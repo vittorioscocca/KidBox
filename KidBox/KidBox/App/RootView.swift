@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var coordinator = AppCoordinator()
     
     var body: some View {
@@ -16,6 +17,9 @@ struct RootView: View {
                 .navigationDestination(for: Route.self) { route in
                     coordinator.makeDestination(for: route)
                 }
+        }
+        .onAppear {
+            DebugSeeder.seedIfNeeded(context: modelContext)
         }
     }
 }
