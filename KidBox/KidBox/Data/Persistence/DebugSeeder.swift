@@ -47,7 +47,7 @@ enum DebugSeeder {
             context.insert(KBTodoItem(familyId: family.id, childId: child.id, title: "Prenotare pediatra", updatedBy: userId))
             
             // 1 event (tomorrow 09:00)
-            var cal = Calendar.current
+            let cal = Calendar.current
             let now = Date()
             let tomorrow = cal.date(byAdding: .day, value: 1, to: now) ?? now
             let start = cal.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) ?? tomorrow

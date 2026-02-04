@@ -21,6 +21,11 @@ struct RootView: View {
         .onAppear {
             DebugSeeder.seedIfNeeded(context: modelContext)
         }
+        .task {
+        #if DEBUG
+            FirestorePingService().ping { _ in }
+        #endif
+        }
     }
 }
 
