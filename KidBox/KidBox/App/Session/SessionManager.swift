@@ -1,38 +1,28 @@
 //
-//  AppCoordinator.swift
+//  SessionManager.swift
 //  KidBox
 //
 //  Created by vscocca on 04/02/26.
 //
 
-import SwiftUI
-import Combine
-import OSLog
+import Foundation
 import FirebaseAuth
 import SwiftData
+import OSLog
+import Combine
 
-/// Central coordinator responsible for navigation and flow control.
-///
-/// `AppCoordinator` owns the navigation path and decides which screen should be
-/// presented based on the current application state (authentication, family setup, etc.).
-///
-/// - Important: Views and ViewModels must not perform navigation directly.
-///   All routing decisions go through the coordinator.
 @MainActor
-final class AppCoordinator: ObservableObject {
+final class SessionManager: ObservableObject {
     
-    @Published var path: [Route] = []
-    
-    /// Global auth/session state (persisted by FirebaseAuth)
     @Published private(set) var isAuthenticated: Bool = false
     @Published private(set) var uid: String?
     
-    private var authHandle: AuthStateDidChangeListenerHandle?
+    private var handle: AuthStateDidChangeListenerHandle?
     
-    func startSessionListener(modelContext: ModelContext) {
-        guard authHandle == nil else { return }
+    func startListening(modelContext: ModelContext) {
+        guard handle == nil else { return }
         
-        authHandle = Auth.auth().addStateDidChangeListener { _, user in
+        handle = Auth.auth().addStateDidChangeListener { _, user in
             Task { @MainActor in
                 if let user {
                     self.isAuthenticated = true
@@ -43,7 +33,6 @@ final class AppCoordinator: ObservableObject {
                     self.isAuthenticated = false
                     self.uid = nil
                     KBLog.auth.info("Auth state: logged out")
-                    self.resetToRoot()
                 }
             }
         }
@@ -54,7 +43,7 @@ final class AppCoordinator: ObservableObject {
             let uid = user.uid   // ✅ cattura prima
             
             let descriptor = FetchDescriptor<KBUserProfile>(
-                predicate: #Predicate { $0.uid == uid }   // ✅ usa uid “stabile”
+                predicate: #Predicate { $0.uid == uid }   // ✅ usa uid catturato
             )
             let existing = try modelContext.fetch(descriptor).first
             
@@ -74,14 +63,4 @@ final class AppCoordinator: ObservableObject {
             KBLog.data.error("UserProfile upsert failed: \(error.localizedDescription, privacy: .public)")
         }
     }
-    
-    func makeRootView() -> some View {
-        RootGateView()
-    }
-    
-    @ViewBuilder
-    func makeDestination(for route: Route) -> some View { /* unchanged */ }
-    
-    func navigate(to route: Route) { /* unchanged */ }
-    func resetToRoot() { /* unchanged */ }
 }

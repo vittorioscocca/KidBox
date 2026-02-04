@@ -28,7 +28,8 @@ enum ModelContainerProvider {
             KBRoutineCheck.self,
             KBEvent.self,
             KBTodoItem.self,
-            KBCustodySchedule.self
+            KBCustodySchedule.self,
+            KBUserProfile.self
         ])
         
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
