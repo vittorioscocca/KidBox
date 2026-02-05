@@ -17,35 +17,22 @@ import SwiftData
 @Model
 final class KBChild {
     @Attribute(.unique) var id: String
-    var familyId: String
+    
     var name: String
     var birthDate: Date?
-    var photoLocalRef: String? // placeholder locale
     
+    // audit (i tuoi campi già esistenti)
+    var createdBy: String
     var createdAt: Date
-    var updatedAt: Date
-    var updatedBy: String
-    var isDeleted: Bool
     
-    init(
-        id: String = UUID().uuidString,
-        familyId: String,
-        name: String,
-        birthDate: Date? = nil,
-        photoLocalRef: String? = nil,
-        updatedBy: String,
-        createdAt: Date = Date(),
-        updatedAt: Date = Date(),
-        isDeleted: Bool = false
-    ) {
+    /// Inverse relationship back to the family.
+    var family: KBFamily?
+    
+    init(id: String, name: String, birthDate: Date?, createdBy: String, createdAt: Date) {
         self.id = id
-        self.familyId = familyId
         self.name = name
         self.birthDate = birthDate
-        self.photoLocalRef = photoLocalRef
-        self.updatedBy = updatedBy
+        self.createdBy = createdBy
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
-        self.isDeleted = isDeleted
     }
 }
