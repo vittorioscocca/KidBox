@@ -12,14 +12,10 @@ struct RootGateView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     
-    @Query private var families: [KBFamily]
-    
     var body: some View {
         Group {
             if !coordinator.isAuthenticated {
                 LoginView()
-            } else if families.isEmpty {
-                SetupFamilyView()
             } else {
                 HomeView()
             }
