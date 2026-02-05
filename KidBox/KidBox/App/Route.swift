@@ -14,12 +14,20 @@ import Foundation
 ///
 /// - Note: Routes are intentionally coarse-grained; feature-specific sub-flows
 ///   can be handled by dedicated coordinators later.
+import Foundation
+
 enum Route: Hashable {
     case home
     case today
     case calendar
     case todo
     case settings
+    
     case profile
-    case setupFamily
+    case familySettings
+    case inviteCode
+    case joinFamily
+    
+    case setupFamily               // create
+    case editFamily(familyId: String, childId: String) // edit
 }

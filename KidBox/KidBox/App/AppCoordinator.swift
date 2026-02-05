@@ -39,6 +39,8 @@ final class AppCoordinator: ObservableObject {
                     self.uid = user.uid
                     KBLog.auth.info("Auth state: logged in uid=\(user.uid, privacy: .public)")
                     self.upsertUserProfile(from: user, modelContext: modelContext)
+                   
+                    await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
                 } else {
                     self.isAuthenticated = false
                     self.uid = nil
@@ -80,8 +82,62 @@ final class AppCoordinator: ObservableObject {
     }
     
     @ViewBuilder
-    func makeDestination(for route: Route) -> some View { /* unchanged */ }
+    func makeDestination(for route: Route) -> some View {
+        switch route {
+        case .home:
+            HomeView()
+        case .today:
+            Text("Today")
+        case .calendar:
+            Text("Calendar")
+        case .todo:
+            TodoListView()
+        case .settings:
+            SettingsView()
+            
+        case .familySettings:
+            FamilySettingsView()
+        case .inviteCode:
+            InviteCodeView()
+        case .joinFamily:
+            JoinFamilyView()
+            
+        case .profile:
+            ProfileView()
+            
+        case .setupFamily:
+            SetupFamilyView(mode: .create)
+            
+        case let .editFamily(familyId, childId):
+            SetupFamilyDestinationView(familyId: familyId, childId: childId)
+        }
+    }
+
+    func navigate(to route: Route) {
+        KBLog.navigation.debug("Navigate to \(String(describing: route), privacy: .public)")
+        path.append(route)
+        KBLog.navigation.debug("Path count now = \(self.path.count, privacy: .public)")
+    }
     
-    func navigate(to route: Route) { /* unchanged */ }
-    func resetToRoot() { /* unchanged */ }
+    func resetToRoot() {
+        KBLog.navigation.debug("Reset to root (clearing path)")
+        path.removeAll()
+    }
+    
+    @MainActor
+    func signOut(modelContext: ModelContext) {
+        do {
+            try LocalDataWiper.wipeAll(context: modelContext)
+        } catch {
+            KBLog.persistence.error("Local wipe failed: \(error.localizedDescription, privacy: .public)")
+        }
+        
+        do {
+            try Auth.auth().signOut()
+            KBLog.auth.info("Firebase sign-out OK")
+            resetToRoot()
+        } catch {
+            KBLog.auth.error("Sign-out failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 }
