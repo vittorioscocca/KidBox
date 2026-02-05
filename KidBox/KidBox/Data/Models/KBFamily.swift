@@ -18,29 +18,26 @@ import SwiftData
 @Model
 final class KBFamily {
     @Attribute(.unique) var id: String
+    
     var name: String
     
-    var createdAt: Date
-    var updatedAt: Date
+    // audit (i tuoi campi già esistenti)
     var createdBy: String
     var updatedBy: String
-    var isDeleted: Bool
+    var createdAt: Date
+    var updatedAt: Date
     
-    init(
-        id: String = UUID().uuidString,
-        name: String,
-        createdBy: String,
-        updatedBy: String? = nil,
-        createdAt: Date = Date(),
-        updatedAt: Date = Date(),
-        isDeleted: Bool = false
-    ) {
+    /// Children belonging to this family.
+    /// Cascade delete: deleting a family deletes its children.
+    @Relationship(deleteRule: .cascade, inverse: \KBChild.family)
+    var children: [KBChild] = []
+    
+    init(id: String, name: String, createdBy: String, updatedBy: String, createdAt: Date, updatedAt: Date) {
         self.id = id
         self.name = name
         self.createdBy = createdBy
-        self.updatedBy = updatedBy ?? createdBy
+        self.updatedBy = updatedBy
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.isDeleted = isDeleted
     }
 }
