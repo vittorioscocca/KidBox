@@ -10,7 +10,9 @@ import SwiftData
 
 struct FamilySettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
+    
     @Query private var families: [KBFamily]
+    @Query private var members: [KBFamilyMember]
     
     private var family: KBFamily? { families.first }
     private var child: KBChild? { families.first?.children.first }
@@ -23,6 +25,7 @@ struct FamilySettingsView: View {
                 
                 if hasFamily {
                     familySummaryCard
+                    familyMembersCard
                     actionsWithFamily
                 } else {
                     emptyStateCard
@@ -54,7 +57,7 @@ struct FamilySettingsView: View {
             subtitle: childSummaryText,
             systemImage: "person.2.fill",
             style: .info,
-            action: nil, // card non tappabile
+            action: nil,
             trailingSystemImage: "pencil",
             trailingAction: {
                 guard let family, let child else { return }
@@ -63,16 +66,62 @@ struct FamilySettingsView: View {
         )
     }
     
+    /// ✅ Card con lista membri dentro (usa KBSettingsCardWithExtra)
+    private var familyMembersCard: some View {
+        let familyId = family?.id ?? ""
+        
+        let list = members
+            .filter { $0.familyId == familyId && !$0.isDeleted }
+            .sorted { displayLabel(for: $0) < displayLabel(for: $1) }
+        
+        return KBSettingsCardWithExtra(
+            title: "Membri",
+            subtitle: membersSubtitle(list: list),
+            systemImage: "person.crop.circle.badge.checkmark",
+            style: .secondary,
+            action: nil
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                if list.isEmpty {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.crop.circle.badge.questionmark")
+                        Text("Nessun membro ancora sincronizzato.")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                } else {
+                    ForEach(list) { m in
+                        HStack(spacing: 10) {
+                            Image(systemName: m.role == "admin" ? "crown.fill" : "person.fill")
+                                .foregroundStyle(.secondary)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(displayLabel(for: m))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                
+                                Text(roleLabel(m.role))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+        }
+    }
+    
     private var actionsWithFamily: some View {
         VStack(spacing: 12) {
             KBSettingsCard(
-                title: "Invita l’altro genitore",
+                title: "Invita l’altro genitore o un altro componente della famiglia",
                 subtitle: "Genera un codice e condividilo.",
                 systemImage: "qrcode",
                 style: .primary,
-                action: {
-                    coordinator.navigate(to: .inviteCode)
-                }
+                action: { coordinator.navigate(to: .inviteCode) }
             )
             
             KBSettingsCard(
@@ -80,9 +129,7 @@ struct FamilySettingsView: View {
                 subtitle: "Usa un codice se vuoi unirti a un’altra famiglia.",
                 systemImage: "key.fill",
                 style: .secondary,
-                action: {
-                    coordinator.navigate(to: .joinFamily)
-                }
+                action: { coordinator.navigate(to: .joinFamily) }
             )
         }
     }
@@ -104,9 +151,7 @@ struct FamilySettingsView: View {
                 subtitle: "Sei il primo genitore su questo account.",
                 systemImage: "plus.circle.fill",
                 style: .primary,
-                action: {
-                    coordinator.navigate(to: .setupFamily) // create
-                }
+                action: { coordinator.navigate(to: .setupFamily) }
             )
             
             KBSettingsCard(
@@ -114,9 +159,7 @@ struct FamilySettingsView: View {
                 subtitle: "Se l’altro genitore ha già creato la famiglia, inserisci il codice.",
                 systemImage: "key.fill",
                 style: .secondary,
-                action: {
-                    coordinator.navigate(to: .joinFamily)
-                }
+                action: { coordinator.navigate(to: .joinFamily) }
             )
         }
     }
@@ -128,111 +171,34 @@ struct FamilySettingsView: View {
         }
         return "Bimbo/a: \(child.name)"
     }
+    
+    // MARK: - Helpers
+    
+    private func displayLabel(for m: KBFamilyMember) -> String {
+        (m.displayName?.trimmedNonEmpty)
+        ?? (m.email?.trimmedNonEmpty)
+        ?? "Utente"
+    }
+    
+    private func membersSubtitle(list: [KBFamilyMember]) -> String {
+        if list.isEmpty { return "Chi può accedere ai dati della famiglia." }
+        if list.count == 1 { return "1 membro collegato." }
+        return "\(list.count) membri collegati."
+    }
+    
+    private func roleLabel(_ raw: String) -> String {
+        switch raw.lowercased() {
+        case "admin", "owner": return "Admin"
+        default: return "Membro"
+        }
+    }
 }
 
-// MARK: - Reusable card (no dependencies)
+// MARK: - Small helpers (TIENI SOLO QUESTA, NON DUPLICARLA ALTROVE)
 
-private struct KBSettingsCard: View {
-    enum Style { case primary, secondary, info, warning }
-    
-    let title: String
-    let subtitle: String
-    let systemImage: String
-    let style: Style
-    
-    // action principale (tappare la card). Se nil, la card NON è tappabile.
-    let action: (() -> Void)?
-    
-    // trailing action (es. matita). Se nil, non compare.
-    let trailingSystemImage: String?
-    let trailingAction: (() -> Void)?
-    
-    init(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        style: Style,
-        action: (() -> Void)? = nil,
-        trailingSystemImage: String? = nil,
-        trailingAction: (() -> Void)? = nil
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.systemImage = systemImage
-        self.style = style
-        self.action = action
-        self.trailingSystemImage = trailingSystemImage
-        self.trailingAction = trailingAction
-    }
-    
-    var body: some View {
-        Group {
-            if let action {
-                Button(action: action) { content }
-                    .buttonStyle(.plain)
-            } else {
-                content
-            }
-        }
-    }
-    
-    private var content: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(iconColor)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Spacer(minLength: 0)
-            
-            if let trailingSystemImage, let trailingAction {
-                Button(action: trailingAction) {
-                    Image(systemName: trailingSystemImage)
-                        .font(.headline)
-                        .padding(8)
-                        .background(
-                            Circle().fill(Color(.tertiarySystemBackground))
-                        )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Modifica")
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(borderColor, lineWidth: 1)
-        )
-    }
-    
-    private var iconColor: Color {
-        switch style {
-        case .primary: return .accentColor
-        case .secondary: return .secondary
-        case .info: return .blue
-        case .warning: return .orange
-        }
-    }
-    
-    private var borderColor: Color {
-        switch style {
-        case .primary: return Color.accentColor.opacity(0.25)
-        case .secondary: return Color.primary.opacity(0.08)
-        case .info: return Color.blue.opacity(0.2)
-        case .warning: return Color.orange.opacity(0.25)
-        }
+private extension String {
+    var trimmedNonEmpty: String? {
+        let t = trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
     }
 }

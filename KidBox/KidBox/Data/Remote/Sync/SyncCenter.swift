@@ -19,6 +19,8 @@ final class SyncCenter: ObservableObject {
     // MARK: - Realtime (Inbound)
     
     private var todoListener: ListenerRegistration?
+    private var membersListener: ListenerRegistration?
+    private let membersRemote = FamilyMemberRemoteStore()
     
     func startTodoRealtime(
         familyId: String,
@@ -31,6 +33,82 @@ final class SyncCenter: ObservableObject {
         todoListener = remote.listenTodos(familyId: familyId, childId: childId) { [weak self] changes in
             guard let self else { return }
             self.applyTodoInbound(changes: changes, modelContext: modelContext)
+        }
+    }
+    
+    func startMembersRealtime(familyId: String, modelContext: ModelContext) {
+        stopMembersRealtime()
+        
+        // prova a valorizzare il profilo “io” lato firestore (non blocca)
+        Task { [familyId] in
+            await membersRemote.upsertMyMemberProfileIfNeeded(familyId: familyId)
+        }
+        
+        membersListener = membersRemote.listenMembers(familyId: familyId) { [weak self] changes in
+            guard let self else { return }
+            Task { @MainActor in
+                self.applyMembersInbound(changes: changes, modelContext: modelContext)
+            }
+        }
+    }
+    
+    func stopMembersRealtime() {
+        membersListener?.remove()
+        membersListener = nil
+    }
+    
+    private func applyMembersInbound(changes: [FamilyMemberRemoteChange], modelContext: ModelContext) {
+        do {
+            for change in changes {
+                switch change {
+                case .upsert(let dto):
+                    let mid = dto.id
+                    let desc = FetchDescriptor<KBFamilyMember>(predicate: #Predicate { $0.id == mid })
+                    if let local = try modelContext.fetch(desc).first {
+                        // LWW (usa updatedAt se c'è, altrimenti applica comunque)
+                        let remoteStamp = dto.updatedAt ?? Date.distantPast
+                        if dto.updatedAt == nil || remoteStamp >= local.updatedAt {
+                            local.familyId = dto.familyId
+                            local.userId = dto.userId
+                            local.role = dto.role
+                            local.displayName = dto.displayName
+                            local.email = dto.email
+                            local.photoURL = dto.photoURL
+                            local.isDeleted = dto.isDeleted
+                            
+                            local.updatedAt = dto.updatedAt ?? Date()
+                            local.updatedBy = dto.updatedBy ?? local.updatedBy
+                        }
+                    } else {
+                        let now = Date()
+                        let m = KBFamilyMember(
+                            id: dto.id,
+                            familyId: dto.familyId,
+                            userId: dto.userId,
+                            role: dto.role,
+                            displayName: dto.displayName,
+                            email: dto.email,
+                            photoURL: dto.photoURL,
+                            updatedBy: dto.updatedBy ?? "remote",
+                            createdAt: now,
+                            updatedAt: dto.updatedAt ?? now,
+                            isDeleted: dto.isDeleted
+                        )
+                        modelContext.insert(m)
+                    }
+                    
+                case .remove(let id):
+                    let mid = id
+                    let desc = FetchDescriptor<KBFamilyMember>(predicate: #Predicate { $0.id == mid })
+                    if let local = try modelContext.fetch(desc).first {
+                        modelContext.delete(local)
+                    }
+                }
+            }
+            
+            try modelContext.save()
+        } catch {
+            KBLog.sync.error("applyMembersInbound failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     

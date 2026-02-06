@@ -46,7 +46,7 @@ private struct InviteCodeViewBody: View {
                         Label("Condividi", systemImage: "square.and.arrow.up")
                     }
                 } else {
-                    Text("Genera un codice da condividere con l’altro genitore.")
+                    Text("Genera un codice da condividere con l’altro genitore o co un altro membro della famiglia.")
                         .foregroundStyle(.secondary)
                 }
             }
