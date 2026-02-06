@@ -22,6 +22,11 @@ final class KBFamilyMember {
     var userId: String
     var role: String // "admin" | "member"
     
+    // ✅ profile (optional = migration-safe)
+    var displayName: String?
+    var email: String?
+    var photoURL: String?
+    
     var createdAt: Date
     var updatedAt: Date
     var updatedBy: String
@@ -32,6 +37,9 @@ final class KBFamilyMember {
         familyId: String,
         userId: String,
         role: String = "member",
+        displayName: String? = nil,
+        email: String? = nil,
+        photoURL: String? = nil,
         updatedBy: String,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -41,6 +49,11 @@ final class KBFamilyMember {
         self.familyId = familyId
         self.userId = userId
         self.role = role
+        
+        self.displayName = displayName
+        self.email = email
+        self.photoURL = photoURL
+        
         self.updatedBy = updatedBy
         self.createdAt = createdAt
         self.updatedAt = updatedAt

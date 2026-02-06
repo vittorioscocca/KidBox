@@ -12,8 +12,9 @@ struct RootHostView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     
-    // family “attiva” deterministica
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
+    
+    @State private var startedFamilyId: String?
     
     var body: some View {
         NavigationStack(path: $coordinator.path) {
@@ -24,14 +25,31 @@ struct RootHostView: View {
             startFamilyRealtimeIfPossible()
         }
         .onChange(of: families.first?.id) { _, _ in
-            // se dopo create family l’id arriva “dopo”, riproviamo
             startFamilyRealtimeIfPossible()
         }
     }
     
     private func startFamilyRealtimeIfPossible() {
-        guard let familyId = families.first?.id, !familyId.isEmpty else { return }
+        guard let familyId = families.first?.id, !familyId.isEmpty else {
+            // opzionale: se perdi la family, stop listeners
+            if startedFamilyId != nil {
+                SyncCenter.shared.stopFamilyBundleRealtime()
+                SyncCenter.shared.stopMembersRealtime()
+                startedFamilyId = nil
+            }
+            return
+        }
+        
+        // evita restart inutili
+        guard startedFamilyId != familyId else { return }
+        startedFamilyId = familyId
+        
         SyncCenter.shared.startFamilyBundleRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        
+        SyncCenter.shared.startMembersRealtime(
             familyId: familyId,
             modelContext: modelContext
         )
