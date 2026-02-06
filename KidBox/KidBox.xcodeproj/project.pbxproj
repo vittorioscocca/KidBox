@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7C11ACD42F3629A500EB83F7 /* FirebaseStorage */; };
 		7CFC51EA2F33DACC0086D687 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51E92F33DACC0086D687 /* FirebaseCore */; };
 		7CFC51EC2F33DACC0086D687 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51EB2F33DACC0086D687 /* FirebaseFirestore */; };
 		7CFC51F72F33E9000086D687 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51F62F33E9000086D687 /* FirebaseAuth */; };
@@ -78,6 +79,7 @@
 				7CFC52122F33F93E0086D687 /* GoogleSignIn in Frameworks */,
 				7CFC51F72F33E9000086D687 /* FirebaseAuth in Frameworks */,
 				7CFC51EC2F33DACC0086D687 /* FirebaseFirestore in Frameworks */,
+				7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,6 +153,7 @@
 				7CFC51F62F33E9000086D687 /* FirebaseAuth */,
 				7CFC52112F33F93E0086D687 /* GoogleSignIn */,
 				7CFC52132F33F93E0086D687 /* GoogleSignInSwift */,
+				7C11ACD42F3629A500EB83F7 /* FirebaseStorage */,
 			);
 			productName = KidBox;
 			productReference = 7CFC515D2F3378CB0086D687 /* KidBox.app */;
@@ -705,6 +708,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7C11ACD42F3629A500EB83F7 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
 		7CFC51E92F33DACC0086D687 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

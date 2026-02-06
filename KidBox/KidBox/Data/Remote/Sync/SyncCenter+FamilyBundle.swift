@@ -39,21 +39,51 @@ extension SyncCenter {
                 guard let snap, let data = snap.data() else { return }
                 
                 let remoteName = data["name"] as? String ?? ""
-                let remoteUpdatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? .distantPast
+                
+                let remoteUpdatedAt =
+                (data["updatedAt"] as? Timestamp)?.dateValue()
+                ?? .distantPast
+                
                 let remoteUpdatedBy = data["updatedBy"] as? String
+                
+                // ✅ Hero fields (URL + crop)
+                let remoteHeroURL = data["heroPhotoURL"] as? String
+                let remoteHeroUpdatedAt = (data["heroPhotoUpdatedAt"] as? Timestamp)?.dateValue()
+                
+                let remoteHeroScale = data["heroPhotoScale"] as? Double
+                let remoteHeroOffsetX = data["heroPhotoOffsetX"] as? Double
+                let remoteHeroOffsetY = data["heroPhotoOffsetY"] as? Double
                 
                 Task { @MainActor in
                     do {
                         let fid = familyId
                         let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
-                        if let fam = try modelContext.fetch(desc).first {
-                            if remoteUpdatedAt >= fam.updatedAt {
-                                fam.name = remoteName
-                                fam.updatedAt = remoteUpdatedAt
-                                fam.updatedBy = remoteUpdatedBy ?? fam.updatedBy
-                                try modelContext.save()
-                            }
+                        
+                        guard let fam = try modelContext.fetch(desc).first else { return }
+                        
+                        // ✅ LWW: name/metadata
+                        if remoteUpdatedAt >= fam.updatedAt {
+                            fam.name = remoteName
+                            fam.updatedAt = remoteUpdatedAt
+                            fam.updatedBy = remoteUpdatedBy ?? fam.updatedBy
                         }
+                        
+                        // ✅ LWW: hero (se manca heroPhotoUpdatedAt, fallback su updatedAt)
+                        let remoteHeroStamp = remoteHeroUpdatedAt ?? remoteUpdatedAt
+                        let localHeroStamp = fam.heroPhotoUpdatedAt ?? .distantPast
+                        
+                        if remoteHeroStamp >= localHeroStamp {
+                            // URL può essere nil se non impostata ancora
+                            fam.heroPhotoURL = remoteHeroURL
+                            fam.heroPhotoUpdatedAt = remoteHeroStamp
+                            
+                            // crop: se non ci sono valori, lascio i locali (non li azzero)
+                            if let s = remoteHeroScale { fam.heroPhotoScale = s }
+                            if let x = remoteHeroOffsetX { fam.heroPhotoOffsetX = x }
+                            if let y = remoteHeroOffsetY { fam.heroPhotoOffsetY = y }
+                        }
+                        
+                        try modelContext.save()
                     } catch {
                         KBLog.sync.error("Family inbound apply failed: \(error.localizedDescription, privacy: .public)")
                     }
