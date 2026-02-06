@@ -45,7 +45,9 @@ final class FamilyCreationService {
             name: childName,
             birthDate: childBirthDate,
             createdBy: uid,
-            createdAt: Date()
+            createdAt: Date(),
+            updatedBy: uid,
+            updatedAt: Date()
         )
         
         family.children.append(child)

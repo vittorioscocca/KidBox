@@ -35,7 +35,7 @@ enum TodoRemoteChange {
 }
 
 final class TodoRemoteStore {
-    private var db: Firestore { Firestore.firestore() }
+    var db: Firestore { Firestore.firestore() }
     
     func upsert(todo: RemoteTodoWrite) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {

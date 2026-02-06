@@ -13,7 +13,6 @@ import OSLog
 struct TodoListView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var syncer = TodoRealtimeSyncer()
     
     // Family “attiva” deterministica
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
@@ -26,13 +25,10 @@ struct TodoListView: View {
     @State private var errorMessage: String?
     
     private let remote = TodoRemoteStore()
-    
     private let familyId: String
     private let childId: String
     
     init() {
-        // placeholder: verrà ricalcolato in body via re-init? No.
-        // Quindi: usiamo init(familyId:childId:) + factory sotto.
         self.familyId = ""
         self.childId = ""
         _todos = Query(filter: #Predicate<KBTodoItem> { _ in false })
@@ -56,17 +52,11 @@ struct TodoListView: View {
         let family = families.first
         let child = family?.children.first
         
-        // Se questa view è stata costruita senza ids, la ricostruiamo correttamente
-        // (così puoi continuare a navigare a .todo senza passare parametri in giro)
         if familyId.isEmpty || childId.isEmpty {
-            return AnyView(
-                TodoListViewFactory(family: family, child: child)
-            )
+            return AnyView(TodoListViewFactory(family: family, child: child))
         }
         
-        return AnyView(
-            content
-        )
+        return AnyView(content)
     }
     
     private var content: some View {
@@ -80,12 +70,8 @@ struct TodoListView: View {
                             .foregroundStyle(.secondary)
                         
                         HStack {
-                            Button("Entra con codice") {
-                                coordinator.navigate(to: .joinFamily)
-                            }
-                            Button("Impostazioni Family") {
-                                coordinator.navigate(to: .familySettings)
-                            }
+                            Button("Entra con codice") { coordinator.navigate(to: .joinFamily) }
+                            Button("Impostazioni Family") { coordinator.navigate(to: .familySettings) }
                         }
                     }
                 } else {
@@ -120,9 +106,21 @@ struct TodoListView: View {
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: todo.isDone ? "checkmark.circle.fill" : "circle")
-                                Text(todo.title)
-                                    .foregroundStyle(.primary)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(todo.title).foregroundStyle(.primary)
+                                    
+                                    if todo.syncState != .synced {
+                                        Text(syncLabel(for: todo))
+                                            .font(.caption)
+                                            .foregroundStyle(todo.syncState == .error ? .red : .secondary)
+                                    }
+                                }
+                                
                                 Spacer()
+                                
+                                Image(systemName: syncIcon(for: todo))
+                                    .foregroundStyle(todo.syncState == .error ? .red : .secondary)
                             }
                         }
                     }
@@ -133,10 +131,18 @@ struct TodoListView: View {
         .navigationTitle("Todo")
         .onAppear {
             guard !familyId.isEmpty, !childId.isEmpty else { return }
-            syncer.start(familyId: familyId, childId: childId, modelContext: modelContext)
+            
+            SyncCenter.shared.startTodoRealtime(
+                familyId: familyId,
+                childId: childId,
+                modelContext: modelContext,
+                remote: remote
+            )
+            
+            Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: remote) }
         }
         .onDisappear {
-            syncer.stop()
+            SyncCenter.shared.stopTodoRealtime()
         }
     }
     
@@ -153,7 +159,6 @@ struct TodoListView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         
-        // 1) Local
         let local = KBTodoItem(
             id: id,
             familyId: familyId,
@@ -169,6 +174,10 @@ struct TodoListView: View {
             updatedAt: now,
             isDeleted: false
         )
+        
+        local.syncState = .pendingUpsert
+        local.lastSyncError = nil
+        
         modelContext.insert(local)
         
         do {
@@ -179,18 +188,8 @@ struct TodoListView: View {
             return
         }
         
-        // 2) Remote (MVP: no rollback)
-        do {
-            try await remote.upsert(todo: .init(
-                id: id,
-                familyId: familyId,
-                childId: childId,
-                title: title,
-                isDone: false
-            ))
-        } catch {
-            errorMessage = "Firestore write failed: \(error.localizedDescription)"
-        }
+        SyncCenter.shared.enqueueTodoUpsert(todoId: id, familyId: familyId, modelContext: modelContext)
+        await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
     }
     
     @MainActor
@@ -205,6 +204,9 @@ struct TodoListView: View {
         todo.doneAt = todo.isDone ? now : nil
         todo.doneBy = todo.isDone ? uid : nil
         
+        todo.syncState = .pendingUpsert
+        todo.lastSyncError = nil
+        
         do {
             try modelContext.save()
         } catch {
@@ -212,17 +214,8 @@ struct TodoListView: View {
             return
         }
         
-        do {
-            try await remote.upsert(todo: .init(
-                id: todo.id,
-                familyId: todo.familyId,
-                childId: todo.childId,
-                title: todo.title,
-                isDone: todo.isDone
-            ))
-        } catch {
-            errorMessage = "Firestore update failed: \(error.localizedDescription)"
-        }
+        SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: todo.familyId, modelContext: modelContext)
+        await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
     }
     
     private func deleteTodos(offsets: IndexSet) {
@@ -233,29 +226,50 @@ struct TodoListView: View {
             
             for index in offsets {
                 let todo = todos[index]
+                
                 todo.isDeleted = true
                 todo.updatedBy = uid
                 todo.updatedAt = now
                 
-                // MVP: non cancelliamo fisicamente, soft-delete
-                do {
-                    try await remote.softDelete(todoId: todo.id, familyId: todo.familyId)
-                } catch {
-                    // non blocco
-                    KBLog.sync.error("Remote softDelete failed: \(error.localizedDescription, privacy: .public)")
-                }
+                todo.syncState = .pendingDelete
+                todo.lastSyncError = nil
+                
+                SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: todo.familyId, modelContext: modelContext)
             }
             
             do {
                 try modelContext.save()
             } catch {
                 errorMessage = "SwiftData save failed: \(error.localizedDescription)"
+                return
             }
+            
+            await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+        }
+    }
+    
+    private func syncIcon(for todo: KBTodoItem) -> String {
+        switch todo.syncState {
+        case .synced: return "checkmark"
+        case .pendingUpsert, .pendingDelete: return "arrow.triangle.2.circlepath"
+        case .error: return "exclamationmark.triangle"
+        }
+    }
+    
+    private func syncLabel(for todo: KBTodoItem) -> String {
+        switch todo.syncState {
+        case .synced:
+            return "Sincronizzato"
+        case .pendingUpsert:
+            return "In sincronizzazione…"
+        case .pendingDelete:
+            return "Eliminazione in corso…"
+        case .error:
+            return todo.lastSyncError ?? "Errore di sincronizzazione"
         }
     }
 }
 
-// MARK: - Factory che ricrea la view con i parametri giusti
 private struct TodoListViewFactory: View {
     let family: KBFamily?
     let child: KBChild?

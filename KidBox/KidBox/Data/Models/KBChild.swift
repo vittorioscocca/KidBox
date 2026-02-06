@@ -21,18 +21,32 @@ final class KBChild {
     var name: String
     var birthDate: Date?
     
-    // audit (i tuoi campi già esistenti)
+    // audit
     var createdBy: String
     var createdAt: Date
+    
+    // ✅ aggiunti per sync (LWW + remote inbound)
+    var updatedBy: String?
+    var updatedAt: Date?
     
     /// Inverse relationship back to the family.
     var family: KBFamily?
     
-    init(id: String, name: String, birthDate: Date?, createdBy: String, createdAt: Date) {
+    init(
+        id: String,
+        name: String,
+        birthDate: Date?,
+        createdBy: String,
+        createdAt: Date,
+        updatedBy: String,
+        updatedAt: Date
+    ) {
         self.id = id
         self.name = name
         self.birthDate = birthDate
         self.createdBy = createdBy
         self.createdAt = createdAt
+        self.updatedBy = updatedBy
+        self.updatedAt = updatedAt
     }
 }

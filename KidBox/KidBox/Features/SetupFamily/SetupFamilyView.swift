@@ -17,7 +17,6 @@ struct SetupFamilyView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
     @EnvironmentObject private var coordinator: AppCoordinator
     
     private let mode: Mode
@@ -136,7 +135,6 @@ struct SetupFamilyView: View {
                 childBirthDate: hasBirthDate ? birthDate : nil
             )
             
-            // dopo create, torna indietro dove vuoi (io farei dismiss)
             dismiss()
         } catch {
             errorText = error.localizedDescription
@@ -156,6 +154,10 @@ struct SetupFamilyView: View {
         child.name = childName.trimmed
         child.birthDate = hasBirthDate ? birthDate : nil
         
+        // (consigliato se hai aggiunto updatedAt/updatedBy su KBChild)
+        // child.updatedBy = uid
+        // child.updatedAt = now
+        
         do {
             try modelContext.save()
         } catch {
@@ -163,21 +165,15 @@ struct SetupFamilyView: View {
             return
         }
         
-        // 2) REMOTE (best-effort)
-        do {
-            try await FamilyRemoteStore().updateFamilyAndChild(
-                family: .init(familyId: family.id, name: family.name),
-                child: .init(
-                    familyId: family.id,
-                    childId: child.id,
-                    name: child.name,
-                    birthDate: child.birthDate
-                )
-            )
-            dismiss()
-        } catch {
-            errorText = "Firestore update failed: \(error.localizedDescription)"
-        }
+        // 2) OUTBOX (offline-first) + flush
+        // ✅ questa è la parte che ti fa vedere le modifiche anche all’altro genitore
+        SyncCenter.shared.enqueueFamilyBundleUpsert(familyId: family.id, modelContext: modelContext)
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        // opzionale: proviamo anche a flush "subito" (non serve, ma accelera)
+        // await SyncCenter.shared.flush(modelContext: modelContext, remote: TodoRemoteStore())
+        
+        dismiss()
     }
 }
 

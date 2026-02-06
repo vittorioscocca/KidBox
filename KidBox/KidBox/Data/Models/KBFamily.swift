@@ -18,17 +18,17 @@ import SwiftData
 @Model
 final class KBFamily {
     @Attribute(.unique) var id: String
-    
     var name: String
     
-    // audit (i tuoi campi già esistenti)
     var createdBy: String
     var updatedBy: String
     var createdAt: Date
     var updatedAt: Date
     
-    /// Children belonging to this family.
-    /// Cascade delete: deleting a family deletes its children.
+    // ✅ M3
+    var lastSyncAt: Date?            // ultimo momento in cui abbiamo processato sync per questa family
+    var lastSyncError: String?       // utile per debug/supporto
+    
     @Relationship(deleteRule: .cascade, inverse: \KBChild.family)
     var children: [KBChild] = []
     

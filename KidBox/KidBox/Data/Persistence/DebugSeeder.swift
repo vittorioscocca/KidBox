@@ -46,7 +46,9 @@ enum DebugSeeder {
                 name: "Sofia",
                 birthDate: nil,
                 createdBy: userId,
-                createdAt: now
+                createdAt: now,
+                updatedBy:userId,
+                updatedAt: now
             )
             
             family.children.append(child)

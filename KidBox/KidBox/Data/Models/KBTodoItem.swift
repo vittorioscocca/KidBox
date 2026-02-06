@@ -22,7 +22,7 @@ final class KBTodoItem {
     
     var title: String
     var notes: String?
-    var dueAt: Date? // nil = backlog “senza data”
+    var dueAt: Date?
     var isDone: Bool
     var doneAt: Date?
     var doneBy: String?
@@ -31,6 +31,15 @@ final class KBTodoItem {
     var updatedAt: Date
     var updatedBy: String
     var isDeleted: Bool
+    
+    // ✅ M3 (make optional for migration safety)
+    var syncStateRaw: Int?
+    var lastSyncError: String?
+    
+    var syncState: KBSyncState {
+        get { KBSyncState(rawValue: syncStateRaw ?? KBSyncState.synced.rawValue) ?? .synced }
+        set { syncStateRaw = newValue.rawValue }
+    }
     
     init(
         id: String = UUID().uuidString,
@@ -60,5 +69,9 @@ final class KBTodoItem {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isDeleted = isDeleted
+        
+        // default for new records
+        self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
+        self.lastSyncError = nil
     }
 }

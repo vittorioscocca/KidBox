@@ -82,12 +82,15 @@ final class FamilyJoinService {
                 lc.birthDate = rc.birthDate
                 if lc.family == nil { lc.family = family }
             } else {
+                let now = Date()
                 let child = KBChild(
                     id: rc.id,
                     name: rc.name,
                     birthDate: rc.birthDate,
                     createdBy: remoteFamily.ownerUid,
-                    createdAt: Date()
+                    createdAt: Date(),
+                    updatedBy: uid,
+                    updatedAt: now
                 )
                 child.family = family
                 family.children.append(child)
