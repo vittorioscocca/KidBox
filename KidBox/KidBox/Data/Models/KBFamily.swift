@@ -19,6 +19,12 @@ import SwiftData
 final class KBFamily {
     @Attribute(.unique) var id: String
     var name: String
+    // Hero image (sync via Firestore)
+    var heroPhotoURL: String?
+    var heroPhotoUpdatedAt: Date?
+    var heroPhotoScale: Double?
+    var heroPhotoOffsetX: Double?
+    var heroPhotoOffsetY: Double?
     
     var createdBy: String
     var updatedBy: String
