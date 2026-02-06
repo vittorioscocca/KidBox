@@ -13,50 +13,56 @@ import FirebaseAuth
 
 @main
 struct KidBoxApp: App {
-    private var modelContainer = ModelContainerProvider.makeContainer(inMemory: false)
+    private var modelContainer: ModelContainer
     @StateObject private var coordinator = AppCoordinator()
+    @Environment(\.scenePhase) private var scenePhase
     
     init() {
         FirebaseBootstrap.configureIfNeeded()
         KBLog.app.info("KidBoxApp init")
-        
         self.modelContainer = ModelContainerProvider.makeContainer(inMemory: false)
         KBLog.app.info("KidBoxApp ready")
     }
     
     var body: some Scene {
         WindowGroup {
-            NavigationStack(path: $coordinator.path) {
-                coordinator.makeRootView()
-                    .navigationDestination(for: Route.self) { coordinator.makeDestination(for: $0) }
-            }
-            .environmentObject(coordinator)
-            .onChange(of: coordinator.path) { _, newValue in
-                KBLog.navigation.debug("NavigationStack observed path: \(newValue.count, privacy: .public)")
-            }
-            .onOpenURL { url in
-                GIDSignIn.sharedInstance.handle(url)
-            }
-            .onAppear {
-                let context = modelContainer.mainContext
-                
-#if DEBUG
-                // Seed SOLO se non c’è un utente Firebase loggato
-                // (evita che Apple/Google vedano sempre "Famiglia Rossi")
-                if Auth.auth().currentUser == nil {
-                    DebugSeeder.seedIfNeeded(context: context)
-                } else {
-                    KBLog.persistence.info("DEBUG seed skipped (authenticated user)")
+            RootHostView()
+                .environmentObject(coordinator)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                    
+                    // trigger post-login
+                    let context = modelContainer.mainContext
+                    SyncCenter.shared.flushGlobal(modelContext: context)
                 }
+                .onAppear {
+                    let context = modelContainer.mainContext
+                    
+#if DEBUG
+                    if Auth.auth().currentUser == nil {
+                        DebugSeeder.seedIfNeeded(context: context)
+                    } else {
+                        KBLog.persistence.info("DEBUG seed skipped (authenticated user)")
+                    }
 #endif
-            }
-            .task {
-                #if DEBUG
-                FirestorePingService().ping { _ in }
-                #endif
-            }
+                }
+                .task {
+#if DEBUG
+                    FirestorePingService().ping { _ in }
+#endif
+                }
         }
         .modelContainer(modelContainer)
-        
+        .onChange(of: scenePhase) { _, newPhase in
+            let context = modelContainer.mainContext
+            if newPhase == .active {
+                SyncCenter.shared.startAutoFlush(modelContext: context)
+                SyncCenter.shared.flushGlobal(modelContext: context)
+            } else {
+                SyncCenter.shared.stopAutoFlush()
+                // opzionale ma consigliato: stop listeners quando vai in background
+                SyncCenter.shared.stopFamilyBundleRealtime()
+            }
+        }
     }
 }

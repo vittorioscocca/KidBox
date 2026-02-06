@@ -84,8 +84,13 @@ final class FamilyRemoteStore {
         
         var childData: [String: Any] = [
             "name": child.name,
-            "createdAt": FieldValue.serverTimestamp()
+            "isDeleted": false,
+            "createdAt": FieldValue.serverTimestamp(),
+            // ✅ importantissimo: così gli update inbound hanno sempre un timestamp
+            "updatedBy": uid,
+            "updatedAt": FieldValue.serverTimestamp()
         ]
+        
         if let birthDate = child.birthDate {
             childData["birthDate"] = Timestamp(date: birthDate)
         }

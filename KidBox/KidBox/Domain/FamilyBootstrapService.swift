@@ -119,7 +119,9 @@ final class FamilyBootstrapService {
                     name: rc.name,
                     birthDate: rc.birthDate,
                     createdBy: family.ownerUid,
-                    createdAt: Date()
+                    createdAt: Date(),
+                    updatedBy: uid,
+                    updatedAt: Date()
                 )
                 newChild.family = localFamily
                 localFamily.children.append(newChild)
