@@ -14,6 +14,7 @@ struct HomeView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
+    
     private var activeFamily: KBFamily? { families.first }
     private var hasFamily: Bool { activeFamily != nil }
     
@@ -23,6 +24,7 @@ struct HomeView: View {
                 
                 header
                 
+                // Quick actions grid
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: 12),
@@ -30,23 +32,10 @@ struct HomeView: View {
                     ],
                     spacing: 12
                 ) {
-                    // TODO(M3):
-                    // - Photo picker (PhotosUI)
-                    // - Save locally (FileManager / SwiftData reference)
-                    // - Upload to Firebase Storage
-                    // - Sync across devices
-                    HomeCardView(
-                        title: "Foto famiglia",
-                        subtitle: "Aggiungi o cambia foto",
-                        systemImage: "photo.on.rectangle.angled"
-                    ) {
-                        KBLog.navigation.debug("Tap Foto famiglia")
-                        if !hasFamily { coordinator.navigate(to: .familySettings) }
-                    }
                     
                     HomeCardView(
                         title: "Oggi",
-                        subtitle: "Routine e cose da fare",
+                        subtitle: "Routine, cure e cose da fare",
                         systemImage: "sun.max"
                     ) {
                         KBLog.navigation.debug("Tap Oggi")
@@ -55,7 +44,7 @@ struct HomeView: View {
                     
                     HomeCardView(
                         title: "Calendario",
-                        subtitle: "Eventi e impegni",
+                        subtitle: "Eventi e affidamenti",
                         systemImage: "calendar"
                     ) {
                         KBLog.navigation.debug("Tap Calendario")
@@ -67,9 +56,66 @@ struct HomeView: View {
                         subtitle: "Lista condivisa",
                         systemImage: "checklist"
                     ) {
-                        KBLog.navigation.debug("Tap Lista condivisa")
+                        KBLog.navigation.debug("Tap Todo")
                         go(.todo)
                     }
+                    
+                    HomeCardView(
+                        title: "Cure",
+                        subtitle: "Promemoria e “fatto / non fatto”",
+                        systemImage: "cross.case"
+                    ) {
+                        KBLog.navigation.debug("Tap Cure")
+                        //go(.care)
+                    }
+                    
+                    HomeCardView(
+                        title: "Documenti",
+                        subtitle: "Carte importanti del bimbo",
+                        systemImage: "doc.text"
+                    ) {
+                        KBLog.navigation.debug("Tap Documenti")
+                        //go(.documents)
+                    }
+                    
+                    HomeCardView(
+                        title: "Spese",
+                        subtitle: "Rette, visite, extra",
+                        systemImage: "eurosign.circle"
+                    ) {
+                        KBLog.navigation.debug("Tap Spese")
+                        //go(.expenses)
+                    }
+                    
+                    HomeCardView(
+                        title: "Chat",
+                        subtitle: "Coordinamento famiglia",
+                        systemImage: "message"
+                    ) {
+                        KBLog.navigation.debug("Tap Chat")
+                        //go(.chat)
+                    }
+                    
+                    HomeCardView(
+                        title: "Timeline",
+                        subtitle: "Storia e tappe del bimbo",
+                        systemImage: "clock.arrow.circlepath"
+                    ) {
+                        KBLog.navigation.debug("Tap Timeline")
+                        //go(.timeline)
+                    }
+                }
+                
+                // Optional: “Foto famiglia” la sposterei in Profile o nelle impostazioni,
+                // ma se vuoi tenerla qui, mettila come card singola sotto la grid.
+                HomeCardView(
+                    title: "Foto famiglia",
+                    subtitle: "Aggiungi o cambia foto",
+                    systemImage: "photo.on.rectangle.angled"
+                ) {
+                    KBLog.navigation.debug("Tap Foto famiglia")
+                    if !hasFamily { coordinator.navigate(to: .familySettings) }
+                    else {/* coordinator.navigate(to: .familyPhoto) */} // opzionale
                 }
                 
                 InviteCardView {
@@ -89,7 +135,6 @@ struct HomeView: View {
                 Button {
                     KBLog.navigation.debug("Tap Profile")
                     coordinator.navigate(to: .profile)
-                    
                 } label: {
                     Image(systemName: "person.crop.circle")
                 }

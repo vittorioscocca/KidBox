@@ -13,6 +13,7 @@ import OSLog
 struct TodoListView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var syncer = TodoRealtimeSyncer()
     
     // Family “attiva” deterministica
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
@@ -130,6 +131,13 @@ struct TodoListView: View {
             }
         }
         .navigationTitle("Todo")
+        .onAppear {
+            guard !familyId.isEmpty, !childId.isEmpty else { return }
+            syncer.start(familyId: familyId, childId: childId, modelContext: modelContext)
+        }
+        .onDisappear {
+            syncer.stop()
+        }
     }
     
     // MARK: - Actions
