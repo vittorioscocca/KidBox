@@ -30,6 +30,9 @@ enum ModelContainerProvider {
             KBTodoItem.self,
             KBCustodySchedule.self,
             KBUserProfile.self,
+            KBDocument.self,
+            KBDocumentCategory.self,
+            KBDocumentItem.self,
             KBSyncOp.self
         ])
         

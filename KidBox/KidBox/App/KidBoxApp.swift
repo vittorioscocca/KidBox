@@ -16,7 +16,7 @@ struct KidBoxApp: App {
     private var modelContainer: ModelContainer
     @StateObject private var coordinator = AppCoordinator()
     @Environment(\.scenePhase) private var scenePhase
-    
+
     init() {
         FirebaseBootstrap.configureIfNeeded()
         KBLog.app.info("KidBoxApp init")
@@ -38,13 +38,13 @@ struct KidBoxApp: App {
                 .onAppear {
                     let context = modelContainer.mainContext
                     
-#if DEBUG
+                #if DEBUG
                     if Auth.auth().currentUser == nil {
                         DebugSeeder.seedIfNeeded(context: context)
                     } else {
                         KBLog.persistence.info("DEBUG seed skipped (authenticated user)")
                     }
-#endif
+                #endif
                 }
                 .task {
 #if DEBUG

@@ -28,6 +28,10 @@ enum Route: Hashable {
     case inviteCode
     case joinFamily
     
+    case document
+    case documentsHome
+    case documentsCategory(familyId: String, categoryId: String, title: String)
+    
     case setupFamily               // create
     case editFamily(familyId: String, childId: String) // edit
 }

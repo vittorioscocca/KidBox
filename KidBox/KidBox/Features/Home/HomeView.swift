@@ -98,7 +98,7 @@ struct HomeView: View {
                     
                     HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text") {
                         KBLog.navigation.debug("Tap Documenti")
-                        // go(.documents)
+                        go(.document)
                     }
                     
                     HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle") {
