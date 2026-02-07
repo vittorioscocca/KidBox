@@ -64,12 +64,13 @@ extension SyncCenter {
             try modelContext.save()
             
         case "delete":
-            try await remote.softDelete(familyId: op.familyId, categoryId: cid)
+            try await remote.delete(
+                familyId: op.familyId,
+                categoryId: cid
+            )
             
             if let cat {
-                cat.isDeleted = true
-                cat.syncState = .synced
-                cat.lastSyncError = nil
+                modelContext.delete(cat)
                 try modelContext.save()
             }
             

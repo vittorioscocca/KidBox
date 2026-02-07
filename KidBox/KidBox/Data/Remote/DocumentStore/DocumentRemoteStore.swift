@@ -84,6 +84,20 @@ final class DocumentRemoteStore {
         ], merge: true)
     }
     
+    func delete(familyId: String, docId: String) async throws {
+        guard Auth.auth().currentUser != nil else {
+            throw NSError(domain: "KidBox", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+        
+        let ref = db.collection("families")
+            .document(familyId)
+            .collection("documents")
+            .document(docId)
+        
+        try await ref.delete()
+    }
+    
     func listenDocuments(
         familyId: String,
         onChange: @escaping ([DocumentRemoteChange]) -> Void
