@@ -94,22 +94,24 @@ final class AppCoordinator: ObservableObject {
             TodoListView()
         case .settings:
             SettingsView()
-            
         case .familySettings:
             FamilySettingsView()
         case .inviteCode:
             InviteCodeView()
         case .joinFamily:
             JoinFamilyView()
-            
+        case .document:
+            DocumentsHomeView()
         case .profile:
             ProfileView()
-            
         case .setupFamily:
             SetupFamilyView(mode: .create)
-            
         case let .editFamily(familyId, childId):
             SetupFamilyDestinationView(familyId: familyId, childId: childId)
+        case .documentsHome:
+            DocumentsHomeView()
+        case .documentsCategory(familyId: let familyId, categoryId: let categoryId, title: let title):
+            CategoryDocumentsView(familyId: familyId, categoryId: categoryId, categoryTitle: title)
         }
     }
 

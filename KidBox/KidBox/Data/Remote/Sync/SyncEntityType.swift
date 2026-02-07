@@ -8,6 +8,7 @@
 enum SyncEntityType: String {
     case todo
     case document
+    case documentCategory 
     case event
     case familyBundle
 }

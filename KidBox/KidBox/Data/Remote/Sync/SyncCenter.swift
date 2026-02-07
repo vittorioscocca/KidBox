@@ -21,6 +21,9 @@ final class SyncCenter: ObservableObject {
     private var todoListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
     private let membersRemote = FamilyMemberRemoteStore()
+    var documentsListener: ListenerRegistration?
+    let documentRemote = DocumentRemoteStore()
+    private let documentCategoryRemote = DocumentCategoryRemoteStore()
     
     func startTodoRealtime(
         familyId: String,
@@ -238,13 +241,15 @@ final class SyncCenter: ObservableObject {
                 try await processTodo(op: op, modelContext: modelContext, remote: remote)
                 
             case SyncEntityType.document.rawValue:
-                // IMPORTANT: don't silently drop ops you haven't implemented yet
-                throw NSError(domain: "KidBox.Sync", code: -2001,
-                              userInfo: [NSLocalizedDescriptionKey: "Document sync not implemented yet"])
+                try await processDocument(op: op, modelContext: modelContext, remote: documentRemote)
+                
+            case SyncEntityType.documentCategory.rawValue:
+                try await processDocumentCategory(op: op, modelContext: modelContext, remote: documentCategoryRemote)
                 
             case SyncEntityType.event.rawValue:
                 throw NSError(domain: "KidBox.Sync", code: -2002,
                               userInfo: [NSLocalizedDescriptionKey: "Event sync not implemented yet"])
+                
             case SyncEntityType.familyBundle.rawValue:
                 try await self.processFamilyBundle(op: op, modelContext: modelContext)
                 

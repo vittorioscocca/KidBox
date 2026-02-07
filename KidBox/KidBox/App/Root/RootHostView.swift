@@ -13,7 +13,6 @@ struct RootHostView: View {
     @Environment(\.modelContext) private var modelContext
     
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
-    
     @State private var startedFamilyId: String?
     
     var body: some View {
@@ -31,10 +30,11 @@ struct RootHostView: View {
     
     private func startFamilyRealtimeIfPossible() {
         guard let familyId = families.first?.id, !familyId.isEmpty else {
-            // opzionale: se perdi la family, stop listeners
+            // se perdi la family, stop listeners
             if startedFamilyId != nil {
                 SyncCenter.shared.stopFamilyBundleRealtime()
                 SyncCenter.shared.stopMembersRealtime()
+                SyncCenter.shared.stopDocumentsRealtime()
                 startedFamilyId = nil
             }
             return
@@ -42,6 +42,14 @@ struct RootHostView: View {
         
         // evita restart inutili
         guard startedFamilyId != familyId else { return }
+        
+        // se stavi ascoltando un'altra famiglia, stop prima
+        if startedFamilyId != nil {
+            SyncCenter.shared.stopFamilyBundleRealtime()
+            SyncCenter.shared.stopMembersRealtime()
+            SyncCenter.shared.stopDocumentsRealtime()
+        }
+        
         startedFamilyId = familyId
         
         SyncCenter.shared.startFamilyBundleRealtime(
@@ -50,6 +58,11 @@ struct RootHostView: View {
         )
         
         SyncCenter.shared.startMembersRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        
+        SyncCenter.shared.startDocumentsRealtime(
             familyId: familyId,
             modelContext: modelContext
         )
