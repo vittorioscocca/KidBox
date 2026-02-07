@@ -46,4 +46,17 @@ final class DocumentStorageService {
         let url = try await ref.downloadURL()
         return (storagePath: path, downloadURL: url.absoluteString)
     }
+    
+    func delete(path: String) async throws {
+        guard let _ = Auth.auth().currentUser else {
+            throw NSError(
+                domain: "KidBox",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
+            )
+        }
+        
+        let ref = Storage.storage().reference(withPath: path)
+        try await ref.delete()
+    }
 }

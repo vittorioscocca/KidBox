@@ -35,13 +35,15 @@ struct CategoryDocumentsView: View {
     
     // documenti di questa categoria
     @Query private var docs: [KBDocument]
-    
     @State private var layout: LayoutMode = .grid
     
     // upload
     @State private var showImporter = false
     @State private var isUploading = false
     @State private var errorText: String?
+    
+    @State private var isDeleting = false
+    private let deleteService = DocumentDeleteService()
     
     // “scope” documento: famiglia o child
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
@@ -178,11 +180,11 @@ struct CategoryDocumentsView: View {
                             DocumentGridCard(doc: doc) {
                                 open(doc)
                             } onDelete: {
-                                softDelete(doc)
+                                deleteDocument(doc)
                             }
                         }
                     }
-                                        .padding()
+                    .padding()
                 }
                 
             case .list:
@@ -196,7 +198,7 @@ struct CategoryDocumentsView: View {
                         .buttonStyle(.plain)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
-                                softDelete(doc)
+                                deleteDocument(doc)
                             } label: {
                                 Label("Elimina", systemImage: "trash")
                             }
@@ -319,13 +321,24 @@ struct CategoryDocumentsView: View {
     }
     
     @MainActor
-    private func softDelete(_ doc: KBDocument) {
-        // MVP: local only; dopo lo attacchiamo a SyncCenter enqueue+flush
-        doc.isDeleted = true
-        doc.updatedAt = Date()
-        doc.updatedBy = Auth.auth().currentUser?.uid ?? "local"
-        doc.syncState = .pendingDelete
-        try? modelContext.save()
+    private func deleteDocument(_ doc: KBDocument) {
+        guard !isDeleting else { return }
+        isDeleting = true
+        
+        Task { @MainActor in
+            defer { isDeleting = false }
+            
+            do {
+                try await deleteService.deleteDocumentHard(familyId: familyId, doc: doc)
+                
+                // LOCAL delete
+                modelContext.delete(doc)
+                try modelContext.save()
+                
+            } catch {
+                errorText = error.localizedDescription
+            }
+        }
     }
     
     // MARK: - Helpers

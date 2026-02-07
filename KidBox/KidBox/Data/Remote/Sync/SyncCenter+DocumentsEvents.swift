@@ -39,9 +39,22 @@ extension SyncCenter {
                     do {
                         for diff in snap.documentChanges {
                             let doc = diff.document
+                            let id = doc.documentID
+                            
+                            // ✅ HARD delete: se la categoria è stata cancellata su Firestore,
+                            // Firestore manda diff.type == .removed -> noi cancelliamo la categoria locale
+                            if diff.type == .removed {
+                                let cid = id
+                                let desc = FetchDescriptor<KBDocumentCategory>(predicate: #Predicate { $0.id == cid })
+                                if let local = try modelContext.fetch(desc).first {
+                                    modelContext.delete(local)
+                                }
+                                continue
+                            }
+                            
+                            // ---- qui sotto è il tuo codice attuale (added/modified) ----
                             let data = doc.data()
                             
-                            let id = doc.documentID
                             let title = data["title"] as? String ?? "Categoria"
                             let sortOrder = data["sortOrder"] as? Int ?? 0
                             let isDeleted = data["isDeleted"] as? Bool ?? false
@@ -270,11 +283,14 @@ extension SyncCenter {
             try modelContext.save()
             
         case "delete":
-            try await remote.softDelete(familyId: op.familyId, docId: did)
+            try await remote.delete(
+                familyId: op.familyId,
+                docId: did
+            )
             
+            // locale: elimina davvero
             if let doc {
-                doc.syncState = .synced
-                doc.lastSyncError = nil
+                modelContext.delete(doc)
                 try modelContext.save()
             }
             

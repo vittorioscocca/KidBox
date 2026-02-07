@@ -70,6 +70,21 @@ final class DocumentCategoryRemoteStore {
         ], merge: true)
     }
     
+    //Hard Delete
+    func delete(familyId: String, categoryId: String) async throws {
+        guard Auth.auth().currentUser != nil else {
+            throw NSError(domain: "KidBox", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+        
+        let ref = db.collection("families")
+            .document(familyId)
+            .collection("documentCategories")
+            .document(categoryId)
+        
+        try await ref.delete()
+    }
+    
     // MARK: - INBOUND (realtime)
     
     func listenCategories(
