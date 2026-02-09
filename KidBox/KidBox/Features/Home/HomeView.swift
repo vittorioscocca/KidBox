@@ -83,35 +83,41 @@ struct HomeView: View {
                     ],
                     spacing: 12
                 ) {
-                    HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist") { go(.todo) }
-                    HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar") { go(.calendar) }
+                    HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
+                        KBLog.navigation.debug("Tap Note")
+                        //go(.notes)
+                    }
                     
-                    HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case") {
+                    HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) { go(.todo) }
+                    
+                    HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) { go(.calendar) }
+                    
+                    HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
                         KBLog.navigation.debug("Tap Cure")
                         // go(.care)
                     }
                     
-                    HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message") {
+                    HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message", tint: .green) {
                         KBLog.navigation.debug("Tap Chat")
                         // go(.chat)
                     }
                     
-                    HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text") {
+                    HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
                         KBLog.navigation.debug("Tap Documenti")
                         go(.document)
                     }
                     
-                    HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle") {
+                    HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
                         KBLog.navigation.debug("Tap Spese")
                         // go(.expenses)
                     }
                     
-                    HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath") {
+                    HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
                         KBLog.navigation.debug("Tap Timeline")
                         // go(.timeline)
                     }
                     
-                    HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill") {
+                    HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill", tint: .teal) {
                         coordinator.navigate(to: .familySettings)
                     }
                 }

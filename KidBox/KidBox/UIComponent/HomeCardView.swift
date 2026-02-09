@@ -13,17 +13,20 @@ struct HomeCardView: View {
     let title: String
     let subtitle: String
     let systemImage: String
+    let tint: Color
     let action: () -> Void
     
     init(
         title: String,
         subtitle: String,
         systemImage: String,
+        tint: Color = .blue,              // ✅ default
         action: @escaping () -> Void
     ) {
         self.title = title
         self.subtitle = subtitle
         self.systemImage = systemImage
+        self.tint = tint
         self.action = action
     }
     
@@ -33,6 +36,7 @@ struct HomeCardView: View {
                 HStack {
                     Image(systemName: systemImage)
                         .font(.title2)
+                        .foregroundStyle(tint)        // ✅ icona colorata
                     Spacer()
                 }
                 
@@ -48,8 +52,12 @@ struct HomeCardView: View {
             .padding()
             .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.thinMaterial)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(tint.opacity(0.10))         // ✅ colore “soft”
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(tint.opacity(0.18), lineWidth: 1) // ✅ bordino leggero
             )
         }
         .buttonStyle(.plain)
