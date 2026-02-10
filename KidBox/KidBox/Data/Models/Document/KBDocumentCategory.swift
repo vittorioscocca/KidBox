@@ -20,6 +20,7 @@ final class KBDocumentCategory {
     var updatedAt: Date
     var updatedBy: String
     var isDeleted: Bool
+    var parentId: String?   // nil = root
     
     // ✅ M3 sync metadata
     var syncStateRaw: Int
@@ -35,6 +36,7 @@ final class KBDocumentCategory {
         familyId: String,
         title: String,
         sortOrder: Int,
+        parentId: String? = nil,
         updatedBy: String,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -44,6 +46,7 @@ final class KBDocumentCategory {
         self.familyId = familyId
         self.title = title
         self.sortOrder = sortOrder
+        self.parentId = parentId 
         self.updatedBy = updatedBy
         self.createdAt = createdAt
         self.updatedAt = updatedAt

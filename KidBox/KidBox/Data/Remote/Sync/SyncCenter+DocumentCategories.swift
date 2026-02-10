@@ -52,6 +52,7 @@ extension SyncCenter {
                 familyId: cat.familyId,
                 title: cat.title,
                 sortOrder: cat.sortOrder,
+                parentId: cat.parentId,
                 isDeleted: cat.isDeleted,
                 updatedAt: cat.updatedAt,
                 updatedBy: cat.updatedBy

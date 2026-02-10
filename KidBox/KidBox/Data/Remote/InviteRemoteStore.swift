@@ -30,7 +30,7 @@ final class InviteRemoteStore {
             let ref = db.collection("invites").document(code)
             
             do {
-                try await db.runTransaction { transaction, errorPointer in
+                _ = try await db.runTransaction { transaction, errorPointer in
                     do {
                         let snap = try transaction.getDocument(ref)
                         if snap.exists {

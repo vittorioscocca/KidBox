@@ -111,7 +111,7 @@ final class AppCoordinator: ObservableObject {
         case .documentsHome:
             DocumentsHomeView()
         case .documentsCategory(familyId: let familyId, categoryId: let categoryId, title: let title):
-            CategoryDocumentsView(familyId: familyId, categoryId: categoryId, categoryTitle: title)
+            DocumentFolderView(familyId: familyId, folderId: categoryId, folderTitle: title)
         }
     }
 
