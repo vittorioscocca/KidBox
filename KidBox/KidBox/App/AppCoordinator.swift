@@ -26,6 +26,7 @@ final class AppCoordinator: ObservableObject {
     /// Global auth/session state (persisted by FirebaseAuth)
     @Published private(set) var isAuthenticated: Bool = false
     @Published private(set) var uid: String?
+    @Published var pendingOpenDocumentId: String? = nil
     
     private var authHandle: AuthStateDidChangeListenerHandle?
     
@@ -119,6 +120,15 @@ final class AppCoordinator: ObservableObject {
         KBLog.navigation.debug("Navigate to \(String(describing: route), privacy: .public)")
         path.append(route)
         KBLog.navigation.debug("Path count now = \(self.path.count, privacy: .public)")
+    }
+    
+    @MainActor
+    func openDocumentFromPush(familyId: String, docId: String) {
+        // vai alla home documenti (quella che esiste davvero)
+        navigate(to: .documentsHome) // oppure .document (scegline uno, vedi sotto)
+        
+        // salva pending id da consumare quando la UI è pronta
+        pendingOpenDocumentId = docId
     }
     
     func resetToRoot() {

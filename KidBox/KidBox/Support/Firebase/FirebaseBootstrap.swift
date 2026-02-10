@@ -20,11 +20,7 @@ enum FirebaseBootstrap {
         }
         
         let plistName: String
-        #if DEBUG
-        plistName = "GoogleService-Info-Debug"
-        #else
-        plistName = "GoogleService-Info-Release"
-        #endif
+        plistName = "GoogleService-Info"
         
         guard let path = Bundle.main.path(forResource: plistName, ofType: "plist"),
               let options = FirebaseOptions(contentsOfFile: path) else {

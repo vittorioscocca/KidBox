@@ -1056,6 +1056,21 @@ final class DocumentFolderViewModel: ObservableObject {
         }
     }
     
+    func openIfPresent(docId: String) {
+        if let d = docs.first(where: { $0.id == docId }) {
+            open(d)
+        } else {
+            // doc non ancora in locale (sync in ritardo): riprova tra poco
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s
+                reload()
+                if let d = docs.first(where: { $0.id == docId }) {
+                    open(d)
+                }
+            }
+        }
+    }
+    
     private func uploadSingleFileConcurrent(_ url: URL, childId: String?) async -> Bool {
         guard let modelContext else { return false }
         
