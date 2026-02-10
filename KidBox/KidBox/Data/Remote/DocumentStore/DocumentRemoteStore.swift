@@ -15,7 +15,7 @@ struct RemoteDocumentDTO {
     let id: String
     let familyId: String
     let childId: String?
-    let categoryId: String
+    let categoryId: String?
     
     let title: String
     let fileName: String
@@ -49,7 +49,6 @@ final class DocumentRemoteStore {
             .document(dto.id)
         
         var data: [String: Any] = [
-            "categoryId": dto.categoryId,
             "title": dto.title,
             "fileName": dto.fileName,
             "mimeType": dto.mimeType,
@@ -60,6 +59,9 @@ final class DocumentRemoteStore {
             "updatedAt": FieldValue.serverTimestamp(),
             "createdAt": FieldValue.serverTimestamp()
         ]
+        
+        if let categoryId = dto.categoryId { data["categoryId"] = categoryId }
+        else { data["categoryId"] = FieldValue.delete() }
         
         if let childId = dto.childId { data["childId"] = childId } else { data["childId"] = FieldValue.delete() }
         if let downloadURL = dto.downloadURL { data["downloadURL"] = downloadURL }

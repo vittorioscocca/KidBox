@@ -15,6 +15,7 @@ struct RemoteDocumentCategoryDTO {
     let familyId: String
     let title: String
     let sortOrder: Int
+    let parentId: String?
     let isDeleted: Bool
     let updatedAt: Date?
     let updatedBy: String?
@@ -41,15 +42,31 @@ final class DocumentCategoryRemoteStore {
             .collection("documentCategories")
             .document(dto.id)
         
-        try await ref.setData([
+        var data: [String: Any] = [
+            "familyId": dto.familyId,                       // ✅ utile e coerente
             "title": dto.title,
             "sortOrder": dto.sortOrder,
             "isDeleted": dto.isDeleted,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp(),
-            // ok anche se sovrascrive: merge:true non rompe nulla
-            "createdAt": FieldValue.serverTimestamp()
-        ], merge: true)
+            
+            // ✅ createdAt solo se non esiste già
+            "createdAt": FieldValue.serverTimestamp()       // ⚠️ lo sistemiamo sotto con mergeFields
+        ]
+        
+        if let parentId = dto.parentId {
+            data["parentId"] = parentId
+        } else {
+            data["parentId"] = FieldValue.delete()
+        }
+        
+        // ✅ trucco: scriviamo createdAt solo se il doc NON esiste già
+        let snap = try await ref.getDocument()
+        if snap.exists {
+            data.removeValue(forKey: "createdAt")          // ✅ non toccare createdAt
+        }
+        
+        try await ref.setData(data, merge: true)
     }
     
     func softDelete(familyId: String, categoryId: String) async throws {
@@ -111,6 +128,7 @@ final class DocumentCategoryRemoteStore {
                         familyId: familyId,
                         title: data["title"] as? String ?? "Categoria",
                         sortOrder: data["sortOrder"] as? Int ?? 0,
+                        parentId: data["parentId"] as? String,
                         isDeleted: data["isDeleted"] as? Bool ?? false,
                         updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),
                         updatedBy: data["updatedBy"] as? String

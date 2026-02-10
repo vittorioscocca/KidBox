@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Serve per scattare e salvare documenti/foto in KidBox.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Consenti l’accesso alla libreria per caricare le foto nei documenti</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

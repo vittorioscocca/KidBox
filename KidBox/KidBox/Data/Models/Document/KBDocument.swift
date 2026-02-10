@@ -17,7 +17,10 @@ final class KBDocument {
     var childId: String?        // nil = documento famiglia
     
     // Category
-    var categoryId: String
+    var categoryId: String?
+    
+    // Storage (locale)
+    var localPath: String?
     
     // Metadata
     var title: String
@@ -48,11 +51,12 @@ final class KBDocument {
         id: String = UUID().uuidString,
         familyId: String,
         childId: String?,
-        categoryId: String,
+        categoryId: String?,
         title: String,
         fileName: String,
         mimeType: String,
         fileSize: Int64,
+        localPath: String? = nil,
         storagePath: String,
         downloadURL: String?,
         updatedBy: String,
@@ -68,14 +72,23 @@ final class KBDocument {
         self.fileName = fileName
         self.mimeType = mimeType
         self.fileSize = fileSize
+        self.localPath = localPath
         self.storagePath = storagePath
         self.downloadURL = downloadURL
         self.updatedBy = updatedBy
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isDeleted = isDeleted
-        
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil
     }
 }
+
+extension KBDocument {
+    var localFileURL: URL? {
+        guard let localPath, !localPath.isEmpty else { return nil }
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        return base.appendingPathComponent(localPath)
+    }
+}
+

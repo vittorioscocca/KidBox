@@ -17,7 +17,6 @@ final class SyncCenter: ObservableObject {
     private init() {}
     
     // MARK: - Realtime (Inbound)
-    
     private var todoListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
     private let membersRemote = FamilyMemberRemoteStore()
@@ -474,5 +473,17 @@ extension TodoRemoteStore {
                 updatedBy: data["updatedBy"] as? String
             )
         }
+    }
+}
+
+extension SyncCenter {
+    private static var _docsChanged = PassthroughSubject<String, Never>()
+    
+    var docsChanged: AnyPublisher<String, Never> {
+        Self._docsChanged.eraseToAnyPublisher()
+    }
+    
+    func emitDocsChanged(familyId: String) {
+        Self._docsChanged.send(familyId)
     }
 }

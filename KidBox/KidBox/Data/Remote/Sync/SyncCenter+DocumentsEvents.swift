@@ -52,11 +52,12 @@ extension SyncCenter {
                                 continue
                             }
                             
-                            // ---- qui sotto è il tuo codice attuale (added/modified) ----
+                            // ---- added/modified ----
                             let data = doc.data()
                             
                             let title = data["title"] as? String ?? "Categoria"
                             let sortOrder = data["sortOrder"] as? Int ?? 0
+                            let parentId = data["parentId"] as? String            // ✅ FIX (nested folders)
                             let isDeleted = data["isDeleted"] as? Bool ?? false
                             let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? .distantPast
                             let updatedBy = data["updatedBy"] as? String ?? "remote"
@@ -70,6 +71,7 @@ extension SyncCenter {
                                     local.familyId = familyId
                                     local.title = title
                                     local.sortOrder = sortOrder
+                                    local.parentId = parentId            // ✅ FIX
                                     local.isDeleted = isDeleted
                                     local.updatedAt = updatedAt
                                     local.updatedBy = updatedBy
@@ -78,11 +80,13 @@ extension SyncCenter {
                                 }
                             } else {
                                 if isDeleted { continue }
+                                
                                 let created = KBDocumentCategory(
                                     id: id,
                                     familyId: familyId,
                                     title: title,
                                     sortOrder: sortOrder,
+                                    parentId: parentId,                  // ✅ FIX
                                     updatedBy: updatedBy,
                                     createdAt: updatedAt == .distantPast ? Date() : updatedAt,
                                     updatedAt: updatedAt == .distantPast ? Date() : updatedAt,
@@ -95,6 +99,7 @@ extension SyncCenter {
                         }
                         
                         try modelContext.save()
+                        SyncCenter.shared.emitDocsChanged(familyId: familyId)
                     } catch {
                         KBLog.sync.error("DocCategories inbound apply failed: \(error.localizedDescription, privacy: .public)")
                     }
@@ -111,6 +116,7 @@ extension SyncCenter {
             Task { @MainActor in
                 print("➡️ calling applyDocumentInbound")
                 self.applyDocumentInbound(changes: changes, modelContext: modelContext)
+                SyncCenter.shared.emitDocsChanged(familyId: familyId)
             }
         }
     }
@@ -134,14 +140,14 @@ extension SyncCenter {
                 case .upsert(let dto):
                     let local = try fetchOrCreateDocument(id: dto.id, modelContext: modelContext)
                     
-                    print("DOC DTO id=\(dto.id) family=\(dto.familyId) cat=\(dto.categoryId) deleted=\(dto.isDeleted)")
-                    
                     let remoteStamp = dto.updatedAt ?? Date.distantPast
                     let localStamp = local.updatedAt
                     
-                    // ✅ Se è placeholder (family/category vuoti) applica SEMPRE,
-                    // altrimenti fai LWW normale.
-                    let isPlaceholder = local.familyId.isEmpty || local.categoryId.isEmpty
+                    // ✅ placeholder: family vuota o categoryId nil/empty
+                    let isPlaceholder =
+                    local.familyId.isEmpty ||
+                    local.categoryId == nil ||
+                    local.categoryId?.isEmpty == true
                     
                     if isPlaceholder || dto.updatedAt == nil || remoteStamp >= localStamp {
                         local.familyId = dto.familyId
@@ -169,16 +175,11 @@ extension SyncCenter {
                 }
             }
             
-            print("🧩 inbound changes =", changes.count)
-            for c in changes {
-                if case let .upsert(dto) = c {
-                    print("📄 dto id=\(dto.id) family=\(dto.familyId) cat=\(dto.categoryId) deleted=\(dto.isDeleted)")
-                }
-            }
-            
-            // ✅ Debug: quanti documenti sono “rotti” (non agganciati a family/category)
+            // ✅ Debug: quanti documenti sono “rotti”
             let all = try modelContext.fetch(FetchDescriptor<KBDocument>())
-            let broken = all.filter { $0.familyId.isEmpty || $0.categoryId.isEmpty }
+            let broken = all.filter {
+                $0.familyId.isEmpty || ($0.categoryId?.isEmpty ?? true)
+            }
             print("💾 LOCAL total docs =", all.count)
             print("🧪 docs broken =", broken.count)
             
@@ -205,7 +206,7 @@ extension SyncCenter {
             id: id,
             familyId: "",
             childId: nil,
-            categoryId: "",
+            categoryId: nil,
             title: "",
             fileName: "",
             mimeType: "application/octet-stream",
@@ -213,8 +214,8 @@ extension SyncCenter {
             storagePath: "",
             downloadURL: nil,
             updatedBy: "remote",
-            createdAt: .distantPast,     // ✅
-            updatedAt: .distantPast,     // ✅
+            createdAt: .distantPast,
+            updatedAt: .distantPast,
             isDeleted: false
         )
         created.syncState = .synced
