@@ -49,8 +49,6 @@ struct DocumentFolderView: View {
     @State var newFolderName: String = ""
     @State private var showDeleteSelectedConfirm = false
     
-  
-    
     // Importer
     @State var showImporter = false
     
@@ -252,6 +250,7 @@ struct DocumentFolderView: View {
     
     private struct CommonModifiers: ViewModifier {
         let view: DocumentFolderView
+        @EnvironmentObject private var coordinator: AppCoordinator
         
         private var previewItemBinding: Binding<IdentifiableURL?> {
             Binding<IdentifiableURL?>(
@@ -273,6 +272,11 @@ struct DocumentFolderView: View {
                     view.viewModel.bind(modelContext: view.modelContext)
                     view.viewModel.startObservingChanges()
                     view.viewModel.reload()
+                    
+                    if let docId = coordinator.pendingOpenDocumentId {
+                        coordinator.pendingOpenDocumentId = nil
+                        view.viewModel.openIfPresent(docId: docId)
+                    }
                 }
                 .toolbar { view.topToolbar }
                 .alert("Nuova cartella", isPresented: view.$showNewFolderAlert) {

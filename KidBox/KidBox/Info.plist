@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Serve per scattare e salvare documenti/foto in KidBox.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Consenti l’accesso alla libreria per caricare le foto nei documenti</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -16,6 +12,10 @@
 				<string>com.googleusercontent.apps.52613538008-v2d99mfnbfkgc4d5hoefabrpaevpdgpl</string>
 			</array>
 		</dict>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>

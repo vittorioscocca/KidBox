@@ -16,9 +16,11 @@ struct KidBoxApp: App {
     private var modelContainer: ModelContainer
     @StateObject private var coordinator = AppCoordinator()
     @Environment(\.scenePhase) private var scenePhase
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var notifications = NotificationManager.shared
 
     init() {
-        FirebaseBootstrap.configureIfNeeded()
+        //FirebaseBootstrap.configureIfNeeded()
         KBLog.app.info("KidBoxApp init")
         self.modelContainer = ModelContainerProvider.makeContainer(inMemory: false)
         KBLog.app.info("KidBoxApp ready")
@@ -47,9 +49,19 @@ struct KidBoxApp: App {
                 #endif
                 }
                 .task {
-#if DEBUG
+                #if DEBUG
                     FirestorePingService().ping { _ in }
-#endif
+                #endif
+                }
+                .onReceive(notifications.$pendingDeepLink) { link in
+                    guard let link else { return }
+                    
+                    switch link {
+                    case .document(let familyId, let docId):
+                        coordinator.openDocumentFromPush(familyId: familyId, docId: docId)
+                    }
+                    
+                    notifications.consumeDeepLink()
                 }
         }
         .modelContainer(modelContainer)
@@ -64,5 +76,6 @@ struct KidBoxApp: App {
                 SyncCenter.shared.stopFamilyBundleRealtime()
             }
         }
+        
     }
 }
