@@ -42,6 +42,7 @@ final class FamilyCreationService {
         
         let child = KBChild(
             id: childId,
+            familyId: familyId,
             name: childName,
             birthDate: childBirthDate,
             createdBy: uid,

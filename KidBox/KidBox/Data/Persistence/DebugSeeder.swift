@@ -43,6 +43,7 @@ enum DebugSeeder {
             // Child (relationship-based)
             let child = KBChild(
                 id: UUID().uuidString,
+                familyId: family.id,
                 name: "Sofia",
                 birthDate: nil,
                 createdBy: userId,

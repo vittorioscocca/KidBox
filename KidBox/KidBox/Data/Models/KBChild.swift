@@ -18,30 +18,32 @@ import SwiftData
 final class KBChild {
     @Attribute(.unique) var id: String
     
+    // ✅ optional: migrazione “light” più tollerante
+    var familyId: String?
+    
     var name: String
     var birthDate: Date?
     
-    // audit
     var createdBy: String
     var createdAt: Date
     
-    // ✅ aggiunti per sync (LWW + remote inbound)
     var updatedBy: String?
     var updatedAt: Date?
     
-    /// Inverse relationship back to the family.
-    var family: KBFamily?
+    @Relationship var family: KBFamily?
     
     init(
         id: String,
+        familyId: String?,     // ✅
         name: String,
         birthDate: Date?,
         createdBy: String,
         createdAt: Date,
-        updatedBy: String,
-        updatedAt: Date
+        updatedBy: String?,
+        updatedAt: Date?
     ) {
         self.id = id
+        self.familyId = familyId
         self.name = name
         self.birthDate = birthDate
         self.createdBy = createdBy

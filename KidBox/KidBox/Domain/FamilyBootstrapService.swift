@@ -116,6 +116,7 @@ final class FamilyBootstrapService {
             } else {
                 let newChild = KBChild(
                     id: childId,
+                    familyId: fid,
                     name: rc.name,
                     birthDate: rc.birthDate,
                     createdBy: family.ownerUid,

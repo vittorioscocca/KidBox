@@ -5,8 +5,10 @@
 //  Created by vscocca on 05/02/26.
 //
 
+
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 struct FamilySettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -19,7 +21,35 @@ struct FamilySettingsView: View {
     @State private var leaveError: String?
     
     private var family: KBFamily? { families.first }
-    private var child: KBChild? { families.first?.children.first }
+    @Query(sort: \KBChild.birthDate, order: .forward)
+    private var allChildren: [KBChild]
+    
+    private var children: [KBChild] {
+        guard let family else { return [] }
+        
+        return allChildren
+            .filter { $0.familyId == family.id }   // ✅ SOLO familyId
+            .sorted { ($0.birthDate ?? .distantPast) < ($1.birthDate ?? .distantPast) }
+    }
+    
+    // MARK: - Snapshot rows (anti SwiftData crash)
+    
+    struct ChildRow: Identifiable {
+        let id: String
+        let name: String
+        let birthDate: Date?
+    }
+    
+    private var childRows: [ChildRow] {
+        children.map {
+            ChildRow(
+                id: $0.id,
+                name: $0.name,
+                birthDate: $0.birthDate
+            )
+        }
+    }
+    
     private var hasFamily: Bool { family != nil }
     
     var body: some View {
@@ -29,6 +59,7 @@ struct FamilySettingsView: View {
                 
                 if hasFamily {
                     familySummaryCard
+                    familyChildrenCard
                     familyMembersCard
                     actionsWithFamily
                     dangerZone
@@ -43,10 +74,12 @@ struct FamilySettingsView: View {
         .onAppear {
             if let fid = family?.id {
                 SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
+                SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
             }
         }
         .onDisappear {
             SyncCenter.shared.stopMembersRealtime()
+            SyncCenter.shared.stopChildrenRealtime()
         }
         .alert(
             "Uscire dalla famiglia?",
@@ -95,15 +128,92 @@ struct FamilySettingsView: View {
             action: nil,
             trailingSystemImage: "pencil",
             trailingAction: {
-                guard let family, let child else { return }
+                guard let family else { return }
+                let firstChildId = children.first?.id ?? ""
                 coordinator.navigate(
                     to: .editFamily(
                         familyId: family.id,
-                        childId: child.id
+                        childId: firstChildId
                     )
                 )
             }
         )
+    }
+    
+    private var familyChildrenCard: some View {
+        let list = childRows
+        
+        return KBSettingsCardWithExtra(
+            title: "Figli",
+            subtitle: childrenSubtitle(list: list),
+            systemImage: "figure.and.child.holdinghands",
+            style: .secondary,
+            action: nil
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                if list.isEmpty {
+                    HStack(spacing: 10) {
+                        Image(systemName: "figure.child")
+                        Text("Nessun figlio ancora inserito.")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                } else {
+                    // ✅ Semplice lista in sola lettura
+                    ForEach(list, id: \.id) { c in
+                        Button {
+                            guard let family else { return }
+                            coordinator.navigate(to: .editChild(familyId: family.id, childId: c.id))
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "face.smiling")
+                                    .foregroundStyle(.secondary)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(c.name.isEmpty ? "Senza nome" : c.name)
+                                        .font(.subheadline)
+                                    
+                                    if let birth = c.birthDate {
+                                        Text("Nato/a: \(birth.formatted(date: .numeric, time: .omitted))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                            .padding(.vertical, 2)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                
+                Divider().padding(.vertical, 6)
+                
+                // ✅ Navigazione a SetupFamilyView per aggiungere figli
+                Button {
+                    guard let family else { return }
+                    let firstChildId = children.first?.id ?? ""
+                    coordinator.navigate(
+                        to: .editFamily(
+                            familyId: family.id,
+                            childId: firstChildId
+                        )
+                    )
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Aggiungi figlio")
+                        Spacer()
+                    }
+                }
+                .font(.subheadline)
+            }
+        }
     }
     
     private var familyMembersCard: some View {
@@ -213,11 +323,18 @@ struct FamilySettingsView: View {
     }
     
     private var childSummaryText: String {
-        guard let child else { return "Nessun bimbo/a configurato" }
-        if let birth = child.birthDate {
-            return "Bimbo/a: \(child.name) • Nato/a: \(birth.formatted(date: .numeric, time: .omitted))"
+        if children.isEmpty { return "Nessun bimbo/a configurato" }
+        if children.count == 1 {
+            let c = children[0]
+            if let birth = c.birthDate {
+                return "Bimbo/a: \(c.name) • Nato/a: \(birth.formatted(date: .numeric, time: .omitted))"
+            }
+            return "Bimbo/a: \(c.name)"
         }
-        return "Bimbo/a: \(child.name)"
+        // 2+ figli: testo compatto
+        let names = children.prefix(3).map(\.name).joined(separator: ", ")
+        if children.count <= 3 { return "Figli: \(names)" }
+        return "Figli: \(names) +\(children.count - 3)"
     }
     
     // MARK: - Actions
@@ -253,6 +370,12 @@ struct FamilySettingsView: View {
         case "admin", "owner": return "Admin"
         default: return "Membro"
         }
+    }
+    
+    private func childrenSubtitle(list: [ChildRow]) -> String {
+        if list.isEmpty { return "Gestisci i profili dei figli." }
+        if list.count == 1 { return "1 figlio configurato." }
+        return "\(list.count) figli configurati."
     }
 }
 

@@ -14,9 +14,7 @@ import OSLog
 extension SyncCenter {
     
     // MARK: - Family realtime
-    
     private static var _familyListener: ListenerRegistration?
-    private static var _childListener: ListenerRegistration?
     
     // Usa il tuo RemoteStore
     private var familyRemote: FamilyRemoteStore { FamilyRemoteStore() }
@@ -98,103 +96,11 @@ extension SyncCenter {
                     }
                 }
             }
-        
-        // 2) children collection listener (single child for now: first child)
-        Self._childListener = Firestore.firestore()
-            .collection("families")
-            .document(familyId)
-            .collection("children")
-            .addSnapshotListener { snap, err in
-                if let err {
-                    KBLog.sync.error("Children listener error: \(err.localizedDescription, privacy: .public)")
-                    return
-                }
-                guard let snap else { return }
-                
-                Task { @MainActor in
-                    do {
-                        // fetch family locale
-                        let fid = familyId
-                        let fdesc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
-                        guard let fam = try modelContext.fetch(fdesc).first else { return }
-                        
-                        for diff in snap.documentChanges {
-                            let doc = diff.document
-                            let data = doc.data()
-                            let cid = doc.documentID
-                            
-                            let remoteName = data["name"] as? String ?? ""
-                            let remoteBirthDate = (data["birthDate"] as? Timestamp)?.dateValue()
-                            let remoteUpdatedAt = (data["updatedAt"] as? Timestamp)?.dateValue()
-                            let remoteUpdatedBy = data["updatedBy"] as? String
-                            let remoteIsDeleted = data["isDeleted"] as? Bool ?? false
-                            
-                            // ✅ fetch child by id (non dipendere da family.children materializzata)
-                            let childId = cid
-                            let cdesc = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == childId })
-                            let localChild = try modelContext.fetch(cdesc).first
-                            
-                            if let localChild {
-                                // ✅ LWW robusto: se updatedAt manca, usa createdAt
-                                let localStamp = (localChild.updatedAt ?? localChild.createdAt)
-                                let remoteStamp = (remoteUpdatedAt ?? Date.distantPast)
-                                
-                                // Se remote non ha timestamp (non dovrebbe più dopo Patch 1),
-                                // lo applichiamo comunque, perché è meglio che non vedere nulla.
-                                if remoteUpdatedAt == nil || remoteStamp >= localStamp {
-                                    localChild.name = remoteName
-                                    localChild.birthDate = remoteBirthDate
-                                    localChild.updatedAt = remoteUpdatedAt ?? Date()
-                                    localChild.updatedBy = remoteUpdatedBy ?? localChild.updatedBy ?? "remote"
-                                    
-                                    // se hai isDeleted su KBChild, qui lo setti (tu non ce l’hai)
-                                    // localChild.isDeleted = remoteIsDeleted
-                                }
-                                
-                                // assicurati che sia legato alla family
-                                if localChild.family == nil {
-                                    localChild.family = fam
-                                }
-                                if !fam.children.contains(where: { $0.id == localChild.id }) {
-                                    fam.children.append(localChild)
-                                }
-                                
-                            } else {
-                                // crea child e attacca alla family (se non deleted)
-                                if remoteIsDeleted { continue }
-                                
-                                let now = Date()
-                                let created = KBChild(
-                                    id: cid,
-                                    name: remoteName,
-                                    birthDate: remoteBirthDate,
-                                    createdBy: remoteUpdatedBy ?? "remote",
-                                    createdAt: now,
-                                    updatedBy: remoteUpdatedBy ?? "remote",
-                                    updatedAt: remoteUpdatedAt ?? now
-                                )
-                                created.family = fam
-                                created.updatedAt = remoteUpdatedAt ?? now
-                                created.updatedBy = remoteUpdatedBy ?? "remote"
-                                
-                                fam.children.append(created)
-                                modelContext.insert(created)
-                            }
-                        }
-                        
-                        try modelContext.save()
-                    } catch {
-                        KBLog.sync.error("Children inbound apply failed: \(error.localizedDescription, privacy: .public)")
-                    }
-                }
-            }
     }
     
     func stopFamilyBundleRealtime() {
         Self._familyListener?.remove()
         Self._familyListener = nil
-        Self._childListener?.remove()
-        Self._childListener = nil
     }
     
     // MARK: - Enqueue (one op for family+child)

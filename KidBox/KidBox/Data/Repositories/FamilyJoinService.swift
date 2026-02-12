@@ -138,6 +138,7 @@ final class FamilyJoinService {
                 let now = Date()
                 let child = KBChild(
                     id: rc.id,
+                    familyId: family.id,
                     name: rc.name,
                     birthDate: rc.birthDate,
                     createdBy: remoteFamily.ownerUid,
