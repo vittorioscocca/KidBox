@@ -5,10 +5,10 @@
 //  Created by vscocca on 05/02/26.
 //
 
-
 import SwiftUI
-import SwiftData
 import FirebaseAuth
+import OSLog
+import SwiftData
 
 struct FamilySettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -17,40 +17,46 @@ struct FamilySettingsView: View {
     @Query private var families: [KBFamily]
     @Query private var members: [KBFamilyMember]
     
+    // ⚠️ solo per compatibilità con la route .editFamily(familyId:childId:)
+    // NON renderizziamo children qui, niente card figli.
+    @Query private var allChildren: [KBChild]
+    
     @State private var showLeaveFamilyConfirm = false
     @State private var leaveError: String?
     
     private var family: KBFamily? { families.first }
-    @Query(sort: \KBChild.birthDate, order: .forward)
-    private var allChildren: [KBChild]
-    
-    private var children: [KBChild] {
-        guard let family else { return [] }
-        
-        return allChildren
-            .filter { $0.familyId == family.id }   // ✅ SOLO familyId
-            .sorted { ($0.birthDate ?? .distantPast) < ($1.birthDate ?? .distantPast) }
-    }
-    
-    // MARK: - Snapshot rows (anti SwiftData crash)
-    
-    struct ChildRow: Identifiable {
-        let id: String
-        let name: String
-        let birthDate: Date?
-    }
-    
-    private var childRows: [ChildRow] {
-        children.map {
-            ChildRow(
-                id: $0.id,
-                name: $0.name,
-                birthDate: $0.birthDate
-            )
-        }
-    }
-    
     private var hasFamily: Bool { family != nil }
+    
+    /// Primo childId disponibile per la family (serve solo per la route legacy).
+    /// Se non esiste, ritorna stringa vuota: la destination deve gestire fallback.
+    private var firstChildIdForRoute: String {
+        guard let family else { return "" }
+        return allChildren.first(where: { $0.familyId == family.id })?.id ?? ""
+    }
+    
+    private var childrenNamesSummary: String {
+        guard let family else { return "" }
+        
+        let kids = allChildren
+            .filter { $0.familyId == family.id }
+            .map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        
+        if kids.isEmpty {
+            return "Nessun figlio configurato."
+        }
+        
+        if kids.count == 1 {
+            return "Figlio: \(kids[0])"
+        }
+        
+        if kids.count <= 3 {
+            return "Figli: " + kids.joined(separator: ", ")
+        }
+        
+        let firstThree = kids.prefix(3).joined(separator: ", ")
+        return "Figli: \(firstThree) +\(kids.count - 3)"
+    }
     
     var body: some View {
         ScrollView {
@@ -59,7 +65,6 @@ struct FamilySettingsView: View {
                 
                 if hasFamily {
                     familySummaryCard
-                    familyChildrenCard
                     familyMembersCard
                     actionsWithFamily
                     dangerZone
@@ -74,12 +79,10 @@ struct FamilySettingsView: View {
         .onAppear {
             if let fid = family?.id {
                 SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
-                SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
             }
         }
         .onDisappear {
             SyncCenter.shared.stopMembersRealtime()
-            SyncCenter.shared.stopChildrenRealtime()
         }
         .alert(
             "Uscire dalla famiglia?",
@@ -122,98 +125,24 @@ struct FamilySettingsView: View {
     private var familySummaryCard: some View {
         KBSettingsCard(
             title: family?.name ?? "Famiglia",
-            subtitle: childSummaryText,
+            subtitle: childrenNamesSummary,
             systemImage: "person.2.fill",
             style: .info,
             action: nil,
             trailingSystemImage: "pencil",
             trailingAction: {
                 guard let family else { return }
-                let firstChildId = children.first?.id ?? ""
+                
+                // Route legacy: richiede childId.
+                // Qui passiamo un childId disponibile se c’è, altrimenti stringa vuota.
                 coordinator.navigate(
                     to: .editFamily(
                         familyId: family.id,
-                        childId: firstChildId
+                        childId: firstChildIdForRoute
                     )
                 )
             }
         )
-    }
-    
-    private var familyChildrenCard: some View {
-        let list = childRows
-        
-        return KBSettingsCardWithExtra(
-            title: "Figli",
-            subtitle: childrenSubtitle(list: list),
-            systemImage: "figure.and.child.holdinghands",
-            style: .secondary,
-            action: nil
-        ) {
-            VStack(alignment: .leading, spacing: 10) {
-                if list.isEmpty {
-                    HStack(spacing: 10) {
-                        Image(systemName: "figure.child")
-                        Text("Nessun figlio ancora inserito.")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                } else {
-                    // ✅ Semplice lista in sola lettura
-                    ForEach(list, id: \.id) { c in
-                        Button {
-                            guard let family else { return }
-                            coordinator.navigate(to: .editChild(familyId: family.id, childId: c.id))
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "face.smiling")
-                                    .foregroundStyle(.secondary)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(c.name.isEmpty ? "Senza nome" : c.name)
-                                        .font(.subheadline)
-                                    
-                                    if let birth = c.birthDate {
-                                        Text("Nato/a: \(birth.formatted(date: .numeric, time: .omitted))")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .contentShape(Rectangle())
-                            .padding(.vertical, 2)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                
-                Divider().padding(.vertical, 6)
-                
-                // ✅ Navigazione a SetupFamilyView per aggiungere figli
-                Button {
-                    guard let family else { return }
-                    let firstChildId = children.first?.id ?? ""
-                    coordinator.navigate(
-                        to: .editFamily(
-                            familyId: family.id,
-                            childId: firstChildId
-                        )
-                    )
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Aggiungi figlio")
-                        Spacer()
-                    }
-                }
-                .font(.subheadline)
-            }
-        }
     }
     
     private var familyMembersCard: some View {
@@ -322,21 +251,6 @@ struct FamilySettingsView: View {
         }
     }
     
-    private var childSummaryText: String {
-        if children.isEmpty { return "Nessun bimbo/a configurato" }
-        if children.count == 1 {
-            let c = children[0]
-            if let birth = c.birthDate {
-                return "Bimbo/a: \(c.name) • Nato/a: \(birth.formatted(date: .numeric, time: .omitted))"
-            }
-            return "Bimbo/a: \(c.name)"
-        }
-        // 2+ figli: testo compatto
-        let names = children.prefix(3).map(\.name).joined(separator: ", ")
-        if children.count <= 3 { return "Figli: \(names)" }
-        return "Figli: \(names) +\(children.count - 3)"
-    }
-    
     // MARK: - Actions
     
     private func leaveFamily() async {
@@ -370,12 +284,6 @@ struct FamilySettingsView: View {
         case "admin", "owner": return "Admin"
         default: return "Membro"
         }
-    }
-    
-    private func childrenSubtitle(list: [ChildRow]) -> String {
-        if list.isEmpty { return "Gestisci i profili dei figli." }
-        if list.count == 1 { return "1 figlio configurato." }
-        return "\(list.count) figli configurati."
     }
 }
 
