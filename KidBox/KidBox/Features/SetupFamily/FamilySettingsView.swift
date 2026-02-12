@@ -79,10 +79,12 @@ struct FamilySettingsView: View {
         .onAppear {
             if let fid = family?.id {
                 SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
+                SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
             }
         }
         .onDisappear {
             SyncCenter.shared.stopMembersRealtime()
+            SyncCenter.shared.stopChildrenRealtime()
         }
         .alert(
             "Uscire dalla famiglia?",
