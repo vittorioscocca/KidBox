@@ -9,9 +9,6 @@ import Foundation
 import Combine
 import FirebaseAuth
 
-import Foundation
-import Combine
-
 @MainActor
 final class SettingsViewModel: ObservableObject {
     

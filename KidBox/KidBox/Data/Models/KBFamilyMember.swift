@@ -60,3 +60,5 @@ final class KBFamilyMember {
         self.isDeleted = isDeleted
     }
 }
+
+extension KBFamilyMember: HasFamilyId {}

@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import FirebaseAuth
 import OSLog
+import FirebaseFirestore
 
 @MainActor
 final class FamilyJoinService {
@@ -32,6 +33,58 @@ final class FamilyJoinService {
         
         // 1) Resolve invite -> familyId
         let familyId = try await inviteRemote.resolveInvite(code: code)
+        
+        Task { @MainActor in
+            do {
+                let snap = try await Firestore.firestore()
+                    .collection("families")
+                    .document(familyId)
+                    .getDocument()
+                
+                guard let data = snap.data() else { return }
+                
+                let remoteName = data["name"] as? String ?? ""
+                let remoteUpdatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? .distantPast
+                let remoteUpdatedBy = data["updatedBy"] as? String
+                
+                let remoteHeroURL = data["heroPhotoURL"] as? String
+                let remoteHeroUpdatedAt = (data["heroPhotoUpdatedAt"] as? Timestamp)?.dateValue()
+                
+                // UPSERT locale (crea family se manca)
+                let fid = familyId
+                let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
+                let fam = try modelContext.fetch(desc).first ?? {
+                    let now = Date()
+                    let created = KBFamily(
+                        id: fid,
+                        name: remoteName,
+                        createdBy: remoteUpdatedBy ?? "remote",
+                        updatedBy: remoteUpdatedBy ?? "remote", createdAt: now,
+                        updatedAt: remoteUpdatedAt
+                    )
+                    modelContext.insert(created)
+                    return created
+                }()
+                
+                // aggiorna i campi (LWW)
+                if remoteUpdatedAt >= fam.updatedAt {
+                    fam.name = remoteName
+                    fam.updatedAt = remoteUpdatedAt
+                    fam.updatedBy = remoteUpdatedBy ?? fam.updatedBy
+                }
+                
+                let remoteHeroStamp = remoteHeroUpdatedAt ?? remoteUpdatedAt
+                let localHeroStamp = fam.heroPhotoUpdatedAt ?? .distantPast
+                if remoteHeroStamp >= localHeroStamp {
+                    fam.heroPhotoURL = remoteHeroURL
+                    fam.heroPhotoUpdatedAt = remoteHeroStamp
+                }
+                
+                try modelContext.save()
+            } catch {
+                KBLog.sync.error("family one-shot refresh failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
         
         // 2) Become member on server
         try await inviteRemote.addMember(familyId: familyId, role: "member")
@@ -111,6 +164,20 @@ final class FamilyJoinService {
         
         try modelContext.save()
         KBLog.sync.info("Join family OK familyId=\(familyId, privacy: .public)")
+        try modelContext.save()
+        KBLog.sync.info("Join family OK familyId=\(familyId, privacy: .public)")
+        
+        // 7) start realtime bundle for the joined family (NOW we are member)
+        SyncCenter.shared.stopFamilyBundleRealtime() // se hai un metodo stop, evita doppi listener
+        SyncCenter.shared.startFamilyBundleRealtime(familyId: familyId, modelContext: modelContext)
+        
+        // 8) flush to pull inbound immediately
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        SyncCenter.shared.startMembersRealtime(familyId: familyId, modelContext: modelContext)
+        
+        // 9) (optional) update memberships/local active family cache
+        await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
     }
     
     private func upsertRoutines(_ items: [RemoteRoutineRead], familyId: String, fallbackUpdatedBy: String) throws {

@@ -92,3 +92,5 @@ extension KBDocument {
     }
 }
 
+
+extension KBDocument: HasFamilyId {}

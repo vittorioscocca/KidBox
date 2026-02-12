@@ -52,3 +52,5 @@ final class KBRoutine {
         self.isDeleted = isDeleted
     }
 }
+
+extension KBRoutine: HasFamilyId {}

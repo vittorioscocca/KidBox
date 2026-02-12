@@ -74,6 +74,7 @@ struct HomeView: View {
                     if hasFamily { showHeroPicker = true }
                     else { coordinator.navigate(to: .familySettings) }
                 }
+                .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
                 
                 // GRID
                 LazyVGrid(
@@ -276,3 +277,4 @@ private struct HeroCropperSheet: View {
     }
     .modelContainer(ModelContainerProvider.makeContainer(inMemory: true))
 }
+
