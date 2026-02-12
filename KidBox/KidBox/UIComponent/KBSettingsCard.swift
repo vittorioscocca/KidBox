@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Base card (NO generics)
 
 struct KBSettingsCard: View {
-    enum Style { case primary, secondary, info, warning }
+    enum Style { case primary, secondary, info, warning, danger}
     
     let title: String
     let subtitle: String
@@ -98,6 +98,7 @@ struct KBSettingsCard: View {
         case .secondary: return .secondary
         case .info: return .blue
         case .warning: return .orange
+        case .danger: return .red
         }
     }
     
@@ -107,6 +108,7 @@ struct KBSettingsCard: View {
         case .secondary: return Color.primary.opacity(0.08)
         case .info: return Color.blue.opacity(0.2)
         case .warning: return Color.orange.opacity(0.25)
+        case .danger:  return Color.red.opacity(0.25)
         }
     }
 }

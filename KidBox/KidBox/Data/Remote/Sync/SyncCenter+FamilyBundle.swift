@@ -59,7 +59,18 @@ extension SyncCenter {
                         let fid = familyId
                         let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
                         
-                        guard let fam = try modelContext.fetch(desc).first else { return }
+                        let fam = try modelContext.fetch(desc).first ?? {
+                            let now = Date()
+                            let created = KBFamily(
+                                id: fid,
+                                name: remoteName,
+                                createdBy: remoteUpdatedBy ?? "remote",
+                                updatedBy: remoteUpdatedBy ?? "remote", createdAt: now,
+                                updatedAt: remoteUpdatedAt
+                            )
+                            modelContext.insert(created)
+                            return created
+                        }()
                         
                         // ✅ LWW: name/metadata
                         if remoteUpdatedAt >= fam.updatedAt {
@@ -73,11 +84,9 @@ extension SyncCenter {
                         let localHeroStamp = fam.heroPhotoUpdatedAt ?? .distantPast
                         
                         if remoteHeroStamp >= localHeroStamp {
-                            // URL può essere nil se non impostata ancora
                             fam.heroPhotoURL = remoteHeroURL
                             fam.heroPhotoUpdatedAt = remoteHeroStamp
                             
-                            // crop: se non ci sono valori, lascio i locali (non li azzero)
                             if let s = remoteHeroScale { fam.heroPhotoScale = s }
                             if let x = remoteHeroOffsetX { fam.heroPhotoOffsetX = x }
                             if let y = remoteHeroOffsetY { fam.heroPhotoOffsetY = y }

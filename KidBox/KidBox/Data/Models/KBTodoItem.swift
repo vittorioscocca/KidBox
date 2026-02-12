@@ -75,3 +75,5 @@ final class KBTodoItem {
         self.lastSyncError = nil
     }
 }
+
+extension KBTodoItem: HasFamilyId {}

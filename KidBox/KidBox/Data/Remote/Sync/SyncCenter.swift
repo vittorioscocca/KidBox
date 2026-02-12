@@ -10,6 +10,7 @@ import SwiftData
 import OSLog
 import Combine
 import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 final class SyncCenter: ObservableObject {
@@ -23,6 +24,7 @@ final class SyncCenter: ObservableObject {
     var documentsListener: ListenerRegistration?
     let documentRemote = DocumentRemoteStore()
     private let documentCategoryRemote = DocumentCategoryRemoteStore()
+    private(set) var isWipingLocalData = false
     
     func startTodoRealtime(
         familyId: String,
@@ -38,6 +40,14 @@ final class SyncCenter: ObservableObject {
         }
     }
     
+    func beginLocalWipe() {
+        isWipingLocalData = true
+    }
+    
+    func endLocalWipe() {
+        isWipingLocalData = false
+    }
+    
     func startMembersRealtime(familyId: String, modelContext: ModelContext) {
         stopMembersRealtime()
         
@@ -49,7 +59,7 @@ final class SyncCenter: ObservableObject {
         membersListener = membersRemote.listenMembers(familyId: familyId) { [weak self] changes in
             guard let self else { return }
             Task { @MainActor in
-                self.applyMembersInbound(changes: changes, modelContext: modelContext)
+                self.applyMembersInbound(familyId: familyId, changes: changes, modelContext: modelContext)
             }
         }
     }
@@ -59,15 +69,41 @@ final class SyncCenter: ObservableObject {
         membersListener = nil
     }
     
-    private func applyMembersInbound(changes: [FamilyMemberRemoteChange], modelContext: ModelContext) {
+    @MainActor
+    private func applyMembersInbound(
+        familyId: String,
+        changes: [FamilyMemberRemoteChange],
+        modelContext: ModelContext
+    ) {
         do {
+            // 1️⃣ carica tutti i membri locali per familyId
+            let fid = familyId
+            let allLocal = try modelContext.fetch(
+                FetchDescriptor<KBFamilyMember>(predicate: #Predicate { $0.familyId == fid })
+            )
+            var localById: [String: KBFamilyMember] = [:]
+            allLocal.forEach { localById[$0.id] = $0 }
+            
+            var seenIds = Set<String>()
+            
             for change in changes {
                 switch change {
+                    
+                    // ─────────────────────────────
+                    // UPSERT
+                    // ─────────────────────────────
                 case .upsert(let dto):
-                    let mid = dto.id
-                    let desc = FetchDescriptor<KBFamilyMember>(predicate: #Predicate { $0.id == mid })
-                    if let local = try modelContext.fetch(desc).first {
-                        // LWW (usa updatedAt se c'è, altrimenti applica comunque)
+                    seenIds.insert(dto.id)
+                    
+                    // 🔥 SOFT DELETE → HARD DELETE LOCALE
+                    if dto.isDeleted {
+                        if let local = localById[dto.id] {
+                            modelContext.delete(local)
+                        }
+                        continue
+                    }
+                    
+                    if let local = localById[dto.id] {
                         let remoteStamp = dto.updatedAt ?? Date.distantPast
                         if dto.updatedAt == nil || remoteStamp >= local.updatedAt {
                             local.familyId = dto.familyId
@@ -76,8 +112,7 @@ final class SyncCenter: ObservableObject {
                             local.displayName = dto.displayName
                             local.email = dto.email
                             local.photoURL = dto.photoURL
-                            local.isDeleted = dto.isDeleted
-                            
+                            local.isDeleted = false
                             local.updatedAt = dto.updatedAt ?? Date()
                             local.updatedBy = dto.updatedBy ?? local.updatedBy
                         }
@@ -94,23 +129,41 @@ final class SyncCenter: ObservableObject {
                             updatedBy: dto.updatedBy ?? "remote",
                             createdAt: now,
                             updatedAt: dto.updatedAt ?? now,
-                            isDeleted: dto.isDeleted
+                            isDeleted: false
                         )
                         modelContext.insert(m)
                     }
                     
+                    // ─────────────────────────────
+                    // REMOVE (Firestore remove)
+                    // ─────────────────────────────
                 case .remove(let id):
-                    let mid = id
-                    let desc = FetchDescriptor<KBFamilyMember>(predicate: #Predicate { $0.id == mid })
-                    if let local = try modelContext.fetch(desc).first {
+                    seenIds.insert(id)
+                    
+                    if let local = localById[id] {
+                        let removedUserId = local.userId
+                        let familyId = local.familyId
                         modelContext.delete(local)
+                        
+                        // ⚠️ se sono io che sono stato rimosso
+                        if removedUserId == Auth.auth().currentUser?.uid {
+                            KBLog.sync.info(
+                                "Current user removed from family \(familyId, privacy: .public)"
+                            )
+                            
+                            stopMembersRealtime()
+                            stopTodoRealtime()
+                            documentsListener?.remove()
+                            documentsListener = nil
+                        }
                     }
                 }
             }
-            
             try modelContext.save()
         } catch {
-            KBLog.sync.error("applyMembersInbound failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.error(
+                "applyMembersInbound failed: \(error.localizedDescription, privacy: .public)"
+            )
         }
     }
     

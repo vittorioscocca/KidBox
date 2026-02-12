@@ -56,3 +56,5 @@ final class KBDocumentCategory {
         self.lastSyncError = nil
     }
 }
+
+extension KBDocumentCategory: HasFamilyId {}

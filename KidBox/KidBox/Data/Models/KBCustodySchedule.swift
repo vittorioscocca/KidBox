@@ -51,3 +51,5 @@ final class KBCustodySchedule {
         self.isDeleted = isDeleted
     }
 }
+
+extension KBCustodySchedule: HasFamilyId {}

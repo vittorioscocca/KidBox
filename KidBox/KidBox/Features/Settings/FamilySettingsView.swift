@@ -10,9 +10,13 @@ import SwiftData
 
 struct FamilySettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
+    @Environment(\.modelContext) private var modelContext
     
     @Query private var families: [KBFamily]
     @Query private var members: [KBFamilyMember]
+    
+    @State private var showLeaveFamilyConfirm = false
+    @State private var leaveError: String?
     
     private var family: KBFamily? { families.first }
     private var child: KBChild? { families.first?.children.first }
@@ -27,6 +31,7 @@ struct FamilySettingsView: View {
                     familySummaryCard
                     familyMembersCard
                     actionsWithFamily
+                    dangerZone
                 } else {
                     emptyStateCard
                     actionsWithoutFamily
@@ -35,6 +40,37 @@ struct FamilySettingsView: View {
             .padding()
         }
         .navigationTitle("Family")
+        .onAppear {
+            if let fid = family?.id {
+                SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
+            }
+        }
+        .onDisappear {
+            SyncCenter.shared.stopMembersRealtime()
+        }
+        .alert(
+            "Uscire dalla famiglia?",
+            isPresented: $showLeaveFamilyConfirm
+        ) {
+            Button("Annulla", role: .cancel) { }
+            Button("Esci", role: .destructive) {
+                Task { @MainActor in
+                    await leaveFamily()
+                }
+            }
+        } message: {
+            Text(
+                """
+                Verrai rimosso dalla famiglia e tutti i dati \
+                associati verranno eliminati da questo dispositivo.
+                """
+            )
+        }
+        .alert("Errore", isPresented: .constant(leaveError != nil)) {
+            Button("OK") { leaveError = nil }
+        } message: {
+            Text(leaveError ?? "")
+        }
     }
     
     // MARK: - UI
@@ -50,7 +86,6 @@ struct FamilySettingsView: View {
         .padding(.bottom, 4)
     }
     
-    /// Card riepilogo + matita (edit)
     private var familySummaryCard: some View {
         KBSettingsCard(
             title: family?.name ?? "Famiglia",
@@ -61,12 +96,16 @@ struct FamilySettingsView: View {
             trailingSystemImage: "pencil",
             trailingAction: {
                 guard let family, let child else { return }
-                coordinator.navigate(to: .editFamily(familyId: family.id, childId: child.id))
+                coordinator.navigate(
+                    to: .editFamily(
+                        familyId: family.id,
+                        childId: child.id
+                    )
+                )
             }
         )
     }
     
-    /// ✅ Card con lista membri dentro (usa KBSettingsCardWithExtra)
     private var familyMembersCard: some View {
         let familyId = family?.id ?? ""
         
@@ -98,13 +137,10 @@ struct FamilySettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(displayLabel(for: m))
                                     .font(.subheadline)
-                                    .foregroundStyle(.primary)
-                                
                                 Text(roleLabel(m.role))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            
                             Spacer()
                         }
                         .padding(.vertical, 2)
@@ -132,6 +168,18 @@ struct FamilySettingsView: View {
                 action: { coordinator.navigate(to: .joinFamily) }
             )
         }
+    }
+    
+    private var dangerZone: some View {
+        KBSettingsCard(
+            title: "Esci dalla famiglia",
+            subtitle: "Non potrai più accedere ai dati condivisi.",
+            systemImage: "rectangle.portrait.and.arrow.right",
+            style: .danger,
+            action: {
+                showLeaveFamilyConfirm = true
+            }
+        )
     }
     
     private var emptyStateCard: some View {
@@ -172,6 +220,20 @@ struct FamilySettingsView: View {
         return "Bimbo/a: \(child.name)"
     }
     
+    // MARK: - Actions
+    
+    private func leaveFamily() async {
+        guard let familyId = family?.id else { return }
+        
+        do {
+            let service = FamilyLeaveService(modelContext: modelContext)
+            try await service.leaveFamily(familyId: familyId)
+            coordinator.resetToRoot()
+        } catch {
+            leaveError = error.localizedDescription
+        }
+    }
+    
     // MARK: - Helpers
     
     private func displayLabel(for m: KBFamilyMember) -> String {
@@ -194,7 +256,7 @@ struct FamilySettingsView: View {
     }
 }
 
-// MARK: - Small helpers (TIENI SOLO QUESTA, NON DUPLICARLA ALTROVE)
+// MARK: - Small helpers
 
 private extension String {
     var trimmedNonEmpty: String? {

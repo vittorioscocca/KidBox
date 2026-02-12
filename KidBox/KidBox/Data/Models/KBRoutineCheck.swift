@@ -58,3 +58,5 @@ final class KBRoutineCheck {
         self.isDeleted = isDeleted
     }
 }
+
+extension KBRoutineCheck: HasFamilyId {}

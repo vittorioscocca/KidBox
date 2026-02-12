@@ -59,3 +59,5 @@ final class KBEvent {
         self.isDeleted = isDeleted
     }
 }
+
+extension KBEvent: HasFamilyId {}

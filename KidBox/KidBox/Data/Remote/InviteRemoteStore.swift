@@ -112,6 +112,9 @@ final class InviteRemoteStore {
         batch.setData([
             "uid": uid,
             "role": role,
+            "isDeleted": false,
+            "updatedBy": uid,
+            "updatedAt": FieldValue.serverTimestamp(),
             "createdAt": FieldValue.serverTimestamp()
         ], forDocument: memberRef, merge: true)
         

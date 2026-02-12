@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 // MARK: - HERO CARD (con crop)
 
@@ -25,33 +26,16 @@ struct HomeHeroCard: View {
     let isBusy: Bool
     let action: () -> Void
     
+    @StateObject private var loader = HeroImageLoader()
+    
     var body: some View {
         Button(action: action) {
             ZStack(alignment: .topLeading) {
                 
-                if let photoURL {
-                    AsyncImage(url: photoURL) { phase in
-                        switch phase {
-                        case .empty:
-                            placeholder
-                        case .success(let img):
-                            GeometryReader { geo in
-                                img.resizable()
-                                    .scaledToFill()
-                                    .frame(width: geo.size.width, height: geo.size.height)
-                                    .scaleEffect(scale)
-                                    .offset(x: offsetX, y: offsetY)
-                                    .clipped()
-                            }
-                        case .failure:
-                            placeholder
-                        @unknown default:
-                            placeholder
-                        }
-                    }
-                    .id(photoUpdatedAt ?? Date.distantPast) // ✅ cache-bust
-                    .frame(height: 300)
-                    .clipped()
+                if let ui = loader.image {
+                    Image(uiImage: ui).resizable().scaledToFill()
+                        .frame(height: 300)
+                        .clipped()
                 } else {
                     placeholder
                 }
@@ -134,6 +118,10 @@ struct HomeHeroCard: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .task(id: photoURL?.absoluteString) {
+                loader.load(url: photoURL)
+            }
+            
         }
         .buttonStyle(.plain)
     }
@@ -152,5 +140,29 @@ struct HomeHeroCard: View {
             }
         }
         .frame(height: 300)
+    }
+}
+
+@MainActor
+final class HeroImageLoader: ObservableObject {
+    @Published var image: UIImage?
+    
+    private var task: Task<Void, Never>?
+    
+    func load(url: URL?) {
+        task?.cancel()
+        image = nil
+        guard let url else { return }
+        
+        task = Task {
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                if Task.isCancelled { return }
+                image = UIImage(data: data)
+            } catch {
+                if Task.isCancelled { return }
+                print("HeroImageLoader error:", error)
+            }
+        }
     }
 }
