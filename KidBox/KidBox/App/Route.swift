@@ -32,6 +32,8 @@ enum Route: Hashable {
     case documentsHome
     case documentsCategory(familyId: String, categoryId: String, title: String)
     
+    case editChild(familyId: String, childId: String)
+    
     case setupFamily               // create
     case editFamily(familyId: String, childId: String) // edit
 }

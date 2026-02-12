@@ -20,9 +20,22 @@ struct KidBoxApp: App {
     @StateObject private var notifications = NotificationManager.shared
 
     init() {
-        //FirebaseBootstrap.configureIfNeeded()
         KBLog.app.info("KidBoxApp init")
-        self.modelContainer = ModelContainerProvider.makeContainer(inMemory: false)
+        
+        let container = ModelContainerProvider.makeContainer(inMemory: false)
+        self.modelContainer = container
+        
+        // ✅ Migration/backfill: cattura SOLO `container`, non `self`
+        Task {
+            do {
+                let migrator = KidBoxMigrationActor(modelContainer: container)
+                try await migrator.runAll()
+                KBLog.persistence.info("Migrations OK")
+            } catch {
+                KBLog.persistence.error("Migrations FAILED: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        
         KBLog.app.info("KidBoxApp ready")
     }
     
