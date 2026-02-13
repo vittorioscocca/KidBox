@@ -34,6 +34,8 @@ private struct InviteCodeViewBody: View {
         Form {
             Section {
                 if let code = vm.code {
+                    let payload = "kidbox://join?code=\(code)"
+                    
                     HStack {
                         Text(code)
                             .font(.system(.title2, design: .monospaced))
@@ -42,11 +44,22 @@ private struct InviteCodeViewBody: View {
                         Button("Copia") { vm.copyToClipboard() }
                     }
                     
+                    // ✅ QR CODE
+                    VStack(spacing: 12) {
+                        QRCodeView(payload: payload)
+                        
+                        Text("Scansiona questo QR con l’altro genitore.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
                     ShareLink(item: vm.shareText) {
                         Label("Condividi", systemImage: "square.and.arrow.up")
                     }
                 } else {
-                    Text("Genera un codice da condividere con l’altro genitore o co un altro membro della famiglia.")
+                    Text("Genera un codice da condividere con l’altro genitore o con un altro membro della famiglia.")
                         .foregroundStyle(.secondary)
                 }
             }
