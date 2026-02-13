@@ -25,6 +25,7 @@ struct JoinFamilyView: View {
 
 private struct JoinFamilyViewBody: View {
     @EnvironmentObject private var coordinator: AppCoordinator
+    @State private var showScanner = false
     
     let modelContext: ModelContext
     @StateObject private var vm: JoinFamilyViewModel
@@ -48,6 +49,27 @@ private struct JoinFamilyViewBody: View {
                     .autocorrectionDisabled()
             }
             
+            Button {
+                showScanner = true
+            } label: {
+                Label("Scansiona QR code", systemImage: "qrcode.viewfinder")
+            }
+            .sheet(isPresented: $showScanner) {
+                QRScannerSheet(
+                    onDetected: { raw in
+                        let extracted = JoinPayloadParser.extractCode(from: raw)
+                        if let extracted {
+                            vm.code = extracted
+                            showScanner = false
+                            
+                            // ✅ auto-join: stessa logica del bottone "Entra"
+                            Task { await vm.join() }
+                        }
+                    },
+                    onClose: { showScanner = false }
+                )
+            }
+            
             if let err = vm.errorMessage {
                 Section { Text(err).foregroundStyle(.red) }
             }
@@ -65,6 +87,30 @@ private struct JoinFamilyViewBody: View {
                     Task { await vm.join() }
                 }
                 .disabled(vm.isBusy || vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+    }
+    
+    struct QRScannerSheet: View {
+        var onDetected: (String) -> Void
+        var onClose: () -> Void
+        
+        var body: some View {
+            NavigationStack {
+                ZStack {
+                    QRCodeScannerView(onCode: onDetected)
+                        .ignoresSafeArea()
+                    
+                    RoundedRectangle(cornerRadius: 24)
+                        .strokeBorder(.white.opacity(0.9), lineWidth: 3)
+                        .frame(width: 260, height: 260)
+                }
+                .navigationTitle("Scansiona QR")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Chiudi") { onClose() }
+                    }
+                }
             }
         }
     }
