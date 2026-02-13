@@ -21,6 +21,16 @@ struct RootHostView: View {
                 .navigationDestination(for: Route.self) { coordinator.makeDestination(for: $0) }
         }
         .onAppear {
+            // ✅ Migra master key per famiglie esistenti (idempotent - safe to call multiple times)
+            Task {
+                do {
+                    try await MasterKeyMigration.migrateAllFamilies(modelContext: modelContext)
+                } catch {
+                    print("⚠️ Master key migration failed:", error.localizedDescription)
+                }
+            }
+            
+            // Avvia realtime sync
             startFamilyRealtimeIfPossible()
         }
         .onChange(of: families.first?.id) { _, _ in

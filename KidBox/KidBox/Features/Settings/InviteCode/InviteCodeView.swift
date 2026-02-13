@@ -5,6 +5,7 @@
 //  Created by vscocca on 05/02/26.
 //
 
+
 import SwiftUI
 import SwiftData
 
@@ -13,7 +14,7 @@ struct InviteCodeView: View {
     
     var body: some View {
         InviteCodeViewBody(modelContext: modelContext)
-            .navigationTitle("Codice invito")
+            .navigationTitle("Invita genitore")
             .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -33,45 +34,73 @@ private struct InviteCodeViewBody: View {
     var body: some View {
         Form {
             Section {
-                if let code = vm.code {
-                    let payload = "kidbox://join?code=\(code)"
-                    
-                    HStack {
-                        Text(code)
-                            .font(.system(.title2, design: .monospaced))
-                            .textSelection(.enabled)
-                        Spacer()
-                        Button("Copia") { vm.copyToClipboard() }
-                    }
-                    
-                    // ✅ QR CODE
-                    VStack(spacing: 12) {
-                        QRCodeView(payload: payload)
+                if let qrPayload = vm.qrPayload {
+                    VStack(spacing: 16) {
+                        // ✅ QR CODE con la chiave crittografica
+                        QRCodeView(payload: qrPayload)
+                            .frame(maxWidth: .infinity)
                         
-                        Text("Scansiona questo QR con l’altro genitore.")
-                            .font(.footnote)
+                        // Descrizione
+                        VStack(spacing: 8) {
+                            Text("Scansiona con l'altro genitore")
+                                .font(.headline)
+                            
+                            Text("Condividi questo codice QR. L'altro genitore lo scannerà per unirsi alla famiglia e ricevere automaticamente la chiave di cifratura.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        
+                        // Share button
+                        ShareLink(item: qrPayload) {
+                            Label("Condividi QR", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                    .padding(.vertical, 12)
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "qrcode")
+                            .font(.title2)
                             .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                        
+                        Text("Genera il codice QR")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    
-                    ShareLink(item: vm.shareText) {
-                        Label("Condividi", systemImage: "square.and.arrow.up")
-                    }
-                } else {
-                    Text("Genera un codice da condividere con l’altro genitore o con un altro membro della famiglia.")
-                        .foregroundStyle(.secondary)
+                    .padding(.vertical, 20)
                 }
             }
             
             if let err = vm.errorMessage {
-                Section { Text(err).foregroundStyle(.red) }
+                Section {
+                    Label(err, systemImage: "exclamationmark.circle.fill")
+                        .foregroundStyle(.red)
+                }
             }
             
-            Button(vm.isBusy ? "Generazione…" : "Genera codice") {
-                Task { await vm.generateInviteCode() }
+            Section {
+                Button(action: generateInvite) {
+                    if vm.isBusy {
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("Generazione in corso...")
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "qrcode")
+                            Text("Genera codice QR")
+                        }
+                    }
+                }
+                .disabled(vm.isBusy)
             }
-            .disabled(vm.isBusy)
         }
+    }
+    
+    private func generateInvite() {
+        Task { await vm.generateInviteCode() }
     }
 }

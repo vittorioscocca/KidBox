@@ -269,6 +269,14 @@ struct DocumentFolderView: View {
                 .navigationTitle(view.folderTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .onAppear {
+                    do {
+                        let baseDir = try DocumentLocalCache.baseDir()
+                        try FileManager.default.removeItem(at: baseDir)
+                        print("🗑️ Cache cleaned")
+                    } catch {
+                        print("⚠️ Cache cleanup failed: \(error)")
+                    }
+                    
                     view.viewModel.bind(modelContext: view.modelContext)
                     view.viewModel.startObservingChanges()
                     view.viewModel.reload()

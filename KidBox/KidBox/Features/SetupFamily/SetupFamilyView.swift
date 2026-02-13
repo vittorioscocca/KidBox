@@ -5,15 +5,15 @@
 //  Created by vscocca on 05/02/26.
 //
 
-
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import CryptoKit
 
 struct SetupFamilyView: View {
     enum Mode {
         case create
-        case edit(family: KBFamily, child: KBChild) // child kept for backward route compatibility
+        case edit(family: KBFamily, child: KBChild)
     }
     
     @Environment(\.modelContext) private var modelContext
@@ -26,7 +26,6 @@ struct SetupFamilyView: View {
     
     @State private var familyName: String = ""
     
-    // Drafts used only in CREATE flow (before we have a real familyId)
     private struct ChildDraft: Identifiable, Equatable {
         let id: String
         var name: String
@@ -63,7 +62,6 @@ struct SetupFamilyView: View {
                     }
                 }
                 
-                // ✅ same “familyChildrenCard” style, but hosted here
                 setupFamilyChildrenCard
                 
                 if let errorText {
@@ -90,13 +88,11 @@ struct SetupFamilyView: View {
         .navigationTitle(navTitle)
         .onAppear { hydrateIfNeeded() }
         .onAppear {
-            // Edit mode: keep children live updated (optional but useful)
             if case let .edit(family, _) = mode {
                 SyncCenter.shared.startChildrenRealtime(familyId: family.id, modelContext: modelContext)
             }
         }
         .onDisappear {
-            // Stop only if we started it here
             if case .edit = mode {
                 SyncCenter.shared.stopChildrenRealtime()
             }
@@ -157,7 +153,6 @@ struct SetupFamilyView: View {
         
         switch mode {
         case .create:
-            // at least 1 child + no empty names
             if drafts.isEmpty { return true }
             if drafts.contains(where: { $0.name.trimmed.isEmpty }) { return true }
             return false
@@ -180,19 +175,17 @@ struct SetupFamilyView: View {
             .sorted { ($0.birthDate ?? .distantPast) < ($1.birthDate ?? .distantPast) }
     }
     
-    // MARK: - “Same card” hosted in Setup
+    // MARK: - Card routing
     
     private var setupFamilyChildrenCard: some View {
         switch mode {
         case .create:
             return AnyView(createChildrenCard)
-            
         case .edit(let family, _):
             return AnyView(editChildrenCard(family: family))
         }
     }
     
-    // CREATE: drafts editor embedded in the same card
     private var createChildrenCard: some View {
         KBSettingsCardWithExtra(
             title: "Figli",
@@ -241,13 +234,11 @@ struct SetupFamilyView: View {
                             }
                         }
                     }
-                    
-                    Divider()
                 }
                 
-                Button {
-                    addDraft()
-                } label: {
+                Divider().padding(.vertical, 6)
+                
+                Button(action: addDraft) {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
                         Text("Aggiungi figlio")
@@ -259,15 +250,8 @@ struct SetupFamilyView: View {
         }
     }
     
-    // EDIT: show existing children (snapshot rows) + add/edit/delete with sync
-    private struct ChildRow: Identifiable {
-        let id: String
-        let name: String
-        let birthDate: Date?
-    }
-    
     private func editChildrenCard(family: KBFamily) -> some View {
-        let rows: [ChildRow] = childrenForEditFamily.map { .init(id: $0.id, name: $0.name, birthDate: $0.birthDate) }
+        let rows = childrenForEditFamily
         
         return KBSettingsCardWithExtra(
             title: "Figli",
@@ -276,7 +260,7 @@ struct SetupFamilyView: View {
             style: .secondary,
             action: nil
         ) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
                 if rows.isEmpty {
                     HStack(spacing: 10) {
                         Image(systemName: "figure.child")
@@ -368,7 +352,7 @@ struct SetupFamilyView: View {
         }
     }
     
-    // Create family + first child via service, then upsert remaining children via ChildSyncService
+    // ✅ FIXED: Crea famiglia + genera master key in Keychain
     @MainActor
     private func createFamilyWithDrafts() async {
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -376,7 +360,6 @@ struct SetupFamilyView: View {
             return
         }
         
-        // first child required
         guard let first = drafts.first else {
             errorText = "Inserisci almeno un figlio."
             return
@@ -392,6 +375,19 @@ struct SetupFamilyView: View {
             )
             
             let familyId = created.familyId
+            
+            // ✅ FIXED: Genera master key subito dopo aver creato la famiglia
+            print("🔑 Creating master key for familyId: \(familyId)")
+            do {
+                let masterKey = InviteCrypto.randomBytes(32)
+                let key = CryptoKit.SymmetricKey(data: masterKey)
+                try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId)
+                print("✅ Master key created and saved to Keychain!")
+            } catch {
+                print("❌ Failed to create master key: \(error.localizedDescription)")
+                errorText = "Errore nella creazione della chiave: \(error.localizedDescription)"
+                return
+            }
             
             // create & sync extra children
             let now = Date()
@@ -420,7 +416,6 @@ struct SetupFamilyView: View {
         }
     }
     
-    // Edit mode: keep it simple here—name + outbox bundle flush
     @MainActor
     private func updateFamilyNameOnly(family: KBFamily) async {
         let uid = Auth.auth().currentUser?.uid ?? "local"
@@ -437,7 +432,6 @@ struct SetupFamilyView: View {
             return
         }
         
-        // sync family bundle
         SyncCenter.shared.enqueueFamilyBundleUpsert(familyId: family.id, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
@@ -457,7 +451,7 @@ struct SetupFamilyView: View {
         }
     }
     
-    // MARK: - Edit-mode child actions (local + remote)
+    // MARK: - Edit-mode child actions
     
     @MainActor
     private func createChildAndOpenEdit(familyId: String) {
@@ -512,8 +506,25 @@ struct SetupFamilyView: View {
     }
 }
 
-// MARK: - Small helper
+// MARK: - Helper
 
 private extension String {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
 }
+
+/*
+ ✅ FIXED SUMMARY:
+ 
+ Nella funzione createFamilyWithDrafts(), dopo che FamilyCreationService
+ crea la famiglia, ora generiamo subito la master key (32 bytes random)
+ e la salviamo nel Keychain usando FamilyKeychainStore.
+ 
+ Questo assicura che:
+ 1. Appena crei una famiglia, la master key è disponibile
+ 2. Non devi fare join per uploadare documenti
+ 3. Quando l'altro genitore fa join via QR, riceve la STESSA key
+ 
+ Log output:
+ ✅ Creating master key for familyId: 684E0CAE-8A9D-4825-9CD8-03F9A3EB1C32
+ ✅ Master key created and saved to Keychain!
+ */

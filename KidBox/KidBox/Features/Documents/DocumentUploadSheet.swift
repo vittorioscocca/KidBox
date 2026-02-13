@@ -127,8 +127,8 @@ struct DocumentUploadSheet: View {
                 familyId: family.id,
                 docId: docId,
                 fileName: fileName,
-                mimeType: mimeType,
-                data: data
+                originalMimeType: mimeType,
+                encryptedData: data
             )
             
             // 2) crea locale (SwiftData)
@@ -162,6 +162,15 @@ struct DocumentUploadSheet: View {
                 modelContext: modelContext
             )
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            
+            // DEBUG immediato
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let ops = try? modelContext.fetch(FetchDescriptor<KBSyncOp>())
+                print("📤 OUTBOX after flush: \(ops?.count ?? 0) operations")
+                for op in ops ?? [] {
+                    print("   - \(op.entityTypeRaw) \(op.opType) \(op.entityId)")
+                }
+            }
             
             dismiss()
             onDone()

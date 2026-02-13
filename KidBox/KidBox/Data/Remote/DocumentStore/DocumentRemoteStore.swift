@@ -105,7 +105,7 @@ final class DocumentRemoteStore {
         onChange: @escaping ([DocumentRemoteChange]) -> Void
     ) -> ListenerRegistration {
         
-        db.collection("families")
+        return db.collection("families")
             .document(familyId)
             .collection("documents")
             .addSnapshotListener { snap, err in

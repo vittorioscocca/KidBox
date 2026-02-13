@@ -60,7 +60,6 @@ final class DocumentFolderViewModel: ObservableObject {
     private let deleteService = DocumentDeleteService()
     private let categoryRemoteStore = DocumentCategoryRemoteStore()
     private let storageService = DocumentStorageService()
-    private let cacheService = DocumentLocalCacheService()
     
     // MARK: - SwiftData
     private var modelContext: ModelContext?
@@ -444,25 +443,17 @@ final class DocumentFolderViewModel: ObservableObject {
             
             // REMOTE upload
             do {
-                let service = DocumentUploadService()
-                let urlString = try await service.uploadDocument(
+                let plaintext = data  // Esplicito che è plaintext
+                let encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId)
+                let (_, downloadURL) = try await storageService.upload(
                     familyId: familyId,
-                    documentId: documentId,
-                    storagePath: storagePath,
-                    data: data,
-                    mimeType: mime,
-                    meta: .init(
-                        familyId: familyId,
-                        childId: nil,
-                        categoryId: folderId,
-                        title: title,
-                        fileName: fileName,
-                        mimeType: mime,
-                        fileSize: size
-                    )
+                    docId: documentId,
+                    fileName: fileName,
+                    originalMimeType: mime,
+                    encryptedData: encryptedData  // ✅ già cifrato
                 )
                 
-                local.downloadURL = urlString
+                local.downloadURL = downloadURL
                 local.syncState = .synced
                 local.lastSyncError = nil
                 local.updatedAt = Date()
@@ -680,28 +671,45 @@ final class DocumentFolderViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Open
-    // MARK: - Open (with download feedback)
     func open(_ doc: KBDocument) {
         guard let modelContext else { return }
         errorText = nil
         
         Task { @MainActor in
-            // 1) se esiste già in locale -> apri subito
-            if let localURL = DocumentLocalCache.exists(localPath: doc.localPath) {
-                previewURL = localURL
-                return
+            // 1️⃣ Se esiste in cache (CIFRATO) → decifra
+            if let localPath = doc.localPath, !localPath.isEmpty,
+               let _ = DocumentLocalCache.exists(localPath: localPath) {
+                
+                print("📂 Opening cached plaintext file: \(localPath)")
+                
+                do {
+                    // ✅ Il file in cache è PLAINTEXT, leggi direttamente
+                    let plaintext = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                    
+                    let tempURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("\(doc.id)_\(doc.fileName)")
+                    try plaintext.write(to: tempURL, options: .atomic)
+                    
+                    previewURL = tempURL
+                    return
+                    
+                } catch {
+                    errorText = "Apertura file fallita: \(error.localizedDescription)"
+                    return
+                }
             }
             
-            // 2) altrimenti scarica con progress
+            // 2️⃣ Altrimenti scarica da Storage con progress
+            print("📥 File not in cache, downloading from Storage...")
             do {
-                let localURL = try await downloadToLocalWithProgress(doc: doc, modelContext: modelContext)
-                previewURL = localURL
+                let plaintext = try await downloadToLocalWithProgress(doc: doc, modelContext: modelContext)
+                previewURL = plaintext
             } catch {
                 isDownloading = false
                 downloadProgress = 0
                 downloadCurrentName = ""
                 errorText = "Download locale fallito: \(error.localizedDescription)"
+                print("❌ Download failed: \(error.localizedDescription)")
             }
         }
     }
@@ -753,14 +761,24 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
             }
             
-            // scrivi nella cache “stabile”
-            let data = try Data(contentsOf: tmpURL)
+            // ✅ Leggi il file cifrato
+            let encrypted = try Data(contentsOf: tmpURL)
+            print("📥 Downloaded encrypted file: \(encrypted.count) bytes")
+            
+            // ✅ DECIFRA con la family master key
+            print("🔐 Decrypting downloaded file: \(doc.fileName)")
+            let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId)
+            print("✅ Decrypted: \(encrypted.count) → \(decrypted.count) bytes")
+            
+            // ✅ Scrivi il plaintext DECIFRATO nella cache "stabile"
             let rel = try DocumentLocalCache.write(
                 familyId: doc.familyId,
                 docId: doc.id,
                 fileName: doc.fileName.isEmpty ? doc.id : doc.fileName,
-                data: data
+                data: decrypted  // ✅ Salva il plaintext decifrato
             )
+            
+            print("✅ Saved decrypted file to cache: \(rel)")
             
             doc.localPath = rel
             try modelContext.save()
@@ -773,6 +791,7 @@ final class DocumentFolderViewModel: ObservableObject {
             return try DocumentLocalCache.resolve(localPath: rel)
             
         } catch {
+            print("❌ Download/decrypt failed: \(error.localizedDescription)")
             try? FileManager.default.removeItem(at: tmp)
             await endDownloadingWithMinimumDelay(start: start)
             throw error
@@ -1048,6 +1067,21 @@ final class DocumentFolderViewModel: ObservableObject {
             
             // refresh list
             reload()
+           
+            guard let modelContext else { return }
+            
+            print("📤 Import complete, flushing outbox...")
+            SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            print("📤 Flush called")
+            
+            // DEBUG: verifica outbox
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let ops = try? modelContext.fetch(FetchDescriptor<KBSyncOp>())
+                print("📤 OUTBOX after import flush: \(ops?.count ?? 0) operations")
+                for op in ops ?? [] {
+                    print("   - \(op.entityTypeRaw) / \(op.opType) / \(op.entityId)")
+                }
+            }
             
         } catch {
             isUploading = false
@@ -1071,36 +1105,72 @@ final class DocumentFolderViewModel: ObservableObject {
         }
     }
     
-    private func uploadSingleFileConcurrent(_ url: URL, childId: String?) async -> Bool {
-        guard let modelContext else { return false }
+    func uploadSingleFileConcurrent(_ url: URL, childId: String?) async -> Bool {
+        guard let modelContext else {
+            print("❌ uploadSingleFileConcurrent: modelContext is nil")
+            return false
+        }
         
         do {
             let okScope = url.startAccessingSecurityScopedResource()
             defer { if okScope { url.stopAccessingSecurityScopedResource() } }
             
-            let data = try Data(contentsOf: url)
-            if data.isEmpty { return false }
+            // 1️⃣ Leggi plaintext da disk
+            let plaintext = try Data(contentsOf: url)
+            if plaintext.isEmpty {
+                print("❌ File vuoto")
+                return false
+            }
             
             let fileName = url.lastPathComponent
             let ext = url.pathExtension.lowercased()
             let mime = mimeType(forExtension: ext) ?? "application/octet-stream"
-            let size = Int64(data.count)
+            let size = Int64(plaintext.count)
             let title = url.deletingPathExtension().lastPathComponent
             
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
             let documentId = UUID().uuidString
-            let storagePath = "families/\(familyId)/documents/\(documentId)"
+            let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
             
-            // ✅ LOCAL: salva nello STESSO store usato da open() (DocumentLocalCache)
-            let localPath = try DocumentLocalCache.write(
-                familyId: familyId,
-                docId: documentId,
-                fileName: fileName,
-                data: data
-            )
+            print("📝 Uploading: \(fileName) (size: \(plaintext.count) bytes)")
             
-            // 1) LOCAL placeholder
+            // 2️⃣ CIFRA con family master key
+            let encryptedData: Data
+            do {
+                encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId)
+                print("✅ Encrypted: \(plaintext.count) → \(encryptedData.count) bytes")
+            } catch {
+                print("❌ Encryption failed: \(error.localizedDescription)")
+                return false
+            }
+            
+            // 3️⃣ Salva PLAINTEXT in cache locale (per poter leggere offline)
+            let localPath: String
+            do {
+                print("📝 About to save to cache:")
+                print("   - data size: \(plaintext.count) bytes")
+                print("   - fileName: \(fileName)")
+                print("   - docId: \(documentId)")
+                localPath = try DocumentLocalCache.write(
+                    familyId: familyId,
+                    docId: documentId,
+                    fileName: fileName,
+                    data: plaintext  // ✅ PLAINTEXT (leggibile)
+                )
+                // Verifica cosa è stato salvato
+                let savedURL = try DocumentLocalCache.resolve(localPath: localPath)
+                let savedData = try Data(contentsOf: savedURL)
+                print("✅ Saved plaintext to cache:")
+                print("   - path: \(localPath)")
+                print("   - saved size: \(savedData.count) bytes")
+                print("   - matches plaintext: \(savedData == plaintext)")
+            } catch {
+                print("❌ Local cache write failed: \(error.localizedDescription)")
+                return false
+            }
+            
+            // 4️⃣ Crea documento locale (placeholder)
             do {
                 let local = KBDocument(
                     id: documentId,
@@ -1124,48 +1194,60 @@ final class DocumentFolderViewModel: ObservableObject {
                 
                 modelContext.insert(local)
                 try modelContext.save()
+                print("✅ Created local document: \(documentId)")
+                
+                // ✅ Enqueue per sincronizzazione Firestore
+                SyncCenter.shared.enqueueDocumentUpsert(
+                    documentId: local.id,
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+                print("📤 Document enqueued for sync: \(local.id)")
+                
             } catch {
+                print("❌ Failed to create local document: \(error.localizedDescription)")
                 return false
             }
             
-            // 2) REMOTE upload
+            // 5️⃣ Upload CIPHERTEXT a Storage
             do {
-                let service = DocumentUploadService()
-                let urlString = try await service.uploadDocument(
+                let (uploadedPath, downloadURL) = try await storageService.upload(
                     familyId: familyId,
-                    documentId: documentId,
-                    storagePath: storagePath,
-                    data: data,
-                    mimeType: mime,
-                    meta: .init(
-                        familyId: familyId,
-                        childId: childId,
-                        categoryId: folderId,
-                        title: title,
-                        fileName: fileName,
-                        mimeType: mime,
-                        fileSize: size
-                    )
+                    docId: documentId,
+                    fileName: fileName,
+                    originalMimeType: mime,
+                    encryptedData: encryptedData  // ✅ CIPHERTEXT (cifrato)
                 )
                 
-                // 3) update local
+                print("✅ Uploaded to Storage: \(uploadedPath)")
+                print("📥 Download URL: \(downloadURL)")
+                
+                // 6️⃣ Aggiorna documento (mark synced)
                 do {
                     let did = documentId
                     let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
                     if let local = try modelContext.fetch(desc).first {
-                        local.downloadURL = urlString
+                        local.downloadURL = downloadURL
+                        local.storagePath = uploadedPath
                         local.syncState = .synced
                         local.lastSyncError = nil
                         local.updatedAt = Date()
                         local.updatedBy = uid
                         try modelContext.save()
+                        print("✅ Document synced: \(documentId)")
+                    } else {
+                        print("⚠️ Document not found after upload (race condition?)")
                     }
-                } catch { }
+                } catch {
+                    print("❌ Failed to update document: \(error.localizedDescription)")
+                }
                 
                 return true
                 
             } catch {
-                // upload fallito: resta locale ma marcato errore
+                // Upload fallito: documento rimane in locale, marcato come error
+                print("❌ Upload failed: \(error.localizedDescription)")
+                
                 do {
                     let did = documentId
                     let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
@@ -1173,12 +1255,14 @@ final class DocumentFolderViewModel: ObservableObject {
                         local.syncState = .error
                         local.lastSyncError = error.localizedDescription
                         try? modelContext.save()
+                        print("⚠️ Document marked as error: \(error.localizedDescription)")
                     }
                 } catch { }
                 return false
             }
             
         } catch {
+            print("❌ Upload failed (outer): \(error.localizedDescription)")
             return false
         }
     }

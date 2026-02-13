@@ -184,7 +184,26 @@ final class SyncCenter: ObservableObject {
         flushTask?.cancel()
         flushTask = Task { [weak self] in
             guard let self else { return }
-            await self.flush(modelContext: modelContext, remote: self.todoRemote)
+            
+            do {
+                let now = Date()
+                let desc = FetchDescriptor<KBSyncOp>(
+                    predicate: #Predicate { $0.nextRetryAt <= now },
+                    sortBy: [SortDescriptor(\KBSyncOp.createdAt, order: .forward)]
+                )
+                
+                let ops = try modelContext.fetch(desc)
+                print("🔄 Flushing \(ops.count) operations")
+                
+                for op in ops {
+                    print("   - Processing: \(op.entityTypeRaw) \(op.opType) \(op.entityId)")
+                    await self.process(op: op, modelContext: modelContext, remote: self.todoRemote)
+                }
+                
+                print("✅ Flush complete")
+            } catch {
+                print("❌ Flush failed: \(error.localizedDescription)")
+            }
         }
     }
     
