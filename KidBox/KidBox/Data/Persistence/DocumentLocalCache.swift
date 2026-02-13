@@ -20,6 +20,13 @@ enum DocumentLocalCache {
         return dir
     }
     
+    /// Leggi file CIFRATO da cache locale
+    /// - Returns: Ciphertext (ancora cifrato)
+    static func readEncrypted(localPath: String) throws -> Data {
+        let url = try resolve(localPath: localPath)
+        return try Data(contentsOf: url)
+    }
+    
     static func localURL(familyId: String, docId: String, fileName: String) throws -> URL {
         let safeName = fileName.isEmpty ? "\(docId)" : fileName
         let dir = try baseDir().appendingPathComponent(familyId, isDirectory: true)
@@ -56,15 +63,26 @@ enum DocumentLocalCache {
     // Scarica da Firebase Storage usando storagePath (preferibile a downloadURL)
     static func downloadToLocal(doc: KBDocument, modelContext: ModelContext) async throws -> URL {
         let storagePath = doc.storagePath
-        guard !storagePath.isEmpty else { throw NSError(domain: "KidBox", code: -2, userInfo: [NSLocalizedDescriptionKey: "storagePath vuoto"]) }
+        guard !storagePath.isEmpty else {
+            throw NSError(domain: "KidBox", code: -2, userInfo: [NSLocalizedDescriptionKey: "storagePath vuoto"])
+        }
         
         let ref = Storage.storage().reference(withPath: storagePath)
-        let data = try await ref.data(maxSize: 30 * 1024 * 1024) // 30MB (alza se vuoi)
+        let encrypted = try await ref.data(maxSize: 30 * 1024 * 1024)
         
-        let rel = try write(familyId: doc.familyId, docId: doc.id, fileName: doc.fileName, data: data)
-        doc.localPath = rel
-        try modelContext.save()
+        // ✅ DECRYPT
+        let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId)
         
-        return try resolve(localPath: rel)
+        // ✅ Salva in TEMP (viene cancellato quando chiudi)
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempFileName = "\(doc.id)_\(doc.fileName)"
+        let tempURL = tempDir.appendingPathComponent(tempFileName)
+        
+        try decrypted.write(to: tempURL, options: .atomic)
+        
+        // Non salvare localPath persistentemente
+        // doc.localPath rimane nil o vuoto
+        
+        return tempURL
     }
 }

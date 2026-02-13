@@ -8,9 +8,6 @@
 import SwiftUI
 import SwiftData
 
-import SwiftUI
-import SwiftData
-
 struct JoinFamilyView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -57,13 +54,42 @@ private struct JoinFamilyViewBody: View {
             .sheet(isPresented: $showScanner) {
                 QRScannerSheet(
                     onDetected: { raw in
-                        let extracted = JoinPayloadParser.extractCode(from: raw)
-                        if let extracted {
-                            vm.code = extracted
-                            showScanner = false
-                            
-                            // ✅ auto-join: stessa logica del bottone "Entra"
-                            Task { await vm.join() }
+                        Task {
+                            do {
+                                print("📱 QR scanned, processing...")
+                                
+                                // 1️⃣ Decifra la chiave dal QR
+                                print("🔑 Step 1: Unwrap master key from encrypted invite...")
+                                try await JoinWrapService().join(usingQRPayload: raw)
+                                print("✅ Master key saved to Keychain")
+                                
+                                // 2️⃣ Estrai il codice membership dal QR
+                                print("📋 Step 2: Extract membership code...")
+                                guard let code = JoinPayloadParser.extractCode(from: raw) else {
+                                    showScanner = false
+                                    vm.errorMessage = "QR valido ma senza codice invito."
+                                    print("❌ No membership code found in QR")
+                                    return
+                                }
+                                
+                                print("✅ Membership code extracted: \(code)")
+                                
+                                // 3️⃣ Fai il join membership con il codice
+                                print("👥 Step 3: Join membership...")
+                                vm.code = code
+                                showScanner = false
+                                
+                                // Aspetta un attimo prima del join (give UI time to update)
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                
+                                await vm.join()
+                                print("✅ Join completed")
+                                
+                            } catch {
+                                showScanner = false
+                                vm.errorMessage = error.localizedDescription
+                                print("❌ Join error: \(error.localizedDescription)")
+                            }
                         }
                     },
                     onClose: { showScanner = false }
@@ -71,15 +97,25 @@ private struct JoinFamilyViewBody: View {
             }
             
             if let err = vm.errorMessage {
-                Section { Text(err).foregroundStyle(.red) }
+                Section {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.red)
+                        Text(err)
+                            .foregroundStyle(.red)
+                    }
+                }
             }
             
             if vm.didJoin {
                 Section {
-                    Text("✅ Sei entrato nella family!")
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("Sei entrato nella famiglia!")
+                    }
                     Button("Continua") {
                         coordinator.resetToRoot()
-                        // RootGateView vedrà families non vuoto e mostrerà HomeView
                     }
                 }
             } else {
@@ -115,3 +151,4 @@ private struct JoinFamilyViewBody: View {
         }
     }
 }
+
