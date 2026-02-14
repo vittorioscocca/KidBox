@@ -9,6 +9,13 @@ import SwiftUI
 import FirebaseAuth
 import OSLog
 
+/// User profile / account info screen.
+///
+/// Shows basic authentication state and allows the user to sign out.
+///
+/// - Important:
+///   - Be careful with PII in UI/logs. UID is shown for debugging/support and is selectable.
+///   - Logs avoid printing emails. Errors are logged with `.public` to help debugging.
 struct ProfileView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     
@@ -22,6 +29,7 @@ struct ProfileView: View {
                     
                     if let email = user.email {
                         Text("Email: \(email)")
+                            .textSelection(.enabled)
                     }
                 } else {
                     Text("Non autenticato")
@@ -31,13 +39,20 @@ struct ProfileView: View {
             
             Section {
                 Button(role: .destructive) {
+                    KBLog.auth.debug("Logout tap")
                     signOut()
                 } label: {
                     Text("Logout")
                 }
+                .accessibilityLabel("Logout")
             }
         }
-        .navigationTitle("Profile")
+        .navigationTitle("Profilo")
+        .onAppear {
+            // View logs: keep them minimal to avoid spam in SwiftUI re-renders.
+            let isAuthed = (Auth.auth().currentUser != nil)
+            KBLog.auth.debug("ProfileView appeared authed=\(isAuthed, privacy: .public)")
+        }
     }
     
     private func signOut() {

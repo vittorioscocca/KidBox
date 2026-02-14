@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import OSLog
 
 struct JoinFamilyView: View {
     @Environment(\.modelContext) private var modelContext
@@ -17,6 +18,9 @@ struct JoinFamilyView: View {
             .environmentObject(coordinator)
             .navigationTitle("Entra con codice")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                KBLog.ui.debug("JoinFamilyView appeared")
+            }
     }
 }
 
@@ -44,10 +48,15 @@ private struct JoinFamilyViewBody: View {
                 TextField("Es. K7P4D2", text: $vm.code)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
+                    .onChange(of: vm.code) { _, newValue in
+                        // Logga solo metadati (lunghezza), non il contenuto del codice.
+                        KBLog.ui.debug("JoinFamilyView code changed len=\(newValue.count, privacy: .public)")
+                    }
             }
             
             Button {
                 showScanner = true
+                KBLog.ui.info("JoinFamilyView: open QR scanner")
             } label: {
                 Label("Scansiona QR code", systemImage: "qrcode.viewfinder")
             }
@@ -56,43 +65,47 @@ private struct JoinFamilyViewBody: View {
                     onDetected: { raw in
                         Task {
                             do {
-                                print("📱 QR scanned, processing...")
+                                KBLog.ui.info("JoinFamilyView: QR scanned (processing)")
                                 
-                                // 1️⃣ Decifra la chiave dal QR
-                                print("🔑 Step 1: Unwrap master key from encrypted invite...")
+                                // 1️⃣ Decifra la chiave dal QR (non loggare raw: contiene segreti)
+                                KBLog.sync.info("JoinFamilyView: unwrap master key from encrypted invite (start)")
                                 try await JoinWrapService().join(usingQRPayload: raw)
-                                print("✅ Master key saved to Keychain")
+                                KBLog.sync.info("JoinFamilyView: master key saved to Keychain (ok)")
                                 
                                 // 2️⃣ Estrai il codice membership dal QR
-                                print("📋 Step 2: Extract membership code...")
+                                KBLog.sync.debug("JoinFamilyView: extract membership code from QR payload")
                                 guard let code = JoinPayloadParser.extractCode(from: raw) else {
                                     showScanner = false
                                     vm.errorMessage = "QR valido ma senza codice invito."
-                                    print("❌ No membership code found in QR")
+                                    KBLog.sync.error("JoinFamilyView: QR missing membership code")
                                     return
                                 }
                                 
-                                print("✅ Membership code extracted: \(code)")
+                                // Non loggare il codice; al massimo la lunghezza.
+                                KBLog.sync.info("JoinFamilyView: membership code extracted len=\(code.count, privacy: .public)")
                                 
-                                // 3️⃣ Fai il join membership con il codice
-                                print("👥 Step 3: Join membership...")
+                                // 3️⃣ Join membership
                                 vm.code = code
                                 showScanner = false
                                 
-                                // Aspetta un attimo prima del join (give UI time to update)
+                                // Give UI time to update (as in original)
                                 try? await Task.sleep(nanoseconds: 500_000_000)
                                 
+                                KBLog.sync.info("JoinFamilyView: starting membership join")
                                 await vm.join()
-                                print("✅ Join completed")
+                                KBLog.sync.info("JoinFamilyView: join completed")
                                 
                             } catch {
                                 showScanner = false
                                 vm.errorMessage = error.localizedDescription
-                                print("❌ Join error: \(error.localizedDescription)")
+                                KBLog.sync.error("JoinFamilyView: join failed \(error.localizedDescription, privacy: .public)")
                             }
                         }
                     },
-                    onClose: { showScanner = false }
+                    onClose: {
+                        showScanner = false
+                        KBLog.ui.debug("JoinFamilyView: QR scanner closed")
+                    }
                 )
             }
             
@@ -104,6 +117,7 @@ private struct JoinFamilyViewBody: View {
                         Text(err)
                             .foregroundStyle(.red)
                     }
+                    .accessibilityLabel("Errore: \(err)")
                 }
             }
             
@@ -115,15 +129,20 @@ private struct JoinFamilyViewBody: View {
                         Text("Sei entrato nella famiglia!")
                     }
                     Button("Continua") {
+                        KBLog.navigation.info("JoinFamilyView: continue -> resetToRoot")
                         coordinator.resetToRoot()
                     }
                 }
             } else {
                 Button(vm.isBusy ? "Ingresso…" : "Entra") {
+                    KBLog.sync.info("JoinFamilyView: join button tapped")
                     Task { await vm.join() }
                 }
                 .disabled(vm.isBusy || vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
+        }
+        .onAppear {
+            KBLog.ui.debug("JoinFamilyViewBody appeared")
         }
     }
     
@@ -137,7 +156,7 @@ private struct JoinFamilyViewBody: View {
                     QRCodeScannerView(onCode: onDetected)
                         .ignoresSafeArea()
                     
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .strokeBorder(.white.opacity(0.9), lineWidth: 3)
                         .frame(width: 260, height: 260)
                 }
@@ -147,8 +166,10 @@ private struct JoinFamilyViewBody: View {
                         Button("Chiudi") { onClose() }
                     }
                 }
+                .onAppear {
+                    KBLog.ui.debug("QRScannerSheet appeared")
+                }
             }
         }
     }
 }
-

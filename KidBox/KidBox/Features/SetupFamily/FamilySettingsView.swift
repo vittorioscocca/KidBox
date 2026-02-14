@@ -10,6 +10,17 @@ import FirebaseAuth
 import OSLog
 import SwiftData
 
+/// Family settings hub.
+///
+/// Responsibilities:
+/// - Shows current family summary and members list (local SwiftData).
+/// - Provides navigation to invite/join/setup routes.
+/// - Starts/stops realtime listeners for members + children while the view is visible.
+///
+/// Logging strategy (important for SwiftUI views):
+/// - Avoid logging in `body` (recomputed frequently).
+/// - Log only lifecycle transitions and user-triggered actions.
+/// - Use `KBLog.*` and keep messages short but searchable.
 struct FamilySettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
@@ -17,8 +28,8 @@ struct FamilySettingsView: View {
     @Query private var families: [KBFamily]
     @Query private var members: [KBFamilyMember]
     
-    // ⚠️ solo per compatibilità con la route .editFamily(familyId:childId:)
-    // NON renderizziamo children qui, niente card figli.
+    // ⚠️ Compatibilità con route legacy `.editFamily(familyId:childId:)`.
+    // NON renderizziamo children qui (niente card figli), li usiamo solo per ricavare un childId.
     @Query private var allChildren: [KBChild]
     
     @State private var showLeaveFamilyConfirm = false
@@ -42,17 +53,9 @@ struct FamilySettingsView: View {
             .map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         
-        if kids.isEmpty {
-            return "Nessun figlio configurato."
-        }
-        
-        if kids.count == 1 {
-            return "Figlio: \(kids[0])"
-        }
-        
-        if kids.count <= 3 {
-            return "Figli: " + kids.joined(separator: ", ")
-        }
+        if kids.isEmpty { return "Nessun figlio configurato." }
+        if kids.count == 1 { return "Figlio: \(kids[0])" }
+        if kids.count <= 3 { return "Figli: " + kids.joined(separator: ", ") }
         
         let firstThree = kids.prefix(3).joined(separator: ", ")
         return "Figli: \(firstThree) +\(kids.count - 3)"
@@ -76,20 +79,9 @@ struct FamilySettingsView: View {
             .padding()
         }
         .navigationTitle("Family")
-        .onAppear {
-            if let fid = family?.id {
-                SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
-                SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
-            }
-        }
-        .onDisappear {
-            SyncCenter.shared.stopMembersRealtime()
-            SyncCenter.shared.stopChildrenRealtime()
-        }
-        .alert(
-            "Uscire dalla famiglia?",
-            isPresented: $showLeaveFamilyConfirm
-        ) {
+        .onAppear { onAppearStartRealtime() }
+        .onDisappear { onDisappearStopRealtime() }
+        .alert("Uscire dalla famiglia?", isPresented: $showLeaveFamilyConfirm) {
             Button("Annulla", role: .cancel) { }
             Button("Esci", role: .destructive) {
                 Task { @MainActor in
@@ -104,11 +96,35 @@ struct FamilySettingsView: View {
                 """
             )
         }
-        .alert("Errore", isPresented: .constant(leaveError != nil)) {
+        .alert("Errore", isPresented: Binding(
+            get: { leaveError != nil },
+            set: { if !$0 { leaveError = nil } }
+        )) {
             Button("OK") { leaveError = nil }
         } message: {
             Text(leaveError ?? "")
         }
+    }
+    
+    // MARK: - Lifecycle (logs only here, not in body)
+    
+    @MainActor
+    private func onAppearStartRealtime() {
+        guard let fid = family?.id else {
+            KBLog.navigation.debug("FamilySettingsView appeared (no family)")
+            return
+        }
+        
+        KBLog.navigation.info("FamilySettingsView appeared familyId=\(fid, privacy: .public) start realtime (members+children)")
+        SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
+        SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
+    }
+    
+    @MainActor
+    private func onDisappearStopRealtime() {
+        KBLog.navigation.debug("FamilySettingsView disappeared stop realtime (members+children)")
+        SyncCenter.shared.stopMembersRealtime()
+        SyncCenter.shared.stopChildrenRealtime()
     }
     
     // MARK: - UI
@@ -135,8 +151,9 @@ struct FamilySettingsView: View {
             trailingAction: {
                 guard let family else { return }
                 
+                KBLog.navigation.debug("FamilySettingsView: tap editFamily familyId=\(family.id, privacy: .public)")
+                
                 // Route legacy: richiede childId.
-                // Qui passiamo un childId disponibile se c’è, altrimenti stringa vuota.
                 coordinator.navigate(
                     to: .editFamily(
                         familyId: family.id,
@@ -198,7 +215,10 @@ struct FamilySettingsView: View {
                 subtitle: "Genera un codice e condividilo.",
                 systemImage: "qrcode",
                 style: .primary,
-                action: { coordinator.navigate(to: .inviteCode) }
+                action: {
+                    KBLog.navigation.debug("FamilySettingsView: tap inviteCode")
+                    coordinator.navigate(to: .inviteCode)
+                }
             )
             
             KBSettingsCard(
@@ -206,7 +226,10 @@ struct FamilySettingsView: View {
                 subtitle: "Usa un codice se vuoi unirti a un’altra famiglia.",
                 systemImage: "key.fill",
                 style: .secondary,
-                action: { coordinator.navigate(to: .joinFamily) }
+                action: {
+                    KBLog.navigation.debug("FamilySettingsView: tap joinFamily")
+                    coordinator.navigate(to: .joinFamily)
+                }
             )
         }
     }
@@ -218,6 +241,8 @@ struct FamilySettingsView: View {
             systemImage: "rectangle.portrait.and.arrow.right",
             style: .danger,
             action: {
+                guard let fid = family?.id else { return }
+                KBLog.navigation.info("FamilySettingsView: tap leave familyId=\(fid, privacy: .public)")
                 showLeaveFamilyConfirm = true
             }
         )
@@ -240,7 +265,10 @@ struct FamilySettingsView: View {
                 subtitle: "Sei il primo genitore su questo account.",
                 systemImage: "plus.circle.fill",
                 style: .primary,
-                action: { coordinator.navigate(to: .setupFamily) }
+                action: {
+                    KBLog.navigation.debug("FamilySettingsView: tap setupFamily")
+                    coordinator.navigate(to: .setupFamily)
+                }
             )
             
             KBSettingsCard(
@@ -248,21 +276,37 @@ struct FamilySettingsView: View {
                 subtitle: "Se l’altro genitore ha già creato la famiglia, inserisci il codice.",
                 systemImage: "key.fill",
                 style: .secondary,
-                action: { coordinator.navigate(to: .joinFamily) }
+                action: {
+                    KBLog.navigation.debug("FamilySettingsView: tap joinFamily (no family)")
+                    coordinator.navigate(to: .joinFamily)
+                }
             )
         }
     }
     
     // MARK: - Actions
     
+    /// Leaves the current family.
+    ///
+    /// Expected side effects:
+    /// - Local data for that family is removed from this device (by `FamilyLeaveService`).
+    /// - UI navigates back to root.
+    ///
+    /// Logging:
+    /// - Info on start + success, error on failure.
+    @MainActor
     private func leaveFamily() async {
         guard let familyId = family?.id else { return }
+        
+        KBLog.sync.info("FamilySettingsView: leaving familyId=\(familyId, privacy: .public)")
         
         do {
             let service = FamilyLeaveService(modelContext: modelContext)
             try await service.leaveFamily(familyId: familyId)
+            KBLog.sync.info("FamilySettingsView: leave OK familyId=\(familyId, privacy: .public)")
             coordinator.resetToRoot()
         } catch {
+            KBLog.sync.error("FamilySettingsView: leave FAILED familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
             leaveError = error.localizedDescription
         }
     }

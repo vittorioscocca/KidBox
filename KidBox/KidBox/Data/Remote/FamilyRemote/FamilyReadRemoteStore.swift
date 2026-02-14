@@ -7,19 +7,25 @@
 
 import Foundation
 import FirebaseFirestore
+import OSLog
 
+// MARK: - Remote read models
+
+/// Minimal family snapshot read from Firestore.
 struct RemoteFamilyRead {
     let id: String
     let name: String
     let ownerUid: String
 }
 
+/// Minimal child snapshot read from Firestore.
 struct RemoteChildRead {
     let id: String
     let name: String
     let birthDate: Date?
 }
 
+/// Routine snapshot read from Firestore.
 struct RemoteRoutineRead {
     let id: String
     let childId: String
@@ -31,6 +37,7 @@ struct RemoteRoutineRead {
     let isDeleted: Bool
 }
 
+/// Todo snapshot read from Firestore.
 struct RemoteTodoRead {
     let id: String
     let childId: String
@@ -45,6 +52,7 @@ struct RemoteTodoRead {
     let isDeleted: Bool
 }
 
+/// Event snapshot read from Firestore.
 struct RemoteEventRead {
     let id: String
     let childId: String
@@ -58,39 +66,93 @@ struct RemoteEventRead {
     let isDeleted: Bool
 }
 
+// MARK: - Remote store
+
+/// Read-only remote store for fetching a family's "bundle" from Firestore.
+///
+/// Responsibilities:
+/// - Fetch the family root document
+/// - Fetch children
+/// - Fetch routines
+/// - Fetch todos (filtered to `isDeleted == false`)
+/// - Fetch events
+///
+/// Notes:
+/// - This layer performs best-effort decoding:
+///   rows missing required fields are skipped (`compactMap`) for collections.
+/// - `fetchFamily` throws if required fields are missing (unchanged).
 final class FamilyReadRemoteStore {
+    
     private var db: Firestore { Firestore.firestore() }
     
+    /// Fetches the family root document.
+    ///
+    /// - Throws: If the document does not exist or required fields are missing.
     func fetchFamily(familyId: String) async throws -> RemoteFamilyRead {
-        let snap = try await db.collection("families").document(familyId).getDocument()
+        KBLog.sync.kbInfo("fetchFamily started familyId=\(familyId)")
+        
+        let snap = try await db.collection("families")
+            .document(familyId)
+            .getDocument()
+        
         guard let data = snap.data(),
               let name = data["name"] as? String,
               let ownerUid = data["ownerUid"] as? String
-        else { throw NSError(domain: "KidBox", code: -10) }
+        else {
+            KBLog.sync.kbError("fetchFamily failed: missing fields familyId=\(familyId)")
+            throw NSError(domain: "KidBox", code: -10)
+        }
         
+        KBLog.sync.kbInfo("fetchFamily completed familyId=\(familyId)")
         return .init(id: familyId, name: name, ownerUid: ownerUid)
     }
     
+    /// Fetches all children documents under a family.
+    ///
+    /// - Returns: Array of decoded children. Invalid rows are skipped.
     func fetchChildren(familyId: String) async throws -> [RemoteChildRead] {
-        let qs = try await db.collection("families").document(familyId).collection("children").getDocuments()
-        return qs.documents.compactMap { doc in
+        KBLog.sync.kbInfo("fetchChildren started familyId=\(familyId)")
+        
+        let qs = try await db.collection("families")
+            .document(familyId)
+            .collection("children")
+            .getDocuments()
+        
+        let items: [RemoteChildRead] = qs.documents.compactMap { doc in
             let d = doc.data()
             guard let name = d["name"] as? String else { return nil }
             let birth = (d["birthDate"] as? Timestamp)?.dateValue()
-            return .init(id: doc.documentID, name: name, birthDate: birth)
+            
+            return RemoteChildRead(
+                id: doc.documentID,
+                name: name,
+                birthDate: birth
+            )
         }
+        
+        KBLog.sync.kbInfo("fetchChildren completed familyId=\(familyId) count=\(items.count)")
+        return items
     }
     
+    /// Fetches all routines documents under a family.
+    ///
+    /// - Returns: Array of decoded routines. Invalid rows are skipped.
     func fetchRoutines(familyId: String) async throws -> [RemoteRoutineRead] {
-        let qs = try await db.collection("families").document(familyId).collection("routines").getDocuments()
-        return qs.documents.compactMap { doc in
+        KBLog.sync.kbInfo("fetchRoutines started familyId=\(familyId)")
+        
+        let qs = try await db.collection("families")
+            .document(familyId)
+            .collection("routines")
+            .getDocuments()
+        
+        let items: [RemoteRoutineRead] = qs.documents.compactMap { doc in
             let d = doc.data()
             guard
                 let childId = d["childId"] as? String,
                 let title = d["title"] as? String
             else { return nil }
             
-            return .init(
+            return RemoteRoutineRead(
                 id: doc.documentID,
                 childId: childId,
                 title: title,
@@ -101,23 +163,31 @@ final class FamilyReadRemoteStore {
                 isDeleted: (d["isDeleted"] as? Bool) ?? false
             )
         }
+        
+        KBLog.sync.kbInfo("fetchRoutines completed familyId=\(familyId) count=\(items.count)")
+        return items
     }
     
+    /// Fetches todos documents under a family where `isDeleted == false`.
+    ///
+    /// - Returns: Array of decoded todos. Invalid rows are skipped.
     func fetchTodos(familyId: String) async throws -> [RemoteTodoRead] {
+        KBLog.sync.kbInfo("fetchTodos started familyId=\(familyId)")
+        
         let qs = try await db.collection("families")
             .document(familyId)
             .collection("todos")
             .whereField("isDeleted", isEqualTo: false)
             .getDocuments()
         
-        return qs.documents.compactMap { doc in
+        let items: [RemoteTodoRead] = qs.documents.compactMap { doc in
             let d = doc.data()
             guard
                 let childId = d["childId"] as? String,
                 let title = d["title"] as? String
             else { return nil }
             
-            return .init(
+            return RemoteTodoRead(
                 id: doc.documentID,
                 childId: childId,
                 title: title,
@@ -131,11 +201,23 @@ final class FamilyReadRemoteStore {
                 isDeleted: (d["isDeleted"] as? Bool) ?? false
             )
         }
+        
+        KBLog.sync.kbInfo("fetchTodos completed familyId=\(familyId) count=\(items.count)")
+        return items
     }
     
+    /// Fetches all events documents under a family.
+    ///
+    /// - Returns: Array of decoded events. Invalid rows are skipped.
     func fetchEvents(familyId: String) async throws -> [RemoteEventRead] {
-        let qs = try await db.collection("families").document(familyId).collection("events").getDocuments()
-        return qs.documents.compactMap { doc in
+        KBLog.sync.kbInfo("fetchEvents started familyId=\(familyId)")
+        
+        let qs = try await db.collection("families")
+            .document(familyId)
+            .collection("events")
+            .getDocuments()
+        
+        let items: [RemoteEventRead] = qs.documents.compactMap { doc in
             let d = doc.data()
             guard
                 let childId = d["childId"] as? String,
@@ -144,7 +226,7 @@ final class FamilyReadRemoteStore {
                 let startAt = (d["startAt"] as? Timestamp)?.dateValue()
             else { return nil }
             
-            return .init(
+            return RemoteEventRead(
                 id: doc.documentID,
                 childId: childId,
                 type: type,
@@ -157,5 +239,8 @@ final class FamilyReadRemoteStore {
                 isDeleted: (d["isDeleted"] as? Bool) ?? false
             )
         }
+        
+        KBLog.sync.kbInfo("fetchEvents completed familyId=\(familyId) count=\(items.count)")
+        return items
     }
 }

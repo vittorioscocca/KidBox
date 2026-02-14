@@ -9,7 +9,18 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 import CryptoKit
+internal import os
 
+/// Setup / modifica della famiglia.
+///
+/// Modalità:
+/// - `.create`: crea una nuova famiglia + almeno 1 figlio (draft), genera e salva la master key.
+/// - `.edit`: modifica il nome famiglia e gestisce i figli (lista + aggiungi/elimina).
+///
+/// Note importanti:
+/// - Niente `print`: usa `KBLog` (e log solo in punti “stabili”, non nel `body`).
+/// - In view SwiftUI, evitare log in computed properties che vengono rivalutati spesso.
+/// - La logica non cambia: sostituzione `print` -> log, più commenti e piccoli guard rail (senza cambiare flusso).
 struct SetupFamilyView: View {
     enum Mode {
         case create
@@ -38,6 +49,7 @@ struct SetupFamilyView: View {
     
     @State private var isBusy = false
     @State private var errorText: String?
+    @State private var didHydrate = false
     
     init(mode: Mode = .create) {
         self.mode = mode
@@ -86,14 +98,20 @@ struct SetupFamilyView: View {
             .padding()
         }
         .navigationTitle(navTitle)
-        .onAppear { hydrateIfNeeded() }
         .onAppear {
+            hydrateIfNeeded()
+            
+            // children realtime solo in edit mode (come prima)
             if case let .edit(family, _) = mode {
+                KBLog.sync.info("SetupFamilyView appear (edit) familyId=\(family.id, privacy: .public)")
                 SyncCenter.shared.startChildrenRealtime(familyId: family.id, modelContext: modelContext)
+            } else {
+                KBLog.sync.info("SetupFamilyView appear (create)")
             }
         }
         .onDisappear {
             if case .edit = mode {
+                KBLog.sync.info("SetupFamilyView disappear -> stopChildrenRealtime")
                 SyncCenter.shared.stopChildrenRealtime()
             }
         }
@@ -168,6 +186,7 @@ struct SetupFamilyView: View {
         return nil
     }
     
+    /// In edit mode, i figli derivano dalla query globale filtrata per familyId.
     private var childrenForEditFamily: [KBChild] {
         guard let fid = familyIdInEdit else { return [] }
         return allChildren
@@ -228,6 +247,7 @@ struct SetupFamilyView: View {
                     .swipeActions {
                         if drafts.count > 1 {
                             Button(role: .destructive) {
+                                KBLog.data.info("SetupFamilyView: remove draft childDraftId=\(d.id, privacy: .public)")
                                 removeDraft(id: d.id)
                             } label: {
                                 Label("Elimina", systemImage: "trash")
@@ -238,7 +258,10 @@ struct SetupFamilyView: View {
                 
                 Divider().padding(.vertical, 6)
                 
-                Button(action: addDraft) {
+                Button(action: {
+                    KBLog.data.info("SetupFamilyView: add draft")
+                    addDraft()
+                }) {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
                         Text("Aggiungi figlio")
@@ -271,6 +294,9 @@ struct SetupFamilyView: View {
                 } else {
                     ForEach(rows, id: \.id) { r in
                         Button {
+                            KBLog.navigation.info(
+                                "SetupFamilyView: open EditChild familyId=\(family.id, privacy: .public) childId=\(r.id, privacy: .public)"
+                            )
                             coordinator.navigate(to: .editChild(familyId: family.id, childId: r.id))
                         } label: {
                             HStack(spacing: 10) {
@@ -299,6 +325,9 @@ struct SetupFamilyView: View {
                         .buttonStyle(.plain)
                         .swipeActions {
                             Button(role: .destructive) {
+                                KBLog.data.info(
+                                    "SetupFamilyView: delete child requested familyId=\(family.id, privacy: .public) childId=\(r.id, privacy: .public)"
+                                )
                                 deleteChild(by: r.id, familyId: family.id)
                             } label: {
                                 Label("Elimina", systemImage: "trash")
@@ -310,6 +339,7 @@ struct SetupFamilyView: View {
                 Divider().padding(.vertical, 6)
                 
                 Button {
+                    KBLog.data.info("SetupFamilyView: create empty child then open edit familyId=\(family.id, privacy: .public)")
                     createChildAndOpenEdit(familyId: family.id)
                 } label: {
                     HStack(spacing: 10) {
@@ -331,9 +361,15 @@ struct SetupFamilyView: View {
     
     // MARK: - Hydrate
     
+    /// In edit mode inizializza i campi UI una sola volta.
+    /// Non loggare nel `body`: qui è un punto stabile.
     private func hydrateIfNeeded() {
+        guard !didHydrate else { return }
+        didHydrate = true
+        
         guard case let .edit(family, _) = mode else { return }
         familyName = family.name
+        KBLog.data.info("SetupFamilyView hydrate (edit) familyId=\(family.id, privacy: .public)")
     }
     
     // MARK: - Actions
@@ -346,22 +382,31 @@ struct SetupFamilyView: View {
         
         switch mode {
         case .create:
+            KBLog.data.info("SetupFamilyView primaryAction: create")
             await createFamilyWithDrafts()
         case let .edit(family, _):
+            KBLog.data.info("SetupFamilyView primaryAction: update family name familyId=\(family.id, privacy: .public)")
             await updateFamilyNameOnly(family: family)
         }
     }
     
-    // ✅ FIXED: Crea famiglia + genera master key in Keychain
+    /// Crea famiglia + genera master key in Keychain + crea eventuali figli extra.
+    ///
+    /// Logica invariata:
+    /// - Usa `FamilyCreationService` per creare famiglia + primo figlio.
+    /// - Genera e salva master key subito dopo.
+    /// - Crea extra children in locale + sync remoto best-effort.
     @MainActor
     private func createFamilyWithDrafts() async {
         guard let uid = Auth.auth().currentUser?.uid else {
             errorText = "Utente non autenticato."
+            KBLog.auth.error("SetupFamilyView create: not authenticated")
             return
         }
         
         guard let first = drafts.first else {
             errorText = "Inserisci almeno un figlio."
+            KBLog.data.error("SetupFamilyView create: missing first draft")
             return
         }
         
@@ -376,20 +421,22 @@ struct SetupFamilyView: View {
             
             let familyId = created.familyId
             
-            // ✅ FIXED: Genera master key subito dopo aver creato la famiglia
-            print("🔑 Creating master key for familyId: \(familyId)")
+            // ✅ Genera master key subito dopo aver creato la famiglia (come prima, ma con log)
+            KBLog.crypto.info("Creating master key for familyId=\(familyId, privacy: .public)")
             do {
                 let masterKey = InviteCrypto.randomBytes(32)
                 let key = CryptoKit.SymmetricKey(data: masterKey)
                 try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId)
-                print("✅ Master key created and saved to Keychain!")
+                KBLog.crypto.info("Master key saved to Keychain familyId=\(familyId, privacy: .public)")
             } catch {
-                print("❌ Failed to create master key: \(error.localizedDescription)")
+                KBLog.crypto.error(
+                    "Master key creation failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                )
                 errorText = "Errore nella creazione della chiave: \(error.localizedDescription)"
                 return
             }
             
-            // create & sync extra children
+            // create & sync extra children (best effort come prima)
             let now = Date()
             for extra in drafts.dropFirst() {
                 let child = KBChild(
@@ -404,18 +451,40 @@ struct SetupFamilyView: View {
                 )
                 modelContext.insert(child)
                 
-                do { try modelContext.save() }
-                catch { /* non blocchiamo create */ }
+                do {
+                    try modelContext.save()
+                } catch {
+                    // non blocchiamo create (stessa logica: best effort)
+                    KBLog.data.error(
+                        "SetupFamilyView create: save extra child failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                    )
+                }
                 
-                Task { try? await ChildSyncService().upsert(child: child) }
+                Task {
+                    do {
+                        try await ChildSyncService().upsert(child: child)
+                        KBLog.sync.info(
+                            "SetupFamilyView create: extra child upserted childId=\(child.id, privacy: .public) familyId=\(familyId, privacy: .public)"
+                        )
+                    } catch {
+                        KBLog.sync.error(
+                            "SetupFamilyView create: extra child upsert failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                        )
+                    }
+                }
             }
             
+            KBLog.data.info("SetupFamilyView create completed familyId=\(familyId, privacy: .public)")
             dismiss()
+            
         } catch {
             errorText = error.localizedDescription
+            KBLog.data.error("SetupFamilyView create failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     
+    /// In edit mode aggiorna solo il nome famiglia e sincronizza via outbox.
+    /// Logica invariata: save locale -> enqueue -> flush -> dismiss.
     @MainActor
     private func updateFamilyNameOnly(family: KBFamily) async {
         let uid = Auth.auth().currentUser?.uid ?? "local"
@@ -427,13 +496,18 @@ struct SetupFamilyView: View {
         
         do {
             try modelContext.save()
+            KBLog.data.info("SetupFamilyView update: SwiftData save OK familyId=\(family.id, privacy: .public)")
         } catch {
             errorText = "SwiftData save failed: \(error.localizedDescription)"
+            KBLog.data.error(
+                "SetupFamilyView update: SwiftData save failed familyId=\(family.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            )
             return
         }
         
         SyncCenter.shared.enqueueFamilyBundleUpsert(familyId: family.id, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        KBLog.sync.info("SetupFamilyView update: enqueued+flush familyId=\(family.id, privacy: .public)")
         
         dismiss()
     }
@@ -455,7 +529,10 @@ struct SetupFamilyView: View {
     
     @MainActor
     private func createChildAndOpenEdit(familyId: String) {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let uid = Auth.auth().currentUser?.uid else {
+            KBLog.auth.error("SetupFamilyView create child: not authenticated")
+            return
+        }
         
         let now = Date()
         let child = KBChild(
@@ -473,12 +550,25 @@ struct SetupFamilyView: View {
         
         do {
             try modelContext.save()
+            KBLog.data.info("SetupFamilyView: local child created childId=\(child.id, privacy: .public) familyId=\(familyId, privacy: .public)")
         } catch {
             errorText = error.localizedDescription
+            KBLog.data.error(
+                "SetupFamilyView: local child create failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            )
             return
         }
         
-        Task { try? await ChildSyncService().upsert(child: child) }
+        Task {
+            do {
+                try await ChildSyncService().upsert(child: child)
+                KBLog.sync.info("SetupFamilyView: child upserted childId=\(child.id, privacy: .public)")
+            } catch {
+                KBLog.sync.error(
+                    "SetupFamilyView: child upsert failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
         
         coordinator.navigate(to: .editChild(familyId: familyId, childId: child.id))
     }
@@ -490,18 +580,29 @@ struct SetupFamilyView: View {
             if let child = try modelContext.fetch(desc).first {
                 modelContext.delete(child)
                 try modelContext.save()
+                KBLog.data.info("SetupFamilyView: local child deleted childId=\(childId, privacy: .public)")
+            } else {
+                KBLog.data.info("SetupFamilyView: child not found for delete childId=\(childId, privacy: .public)")
             }
             
             Task {
-                try? await ChildSyncService().softDeleteChild(
-                    familyId: familyId,
-                    childId: childId,
-                    updatedBy: Auth.auth().currentUser?.uid
-                )
+                do {
+                    try await ChildSyncService().softDeleteChild(
+                        familyId: familyId,
+                        childId: childId,
+                        updatedBy: Auth.auth().currentUser?.uid
+                    )
+                    KBLog.sync.info("SetupFamilyView: remote child soft-delete OK childId=\(childId, privacy: .public)")
+                } catch {
+                    KBLog.sync.error(
+                        "SetupFamilyView: remote child soft-delete failed childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                    )
+                }
             }
             
         } catch {
             errorText = error.localizedDescription
+            KBLog.data.error("SetupFamilyView: delete child failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -511,20 +612,3 @@ struct SetupFamilyView: View {
 private extension String {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
 }
-
-/*
- ✅ FIXED SUMMARY:
- 
- Nella funzione createFamilyWithDrafts(), dopo che FamilyCreationService
- crea la famiglia, ora generiamo subito la master key (32 bytes random)
- e la salviamo nel Keychain usando FamilyKeychainStore.
- 
- Questo assicura che:
- 1. Appena crei una famiglia, la master key è disponibile
- 2. Non devi fare join per uploadare documenti
- 3. Quando l'altro genitore fa join via QR, riceve la STESSA key
- 
- Log output:
- ✅ Creating master key for familyId: 684E0CAE-8A9D-4825-9CD8-03F9A3EB1C32
- ✅ Master key created and saved to Keychain!
- */

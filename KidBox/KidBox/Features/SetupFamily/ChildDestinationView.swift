@@ -8,7 +8,14 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import OSLog
 
+/// Displays the destination for editing a specific child.
+///
+/// This view resolves a `KBChild` from SwiftData by id and routes to `EditChildView`.
+/// Logging strategy:
+/// - Log only meaningful events (fetch success/failure).
+/// - Avoid noisy logs for body recomputation.
 struct ChildDestinationView: View {
     @Environment(\.modelContext) private var modelContext
     let childId: String
@@ -26,13 +33,30 @@ struct ChildDestinationView: View {
         do {
             let cid = id
             let desc = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == cid })
-            return try modelContext.fetch(desc).first
+            let child = try modelContext.fetch(desc).first
+            
+            if child == nil {
+                KBLog.data.info("ChildDestinationView: child not found id=\(cid, privacy: .public)")
+            } else {
+                KBLog.data.debug("ChildDestinationView: child resolved id=\(cid, privacy: .public)")
+            }
+            return child
         } catch {
+            KBLog.data.error("ChildDestinationView: fetch failed id=\(id, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
 }
 
+/// Allows editing a child and deleting it.
+///
+/// Persistence model:
+/// - Save: updates local SwiftData immediately, then best-effort remote upsert.
+/// - Delete: hard delete locally, then best-effort remote soft delete so other devices remove it via inbound.
+///
+/// Logging strategy:
+/// - Log user actions and outcomes (save/delete start, local save OK/failed, remote sync OK/failed).
+/// - No `print`.
 struct EditChildView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -65,7 +89,6 @@ struct EditChildView: View {
                 }
             }
             
-            // ✅ Sezione Pericolo - Elimina figlio
             Section {
                 Button(role: .destructive) {
                     showDeleteConfirm = true
@@ -86,9 +109,7 @@ struct EditChildView: View {
             "Eliminare \(child.name)?",
             isPresented: $showDeleteConfirm,
             actions: {
-                Button("Elimina", role: .destructive) {
-                    deleteChild()
-                }
+                Button("Elimina", role: .destructive) { deleteChild() }
                 Button("Annulla", role: .cancel) { }
             },
             message: {
@@ -103,42 +124,58 @@ struct EditChildView: View {
     }
     
     @MainActor private func save() {
-        // Validazione minima (opzionale ma utile)
+        let childId = child.id
+        let familyId = child.familyId ?? ""
+        KBLog.data.info("EditChildView: save requested childId=\(childId, privacy: .public) familyId=\(familyId, privacy: .public)")
+        
+        // Minimal validation.
         let trimmed = child.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             errorMessage = "Inserisci un nome."
             showError = true
+            KBLog.data.info("EditChildView: save blocked (empty name) childId=\(childId, privacy: .public)")
             return
         }
         child.name = trimmed
         
-        // Audit LWW
+        // LWW metadata.
         child.updatedAt = Date()
         
         do {
             try modelContext.save()
+            KBLog.data.info("EditChildView: local save OK childId=\(childId, privacy: .public)")
+            
+            // Remote best-effort.
             Task {
-                try? await ChildSyncService().upsert(child: child)
+                do {
+                    try await ChildSyncService().upsert(child: child)
+                    KBLog.sync.info("EditChildView: remote upsert OK childId=\(childId, privacy: .public)")
+                } catch {
+                    KBLog.sync.error("EditChildView: remote upsert FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+                }
             }
+            
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+            KBLog.data.error("EditChildView: local save FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
         }
     }
     
-    // ✅ NEW: Eliminazione con sync remoto
     @MainActor private func deleteChild() {
+        let childId = child.id
+        let familyId = child.familyId ?? ""
+        let updatedBy = Auth.auth().currentUser?.uid
+        KBLog.data.info("EditChildView: delete requested childId=\(childId, privacy: .public) familyId=\(familyId, privacy: .public)")
+        
         do {
-            let childId = child.id
-            let familyId = child.familyId ?? ""
-            let updatedBy = Auth.auth().currentUser?.uid
-            
-            // 1) Hard delete locale
+            // 1) Hard delete local.
             modelContext.delete(child)
             try modelContext.save()
+            KBLog.data.info("EditChildView: local delete OK childId=\(childId, privacy: .public)")
             
-            // 2) Soft delete remoto (async, non blocca UI)
+            // 2) Remote soft delete best-effort.
             Task {
                 do {
                     try await ChildSyncService().softDeleteChild(
@@ -146,20 +183,22 @@ struct EditChildView: View {
                         childId: childId,
                         updatedBy: updatedBy
                     )
+                    KBLog.sync.info("EditChildView: remote softDelete OK childId=\(childId, privacy: .public)")
                 } catch {
                     await MainActor.run {
                         errorMessage = "Eliminazione remota fallita: \(error.localizedDescription)"
                         showError = true
                     }
+                    KBLog.sync.error("EditChildView: remote softDelete FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
                 }
             }
             
-            // 3) Torna indietro
+            // 3) Navigate back.
             dismiss()
-            
         } catch {
             errorMessage = "Errore locale: \(error.localizedDescription)"
             showError = true
+            KBLog.data.error("EditChildView: local delete FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
         }
     }
 }

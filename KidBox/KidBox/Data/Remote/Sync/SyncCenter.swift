@@ -12,26 +12,47 @@ import Combine
 import FirebaseFirestore
 import FirebaseAuth
 
+/// Central sync orchestrator.
+///
+/// Responsibilities:
+/// - Manage realtime listeners (inbound) for entities (todos, members, documents, etc.)
+/// - Maintain an outbox (`KBSyncOp`) for offline-first outbound operations
+/// - Periodically flush pending operations (auto flush)
+/// - Apply inbound changes to local SwiftData storage
+///
+/// Notes:
+/// - `@MainActor` because it touches SwiftData `ModelContext` and is used from UI flows.
+/// - Avoid logging PII (email, photoURL, tokens).
 @MainActor
 final class SyncCenter: ObservableObject {
+    
     static let shared = SyncCenter()
     private init() {}
     
     // MARK: - Realtime (Inbound)
+    
     private var todoListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
+    
     private let membersRemote = FamilyMemberRemoteStore()
+    
     var documentsListener: ListenerRegistration?
     let documentRemote = DocumentRemoteStore()
     private let documentCategoryRemote = DocumentCategoryRemoteStore()
+    
+    /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
     
+    // MARK: - Todo Realtime
+    
+    /// Starts (or restarts) realtime listener for todos.
     func startTodoRealtime(
         familyId: String,
         childId: String,
         modelContext: ModelContext,
         remote: TodoRemoteStore
     ) {
+        KBLog.sync.kbInfo("startTodoRealtime familyId=\(familyId) childId=\(childId)")
         stopTodoRealtime()
         
         todoListener = remote.listenTodos(familyId: familyId, childId: childId) { [weak self] changes in
@@ -40,18 +61,39 @@ final class SyncCenter: ObservableObject {
         }
     }
     
+    /// Stops todo realtime listener if active.
+    func stopTodoRealtime() {
+        if todoListener != nil {
+            KBLog.sync.kbInfo("stopTodoRealtime")
+        }
+        todoListener?.remove()
+        todoListener = nil
+    }
+    
+    // MARK: - Local wipe guard
+    
+    /// Signals that a local wipe is in progress. Sync should not resurrect data.
     func beginLocalWipe() {
+        KBLog.sync.kbInfo("beginLocalWipe")
         isWipingLocalData = true
     }
     
+    /// Signals that a local wipe has finished.
     func endLocalWipe() {
+        KBLog.sync.kbInfo("endLocalWipe")
         isWipingLocalData = false
     }
     
+    // MARK: - Members Realtime
+    
+    /// Starts (or restarts) realtime listener for family members.
+    ///
+    /// Also attempts a best-effort upsert of the current user's profile fields on Firestore.
     func startMembersRealtime(familyId: String, modelContext: ModelContext) {
+        KBLog.sync.kbInfo("startMembersRealtime familyId=\(familyId)")
         stopMembersRealtime()
         
-        // prova a valorizzare il profilo “io” lato firestore (non blocca)
+        // Best-effort: populate "my" profile on Firestore (non-blocking)
         Task { [familyId] in
             await membersRemote.upsertMyMemberProfileIfNeeded(familyId: familyId)
         }
@@ -64,23 +106,38 @@ final class SyncCenter: ObservableObject {
         }
     }
     
+    /// Stops members realtime listener if active.
     func stopMembersRealtime() {
+        if membersListener != nil {
+            KBLog.sync.kbInfo("stopMembersRealtime")
+        }
         membersListener?.remove()
         membersListener = nil
     }
     
-    @MainActor
+    /// Applies inbound member changes into SwiftData using LWW semantics.
+    ///
+    /// Behavior (unchanged):
+    /// - Loads all local members for `familyId`
+    /// - Upserts by id
+    /// - Soft-delete remote => hard-delete local
+    /// - Firestore remove => delete local row
+    /// - If current user is removed, stop listeners (members/todo/documents)
     private func applyMembersInbound(
         familyId: String,
         changes: [FamilyMemberRemoteChange],
         modelContext: ModelContext
     ) {
+        KBLog.sync.kbDebug("applyMembersInbound changes=\(changes.count) familyId=\(familyId)")
+        
         do {
-            // 1️⃣ carica tutti i membri locali per familyId
             let fid = familyId
+            
+            // 1) Load local members for the family
             let allLocal = try modelContext.fetch(
                 FetchDescriptor<KBFamilyMember>(predicate: #Predicate { $0.familyId == fid })
             )
+            
             var localById: [String: KBFamilyMember] = [:]
             allLocal.forEach { localById[$0.id] = $0 }
             
@@ -89,13 +146,10 @@ final class SyncCenter: ObservableObject {
             for change in changes {
                 switch change {
                     
-                    // ─────────────────────────────
-                    // UPSERT
-                    // ─────────────────────────────
                 case .upsert(let dto):
                     seenIds.insert(dto.id)
                     
-                    // 🔥 SOFT DELETE → HARD DELETE LOCALE
+                    // Soft-delete remote => delete local
                     if dto.isDeleted {
                         if let local = localById[dto.id] {
                             modelContext.delete(local)
@@ -134,42 +188,37 @@ final class SyncCenter: ObservableObject {
                         modelContext.insert(m)
                     }
                     
-                    // ─────────────────────────────
-                    // REMOVE (Firestore remove)
-                    // ─────────────────────────────
                 case .remove(let id):
                     seenIds.insert(id)
                     
                     if let local = localById[id] {
                         let removedUserId = local.userId
-                        let familyId = local.familyId
+                        let famId = local.familyId
                         modelContext.delete(local)
                         
-                        // ⚠️ se sono io che sono stato rimosso
+                        // If I'm removed: stop listeners to avoid resurrecting
                         if removedUserId == Auth.auth().currentUser?.uid {
-                            KBLog.sync.info(
-                                "Current user removed from family \(familyId, privacy: .public)"
-                            )
+                            KBLog.sync.kbInfo("Current user removed from family familyId=\(famId)")
                             
                             stopMembersRealtime()
                             stopTodoRealtime()
+                            
+                            if documentsListener != nil {
+                                KBLog.sync.kbInfo("Stopping documentsListener due to removal")
+                            }
                             documentsListener?.remove()
                             documentsListener = nil
                         }
                     }
                 }
             }
+            
             try modelContext.save()
+            KBLog.sync.kbDebug("applyMembersInbound saved localMembers=\(allLocal.count) changes=\(changes.count)")
+            
         } catch {
-            KBLog.sync.error(
-                "applyMembersInbound failed: \(error.localizedDescription, privacy: .public)"
-            )
+            KBLog.sync.kbError("applyMembersInbound failed: \(error.localizedDescription)")
         }
-    }
-    
-    func stopTodoRealtime() {
-        todoListener?.remove()
-        todoListener = nil
     }
     
     // MARK: - Remotes (default)
@@ -180,8 +229,16 @@ final class SyncCenter: ObservableObject {
     
     private var flushTask: Task<Void, Never>?
     
+    /// Immediately flushes all pending outbox operations (best-effort).
+    ///
+    /// Behavior (unchanged):
+    /// - Cancels any ongoing flushTask
+    /// - Fetches ops eligible for retry (`nextRetryAt <= now`) ordered by `createdAt`
+    /// - Processes ops sequentially
     func flushGlobal(modelContext: ModelContext) {
+        KBLog.sync.kbInfo("flushGlobal requested")
         flushTask?.cancel()
+        
         flushTask = Task { [weak self] in
             guard let self else { return }
             
@@ -193,22 +250,26 @@ final class SyncCenter: ObservableObject {
                 )
                 
                 let ops = try modelContext.fetch(desc)
-                print("🔄 Flushing \(ops.count) operations")
+                KBLog.sync.kbInfo("flushGlobal ops=\(ops.count)")
                 
                 for op in ops {
-                    print("   - Processing: \(op.entityTypeRaw) \(op.opType) \(op.entityId)")
+                    KBLog.sync.kbDebug("Processing op entity=\(op.entityTypeRaw) opType=\(op.opType) id=\(op.entityId)")
                     await self.process(op: op, modelContext: modelContext, remote: self.todoRemote)
                 }
                 
-                print("✅ Flush complete")
+                KBLog.sync.kbInfo("flushGlobal completed")
+                
             } catch {
-                print("❌ Flush failed: \(error.localizedDescription)")
+                KBLog.sync.kbError("flushGlobal failed: \(error.localizedDescription)")
             }
         }
     }
     
+    /// Starts a periodic auto flush loop (~30s).
     func startAutoFlush(modelContext: ModelContext) {
+        KBLog.sync.kbInfo("startAutoFlush")
         flushTask?.cancel()
+        
         flushTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
@@ -218,7 +279,9 @@ final class SyncCenter: ObservableObject {
         }
     }
     
+    /// Stops the auto flush loop.
     func stopAutoFlush() {
+        KBLog.sync.kbInfo("stopAutoFlush")
         flushTask?.cancel()
         flushTask = nil
     }
@@ -228,6 +291,7 @@ final class SyncCenter: ObservableObject {
     private var isFlushing = false
     
     func enqueueTodoUpsert(todoId: String, familyId: String, modelContext: ModelContext) {
+        KBLog.sync.kbDebug("enqueueTodoUpsert familyId=\(familyId) todoId=\(todoId)")
         upsertOp(
             familyId: familyId,
             entityType: SyncEntityType.todo.rawValue,
@@ -238,6 +302,7 @@ final class SyncCenter: ObservableObject {
     }
     
     func enqueueTodoDelete(todoId: String, familyId: String, modelContext: ModelContext) {
+        KBLog.sync.kbDebug("enqueueTodoDelete familyId=\(familyId) todoId=\(todoId)")
         upsertOp(
             familyId: familyId,
             entityType: SyncEntityType.todo.rawValue,
@@ -247,6 +312,11 @@ final class SyncCenter: ObservableObject {
         )
     }
     
+    /// Upserts (or replaces) a pending sync operation in the outbox.
+    ///
+    /// Behavior (unchanged):
+    /// - If an op for same (familyId, entityType, entityId) exists => update its opType and reset retry state.
+    /// - Else insert a new KBSyncOp.
     func upsertOp(
         familyId: String,
         entityType: String,
@@ -268,6 +338,7 @@ final class SyncCenter: ObservableObject {
                 existing.attempts = 0
                 existing.lastError = nil
                 existing.nextRetryAt = Date()
+                KBLog.sync.kbDebug("Updated existing op entity=\(et) id=\(eid) opType=\(opType)")
             } else {
                 let op = KBSyncOp(
                     familyId: familyId,
@@ -276,16 +347,23 @@ final class SyncCenter: ObservableObject {
                     opType: opType
                 )
                 modelContext.insert(op)
+                KBLog.sync.kbDebug("Inserted new op entity=\(et) id=\(eid) opType=\(opType)")
             }
             
             try modelContext.save()
+            
         } catch {
-            KBLog.sync.error("enqueue op failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("enqueue op failed: \(error.localizedDescription)")
         }
     }
     
+    /// Flushes outbox operations (guarded to avoid re-entrancy).
     func flush(modelContext: ModelContext, remote: TodoRemoteStore) async {
-        guard !isFlushing else { return }
+        guard !isFlushing else {
+            KBLog.sync.kbDebug("flush skipped (already flushing)")
+            return
+        }
+        
         isFlushing = true
         defer { isFlushing = false }
         
@@ -297,14 +375,24 @@ final class SyncCenter: ObservableObject {
             )
             
             let ops = try modelContext.fetch(desc)
+            if !ops.isEmpty {
+                KBLog.sync.kbDebug("flush ops=\(ops.count)")
+            }
+            
             for op in ops {
                 await process(op: op, modelContext: modelContext, remote: remote)
             }
+            
         } catch {
-            KBLog.sync.error("flush fetch failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("flush fetch failed: \(error.localizedDescription)")
         }
     }
     
+    /// Processes a single outbox operation.
+    ///
+    /// Behavior (unchanged):
+    /// - On success: delete op, save, update lastSyncAt, clear lastSyncError.
+    /// - On failure: increment attempts, set lastError, schedule retry with backoff, update lastSyncError.
     private func process(op: KBSyncOp, modelContext: ModelContext, remote: TodoRemoteStore) async {
         do {
             switch op.entityTypeRaw {
@@ -329,11 +417,11 @@ final class SyncCenter: ObservableObject {
                               userInfo: [NSLocalizedDescriptionKey: "Unknown entityType: \(op.entityTypeRaw)"])
             }
             
-            // ok -> remove op
             modelContext.delete(op)
             try modelContext.save()
-            
             try updateFamilyLastSyncAt(familyId: op.familyId, modelContext: modelContext, error: nil)
+            
+            KBLog.sync.kbDebug("sync op OK entity=\(op.entityTypeRaw) opType=\(op.opType) id=\(op.entityId)")
             
         } catch {
             op.attempts += 1
@@ -343,10 +431,13 @@ final class SyncCenter: ObservableObject {
             
             try? updateFamilyLastSyncAt(familyId: op.familyId, modelContext: modelContext, error: op.lastError)
             
-            KBLog.sync.error("sync op failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("sync op failed entity=\(op.entityTypeRaw) opType=\(op.opType) id=\(op.entityId) err=\(error.localizedDescription)")
         }
     }
     
+    /// Processes a Todo outbox operation.
+    ///
+    /// Behavior unchanged.
     private func processTodo(op: KBSyncOp, modelContext: ModelContext, remote: TodoRemoteStore) async throws {
         let tid = op.entityId
         let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == tid })
@@ -409,6 +500,7 @@ final class SyncCenter: ObservableObject {
     
     // MARK: - Pull incremental (updatedAt > lastSyncAt)
     
+    /// Pulls todos updated since last sync, applies LWW to local, and updates lastSyncAt.
     func pullTodoIncremental(
         familyId: String,
         childId: String,
@@ -416,10 +508,13 @@ final class SyncCenter: ObservableObject {
         remote: TodoRemoteStore? = nil
     ) async {
         let remote = remote ?? todoRemote
+        KBLog.sync.kbInfo("pullTodoIncremental started familyId=\(familyId) childId=\(childId)")
         
         do {
             let since = try fetchFamilyLastSyncAt(familyId: familyId, modelContext: modelContext) ?? .distantPast
             let dtos = try await remote.fetchTodosUpdatedSince(familyId: familyId, childId: childId, since: since)
+            
+            KBLog.sync.kbDebug("pullTodoIncremental dtos=\(dtos.count)")
             
             for dto in dtos {
                 let todo = try fetchOrCreateTodo(id: dto.id, modelContext: modelContext)
@@ -442,15 +537,24 @@ final class SyncCenter: ObservableObject {
             try modelContext.save()
             try updateFamilyLastSyncAt(familyId: familyId, modelContext: modelContext, error: nil)
             
+            KBLog.sync.kbInfo("pullTodoIncremental completed familyId=\(familyId)")
+            
         } catch {
-            KBLog.sync.error("pull incremental failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("pullTodoIncremental failed: \(error.localizedDescription)")
             try? updateFamilyLastSyncAt(familyId: familyId, modelContext: modelContext, error: error.localizedDescription)
         }
     }
     
     // MARK: - Apply inbound (Realtime)
     
+    /// Applies realtime Todo changes to local SwiftData.
+    ///
+    /// Behavior unchanged.
     private func applyTodoInbound(changes: [TodoRemoteChange], modelContext: ModelContext) {
+        if !changes.isEmpty {
+            KBLog.sync.kbDebug("applyTodoInbound changes=\(changes.count)")
+        }
+        
         do {
             for change in changes {
                 switch change {
@@ -472,7 +576,7 @@ final class SyncCenter: ObservableObject {
                     }
                     
                 case .remove(let id):
-                    // Usually unused (you soft-delete), but keep it safe.
+                    // Usually unused (soft delete), but keep safe.
                     if let existing = try fetchTodo(id: id, modelContext: modelContext) {
                         modelContext.delete(existing)
                     }
@@ -480,8 +584,9 @@ final class SyncCenter: ObservableObject {
             }
             
             try modelContext.save()
+            
         } catch {
-            KBLog.sync.error("Realtime apply failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("Realtime applyTodoInbound failed: \(error.localizedDescription)")
         }
     }
     
@@ -524,6 +629,12 @@ final class SyncCenter: ObservableObject {
 // MARK: - Remote incremental fetch (same file => can access private db)
 
 extension TodoRemoteStore {
+    
+    /// Fetches todos updated after a given date (server-side filter on updatedAt).
+    ///
+    /// Notes:
+    /// - Uses `Timestamp(date: since)` comparison.
+    /// - Decodes documents into `TodoRemoteDTO`.
     func fetchTodosUpdatedSince(familyId: String, childId: String, since: Date) async throws -> [TodoRemoteDTO] {
         let snap = try await db.collection("families")
             .document(familyId)
@@ -549,13 +660,18 @@ extension TodoRemoteStore {
 }
 
 extension SyncCenter {
+    
+    /// Internal subject used to notify UI or view models that documents changed for a family.
     private static var _docsChanged = PassthroughSubject<String, Never>()
     
+    /// Public publisher for document changes.
     var docsChanged: AnyPublisher<String, Never> {
         Self._docsChanged.eraseToAnyPublisher()
     }
     
+    /// Emits a document-changed signal for a family.
     func emitDocsChanged(familyId: String) {
+        KBLog.sync.kbDebug("emitDocsChanged familyId=\(familyId)")
         Self._docsChanged.send(familyId)
     }
 }

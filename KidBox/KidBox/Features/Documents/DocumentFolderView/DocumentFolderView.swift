@@ -14,6 +14,7 @@ import UniformTypeIdentifiers
 import UIKit
 import Combine
 import PhotosUI
+internal import os
 
 struct DocumentFolderView: View {
     
@@ -269,14 +270,6 @@ struct DocumentFolderView: View {
                 .navigationTitle(view.folderTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .onAppear {
-                    do {
-                        let baseDir = try DocumentLocalCache.baseDir()
-                        try FileManager.default.removeItem(at: baseDir)
-                        print("🗑️ Cache cleaned")
-                    } catch {
-                        print("⚠️ Cache cleanup failed: \(error)")
-                    }
-                    
                     view.viewModel.bind(modelContext: view.modelContext)
                     view.viewModel.startObservingChanges()
                     view.viewModel.reload()
@@ -499,10 +492,17 @@ struct DocumentFolderView: View {
             try? FileManager.default.removeItem(at: tmpURL)
             viewModel.reload()
             
+            // ✅ AGGIUNGI QUESTO
+            if ok {
+                KBLog.data.info("Camera upload: flushing outbox")
+                SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            }
+            
         } catch {
             viewModel.isUploading = false
             viewModel.uploadCurrentName = ""
             viewModel.errorText = error.localizedDescription
+            KBLog.data.error("uploadCameraImage failed: \(error.localizedDescription)")
         }
     }
     

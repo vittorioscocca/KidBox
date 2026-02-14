@@ -14,6 +14,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
 import PhotosUI
+internal import os
 
 @MainActor
 final class DocumentFolderViewModel: ObservableObject {
@@ -31,6 +32,7 @@ final class DocumentFolderViewModel: ObservableObject {
     @Published var layout: DocumentFolderView.LayoutMode = .grid
     
     @Published var isUploading: Bool = false
+    
     // MARK: - Download state (preview)
     @Published var isDownloading: Bool = false
     @Published var downloadProgress: Double = 0        // 0...1
@@ -52,7 +54,7 @@ final class DocumentFolderViewModel: ObservableObject {
     // preview
     @Published var previewURL: URL?
     
-    //Photo Library
+    // Photo Library
     @Published var showPhotoLibrary = false
     @Published var photoItems: [PhotosPickerItem] = []
     
@@ -67,7 +69,6 @@ final class DocumentFolderViewModel: ObservableObject {
     enum NameSortOrder {
         case asc
         case desc
-        
         mutating func toggle() { self = (self == .asc) ? .desc : .asc }
     }
     
@@ -92,11 +93,15 @@ final class DocumentFolderViewModel: ObservableObject {
     init(familyId: String, folderId: String?) {
         self.familyId = familyId
         self.folderId = folderId
+        KBLog.data.debug("DocumentFolderVM init familyId=\(familyId, privacy: .public) folderId=\((folderId ?? "nil"), privacy: .public)")
     }
     
     func bind(modelContext: ModelContext) {
         self.modelContext = modelContext
+        KBLog.data.debug("DocumentFolderVM bind modelContext set")
     }
+    
+    // MARK: - Sorting
     
     private func applyNameSort() {
         let isAsc = (nameSortOrder == .asc)
@@ -117,25 +122,32 @@ final class DocumentFolderViewModel: ObservableObject {
         do {
             folders = try fetchFolders(modelContext: modelContext)
             docs = try fetchDocs(modelContext: modelContext)
-            applyNameSort() // ✅ qui
+            applyNameSort()
+            KBLog.data.debug("DocumentFolderVM reload ok folders=\(self.folders.count) docs=\(self.docs.count)")
         } catch {
             errorText = error.localizedDescription
+            KBLog.data.error("DocumentFolderVM reload failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     
     func toggleNameSort() {
         nameSortOrder.toggle()
         applyNameSort()
+        KBLog.data.debug("DocumentFolderVM toggleNameSort -> \(self.nameSortOrder == .asc ? "asc" : "desc", privacy: .public)")
     }
+    
+    // MARK: - Selection mode
     
     func enterSelectionMode() {
         isSelecting = true
         selectedItems.removeAll()
+        KBLog.data.debug("DocumentFolderVM enterSelectionMode")
     }
     
     func exitSelectionMode() {
         isSelecting = false
         selectedItems.removeAll()
+        KBLog.data.debug("DocumentFolderVM exitSelectionMode")
     }
     
     func toggleSelection(_ item: SelectionItem) {
@@ -144,14 +156,20 @@ final class DocumentFolderViewModel: ObservableObject {
         } else {
             selectedItems.insert(item)
         }
+        KBLog.data.debug("DocumentFolderVM toggleSelection selected=\(self.selectedItems.count)")
     }
     
     func isSelected(_ item: SelectionItem) -> Bool {
         selectedItems.contains(item)
     }
     
+    // MARK: - Photo library upload
     func handlePhotoLibrarySelection(_ items: [PhotosPickerItem]) async {
         guard !items.isEmpty else { return }
+        
+        guard let modelContext else { return }
+        
+        KBLog.data.info("PhotoLibrarySelection start count=\(items.count)")
         
         isUploading = true
         uploadTotal = items.count
@@ -186,6 +204,7 @@ final class DocumentFolderViewModel: ObservableObject {
             } catch {
                 uploadFailures += 1
                 uploadDone += 1
+                KBLog.data.error("PhotoLibrarySelection: error=\(error.localizedDescription)")
             }
         }
         
@@ -193,7 +212,15 @@ final class DocumentFolderViewModel: ObservableObject {
         uploadCurrentName = ""
         photoItems = []
         reload()
+        
+        // ✅ AGGIUNGI: Flush per sincronizzare i documenti a Firestore
+        KBLog.data.info("PhotoLibrarySelection: flushing outbox")
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        KBLog.data.info("PhotoLibrarySelection done ok=\(self.uploadTotal - self.uploadFailures) fail=\(self.uploadFailures)")
     }
+    
+    // MARK: - Bulk delete
     
     func deleteSelectedItems() async {
         guard let modelContext else { return }
@@ -201,15 +228,17 @@ final class DocumentFolderViewModel: ObservableObject {
         isDeleting = true
         errorText = nil
         
+        KBLog.data.info("deleteSelectedItems start count=\(self.selectedItems.count)")
+        
         defer {
             isDeleting = false
             selectedItems.removeAll()
             isSelecting = false
             reload()
+            KBLog.data.info("deleteSelectedItems end")
         }
         
         do {
-            // 1) carico snapshot locale (serve per mappare id selezionati -> oggetti)
             let fid = familyId
             let allCats = try modelContext.fetch(
                 FetchDescriptor<KBDocumentCategory>(
@@ -230,7 +259,6 @@ final class DocumentFolderViewModel: ObservableObject {
             let catsById = Dictionary(uniqueKeysWithValues: allCats.map { ($0.id, $0) })
             let docsById = Dictionary(uniqueKeysWithValues: allDocs.map { ($0.id, $0) })
             
-            // 2) separo selezione
             let selectedFolderIds: [String] = selectedItems.compactMap { item in
                 switch item {
                 case .folder(let id): return id
@@ -245,8 +273,6 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
             }
             
-            // 3) Calcolo tutti i folderId che verranno eliminati in cascata
-            // (così posso evitare di cancellare docs già "compresi" nella cascata)
             let folderIdsCoveredByCascade: Set<String> = {
                 var covered = Set<String>()
                 for fidSel in selectedFolderIds {
@@ -258,15 +284,11 @@ final class DocumentFolderViewModel: ObservableObject {
                 return covered
             }()
             
-            // 4) Elimino CARTELLE (cascade). Importante: deep->root lo fa già computeFolderSubtree + reversed.
             for folderId in selectedFolderIds {
                 guard let folder = catsById[folderId] else { continue }
-                // chiama la tua logica “core” senza i guard che bloccherebbero
                 try await deleteFolderCascadeCore(folder, allCats: allCats, allDocs: allDocs)
             }
             
-            // 5) Elimino FILE selezionati SOLO se non appartengono a cartelle già eliminate
-            // (se doc.categoryId è dentro folderIdsCoveredByCascade, è già sparito con la cascata)
             for docId in selectedDocIds {
                 guard let doc = docsById[docId] else { continue }
                 let parentFolder = (doc.categoryId ?? "")
@@ -278,13 +300,13 @@ final class DocumentFolderViewModel: ObservableObject {
             
         } catch {
             errorText = error.localizedDescription
+            KBLog.data.error("deleteSelectedItems failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     
     private func deleteDocumentCore(_ doc: KBDocument) async throws {
         guard let modelContext else { return }
         
-        // Se NON synced: local-only + purge outbox
         if doc.syncState != .synced {
             purgeOutboxForDocs([doc.id])
             modelContext.delete(doc)
@@ -292,7 +314,6 @@ final class DocumentFolderViewModel: ObservableObject {
             return
         }
         
-        // Synced: remote delete + purge + local delete
         try await deleteService.deleteDocumentHard(familyId: familyId, doc: doc)
         purgeOutboxForDocs([doc.id])
         
@@ -314,9 +335,7 @@ final class DocumentFolderViewModel: ObservableObject {
             subtreeIds.contains(d.categoryId ?? "")
         }
         
-        // CASE A: root non syncata -> local-only + purge
         if folder.syncState != .synced {
-            // best effort storage cleanup
             Task.detached { [storageService] in
                 for d in docsInSubtree { try? await storageService.delete(path: d.storagePath) }
             }
@@ -329,8 +348,6 @@ final class DocumentFolderViewModel: ObservableObject {
             return
         }
         
-        // CASE B: synced -> remote best effort + local
-        // remote docs
         for d in docsInSubtree where d.syncState == .synced {
             do {
                 try await deleteService.deleteDocumentHard(familyId: familyId, doc: d)
@@ -341,7 +358,6 @@ final class DocumentFolderViewModel: ObservableObject {
             }
         }
         
-        // remote folders (deep->root)
         for f in subtree where f.syncState == .synced {
             do {
                 try await categoryRemoteStore.delete(familyId: familyId, categoryId: f.id)
@@ -359,9 +375,13 @@ final class DocumentFolderViewModel: ObservableObject {
         try modelContext.save()
     }
     
+    // MARK: - Realtime observation
+    
     func startObservingChanges() {
         guard !isObserving else { return }
         isObserving = true
+        
+        KBLog.data.debug("startObservingChanges attach familyId=\(self.familyId, privacy: .public)")
         
         SyncCenter.shared.docsChanged
             .filter { [weak self] fid in fid == self?.familyId }
@@ -371,6 +391,8 @@ final class DocumentFolderViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
+    
+    // MARK: - Download overlay
     
     private func endDownloadingWithMinimumDelay(start: Date) async {
         let minVisible: TimeInterval = 0.35
@@ -407,16 +429,18 @@ final class DocumentFolderViewModel: ObservableObject {
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
             let documentId = UUID().uuidString
-            let storagePath = "families/\(familyId)/documents/\(documentId)"
+            let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
             
-            // ✅ LOCAL: usa DocumentLocalCache (stesso store dell’open/download)
+            // 1️⃣ Salva PLAINTEXT in cache locale
             let localRelPath = try DocumentLocalCache.write(
                 familyId: familyId,
                 docId: documentId,
                 fileName: fileName,
                 data: data
             )
+            KBLog.data.info("uploadSingleFileFromURL: saved plaintext to cache docId=\(documentId)")
             
+            // 2️⃣ Crea documento locale
             let local = KBDocument(
                 id: documentId,
                 familyId: familyId,
@@ -440,29 +464,44 @@ final class DocumentFolderViewModel: ObservableObject {
             
             modelContext.insert(local)
             try modelContext.save()
+            KBLog.data.info("uploadSingleFileFromURL: created local document docId=\(documentId)")
             
-            // REMOTE upload
+            // ✅ AGGIUNGI: Enqueue per sincronizzazione Firestore
+            SyncCenter.shared.enqueueDocumentUpsert(
+                documentId: local.id,
+                familyId: familyId,
+                modelContext: modelContext
+            )
+            KBLog.data.info("uploadSingleFileFromURL: enqueued for sync docId=\(documentId)")
+            
+            // 3️⃣ Cifra e upload a Storage
             do {
-                let plaintext = data  // Esplicito che è plaintext
+                let plaintext = data
                 let encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId)
+                KBLog.data.info("uploadSingleFileFromURL: encrypted docId=\(documentId) bytes=\(plaintext.count)->\(encryptedData.count)")
+                
                 let (_, downloadURL) = try await storageService.upload(
                     familyId: familyId,
                     docId: documentId,
                     fileName: fileName,
                     originalMimeType: mime,
-                    encryptedData: encryptedData  // ✅ già cifrato
+                    encryptedData: encryptedData
                 )
+                KBLog.data.info("uploadSingleFileFromURL: uploaded to storage docId=\(documentId)")
                 
+                // 4️⃣ Aggiorna documento (mark synced)
                 local.downloadURL = downloadURL
                 local.syncState = .synced
                 local.lastSyncError = nil
                 local.updatedAt = Date()
                 local.updatedBy = uid
                 try modelContext.save()
+                KBLog.data.info("uploadSingleFileFromURL: marked synced docId=\(documentId)")
                 
                 return true
                 
             } catch {
+                KBLog.data.error("uploadSingleFileFromURL: storage/encrypt failed docId=\(documentId) error=\(error.localizedDescription)")
                 local.syncState = .error
                 local.lastSyncError = error.localizedDescription
                 try? modelContext.save()
@@ -470,9 +509,12 @@ final class DocumentFolderViewModel: ObservableObject {
             }
             
         } catch {
+            KBLog.data.error("uploadSingleFileFromURL: failed error=\(error.localizedDescription)")
             return false
         }
     }
+    
+    // MARK: - Fetch
     
     private func fetchFolders(modelContext: ModelContext) throws -> [KBDocumentCategory] {
         let fid = familyId
@@ -488,7 +530,6 @@ final class DocumentFolderViewModel: ObservableObject {
             )
             return try modelContext.fetch(desc)
         } else {
-            // ✅ ROOT: 2 query (nil + "") per evitare "type-check too complex"
             let descNil = FetchDescriptor<KBDocumentCategory>(
                 predicate: #Predicate { c in
                     c.familyId == fid &&
@@ -507,7 +548,6 @@ final class DocumentFolderViewModel: ObservableObject {
             let a = try modelContext.fetch(descNil)
             let b = try modelContext.fetch(descEmpty)
             
-            // merge senza duplicati (per sicurezza)
             var map: [String: KBDocumentCategory] = [:]
             for x in a { map[x.id] = x }
             for x in b { map[x.id] = x }
@@ -530,7 +570,6 @@ final class DocumentFolderViewModel: ObservableObject {
             )
             return try modelContext.fetch(desc)
         } else {
-            // ✅ ROOT: 2 query (nil + "") per evitare type-check too complex
             let descNil = FetchDescriptor<KBDocument>(
                 predicate: #Predicate { d in
                     d.familyId == fid &&
@@ -558,6 +597,7 @@ final class DocumentFolderViewModel: ObservableObject {
     }
     
     // MARK: - Create folder
+    
     func createFolder(name raw: String) {
         guard let modelContext else { return }
         let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -571,7 +611,7 @@ final class DocumentFolderViewModel: ObservableObject {
             familyId: familyId,
             title: name,
             sortOrder: nextOrder,
-            parentId: folderId,               // ✅ child folder
+            parentId: folderId,
             updatedBy: uid,
             createdAt: now,
             updatedAt: now,
@@ -585,7 +625,6 @@ final class DocumentFolderViewModel: ObservableObject {
             modelContext.insert(folder)
             try modelContext.save()
             
-            // ✅ Outbox (fallback)
             SyncCenter.shared.enqueueDocumentCategoryUpsert(
                 categoryId: folder.id,
                 familyId: familyId,
@@ -593,13 +632,12 @@ final class DocumentFolderViewModel: ObservableObject {
             )
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             
-            // ✅ Remote IMMEDIATO (best effort) -> così l’altro account lo vede subito
             let dto = RemoteDocumentCategoryDTO(
                 id: folder.id,
                 familyId: familyId,
                 title: folder.title,
                 sortOrder: folder.sortOrder,
-                parentId: folder.parentId,     // String?
+                parentId: folder.parentId,
                 isDeleted: false,
                 updatedAt: now,
                 updatedBy: uid
@@ -610,7 +648,7 @@ final class DocumentFolderViewModel: ObservableObject {
                     let remote = await DocumentCategoryRemoteStore()
                     try await remote.upsert(dto: dto)
                 } catch {
-                    // best effort: ignora, outbox farà retry
+                    // best effort: ignore, outbox will retry
                 }
             }
             
@@ -621,6 +659,7 @@ final class DocumentFolderViewModel: ObservableObject {
     }
     
     // MARK: - Rename
+    
     func renameFolder(_ folder: KBDocumentCategory, newName raw: String) {
         guard let modelContext else { return }
         let newName = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -671,19 +710,16 @@ final class DocumentFolderViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Open / Preview
+    
     func open(_ doc: KBDocument) {
         guard let modelContext else { return }
         errorText = nil
         
         Task { @MainActor in
-            // 1️⃣ Se esiste in cache (CIFRATO) → decifra
             if let localPath = doc.localPath, !localPath.isEmpty,
                let _ = DocumentLocalCache.exists(localPath: localPath) {
-                
-                print("📂 Opening cached plaintext file: \(localPath)")
-                
                 do {
-                    // ✅ Il file in cache è PLAINTEXT, leggi direttamente
                     let plaintext = try DocumentLocalCache.readEncrypted(localPath: localPath)
                     
                     let tempURL = FileManager.default.temporaryDirectory
@@ -699,8 +735,6 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
             }
             
-            // 2️⃣ Altrimenti scarica da Storage con progress
-            print("📥 File not in cache, downloading from Storage...")
             do {
                 let plaintext = try await downloadToLocalWithProgress(doc: doc, modelContext: modelContext)
                 previewURL = plaintext
@@ -709,7 +743,6 @@ final class DocumentFolderViewModel: ObservableObject {
                 downloadProgress = 0
                 downloadCurrentName = ""
                 errorText = "Download locale fallito: \(error.localizedDescription)"
-                print("❌ Download failed: \(error.localizedDescription)")
             }
         }
     }
@@ -761,37 +794,24 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
             }
             
-            // ✅ Leggi il file cifrato
             let encrypted = try Data(contentsOf: tmpURL)
-            print("📥 Downloaded encrypted file: \(encrypted.count) bytes")
-            
-            // ✅ DECIFRA con la family master key
-            print("🔐 Decrypting downloaded file: \(doc.fileName)")
             let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId)
-            print("✅ Decrypted: \(encrypted.count) → \(decrypted.count) bytes")
             
-            // ✅ Scrivi il plaintext DECIFRATO nella cache "stabile"
             let rel = try DocumentLocalCache.write(
                 familyId: doc.familyId,
                 docId: doc.id,
                 fileName: doc.fileName.isEmpty ? doc.id : doc.fileName,
-                data: decrypted  // ✅ Salva il plaintext decifrato
+                data: decrypted
             )
-            
-            print("✅ Saved decrypted file to cache: \(rel)")
             
             doc.localPath = rel
             try modelContext.save()
             
             try? FileManager.default.removeItem(at: tmpURL)
-            
-            // chiudi overlay ma con minimo delay visibile
             await endDownloadingWithMinimumDelay(start: start)
-            
             return try DocumentLocalCache.resolve(localPath: rel)
             
         } catch {
-            print("❌ Download/decrypt failed: \(error.localizedDescription)")
             try? FileManager.default.removeItem(at: tmp)
             await endDownloadingWithMinimumDelay(start: start)
             throw error
@@ -799,6 +819,7 @@ final class DocumentFolderViewModel: ObservableObject {
     }
     
     // MARK: - Delete doc
+    
     func deleteDocument(_ doc: KBDocument) {
         guard let modelContext else { return }
         guard !isDeleting else { return }
@@ -808,7 +829,6 @@ final class DocumentFolderViewModel: ObservableObject {
         Task { @MainActor in
             defer { isDeleting = false }
             do {
-                // ✅ se NON è synced: local-only + purge outbox (altrimenti "risorge")
                 if doc.syncState != .synced {
                     purgeOutboxForDocs([doc.id])
                     modelContext.delete(doc)
@@ -817,13 +837,9 @@ final class DocumentFolderViewModel: ObservableObject {
                     return
                 }
                 
-                // ✅ synced: remote delete (hard/soft a seconda del tuo servizio)
                 try await deleteService.deleteDocumentHard(familyId: familyId, doc: doc)
-                
-                // ✅ purge outbox SEMPRE (importantissimo)
                 purgeOutboxForDocs([doc.id])
                 
-                // ✅ local delete finale
                 modelContext.delete(doc)
                 try modelContext.save()
                 reload()
@@ -850,11 +866,12 @@ final class DocumentFolderViewModel: ObservableObject {
             
             try modelContext.save()
         } catch {
-            print("⚠️ purgeOutboxForDocs failed:", error.localizedDescription)
+            KBLog.data.debug("purgeOutboxForDocs failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     
-    // MARK: - Folder cascade delete (hard)
+    // MARK: - Folder cascade delete
+    
     func deleteFolderCascade(_ folder: KBDocumentCategory) {
         guard let modelContext else { return }
         guard !isDeleting else { return }
@@ -864,7 +881,7 @@ final class DocumentFolderViewModel: ObservableObject {
         Task { @MainActor in
             defer { isDeleting = false }
             do {
-                let fid = familyId   // ✅ NON usare self.familyId dentro #Predicate
+                let fid = familyId
                 
                 let allCats = try modelContext.fetch(
                     FetchDescriptor<KBDocumentCategory>(
@@ -939,7 +956,6 @@ final class DocumentFolderViewModel: ObservableObject {
     private func hardDeleteFolderRemoteThenLocal(subtree: [KBDocumentCategory], docs: [KBDocument]) async throws {
         guard let modelContext else { return }
         
-        // A) remote docs
         for d in docs where d.syncState == .synced {
             do {
                 try await deleteService.deleteDocumentHard(familyId: familyId, doc: d)
@@ -950,7 +966,6 @@ final class DocumentFolderViewModel: ObservableObject {
             }
         }
         
-        // B) remote folders (deep -> root)
         for f in subtree where f.syncState == .synced {
             do {
                 try await categoryRemoteStore.delete(familyId: familyId, categoryId: f.id)
@@ -961,10 +976,8 @@ final class DocumentFolderViewModel: ObservableObject {
             }
         }
         
-        // C) purge outbox
         purgeOutboxForFoldersAndDocs(folderIds: subtree.map(\.id), docs: docs)
         
-        // D) local delete
         for d in docs { modelContext.delete(d) }
         for f in subtree { modelContext.delete(f) }
         try modelContext.save()
@@ -999,11 +1012,12 @@ final class DocumentFolderViewModel: ObservableObject {
             
             try modelContext.save()
         } catch {
-            print("⚠️ purgeOutbox failed:", error.localizedDescription)
+            KBLog.data.debug("purgeOutboxForFoldersAndDocs failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     
-    // MARK: - Multi upload (TaskGroup + progress) — mantiene la tua logica
+    // MARK: - Multi upload (TaskGroup + progress)
+    
     actor AsyncSemaphore {
         private var value: Int
         private var waiters: [CheckedContinuation<Void, Never>] = []
@@ -1065,23 +1079,10 @@ final class DocumentFolderViewModel: ObservableObject {
                 errorText = "Caricamento completato con \(uploadFailures) errori."
             }
             
-            // refresh list
             reload()
-           
+            
             guard let modelContext else { return }
-            
-            print("📤 Import complete, flushing outbox...")
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
-            print("📤 Flush called")
-            
-            // DEBUG: verifica outbox
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                let ops = try? modelContext.fetch(FetchDescriptor<KBSyncOp>())
-                print("📤 OUTBOX after import flush: \(ops?.count ?? 0) operations")
-                for op in ops ?? [] {
-                    print("   - \(op.entityTypeRaw) / \(op.opType) / \(op.entityId)")
-                }
-            }
             
         } catch {
             isUploading = false
@@ -1094,7 +1095,6 @@ final class DocumentFolderViewModel: ObservableObject {
         if let d = docs.first(where: { $0.id == docId }) {
             open(d)
         } else {
-            // doc non ancora in locale (sync in ritardo): riprova tra poco
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s
                 reload()
@@ -1106,21 +1106,14 @@ final class DocumentFolderViewModel: ObservableObject {
     }
     
     func uploadSingleFileConcurrent(_ url: URL, childId: String?) async -> Bool {
-        guard let modelContext else {
-            print("❌ uploadSingleFileConcurrent: modelContext is nil")
-            return false
-        }
+        guard let modelContext else { return false }
         
         do {
             let okScope = url.startAccessingSecurityScopedResource()
             defer { if okScope { url.stopAccessingSecurityScopedResource() } }
             
-            // 1️⃣ Leggi plaintext da disk
             let plaintext = try Data(contentsOf: url)
-            if plaintext.isEmpty {
-                print("❌ File vuoto")
-                return false
-            }
+            if plaintext.isEmpty { return false }
             
             let fileName = url.lastPathComponent
             let ext = url.pathExtension.lowercased()
@@ -1133,44 +1126,25 @@ final class DocumentFolderViewModel: ObservableObject {
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
             
-            print("📝 Uploading: \(fileName) (size: \(plaintext.count) bytes)")
-            
-            // 2️⃣ CIFRA con family master key
             let encryptedData: Data
             do {
                 encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId)
-                print("✅ Encrypted: \(plaintext.count) → \(encryptedData.count) bytes")
             } catch {
-                print("❌ Encryption failed: \(error.localizedDescription)")
                 return false
             }
             
-            // 3️⃣ Salva PLAINTEXT in cache locale (per poter leggere offline)
             let localPath: String
             do {
-                print("📝 About to save to cache:")
-                print("   - data size: \(plaintext.count) bytes")
-                print("   - fileName: \(fileName)")
-                print("   - docId: \(documentId)")
                 localPath = try DocumentLocalCache.write(
                     familyId: familyId,
                     docId: documentId,
                     fileName: fileName,
-                    data: plaintext  // ✅ PLAINTEXT (leggibile)
+                    data: plaintext
                 )
-                // Verifica cosa è stato salvato
-                let savedURL = try DocumentLocalCache.resolve(localPath: localPath)
-                let savedData = try Data(contentsOf: savedURL)
-                print("✅ Saved plaintext to cache:")
-                print("   - path: \(localPath)")
-                print("   - saved size: \(savedData.count) bytes")
-                print("   - matches plaintext: \(savedData == plaintext)")
             } catch {
-                print("❌ Local cache write failed: \(error.localizedDescription)")
                 return false
             }
             
-            // 4️⃣ Crea documento locale (placeholder)
             do {
                 let local = KBDocument(
                     id: documentId,
@@ -1194,35 +1168,26 @@ final class DocumentFolderViewModel: ObservableObject {
                 
                 modelContext.insert(local)
                 try modelContext.save()
-                print("✅ Created local document: \(documentId)")
                 
-                // ✅ Enqueue per sincronizzazione Firestore
                 SyncCenter.shared.enqueueDocumentUpsert(
                     documentId: local.id,
                     familyId: familyId,
                     modelContext: modelContext
                 )
-                print("📤 Document enqueued for sync: \(local.id)")
                 
             } catch {
-                print("❌ Failed to create local document: \(error.localizedDescription)")
                 return false
             }
             
-            // 5️⃣ Upload CIPHERTEXT a Storage
             do {
                 let (uploadedPath, downloadURL) = try await storageService.upload(
                     familyId: familyId,
                     docId: documentId,
                     fileName: fileName,
                     originalMimeType: mime,
-                    encryptedData: encryptedData  // ✅ CIPHERTEXT (cifrato)
+                    encryptedData: encryptedData
                 )
                 
-                print("✅ Uploaded to Storage: \(uploadedPath)")
-                print("📥 Download URL: \(downloadURL)")
-                
-                // 6️⃣ Aggiorna documento (mark synced)
                 do {
                     let did = documentId
                     let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
@@ -1234,20 +1199,12 @@ final class DocumentFolderViewModel: ObservableObject {
                         local.updatedAt = Date()
                         local.updatedBy = uid
                         try modelContext.save()
-                        print("✅ Document synced: \(documentId)")
-                    } else {
-                        print("⚠️ Document not found after upload (race condition?)")
                     }
-                } catch {
-                    print("❌ Failed to update document: \(error.localizedDescription)")
-                }
+                } catch { }
                 
                 return true
                 
             } catch {
-                // Upload fallito: documento rimane in locale, marcato come error
-                print("❌ Upload failed: \(error.localizedDescription)")
-                
                 do {
                     let did = documentId
                     let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
@@ -1255,14 +1212,12 @@ final class DocumentFolderViewModel: ObservableObject {
                         local.syncState = .error
                         local.lastSyncError = error.localizedDescription
                         try? modelContext.save()
-                        print("⚠️ Document marked as error: \(error.localizedDescription)")
                     }
                 } catch { }
                 return false
             }
             
         } catch {
-            print("❌ Upload failed (outer): \(error.localizedDescription)")
             return false
         }
     }

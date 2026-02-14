@@ -10,6 +10,12 @@ import SwiftData
 import FirebaseAuth
 import OSLog
 
+/// Lista To-Do condivisa (per family + child).
+///
+/// Obiettivi:
+/// - Nessun `print`
+/// - Log solo in punti “stabili” (onAppear / azioni utente), NON in computed props che ricalcolano spesso.
+/// - Logica invariata: stesso flusso local->outbox->flush e realtime start/stop.
 struct TodoListView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
@@ -23,6 +29,7 @@ struct TodoListView: View {
     @State private var newTitle: String = ""
     @State private var isSaving: Bool = false
     @State private var errorMessage: String?
+    @State private var didStartRealtime = false
     
     private let remote = TodoRemoteStore()
     private let familyId: String
@@ -52,6 +59,7 @@ struct TodoListView: View {
         let family = families.first
         let child = family?.children.first
         
+        // Factory per risolvere familyId/childId se la route legacy ci arriva vuota
         if familyId.isEmpty || childId.isEmpty {
             return AnyView(TodoListViewFactory(family: family, child: child))
         }
@@ -70,8 +78,14 @@ struct TodoListView: View {
                             .foregroundStyle(.secondary)
                         
                         HStack {
-                            Button("Entra con codice") { coordinator.navigate(to: .joinFamily) }
-                            Button("Impostazioni Family") { coordinator.navigate(to: .familySettings) }
+                            Button("Entra con codice") {
+                                KBLog.navigation.info("TodoListView: go joinFamily")
+                                coordinator.navigate(to: .joinFamily)
+                            }
+                            Button("Impostazioni Family") {
+                                KBLog.navigation.info("TodoListView: go familySettings")
+                                coordinator.navigate(to: .familySettings)
+                            }
                         }
                     }
                 } else {
@@ -131,6 +145,12 @@ struct TodoListView: View {
         .navigationTitle("Todo")
         .onAppear {
             guard !familyId.isEmpty, !childId.isEmpty else { return }
+            guard !didStartRealtime else { return }
+            didStartRealtime = true
+            
+            KBLog.sync.info(
+                "TodoListView appear: start realtime familyId=\(familyId, privacy: .public) childId=\(childId, privacy: .public)"
+            )
             
             SyncCenter.shared.startTodoRealtime(
                 familyId: familyId,
@@ -139,9 +159,17 @@ struct TodoListView: View {
                 remote: remote
             )
             
-            Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: remote) }
+            Task {
+                await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+                KBLog.sync.debug(
+                    "TodoListView: initial flush done familyId=\(familyId, privacy: .public) childId=\(childId, privacy: .public)"
+                )
+            }
         }
         .onDisappear {
+            guard didStartRealtime else { return }
+            didStartRealtime = false
+            KBLog.sync.info("TodoListView disappear: stop realtime")
             SyncCenter.shared.stopTodoRealtime()
         }
     }
@@ -183,13 +211,18 @@ struct TodoListView: View {
         do {
             try modelContext.save()
             newTitle = ""
+            KBLog.data.info(
+                "TodoListView add: local saved todoId=\(id, privacy: .public) familyId=\(familyId, privacy: .public) childId=\(childId, privacy: .public)"
+            )
         } catch {
             errorMessage = "SwiftData save failed: \(error.localizedDescription)"
+            KBLog.data.error("TodoListView add: SwiftData save failed: \(error.localizedDescription, privacy: .public)")
             return
         }
         
         SyncCenter.shared.enqueueTodoUpsert(todoId: id, familyId: familyId, modelContext: modelContext)
         await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+        KBLog.sync.debug("TodoListView add: enqueued+flush todoId=\(id, privacy: .public)")
     }
     
     @MainActor
@@ -209,13 +242,18 @@ struct TodoListView: View {
         
         do {
             try modelContext.save()
+            KBLog.data.info(
+                "TodoListView toggle: local saved todoId=\(todo.id, privacy: .public) done=\(todo.isDone, privacy: .public)"
+            )
         } catch {
             errorMessage = "SwiftData save failed: \(error.localizedDescription)"
+            KBLog.data.error("TodoListView toggle: SwiftData save failed: \(error.localizedDescription, privacy: .public)")
             return
         }
         
         SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: todo.familyId, modelContext: modelContext)
         await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+        KBLog.sync.debug("TodoListView toggle: enqueued+flush todoId=\(todo.id, privacy: .public)")
     }
     
     private func deleteTodos(offsets: IndexSet) {
@@ -223,6 +261,8 @@ struct TodoListView: View {
             errorMessage = nil
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
+            
+            var deletedIds: [String] = []
             
             for index in offsets {
                 let todo = todos[index]
@@ -235,16 +275,22 @@ struct TodoListView: View {
                 todo.lastSyncError = nil
                 
                 SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: todo.familyId, modelContext: modelContext)
+                deletedIds.append(todo.id)
             }
             
             do {
                 try modelContext.save()
+                KBLog.data.info(
+                    "TodoListView delete: local saved count=\(deletedIds.count, privacy: .public) familyId=\(familyId, privacy: .public) childId=\(childId, privacy: .public)"
+                )
             } catch {
                 errorMessage = "SwiftData save failed: \(error.localizedDescription)"
+                KBLog.data.error("TodoListView delete: SwiftData save failed: \(error.localizedDescription, privacy: .public)")
                 return
             }
             
             await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+            KBLog.sync.debug("TodoListView delete: enqueued+flush ids=\(deletedIds.joined(separator: ","), privacy: .public)")
         }
     }
     
