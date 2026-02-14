@@ -15,12 +15,24 @@ extension SyncCenter {
     
     // MARK: - Realtime (Inbound) Children
     
+    /// Shared listener for children realtime updates.
+    ///
+    /// Note:
+    /// - Kept as `static` to ensure a single active listener even if `SyncCenter`
+    ///   is referenced in multiple places.
     private static var _childrenListener: ListenerRegistration?
     
+    /// Starts a realtime listener on `families/{familyId}/children`.
+    ///
+    /// Behavior (unchanged):
+    /// - Stops any existing children listener.
+    /// - Attaches a Firestore snapshot listener.
+    /// - On each snapshot, dispatches inbound apply on MainActor.
     func startChildrenRealtime(
         familyId: String,
         modelContext: ModelContext
     ) {
+        KBLog.sync.kbInfo("startChildrenRealtime familyId=\(familyId)")
         stopChildrenRealtime()
         
         Self._childrenListener = Firestore.firestore()
@@ -29,10 +41,15 @@ extension SyncCenter {
             .collection("children")
             .addSnapshotListener { snap, err in
                 if let err {
-                    KBLog.sync.error("Children listener error: \(err.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("Children listener error: \(err.localizedDescription)")
                     return
                 }
-                guard let snap else { return }
+                guard let snap else {
+                    KBLog.sync.kbDebug("Children listener snapshot nil familyId=\(familyId)")
+                    return
+                }
+                
+                KBLog.sync.kbDebug("Children snapshot size=\(snap.documents.count) changes=\(snap.documentChanges.count) familyId=\(familyId)")
                 
                 Task { @MainActor in
                     self.applyChildrenInbound(
@@ -42,26 +59,47 @@ extension SyncCenter {
                     )
                 }
             }
+        
+        KBLog.sync.kbInfo("Children listener attached familyId=\(familyId)")
     }
     
+    /// Stops the children realtime listener if active.
     func stopChildrenRealtime() {
+        if Self._childrenListener != nil {
+            KBLog.sync.kbInfo("stopChildrenRealtime")
+        }
         Self._childrenListener?.remove()
         Self._childrenListener = nil
     }
     
     // MARK: - Apply inbound
     
+    /// Applies inbound Firestore document changes for children into local SwiftData.
+    ///
+    /// Behavior (unchanged):
+    /// - Loads local `KBFamily` for `familyId` (returns if missing).
+    /// - For each change:
+    ///   - `.removed` => hard delete local child
+    ///   - `isDeleted == true` => hard delete local child
+    ///   - otherwise upsert with LWW (remoteUpdatedAt/remoteCreatedAt vs local updated/created)
+    /// - Ensures `child.family` relationship is set (does not mutate `fam.children` array).
+    /// - Saves only if any mutation occurred.
     @MainActor
     private func applyChildrenInbound(
         familyId: String,
         documentChanges: [DocumentChange],
         modelContext: ModelContext
     ) {
+        KBLog.sync.kbDebug("applyChildrenInbound start familyId=\(familyId) changes=\(documentChanges.count)")
+        
         do {
-            // 1) fetch family locale
+            // 1) fetch local family
             let fid = familyId
             let fdesc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
-            guard let fam = try modelContext.fetch(fdesc).first else { return }
+            guard let fam = try modelContext.fetch(fdesc).first else {
+                KBLog.sync.kbDebug("applyChildrenInbound skipped: local family missing familyId=\(familyId)")
+                return
+            }
             
             var didMutateAny = false
             
@@ -70,13 +108,14 @@ extension SyncCenter {
                 let data = doc.data()
                 let cid = doc.documentID
                 
-                // Se Firestore segnala removed, cancelliamo locale (hard delete)
+                // Firestore removed => hard delete local
                 if diff.type == .removed {
                     let childId = cid
                     let cdesc = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == childId })
                     if let local = try modelContext.fetch(cdesc).first {
                         modelContext.delete(local)
                         didMutateAny = true
+                        KBLog.sync.kbDebug("Child removed locally childId=\(childId)")
                     }
                     continue
                 }
@@ -89,16 +128,17 @@ extension SyncCenter {
                 let remoteCreatedBy = data["createdBy"] as? String
                 let remoteIsDeleted = data["isDeleted"] as? Bool ?? false
                 
-                // 2) fetch child by id (non dipendere da fam.children materializzata)
+                // 2) fetch child by id (do not rely on fam.children)
                 let childId = cid
                 let cdesc = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == childId })
                 let localChild = try modelContext.fetch(cdesc).first
                 
-                // DELETE remoto (soft) => hard delete locale
+                // remote soft delete => hard delete local
                 if remoteIsDeleted {
                     if let localChild {
                         modelContext.delete(localChild)
                         didMutateAny = true
+                        KBLog.sync.kbDebug("Child soft-deleted remotely -> deleted locally childId=\(childId)")
                     }
                     continue
                 }
@@ -106,11 +146,10 @@ extension SyncCenter {
                 if let localChild {
                     var didMutate = false
                     
-                    // LWW: confronto robusto (MA non inventiamo Date() se manca updatedAt remoto)
+                    // LWW
                     let localStamp = (localChild.updatedAt ?? localChild.createdAt)
                     let remoteStamp = (remoteUpdatedAt ?? remoteCreatedAt ?? .distantPast)
                     
-                    // Applica solo se remoto è più recente
                     if remoteStamp >= localStamp {
                         if localChild.familyId != familyId {
                             localChild.familyId = familyId
@@ -137,7 +176,7 @@ extension SyncCenter {
                             didMutate = true
                         }
                         
-                        // ✅ NON mettere Date() se remoteUpdatedAt è nil
+                        // do not invent Date() if remoteUpdatedAt is nil
                         if let rua = remoteUpdatedAt, localChild.updatedAt != rua {
                             localChild.updatedAt = rua
                             didMutate = true
@@ -149,16 +188,19 @@ extension SyncCenter {
                         }
                     }
                     
-                    // assicurati relazione (solo puntatore; NON toccare fam.children)
+                    // ensure relationship pointer only (do not touch fam.children)
                     if localChild.family == nil {
                         localChild.family = fam
                         didMutate = true
                     }
                     
-                    if didMutate { didMutateAny = true }
+                    if didMutate {
+                        didMutateAny = true
+                        KBLog.sync.kbDebug("Child updated locally childId=\(childId)")
+                    }
                     
                 } else {
-                    // create locale
+                    // create local
                     let now = Date()
                     let createdAt = remoteCreatedAt ?? now
                     
@@ -176,16 +218,20 @@ extension SyncCenter {
                     created.family = fam
                     modelContext.insert(created)
                     didMutateAny = true
+                    KBLog.sync.kbDebug("Child inserted locally childId=\(cid)")
                 }
             }
             
-            // ✅ salva solo se ci sono state mutazioni
+            // Save only if any mutation occurred
             if didMutateAny {
                 try modelContext.save()
+                KBLog.sync.kbInfo("applyChildrenInbound saved familyId=\(familyId)")
+            } else {
+                KBLog.sync.kbDebug("applyChildrenInbound no changes to save familyId=\(familyId)")
             }
             
         } catch {
-            KBLog.sync.error("Children inbound apply failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("Children inbound apply failed: \(error.localizedDescription)")
         }
     }
 }

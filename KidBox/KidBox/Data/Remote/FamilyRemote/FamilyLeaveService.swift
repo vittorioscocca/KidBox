@@ -10,8 +10,26 @@ import FirebaseAuth
 import FirebaseFirestore
 import SwiftData
 
+/// Service responsible for removing the current user from a family and wiping local family data.
+///
+/// Flow (unchanged):
+/// 1) Ensure authenticated
+/// 2) Block sync locally (beginLocalWipe)
+/// 3) Stop realtime listeners
+/// 4) Yield briefly to let pending snapshots settle
+/// 5) Server: remove member doc `families/{familyId}/members/{uid}`
+/// 6) Local: wipe family data
+/// 7) Optional: remove membership index `users/{uid}/memberships/{familyId}`
+/// 8) Save modelContext
+/// 9) Re-enable sync (endLocalWipe)
+/// 10) Flush global sync
+///
+/// Notes:
+/// - Runs on MainActor due to SwiftData `ModelContext` usage and UI-adjacent calls.
+/// - If a step throws, subsequent steps won't run (same behavior as current code).
 @MainActor
 final class FamilyLeaveService {
+    
     private let db = Firestore.firestore()
     private let modelContext: ModelContext
     
@@ -19,20 +37,30 @@ final class FamilyLeaveService {
         self.modelContext = modelContext
     }
     
+    /// Leaves the specified family and wipes related local data.
     func leaveFamily(familyId: String) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
-            throw NSError(domain: "KidBox", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+            KBLog.auth.kbError("leaveFamily failed: not authenticated")
+            throw NSError(domain: "KidBox", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
-        // 🔒 1) BLOCCA SYNC
+        
+        KBLog.sync.kbInfo("leaveFamily started familyId=\(familyId)")
+        
+        // 1) Block sync
+        KBLog.sync.kbInfo("beginLocalWipe")
         SyncCenter.shared.beginLocalWipe()
         
-        // 2) stop listeners prima (così non “riscrivono” roba mentre wipi)
+        // 2) Stop listeners first to avoid re-populating while wiping
+        KBLog.sync.kbInfo("Stopping realtime listeners before wipe")
         SyncCenter.shared.stopFamilyBundleRealtime()
         
-        // ⏳ 3) piccolo yield per far morire snapshot pendenti
+        // 3) Small yield for pending snapshots
+        KBLog.sync.kbDebug("Yielding briefly to let pending snapshots settle")
         try await Task.sleep(nanoseconds: 150_000_000) // 150 ms
         
-        // 4) server: remove member doc
+        // 4) Server: remove member document
+        KBLog.sync.kbInfo("Removing member doc from Firestore")
         try await db
             .collection("families")
             .document(familyId)
@@ -40,13 +68,15 @@ final class FamilyLeaveService {
             .document(uid)
             .delete()
         
-        // 🧹 5) wipe locale family
+        // 5) Local wipe family
+        KBLog.persistence.kbInfo("Wiping local family data")
         try LocalDataWiper.wipeFamily(
             familyId: familyId,
             context: modelContext
         )
         
-        // 5) opzionale: membership index (se lo usi)
+        // 6) Optional membership index removal
+        KBLog.sync.kbDebug("Removing membership index (best effort)")
         try? await db
             .collection("users")
             .document(uid)
@@ -54,11 +84,18 @@ final class FamilyLeaveService {
             .document(familyId)
             .delete()
         
+        // Persist local changes
         try modelContext.save()
+        KBLog.persistence.kbInfo("Local wipe committed")
         
-        // 🔓 6) riabilita sync
+        // 7) Re-enable sync
+        KBLog.sync.kbInfo("endLocalWipe")
         SyncCenter.shared.endLocalWipe()
         
+        // 8) Flush sync
+        KBLog.sync.kbInfo("flushGlobal after leaveFamily")
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        KBLog.sync.kbInfo("leaveFamily completed familyId=\(familyId)")
     }
 }

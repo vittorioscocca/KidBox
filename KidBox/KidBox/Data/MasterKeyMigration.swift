@@ -5,29 +5,40 @@
 //  Created by vscocca on 13/02/26.
 //
 
-
 import Foundation
 import SwiftData
 import CryptoKit
 
+/// Performs a local migration to ensure each `KBFamily` has a stored master key.
+///
+/// This migration is **local-only**:
+/// - It inspects all local families in SwiftData.
+/// - For any family missing a key in `FamilyKeychainStore`, it generates a new random 32-byte key
+///   and saves it to the Keychain.
+///
+/// Typical usage (boot time, best effort):
+/// ```swift
+/// Task {
+///   try? await MasterKeyMigration.migrateAllFamilies(modelContext: modelContext)
+/// }
+/// ```
 enum MasterKeyMigration {
     
-    /// Genera master key per tutte le famiglie che non ce l'hanno
+    /// Generates and stores a master key for every local family that doesn't have one yet.
     ///
-    /// Uso:
-    /// ```
-    /// // Nel boot (AppDelegate o RootView onAppear)
-    /// try? await MasterKeyMigration.migrateAllFamilies(modelContext: modelContext)
-    /// ```
-    ///
+    /// Behavior (logic unchanged):
+    /// - Fetches all families from SwiftData.
+    /// - Skips families that already have a key in `FamilyKeychainStore`.
+    /// - Generates a 32-byte random key and stores it in Keychain for missing ones.
+    /// - Throws if saving fails for any family.
     static func migrateAllFamilies(modelContext: ModelContext) async throws {
-        print("🔄 Checking families for master key migration...")
+        KBLog.sync.kbInfo("MasterKeyMigration started (checking families)")
         
         // Carica tutte le famiglie
         let descriptor = FetchDescriptor<KBFamily>()
         let families = try modelContext.fetch(descriptor)
         
-        print("📊 Found \(families.count) families")
+        KBLog.sync.kbInfo("MasterKeyMigration families count=\(families.count)")
         
         var migratedCount = 0
         
@@ -36,59 +47,24 @@ enum MasterKeyMigration {
             
             // Controlla se la key esiste già
             if FamilyKeychainStore.loadFamilyKey(familyId: familyId) != nil {
-                print("✅ Family \(familyId) already has master key")
+                KBLog.sync.kbDebug("MasterKeyMigration skip (already exists) familyId=\(familyId)")
                 continue
             }
             
             // Crea la key
-            print("🔑 Generating master key for family: \(familyId)")
+            KBLog.sync.kbInfo("MasterKeyMigration generating key familyId=\(familyId)")
             do {
                 let masterKeyBytes = InviteCrypto.randomBytes(32)
                 let masterKey = CryptoKit.SymmetricKey(data: masterKeyBytes)
                 try FamilyKeychainStore.saveFamilyKey(masterKey, familyId: familyId)
-                print("✅ Master key created for family: \(familyId)")
+                KBLog.sync.kbInfo("MasterKeyMigration key created familyId=\(familyId)")
                 migratedCount += 1
             } catch {
-                print("❌ Failed to create master key for family \(familyId): \(error.localizedDescription)")
+                KBLog.sync.kbError("MasterKeyMigration failed familyId=\(familyId) error=\(error.localizedDescription)")
                 throw error
             }
         }
         
-        print("✅ Migration complete! Migrated \(migratedCount) families")
+        KBLog.sync.kbInfo("MasterKeyMigration completed migrated=\(migratedCount)")
     }
 }
-
-/*
- INTEGRAZIONE:
- 
- 1. Aggiungi questo call nel tuo AppDelegate.application(_:didFinishLaunchingWithOptions:)
- oppure nel RootView.onAppear():
- 
- ```swift
- @Environment(\.modelContext) private var modelContext
- 
- .onAppear {
- Task {
- try? await MasterKeyMigration.migrateAllFamilies(modelContext: modelContext)
- }
- }
- ```
- 
- 2. Questo script:
- - Carica tutte le famiglie dal database
- - Per ogni famiglia, controlla se ha una master key nel Keychain
- - Se NO, ne genera una nuova (32 bytes random)
- - Se SÌ, la salta (idempotent)
- 
- 3. È sicuro lanciarlo multiple volte (ogni volta skippa le famiglie che già hanno la key)
- 
- 4. Log output sarà:
- ```
- 🔄 Checking families for master key migration...
- 📊 Found 2 families
- ✅ Family 684E0CAE-... already has master key
- 🔑 Generating master key for family: ABC123...
- ✅ Master key created for family: ABC123...
- ✅ Migration complete! Migrated 1 families
- ```
- */

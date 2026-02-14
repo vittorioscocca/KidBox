@@ -6,7 +6,16 @@
 //
 
 import SwiftUI
+import OSLog
 
+/// Visual indicator for document/category sync state.
+///
+/// Designed to:
+/// - Remain visually stable inside grids and tight layouts
+/// - Avoid compression issues
+/// - Provide meaningful accessibility feedback
+///
+/// - Important: No logging inside `body` to avoid SwiftUI recomposition noise.
 struct SyncPill: View {
     let state: KBSyncState
     let error: String?
@@ -30,8 +39,12 @@ struct SyncPill: View {
         .fixedSize(horizontal: true, vertical: true) // ✅ NON si strizza in grid
         .layoutPriority(1)                           // ✅ vince su title/fileName
         .accessibilityLabel(accessibilityText)
+        .accessibilityHint(accessibilityHint)
     }
     
+    // MARK: - Derived UI
+    
+    /// Short visual label shown inside the pill.
     private var label: String {
         switch state {
         case .synced: return "OK"
@@ -40,6 +53,7 @@ struct SyncPill: View {
         }
     }
     
+    /// SF Symbol representing current sync state.
     private var iconName: String {
         switch state {
         case .synced: return "checkmark.circle.fill"
@@ -48,6 +62,7 @@ struct SyncPill: View {
         }
     }
     
+    /// Background tint based on state.
     private var backgroundColor: Color {
         switch state {
         case .synced: return .green.opacity(0.15)
@@ -56,6 +71,7 @@ struct SyncPill: View {
         }
     }
     
+    /// Foreground (text/icon) tint based on state.
     private var foregroundColor: Color {
         switch state {
         case .synced: return .green
@@ -64,10 +80,25 @@ struct SyncPill: View {
         }
     }
     
+    // MARK: - Accessibility
+    
+    /// VoiceOver full description.
     private var accessibilityText: String {
         if state == .error, let error {
             return "Errore di sincronizzazione: \(error)"
         }
         return "Stato sincronizzazione: \(label)"
+    }
+    
+    /// Additional VoiceOver hint for clarity.
+    private var accessibilityHint: String {
+        switch state {
+        case .synced:
+            return "Il documento è sincronizzato con il server."
+        case .pendingUpsert, .pendingDelete:
+            return "La sincronizzazione è in corso."
+        case .error:
+            return "La sincronizzazione non è riuscita."
+        }
     }
 }

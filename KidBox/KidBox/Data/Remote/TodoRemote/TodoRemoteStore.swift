@@ -10,6 +10,9 @@ import FirebaseFirestore
 import FirebaseAuth
 import OSLog
 
+// MARK: - Payloads / DTOs
+
+/// Outbound payload used to write (upsert) a Todo on Firestore.
 struct RemoteTodoWrite {
     let id: String
     let familyId: String
@@ -18,6 +21,7 @@ struct RemoteTodoWrite {
     let isDone: Bool
 }
 
+/// Inbound DTO decoded from Firestore.
 struct TodoRemoteDTO {
     let id: String
     let familyId: String
@@ -29,22 +33,45 @@ struct TodoRemoteDTO {
     let updatedBy: String?
 }
 
+/// Realtime change event from Firestore.
 enum TodoRemoteChange {
     case upsert(TodoRemoteDTO)
     case remove(String)
 }
 
+// MARK: - Remote store
+
+/// Firestore remote store for Todos.
+///
+/// Responsibilities:
+/// - Upsert Todo documents
+/// - Soft-delete Todo documents
+/// - Listen to realtime changes (filtered by childId)
+///
+/// Notes:
+/// - Requires an authenticated Firebase user for writes.
 final class TodoRemoteStore {
+    
+    /// Firestore handle (computed as in original code).
     var db: Firestore { Firestore.firestore() }
     
+    /// Upserts a Todo document.
+    ///
+    /// Behavior (unchanged):
+    /// - Requires authenticated user.
+    /// - Writes fields + `updatedAt` server timestamp.
+    /// - Writes `createdAt` using merge=true (still setData with merge true).
     func upsert(todo: RemoteTodoWrite) async throws {
-        guard let uid = Auth.auth().currentUser?.uid else {
+        guard let _ = Auth.auth().currentUser?.uid else {
+            KBLog.auth.kbError("TodoRemoteStore.upsert failed: not authenticated")
             throw NSError(
                 domain: "KidBox",
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
             )
         }
+        
+        KBLog.sync.kbDebug("TodoRemoteStore.upsert start familyId=\(todo.familyId) todoId=\(todo.id) childId=\(todo.childId)")
         
         let ref = db
             .collection("families")
@@ -57,21 +84,31 @@ final class TodoRemoteStore {
             "title": todo.title,
             "isDone": todo.isDone,
             "isDeleted": false,
-            "updatedBy": uid,
+            "updatedBy": Auth.auth().currentUser?.uid ?? "",
             "updatedAt": FieldValue.serverTimestamp(),
-            // creato solo la prima volta
+            // created only the first time (still sent, merge=true keeps it if already exists)
             "createdAt": FieldValue.serverTimestamp()
         ], merge: true)
+        
+        KBLog.sync.kbDebug("TodoRemoteStore.upsert OK familyId=\(todo.familyId) todoId=\(todo.id)")
     }
     
+    /// Soft-deletes a Todo document.
+    ///
+    /// Behavior (unchanged):
+    /// - Requires authenticated user.
+    /// - Sets `isDeleted=true` and updates `updatedAt` server timestamp.
     func softDelete(todoId: String, familyId: String) async throws {
-        guard let uid = Auth.auth().currentUser?.uid else {
+        guard let _ = Auth.auth().currentUser?.uid else {
+            KBLog.auth.kbError("TodoRemoteStore.softDelete failed: not authenticated")
             throw NSError(
                 domain: "KidBox",
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
             )
         }
+        
+        KBLog.sync.kbDebug("TodoRemoteStore.softDelete start familyId=\(familyId) todoId=\(todoId)")
         
         let ref = db
             .collection("families")
@@ -81,19 +118,31 @@ final class TodoRemoteStore {
         
         try await ref.setData([
             "isDeleted": true,
-            "updatedBy": uid,
+            "updatedBy": Auth.auth().currentUser?.uid ?? "",
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
+        
+        KBLog.sync.kbDebug("TodoRemoteStore.softDelete OK familyId=\(familyId) todoId=\(todoId)")
     }
 }
 
+// MARK: - Realtime listener
+
 extension TodoRemoteStore {
     
+    /// Starts a realtime listener for todos of a given child in a family.
+    ///
+    /// Behavior (unchanged):
+    /// - Listens on `families/{familyId}/todos` filtered by `childId`.
+    /// - Maps Firestore documentChanges to `TodoRemoteChange` array.
+    /// - Calls `onChange` only when changes is not empty.
     func listenTodos(
         familyId: String,
         childId: String,
         onChange: @escaping ([TodoRemoteChange]) -> Void
     ) -> ListenerRegistration {
+        
+        KBLog.sync.kbInfo("TodoRemoteStore.listenTodos attach familyId=\(familyId) childId=\(childId)")
         
         let db = Firestore.firestore()
         
@@ -103,16 +152,20 @@ extension TodoRemoteStore {
             .whereField("childId", isEqualTo: childId)
             .addSnapshotListener { snap, err in
                 if let err {
-                    KBLog.sync.error("Firestore listener error: \(err.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("Todos listener error: \(err.localizedDescription) familyId=\(familyId) childId=\(childId)")
                     return
                 }
-                guard let snap else { return }
+                guard let snap else {
+                    KBLog.sync.kbDebug("Todos listener snapshot nil familyId=\(familyId) childId=\(childId)")
+                    return
+                }
+                
+                KBLog.sync.kbDebug("Todos snapshot size=\(snap.documents.count) changes=\(snap.documentChanges.count) familyId=\(familyId) childId=\(childId)")
                 
                 let changes: [TodoRemoteChange] = snap.documentChanges.compactMap { diff in
                     let doc = diff.document
                     let data = doc.data()
                     
-                    // Mappa i tuoi campi
                     let dto = TodoRemoteDTO(
                         id: doc.documentID,
                         familyId: familyId,
@@ -133,6 +186,7 @@ extension TodoRemoteStore {
                 }
                 
                 if !changes.isEmpty {
+                    KBLog.sync.kbDebug("Todos onChange firing changes=\(changes.count) familyId=\(familyId) childId=\(childId)")
                     onChange(changes)
                 }
             }

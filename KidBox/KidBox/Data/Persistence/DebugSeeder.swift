@@ -7,30 +7,48 @@
 
 import Foundation
 import SwiftData
-import OSLog
 
 /// Seeds the local SwiftData store with a minimal dataset for development.
 ///
-/// The seed is idempotent: it will not run if at least one `KBFamily` exists.
-/// This allows you to relaunch the app without duplicating data.
+/// The seed is idempotent:
+/// - If at least one `KBFamily` already exists, seeding is skipped.
+/// - This allows relaunching the app without duplicating debug data.
 ///
-/// - Important: This is compiled and executed only in DEBUG builds.
-
+/// Scope:
+/// - DEBUG builds only.
+/// - Creates:
+///     - 1 family
+///     - 1 child (via relationship)
+///     - 3 routines
+///     - 2 todos
+///     - 1 calendar event
+///
+/// - Important:
+///   This must never run in production builds.
 enum DebugSeeder {
     
+    /// Seeds debug data if the database is empty.
+    ///
+    /// - Parameter context: SwiftData `ModelContext`.
     static func seedIfNeeded(context: ModelContext) {
 #if DEBUG
+        KBLog.persistence.kbInfo("DEBUG seed check started")
+        
         do {
             let existingFamilies = try context.fetch(FetchDescriptor<KBFamily>())
+            
             guard existingFamilies.isEmpty else {
-                KBLog.persistence.debug("Seed skipped (family already exists)")
+                KBLog.persistence.kbDebug("Seed skipped (family already exists)")
                 return
             }
+            
+            KBLog.persistence.kbInfo("No families found, creating debug seed data")
             
             let userId = "debug-user"
             let now = Date()
             
-            // Family
+            // MARK: - Family
+            
             let family = KBFamily(
                 id: UUID().uuidString,
                 name: "Famiglia Rossi",
@@ -40,7 +58,10 @@ enum DebugSeeder {
                 updatedAt: now
             )
             
-            // Child (relationship-based)
+            KBLog.persistence.kbDebug("Family created (in-memory)")
+            
+            // MARK: - Child (relationship-based)
+            
             let child = KBChild(
                 id: UUID().uuidString,
                 familyId: family.id,
@@ -48,29 +69,64 @@ enum DebugSeeder {
                 birthDate: nil,
                 createdBy: userId,
                 createdAt: now,
-                updatedBy:userId,
+                updatedBy: userId,
                 updatedAt: now
             )
             
             family.children.append(child)
+            KBLog.persistence.kbDebug("Child appended to family")
             
-            // Insert ONLY the root (family) is enough when using relationships
+            // Insert only root when using relationships
             context.insert(family)
             
-            // Routines / Todos / Events:
-            // ⚠️ Qui devi decidere: questi modelli usano ancora familyId/childId string?
-            // Se sì, continuiamo a popolarli con family.id e child.id come prima.
+            // MARK: - Routines (ordered)
             
-            // 3 routines (ordered)
-            context.insert(KBRoutine(familyId: family.id, childId: child.id, title: "Preparare latte", sortOrder: 0, updatedBy: userId))
-            context.insert(KBRoutine(familyId: family.id, childId: child.id, title: "Vitamina", sortOrder: 1, updatedBy: userId))
-            context.insert(KBRoutine(familyId: family.id, childId: child.id, title: "Borsa nido", sortOrder: 2, updatedBy: userId))
+            context.insert(KBRoutine(
+                familyId: family.id,
+                childId: child.id,
+                title: "Preparare latte",
+                sortOrder: 0,
+                updatedBy: userId
+            ))
             
-            // 2 todos
-            context.insert(KBTodoItem(familyId: family.id, childId: child.id, title: "Comprare pannolini", updatedBy: userId))
-            context.insert(KBTodoItem(familyId: family.id, childId: child.id, title: "Prenotare pediatra", updatedBy: userId))
+            context.insert(KBRoutine(
+                familyId: family.id,
+                childId: child.id,
+                title: "Vitamina",
+                sortOrder: 1,
+                updatedBy: userId
+            ))
             
-            // 1 event (tomorrow 09:00)
+            context.insert(KBRoutine(
+                familyId: family.id,
+                childId: child.id,
+                title: "Borsa nido",
+                sortOrder: 2,
+                updatedBy: userId
+            ))
+            
+            KBLog.persistence.kbDebug("Routines inserted")
+            
+            // MARK: - Todos
+            
+            context.insert(KBTodoItem(
+                familyId: family.id,
+                childId: child.id,
+                title: "Comprare pannolini",
+                updatedBy: userId
+            ))
+            
+            context.insert(KBTodoItem(
+                familyId: family.id,
+                childId: child.id,
+                title: "Prenotare pediatra",
+                updatedBy: userId
+            ))
+            
+            KBLog.persistence.kbDebug("Todo items inserted")
+            
+            // MARK: - Event (tomorrow 09:00)
+            
             let cal = Calendar.current
             let tomorrow = cal.date(byAdding: .day, value: 1, to: now) ?? now
             let start = cal.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) ?? tomorrow
@@ -85,11 +141,14 @@ enum DebugSeeder {
                 updatedBy: userId
             ))
             
+            KBLog.persistence.kbDebug("Event inserted")
+            
             try context.save()
-            KBLog.persistence.info("DEBUG seed created (familyId=\(family.id, privacy: .public))")
+            
+            KBLog.persistence.kbInfo("DEBUG seed created successfully (familyId=\(family.id))")
             
         } catch {
-            KBLog.persistence.error("DEBUG seed failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.persistence.kbError("DEBUG seed failed: \(error.localizedDescription)")
         }
 #endif
     }

@@ -11,22 +11,36 @@ import OSLog
 
 /// SwiftData-backed implementation of `RoutineRepository`.
 ///
-/// - Important: This repository persists data locally and is designed for local-first usage.
-///   Server sync will be handled by a dedicated SyncEngine layer.
+/// This repository is **local-first** and persists routines and routine checks in SwiftData.
+/// Remote sync (Firestore/outbox) is handled elsewhere (e.g. `SyncCenter`).
+///
+/// Key behaviors:
+/// - Queries always scope by `familyId` + `childId`.
+/// - Soft delete via `isDeleted`.
+/// - Routine checks are **append-only** to reduce sync conflicts.
 final class SwiftDataRoutineRepository: RoutineRepository {
     
     // MARK: - Dependencies
+    
+    /// SwiftData context used for fetch/insert/save operations.
     private let context: ModelContext
     
     /// Creates a repository bound to a specific SwiftData `ModelContext`.
     init(context: ModelContext) {
         self.context = context
+        KBLog.data.kbDebug("SwiftDataRoutineRepository init")
     }
     
     // MARK: - Queries
     
-    /// Returns active, non-deleted routines for a child, ordered by `sortOrder`.
+    /// Returns active, non-deleted routines for a child, ordered by `sortOrder` then `title`.
+    ///
+    /// Behavior (unchanged):
+    /// - Filters by `familyId`, `childId`, `isActive == true`, `isDeleted == false`.
+    /// - Sorts by `sortOrder`, then `title`.
     func listActiveRoutines(familyId: String, childId: String) throws -> [KBRoutine] {
+        KBLog.data.kbDebug("listActiveRoutines start familyId=\(familyId) childId=\(childId)")
+        
         let descriptor = FetchDescriptor<KBRoutine>(
             predicate: #Predicate {
                 $0.familyId == familyId &&
@@ -36,42 +50,71 @@ final class SwiftDataRoutineRepository: RoutineRepository {
             },
             sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.title)]
         )
-        return try context.fetch(descriptor)
+        
+        let items = try context.fetch(descriptor)
+        KBLog.data.kbDebug("listActiveRoutines done count=\(items.count)")
+        return items
     }
     
     // MARK: - Commands
     
-    /// Inserts a new routine and saves the context.
+    /// Inserts a new routine and persists it.
+    ///
+    /// Behavior (unchanged):
+    /// - Inserts into the context.
+    /// - Saves the context.
     func createRoutine(_ routine: KBRoutine) throws {
-        KBLog.data.debug("Create routine id=\(routine.id, privacy: .public)")
+        KBLog.data.kbInfo("createRoutine id=\(routine.id)")
         context.insert(routine)
         try context.save()
+        KBLog.data.kbDebug("createRoutine saved id=\(routine.id)")
     }
     
-    /// Updates a routine in-place and saves the context.
+    /// Persists changes to an existing routine and refreshes `updatedAt`.
     ///
-    /// - Note: SwiftData tracks changes; this method mainly ensures `updatedAt` is refreshed.
+    /// Behavior (unchanged):
+    /// - Sets `updatedAt = Date()`.
+    /// - Saves the context.
     func updateRoutine(_ routine: KBRoutine) throws {
-        KBLog.data.debug("Update routine id=\(routine.id, privacy: .public)")
+        KBLog.data.kbInfo("updateRoutine id=\(routine.id)")
         routine.updatedAt = Date()
         try context.save()
+        KBLog.data.kbDebug("updateRoutine saved id=\(routine.id)")
     }
     
-    /// Soft deletes a routine by setting `isDeleted = true`.
+    /// Soft deletes a routine by marking `isDeleted = true` and persisting it.
+    ///
+    /// Behavior (unchanged):
+    /// - Sets `isDeleted = true`.
+    /// - Sets `updatedBy` and `updatedAt = Date()`.
+    /// - Saves the context.
     func softDeleteRoutine(_ routine: KBRoutine, updatedBy: String) throws {
-        KBLog.data.debug("Soft delete routine id=\(routine.id, privacy: .public)")
+        KBLog.data.kbInfo("softDeleteRoutine id=\(routine.id)")
         routine.isDeleted = true
         routine.updatedBy = updatedBy
         routine.updatedAt = Date()
         try context.save()
+        KBLog.data.kbDebug("softDeleteRoutine saved id=\(routine.id)")
     }
     
     /// Appends a completion event for a routine for a given day.
     ///
     /// This method is intentionally append-only to avoid conflicts during sync:
     /// if two parents check the same routine, both events can coexist without corruption.
-    func addRoutineCheck(familyId: String, childId: String, routineId: String, day: Date, checkedBy: String) throws {
+    ///
+    /// Behavior (unchanged):
+    /// - Computes `dayKey` from `day`.
+    /// - Inserts a new `KBRoutineCheck`.
+    /// - Saves the context.
+    func addRoutineCheck(
+        familyId: String,
+        childId: String,
+        routineId: String,
+        day: Date,
+        checkedBy: String
+    ) throws {
         let dayKey = day.kbDayKey()
+        
         let check = KBRoutineCheck(
             familyId: familyId,
             childId: childId,
@@ -80,8 +123,9 @@ final class SwiftDataRoutineRepository: RoutineRepository {
             checkedBy: checkedBy
         )
         
-        KBLog.routine.info("Add routine check routineId=\(routineId, privacy: .public) dayKey=\(dayKey, privacy: .public)")
+        KBLog.routine.kbInfo("addRoutineCheck routineId=\(routineId) dayKey=\(dayKey)")
         context.insert(check)
         try context.save()
+        KBLog.routine.kbDebug("addRoutineCheck saved routineId=\(routineId) dayKey=\(dayKey)")
     }
 }

@@ -7,19 +7,29 @@
 
 import Foundation
 import SwiftData
-import OSLog
 
 /// Creates and configures the SwiftData `ModelContainer` for KidBox.
 ///
-/// - Important: KidBox uses a local-first database. Server sync will be handled separately
-///   (e.g. Firestore) by a SyncEngine layer.
-/// - Parameter inMemory: Use `true` for previews/tests.
+/// KidBox is local-first:
+/// - SwiftData provides the on-device persistence layer.
+/// - Remote sync (Firestore/Storage) is handled separately by the sync layer.
+///
+/// Use cases:
+/// - App runtime (persistent store on disk)
+/// - Previews/tests (optional in-memory store)
 enum ModelContainerProvider {
     
     /// Builds a `ModelContainer` containing all KidBox SwiftData models.
+    ///
+    /// - Parameter inMemory: Use `true` for previews/tests to avoid writing to disk.
+    /// - Returns: Configured `ModelContainer`.
+    ///
+    /// - Important:
+    ///   This must succeed for the app to run. On failure the app terminates with `fatalError`.
     static func makeContainer(inMemory: Bool = false) -> ModelContainer {
-        KBLog.persistence.info("Creating ModelContainer (inMemory: \(inMemory))")
+        KBLog.persistence.kbInfo("Creating ModelContainer inMemory=\(inMemory)")
         
+        // Schema includes all persisted models used by the app.
         let schema = Schema([
             KBFamily.self,
             KBFamilyMember.self,
@@ -35,14 +45,17 @@ enum ModelContainerProvider {
             KBSyncOp.self
         ])
         
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: inMemory
+        )
         
         do {
             let container = try ModelContainer(for: schema, configurations: [configuration])
-            KBLog.persistence.info("ModelContainer created successfully")
+            KBLog.persistence.kbInfo("ModelContainer created successfully")
             return container
         } catch {
-            KBLog.persistence.fault("ModelContainer creation failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.persistence.kbError("ModelContainer creation failed: \(error.localizedDescription)")
             fatalError("Could not create ModelContainer: \(error)")
         }
     }

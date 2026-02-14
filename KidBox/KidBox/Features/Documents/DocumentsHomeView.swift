@@ -7,7 +7,16 @@
 
 import SwiftUI
 import SwiftData
+import OSLog
 
+/// Entry point for the "Documenti" area.
+///
+/// Shows:
+/// - An empty state if the user has no active family in local SwiftData
+/// - The root `DocumentFolderView` otherwise
+///
+/// - Note: Avoid logging in `body` to prevent spam due to SwiftUI recomputations.
+///   Logging is performed only on lifecycle or user actions.
 struct DocumentsHomeView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
@@ -26,6 +35,13 @@ struct DocumentsHomeView: View {
         }
         .navigationTitle("Documenti")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            KBLog.ui.info("DocumentsHomeView appeared familyId=\(familyId.isEmpty ? "EMPTY" : familyId, privacy: .public)")
+        }
+        .onChange(of: families.first?.id) { _, newValue in
+            let fid = newValue ?? ""
+            KBLog.ui.info("DocumentsHomeView active family changed familyId=\(fid.isEmpty ? "EMPTY" : fid, privacy: .public)")
+        }
     }
     
     private var emptyNoFamily: some View {
@@ -38,6 +54,7 @@ struct DocumentsHomeView: View {
                 .font(.headline)
             
             Button("Vai a Family") {
+                KBLog.ui.info("DocumentsHomeView CTA tap: navigate to familySettings")
                 coordinator.navigate(to: .familySettings)
             }
             .buttonStyle(.borderedProminent)
