@@ -9,6 +9,7 @@ import SwiftUI
 import FirebaseAuth
 import OSLog
 import SwiftData
+import Combine
 
 /// Family settings hub.
 ///
@@ -34,8 +35,18 @@ struct FamilySettingsView: View {
     
     @State private var showLeaveFamilyConfirm = false
     @State private var leaveError: String?
+    @State private var memberToRevoke: KBFamilyMember?
+    @State private var showRevokeConfirm = false
+    @State private var revokeError: String?
     
-    private var family: KBFamily? { families.first }
+    /// La famiglia attiva: prima cerca per activeFamilyId del coordinator,
+    /// poi fallback a families.first (primo avvio, utente con una sola famiglia).
+    private var family: KBFamily? {
+        if let activeId = coordinator.activeFamilyId {
+            return families.first(where: { $0.id == activeId }) ?? families.first
+        }
+        return families.first
+    }
     private var hasFamily: Bool { family != nil }
     
     /// Primo childId disponibile per la family (serve solo per la route legacy).
@@ -61,6 +72,20 @@ struct FamilySettingsView: View {
         return "Figli: \(firstThree) +\(kids.count - 3)"
     }
     
+    private var currentUid: String { Auth.auth().currentUser?.uid ?? "" }
+    private var isOwner: Bool { family?.createdBy == currentUid }
+    
+    /// Membri attivi (non eliminati) della famiglia corrente
+    private var activeMembers: [KBFamilyMember] {
+        guard let fid = family?.id else { return [] }
+        return members
+            .filter { $0.familyId == fid && !$0.isDeleted }
+            .sorted { displayLabel(for: $0) < displayLabel(for: $1) }
+    }
+    
+    /// Il bottone "Esci" è visibile solo se ci sono almeno 2 membri attivi
+    private var canLeave: Bool { activeMembers.count >= 2 }
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
@@ -70,7 +95,7 @@ struct FamilySettingsView: View {
                     familySummaryCard
                     familyMembersCard
                     actionsWithFamily
-                    dangerZone
+                    if canLeave { dangerZone }
                 } else {
                     emptyStateCard
                     actionsWithoutFamily
@@ -81,6 +106,22 @@ struct FamilySettingsView: View {
         .navigationTitle("Family")
         .onAppear { onAppearStartRealtime() }
         .onDisappear { onDisappearStopRealtime() }
+        .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
+            guard let fid = family?.id, fid == revokedFamilyId else { return }
+            KBLog.sync.info("FamilySettingsView: currentUserRevoked received familyId=\(revokedFamilyId, privacy: .public)")
+            Task { @MainActor in
+                // Wipe local data and return to root
+                do {
+                    let service = FamilyLeaveService(modelContext: modelContext)
+                    try await service.leaveFamily(familyId: revokedFamilyId)
+                } catch {
+                    // Wipe failed (e.g. already wiped) — still reset to root
+                    KBLog.sync.error("FamilySettingsView: post-revoke wipe failed: \(error.localizedDescription, privacy: .public)")
+                }
+                coordinator.setActiveFamily(nil)
+                coordinator.resetToRoot()
+            }
+        }
         .alert("Uscire dalla famiglia?", isPresented: $showLeaveFamilyConfirm) {
             Button("Annulla", role: .cancel) { }
             Button("Esci", role: .destructive) {
@@ -103,6 +144,23 @@ struct FamilySettingsView: View {
             Button("OK") { leaveError = nil }
         } message: {
             Text(leaveError ?? "")
+        }
+        .alert("Revocare l'accesso?", isPresented: $showRevokeConfirm) {
+            Button("Annulla", role: .cancel) { memberToRevoke = nil }
+            Button("Revoca", role: .destructive) {
+                guard let m = memberToRevoke else { return }
+                Task { @MainActor in await revokeAccess(member: m) }
+            }
+        } message: {
+            Text("\(displayLabel(for: memberToRevoke)) non potrà più accedere ai dati della famiglia.")
+        }
+        .alert("Errore revoca", isPresented: Binding(
+            get: { revokeError != nil },
+            set: { if !$0 { revokeError = nil } }
+        )) {
+            Button("OK") { revokeError = nil }
+        } message: {
+            Text(revokeError ?? "")
         }
     }
     
@@ -165,12 +223,7 @@ struct FamilySettingsView: View {
     }
     
     private var familyMembersCard: some View {
-        let familyId = family?.id ?? ""
-        
-        let list = members
-            .filter { $0.familyId == familyId && !$0.isDeleted }
-            .sorted { displayLabel(for: $0) < displayLabel(for: $1) }
-        
+        let list = activeMembers
         return KBSettingsCardWithExtra(
             title: "Membri",
             subtitle: membersSubtitle(list: list),
@@ -189,19 +242,36 @@ struct FamilySettingsView: View {
                 } else {
                     ForEach(list) { m in
                         HStack(spacing: 10) {
-                            Image(systemName: m.role == "admin" ? "crown.fill" : "person.fill")
-                                .foregroundStyle(.secondary)
+                            Image(systemName: m.userId == family?.createdBy ? "crown.fill" : "person.fill")
+                                .foregroundStyle(m.userId == family?.createdBy ? Color.orange : Color.secondary)
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(displayLabel(for: m))
                                     .font(.subheadline)
-                                Text(roleLabel(m.role))
+                                Text(m.userId == family?.createdBy ? "Owner" : roleLabel(m.role))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
+                            
                             Spacer()
+                            
+                            // Bottone revoca: visibile solo all'owner, non su se stesso
+                            if isOwner && m.userId != currentUid {
+                                Button {
+                                    memberToRevoke = m
+                                    showRevokeConfirm = true
+                                } label: {
+                                    Image(systemName: "person.crop.circle.badge.minus")
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.borderless)
+                            }
                         }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, 4)
+                        
+                        if m.id != list.last?.id {
+                            Divider()
+                        }
                     }
                 }
             }
@@ -311,7 +381,28 @@ struct FamilySettingsView: View {
         }
     }
     
+    @MainActor
+    private func revokeAccess(member: KBFamilyMember) async {
+        guard let familyId = family?.id else { return }
+        KBLog.sync.info("FamilySettingsView: revoking uid=\(member.userId, privacy: .public)")
+        do {
+            let service = FamilyRevokeService(modelContext: modelContext)
+            try await service.revokeMember(familyId: familyId, targetUid: member.userId)
+            KBLog.sync.info("FamilySettingsView: revoke OK uid=\(member.userId, privacy: .public)")
+            memberToRevoke = nil
+        } catch {
+            KBLog.sync.error("FamilySettingsView: revoke FAILED err=\(error.localizedDescription, privacy: .public)")
+            revokeError = error.localizedDescription
+            memberToRevoke = nil
+        }
+    }
+    
     // MARK: - Helpers
+    
+    private func displayLabel(for m: KBFamilyMember?) -> String {
+        guard let m else { return "questo membro" }
+        return displayLabel(for: m)
+    }
     
     private func displayLabel(for m: KBFamilyMember) -> String {
         (m.displayName?.trimmedNonEmpty)

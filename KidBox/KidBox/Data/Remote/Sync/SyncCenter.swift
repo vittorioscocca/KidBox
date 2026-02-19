@@ -43,6 +43,32 @@ final class SyncCenter: ObservableObject {
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
     
+    private var accessLostHandled = Set<String>()
+    
+    static func isPermissionDenied(_ error: Error) -> Bool {
+        let ns = error as NSError
+        return ns.domain == FirestoreErrorDomain &&
+        ns.code == FirestoreErrorCode.permissionDenied.rawValue
+    }
+    
+    @MainActor
+    func handleFamilyAccessLost(familyId: String, source: String, error: Error) {
+        // evita spam/loop
+        guard !accessLostHandled.contains(familyId) else { return }
+        accessLostHandled.insert(familyId)
+        
+        KBLog.sync.kbError("Family access lost (PERMISSION_DENIED). familyId=\(familyId) source=\(source) err=\(error.localizedDescription)")
+        
+        stopMembersRealtime()
+        stopTodoRealtime()
+        stopChildrenRealtime()
+        stopFamilyBundleRealtime()
+        stopDocumentsRealtime()
+        
+        // Notifica UI: “sei stato buttato fuori”
+        Self._currentUserRevoked.send(familyId)
+    }
+    
     // MARK: - Todo Realtime
     
     /// Starts (or restarts) realtime listener for todos.
@@ -55,10 +81,22 @@ final class SyncCenter: ObservableObject {
         KBLog.sync.kbInfo("startTodoRealtime familyId=\(familyId) childId=\(childId)")
         stopTodoRealtime()
         
-        todoListener = remote.listenTodos(familyId: familyId, childId: childId) { [weak self] changes in
-            guard let self else { return }
-            self.applyTodoInbound(changes: changes, modelContext: modelContext)
-        }
+        todoListener = remote.listenTodos(
+            familyId: familyId,
+            childId: childId,
+            onChange: { [weak self] changes in
+                guard let self else { return }
+                self.applyTodoInbound(changes: changes, modelContext: modelContext)
+            },
+            onError: { [weak self] err in
+                guard let self else { return }
+                if Self.isPermissionDenied(err) {
+                    Task { @MainActor in
+                        self.handleFamilyAccessLost(familyId: familyId, source: "todos", error: err)
+                    }
+                }
+            }
+        )
     }
     
     /// Stops todo realtime listener if active.
@@ -98,12 +136,23 @@ final class SyncCenter: ObservableObject {
             await membersRemote.upsertMyMemberProfileIfNeeded(familyId: familyId)
         }
         
-        membersListener = membersRemote.listenMembers(familyId: familyId) { [weak self] changes in
-            guard let self else { return }
-            Task { @MainActor in
-                self.applyMembersInbound(familyId: familyId, changes: changes, modelContext: modelContext)
+        membersListener = membersRemote.listenMembers(
+            familyId: familyId,
+            onChange: { [weak self] changes in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.applyMembersInbound(familyId: familyId, changes: changes, modelContext: modelContext)
+                }
+            },
+            onError: { [weak self] err in
+                guard let self else { return }
+                if Self.isPermissionDenied(err) {
+                    Task { @MainActor in
+                        self.handleFamilyAccessLost(familyId: familyId, source: "members", error: err)
+                    }
+                }
             }
-        }
+        )
     }
     
     /// Stops members realtime listener if active.
@@ -149,10 +198,22 @@ final class SyncCenter: ObservableObject {
                 case .upsert(let dto):
                     seenIds.insert(dto.id)
                     
-                    // Soft-delete remote => delete local
+                    // Soft-delete remote => delete local, notify if current user
                     if dto.isDeleted {
                         if let local = localById[dto.id] {
+                            let wasCurrentUser = local.userId == Auth.auth().currentUser?.uid
+                            let famId = local.familyId
                             modelContext.delete(local)
+                            if wasCurrentUser {
+                                KBLog.sync.kbInfo("Current user soft-deleted from family familyId=\(famId)")
+                                stopMembersRealtime()
+                                stopTodoRealtime()
+                                stopChildrenRealtime()
+                                stopFamilyBundleRealtime()
+                                documentsListener?.remove()
+                                documentsListener = nil
+                                Self._currentUserRevoked.send(famId)
+                            }
                         }
                         continue
                     }
@@ -196,18 +257,24 @@ final class SyncCenter: ObservableObject {
                         let famId = local.familyId
                         modelContext.delete(local)
                         
-                        // If I'm removed: stop listeners to avoid resurrecting
+                        // If I'm removed: stop listeners to avoid resurrecting, then notify UI
                         if removedUserId == Auth.auth().currentUser?.uid {
                             KBLog.sync.kbInfo("Current user removed from family familyId=\(famId)")
                             
                             stopMembersRealtime()
                             stopTodoRealtime()
+                            stopChildrenRealtime()
+                            stopFamilyBundleRealtime()
                             
                             if documentsListener != nil {
                                 KBLog.sync.kbInfo("Stopping documentsListener due to removal")
                             }
                             documentsListener?.remove()
                             documentsListener = nil
+                            
+                            // Notify UI to expel the user
+                            KBLog.sync.kbInfo("Emitting currentUserRevoked familyId=\(famId)")
+                            Self._currentUserRevoked.send(famId)
                         }
                     }
                 }
@@ -673,5 +740,17 @@ extension SyncCenter {
     func emitDocsChanged(familyId: String) {
         KBLog.sync.kbDebug("emitDocsChanged familyId=\(familyId)")
         Self._docsChanged.send(familyId)
+    }
+    
+    // MARK: - Member revocation publisher
+    
+    /// Emitted when the current user is removed or revoked from a family.
+    /// Payload is the familyId from which the user was removed.
+    private static var _currentUserRevoked = PassthroughSubject<String, Never>()
+    
+    /// Publisher that fires when the current user is removed/revoked from a family.
+    /// Observe this in views to trigger automatic sign-out from the family.
+    var currentUserRevoked: AnyPublisher<String, Never> {
+        Self._currentUserRevoked.eraseToAnyPublisher()
     }
 }

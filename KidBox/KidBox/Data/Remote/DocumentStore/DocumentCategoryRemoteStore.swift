@@ -160,7 +160,8 @@ final class DocumentCategoryRemoteStore {
     /// - Returns: Firestore `ListenerRegistration` to stop listening.
     func listenCategories(
         familyId: String,
-        onChange: @escaping ([DocumentCategoryRemoteChange]) -> Void
+        onChange: @escaping ([DocumentCategoryRemoteChange]) -> Void,
+        onError: @escaping (Error) -> Void
     ) -> ListenerRegistration {
         
         KBLog.sync.kbInfo("DocCategories listener attach familyId=\(familyId)")
@@ -171,6 +172,7 @@ final class DocumentCategoryRemoteStore {
             .addSnapshotListener { snap, err in
                 if let err {
                     KBLog.sync.kbError("DocCategories listener error: \(err.localizedDescription)")
+                    onError(err)
                     return
                 }
                 guard let snap else {

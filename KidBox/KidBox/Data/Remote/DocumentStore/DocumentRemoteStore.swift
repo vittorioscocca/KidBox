@@ -160,7 +160,8 @@ final class DocumentRemoteStore {
     /// - Returns: Firestore listener registration.
     func listenDocuments(
         familyId: String,
-        onChange: @escaping ([DocumentRemoteChange]) -> Void
+        onChange: @escaping ([DocumentRemoteChange]) -> Void,
+        onError: @escaping (Error) -> Void
     ) -> ListenerRegistration {
         
         KBLog.sync.kbInfo("Documents listener attach familyId=\(familyId)")
@@ -172,6 +173,7 @@ final class DocumentRemoteStore {
                 
                 if let err {
                     KBLog.sync.kbError("Documents listener error: \(err.localizedDescription)")
+                    onError(err)
                     return
                 }
                 

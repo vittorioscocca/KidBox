@@ -90,25 +90,6 @@ struct KidBoxApp: App {
                     SyncCenter.shared.flushGlobal(modelContext: context)
                 }
             
-            // MARK: Debug seeding (simulator-only)
-                .onAppear {
-                    let context = modelContainer.mainContext
-                    KBLog.app.kbDebug("Root window appeared")
-                    
-#if DEBUG
-#if targetEnvironment(simulator)
-                    if Auth.auth().currentUser == nil {
-                        KBLog.persistence.kbInfo("DEBUG seeding (simulator, no authenticated user)")
-                        DebugSeeder.seedIfNeeded(context: context)
-                    } else {
-                        KBLog.persistence.kbInfo("DEBUG seed skipped (authenticated user)")
-                    }
-#else
-                    KBLog.persistence.kbInfo("DEBUG seed disabled on real device")
-#endif
-#endif
-                }
-            
             // MARK: Debug-only services
                 .task {
 #if DEBUG

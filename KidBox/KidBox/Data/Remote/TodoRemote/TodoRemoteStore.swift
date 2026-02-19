@@ -139,7 +139,8 @@ extension TodoRemoteStore {
     func listenTodos(
         familyId: String,
         childId: String,
-        onChange: @escaping ([TodoRemoteChange]) -> Void
+        onChange: @escaping ([TodoRemoteChange]) -> Void,
+        onError: @escaping (Error) -> Void
     ) -> ListenerRegistration {
         
         KBLog.sync.kbInfo("TodoRemoteStore.listenTodos attach familyId=\(familyId) childId=\(childId)")
@@ -153,6 +154,7 @@ extension TodoRemoteStore {
             .addSnapshotListener { snap, err in
                 if let err {
                     KBLog.sync.kbError("Todos listener error: \(err.localizedDescription) familyId=\(familyId) childId=\(childId)")
+                    onError(err)
                     return
                 }
                 guard let snap else {

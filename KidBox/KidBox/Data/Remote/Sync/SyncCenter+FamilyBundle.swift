@@ -40,9 +40,14 @@ extension SyncCenter {
         Self._familyListener = Firestore.firestore()
             .collection("families")
             .document(familyId)
-            .addSnapshotListener { snap, err in
+            .addSnapshotListener { [weak self] snap, err in
                 if let err {
                     KBLog.sync.kbError("Family listener error: \(err.localizedDescription)")
+                    if let self, Self.isPermissionDenied(err) {
+                        Task { @MainActor in
+                            self.handleFamilyAccessLost(familyId: familyId, source: "family", error: err)
+                        }
+                    }
                     return
                 }
                 guard let snap, let data = snap.data() else {

@@ -58,7 +58,7 @@ enum FamilyKeychainStore {
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecAttrSynchronizable as String: true  // ✅ Cerca nei dispositivi sincronizzati
+            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny // trova item sync e non-sync
         ]
         
         var item: CFTypeRef?
@@ -142,24 +142,3 @@ enum FamilyKeychainStore {
         )
     }
 }
-
-/*
- ℹ️ Multi-Account Support:
- 
- Scenario: Un dispositivo con 2 account Apple ID
- 
- Device con Account A + Account B:
- - Account A + Family X → Keychain: "kidbox.family.masterkey.{uidA}.{familyX}" → chiave A
- - Account B + Family X → Keychain: "kidbox.family.masterkey.{uidB}.{familyX}" → chiave B
- - ✅ No conflicts! Ogni account ha la sua chiave
- 
- iCloud Keychain:
- - Account A (Device 1) salva la chiave
- - Account A (Device 2) riceve la stessa chiave via iCloud
- - Account B non vede la chiave di Account A (iCloud è per-account)
- 
- Usage:
- let uid = Auth.auth().currentUser?.uid ?? "local"
- try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId, userId: uid)
- let key = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: uid)
- */

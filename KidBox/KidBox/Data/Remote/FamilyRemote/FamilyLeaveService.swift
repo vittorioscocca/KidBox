@@ -47,6 +47,19 @@ final class FamilyLeaveService {
         
         KBLog.sync.kbInfo("leaveFamily started familyId=\(familyId)")
         
+        // 0) Block if user is the only member (would orphan the family in the cloud)
+        let fid = familyId
+        let memberDesc = FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        let memberCount = (try? modelContext.fetch(memberDesc).count) ?? 0
+        if memberCount <= 1 {
+            KBLog.sync.kbError("leaveFamily blocked: user is the only member")
+            throw NSError(domain: "KidBox", code: -5, userInfo: [
+                NSLocalizedDescriptionKey: "Sei l'unico membro della famiglia. Eliminala prima di uscire."
+            ])
+        }
+        
         // 1) Block sync
         KBLog.sync.kbInfo("beginLocalWipe")
         SyncCenter.shared.beginLocalWipe()
@@ -97,5 +110,26 @@ final class FamilyLeaveService {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         KBLog.sync.kbInfo("leaveFamily completed familyId=\(familyId)")
+    }
+    
+    @MainActor
+    func wipeFamilyLocalOnly(familyId: String) throws {
+        KBLog.sync.kbInfo("wipeFamilyLocalOnly started familyId=\(familyId)")
+        
+        SyncCenter.shared.beginLocalWipe()
+        
+        SyncCenter.shared.stopMembersRealtime()
+        SyncCenter.shared.stopTodoRealtime()
+        SyncCenter.shared.stopChildrenRealtime()
+        SyncCenter.shared.stopFamilyBundleRealtime()
+        SyncCenter.shared.stopDocumentsRealtime()
+        
+        try LocalDataWiper.wipeFamily(familyId: familyId, context: modelContext)
+        try modelContext.save()
+        
+        SyncCenter.shared.endLocalWipe()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        KBLog.sync.kbInfo("wipeFamilyLocalOnly completed familyId=\(familyId)")
     }
 }

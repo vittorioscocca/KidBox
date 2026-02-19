@@ -131,19 +131,30 @@ extension SyncCenter {
             }
         
         // 2) Documents listener
-        Self._docListener = documentRemote.listenDocuments(familyId: familyId) { [weak self] changes in
-            guard let self else {
-                KBLog.sync.kbError("Documents listener callback lost self (unexpected)")
-                return
+        Self._docListener = documentRemote.listenDocuments(
+            familyId: familyId,
+            onChange: { [weak self] changes in
+                guard let self else {
+                    KBLog.sync.kbError("Documents listener callback lost self (unexpected)")
+                    return
+                }
+                
+                KBLog.sync.kbDebug("Documents onChange changes=\(changes.count) familyId=\(familyId)")
+                
+                Task { @MainActor in
+                    self.applyDocumentInbound(changes: changes, modelContext: modelContext)
+                    SyncCenter.shared.emitDocsChanged(familyId: familyId)
+                }
+            },
+            onError: { [weak self] err in
+                guard let self else { return }
+                if Self.isPermissionDenied(err) {
+                    Task { @MainActor in
+                        self.handleFamilyAccessLost(familyId: familyId, source: "documents", error: err)
+                    }
+                }
             }
-            
-            KBLog.sync.kbDebug("Documents onChange changes=\(changes.count) familyId=\(familyId)")
-            
-            Task { @MainActor in
-                self.applyDocumentInbound(changes: changes, modelContext: modelContext)
-                SyncCenter.shared.emitDocsChanged(familyId: familyId)
-            }
-        }
+        )
         
         KBLog.sync.kbInfo("Documents listeners attached familyId=\(familyId)")
     }
