@@ -206,9 +206,11 @@ struct SetupFamilyView: View {
     }
     
     private var createChildrenCard: some View {
-        KBSettingsCardWithExtra(
+        let validDrafts = drafts.filter { !$0.name.trimmed.isEmpty }
+        
+        return KBSettingsCardWithExtra(
             title: "Figli",
-            subtitle: childrenSubtitleCount(count: drafts.count),
+            subtitle: childrenSubtitleCount(count: validDrafts.count),
             systemImage: "figure.and.child.holdinghands",
             style: .secondary,
             action: nil

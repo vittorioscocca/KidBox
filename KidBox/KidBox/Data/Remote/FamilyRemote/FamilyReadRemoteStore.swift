@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import OSLog
+import FirebaseAuth
 
 // MARK: - Remote read models
 
@@ -95,13 +96,29 @@ final class FamilyReadRemoteStore {
             .document(familyId)
             .getDocument()
         
+        guard snap.exists else {
+            KBLog.sync.kbError("fetchFamily: document does not exist familyId=\(familyId)")
+            // ✅ Fallback: crea un documento minimo
+            let ownerUid = Auth.auth().currentUser?.uid ?? "unknown"
+            try await db.collection("families").document(familyId).setData([
+                "name": "Famiglia",
+                "ownerUid": ownerUid,
+                "createdAt": FieldValue.serverTimestamp(),
+                "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
+            
+            KBLog.sync.kbInfo("fetchFamily: created missing family doc familyId=\(familyId)")
+            return .init(id: familyId, name: "Famiglia", ownerUid: ownerUid)
+        }
+        
         guard let data = snap.data(),
-              let name = data["name"] as? String,
-              let ownerUid = data["ownerUid"] as? String
+              let name = data["name"] as? String
         else {
             KBLog.sync.kbError("fetchFamily failed: missing fields familyId=\(familyId)")
             throw NSError(domain: "KidBox", code: -10)
         }
+        
+        let ownerUid = (data["ownerUid"] as? String) ?? ""
         
         KBLog.sync.kbInfo("fetchFamily completed familyId=\(familyId)")
         return .init(id: familyId, name: name, ownerUid: ownerUid)
