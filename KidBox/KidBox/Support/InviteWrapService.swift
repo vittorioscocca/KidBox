@@ -54,12 +54,12 @@ struct InviteWrapService {
         // 1) Ensure family master key in Keychain (random 32 bytes)
         let familyKey: SymmetricKey
         do {
-            if let existing = FamilyKeychainStore.loadFamilyKey(familyId: familyId) {
+            if let existing = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local") {
                 familyKey = existing
             } else {
                 let raw = InviteCrypto.randomBytes(32)
                 let created = SymmetricKey(data: raw)
-                try FamilyKeychainStore.saveFamilyKey(created, familyId: familyId)
+                try FamilyKeychainStore.saveFamilyKey(created, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
                 familyKey = created
                 KBLog.security.info("Family master key created for familyId=\(familyId, privacy: .public)")
             }

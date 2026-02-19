@@ -51,6 +51,9 @@ final class DocumentFolderViewModel: ObservableObject {
     @Published var docToRename: KBDocument?
     @Published var renameText: String = ""
     
+    @Published var showKeyMissingAlert = false
+    @Published var keyMissingAction: (() -> Void)?
+    
     // preview
     @Published var previewURL: URL?
     
@@ -477,7 +480,7 @@ final class DocumentFolderViewModel: ObservableObject {
             // 3️⃣ Cifra e upload a Storage
             do {
                 let plaintext = data
-                let encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId)
+                let encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
                 KBLog.data.info("uploadSingleFileFromURL: encrypted docId=\(documentId) bytes=\(plaintext.count)->\(encryptedData.count)")
                 
                 let (_, downloadURL) = try await storageService.upload(
@@ -717,20 +720,30 @@ final class DocumentFolderViewModel: ObservableObject {
         errorText = nil
         
         Task { @MainActor in
+            let userId = Auth.auth().currentUser?.uid ?? "local"
+            
+            // ✅ Controlla se la chiave esiste
+            if FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) == nil {
+                KBLog.data.warning("Master key not found for familyId=\(doc.familyId) userId=\(userId)")
+                showKeyMissingAlert = true
+                return
+            }
+            
             if let localPath = doc.localPath, !localPath.isEmpty,
                let _ = DocumentLocalCache.exists(localPath: localPath) {
                 do {
                     let plaintext = try DocumentLocalCache.readEncrypted(localPath: localPath)
-                    
                     let tempURL = FileManager.default.temporaryDirectory
                         .appendingPathComponent("\(doc.id)_\(doc.fileName)")
                     try plaintext.write(to: tempURL, options: .atomic)
-                    
                     previewURL = tempURL
                     return
-                    
                 } catch {
-                    errorText = "Apertura file fallita: \(error.localizedDescription)"
+                    if isCryptoKeyError(error) {
+                        showKeyMissingAlert = true
+                    } else {
+                        errorText = "Apertura file fallita: \(error.localizedDescription)"
+                    }
                     return
                 }
             }
@@ -742,9 +755,22 @@ final class DocumentFolderViewModel: ObservableObject {
                 isDownloading = false
                 downloadProgress = 0
                 downloadCurrentName = ""
-                errorText = "Download locale fallito: \(error.localizedDescription)"
+                if isCryptoKeyError(error) {
+                    showKeyMissingAlert = true
+                } else {
+                    errorText = "Apertura file fallita: \(error.localizedDescription)"
+                }
             }
         }
+    }
+    
+    private func isCryptoKeyError(_ error: Error) -> Bool {
+        // CryptoKit error 3 = authenticationFailure, tipicamente chiave mancante/sbagliata
+        let desc = error.localizedDescription.lowercased()
+        if desc.contains("cryptokit") { return true }
+        let nsErr = error as NSError
+        if nsErr.domain == "CryptoKit.CryptoKitError" { return true }
+        return false
     }
     
     private func downloadToLocalWithProgress(doc: KBDocument, modelContext: ModelContext) async throws -> URL {
@@ -795,7 +821,7 @@ final class DocumentFolderViewModel: ObservableObject {
             }
             
             let encrypted = try Data(contentsOf: tmpURL)
-            let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId)
+            let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId, userId: Auth.auth().currentUser?.uid ?? "local")
             
             let rel = try DocumentLocalCache.write(
                 familyId: doc.familyId,
@@ -1128,7 +1154,7 @@ final class DocumentFolderViewModel: ObservableObject {
             
             let encryptedData: Data
             do {
-                encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId)
+                encryptedData = try DocumentCryptoService.encrypt(plaintext, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
             } catch {
                 return false
             }

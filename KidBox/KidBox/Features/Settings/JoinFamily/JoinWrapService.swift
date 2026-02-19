@@ -166,7 +166,7 @@ struct JoinWrapService {
             let familyKey = try InviteCrypto.unwrapFamilyKey(cipher: cipher, nonce: nonce, tag: tag, wrapKey: wrapKey)
             
             // save in Keychain
-            try FamilyKeychainStore.saveFamilyKey(familyKey, familyId: familyId)
+            try FamilyKeychainStore.saveFamilyKey(familyKey, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
             KBLog.sync.info("JoinWrapService master key saved familyId=\(familyId, privacy: .public)")
             
         } catch {
@@ -183,7 +183,7 @@ struct JoinWrapService {
         }
         
         // Verify key presence (do NOT print)
-        if FamilyKeychainStore.loadFamilyKey(familyId: familyId) != nil {
+        if FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local") != nil {
             KBLog.sync.info("JoinWrapService keychain verify OK familyId=\(familyId, privacy: .public)")
         } else {
             KBLog.sync.error("JoinWrapService keychain verify FAILED familyId=\(familyId, privacy: .public)")
