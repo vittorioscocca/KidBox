@@ -14,7 +14,7 @@ struct JoinFamilyView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     
     var body: some View {
-        JoinFamilyViewBody(modelContext: modelContext)
+        JoinFamilyViewBody(modelContext: modelContext, coordinator: coordinator)
             .environmentObject(coordinator)
             .navigationTitle("Entra con codice")
             .navigationBarTitleDisplayMode(.inline)
@@ -25,21 +25,21 @@ struct JoinFamilyView: View {
 }
 
 private struct JoinFamilyViewBody: View {
-    @EnvironmentObject private var coordinator: AppCoordinator
+    private var coordinator: AppCoordinator
     @State private var showScanner = false
-    
     let modelContext: ModelContext
     @StateObject private var vm: JoinFamilyViewModel
     
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext,  coordinator: AppCoordinator) {
         self.modelContext = modelContext
         _vm = StateObject(wrappedValue: JoinFamilyViewModel(
             service: FamilyJoinService(
                 inviteRemote: InviteRemoteStore(),
                 readRemote: FamilyReadRemoteStore(),
                 modelContext: modelContext
-            )
+            ), coordinator: coordinator
         ))
+        self.coordinator = coordinator
     }
     
     var body: some View {

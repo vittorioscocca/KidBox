@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import SwiftData
 import FirebaseAuth
 import OSLog
@@ -18,11 +19,11 @@ import FirebaseFirestore
 /// - Ensure user becomes a member on Firestore.
 /// - Perform a one-shot family doc refresh (including hero fields).
 /// - Fetch and upsert minimal family bundle (family, children, routines, todos, events) into SwiftData.
+/// - Pin the joined family as active via `AppCoordinator.setActiveFamily(_:)` BEFORE any bootstrap.
 /// - Start realtime listeners and trigger a global flush.
 ///
 /// Notes:
 /// - This service is `@MainActor` because it mutates SwiftData (`ModelContext`) and triggers UI-affecting flows.
-/// - Logic is intentionally kept as-is (including the one-shot refresh `Task { @MainActor ... }`).
 @MainActor
 final class FamilyJoinService {
     // MARK: - Dependencies
@@ -43,15 +44,18 @@ final class FamilyJoinService {
     
     /// Joins a family from an invite `code` and bootstraps local data.
     ///
-    /// Behavior (unchanged):
+    /// Behavior:
     /// 1) Normalize code, ensure authenticated.
     /// 2) Resolve invite -> familyId.
     /// 3) One-shot refresh of family doc fields (name + hero) in a detached Task.
     /// 4) Add member on server.
     /// 5) Fetch minimal family bundle from server.
-    /// 6) Upsert local family + children + routines/todos/events (optionally delete missing children).
-    /// 7) Start realtime bundle + members realtime; flush; re-bootstrap memberships.
-    func joinFamily(code rawCode: String) async throws {
+    /// 6) Upsert local family + children + routines/todos/events.
+    /// 7) **Pin `familyId` as active on the coordinator** — this must happen before
+    ///    bootstrap so that RootHostView does not flip back to the old family.
+    /// 8) Start realtime bundle + members; flush.
+    /// 9) Bootstrap remaining memberships (syncs old families in background, does NOT change active).
+    func joinFamily(code rawCode: String, coordinator: AppCoordinator) async throws {
         let code = rawCode
             .uppercased()
             .filter { !$0.isWhitespace && $0 != "-" }
@@ -93,7 +97,6 @@ final class FamilyJoinService {
                 let remoteHeroURL = data["heroPhotoURL"] as? String
                 let remoteHeroUpdatedAt = (data["heroPhotoUpdatedAt"] as? Timestamp)?.dateValue()
                 
-                // UPSERT locale (crea family se manca)
                 let fid = familyId
                 let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
                 let fam = try modelContext.fetch(desc).first ?? {
@@ -111,7 +114,6 @@ final class FamilyJoinService {
                     return created
                 }()
                 
-                // aggiorna i campi (LWW)
                 if remoteUpdatedAt >= fam.updatedAt {
                     fam.name = remoteName
                     fam.updatedAt = remoteUpdatedAt
@@ -164,7 +166,7 @@ final class FamilyJoinService {
             family = KBFamily(
                 id: remoteFamily.id,
                 name: remoteFamily.name,
-                createdBy: remoteFamily.ownerUid, // meglio ownerUid come origine
+                createdBy: remoteFamily.ownerUid,
                 updatedBy: uid,
                 createdAt: now,
                 updatedAt: now
@@ -181,31 +183,30 @@ final class FamilyJoinService {
         
         var seenIds = Set<String>()
         for rc in remoteChildren {
-            seenIds.insert(rc.id)
-            if let lc = localById[rc.id] {
+            let childId = rc.id
+            seenIds.insert(childId)
+            
+            if let lc = localById[childId] {
                 lc.name = rc.name
                 lc.birthDate = rc.birthDate
                 if lc.family == nil { lc.family = family }
             } else {
-                let now = Date()
-                let child = KBChild(
-                    id: rc.id,
-                    familyId: family.id,
+                let newChild = KBChild(
+                    id: childId,
+                    familyId: familyId,
                     name: rc.name,
                     birthDate: rc.birthDate,
                     createdBy: remoteFamily.ownerUid,
                     createdAt: Date(),
                     updatedBy: uid,
-                    updatedAt: now
+                    updatedAt: Date()
                 )
-                child.family = family
-                family.children.append(child)
-                modelContext.insert(child)
+                newChild.family = family
+                family.children.append(newChild)
+                modelContext.insert(newChild)
             }
         }
         
-        // 6) (MVP) opzionale: elimina children locali non più presenti sul server
-        // Se per ora NON vuoi cancellare, commenta questo blocco.
         let toDelete = family.children.filter { !seenIds.contains($0.id) }
         if !toDelete.isEmpty {
             KBLog.sync.kbDebug("Deleting local children not on server count=\(toDelete.count) familyId=\(familyId)")
@@ -221,44 +222,47 @@ final class FamilyJoinService {
         try upsertEvents(remoteEvents, familyId: familyId, fallbackUpdatedBy: uid)
         
         try modelContext.save()
-        KBLog.sync.kbInfo("Join family OK familyId=\(familyId)")
-        try modelContext.save()
-        KBLog.sync.kbInfo("Join family OK familyId=\(familyId)")
+        KBLog.sync.kbInfo("Join family local data saved familyId=\(familyId)")
         
-        // 7) start realtime bundle for the joined family (NOW we are member)
+        // ─────────────────────────────────────────────────────────────────────
+        // 7) PIN THE JOINED FAMILY AS ACTIVE — MUST happen before bootstrap.
+        //
+        //    FamilyBootstrapService.bootstrapIfNeeded() will re-sync old families
+        //    (touching their updatedAt in SwiftData), which would otherwise cause
+        //    RootHostView to flip back to the old family via the `families.first` ordering.
+        //    By setting activeFamilyId here, RootHostView ignores updatedAt ordering
+        //    and keeps displaying the newly joined family.
+        // ─────────────────────────────────────────────────────────────────────
+        KBLog.sync.kbInfo("Pinning joined family as active familyId=\(familyId)")
+        coordinator.setActiveFamily(familyId)
+        
+        // 8) Start realtime for the joined family
         KBLog.sync.kbDebug("Restarting family bundle realtime familyId=\(familyId)")
-        SyncCenter.shared.stopFamilyBundleRealtime() // se hai un metodo stop, evita doppi listener
+        SyncCenter.shared.stopFamilyBundleRealtime()
         SyncCenter.shared.startFamilyBundleRealtime(familyId: familyId, modelContext: modelContext)
         
-        // 8) flush to pull inbound immediately
         KBLog.sync.kbDebug("FlushGlobal requested after join familyId=\(familyId)")
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         KBLog.sync.kbDebug("Starting members realtime after join familyId=\(familyId)")
         SyncCenter.shared.startMembersRealtime(familyId: familyId, modelContext: modelContext)
         
-        // 9) (optional) update memberships/local active family cache
-        KBLog.sync.kbDebug("Bootstrap after join requested")
+        // 9) Bootstrap remaining memberships in background.
+        //    This syncs all other families the user belongs to locally,
+        //    but does NOT touch activeFamilyId (that is already pinned above).
+        KBLog.sync.kbDebug("Bootstrap after join requested (background, will NOT change active family)")
         await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
+        
         KBLog.sync.kbInfo("joinFamily completed familyId=\(familyId)")
     }
     
     // MARK: - Private helpers (Upserts)
     
-    /// Upserts routines into SwiftData by id.
-    ///
-    /// Behavior (unchanged):
-    /// - Fetches by id.
-    /// - Updates fields if existing, otherwise inserts.
-    /// - Uses `fallbackUpdatedBy` when remote updatedBy is missing.
     private func upsertRoutines(_ items: [RemoteRoutineRead], familyId: String, fallbackUpdatedBy: String) throws {
         KBLog.sync.kbDebug("upsertRoutines start familyId=\(familyId) count=\(items.count)")
         for r in items {
             let rid = r.id
-            
-            let desc = FetchDescriptor<KBRoutine>(
-                predicate: #Predicate { $0.id == rid }
-            )
+            let desc = FetchDescriptor<KBRoutine>(predicate: #Predicate { $0.id == rid })
             let existing = try modelContext.fetch(desc).first
             
             if let existing {
@@ -289,20 +293,11 @@ final class FamilyJoinService {
         KBLog.sync.kbDebug("upsertRoutines done familyId=\(familyId)")
     }
     
-    /// Upserts todos into SwiftData by id.
-    ///
-    /// Behavior (unchanged):
-    /// - Fetches by id.
-    /// - Updates fields if existing, otherwise inserts.
-    /// - Uses `fallbackUpdatedBy` when remote updatedBy is missing.
     private func upsertTodos(_ items: [RemoteTodoRead], familyId: String, fallbackUpdatedBy: String) throws {
         KBLog.sync.kbDebug("upsertTodos start familyId=\(familyId) count=\(items.count)")
         for t in items {
             let tid = t.id
-            
-            let desc = FetchDescriptor<KBTodoItem>(
-                predicate: #Predicate { $0.id == tid }
-            )
+            let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == tid })
             let existing = try modelContext.fetch(desc).first
             
             if let existing {
@@ -339,20 +334,11 @@ final class FamilyJoinService {
         KBLog.sync.kbDebug("upsertTodos done familyId=\(familyId)")
     }
     
-    /// Upserts events into SwiftData by id.
-    ///
-    /// Behavior (unchanged):
-    /// - Fetches by id.
-    /// - Updates fields if existing, otherwise inserts.
-    /// - Uses `fallbackUpdatedBy` when remote updatedBy is missing.
     private func upsertEvents(_ items: [RemoteEventRead], familyId: String, fallbackUpdatedBy: String) throws {
         KBLog.sync.kbDebug("upsertEvents start familyId=\(familyId) count=\(items.count)")
         for e in items {
             let eid = e.id
-            
-            let desc = FetchDescriptor<KBEvent>(
-                predicate: #Predicate { $0.id == eid }
-            )
+            let desc = FetchDescriptor<KBEvent>(predicate: #Predicate { $0.id == eid })
             let existing = try modelContext.fetch(desc).first
             
             if let existing {

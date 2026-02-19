@@ -16,11 +16,13 @@ final class JoinFamilyViewModel: ObservableObject {
     @Published var isBusy = false
     @Published var errorMessage: String?
     @Published var didJoin = false
+    var coordinator: AppCoordinator
     
     private let service: FamilyJoinService
     
-    init(service: FamilyJoinService) {
+    init(service: FamilyJoinService, coordinator: AppCoordinator) {
         self.service = service
+        self.coordinator = coordinator
         KBLog.auth.debug("JoinFamilyViewModel init")
     }
     
@@ -47,7 +49,7 @@ final class JoinFamilyViewModel: ObservableObject {
         }
         
         do {
-            try await service.joinFamily(code: trimmed)
+            try await service.joinFamily(code: trimmed, coordinator: coordinator)
             didJoin = true
             KBLog.sync.info("JoinFamilyViewModel join OK")
         } catch {
