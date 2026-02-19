@@ -156,12 +156,25 @@ final class HeroImageLoader: ObservableObject {
         
         task = Task {
             do {
-                let (data, _) = try await URLSession.shared.data(from: url)
+                KBLog.sync.kbDebug("HeroImageLoader: loading from \(url.absoluteString)")
+                let (data, response) = try await URLSession.shared.data(from: url)
+                
                 if Task.isCancelled { return }
+                
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                KBLog.sync.kbDebug("HeroImageLoader: received \(data.count) bytes, status=\(statusCode)")
+                
                 image = UIImage(data: data)
+                
+                if image == nil {
+                    KBLog.sync.kbError("HeroImageLoader: UIImage(data:) returned nil despite \(data.count) bytes")
+                } else {
+                    KBLog.sync.kbInfo("HeroImageLoader: image loaded successfully")
+                }
+                
             } catch {
                 if Task.isCancelled { return }
-                print("HeroImageLoader error:", error)
+                KBLog.sync.kbError("HeroImageLoader error: \(error.localizedDescription)")
             }
         }
     }

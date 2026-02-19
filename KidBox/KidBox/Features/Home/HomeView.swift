@@ -253,10 +253,11 @@ struct HomeView: View {
     // MARK: - Step 2: upload + save crop
     
     /// Uploads the hero photo and persists crop metadata (scale/offset) on the family document.
+    /// Also updates local SwiftData immediately so the image appears without delay.
     ///
     /// Expected behavior:
-    /// - On success: close cropper, reset picker state.
-    /// - No explicit local update needed: the family realtime listener updates KBFamily.
+    /// - On success: close cropper, reset picker state, update local family data.
+    /// - The realtime listener will sync remote changes later.
     @MainActor
     private func uploadHeroWithCrop(crop: HeroCrop) async {
         guard let familyId = activeFamily?.id, !familyId.isEmpty else {
@@ -278,18 +279,33 @@ struct HomeView: View {
         }
         
         do {
-            _ = try await heroService.setHeroPhoto(
+            let urlString = try await heroService.setHeroPhoto(
                 familyId: familyId,
                 imageData: data,
                 crop: crop
             )
+            
+            // Aggiorna localmente SwiftData subito (non aspettare realtime)
+            if let family = activeFamily {
+                family.heroPhotoURL = urlString
+                family.heroPhotoUpdatedAt = Date()
+                family.heroPhotoScale = crop.scale
+                family.heroPhotoOffsetX = crop.offsetX
+                family.heroPhotoOffsetY = crop.offsetY
+                
+                do {
+                    try modelContext.save()
+                    KBLog.sync.info("Home: hero local update saved familyId=\(familyId, privacy: .public)")
+                } catch {
+                    KBLog.sync.error("Home: hero local update failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
             
             pendingHeroImageData = nil
             pickedHeroItem = nil
             showHeroCropper = false
             
             KBLog.sync.info("Home: hero upload OK familyId=\(familyId, privacy: .public)")
-            // Listener realtime aggiorna la home.
             
         } catch {
             heroUploadError = error.localizedDescription
