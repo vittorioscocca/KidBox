@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import CryptoKit
+import FirebaseAuth
 
 /// Performs a local migration to ensure each `KBFamily` has a stored master key.
 ///
@@ -46,7 +47,7 @@ enum MasterKeyMigration {
             let familyId = family.id
             
             // Controlla se la key esiste già
-            if FamilyKeychainStore.loadFamilyKey(familyId: familyId) != nil {
+            if FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local") != nil {
                 KBLog.sync.kbDebug("MasterKeyMigration skip (already exists) familyId=\(familyId)")
                 continue
             }
@@ -56,7 +57,7 @@ enum MasterKeyMigration {
             do {
                 let masterKeyBytes = InviteCrypto.randomBytes(32)
                 let masterKey = CryptoKit.SymmetricKey(data: masterKeyBytes)
-                try FamilyKeychainStore.saveFamilyKey(masterKey, familyId: familyId)
+                try FamilyKeychainStore.saveFamilyKey(masterKey, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
                 KBLog.sync.kbInfo("MasterKeyMigration key created familyId=\(familyId)")
                 migratedCount += 1
             } catch {

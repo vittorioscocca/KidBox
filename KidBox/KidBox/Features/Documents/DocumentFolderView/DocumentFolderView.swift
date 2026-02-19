@@ -64,6 +64,20 @@ struct DocumentFolderView: View {
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     var activeChildId: String? { families.first?.children.first?.id }
     
+    @ViewBuilder
+    var keyMissingAlertButtons: some View {
+        Button("Impostazioni") {
+            if let url = URL(string: "App-Prefs:root=CASTLE") {
+                UIApplication.shared.open(url)
+            }
+        }
+        Button("OK", role: .cancel) { }
+    }
+    
+    var keyMissingAlertMessage: Text {
+        Text("Abilita iCloud Keychain in Impostazioni > [Il tuo account] > iCloud > Portachiavi, oppure chiedi al proprietario della famiglia di condividere un QR code con la chiave.")
+    }
+    
     // MARK: - Init
     init(familyId: String, folderId: String?, folderTitle: String) {
         self.familyId = familyId
@@ -266,6 +280,15 @@ struct DocumentFolderView: View {
         }
         
         func body(content: Content) -> some View {
+            let step1 = applyNavAndAppear(content)
+            let step2 = applyAlerts(step1)
+            let step3 = applySheets(step2)
+            let step4 = applyOverlayAndNav(step3)
+            return step4
+        }
+        
+        @ViewBuilder
+        private func applyNavAndAppear(_ content: Content) -> some View {
             content
                 .navigationTitle(view.folderTitle)
                 .navigationBarTitleDisplayMode(.inline)
@@ -273,13 +296,17 @@ struct DocumentFolderView: View {
                     view.viewModel.bind(modelContext: view.modelContext)
                     view.viewModel.startObservingChanges()
                     view.viewModel.reload()
-                    
                     if let docId = coordinator.pendingOpenDocumentId {
                         coordinator.pendingOpenDocumentId = nil
                         view.viewModel.openIfPresent(docId: docId)
                     }
                 }
                 .toolbar { view.topToolbar }
+        }
+        
+        @ViewBuilder
+        private func applyAlerts<V: View>(_ content: V) -> some View {
+            content
                 .alert("Nuova cartella", isPresented: view.$showNewFolderAlert) {
                     view.newFolderAlertContent
                 } message: {
@@ -300,9 +327,22 @@ struct DocumentFolderView: View {
                             await view.viewModel.deleteSelectedItems()
                         }
                     }
-                }message: {
+                } message: {
                     Text("Questa azione eliminerà cartelle e documenti selezionati in locale e in remoto su tutti i dispositivi.")
                 }
+                .alert("Chiave di crittografia non trovata", isPresented: Binding(
+                    get: { view.viewModel.showKeyMissingAlert },
+                    set: { view.viewModel.showKeyMissingAlert = $0 }
+                )) {
+                    view.keyMissingAlertButtons
+                } message: {
+                    view.keyMissingAlertMessage
+                }
+        }
+        
+        @ViewBuilder
+        private func applySheets<V: View>(_ content: V) -> some View {
+            content
                 .sheet(item: previewItemBinding) { item in
                     QuickLookPreview(urls: [item.url], initialIndex: 0)
                 }
@@ -321,6 +361,11 @@ struct DocumentFolderView: View {
                         await view.viewModel.handlePhotoLibrarySelection(items)
                     }
                 }
+        }
+        
+        @ViewBuilder
+        private func applyOverlayAndNav<V: View>(_ content: V) -> some View {
+            content
                 .overlay {
                     ZStack {
                         view.uploadingOverlay

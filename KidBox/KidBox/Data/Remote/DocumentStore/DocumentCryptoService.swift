@@ -41,10 +41,10 @@ enum DocumentCryptoService {
     ///   - `CryptoError.missingFamilyKey` if the family key is not available.
     ///   - `CryptoError.invalidCipher` if `sealed.combined` is nil.
     ///   - Any CryptoKit errors thrown by `AES.GCM.seal`.
-    static func encrypt(_ plaintext: Data, familyId: String) throws -> Data {
+    static func encrypt(_ plaintext: Data, familyId: String, userId: String) throws -> Data {
         KBLog.sync.kbDebug("Encrypt start familyId=\(familyId) bytes=\(plaintext.count)")
         
-        guard let key = FamilyKeychainStore.loadFamilyKey(familyId: familyId) else {
+        guard let key = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: userId) else {
             KBLog.sync.kbError("Encrypt failed: missing family key familyId=\(familyId)")
             throw CryptoError.missingFamilyKey
         }
@@ -70,10 +70,10 @@ enum DocumentCryptoService {
     /// - Throws:
     ///   - `CryptoError.missingFamilyKey` if the family key is not available.
     ///   - Any CryptoKit errors thrown by `SealedBox(combined:)` or `AES.GCM.open`.
-    static func decrypt(_ combined: Data, familyId: String) throws -> Data {
+    static func decrypt(_ combined: Data, familyId: String, userId: String) throws -> Data {
         KBLog.sync.kbDebug("Decrypt start familyId=\(familyId) bytes=\(combined.count)")
         
-        guard let key = FamilyKeychainStore.loadFamilyKey(familyId: familyId) else {
+        guard let key = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: userId) else {
             KBLog.sync.kbError("Decrypt failed: missing family key familyId=\(familyId)")
             throw CryptoError.missingFamilyKey
         }

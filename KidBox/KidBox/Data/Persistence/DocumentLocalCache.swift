@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import FirebaseStorage
 import OSLog
+import FirebaseAuth
 
 /// Local encrypted document cache utilities.
 ///
@@ -170,7 +171,7 @@ enum DocumentLocalCache {
         
         // decrypt
         KBLog.storage.kbDebug("Decrypting downloaded data docId=\(doc.id)")
-        let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId)
+        let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId, userId: Auth.auth().currentUser?.uid ?? "local")
         KBLog.storage.kbDebug("Decrypt OK bytes=\(decrypted.count) docId=\(doc.id)")
         
         // write to TEMP

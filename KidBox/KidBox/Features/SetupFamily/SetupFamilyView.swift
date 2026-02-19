@@ -428,7 +428,7 @@ struct SetupFamilyView: View {
             do {
                 let masterKey = InviteCrypto.randomBytes(32)
                 let key = CryptoKit.SymmetricKey(data: masterKey)
-                try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId)
+                try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
                 KBLog.crypto.info("Master key saved to Keychain familyId=\(familyId, privacy: .public)")
             } catch {
                 KBLog.crypto.error(
