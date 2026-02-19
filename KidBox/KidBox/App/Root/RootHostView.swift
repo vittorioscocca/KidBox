@@ -13,7 +13,9 @@
 //  active family realtime listeners (family bundle, members, documents).
 //
 //  Notes:
-//  - Uses the most recently updated family as "active" (families.first).
+//  - Uses coordinator.activeFamilyId as the source of truth for the active family.
+//    This is an explicit value set by join/switch actions, not derived from DB ordering.
+//  - Falls back to families.first only if activeFamilyId is not set (e.g. first run).
 //  - Starts/stops listeners when active family changes.
 //  - Performs a master-key migration on appear (best effort with logging).
 //
@@ -31,7 +33,8 @@ struct RootHostView: View {
     /// SwiftData model context (used by realtime sync + migration).
     @Environment(\.modelContext) private var modelContext
     
-    /// Families ordered by latest update, first is considered the "active" family.
+    /// All families, used as fallback when no activeFamilyId is pinned.
+    /// Ordered by latest update so families.first is a reasonable default.
     @Query(sort: \KBFamily.updatedAt, order: .reverse)
     private var families: [KBFamily]
     
@@ -45,6 +48,23 @@ struct RootHostView: View {
     /// - switch listeners when the active family changes
     @State private var startedFamilyId: String?
     
+    // MARK: - Computed
+    
+    /// The resolved active family ID.
+    ///
+    /// Priority:
+    /// 1. `coordinator.activeFamilyId` — explicit selection (join, switch).
+    /// 2. `families.first?.id` — implicit fallback for first-run / fresh install.
+    ///
+    /// This means a family join or switch will always take precedence over
+    /// whatever ordering SwiftData returns.
+    private var resolvedActiveFamilyId: String? {
+        if let pinned = coordinator.activeFamilyId {
+            return pinned
+        }
+        return families.first?.id
+    }
+    
     // MARK: - View
     
     var body: some View {
@@ -57,7 +77,6 @@ struct RootHostView: View {
         .onAppear {
             KBLog.navigation.kbDebug("RootHostView appeared")
             
-            // Keep the migration inside a Task to avoid blocking UI.
             KBLog.sync.kbInfo("Starting master key migration (best effort)")
             Task {
                 do {
@@ -70,33 +89,40 @@ struct RootHostView: View {
             
             startFamilyRealtimeIfPossible()
         }
+        // React to explicit family selection changes (join, switch).
+        .onChange(of: coordinator.activeFamilyId) { oldValue, newValue in
+            KBLog.sync.kbInfo("coordinator.activeFamilyId changed old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
+            startFamilyRealtimeIfPossible()
+        }
+        // React to SwiftData families list changes (covers first-run fallback).
         .onChange(of: families.first?.id) { oldValue, newValue in
-            // Same trigger as before, but now with useful context.
-            KBLog.sync.kbInfo("Active family changed old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
+            // Only relevant when no explicit active family is pinned.
+            guard coordinator.activeFamilyId == nil else {
+                KBLog.sync.kbDebug("families.first changed but activeFamilyId is pinned — ignoring")
+                return
+            }
+            KBLog.sync.kbInfo("families.first changed (fallback) old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
             startFamilyRealtimeIfPossible()
         }
     }
     
     // MARK: - Realtime lifecycle
     
-    /// Starts or restarts realtime listeners if needed.
+    /// Starts or restarts realtime listeners based on `resolvedActiveFamilyId`.
     ///
-    /// Logic (unchanged):
-    /// - If there is no active family, stop listeners (if any were started) and reset `startedFamilyId`.
-    /// - If active family is the same as `startedFamilyId`, do nothing.
-    /// - If active family differs, stop previous listeners (if any), then start new ones.
+    /// Logic:
+    /// - If there is no resolved active family, stop listeners (if any) and reset `startedFamilyId`.
+    /// - If resolved family equals `startedFamilyId`, do nothing.
+    /// - If resolved family differs, stop previous listeners, then start new ones.
     private func startFamilyRealtimeIfPossible() {
-        let activeId = families.first?.id
+        let familyId = resolvedActiveFamilyId
         
-        guard let familyId = activeId, !familyId.isEmpty else {
-            // No active family → stop listeners if they were active.
+        guard let familyId, !familyId.isEmpty else {
             if startedFamilyId != nil {
                 KBLog.sync.kbInfo("No active family. Stopping realtime listeners (previous=\(startedFamilyId ?? "nil"))")
-                
                 SyncCenter.shared.stopFamilyBundleRealtime()
                 SyncCenter.shared.stopMembersRealtime()
                 SyncCenter.shared.stopDocumentsRealtime()
-                
                 startedFamilyId = nil
                 KBLog.sync.kbDebug("Realtime listeners stopped and startedFamilyId cleared")
             } else {
@@ -114,7 +140,6 @@ struct RootHostView: View {
         // Switching to a different family → stop previous listeners first.
         if startedFamilyId != nil {
             KBLog.sync.kbInfo("Switching realtime listeners from=\(startedFamilyId ?? "nil") to=\(familyId)")
-            
             SyncCenter.shared.stopFamilyBundleRealtime()
             SyncCenter.shared.stopMembersRealtime()
             SyncCenter.shared.stopDocumentsRealtime()
@@ -124,7 +149,6 @@ struct RootHostView: View {
         
         startedFamilyId = familyId
         
-        // Start listeners (unchanged).
         KBLog.sync.kbDebug("startFamilyBundleRealtime familyId=\(familyId)")
         SyncCenter.shared.startFamilyBundleRealtime(
             familyId: familyId,

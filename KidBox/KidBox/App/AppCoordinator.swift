@@ -43,10 +43,58 @@ final class AppCoordinator: ObservableObject {
     /// Document id pending to be opened once the UI is ready (e.g. after a push notification).
     @Published var pendingOpenDocumentId: String? = nil
     
+    // MARK: - Active family
+    
+    /// The explicitly selected active family ID.
+    ///
+    /// This is the source of truth for which family is currently displayed.
+    /// It takes priority over any implicit ordering (e.g. updatedAt DESC).
+    ///
+    /// Persisted in UserDefaults so it survives app restarts.
+    /// Set explicitly after a join or family switch.
+    /// Cleared on sign-out.
+    @Published private(set) var activeFamilyId: String? {
+        didSet {
+            if let id = activeFamilyId {
+                UserDefaults.standard.set(id, forKey: Self.activeFamilyIdKey)
+                KBLog.sync.kbInfo("activeFamilyId persisted familyId=\(id)")
+            } else {
+                UserDefaults.standard.removeObject(forKey: Self.activeFamilyIdKey)
+                KBLog.sync.kbInfo("activeFamilyId cleared")
+            }
+        }
+    }
+    
+    private static let activeFamilyIdKey = "KidBox.activeFamilyId"
+    
     // MARK: - Private
     
     /// Firebase Auth listener handle. Non-nil when the session listener is active.
     private var authHandle: AuthStateDidChangeListenerHandle?
+    
+    // MARK: - Init
+    
+    init() {
+        // Restore persisted active family from previous session.
+        activeFamilyId = UserDefaults.standard.string(forKey: Self.activeFamilyIdKey)
+        if let id = activeFamilyId {
+            KBLog.sync.kbInfo("activeFamilyId restored from UserDefaults familyId=\(id)")
+        }
+    }
+    
+    // MARK: - Active family management
+    
+    /// Sets the active family explicitly (e.g. after join or user-initiated family switch).
+    ///
+    /// - Parameter familyId: The family to make active. Pass `nil` to clear.
+    func setActiveFamily(_ familyId: String?) {
+        guard activeFamilyId != familyId else {
+            KBLog.sync.kbDebug("setActiveFamily no-op familyId=\(familyId ?? "nil")")
+            return
+        }
+        KBLog.sync.kbInfo("setActiveFamily familyId=\(familyId ?? "nil")")
+        activeFamilyId = familyId
+    }
     
     // MARK: - Session listener
     
@@ -77,15 +125,24 @@ final class AppCoordinator: ObservableObject {
                     
                     self.upsertUserProfile(from: user, modelContext: modelContext)
                     
-                    // Bootstraps family state if needed (e.g. first run after login).
+                    // Bootstrap syncs all known families locally.
+                    // It does NOT change activeFamilyId — that is set explicitly
+                    // by join/switch actions or restored from UserDefaults.
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
+                    
+                    // If no active family is pinned yet, pick the first available one
+                    // after bootstrap (first-run or after sign-out).
+                    if self.activeFamilyId == nil {
+                        KBLog.sync.kbInfo("No activeFamilyId after bootstrap — will fall back to families.first in RootHostView")
+                    }
                     
                 } else {
                     self.isAuthenticated = false
                     self.uid = nil
                     
                     KBLog.auth.kbInfo("Auth state changed: logged out")
+                    self.setActiveFamily(nil)
                     self.resetToRoot()
                 }
             }
@@ -147,8 +204,6 @@ final class AppCoordinator: ObservableObject {
     /// - Note: This is the single routing map for the entire app.
     @ViewBuilder
     func makeDestination(for route: Route) -> some View {
-        // Logging each destination build is helpful during navigation debugging.
-        
         switch route {
         case .home:
             HomeView()
@@ -197,18 +252,10 @@ final class AppCoordinator: ObservableObject {
     }
     
     /// Handles a "open document" action coming from a push notification.
-    ///
-    /// Current behavior (unchanged):
-    /// - Navigate to `.documentsHome`
-    /// - Store `pendingOpenDocumentId` so the documents UI can consume it when ready.
     @MainActor
     func openDocumentFromPush(familyId: String, docId: String) {
         KBLog.navigation.kbInfo("openDocumentFromPush familyId=\(familyId) docId=\(docId)")
-        
-        // Go to documents home (existing screen)
         navigate(to: .documentsHome)
-        
-        // Save pending id to be consumed when UI is ready
         pendingOpenDocumentId = docId
         KBLog.navigation.kbDebug("pendingOpenDocumentId set")
     }
@@ -216,22 +263,13 @@ final class AppCoordinator: ObservableObject {
     /// Resets navigation to the root (clears the NavigationStack path).
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
-        
         path.removeAll()
-        
         KBLog.navigation.kbDebug("Path cleared")
     }
     
     // MARK: - Sign out
     
     /// Signs out the current user.
-    ///
-    /// Current behavior (unchanged):
-    /// - Best-effort wipe of local data
-    /// - Firebase sign out
-    /// - Reset navigation to root
-    ///
-    /// - Parameter modelContext: SwiftData context used for local wipe.
     @MainActor
     func signOut(modelContext: ModelContext) {
         KBLog.auth.kbInfo("Sign out requested")
@@ -247,6 +285,7 @@ final class AppCoordinator: ObservableObject {
         do {
             try Auth.auth().signOut()
             KBLog.auth.kbInfo("Firebase sign-out OK")
+            setActiveFamily(nil)
             resetToRoot()
         } catch {
             KBLog.auth.kbError("Sign-out failed: \(error.localizedDescription)")
