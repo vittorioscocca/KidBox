@@ -22,6 +22,8 @@
 
 import SwiftUI
 import SwiftData
+import Combine
+internal import os
 
 struct RootHostView: View {
     
@@ -65,6 +67,9 @@ struct RootHostView: View {
         return families.first?.id
     }
     
+    @State private var revokedFamilyName: String?
+    @State private var showRevokedAlert = false
+    
     // MARK: - View
     
     var body: some View {
@@ -104,6 +109,63 @@ struct RootHostView: View {
             KBLog.sync.kbInfo("families.first changed (fallback) old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
             startFamilyRealtimeIfPossible()
         }
+        // Espulsione: wipa i dati locali e torna al root da qualsiasi view.
+        .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
+            KBLog.sync.info("RootHostView: currentUserRevoked familyId=\(revokedFamilyId, privacy: .public)")
+            
+            
+            // Recupera nome famiglia prima del wipe
+            if let fam = try? modelContext.fetch(
+                FetchDescriptor<KBFamily>(
+                    predicate: #Predicate { $0.id == revokedFamilyId }
+                )
+            ).first {
+                revokedFamilyName = fam.name
+            } else {
+                revokedFamilyName = nil
+            }
+            
+            showRevokedAlert = true
+            
+            Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await MainActor.run {
+                    showRevokedAlert = false
+                }
+            }
+            
+            startedFamilyId = nil
+            Task { @MainActor in
+                do {
+                    let service = FamilyLeaveService(modelContext: modelContext)
+                    try await service.leaveFamily(familyId: revokedFamilyId)
+                    KBLog.sync.info("RootHostView: post-revoke wipe OK")
+                } catch {
+                    KBLog.sync.error("RootHostView: post-revoke leaveFamily failed: \(error.localizedDescription, privacy: .public)")
+                    do {
+                        let service = FamilyLeaveService(modelContext: modelContext)
+                        try service.wipeFamilyLocalOnly(familyId: revokedFamilyId)
+                        KBLog.sync.info("RootHostView: fallback local wipe OK")
+                    } catch {
+                        KBLog.sync.error("RootHostView: fallback local wipe failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
+                coordinator.setActiveFamily(nil)
+                coordinator.resetToRoot()
+            }
+        }
+        .overlay(alignment: .top) {
+            if showRevokedAlert {
+                Text("Sei stato rimosso dalla famiglia \"\(revokedFamilyName ?? "")\".")
+                    .padding()
+                    .background(.red.opacity(0.9))
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.top, 12)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(), value: showRevokedAlert)
     }
     
     // MARK: - Realtime lifecycle

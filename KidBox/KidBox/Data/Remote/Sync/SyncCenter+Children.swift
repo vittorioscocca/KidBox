@@ -42,6 +42,11 @@ extension SyncCenter {
             .addSnapshotListener { snap, err in
                 if let err {
                     KBLog.sync.kbError("Children listener error: \(err.localizedDescription)")
+                    if SyncCenter.isPermissionDenied(err) {
+                        Task { @MainActor in
+                            self.handleFamilyAccessLost(familyId: familyId, source: "children", error: err)
+                        }
+                    }
                     return
                 }
                 guard let snap else {

@@ -55,7 +55,8 @@ final class FamilyMemberRemoteStore {
     /// - Returns: Firestore `ListenerRegistration` used to stop listening.
     func listenMembers(
         familyId: String,
-        onChange: @escaping ([FamilyMemberRemoteChange]) -> Void
+        onChange: @escaping ([FamilyMemberRemoteChange]) -> Void,
+        onError: @escaping (Error) -> Void
     ) -> ListenerRegistration {
         
         KBLog.sync.kbInfo("Members listener attach familyId=\(familyId)")
@@ -66,6 +67,7 @@ final class FamilyMemberRemoteStore {
             .addSnapshotListener { snap, err in
                 if let err {
                     KBLog.sync.kbError("Members listener error: \(err.localizedDescription)")
+                    onError(err)
                     return
                 }
                 guard let snap else {
