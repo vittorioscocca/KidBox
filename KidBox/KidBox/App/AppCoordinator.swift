@@ -252,12 +252,86 @@ final class AppCoordinator: ObservableObject {
     }
     
     /// Handles a "open document" action coming from a push notification.
+    ///
+    /// Ricostruisce l'intero path di navigazione (root → cartelle intermedie → documento)
+    /// leggendo `categoryId` e la catena di `parentId` da SwiftData.
+    ///
+    /// Se il documento non è ancora sincronizzato localmente (race condition),
+    /// attende fino a `maxWait` secondi con polling, poi fa fallback a `.documentsHome`.
     @MainActor
-    func openDocumentFromPush(familyId: String, docId: String) {
+    func openDocumentFromPush(familyId: String, docId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openDocumentFromPush familyId=\(familyId) docId=\(docId)")
-        navigate(to: .documentsHome)
-        pendingOpenDocumentId = docId
-        KBLog.navigation.kbDebug("pendingOpenDocumentId set")
+        
+        Task { @MainActor in
+            // ── 1. Prova a trovare il documento, con retry per la race condition sync ──
+            let maxAttempts = 8
+            let delayNs: UInt64 = 500_000_000  // 0.5s tra un tentativo e l'altro
+            var doc: KBDocument? = nil
+            
+            for attempt in 1...maxAttempts {
+                let fid = familyId
+                let did = docId
+                let descriptor = FetchDescriptor<KBDocument>(
+                    predicate: #Predicate { $0.familyId == fid && $0.id == did }
+                )
+                doc = try? modelContext.fetch(descriptor).first
+                
+                if doc != nil {
+                    KBLog.navigation.kbDebug("openDocumentFromPush: document found attempt=\(attempt)")
+                    break
+                }
+                
+                KBLog.navigation.kbDebug("openDocumentFromPush: document not found yet attempt=\(attempt)/\(maxAttempts)")
+                if attempt < maxAttempts {
+                    try? await Task.sleep(nanoseconds: delayNs)
+                }
+            }
+            
+            // ── 2. Se il documento non è ancora disponibile → fallback alla root ──
+            guard let doc else {
+                KBLog.navigation.kbError("openDocumentFromPush: document not found after retries, fallback to documentsHome")
+                path.removeAll()
+                path.append(.documentsHome)
+                pendingOpenDocumentId = docId
+                return
+            }
+            
+            // ── 3. Risali la catena di cartelle: categoryId → parentId → ... → nil (root) ──
+            var categoryChain: [KBDocumentCategory] = []
+            var currentCategoryId = doc.categoryId
+            
+            while let catId = currentCategoryId {
+                let cid = catId
+                let fid = familyId
+                let catDescriptor = FetchDescriptor<KBDocumentCategory>(
+                    predicate: #Predicate { $0.id == cid && $0.familyId == fid }
+                )
+                guard let cat = try? modelContext.fetch(catDescriptor).first else {
+                    KBLog.navigation.kbError("openDocumentFromPush: missing category catId=\(catId)")
+                    break
+                }
+                categoryChain.insert(cat, at: 0)  // prepend → ordine root-first
+                currentCategoryId = cat.parentId
+            }
+            
+            KBLog.navigation.kbDebug("openDocumentFromPush: categoryChain depth=\(categoryChain.count)")
+            
+            // ── 4. Ricostruisci il NavigationStack path ──
+            path.removeAll()
+            path.append(.documentsHome)
+            
+            for cat in categoryChain {
+                path.append(.documentsCategory(
+                    familyId: familyId,
+                    categoryId: cat.id,
+                    title: cat.title
+                ))
+            }
+            
+            // ── 5. Setta il pending doc: la DocumentFolderView foglia lo aprirà in onAppear ──
+            pendingOpenDocumentId = docId
+            KBLog.navigation.kbDebug("openDocumentFromPush: path rebuilt count=\(path.count), pendingOpenDocumentId set")
+        }
     }
     
     /// Resets navigation to the root (clears the NavigationStack path).

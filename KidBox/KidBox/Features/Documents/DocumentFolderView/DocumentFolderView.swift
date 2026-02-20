@@ -296,7 +296,18 @@ struct DocumentFolderView: View {
                     view.viewModel.bind(modelContext: view.modelContext)
                     view.viewModel.startObservingChanges()
                     view.viewModel.reload()
-                    if let docId = coordinator.pendingOpenDocumentId {
+                    if let docId = coordinator.pendingOpenDocumentId,
+                       view.viewModel.docs.first(where: { $0.id == docId }) != nil
+                        || view.viewModel.docs.isEmpty {
+                        coordinator.pendingOpenDocumentId = nil
+                        view.viewModel.openIfPresent(docId: docId)
+                    }
+                }
+            // Backup: scatta se la view era già montata quando arriva il deep link.
+                .onChange(of: coordinator.pendingOpenDocumentId) { _, newDocId in
+                    guard let docId = newDocId else { return }
+                    if view.viewModel.docs.first(where: { $0.id == docId }) != nil
+                        || view.viewModel.docs.isEmpty {
                         coordinator.pendingOpenDocumentId = nil
                         view.viewModel.openIfPresent(docId: docId)
                     }

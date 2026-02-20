@@ -107,7 +107,13 @@ struct KidBoxApp: App {
                     switch link {
                     case .document(let familyId, let docId):
                         KBLog.navigation.kbInfo("Deep link -> open document")
-                        coordinator.openDocumentFromPush(familyId: familyId, docId: docId)
+                        // Passa il modelContext così il coordinator può risalire
+                        // la catena di cartelle direttamente da SwiftData.
+                        coordinator.openDocumentFromPush(
+                            familyId: familyId,
+                            docId: docId,
+                            modelContext: modelContainer.mainContext
+                        )
                     }
                     
                     notifications.consumeDeepLink()
