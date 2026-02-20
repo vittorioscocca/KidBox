@@ -55,7 +55,22 @@ final class FamilyJoinService {
     ///    bootstrap so that RootHostView does not flip back to the old family.
     /// 8) Start realtime bundle + members; flush.
     /// 9) Bootstrap remaining memberships (syncs old families in background, does NOT change active).
+    ///
+    /// - Note: Wraps the entire flow in `beginFamilyJoin` / `endFamilyJoin` to suppress
+    ///   spurious `handleFamilyAccessLost` calls triggered by PERMISSION_DENIED errors
+    ///   from the old family's listeners that may still be alive during the transition.
     func joinFamily(code rawCode: String, coordinator: AppCoordinator) async throws {
+        // ─────────────────────────────────────────────────────────────────────
+        // JOIN GUARD — sopprime handleFamilyAccessLost per tutta la durata del
+        // join. I listener della vecchia famiglia possono emettere
+        // PERMISSION_DENIED nell'intervallo tra setActiveFamily() e lo
+        // stop/start dei listener, causando una revoca spuria dell'utente.
+        // Il defer garantisce che il flag venga sempre rilasciato, anche in
+        // caso di throw.
+        // ─────────────────────────────────────────────────────────────────────
+        SyncCenter.shared.beginFamilyJoin()
+        defer { SyncCenter.shared.endFamilyJoin() }
+        
         let code = rawCode
             .uppercased()
             .filter { !$0.isWhitespace && $0 != "-" }
