@@ -76,6 +76,17 @@ final class FamilyJoinService {
         let familyId = try await inviteRemote.resolveInvite(code: code)
         KBLog.sync.kbInfo("Invite resolved familyId=\(familyId)")
         
+        // ─────────────────────────────────────────────────────────────────────
+        // PIN SUBITO — prima di qualsiasi Task detached o save su SwiftData.
+        // Il Task di one-shot refresh qui sotto chiama modelContext.save(),
+        // che può toccare updatedAt di altre famiglie e triggerare un re-render
+        // di RootHostView prima che setActiveFamily() venga chiamato al punto 7.
+        // Settandolo qui, RootHostView è già vincolata alla famiglia corretta
+        // per tutto il resto del flusso.
+        // ─────────────────────────────────────────────────────────────────────
+        KBLog.sync.kbInfo("Pinning joined family as active (early) familyId=\(familyId)")
+        coordinator.setActiveFamily(familyId)
+        
         // One-shot family refresh (best effort, non-blocking)
         Task { @MainActor in
             KBLog.sync.kbDebug("Family one-shot refresh started familyId=\(familyId)")
@@ -224,18 +235,6 @@ final class FamilyJoinService {
         try modelContext.save()
         KBLog.sync.kbInfo("Join family local data saved familyId=\(familyId)")
         
-        // ─────────────────────────────────────────────────────────────────────
-        // 7) PIN THE JOINED FAMILY AS ACTIVE — MUST happen before bootstrap.
-        //
-        //    FamilyBootstrapService.bootstrapIfNeeded() will re-sync old families
-        //    (touching their updatedAt in SwiftData), which would otherwise cause
-        //    RootHostView to flip back to the old family via the `families.first` ordering.
-        //    By setting activeFamilyId here, RootHostView ignores updatedAt ordering
-        //    and keeps displaying the newly joined family.
-        // ─────────────────────────────────────────────────────────────────────
-        KBLog.sync.kbInfo("Pinning joined family as active familyId=\(familyId)")
-        coordinator.setActiveFamily(familyId)
-        
         // 8) Start realtime for the joined family
         KBLog.sync.kbDebug("Restarting family bundle realtime familyId=\(familyId)")
         SyncCenter.shared.stopFamilyBundleRealtime()
@@ -247,11 +246,13 @@ final class FamilyJoinService {
         KBLog.sync.kbDebug("Starting members realtime after join familyId=\(familyId)")
         SyncCenter.shared.startMembersRealtime(familyId: familyId, modelContext: modelContext)
         
-        // 9) Bootstrap remaining memberships in background.
-        //    This syncs all other families the user belongs to locally,
-        //    but does NOT touch activeFamilyId (that is already pinned above).
-        KBLog.sync.kbDebug("Bootstrap after join requested (background, will NOT change active family)")
-        await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
+        // 9) Bootstrap remaining memberships — fire-and-forget.
+        //    Non usiamo await per non bloccare il ritorno al chiamante.
+        //    bootstrapIfNeeded NON tocca activeFamilyId (già pinnato sopra).
+        KBLog.sync.kbDebug("Bootstrap after join requested (fire-and-forget, will NOT change active family)")
+        Task { @MainActor in
+            await FamilyBootstrapService(modelContext: self.modelContext).bootstrapIfNeeded()
+        }
         
         KBLog.sync.kbInfo("joinFamily completed familyId=\(familyId)")
     }
