@@ -47,8 +47,32 @@ final class SyncCenter: ObservableObject {
     
     private(set) var isFamilyBeingCreated = false
     
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - Join guard
+    //
+    // Sopprime handleFamilyAccessLost durante il join di una famiglia.
+    // I listener della vecchia famiglia possono emettere PERMISSION_DENIED
+    // nell'intervallo tra coordinator.setActiveFamily() e lo stop/start dei
+    // listener, causando una revoca spuria dell'utente.
+    // Il pattern è identico a isFamilyBeingCreated usato in FamilyCreationService.
+    // ─────────────────────────────────────────────────────────────────────────
+    private(set) var isJoiningFamily = false
+    
     func beginFamilyCreation() { isFamilyBeingCreated = true }
     func endFamilyCreation()   { isFamilyBeingCreated = false }
+    
+    /// Segnala l'inizio di un join. Resetta anche accessLostHandled così un
+    /// eventuale revoke legittimo post-join viene correttamente gestito.
+    func beginFamilyJoin() {
+        isJoiningFamily = true
+        accessLostHandled.removeAll()
+        KBLog.sync.kbDebug("beginFamilyJoin: join guard ON, accessLostHandled reset")
+    }
+    
+    func endFamilyJoin() {
+        isJoiningFamily = false
+        KBLog.sync.kbDebug("endFamilyJoin: join guard OFF")
+    }
     
     static func isPermissionDenied(_ error: Error) -> Bool {
         let ns = error as NSError
@@ -62,6 +86,12 @@ final class SyncCenter: ObservableObject {
             KBLog.sync.kbDebug("handleFamilyAccessLost suppressed: family creation in progress")
             return
         }
+        // ← NUOVO: sopprime durante il join per evitare revoche spurie dai
+        //   listener della vecchia famiglia ancora attivi.
+        guard !isJoiningFamily else {
+            KBLog.sync.kbDebug("handleFamilyAccessLost suppressed: family join in progress source=\(source) familyId=\(familyId)")
+            return
+        }
         guard !accessLostHandled.contains(familyId) else { return }
         accessLostHandled.insert(familyId)
         
@@ -73,7 +103,7 @@ final class SyncCenter: ObservableObject {
         stopFamilyBundleRealtime()
         stopDocumentsRealtime()
         
-        // Notifica UI: “sei stato buttato fuori”
+        // Notifica UI: "sei stato buttato fuori"
         Self._currentUserRevoked.send(familyId)
     }
     
