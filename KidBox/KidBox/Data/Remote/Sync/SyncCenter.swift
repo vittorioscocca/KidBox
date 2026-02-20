@@ -45,6 +45,11 @@ final class SyncCenter: ObservableObject {
     
     private var accessLostHandled = Set<String>()
     
+    private(set) var isFamilyBeingCreated = false
+    
+    func beginFamilyCreation() { isFamilyBeingCreated = true }
+    func endFamilyCreation()   { isFamilyBeingCreated = false }
+    
     static func isPermissionDenied(_ error: Error) -> Bool {
         let ns = error as NSError
         return ns.domain == FirestoreErrorDomain &&
@@ -53,7 +58,10 @@ final class SyncCenter: ObservableObject {
     
     @MainActor
     func handleFamilyAccessLost(familyId: String, source: String, error: Error) {
-        // evita spam/loop
+        guard !isFamilyBeingCreated else {
+            KBLog.sync.kbDebug("handleFamilyAccessLost suppressed: family creation in progress")
+            return
+        }
         guard !accessLostHandled.contains(familyId) else { return }
         accessLostHandled.insert(familyId)
         

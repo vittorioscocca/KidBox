@@ -18,6 +18,11 @@ import OSLog
 ///   - Logs avoid printing emails. Errors are logged with `.public` to help debugging.
 struct ProfileView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
+    @State private var showDeleteAccountSheet = false
+    @Environment(\.modelContext) private var modelContext
+    @State private var deleteConfirmText = ""
+    @State private var isDeletingAccount = false
+    @State private var deleteError: String?
     
     var body: some View {
         List {
@@ -45,6 +50,14 @@ struct ProfileView: View {
                     Text("Logout")
                 }
                 .accessibilityLabel("Logout")
+                
+                Button(role: .destructive) {
+                    deleteConfirmText = ""
+                    deleteError = nil
+                    showDeleteAccountSheet = true
+                } label: {
+                    Text("Elimina account")
+                }
             }
         }
         .navigationTitle("Profilo")
@@ -52,6 +65,40 @@ struct ProfileView: View {
             // View logs: keep them minimal to avoid spam in SwiftUI re-renders.
             let isAuthed = (Auth.auth().currentUser != nil)
             KBLog.auth.debug("ProfileView appeared authed=\(isAuthed, privacy: .public)")
+        }
+        .sheet(isPresented: $showDeleteAccountSheet) {
+            DeleteAccountConfirmSheet(
+                confirmText: $deleteConfirmText,
+                isDeleting: $isDeletingAccount,
+                errorText: $deleteError,
+                onCancel: { showDeleteAccountSheet = false },
+                onDelete: {
+                    Task { @MainActor in
+                        let normalized = deleteConfirmText
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .uppercased()
+                        
+                        guard normalized == "ELIMINA" else {
+                            deleteError = "Per confermare, digita ELIMINA."
+                            return
+                        }
+                        
+                        isDeletingAccount = true
+                        deleteError = nil
+                        defer { isDeletingAccount = false }
+                        
+                        do {
+                            try await AccountDeletionService(modelContext: modelContext).deleteMyAccount()
+                            showDeleteAccountSheet = false
+                            
+                            coordinator.setActiveFamily(nil)
+                            coordinator.resetToRoot()
+                        } catch {
+                            deleteError = error.localizedDescription
+                        }
+                    }
+                }
+            )
         }
     }
     

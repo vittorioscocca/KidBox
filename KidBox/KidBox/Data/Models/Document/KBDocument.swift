@@ -29,7 +29,7 @@ final class KBDocument {
     var fileSize: Int64
     
     // Storage
-    var storagePath: String     // es: families/{familyId}/documents/{docId}.pdf
+    var storagePath: String  
     var downloadURL: String?
     
     // Dates
