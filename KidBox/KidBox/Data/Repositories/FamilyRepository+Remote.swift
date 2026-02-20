@@ -86,7 +86,6 @@ final class FamilyCreationService {
             updatedAt: now
         )
         
-        // ✅ NO array append (unchanged)
         modelContext.insert(family)
         modelContext.insert(child)
         child.family = family
@@ -95,18 +94,22 @@ final class FamilyCreationService {
         
         KBLog.data.kbInfo("Local family created familyId=\(familyId) childId=\(childId)")
         
-        // REMOTE best-effort (non bloccare UI) (unchanged)
-        Task.detached { [remote] in
-            await KBLog.sync.kbDebug("Remote family create started familyId=\(familyId)")
-            do {
-                try await remote.createFamilyWithChild(
-                    family: .init(id: familyId, name: name, ownerUid: uid),
-                    child: .init(id: childId, name: childName, birthDate: childBirthDate)
-                )
-                await KBLog.sync.kbInfo("Remote family create completed familyId=\(familyId)")
-            } catch {
-                await KBLog.sync.kbError("Remote family create failed: \(error.localizedDescription)")
-            }
+        // ✅ Sopprime handleFamilyAccessLost durante la scrittura remota.
+        // I listener partono su families.first (SwiftData) che già esiste localmente,
+        // ma su Firestore la famiglia non c'è ancora → PERMISSION_DENIED temporaneo.
+        // Il flag evita che quel PERMISSION_DENIED venga interpretato come "utente rimosso".
+        SyncCenter.shared.beginFamilyCreation()
+        defer { SyncCenter.shared.endFamilyCreation() }
+        
+        do {
+            try await remote.createFamilyWithChild(
+                family: .init(id: familyId, name: name, ownerUid: uid),
+                child: .init(id: childId, name: childName, birthDate: childBirthDate)
+            )
+            KBLog.sync.kbInfo("Remote family create completed familyId=\(familyId)")
+        } catch {
+            KBLog.sync.kbError("Remote family create failed: \(error.localizedDescription)")
+            throw error
         }
         
         KBLog.data.kbDebug("createFamily done returning ids familyId=\(familyId) childId=\(childId)")
