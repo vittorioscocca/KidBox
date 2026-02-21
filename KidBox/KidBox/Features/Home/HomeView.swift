@@ -95,58 +95,9 @@ struct HomeView: View {
                 }
                 .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
                 
-                // GRID
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 12),
-                        GridItem(.flexible(), spacing: 12)
-                    ],
-                    spacing: 12
-                ) {
-                    HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
-                        KBLog.navigation.debug("Home: tap Notes")
-                        // go(.notes)
-                    }
-                    
-                    HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
-                        KBLog.navigation.debug("Home: tap Todo")
-                        go(.todo)
-                    }
-                    
-                    HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
-                        KBLog.navigation.debug("Home: tap Calendar")
-                        go(.calendar)
-                    }
-                    
-                    HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
-                        KBLog.navigation.debug("Home: tap Care")
-                        // go(.care)
-                    }
-                    
-                    HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message", tint: .green) {
-                        KBLog.navigation.debug("Home: tap Chat")
-                        // go(.chat)
-                    }
-                    
-                    HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
-                        KBLog.navigation.debug("Home: tap Documents")
-                        go(.document)
-                    }
-                    
-                    HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
-                        KBLog.navigation.debug("Home: tap Expenses")
-                        // go(.expenses)
-                    }
-                    
-                    HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
-                        KBLog.navigation.debug("Home: tap Timeline")
-                        // go(.timeline)
-                    }
-                    
-                    HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill", tint: .teal) {
-                        KBLog.navigation.debug("Home: tap FamilySettings")
-                        coordinator.navigate(to: .familySettings)
-                    }
+                // ✅ Grid estratta in subview per evitare type-check timeout
+                HomeCardGrid(hasFamily: hasFamily) { destination in
+                    navigate(to: destination)
                 }
                 
                 if showInvite {
@@ -190,7 +141,7 @@ struct HomeView: View {
             Task { await prepareHeroCrop(item: newItem) }
         }
         
-        // ✅ Cropper sheet (estratto in subview per evitare type-check lento)
+        // ✅ Cropper sheet
         .sheet(isPresented: $showHeroCropper) {
             HeroCropperSheet(
                 data: pendingHeroImageData,
@@ -223,26 +174,48 @@ struct HomeView: View {
         }
     }
     
+    // MARK: - Navigation
+    
+    /// Centralized navigation helper. Routes non-members to Family settings.
+    private func navigate(to destination: HomeDestination) {
+        switch destination {
+        case .familySettings:
+            KBLog.navigation.debug("Home: navigate -> familySettings")
+            coordinator.navigate(to: .familySettings)
+        case .profile:
+            KBLog.navigation.debug("Home: navigate -> profile")
+            coordinator.navigate(to: .profile)
+        case .settings:
+            KBLog.navigation.debug("Home: navigate -> settings")
+            coordinator.navigate(to: .settings)
+        case .inviteCode:
+            KBLog.navigation.debug("Home: navigate -> inviteCode")
+            coordinator.navigate(to: .inviteCode)
+        default:
+            if hasFamily {
+                KBLog.navigation.debug("Home: navigate -> \(String(describing: destination), privacy: .public)")
+                coordinator.navigate(to: destination.route)
+            } else {
+                KBLog.navigation.debug("Home: navigation blocked (no family) -> FamilySettings")
+                coordinator.navigate(to: .familySettings)
+            }
+        }
+    }
+    
     // MARK: - Step 1: read bytes then open cropper
     
-    /// Loads selected photo bytes into memory and opens the cropper sheet.
-    ///
-    /// - Note: We keep the original selected bytes and apply crop metadata separately.
     @MainActor
     private func prepareHeroCrop(item: PhotosPickerItem) async {
         heroUploadError = nil
-        
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
                 KBLog.sync.error("Home: hero picker loadTransferable returned nil")
                 pickedHeroItem = nil
                 return
             }
-            
             pendingHeroImageData = data
             showHeroCropper = true
             KBLog.sync.info("Home: hero bytes loaded -> cropper opened (bytes=\(data.count, privacy: .public))")
-            
         } catch {
             heroUploadError = error.localizedDescription
             pickedHeroItem = nil
@@ -252,12 +225,6 @@ struct HomeView: View {
     
     // MARK: - Step 2: upload + save crop
     
-    /// Uploads the hero photo and persists crop metadata (scale/offset) on the family document.
-    /// Also updates local SwiftData immediately so the image appears without delay.
-    ///
-    /// Expected behavior:
-    /// - On success: close cropper, reset picker state, update local family data.
-    /// - The realtime listener will sync remote changes later.
     @MainActor
     private func uploadHeroWithCrop(crop: HeroCrop) async {
         guard let familyId = activeFamily?.id, !familyId.isEmpty else {
@@ -285,14 +252,12 @@ struct HomeView: View {
                 crop: crop
             )
             
-            // Aggiorna localmente SwiftData subito (non aspettare realtime)
             if let family = activeFamily {
                 family.heroPhotoURL = urlString
                 family.heroPhotoUpdatedAt = Date()
                 family.heroPhotoScale = crop.scale
                 family.heroPhotoOffsetX = crop.offsetX
                 family.heroPhotoOffsetY = crop.offsetY
-                
                 do {
                     try modelContext.save()
                     KBLog.sync.info("Home: hero local update saved familyId=\(familyId, privacy: .public)")
@@ -304,7 +269,6 @@ struct HomeView: View {
             pendingHeroImageData = nil
             pickedHeroItem = nil
             showHeroCropper = false
-            
             KBLog.sync.info("Home: hero upload OK familyId=\(familyId, privacy: .public)")
             
         } catch {
@@ -312,23 +276,161 @@ struct HomeView: View {
             KBLog.sync.error("Home: hero upload FAILED familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
         }
     }
+}
+
+// MARK: - HomeDestination
+// Enum leggero usato da HomeCardGrid per comunicare la destinazione
+// senza dipendere direttamente da Route (evita import ciclici).
+
+enum HomeDestination {
+    case notes, todo, calendar, care
+    case chat, document, expenses, timeline
+    case familyLocation, familyPhotos, familySettings
+    case askExpert, profile, settings, inviteCode
     
-    // MARK: - Navigation
-    
-    /// Centralized navigation helper that routes non-members to Family settings.
-    private func go(_ routeIfFamily: Route, else routeIfNoFamily: Route = .familySettings) {
-        if hasFamily {
-            coordinator.navigate(to: routeIfFamily)
-        } else {
-            KBLog.navigation.debug("Home: navigation blocked (no family) -> FamilySettings")
-            coordinator.navigate(to: routeIfNoFamily)
+    /// Mappa verso il Route dell'AppCoordinator.
+    var route: Route {
+        switch self {
+        case .notes:          return .calendar
+        case .todo:           return .todo
+        case .calendar:       return .calendar
+        case .care:           return .calendar
+        case .chat:           return .calendar
+        case .document:       return .document
+        case .expenses:       return .calendar
+        case .timeline:       return .calendar
+        case .familyLocation: return .calendar
+        case .familyPhotos:   return .calendar
+        case .familySettings: return .familySettings
+        case .askExpert:      return .calendar
+        case .profile:        return .profile
+        case .settings:       return .settings
+        case .inviteCode:     return .inviteCode
         }
     }
 }
 
-// MARK: - Subview sheet (riduce errori type-check)
+// MARK: - HomeCardGrid
+// Subview separata: riduce drasticamente il tempo di type-check del compilatore.
 
-/// A small wrapper sheet that shows the cropper if bytes are available.
+private struct HomeCardGrid: View {
+    let hasFamily: Bool
+    let onNavigate: (HomeDestination) -> Void
+    
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+    
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            cardNote
+            cardTodo
+            cardCalendar
+            cardCure
+            cardChat
+            cardDocumenti
+            cardSpese
+            cardTimeline
+            cardPosizione
+            cardFoto
+            cardFamily
+            cardEsperto
+        }
+    }
+    
+    // MARK: Cards
+    
+    private var cardNote: some View {
+        HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
+            KBLog.navigation.debug("Home: tap Notes")
+            // onNavigate(.notes)
+        }
+    }
+    
+    private var cardTodo: some View {
+        HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
+            KBLog.navigation.debug("Home: tap Todo")
+            onNavigate(.todo)
+        }
+    }
+    
+    private var cardCalendar: some View {
+        HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
+            KBLog.navigation.debug("Home: tap Calendar")
+            onNavigate(.calendar)
+        }
+    }
+    
+    private var cardCure: some View {
+        HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
+            KBLog.navigation.debug("Home: tap Care")
+            // onNavigate(.care)
+        }
+    }
+    
+    private var cardChat: some View {
+        HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
+            KBLog.navigation.debug("Home: tap Chat")
+            onNavigate(.chat)
+        }
+    }
+    
+    private var cardDocumenti: some View {
+        HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
+            KBLog.navigation.debug("Home: tap Documents")
+            onNavigate(.document)
+        }
+    }
+    
+    private var cardSpese: some View {
+        HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
+            KBLog.navigation.debug("Home: tap Expenses")
+            // onNavigate(.expenses)
+        }
+    }
+    
+    private var cardTimeline: some View {
+        HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
+            KBLog.navigation.debug("Home: tap Timeline")
+            // onNavigate(.timeline)
+        }
+    }
+    
+    // ✅ NUOVA — Posizione famiglia
+    private var cardPosizione: some View {
+        HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
+            KBLog.navigation.debug("Home: tap FamilyLocation")
+            onNavigate(.familyLocation)
+        }
+    }
+    
+    // ✅ NUOVA — Foto famiglia
+    private var cardFoto: some View {
+        HomeCardView(title: "Foto", subtitle: "Album condiviso", systemImage: "photo.stack.fill", tint: .pink) {
+            KBLog.navigation.debug("Home: tap FamilyPhotos")
+            onNavigate(.familyPhotos)
+        }
+    }
+    
+    private var cardFamily: some View {
+        HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill", tint: .teal) {
+            KBLog.navigation.debug("Home: tap FamilySettings")
+            onNavigate(.familySettings)
+        }
+    }
+    
+    // ✅ NUOVA — Chiedi all'Esperto (AI agent)
+    private var cardEsperto: some View {
+        HomeCardView(title: "Chiedi all'Esperto", subtitle: "Consigli su famiglia e figli", systemImage: "brain.head.profile", tint: .purple) {
+            KBLog.navigation.debug("Home: tap AskExpert")
+            onNavigate(.askExpert)
+        }
+    }
+}
+
+// MARK: - HeroCropperSheet
+
 private struct HeroCropperSheet: View {
     let data: Data?
     let initialCrop: HeroCrop

@@ -2,64 +2,71 @@
 //  FolderGridCard.swift
 //  KidBox
 //
-//  Created by vscocca on 09/02/26.
+//  Created by vscocca on 06/02/26. Updated 21/02/26.
 //
 
 import SwiftUI
 
+/// Card cartella per la vista a griglia — grafica rinnovata.
 struct FolderGridCard: View {
     let title: String
-    
+    var subtitle: String? = nil          // es. "3 elementi"
     let isSelecting: Bool
     let isSelected: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        ZStack(alignment: .topLeading) {
+            // Background card
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.orange.opacity(0.22), Color.orange.opacity(0.10)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(
+                            isSelected
+                            ? Color.accentColor.opacity(0.8)
+                            : Color.orange.opacity(0.25),
+                            lineWidth: isSelected ? 2 : 1
+                        )
+                )
             
-            // spazio riservato al badge
-            if isSelecting {
-                Spacer().frame(height: 18)
+            VStack(alignment: .leading, spacing: 8) {
+                // Icona + badge selezione
+                HStack(alignment: .top) {
+                    Image(systemName: "folder.fill")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                    
+                    Spacer()
+                    
+                    if isSelecting {
+                        SelectionBadge(isSelected: isSelected)
+                    }
+                }
+                
+                Spacer(minLength: 4)
+                
+                Text(title.isEmpty ? "Senza nome" : title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
-            
-            Image(systemName: "folder.fill")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            
-            Text(title)
-                .font(.subheadline).bold()
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-            
-            Spacer(minLength: 0)
+            .padding(14)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .overlay(alignment: .topLeading) {
-            if isSelecting {
-                SelectionBadge(isSelected: isSelected)
-                    .padding(8)
-            }
-        }
-    }
-}
-
-struct SelectionBadge: View {
-    let isSelected: Bool
-    
-    var body: some View {
-        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-            .font(.headline)
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(isSelected ? .blue : .secondary)
-            .padding(2)
-            .background(.ultraThinMaterial, in: Circle())
+        .frame(minHeight: 100)
+        .scaleEffect(isSelected ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
