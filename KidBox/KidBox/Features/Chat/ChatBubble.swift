@@ -104,11 +104,25 @@ struct ChatBubble: View {
     private var bubbleContent: some View {
         switch message.type {
         case .text:
-            Text(message.text ?? "")
-                .font(.body)
-                .foregroundStyle(isOwn ? .white : .primary)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
+            let text = message.text ?? ""
+            let detectedURL = extractFirstURL(from: text)
+            VStack(alignment: .leading, spacing: 6) {
+                // Testo con link tappabile
+                Text(makeAttributedText(text))
+                    .font(.body)
+                    .foregroundStyle(isOwn ? .white : .primary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .environment(\.openURL, OpenURLAction { url in
+                        UIApplication.shared.open(url)
+                        return .handled
+                    })
+                
+                // Anteprima link
+                if let url = detectedURL {
+                    LinkPreviewView(url: url, isOwn: isOwn)
+                }
+            }
             
         case .photo:
             photoContent
@@ -374,6 +388,30 @@ struct ChatBubble: View {
         }
     }
     
+    // MARK: - Link helpers
+    
+    private func extractFirstURL(from text: String) -> URL? {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        return detector.firstMatch(in: text, range: range).flatMap { $0.url }
+    }
+    
+    private func makeAttributedText(_ text: String) -> AttributedString {
+        var attributed = (try? AttributedString(markdown: text)) ?? AttributedString(text)
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return attributed }
+        let range = NSRange(text.startIndex..., in: text)
+        detector.enumerateMatches(in: text, range: range) { match, _, _ in
+            guard let match,
+                  let url = match.url,
+                  let swiftRange = Range(match.range, in: text),
+                  let attrRange = Range(swiftRange, in: attributed) else { return }
+            attributed[attrRange].link = url
+            attributed[attrRange].foregroundColor = isOwn ? UIColor.white : UIColor.systemBlue
+            attributed[attrRange].underlineStyle = .single
+        }
+        return attributed
+    }
+    
     // MARK: - Style helpers
     
     private func maxBubbleWidth(containerWidth: CGFloat) -> CGFloat {
@@ -570,6 +608,184 @@ final class ChatBubbleAudioDelegate: NSObject, AVAudioPlayerDelegate {
     
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         onFinish?()
+    }
+}
+
+// MARK: - LinkPreviewView
+
+private struct LinkPreviewView: View {
+    let url: URL
+    let isOwn: Bool
+    
+    @State private var metadata: LinkMetadata? = nil
+    @State private var isLoading = true
+    
+    var body: some View {
+        Group {
+            if isLoading {
+                // Skeleton
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(previewBackground)
+                    .frame(height: 60)
+                    .overlay(ProgressView().tint(isOwn ? .white : .accentColor))
+            } else if let meta = metadata {
+                Button {
+                    UIApplication.shared.open(url)
+                } label: {
+                    previewCard(meta: meta)
+                }
+                .buttonStyle(.plain)
+            }
+            // Se fetch fallisce non mostriamo nulla
+        }
+        .task { await loadMetadata() }
+    }
+    
+    private func previewCard(meta: LinkMetadata) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Immagine OG
+            if let imageURL = meta.imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 110)
+                            .clipped()
+                    }
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                // Dominio
+                Text(url.host ?? url.absoluteString)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+                    .lineLimit(1)
+                
+                // Titolo
+                if let title = meta.title, !title.isEmpty {
+                    Text(title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .lineLimit(2)
+                }
+                
+                // Descrizione
+                if let desc = meta.description, !desc.isEmpty {
+                    Text(desc)
+                        .font(.caption2)
+                        .foregroundStyle(isOwn ? .white.opacity(0.8) : .secondary)
+                        .lineLimit(2)
+                }
+            }
+            .padding(8)
+        }
+        .background(previewBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+    }
+    
+    private var previewBackground: Color {
+        isOwn ? Color.white.opacity(0.15) : Color(.tertiarySystemBackground)
+    }
+    
+    // MARK: - Fetch metadati OG
+    
+    private func loadMetadata() async {
+        // Cache in memoria per non rifetchare ogni redraw
+        if let cached = LinkMetadataCache.shared.get(url) {
+            metadata = cached
+            isLoading = false
+            return
+        }
+        
+        guard let meta = await fetchOGMetadata(from: url) else {
+            isLoading = false
+            return
+        }
+        
+        LinkMetadataCache.shared.set(meta, for: url)
+        metadata = meta
+        isLoading = false
+    }
+    
+    private func fetchOGMetadata(from url: URL) async -> LinkMetadata? {
+        guard let (data, _) = try? await URLSession.shared.data(from: url),
+              let html = String(data: data, encoding: .utf8) else { return nil }
+        
+        func og(_ property: String) -> String? {
+            // Cerca <meta property="og:X" content="Y"> oppure name=
+            let patterns = [
+                #"<meta[^>]+property=["\']og:\#(property)["\'][^>]+content=["\']([^"\']+)["\']"#,
+                #"<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:\#(property)["\']"#,
+                #"<meta[^>]+name=["\']og:\#(property)["\'][^>]+content=["\']([^"\']+)["\']"#
+            ]
+            for pattern in patterns {
+                if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+                   let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+                   let range = Range(match.range(at: 1), in: html) {
+                    return String(html[range]).htmlDecoded
+                }
+            }
+            return nil
+        }
+        
+        // Fallback titolo da <title>
+        let title = og("title") ?? {
+            let pattern = #"<title[^>]*>([^<]+)</title>"#
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+               let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+               let range = Range(match.range(at: 1), in: html) {
+                return String(html[range]).htmlDecoded
+            }
+            return nil
+        }()
+        
+        let imageURLString = og("image")
+        let imageURL: URL? = imageURLString.flatMap { URL(string: $0) }
+        
+        guard title != nil || imageURL != nil else { return nil }
+        
+        return LinkMetadata(
+            title: title,
+            description: og("description"),
+            imageURL: imageURL
+        )
+    }
+}
+
+// MARK: - LinkMetadata
+
+private struct LinkMetadata {
+    let title: String?
+    let description: String?
+    let imageURL: URL?
+}
+
+// MARK: - LinkMetadataCache
+
+private final class LinkMetadataCache {
+    static let shared = LinkMetadataCache()
+    private var cache: [URL: LinkMetadata] = [:]
+    private init() {}
+    func get(_ url: URL) -> LinkMetadata? { cache[url] }
+    func set(_ meta: LinkMetadata, for url: URL) { cache[url] = meta }
+}
+
+// MARK: - String+htmlDecoded
+
+private extension String {
+    var htmlDecoded: String {
+        let entities: [(String, String)] = [
+            ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
+            ("&quot;", "\""), ("&#39;", "'"), ("&apos;", "'"),
+            ("&nbsp;", " ")
+        ]
+        return entities.reduce(self) { $0.replacingOccurrences(of: $1.0, with: $1.1) }
     }
 }
 
