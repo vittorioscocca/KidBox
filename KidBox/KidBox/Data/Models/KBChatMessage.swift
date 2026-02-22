@@ -1,52 +1,40 @@
-//
-//  KBChatMessage.swift
-//  KidBox
-//
-//  Created by vscocca on 21/02/26.
-//
-
 import Foundation
 import SwiftData
 
 /// Tipo di messaggio supportato dalla chat familiare.
 enum KBChatMessageType: String, Codable {
-    case text       // messaggio di testo
-    case audio      // vocale
-    case photo      // foto
-    case video      // video
+    case text
+    case audio
+    case photo
+    case video
 }
 
 /// Modello locale di un messaggio della chat familiare.
-///
-/// Struttura Firestore:
-/// `families/{familyId}/chatMessages/{messageId}`
 @Model
 final class KBChatMessage {
     @Attribute(.unique) var id: String
     
-    // Ownership
     var familyId: String
-    var senderId: String        // Firebase UID del mittente
-    var senderName: String      // display name al momento dell'invio
+    var senderId: String
+    var senderName: String
     
-    // Tipo e contenuto
-    var typeRaw: String         // KBChatMessageType.rawValue
-    var text: String?           // solo per .text
+    var typeRaw: String
+    var text: String?
     
-    // Media (foto / video / audio)
-    var mediaStoragePath: String?   // path su Firebase Storage
-    var mediaURL: String?           // download URL (cache)
-    var mediaDurationSeconds: Int?  // solo per .audio e .video
-    var mediaThumbnailURL: String?  // solo per .video
+    var mediaStoragePath: String?
+    var mediaURL: String?
+    var mediaDurationSeconds: Int?
+    var mediaThumbnailURL: String?
     
-    // Reazioni: JSON serializzato  es. {"❤️": ["uid1","uid2"], "😂": ["uid3"]}
     var reactionsJSON: String?
     
-    // Date
+    /// JSON serializzato degli UID che hanno letto il messaggio.
+    /// Es. ["uid1", "uid2"]
+    var readByJSON: String?
+    
     var createdAt: Date
     var isDeleted: Bool
     
-    // Sync
     var syncStateRaw: Int
     var lastSyncError: String?
     
@@ -81,6 +69,25 @@ final class KBChatMessage {
         }
     }
     
+    /// UID degli utenti che hanno letto il messaggio.
+    var readBy: [String] {
+        get {
+            guard let json = readByJSON,
+                  let data = json.data(using: .utf8),
+                  let decoded = try? JSONDecoder().decode([String].self, from: data)
+            else { return [] }
+            return decoded
+        }
+        set {
+            if newValue.isEmpty {
+                readByJSON = nil
+            } else if let data = try? JSONEncoder().encode(newValue),
+                      let json = String(data: data, encoding: .utf8) {
+                readByJSON = json
+            }
+        }
+    }
+    
     // MARK: - Init
     
     init(
@@ -108,6 +115,7 @@ final class KBChatMessage {
         self.mediaDurationSeconds = mediaDurationSeconds
         self.mediaThumbnailURL = mediaThumbnailURL
         self.reactionsJSON = nil
+        self.readByJSON = nil
         self.createdAt = createdAt
         self.isDeleted = isDeleted
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue

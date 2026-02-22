@@ -10,7 +10,8 @@ import SwiftData
 import PhotosUI
 import FirebaseAuth
 
-/// Entry point della chat familiare.
+// MARK: - ChatView (entry point)
+
 struct ChatView: View {
     
     @Environment(\.modelContext) private var modelContext
@@ -67,7 +68,6 @@ private struct ChatConversationView: View {
     @State private var showClearConfirm = false
     
     // Scroll
-    @Namespace private var bottomAnchor
     @State private var showScrollToBottom = false
     
     // Date pill floating (stile WhatsApp)
@@ -80,147 +80,15 @@ private struct ChatConversationView: View {
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
     }
     
+    // MARK: - Body
+    
     var body: some View {
         VStack(spacing: 0) {
-            
-            // ── Lista messaggi ──────────────────────────────────────────────
-            ScrollViewReader { proxy in
-                ZStack(alignment: .top) {
-                    ScrollView {
-                        LazyVStack(spacing: 4) {
-                            ForEach(groupedMessages, id: \.day) { group in
-                                
-                                // ── Separatore giorno statico ───────────────
-                                ChatDaySeparator(label: group.label)
-                                    .id("day-\(group.day)")
-                                    .background(
-                                        GeometryReader { geo -> Color in
-                                            let frame = geo.frame(in: .named("scrollArea"))
-                                            if frame.minY < 60 && frame.minY > -frame.height {
-                                                DispatchQueue.main.async {
-                                                    showFloatingPill(label: group.label)
-                                                }
-                                            }
-                                            return Color.clear
-                                        }
-                                    )
-                                
-                                ForEach(group.messages) { msg in
-                                    ChatBubble(
-                                        message: msg,
-                                        isOwn: msg.senderId == currentUID,
-                                        onReactionTap: { emoji in
-                                            viewModel.toggleReaction(emoji, on: msg)
-                                        },
-                                        onLongPress: {
-                                            messageForReaction = msg
-                                        },
-                                        onDelete: {
-                                            viewModel.deleteMessage(msg)
-                                        }
-                                    )
-                                    .id(msg.id)
-                                }
-                            }
-                            
-                            Color.clear
-                                .frame(height: 1)
-                                .id("bottom")
-                                .background(
-                                    GeometryReader { geo -> Color in
-                                        let frame = geo.frame(in: .named("scrollArea"))
-                                        // Il fondo è visibile se minY è dentro lo schermo (< altezza viewport)
-                                        // Usiamo 120pt come soglia: equivale a ~4-5 messaggi di distanza
-                                        let isNearBottom = frame.minY < UIScreen.main.bounds.height - 120
-                                        DispatchQueue.main.async {
-                                            withAnimation(.easeInOut(duration: 0.2)) {
-                                                showScrollToBottom = !isNearBottom
-                                            }
-                                        }
-                                        return Color.clear
-                                    }
-                                )
-                        }
-                        .padding(.vertical, 10)
-                    }
-                    .coordinateSpace(name: "scrollArea")
-                    .onChange(of: viewModel.messages.count) { _, _ in
-                        withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-                    }
-                    .onAppear {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
-                    
-                    // ── Floating date pill (stile WhatsApp) ─────────────────
-                    if showFloatingDate {
-                        Text(floatingDateLabel)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 1)
-                            .padding(.top, 8)
-                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                            .animation(.easeInOut(duration: 0.2), value: showFloatingDate)
-                            .allowsHitTesting(false)
-                            .zIndex(10)
-                    }
-                    
-                    // ── Scroll to bottom button ──────────────────────────────
-                    if showScrollToBottom {
-                        VStack {
-                            Spacer()
-                            Button {
-                                withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-                            } label: {
-                                Image(systemName: "chevron.down")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(.primary)
-                                    .frame(width: 36, height: 36)
-                                    .background(.ultraThinMaterial, in: Circle())
-                                    .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 2)
-                            }
-                            .padding(.bottom, 10)
-                            .padding(.trailing, 16)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
-                        .zIndex(9)
-                    }
-                }
-            }
-            
-            // ── Errore ──────────────────────────────────────────────────────
-            if let error = viewModel.errorText {
-                Text(error)
-                    .font(.caption).foregroundStyle(.red)
-                    .padding(.horizontal).padding(.top, 4)
-            }
-            
-            // ── Upload progress ─────────────────────────────────────────────
-            if viewModel.isUploadingMedia {
-                ProgressView(value: viewModel.uploadProgress)
-                    .tint(.accentColor)
-                    .padding(.horizontal)
-                    .padding(.top, 4)
-            }
-            
+            messageList
+            errorBanner
+            uploadProgress
             Divider()
-            
-            // ── Input bar ───────────────────────────────────────────────────
-            ChatInputBar(
-                text: $viewModel.inputText,
-                isRecording: viewModel.isRecording,
-                recordingDuration: viewModel.recordingDuration,
-                isSending: viewModel.isSending,
-                onSendText: { viewModel.sendText() },
-                onStartRecord: { viewModel.startRecording() },
-                onStopRecord: { viewModel.stopAndSendRecording() },
-                onCancelRecord: { viewModel.cancelRecording() },
-                onMediaTap: { showMediaPicker = true },
-                onCameraTap: { showCamera = true }
-            )
+            inputBar
         }
         .onAppear {
             viewModel.bind(modelContext: modelContext)
@@ -229,38 +97,23 @@ private struct ChatConversationView: View {
         .onDisappear {
             viewModel.stopListening()
         }
-        // ── Tasto svuota chat ───────────────────────────────────────────────
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showClearConfirm = true
-                } label: {
-                    Image(systemName: "trash")
-                        .foregroundStyle(.red)
-                }
-                .disabled(viewModel.messages.isEmpty)
-            }
-        }
+        .toolbar { trashButton }
         .confirmationDialog(
             "Svuota chat",
             isPresented: $showClearConfirm,
             titleVisibility: .visible
         ) {
-            Button("Elimina tutti i messaggi", role: .destructive) {
-                viewModel.clearChat()
-            }
+            Button("Elimina tutti i messaggi", role: .destructive) { viewModel.clearChat() }
             Button("Annulla", role: .cancel) {}
         } message: {
             Text("Questa azione eliminerà tutti i messaggi per tutti i membri della famiglia. Non è reversibile.")
         }
-        // Reaction picker sheet
         .sheet(item: $messageForReaction) { msg in
             ReactionPickerSheet(message: msg) { emoji in
                 viewModel.toggleReaction(emoji, on: msg)
             }
             .presentationDetents([.height(120)])
         }
-        // Media picker
         .photosPicker(
             isPresented: $showMediaPicker,
             selection: $mediaPickerItems,
@@ -272,22 +125,181 @@ private struct ChatConversationView: View {
             Task { await handlePickedMedia(item) }
             mediaPickerItems = []
         }
-        // Camera (foto + video con tasto tenuto premuto)
-        .sheet(isPresented: $showCamera) {
-            CameraPicker(image: $cameraImage, videoURL: $cameraVideoURL)
-                .ignoresSafeArea()
-                .onDisappear {
-                    if let img = cameraImage,
-                       let data = img.jpegData(compressionQuality: 0.85) {
-                        viewModel.sendMedia(data: data, type: .photo)
-                    } else if let url = cameraVideoURL,
-                              let data = try? Data(contentsOf: url) {
-                        viewModel.sendMedia(data: data, type: .video)
-                    }
-                    cameraImage = nil
-                    cameraVideoURL = nil
-                }
+        .sheet(isPresented: $showCamera) { cameraSheet }
+    }
+    
+    // MARK: - Subviews estratte
+    
+    /// Lista messaggi con scroll, floating pill e freccia in basso.
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ZStack(alignment: .top) {
+                scrollContent(proxy: proxy)
+                floatingDatePill
+                scrollToBottomButton(proxy: proxy)
+            }
         }
+    }
+    
+    private func scrollContent(proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 4) {
+                ForEach(groupedMessages, id: \.day) { group in
+                    daySeparator(group: group)
+                    ForEach(group.messages) { msg in
+                        bubbleRow(msg: msg)
+                    }
+                }
+                Color.clear.frame(height: 1).id("bottom")
+            }
+            .padding(.vertical, 10)
+        }
+        .coordinateSpace(name: "scrollArea")
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height
+        } action: { _, distanceFromBottom in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showScrollToBottom = distanceFromBottom > 200
+            }
+        }
+        .onChange(of: viewModel.messages.count) { _, _ in
+            withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+            viewModel.markVisibleMessagesAsRead()
+        }
+        .onAppear {
+            proxy.scrollTo("bottom", anchor: .bottom)
+            viewModel.markVisibleMessagesAsRead()
+        }
+    }
+    
+    /// Separatore giorno con rilevamento posizione per la floating pill.
+    private func daySeparator(group: DayGroup) -> some View {
+        ChatDaySeparator(label: group.label)
+            .id("day-\(group.day)")
+            .background(daySeparatorDetector(label: group.label))
+    }
+    
+    private func daySeparatorDetector(label: String) -> some View {
+        GeometryReader { geo -> Color in
+            let frame = geo.frame(in: .named("scrollArea"))
+            if frame.minY < 60 && frame.minY > -frame.height {
+                DispatchQueue.main.async { showFloatingPill(label: label) }
+            }
+            return Color.clear
+        }
+    }
+    
+    /// Singola bolla messaggio.
+    private func bubbleRow(msg: KBChatMessage) -> some View {
+        ChatBubble(
+            message: msg,
+            isOwn: msg.senderId == currentUID,
+            onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
+            onLongPress: { messageForReaction = msg },
+            onDelete: { viewModel.deleteMessage(msg) }
+        )
+        .id(msg.id)
+    }
+    
+    /// Pill data flottante stile WhatsApp.
+    @ViewBuilder
+    private var floatingDatePill: some View {
+        if showFloatingDate {
+            Text(floatingDateLabel)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(.ultraThinMaterial, in: Capsule())
+                .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 1)
+                .padding(.top, 8)
+                .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                .animation(.easeInOut(duration: 0.2), value: showFloatingDate)
+                .allowsHitTesting(false)
+                .zIndex(10)
+        }
+    }
+    
+    /// Freccia "vai in fondo" stile WhatsApp.
+    @ViewBuilder
+    private func scrollToBottomButton(proxy: ScrollViewProxy) -> some View {
+        if showScrollToBottom {
+            VStack {
+                Spacer()
+                Button {
+                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 36, height: 36)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 2)
+                }
+                .padding(.bottom, 10)
+                .padding(.trailing, 16)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .transition(.opacity.combined(with: .scale(scale: 0.85)))
+            .zIndex(9)
+        }
+    }
+    
+    @ViewBuilder
+    private var errorBanner: some View {
+        if let error = viewModel.errorText {
+            Text(error)
+                .font(.caption).foregroundStyle(.red)
+                .padding(.horizontal).padding(.top, 4)
+        }
+    }
+    
+    @ViewBuilder
+    private var uploadProgress: some View {
+        if viewModel.isUploadingMedia {
+            ProgressView(value: viewModel.uploadProgress)
+                .tint(.accentColor)
+                .padding(.horizontal)
+                .padding(.top, 4)
+        }
+    }
+    
+    private var inputBar: some View {
+        ChatInputBar(
+            text: $viewModel.inputText,
+            isRecording: viewModel.isRecording,
+            recordingDuration: viewModel.recordingDuration,
+            isSending: viewModel.isSending,
+            onSendText: { viewModel.sendText() },
+            onStartRecord: { viewModel.startRecording() },
+            onStopRecord: { viewModel.stopAndSendRecording() },
+            onCancelRecord: { viewModel.cancelRecording() },
+            onMediaTap: { showMediaPicker = true },
+            onCameraTap: { showCamera = true }
+        )
+    }
+    
+    private var trashButton: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button { showClearConfirm = true } label: {
+                Image(systemName: "trash").foregroundStyle(.red)
+            }
+            .disabled(viewModel.messages.isEmpty)
+        }
+    }
+    
+    private var cameraSheet: some View {
+        CameraPicker(image: $cameraImage, videoURL: $cameraVideoURL)
+            .ignoresSafeArea()
+            .onDisappear {
+                if let img = cameraImage, let data = img.jpegData(compressionQuality: 0.85) {
+                    viewModel.sendMedia(data: data, type: .photo)
+                } else if let url = cameraVideoURL, let data = try? Data(contentsOf: url) {
+                    viewModel.sendMedia(data: data, type: .video)
+                }
+                cameraImage = nil
+                cameraVideoURL = nil
+            }
     }
     
     // MARK: - Helpers
@@ -296,16 +308,25 @@ private struct ChatConversationView: View {
         Auth.auth().currentUser?.uid ?? ""
     }
     
-    // ── Raggruppamento per giorno ─────────────────────────────────────────────
+    // MARK: - Raggruppamento per giorno
     
-    private struct DayGroup: Identifiable {
-        let day: String          // "2026-02-22"
-        let label: String        // "Oggi", "Ieri", "Lunedì", "domenica 15 feb"
+    struct DayGroup: Identifiable {
+        let day: String
+        let label: String
         let messages: [KBChatMessage]
         var id: String { day }
     }
     
-    private var groupedMessages: [DayGroup] {
+    private static func dayLabel(for date: Date, daysAgo: Int) -> String {
+        switch daysAgo {
+        case 0:  return "Oggi"
+        case 1:  return "Ieri"
+        case 2...6: return date.formatted(.dateTime.weekday(.wide)).capitalized
+        default: return date.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)).capitalized
+        }
+    }
+    
+    var groupedMessages: [DayGroup] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let formatter = DateFormatter()
@@ -316,18 +337,8 @@ private struct ChatConversationView: View {
         }
         
         return grouped.keys.sorted().map { day in
-            let diff = calendar.dateComponents([.day], from: day, to: today).day ?? 0
-            let label: String
-            switch diff {
-            case 0:
-                label = "Oggi"
-            case 1:
-                label = "Ieri"
-            case 2...6:
-                label = day.formatted(.dateTime.weekday(.wide)).capitalized
-            default:
-                label = day.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)).capitalized
-            }
+            let daysAgo = calendar.dateComponents([.day], from: day, to: today).day ?? 0
+            let label = Self.dayLabel(for: day, daysAgo: daysAgo)
             return DayGroup(
                 day: formatter.string(from: day),
                 label: label,
@@ -336,7 +347,7 @@ private struct ChatConversationView: View {
         }
     }
     
-    // ── Floating pill ─────────────────────────────────────────────────────────
+    // MARK: - Floating pill
     
     private func showFloatingPill(label: String) {
         floatingDateLabel = label
