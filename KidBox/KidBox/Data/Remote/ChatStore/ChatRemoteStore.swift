@@ -24,8 +24,18 @@ struct RemoteChatMessageDTO {
     let mediaDurationSeconds: Int?
     let mediaThumbnailURL: String?
     let reactionsJSON: String?
+    let readByJSON: String?
     let createdAt: Date?
     let isDeleted: Bool
+    
+    /// Decodifica readByJSON → array di UID
+    var readBy: [String] {
+        guard let json = readByJSON,
+              let data = json.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([String].self, from: data)
+        else { return [] }
+        return decoded
+    }
 }
 
 // MARK: - Change type
@@ -37,20 +47,12 @@ enum ChatRemoteChange {
 
 // MARK: - Store
 
-/// Firestore remote store per i messaggi della chat familiare.
-///
-/// Struttura: `families/{familyId}/chatMessages/{messageId}`
-///
-/// Responsabilità:
-/// - OUTBOUND: upsert messaggio, soft delete, aggiornamento reazioni
-/// - INBOUND: listener realtime con paginazione (ultimi N messaggi)
 final class ChatRemoteStore {
     
     private var db: Firestore { Firestore.firestore() }
     
     // MARK: - OUTBOUND
     
-    /// Crea o aggiorna un messaggio remoto su Firestore.
     func upsert(dto: RemoteChatMessageDTO) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "KidBox", code: -1,
@@ -80,8 +82,9 @@ final class ChatRemoteStore {
         if let dur  = dto.mediaDurationSeconds         { data["mediaDurationSeconds"] = dur }
         if let thu  = dto.mediaThumbnailURL            { data["mediaThumbnailURL"] = thu }
         if let r    = dto.reactionsJSON                { data["reactionsJSON"] = r }
+        // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
+        // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
         
-        // Preserva createdAt se il documento esiste già
         let snap = try await ref.getDocument()
         if snap.exists { data.removeValue(forKey: "createdAt") }
         
@@ -89,7 +92,6 @@ final class ChatRemoteStore {
         KBLog.sync.kbInfo("ChatRemote upsert OK msgId=\(dto.id)")
     }
     
-    /// Aggiorna solo le reazioni di un messaggio (merge parziale).
     func updateReactions(familyId: String, messageId: String, reactionsJSON: String?) async throws {
         guard Auth.auth().currentUser != nil else {
             throw NSError(domain: "KidBox", code: -1,
@@ -107,10 +109,31 @@ final class ChatRemoteStore {
         ]
         
         try await ref.setData(data, merge: true)
-        KBLog.sync.kbDebug("ChatRemote reactions updated msgId=\(messageId)")
     }
     
-    /// Soft delete: marca il messaggio come eliminato.
+    /// ✅ Segna i messaggi come letti dall'utente corrente.
+    /// Usa arrayUnion per aggiungere l'UID senza sovrascrivere gli altri.
+    func markAsRead(familyId: String, messageIds: [String], uid: String) async throws {
+        guard !messageIds.isEmpty else { return }
+        
+        // Firestore batch: max 500 operazioni per batch
+        let batches = messageIds.chunked(into: 450)
+        
+        for chunk in batches {
+            let batch = db.batch()
+            for msgId in chunk {
+                let ref = db.collection("families")
+                    .document(familyId)
+                    .collection("chatMessages")
+                    .document(msgId)
+                // arrayUnion è idempotente: aggiunge uid solo se non c'è già
+                batch.updateData(["readBy": FieldValue.arrayUnion([uid])], forDocument: ref)
+            }
+            try await batch.commit()
+        }
+        KBLog.sync.kbDebug("ChatRemote markAsRead \(messageIds.count) msgs uid=\(uid)")
+    }
+    
     func softDelete(familyId: String, messageId: String) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "KidBox", code: -1,
@@ -127,20 +150,10 @@ final class ChatRemoteStore {
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
-        
-        KBLog.sync.kbInfo("ChatRemote softDelete OK msgId=\(messageId)")
     }
     
     // MARK: - INBOUND (Realtime)
     
-    /// Avvia un listener realtime sugli ultimi `limit` messaggi della famiglia.
-    ///
-    /// - Parameters:
-    ///   - familyId: ID della famiglia.
-    ///   - limit: Numero massimo di messaggi da ricevere (default 100).
-    ///   - onChange: Callback con le modifiche ricevute.
-    ///   - onError: Callback in caso di errore.
-    /// - Returns: `ListenerRegistration` da rimuovere quando la view scompare.
     func listenMessages(
         familyId: String,
         limit: Int = 100,
@@ -157,7 +170,6 @@ final class ChatRemoteStore {
             .limit(toLast: limit)
             .addSnapshotListener { snap, err in
                 if let err {
-                    KBLog.sync.kbError("ChatRemote listener error: \(err.localizedDescription)")
                     onError(err); return
                 }
                 guard let snap else { return }
@@ -171,6 +183,15 @@ final class ChatRemoteStore {
                         return .remove(doc.documentID)
                         
                     case .added, .modified:
+                        // ✅ readBy arriva come array di stringhe da Firestore
+                        let readByArray = data["readBy"] as? [String] ?? []
+                        let readByJSON: String? = {
+                            guard !readByArray.isEmpty,
+                                  let d = try? JSONEncoder().encode(readByArray),
+                                  let s = String(data: d, encoding: .utf8) else { return nil }
+                            return s
+                        }()
+                        
                         let dto = RemoteChatMessageDTO(
                             id:                   doc.documentID,
                             familyId:             familyId,
@@ -183,6 +204,7 @@ final class ChatRemoteStore {
                             mediaDurationSeconds: data["mediaDurationSeconds"] as? Int,
                             mediaThumbnailURL:    data["mediaThumbnailURL"]    as? String,
                             reactionsJSON:        data["reactionsJSON"]        as? String,
+                            readByJSON:           readByJSON,
                             createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
                             isDeleted:            data["isDeleted"] as? Bool ?? false
                         )
@@ -191,9 +213,18 @@ final class ChatRemoteStore {
                 }
                 
                 if !changes.isEmpty {
-                    KBLog.sync.kbDebug("ChatRemote listener changes=\(changes.count)")
                     onChange(changes)
                 }
             }
+    }
+}
+
+// MARK: - Array+chunked
+
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
+        }
     }
 }

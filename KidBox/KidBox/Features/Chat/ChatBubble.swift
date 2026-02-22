@@ -291,15 +291,29 @@ struct ChatBubble: View {
     @ViewBuilder
     private var syncIcon: some View {
         switch message.syncState {
-        case .synced:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.caption2).foregroundStyle(.white.opacity(0.7))
         case .pendingUpsert, .pendingDelete:
+            // Orologio: in attesa di sync
             Image(systemName: "clock")
-                .font(.caption2).foregroundStyle(.white.opacity(0.6))
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.6))
+            
         case .error:
+            // Punto esclamativo: errore invio
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.caption2).foregroundStyle(.red)
+                .font(.caption2)
+                .foregroundStyle(.red)
+            
+        case .synced:
+            // ✅ Spunta singola = inviato, doppia = letto
+            let isRead = !message.readBy.isEmpty
+            HStack(spacing: -4) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isRead ? Color.white : Color.white.opacity(0.6))
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isRead ? Color.white : Color.clear)
+            }
         }
     }
     

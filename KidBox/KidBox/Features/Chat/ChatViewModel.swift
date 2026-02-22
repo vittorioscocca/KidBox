@@ -134,11 +134,16 @@ final class ChatViewModel: ObservableObject {
         let existing = try? modelContext.fetch(desc).first
         
         if let existing {
-            // Aggiorna solo se il remote è più recente o è lo stesso messaggio
             existing.senderName    = dto.senderName
             existing.text          = dto.text
             existing.mediaURL      = dto.mediaURL
             existing.reactionsJSON = dto.reactionsJSON
+            // ✅ Per readBy: merge locale + remoto per evitare race condition ottimistica.
+            // Se localmente ho già segnato come letto, non perdo quella info.
+            let remoteReadBy = dto.readBy
+            let localReadBy  = existing.readBy
+            let merged = Array(Set(localReadBy + remoteReadBy))
+            existing.readBy        = merged
             existing.isDeleted     = dto.isDeleted
             existing.syncState     = .synced
             existing.lastSyncError = nil
@@ -160,6 +165,7 @@ final class ChatViewModel: ObservableObject {
                 isDeleted:            false
             )
             msg.reactionsJSON = dto.reactionsJSON
+            msg.readByJSON    = dto.readByJSON        // ✅
             msg.syncState     = .synced
             msg.lastSyncError = nil
             modelContext.insert(msg)
@@ -499,6 +505,37 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
+    // MARK: - ─── CLEAR CHAT ──────────────────────────────────────────────────
+    
+    /// Elimina TUTTI i messaggi della famiglia — media su Storage + soft delete su Firestore + locale.
+    func clearChat() {
+        guard let modelContext else { return }
+        
+        let snapshot = messages
+        
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for msg in snapshot {
+                    group.addTask {
+                        if let path = msg.mediaStoragePath {
+                            try? await self.storageService.delete(storagePath: path)
+                        }
+                        try? await self.remoteStore.softDelete(
+                            familyId: self.familyId,
+                            messageId: msg.id
+                        )
+                    }
+                }
+            }
+            await MainActor.run {
+                for msg in snapshot { modelContext.delete(msg) }
+                try? modelContext.save()
+                reloadLocal()
+                KBLog.data.info("ChatVM clearChat done — \(snapshot.count) msgs")
+            }
+        }
+    }
+    
     // MARK: - ─── DELETE ───────────────────────────────────────────────────────
     
     /// Elimina un messaggio (soft delete su Firestore + rimozione locale).
@@ -524,50 +561,41 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
-    // MARK: - ─── CLEAR CHAT ──────────────────────────────────────────────────
+    // MARK: - ─── READ RECEIPTS ───────────────────────────────────────────────
     
-    /// Elimina TUTTI i messaggi della famiglia — media su Storage + soft delete su Firestore + locale.
-    func clearChat() {
+    /// Chiamato da ChatView quando i messaggi diventano visibili.
+    /// Segna come letti tutti i messaggi degli altri che l'utente non ha ancora letto.
+    func markVisibleMessagesAsRead() {
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        guard !uid.isEmpty else { return }
+        
+        // Solo i messaggi di altri, non ancora letti da me, già sincronizzati
+        let unread = messages.filter { msg in
+            msg.senderId != uid &&
+            !msg.readBy.contains(uid) &&
+            msg.syncState == .synced
+        }
+        guard !unread.isEmpty else { return }
+        
+        let ids = unread.map(\.id)
+        
+        // Aggiorna localmente subito (UI reattiva)
         guard let modelContext else { return }
+        for msg in unread {
+            var rb = msg.readBy
+            rb.append(uid)
+            msg.readBy = rb
+        }
+        try? modelContext.save()
+        reloadLocal()
         
-        let snapshot = messages // copia per non mutare durante l'iterazione
-        
+        // Poi su Firestore in background
         Task {
-            var errors: [String] = []
-            
-            await withTaskGroup(of: Void.self) { group in
-                for msg in snapshot {
-                    group.addTask {
-                        do {
-                            if let path = msg.mediaStoragePath {
-                                try? await self.storageService.delete(storagePath: path)
-                            }
-                            try await self.remoteStore.softDelete(
-                                familyId: self.familyId,
-                                messageId: msg.id
-                            )
-                        } catch {
-                            errors.append(msg.id)
-                        }
-                    }
-                }
-            }
-            
-            // Rimozione locale di tutti i messaggi
-            await MainActor.run {
-                for msg in snapshot {
-                    modelContext.delete(msg)
-                }
-                try? modelContext.save()
-                reloadLocal()
-                
-                if !errors.isEmpty {
-                    errorText = "Alcuni messaggi non sono stati eliminati dal server."
-                }
-                KBLog.data.info("ChatVM clearChat done — \(snapshot.count) msgs, \(errors.count) errors")
-            }
+            try? await remoteStore.markAsRead(familyId: familyId, messageIds: ids, uid: uid)
         }
     }
+    
+    // MARK: - Helpers
     
     private func senderDisplayName() -> String {
         guard let modelContext else { return "Utente" }
@@ -589,6 +617,7 @@ final class ChatViewModel: ObservableObject {
             mediaDurationSeconds: msg.mediaDurationSeconds,
             mediaThumbnailURL:    msg.mediaThumbnailURL,
             reactionsJSON:        msg.reactionsJSON,
+            readByJSON:           nil,   // readBy è gestito solo da markAsRead
             createdAt:            msg.createdAt,
             isDeleted:            msg.isDeleted
         )
