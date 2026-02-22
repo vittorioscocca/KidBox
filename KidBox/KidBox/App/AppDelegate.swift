@@ -5,6 +5,7 @@
 //  Created by vscocca on 06/02/26.
 //
 
+import Foundation
 import UIKit
 import FirebaseCore
 import FirebaseMessaging
@@ -52,8 +53,15 @@ final class AppDelegate: NSObject,
         // 📩 FCM delegate (token refresh)
         Messaging.messaging().delegate = self
         KBLog.app.kbDebug("Messaging delegate set")
-        
+        configureMediaURLCache()
+        KBLog.app.kbDebug("Chache configured")
         return true
+    }
+    
+    func configureMediaURLCache() {
+        let memory = 100 * 1024 * 1024   // 100 MB
+        let disk   = 300 * 1024 * 1024   // 300 MB
+        URLCache.shared = URLCache(memoryCapacity: memory, diskCapacity: disk, diskPath: "kidbox-media-cache")
     }
     
     // MARK: - Notification tap handling

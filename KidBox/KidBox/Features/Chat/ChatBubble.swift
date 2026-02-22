@@ -32,6 +32,7 @@ struct ChatBubble: View {
     @State private var dragProgress: Double = 0.0
     
     @State private var showFullScreenPhoto = false
+    @State private var showFullScreenVideo = false
     
     var body: some View {
         VStack(alignment: isOwn ? .trailing : .leading, spacing: 2) {
@@ -140,24 +141,16 @@ struct ChatBubble: View {
     private var photoContent: some View {
         Group {
             if let urlString = message.mediaURL, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let img):
-                        img.resizable()
-                            .scaledToFill()
-                            .frame(width: 220, height: 160)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .onTapGesture { showFullScreenPhoto = true }
-                            .fullScreenCover(isPresented: $showFullScreenPhoto) {
-                                FullScreenPhotoView(url: url)
-                            }
-                    case .failure:
-                        mediaErrorPlaceholder(icon: "photo")
-                    default:
-                        mediaLoadingPlaceholder
+                
+                CachedAsyncImage(url: url, contentMode: .fill)
+                    .frame(width: 220, height: 160)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .onTapGesture { showFullScreenPhoto = true }
+                    .fullScreenCover(isPresented: $showFullScreenPhoto) {
+                        FullScreenPhotoView(url: url)
                     }
-                }
+                
             } else {
                 mediaLoadingPlaceholder
             }
@@ -169,13 +162,42 @@ struct ChatBubble: View {
     private var videoContent: some View {
         Group {
             if let urlString = message.mediaURL, let url = URL(string: urlString) {
-                VideoPlayer(player: AVPlayer(url: url))
+                
+                ZStack {
+                    VideoThumbnailView(
+                        videoURL: url,
+                        cacheKey: videoCacheKey(urlString: urlString)
+                    )
                     .frame(width: 220, height: 160)
+                    .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
+                    // Play overlay
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.white)
+                        .shadow(radius: 6)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { showFullScreenVideo = true }
+                .fullScreenCover(isPresented: $showFullScreenVideo) {
+                    FullScreenVideoView(url: url)
+                }
+                
             } else {
                 mediaLoadingPlaceholder
             }
         }
+    }
+    
+    private func videoCacheKey(urlString: String) -> String {
+        // IMPORTANT: se è Firebase download URL, togli query -> key stabile
+        // così non “perdi cache” quando cambia token
+        if var comps = URLComponents(string: urlString) {
+            comps.query = nil
+            return comps.string ?? urlString
+        }
+        return urlString
     }
     
     // MARK: - Audio
@@ -585,14 +607,56 @@ private struct FullScreenPhotoView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color.black.ignoresSafeArea()
-            AsyncImage(url: url) { phase in
-                if case .success(let img) = phase {
-                    img.resizable().scaledToFit()
-                }
-            }
+            CachedAsyncImage(url: url, contentMode: .fit)
             Button { dismiss() } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title2).foregroundStyle(.white)
+                    .padding()
+            }
+        }
+    }
+}
+
+// MARK: - FullScreenVideoView
+
+private struct FullScreenVideoView: View {
+    let url: URL
+    
+    @Environment(\.dismiss) private var dismiss
+    @State private var player: AVPlayer
+    
+    init(url: URL) {
+        self.url = url
+        let p = AVPlayer(url: url)
+        p.isMuted = false
+        p.volume = 1.0
+        _player = State(initialValue: p)
+    }
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            
+            VideoPlayer(player: player)
+                .ignoresSafeArea()
+                .onAppear {
+                    // IMPORTANT: fa sentire l’audio anche con silent switch
+                    do {
+                        let session = AVAudioSession.sharedInstance()
+                        try session.setCategory(.playback, mode: .moviePlayback, options: [.allowAirPlay, .allowBluetooth])
+                        try session.setActive(true)
+                    } catch {}
+                    
+                    player.play()
+                }
+                .onDisappear {
+                    player.pause()
+                }
+            
+            Button { dismiss() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
                     .padding()
             }
         }
@@ -796,3 +860,4 @@ private extension Comparable {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }
+
