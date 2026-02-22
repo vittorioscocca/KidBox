@@ -24,6 +24,7 @@ struct ChatInputBar: View {
     let onCancelRecord: () -> Void
     let onMediaTap: () -> Void
     let onCameraTap: () -> Void
+    let onTextChange: () -> Void   // ✅ chiamato ad ogni carattere digitato
     
     @FocusState private var isTextFocused: Bool
     
@@ -80,7 +81,10 @@ struct ChatInputBar: View {
                     .padding(.vertical, 4)
                     .fixedSize(horizontal: false, vertical: true)
                     .scrollContentBackground(.hidden)
-                    .disabled(isRecording) // ✅ blocca input testo mentre registri
+                    .disabled(isRecording)
+                    .onChange(of: text) { _, _ in
+                        if !isRecording { onTextChange() }
+                    }
             }
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 20))

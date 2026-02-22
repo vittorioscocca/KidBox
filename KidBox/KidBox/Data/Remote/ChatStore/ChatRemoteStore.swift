@@ -217,9 +217,49 @@ final class ChatRemoteStore {
                 }
             }
     }
+    // MARK: - TYPING INDICATOR
+    
+    /// Struttura Firestore: `families/{familyId}/typing/{uid}`
+    /// Campi: `isTyping: Bool`, `name: String`, `updatedAt: Timestamp`
+    
+    func setTyping(_ isTyping: Bool, familyId: String) async throws {
+        guard let user = Auth.auth().currentUser else { return }
+        let ref = db.collection("families")
+            .document(familyId)
+            .collection("typing")
+            .document(user.uid)
+        
+        if isTyping {
+            try await ref.setData([
+                "isTyping":  true,
+                "name":      user.displayName ?? "Utente",
+                "updatedAt": FieldValue.serverTimestamp()
+            ])
+        } else {
+            try await ref.delete()
+        }
+    }
+    
+    /// Ascolta chi sta scrivendo nella famiglia, escludendo l'utente corrente.
+    /// Ritorna i nomi visualizzati degli utenti che hanno `isTyping == true`.
+    func listenTyping(
+        familyId: String,
+        excludeUID: String,
+        onChange: @escaping ([String]) -> Void
+    ) -> ListenerRegistration {
+        db.collection("families")
+            .document(familyId)
+            .collection("typing")
+            .addSnapshotListener { snap, _ in
+                guard let snap else { return }
+                let names = snap.documents
+                    .filter { $0.documentID != excludeUID }
+                    .filter { $0.data()["isTyping"] as? Bool == true }
+                    .compactMap { $0.data()["name"] as? String }
+                onChange(names)
+            }
+    }
 }
-
-// MARK: - Array+chunked
 
 private extension Array {
     func chunked(into size: Int) -> [[Element]] {
