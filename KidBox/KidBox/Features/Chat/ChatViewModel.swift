@@ -524,7 +524,50 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Helpers
+    // MARK: - ─── CLEAR CHAT ──────────────────────────────────────────────────
+    
+    /// Elimina TUTTI i messaggi della famiglia — media su Storage + soft delete su Firestore + locale.
+    func clearChat() {
+        guard let modelContext else { return }
+        
+        let snapshot = messages // copia per non mutare durante l'iterazione
+        
+        Task {
+            var errors: [String] = []
+            
+            await withTaskGroup(of: Void.self) { group in
+                for msg in snapshot {
+                    group.addTask {
+                        do {
+                            if let path = msg.mediaStoragePath {
+                                try? await self.storageService.delete(storagePath: path)
+                            }
+                            try await self.remoteStore.softDelete(
+                                familyId: self.familyId,
+                                messageId: msg.id
+                            )
+                        } catch {
+                            errors.append(msg.id)
+                        }
+                    }
+                }
+            }
+            
+            // Rimozione locale di tutti i messaggi
+            await MainActor.run {
+                for msg in snapshot {
+                    modelContext.delete(msg)
+                }
+                try? modelContext.save()
+                reloadLocal()
+                
+                if !errors.isEmpty {
+                    errorText = "Alcuni messaggi non sono stati eliminati dal server."
+                }
+                KBLog.data.info("ChatVM clearChat done — \(snapshot.count) msgs, \(errors.count) errors")
+            }
+        }
+    }
     
     private func senderDisplayName() -> String {
         guard let modelContext else { return "Utente" }
@@ -568,4 +611,3 @@ final class FirestoreListenerWrapper: ListenerRegistrationProtocol {
     init(_ inner: any ListenerRegistration) { self.inner = inner }
     func remove() { inner.remove() }
 }
-

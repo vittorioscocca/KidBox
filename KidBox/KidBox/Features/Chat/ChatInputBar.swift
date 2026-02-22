@@ -46,7 +46,7 @@ struct ChatInputBar: View {
     // MARK: - Normal bar
     
     private var normalBar: some View {
-        HStack(alignment: .bottom, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             
             // Tasto + (media)
             Menu {
@@ -58,7 +58,7 @@ struct ChatInputBar: View {
                 }
             } label: {
                 Image(systemName: "plus.circle.fill")
-                    .font(.title2)
+                    .font(.system(size: 32))
                     .foregroundStyle(Color.accentColor)
             }
             // Durante recording blocchiamo il menu (evita gesture/scroll strani)
@@ -95,7 +95,7 @@ struct ChatInputBar: View {
             } else {
                 Button(action: onSendText) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
+                        .font(.system(size: 32))
                         .foregroundStyle(Color.accentColor)
                 }
                 .disabled(isSending || isRecording)
@@ -111,7 +111,7 @@ struct ChatInputBar: View {
     
     private var micButton: some View {
         Image(systemName: "mic.circle.fill")
-            .font(.title2)
+            .font(.system(size: 32))
             .foregroundStyle(Color.accentColor)
             .contentShape(Rectangle()) // area touch più “umana”
         // ✅ UNA SOLA gesture: press -> start, release -> stop
