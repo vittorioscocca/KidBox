@@ -235,6 +235,8 @@ final class AppCoordinator: ObservableObject {
             DocumentFolderView(familyId: familyId, folderId: categoryId, folderTitle: title)
         case .editChild(familyId: _, childId: let childId):
             ChildDestinationView(childId: childId)
+        case .chat:
+            ChatView()
         }
     }
     

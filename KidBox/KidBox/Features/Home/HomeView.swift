@@ -295,7 +295,7 @@ enum HomeDestination {
         case .todo:           return .todo
         case .calendar:       return .calendar
         case .care:           return .calendar
-        case .chat:           return .calendar
+        case .chat:           return .chat
         case .document:       return .document
         case .expenses:       return .calendar
         case .timeline:       return .calendar
