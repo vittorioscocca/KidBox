@@ -28,9 +28,10 @@ struct ChatBubble: View {
     @State private var audioDelegate = ChatBubbleAudioDelegate()
     @State private var playbackProgress: Double = 0.0
     @State private var progressTimer: Timer?
+    @State private var isDraggingSlider = false
+    @State private var dragProgress: Double = 0.0
     
     @State private var showFullScreenPhoto = false
-    @State private var showFullScreenVideo = false
     
     var body: some View {
         VStack(alignment: isOwn ? .trailing : .leading, spacing: 2) {
@@ -154,42 +155,9 @@ struct ChatBubble: View {
     private var videoContent: some View {
         Group {
             if let urlString = message.mediaURL, let url = URL(string: urlString) {
-                ZStack(alignment: .bottomTrailing) {
-                    
-                    // Player inline (muto, senza controlli) — funge da thumbnail animato
-                    VideoPlayer(player: AVPlayer(url: url))
-                        .frame(width: 220, height: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .disabled(true) // ✅ disabilita i controlli nativi inline
-                    
-                    // Overlay scuro semi-trasparente
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.black.opacity(0.25))
-                        .frame(width: 220, height: 160)
-                        .allowsHitTesting(false)
-                    
-                    // Tasto play centrale
-                    Button { showFullScreenVideo = true } label: {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 44))
-                            .foregroundStyle(.white.opacity(0.92))
-                            .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 2)
-                    }
+                VideoPlayer(player: AVPlayer(url: url))
                     .frame(width: 220, height: 160)
-                    
-                    // Tasto fullscreen angolo in basso a destra
-                    Button { showFullScreenVideo = true } label: {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.caption.bold())
-                            .foregroundStyle(.white)
-                            .padding(6)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .padding(8)
-                }
-                .fullScreenCover(isPresented: $showFullScreenVideo) {
-                    FullScreenVideoView(url: url)
-                }
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
                 mediaLoadingPlaceholder
             }
@@ -198,25 +166,92 @@ struct ChatBubble: View {
     
     // MARK: - Audio
     
-    /// ✅ Fix: play button ancorato al bordo (sinistra per ricevuti, destra per inviati),
-    /// niente più "troppo a destra" / centrato male.
-    /// ✅ Fix: waveform stabile (non random ad ogni redraw).
     private var audioContent: some View {
-        HStack(spacing: 10) {
-            
-            playButton // ✅ sempre a sinistra
-            
-            waveformView
-                .frame(width: 130, alignment: .leading) // non si espande
-            
-            if let dur = message.mediaDurationSeconds {
-                Text(formatDuration(dur))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(isOwn ? .white.opacity(0.8) : .secondary)
-                    .frame(width: 40, alignment: .trailing)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                playButton
+                
+                // Waveform interattiva con scrubbing
+                scrubbableWaveform
+                    .frame(width: 130)
+                
+                // Tempo: durante drag mostra posizione, altrimenti durata totale
+                Group {
+                    if isDraggingSlider, let dur = message.mediaDurationSeconds {
+                        Text(formatDuration(Int(dragProgress * Double(dur))))
+                    } else if let dur = message.mediaDurationSeconds {
+                        Text(formatDuration(dur))
+                    }
+                }
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(isOwn ? .white.opacity(0.8) : .secondary)
+                .frame(width: 40, alignment: .trailing)
+                .animation(.none, value: isDraggingSlider)
             }
         }
         .frame(width: 220, alignment: .leading)
+    }
+    
+    /// Waveform tappabile e draggabile per scrubbing.
+    private var scrubbableWaveform: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                // Barre waveform
+                HStack(spacing: 2) {
+                    ForEach(0..<20, id: \.self) { i in
+                        let barProgress = Double(i) / 20.0
+                        let displayProgress = isDraggingSlider ? dragProgress : playbackProgress
+                        let isPlayed = barProgress < displayProgress
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(
+                                isOwn
+                                ? (isPlayed ? Color.white : Color.white.opacity(0.35))
+                                : (isPlayed ? Color.accentColor : Color.accentColor.opacity(0.3))
+                            )
+                            .frame(width: 5, height: waveformHeight(index: i))
+                    }
+                }
+                
+                // Thumb cursore
+                let displayProgress = isDraggingSlider ? dragProgress : playbackProgress
+                Circle()
+                    .fill(isOwn ? Color.white : Color.accentColor)
+                    .frame(width: isDraggingSlider ? 14 : 10, height: isDraggingSlider ? 14 : 10)
+                    .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 1)
+                    .offset(x: displayProgress * geo.size.width - (isDraggingSlider ? 7 : 5))
+                    .animation(.easeInOut(duration: 0.1), value: isDraggingSlider)
+            }
+            .contentShape(Rectangle()) // tutta l'area è tappabile
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let newProgress = (value.location.x / geo.size.width)
+                            .clamped(to: 0...1)
+                        dragProgress = newProgress
+                        isDraggingSlider = true
+                        stopProgressTimer()
+                        // Scrubbing live sul player
+                        if let player = audioPlayer {
+                            player.currentTime = newProgress * player.duration
+                        }
+                    }
+                    .onEnded { value in
+                        let finalProgress = (value.location.x / geo.size.width)
+                            .clamped(to: 0...1)
+                        isDraggingSlider = false
+                        playbackProgress = finalProgress
+                        if let player = audioPlayer {
+                            player.currentTime = finalProgress * player.duration
+                            if isPlayingAudio { startProgressTimer() }
+                        } else {
+                            // Primo tocco senza aver mai fatto play:
+                            // carica il player e vai alla posizione
+                            Task { await loadPlayerAndSeek(to: finalProgress) }
+                        }
+                    }
+            )
+        }
+        .frame(height: 24) // altezza fissa per il GeometryReader
     }
     
     private var playButton: some View {
@@ -230,23 +265,6 @@ struct ChatBubble: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isPlayingAudio ? "Pausa audio" : "Riproduci audio")
-    }
-    
-    private var waveformView: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<20, id: \.self) { i in
-                let barProgress = Double(i) / 20.0
-                let isPlayed = barProgress < playbackProgress
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(
-                        isOwn
-                        ? (isPlayed ? Color.white : Color.white.opacity(0.35))
-                        : (isPlayed ? Color.accentColor : Color.accentColor.opacity(0.3))
-                    )
-                    .frame(width: 5, height: waveformHeight(index: i))
-                    .animation(.linear(duration: 0.1), value: playbackProgress)
-            }
-        }
     }
     
     private func waveformHeight(index: Int) -> CGFloat {
@@ -448,6 +466,36 @@ struct ChatBubble: View {
         }
     }
     
+    /// Carica il player senza avviare la riproduzione, poi salta alla posizione indicata.
+    private func loadPlayerAndSeek(to progress: Double) async {
+        guard let urlString = message.mediaURL,
+              let url = URL(string: urlString) else { return }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            try configureVoicePlaybackSession()
+            let player = try AVAudioPlayer(data: data)
+            player.prepareToPlay()
+            player.currentTime = progress * player.duration
+            
+            let router = proximityRouter
+            audioDelegate.onFinish = {
+                DispatchQueue.main.async {
+                    router.stop()
+                    self.stopProgressTimer()
+                    self.isPlayingAudio = false
+                    self.playbackProgress = 0
+                    self.audioPlayer?.currentTime = 0
+                }
+            }
+            player.delegate = audioDelegate
+            
+            DispatchQueue.main.async {
+                self.audioPlayer = player
+                self.playbackProgress = progress
+            }
+        } catch {}
+    }
+    
     private func startProgressTimer() {
         progressTimer?.invalidate()
         progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
@@ -499,44 +547,6 @@ private struct FullScreenPhotoView: View {
     }
 }
 
-// MARK: - FullScreenVideoView
-
-private struct FullScreenVideoView: View {
-    let url: URL
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var player: AVPlayer
-    
-    init(url: URL) {
-        self.url = url
-        _player = State(initialValue: AVPlayer(url: url))
-    }
-    
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            
-            VideoPlayer(player: player)
-                .ignoresSafeArea()
-            
-            Button {
-                player.pause()
-                dismiss()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 4)
-                    .padding()
-            }
-        }
-        .onAppear { player.play() }
-        .onDisappear { player.pause() }
-    }
-}
-
-// MARK: - ChatBubbleAudioDelegate
-
 final class ChatBubbleAudioDelegate: NSObject, AVAudioPlayerDelegate {
     var onFinish: (() -> Void)?
     
@@ -546,5 +556,13 @@ final class ChatBubbleAudioDelegate: NSObject, AVAudioPlayerDelegate {
     
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         onFinish?()
+    }
+}
+
+// MARK: - Comparable+clamped
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
