@@ -42,7 +42,8 @@ enum ModelContainerProvider {
             KBUserProfile.self,
             KBDocument.self,
             KBDocumentCategory.self,
-            KBSyncOp.self
+            KBSyncOp.self,
+            KBChatMessage.self
         ])
         
         let configuration = ModelConfiguration(
