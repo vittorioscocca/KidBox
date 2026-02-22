@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 import FirebaseAuth
+import Combine
 
 // MARK: - ChatView (entry point)
 
@@ -87,6 +88,7 @@ private struct ChatConversationView: View {
             messageList
             errorBanner
             uploadProgress
+            typingBanner
             Divider()
             inputBar
         }
@@ -264,6 +266,32 @@ private struct ChatConversationView: View {
         }
     }
     
+    @ViewBuilder
+    private var typingBanner: some View {
+        if !viewModel.typingUsers.isEmpty {
+            HStack(spacing: 6) {
+                // Tre puntini animati
+                TypingDotsView()
+                Text(typingLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .animation(.easeInOut(duration: 0.2), value: viewModel.typingUsers)
+        }
+    }
+    
+    private var typingLabel: String {
+        switch viewModel.typingUsers.count {
+        case 1: return "\(viewModel.typingUsers[0]) sta scrivendo…"
+        case 2: return "\(viewModel.typingUsers[0]) e \(viewModel.typingUsers[1]) stanno scrivendo…"
+        default: return "Tutti stanno scrivendo…"
+        }
+    }
+    
     private var inputBar: some View {
         ChatInputBar(
             text: $viewModel.inputText,
@@ -275,7 +303,8 @@ private struct ChatConversationView: View {
             onStopRecord: { viewModel.stopAndSendRecording() },
             onCancelRecord: { viewModel.cancelRecording() },
             onMediaTap: { showMediaPicker = true },
-            onCameraTap: { showCamera = true }
+            onCameraTap: { showCamera = true },
+            onTextChange: { viewModel.userIsTyping() }
         )
     }
     
@@ -367,6 +396,29 @@ private struct ChatConversationView: View {
             let type: KBChatMessageType = item.supportedContentTypes
                 .first?.identifier.contains("video") == true ? .video : .photo
             viewModel.sendMedia(data: data, type: type)
+        }
+    }
+}
+
+// MARK: - TypingDotsView
+
+private struct TypingDotsView: View {
+    @State private var phase = 0
+    
+    private let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
+    
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<3, id: \.self) { i in
+                Circle()
+                    .fill(Color.secondary)
+                    .frame(width: 5, height: 5)
+                    .scaleEffect(phase == i ? 1.4 : 1.0)
+                    .animation(.easeInOut(duration: 0.3), value: phase)
+            }
+        }
+        .onReceive(timer) { _ in
+            phase = (phase + 1) % 3
         }
     }
 }

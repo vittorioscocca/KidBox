@@ -31,9 +31,14 @@ final class ChatViewModel: ObservableObject {
     @Published var isRecording: Bool = false
     @Published var recordingDuration: TimeInterval = 0
     
+    // Typing indicators
+    @Published var typingUsers: [String] = []   // nomi degli altri che stanno scrivendo
+    
     // MARK: - Private
     private var modelContext: ModelContext?
     private var listener: (any ListenerRegistrationProtocol)?
+    private var typingListener: (any ListenerRegistrationProtocol)?
+    private var typingDebounceTask: Task<Void, Never>? = nil
     private var cancellables = Set<AnyCancellable>()
     private var isObserving = false
     
@@ -70,26 +75,35 @@ final class ChatViewModel: ObservableObject {
             limit: 100,
             onChange: { [weak self] changes in
                 guard let self else { return }
-                Task { @MainActor in
-                    self.applyRemoteChanges(changes)
-                }
+                Task { @MainActor in self.applyRemoteChanges(changes) }
             },
             onError: { [weak self] error in
                 guard let self else { return }
-                Task { @MainActor in
-                    self.errorText = error.localizedDescription
-                }
+                Task { @MainActor in self.errorText = error.localizedDescription }
             }
         ))
         
-        // Carica i messaggi già salvati localmente
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        typingListener = FirestoreListenerWrapper(remoteStore.listenTyping(
+            familyId: familyId,
+            excludeUID: uid,
+            onChange: { [weak self] names in
+                guard let self else { return }
+                Task { @MainActor in self.typingUsers = names }
+            }
+        ))
+        
         reloadLocal()
     }
     
     func stopListening() {
         listener?.remove()
         listener = nil
+        typingListener?.remove()
+        typingListener = nil
         isObserving = false
+        // Assicura che il nostro indicatore venga rimosso
+        Task { try? await remoteStore.setTyping(false, familyId: familyId) }
         KBLog.sync.kbInfo("ChatVM stopListening familyId=\(familyId)")
     }
     
@@ -179,7 +193,28 @@ final class ChatViewModel: ObservableObject {
         guard !text.isEmpty, !isSending else { return }
         
         inputText = ""
+        stopTyping()          // smetti di segnalare typing quando invii
         send(type: .text, text: text)
+    }
+    
+    // MARK: - ─── TYPING INDICATOR ────────────────────────────────────────────
+    
+    /// Chiamato dal ChatInputBar ogni volta che il testo cambia.
+    /// Usa un debounce di 3s: se l'utente smette di scrivere, rimuove l'indicatore.
+    func userIsTyping() {
+        typingDebounceTask?.cancel()
+        Task { try? await remoteStore.setTyping(true, familyId: familyId) }
+        typingDebounceTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { stopTyping() }
+        }
+    }
+    
+    func stopTyping() {
+        typingDebounceTask?.cancel()
+        typingDebounceTask = nil
+        Task { try? await remoteStore.setTyping(false, familyId: familyId) }
     }
     
     // MARK: - ─── SEND PHOTO / VIDEO ──────────────────────────────────────────
