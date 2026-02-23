@@ -31,6 +31,7 @@ final class ChatViewModel: ObservableObject {
     @Published var inputText: String = ""
     @Published var isSending: Bool = false
     @Published var isUploadingMedia: Bool = false
+    @Published var isCompressingMedia: Bool = false
     @Published var uploadProgress: Double = 0
     @Published var errorText: String?
     
@@ -451,11 +452,36 @@ final class ChatViewModel: ObservableObject {
         
         let (fileName, mimeType) = ChatStorageService.fileInfo(for: type)
         
+        errorText = nil
+        
+        // 1) Comprimi PRIMA di creare il messaggio locale (nessuna rotella prematura)
+        let uploadData: Data
+        do {
+            switch type {
+            case .photo:
+                isCompressingMedia = true
+                uploadData = await compressPhoto(data: data)
+                isCompressingMedia = false
+                KBLog.data.info("ChatVM photo compressed: \(data.count) → \(uploadData.count) bytes")
+            case .video:
+                isCompressingMedia = true
+                uploadData = try await compressVideo(data: data)
+                isCompressingMedia = false
+                KBLog.data.info("ChatVM video compressed: \(data.count) → \(uploadData.count) bytes")
+            default:
+                uploadData = data
+            }
+        } catch {
+            isCompressingMedia = false
+            errorText = "Compressione fallita: \(error.localizedDescription)"
+            KBLog.data.error("ChatVM compress failed: \(error.localizedDescription)")
+            return
+        }
+        
+        // 2) Solo ora crea il messaggio locale — appare nella lista senza rotella
         isUploadingMedia = true
         uploadProgress   = 0
-        errorText        = nil
         
-        // 1) Crea messaggio locale in stato pendingUpsert
         let msg = KBChatMessage(
             id:        messageId,
             familyId:  familyId,
@@ -467,12 +493,12 @@ final class ChatViewModel: ObservableObject {
         msg.syncState = .pendingUpsert
         modelContext.insert(msg)
         try? modelContext.save()
-        reloadLocal()
+        // ⚠️ NON fare reloadLocal qui: mediaURL è ancora nil e la bubble mostrerebbe la rotella
         
         do {
-            // 2) Upload su Storage
+            // 3) Upload su Storage
             let (storagePath, downloadURL) = try await storageService.upload(
-                data:        data,
+                data:        uploadData,
                 familyId:    familyId,
                 messageId:   messageId,
                 fileName:    fileName,
@@ -482,19 +508,21 @@ final class ChatViewModel: ObservableObject {
                 }
             )
             
-            // 3) Aggiorna locale con URL
+            // 4) Aggiorna locale con URL — solo ORA la bubble può renderizzarsi correttamente
             msg.mediaStoragePath = storagePath
             msg.mediaURL         = downloadURL
             msg.syncState        = .pendingUpsert
             try? modelContext.save()
+            reloadLocal()   // ← prima apparizione della bubble, già con l'immagine
             
-            // 4) Scrivi su Firestore
+            // 5) Scrivi su Firestore
             let dto = makeDTO(from: msg)
             try await remoteStore.upsert(dto: dto)
             
             msg.syncState     = .synced
             msg.lastSyncError = nil
             try? modelContext.save()
+            reloadLocal()
             
             KBLog.data.info("ChatVM sendMedia OK msgId=\(messageId)")
             
@@ -509,6 +537,74 @@ final class ChatViewModel: ObservableObject {
         isUploadingMedia = false
         uploadProgress   = 0
         reloadLocal()
+    }
+    
+    // MARK: - ─── COMPRESSION ─────────────────────────────────────────────────
+    
+    /// Ridimensiona e ricomprime una foto JPEG.
+    /// Target: lato lungo max 1920px, qualità 0.75 → tipicamente 200-600 KB.
+    private func compressPhoto(data: Data) async -> Data {
+        await Task.detached(priority: .userInitiated) {
+            // Usa CGImageSource per supportare HEIC, HEIF, JPEG, PNG e qualsiasi formato
+            guard
+                let source  = CGImageSourceCreateWithData(data as CFData, nil),
+                let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            else {
+                return data
+            }
+            
+            let original = UIImage(cgImage: cgImage)
+            let size     = original.size
+            let maxSide: CGFloat = 1920
+            
+            let scale: CGFloat = (size.width > maxSide || size.height > maxSide)
+            ? maxSide / max(size.width, size.height)
+            : 1.0
+            
+            let newSize = scale < 1
+            ? CGSize(width: (size.width  * scale).rounded(),
+                     height: (size.height * scale).rounded())
+            : size
+            
+            let renderer = UIGraphicsImageRenderer(size: newSize)
+            let resized  = renderer.image { _ in
+                original.draw(in: CGRect(origin: .zero, size: newSize))
+            }
+            
+            return resized.jpegData(compressionQuality: 0.75) ?? data
+        }.value
+    }
+    
+    /// Ricodifica un video usando `AVAssetExportSession` con preset Medium.
+    /// Target: tipicamente 5-15 MB per un minuto di video a 720p.
+    private func compressVideo(data: Data) async throws -> Data {
+        let inputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".mp4")
+        try data.write(to: inputURL)
+        defer { try? FileManager.default.removeItem(at: inputURL) }
+        
+        let asset = AVURLAsset(url: inputURL)
+        
+        guard let session = AVAssetExportSession(
+            asset: asset,
+            presetName: AVAssetExportPresetMediumQuality
+        ) else {
+            KBLog.data.kbError("ChatVM compressVideo: cannot create export session")
+            return data
+        }
+        
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".mp4")
+        defer { try? FileManager.default.removeItem(at: outputURL) }
+        
+        do {
+            try await session.export(to: outputURL, as: .mp4, isolation: .none)
+        } catch {
+            KBLog.data.kbError("ChatVM compressVideo export failed: \(error.localizedDescription)")
+            return data   // fallback: invia originale
+        }
+        
+        return (try? Data(contentsOf: outputURL)) ?? data
     }
     
     // MARK: - ─── SEND AUDIO ───────────────────────────────────────────────────

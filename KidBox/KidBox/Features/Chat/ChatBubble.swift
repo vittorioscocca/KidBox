@@ -46,8 +46,11 @@ struct ChatBubble: View {
     @State private var dragProgress: Double = 0.0
     @State private var playbackRate: Float = 1.0
     
-    @State private var showFullScreenPhoto = false
-    @State private var showFullScreenVideo = false
+    // Media QuickLook (foto, video, documento)
+    @State private var isDownloadingMedia = false
+    @State private var downloadedMediaURL: URL?
+    @State private var showMediaQuickLook = false
+    @State private var mediaDownloadError: String?
     
     // Swipe-to-reply
     @State private var swipeX: CGFloat = 0
@@ -359,13 +362,26 @@ struct ChatBubble: View {
     
     private var photoContent: some View {
         Group {
-            if let urlString = message.mediaURL, let url = URL(string: urlString) {
-                CachedAsyncImage(url: url, contentMode: .fill)
-                    .frame(width: 220, height: 160).clipped()
-                    .overlay(highlightOverlay)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .onTapGesture { showFullScreenPhoto = true }
-                    .fullScreenCover(isPresented: $showFullScreenPhoto) { FullScreenPhotoView(url: url) }
+            if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
+                ZStack(alignment: .bottomTrailing) {
+                    CachedAsyncImage(url: remoteURL, contentMode: .fill)
+                        .frame(width: 220, height: 160).clipped()
+                        .overlay(highlightOverlay)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
+                    if isDownloadingMedia {
+                        Color.black.opacity(0.35)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        ProgressView().tint(.white)
+                            .frame(width: 220, height: 160)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard !isDownloadingMedia else { return }
+                    Task { await downloadAndPreviewMedia(remoteURL: remoteURL, fileName: "immagine.jpg") }
+                }
+                .mediaQuickLookSheet(url: $downloadedMediaURL, isPresented: $showMediaQuickLook, error: $mediaDownloadError)
             } else { mediaLoadingPlaceholder }
         }
     }
@@ -379,19 +395,61 @@ struct ChatBubble: View {
     
     private var videoContent: some View {
         Group {
-            if let urlString = message.mediaURL, let url = URL(string: urlString) {
+            if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 ZStack {
-                    VideoThumbnailView(videoURL: url, cacheKey: videoCacheKey(urlString: urlString))
+                    VideoThumbnailView(videoURL: remoteURL, cacheKey: videoCacheKey(urlString: urlString))
                         .frame(width: 220, height: 160).clipped()
                         .overlay(highlightOverlay)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                    Image(systemName: "play.circle.fill").font(.system(size: 44))
-                        .foregroundStyle(.white).shadow(radius: 6)
+                    
+                    if isDownloadingMedia {
+                        Color.black.opacity(0.35)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.white).shadow(radius: 6)
+                    }
                 }
                 .contentShape(Rectangle())
-                .onTapGesture { showFullScreenVideo = true }
-                .fullScreenCover(isPresented: $showFullScreenVideo) { FullScreenVideoView(url: url) }
+                .onTapGesture {
+                    guard !isDownloadingMedia else { return }
+                    let ext = remoteURL.pathExtension.isEmpty ? "mp4" : remoteURL.pathExtension
+                    Task { await downloadAndPreviewMedia(remoteURL: remoteURL, fileName: "video.\(ext)") }
+                }
+                .mediaQuickLookSheet(url: $downloadedMediaURL, isPresented: $showMediaQuickLook, error: $mediaDownloadError)
             } else { mediaLoadingPlaceholder }
+        }
+    }
+    
+    // MARK: - Shared download + QuickLook
+    
+    private func downloadAndPreviewMedia(remoteURL: URL, fileName: String) async {
+        isDownloadingMedia = true
+        mediaDownloadError = nil
+        defer { isDownloadingMedia = false }
+        
+        do {
+            let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
+            
+            let destURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathComponent(fileName)
+            
+            try FileManager.default.createDirectory(
+                at: destURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            if FileManager.default.fileExists(atPath: destURL.path) {
+                try FileManager.default.removeItem(at: destURL)
+            }
+            try FileManager.default.moveItem(at: tmpURL, to: destURL)
+            
+            downloadedMediaURL = destURL
+            showMediaQuickLook = true
+        } catch {
+            mediaDownloadError = error.localizedDescription
         }
     }
     
@@ -407,7 +465,7 @@ struct ChatBubble: View {
             if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 Button {
                     guard !isDownloadingDoc else { return }
-                    Task { await downloadAndPreview(remoteURL: remoteURL) }
+                    Task { await downloadAndPreviewDoc(remoteURL: remoteURL) }
                 } label: {
                     HStack(spacing: 12) {
                         ZStack {
@@ -422,7 +480,6 @@ struct ChatBubble: View {
                                     .frame(width: 36)
                             }
                         }
-                        
                         VStack(alignment: .leading, spacing: 2) {
                             Text(message.text ?? "Documento")
                                 .font(.subheadline.weight(.semibold))
@@ -433,7 +490,6 @@ struct ChatBubble: View {
                                 .font(.caption2)
                                 .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
                         }
-                        
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 4)
@@ -452,7 +508,6 @@ struct ChatBubble: View {
                     Text(docDownloadError ?? "")
                 }
             } else {
-                // Upload in corso
                 HStack(spacing: 12) {
                     ProgressView()
                         .tint(isOwn ? .white : .accentColor)
@@ -468,35 +523,23 @@ struct ChatBubble: View {
         }
     }
     
-    private func downloadAndPreview(remoteURL: URL) async {
+    private func downloadAndPreviewDoc(remoteURL: URL) async {
         isDownloadingDoc = true
         docDownloadError = nil
         defer { isDownloadingDoc = false }
-        
         do {
             let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
-            
-            // Sposta in una cartella temp con il nome file corretto
             let fileName = message.text ?? remoteURL.lastPathComponent
             let destURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
                 .appendingPathComponent(fileName)
-            
-            try FileManager.default.createDirectory(
-                at: destURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            
-            // Se esiste già (download precedente) rimuovilo
+            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             if FileManager.default.fileExists(atPath: destURL.path) {
                 try FileManager.default.removeItem(at: destURL)
             }
-            
             try FileManager.default.moveItem(at: tmpURL, to: destURL)
-            
             downloadedDocURL = destURL
             showQuickLook = true
-            
         } catch {
             docDownloadError = "Impossibile aprire il documento: \(error.localizedDescription)"
         }
@@ -815,46 +858,22 @@ struct ChatBubble: View {
     private func formatDuration(_ sec: Int) -> String { String(format: "%d:%02d", sec / 60, sec % 60) }
 }
 
-// MARK: - FullScreenPhotoView
+// MARK: - QuickLook sheet modifier (per foto e video)
 
-private struct FullScreenPhotoView: View {
-    let url: URL
-    @Environment(\.dismiss) private var dismiss
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            CachedAsyncImage(url: url, contentMode: .fit)
-            Button { dismiss() } label: {
-                Image(systemName: "xmark.circle.fill").font(.title2).foregroundStyle(.white).padding()
-            }
-        }
-    }
-}
-
-// MARK: - FullScreenVideoView
-
-private struct FullScreenVideoView: View {
-    let url: URL
-    @Environment(\.dismiss) private var dismiss
-    @State private var player: AVPlayer
-    init(url: URL) { self.url = url; let p = AVPlayer(url: url); p.volume = 1.0; _player = State(initialValue: p) }
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            VideoPlayer(player: player).ignoresSafeArea()
-                .onAppear {
-                    do {
-                        let s = AVAudioSession.sharedInstance()
-                        try s.setCategory(.playback, mode: .moviePlayback, options: [.allowAirPlay, AVAudioSession.CategoryOptions.allowBluetoothHFP])
-                        try s.setActive(true)
-                    } catch {}
-                    player.play()
+private extension View {
+    func mediaQuickLookSheet(url: Binding<URL?>, isPresented: Binding<Bool>, error: Binding<String?>) -> some View {
+        self
+            .sheet(isPresented: isPresented) {
+                if let u = url.wrappedValue {
+                    QuickLookPreview(urls: [u], initialIndex: 0)
+                        .ignoresSafeArea()
                 }
-                .onDisappear { player.pause() }
-            Button { dismiss() } label: {
-                Image(systemName: "xmark.circle.fill").font(.title2).foregroundStyle(.white).padding()
             }
-        }
+            .alert("Errore", isPresented: .constant(error.wrappedValue != nil)) {
+                Button("OK") { error.wrappedValue = nil }
+            } message: {
+                Text(error.wrappedValue ?? "")
+            }
     }
 }
 

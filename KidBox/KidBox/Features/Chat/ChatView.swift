@@ -10,6 +10,7 @@ import SwiftData
 import PhotosUI
 import FirebaseAuth
 import Combine
+import UniformTypeIdentifiers
 
 // MARK: - ChatView (entry point)
 
@@ -548,11 +549,35 @@ private struct ChatConversationView: View {
     
     @ViewBuilder
     private var uploadProgress: some View {
-        if viewModel.isUploadingMedia {
-            ProgressView(value: viewModel.uploadProgress)
-                .tint(.accentColor)
-                .padding(.horizontal)
-                .padding(.top, 4)
+        if viewModel.isCompressingMedia {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Compressione in corso…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if viewModel.isUploadingMedia {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("Invio in corso…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(viewModel.uploadProgress * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: viewModel.uploadProgress)
+                    .tint(.accentColor)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
     
@@ -826,9 +851,13 @@ private struct ChatConversationView: View {
     }
     
     private func handlePickedMedia(_ item: PhotosPickerItem) async {
+        // Controlla su TUTTI i contentTypes, non solo il primo
+        let isVideo = item.supportedContentTypes.contains {
+            $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.conforms(to: .mpeg4Movie)
+        }
+        let type: KBChatMessageType = isVideo ? .video : .photo
+        
         if let data = try? await item.loadTransferable(type: Data.self) {
-            let type: KBChatMessageType = item.supportedContentTypes
-                .first?.identifier.contains("video") == true ? .video : .photo
             viewModel.sendMedia(data: data, type: type)
         }
     }
