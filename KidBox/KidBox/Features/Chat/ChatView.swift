@@ -191,7 +191,14 @@ private struct ChatConversationView: View {
                 ForEach(groupedMessages, id: \.day) { group in
                     daySeparator(group: group)
                     ForEach(group.messages) { msg in
-                        bubbleRow(msg: msg, proxy: proxy)
+                        BubbleRowView(
+                            msg: msg,
+                            proxy: proxy,
+                            viewModel: viewModel,
+                            messageForReaction: $messageForReaction,
+                            highlightedMessageId: $highlightedMessageId,
+                            onScrollAndHighlight: scrollToAndHighlight
+                        )
                     }
                 }
                 Color.clear.frame(height: 1).id("bottom")
@@ -233,33 +240,40 @@ private struct ChatConversationView: View {
         }
     }
     
-    /// Singola bolla messaggio.
-    private func bubbleRow(msg: KBChatMessage, proxy: ScrollViewProxy) -> some View {
-        let repliedTo: KBChatMessage? = {
-            guard let rid = msg.replyToId else { return nil }
-            return viewModel.messages.first(where: { $0.id == rid })
-        }()
-        let isOwn = msg.senderId == currentUID
-        let canAct = isOwn && viewModel.canEditOrDelete(msg)
-        return ChatBubble(
-            message: msg,
-            isOwn: isOwn,
-            currentUID: currentUID,
-            onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
-            onLongPress: { messageForReaction = msg },
-            onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
-            onDelete: canAct ? { viewModel.deleteMessage(msg) } : nil,
-            onReply: { viewModel.startReply(to: msg) },
-            repliedTo: repliedTo,
-            onReplyContextTap: {
-                guard let rid = msg.replyToId else { return }
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    scrollToAndHighlight(rid, proxy: proxy)
-                }
-            },
-            highlightedMessageId: highlightedMessageId
-        )
-        .id(msg.id)
+    private struct BubbleRowView: View {
+        let msg: KBChatMessage
+        let proxy: ScrollViewProxy
+        @ObservedObject var viewModel: ChatViewModel
+        @Binding var messageForReaction: KBChatMessage?
+        @Binding var highlightedMessageId: String?
+        let onScrollAndHighlight: (String, ScrollViewProxy) -> Void
+        
+        var body: some View {
+            let repliedTo = viewModel.messages.first(where: { $0.id == msg.replyToId })
+            let uid = Auth.auth().currentUser?.uid ?? ""
+            let isOwn = msg.senderId == uid
+            let canAct = isOwn && viewModel.canEditOrDelete(msg)
+            
+            ChatBubble(
+                message: msg,
+                isOwn: isOwn,
+                currentUID: uid,
+                onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
+                onLongPress: { messageForReaction = msg },
+                onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
+                onDelete: canAct ? { viewModel.deleteMessage(msg) } : nil,
+                onReply: { viewModel.startReply(to: msg) },
+                repliedTo: repliedTo,
+                onReplyContextTap: {
+                    guard let rid = msg.replyToId else { return }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        onScrollAndHighlight(rid, proxy)
+                    }
+                },
+                highlightedMessageId: highlightedMessageId
+            )
+            .id(msg.id)
+        }
     }
     
     private func scrollToAndHighlight(_ id: String, proxy: ScrollViewProxy) {

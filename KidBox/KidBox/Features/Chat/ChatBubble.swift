@@ -100,9 +100,20 @@ struct ChatBubble: View {
                 
                 bubbleBody
                     .contextMenu { contextMenuItems }
-                    .onLongPressGesture { onLongPress() }
                     .offset(x: swipeX)
-                    .simultaneousGesture(swipeToReplyGesture)
+                    .gesture(
+                        DragGesture(minimumDistance: 20)
+                            .onChanged { v in
+                                guard abs(v.translation.width) > abs(v.translation.height) else { return }
+                                guard v.translation.width > 0 else { return }
+                                swipeX = min(28, v.translation.width / 3)
+                            }
+                            .onEnded { v in
+                                let shouldTrigger = v.translation.width > 70 && abs(v.translation.width) > abs(v.translation.height)
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { swipeX = 0 }
+                                if shouldTrigger { onReply() }
+                            }
+                    )
                 
                 if !isOwn { Spacer(minLength: 0) }
             }
@@ -136,24 +147,30 @@ struct ChatBubble: View {
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
         } else {
-            // Testo / Foto / Video:
-            // - si restringe al contenuto (no Spacer nel bottomRow)
-            // - cappata a maxBubbleWidth
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 6) {
                 replyContextHeader
                 bubbleContent
-                bottomRow
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(maxWidth: maxBubbleWidth, alignment: isOwn ? .trailing : .leading) // 👈 DOPO
-            .fixedSize(horizontal: true, vertical: false) // 👈 PRIMA
+            .padding(.top, 10)
+            .padding(.bottom, 20)
             .background(bubbleBackground)
             .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
         }
     }
+    
+    private var timeAndChecks: some View {
+        HStack(spacing: 4) {
+            Text(message.createdAt, style: .time)
+                .font(.caption2)
+                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            if isOwn { syncIcon }
+        }
+        .fixedSize() // important: non deve espandere
+    }
+
     
     @ViewBuilder
     private var highlightOverlay: some View {
@@ -258,24 +275,6 @@ struct ChatBubble: View {
         }
     }
     
-    // MARK: - Swipe gesture
-    
-    private var swipeToReplyGesture: some Gesture {
-        DragGesture(minimumDistance: 12)
-            .onChanged { v in
-                guard v.translation.width > 0 else { return }
-                guard abs(v.translation.width) > abs(v.translation.height) else { return }
-                swipeX = min(28, v.translation.width / 3)
-            }
-            .onEnded { v in
-                let shouldTrigger = v.translation.width > 70 && abs(v.translation.width) > abs(v.translation.height)
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                    swipeX = 0
-                }
-                if shouldTrigger { onReply() }
-            }
-    }
-    
     // MARK: - Bubble content (non-audio)
     
     @ViewBuilder
@@ -283,16 +282,40 @@ struct ChatBubble: View {
         switch message.type {
         case .text:
             let text = message.text ?? ""
-            VStack(alignment: .leading, spacing: 6) {
-                Text(makeAttributedText(text))
-                    .font(.body)
-                    .foregroundStyle(isOwn ? .white : .primary)
-                    .multilineTextAlignment(.leading)
-                // Permette al testo di andare a capo senza espandere oltre maxBubbleWidth
-                    .fixedSize(horizontal: false, vertical: true)
-                    .environment(\.openURL, OpenURLAction { url in
-                        UIApplication.shared.open(url); return .handled
-                    })
+            
+            VStack(alignment: .leading, spacing: 4) {
+                
+                ViewThatFits(in: .horizontal) {
+                    
+                    // ✅ Tentativo 1: testo + footer INLINE (una riga)
+                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                        Text(makeAttributedText(text))
+                            .font(.body)
+                            .foregroundStyle(isOwn ? .white : .primary)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: true)
+                        
+                        timeAndChecks
+                    }
+                    .fixedSize(horizontal: true, vertical: true)
+                    
+                    // ✅ Fallback: testo wrappato + footer sotto
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(makeAttributedText(text))
+                            .font(.body)
+                            .foregroundStyle(isOwn ? .white : .primary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        HStack {
+                            Spacer(minLength: 0)
+                            timeAndChecks
+                        }
+                    }
+                    .frame(maxWidth: maxBubbleWidth - 24, alignment: .leading)
+                }
+                
                 if let url = extractFirstURL(from: text) {
                     LinkPreviewView(url: url, isOwn: isOwn)
                 }
@@ -442,13 +465,12 @@ struct ChatBubble: View {
     // Testo/foto/video: NO Spacer — la bubble si restringe al contenuto
     private var bottomRow: some View {
         HStack(spacing: 4) {
+            Spacer(minLength: 0)
             Text(message.createdAt, style: .time)
                 .font(.caption2)
                 .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             if isOwn { syncIcon }
         }
-        // Allinea orario a destra nella bubble
-        .frame(maxWidth: .infinity, alignment: .trailing)
     }
     
     @ViewBuilder
