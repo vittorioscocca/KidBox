@@ -230,13 +230,15 @@ private struct ChatConversationView: View {
     
     /// Singola bolla messaggio.
     private func bubbleRow(msg: KBChatMessage) -> some View {
-        ChatBubble(
+        let isOwn = msg.senderId == currentUID
+        let canAct = isOwn && viewModel.canEditOrDelete(msg)
+        return ChatBubble(
             message: msg,
-            isOwn: msg.senderId == currentUID,
+            isOwn: isOwn,
             onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
             onLongPress: { messageForReaction = msg },
-            onDelete: { viewModel.deleteMessage(msg) },
-            onEdit: { viewModel.startEditing(msg) }
+            onDelete: canAct ? { viewModel.deleteMessage(msg) } : nil,
+            onEdit: canAct ? { viewModel.startEditing(msg) } : nil
         )
         .id(msg.id)
     }

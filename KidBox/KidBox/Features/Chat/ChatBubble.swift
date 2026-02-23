@@ -25,8 +25,8 @@ struct ChatBubble: View {
     let isOwn: Bool
     let onReactionTap: (String) -> Void
     let onLongPress: () -> Void
-    let onDelete: () -> Void
-    let onEdit: () -> Void
+    let onDelete: (() -> Void)?
+    let onEdit: (() -> Void)?
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
@@ -346,11 +346,11 @@ struct ChatBubble: View {
     private var contextMenuItems: some View {
         Button { onLongPress() } label: { Label("Reagisci", systemImage: "face.smiling") }
         
-        if isOwn, message.type == .text {
+        if isOwn, message.type == .text, let onEdit {
             Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
         }
         
-        if isOwn {
+        if isOwn, let onDelete {
             Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
         }
     }
@@ -630,3 +630,4 @@ private extension String {
 private extension Comparable {
     func clamped(to r: ClosedRange<Self>) -> Self { min(max(self, r.lowerBound), r.upperBound) }
 }
+

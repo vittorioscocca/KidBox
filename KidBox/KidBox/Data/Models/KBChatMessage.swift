@@ -25,6 +25,7 @@ final class KBChatMessage {
     var mediaURL: String?
     var mediaDurationSeconds: Int?
     var mediaThumbnailURL: String?
+    var replyToId: String? = nil
     
     var reactionsJSON: String?
     

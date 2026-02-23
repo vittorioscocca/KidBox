@@ -57,6 +57,12 @@ final class ChatViewModel: ObservableObject {
     
     var isEditing: Bool { editingMessageId != nil }
     
+    /// Restituisce `true` solo se NON sono ancora trascorsi 5 minuti dall'invio del messaggio.
+    func canEditOrDelete(_ message: KBChatMessage) -> Bool {
+        let elapsed = Date().timeIntervalSince(message.createdAt)
+        return elapsed < 5 * 60
+    }
+    
     // MARK: - Init
     
     init(familyId: String) {
@@ -205,6 +211,10 @@ final class ChatViewModel: ObservableObject {
     func startEditing(_ message: KBChatMessage) {
         guard message.senderId == Auth.auth().currentUser?.uid else { return }
         guard message.type == .text else { return }
+        guard canEditOrDelete(message) else {
+            errorText = "Puoi modificare un messaggio solo entro 5 minuti dall'invio."
+            return
+        }
         
         editingMessageId = message.id
         editingOriginalText = message.text ?? ""
@@ -652,6 +662,10 @@ final class ChatViewModel: ObservableObject {
     /// Elimina un messaggio (soft delete su Firestore + rimozione locale).
     func deleteMessage(_ message: KBChatMessage) {
         guard let modelContext else { return }
+        guard canEditOrDelete(message) else {
+            errorText = "Puoi eliminare un messaggio solo entro 5 minuti dall'invio."
+            return
+        }
         
         Task {
             do {
