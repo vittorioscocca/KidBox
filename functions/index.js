@@ -235,3 +235,139 @@ exports.deleteAccount = onCall(
       return {ok: true, familiesProcessed: familyIds.length};
     },
 );
+
+exports.notifyNewChatMessage = onDocumentCreated(
+    {
+      document: "families/{familyId}/chatMessages/{messageId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const messageId = event.params.messageId;
+
+      const msgData = event.data ? event.data.data() : null;
+      if (!msgData) {
+        logger.warn("notifyNewChatMessage: missing message data");
+        return;
+      }
+
+      // Ignora messaggi eliminati
+      if (msgData.isDeleted === true) return;
+
+      const senderUid = msgData.senderId;
+      const senderName = msgData.senderName || "Qualcuno";
+
+      if (!senderUid) {
+        logger.warn("notifyNewChatMessage: missing senderId");
+        return;
+      }
+
+      logger.info("notifyNewChatMessage triggered", {familyId, messageId, senderUid});
+
+      // 1) Leggi membri della famiglia
+      const membersSnap = await admin.firestore()
+          .collection("families")
+          .doc(familyId)
+          .collection("members")
+          .get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewChatMessage: no members found");
+        return;
+      }
+
+      // Escludi il mittente
+      const memberUids = membersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid && uid !== senderUid);
+
+      if (memberUids.length === 0) {
+        logger.info("notifyNewChatMessage: no targets (only sender in family)");
+        return;
+      }
+
+      // 2) Per ogni membro: controlla prefs + raccogli tokens
+      const allTokens = [];
+
+      for (const uid of memberUids) {
+        const userRef = admin.firestore().collection("users").doc(uid);
+        const userSnap = await userRef.get();
+
+        const prefs = userSnap.exists ? userSnap.get("notificationPrefs") : null;
+        // Usa la stessa struttura prefs già esistente, aggiungi notifyOnNewMessages
+        const enabled = !prefs || prefs.notifyOnNewMessages !== false;
+
+        logger.info("user chat prefs", {uid, enabled});
+        if (!enabled) continue;
+
+        const tokensSnap = await userRef.collection("fcmTokens").get();
+        tokensSnap.forEach((t) => {
+          const tok = t.get("token");
+          if (tok) allTokens.push(tok);
+        });
+      }
+
+      if (allTokens.length === 0) {
+        logger.info("notifyNewChatMessage: no tokens to notify");
+        return;
+      }
+
+      // 3) Costruisci body notifica in base al tipo di messaggio
+      const msgType = msgData.typeRaw || "text";
+      let body;
+
+      switch (msgType) {
+        case "text":
+          body = msgData.text || "Nuovo messaggio";
+          // Tronca se troppo lungo
+          if (body.length > 100) body = body.substring(0, 97) + "…";
+          break;
+        case "photo":
+          body = "📷 Ha inviato una foto";
+          break;
+        case "video":
+          body = "🎥 Ha inviato un video";
+          break;
+        case "audio":
+          body = "🎤 Ha inviato un messaggio vocale";
+          break;
+        case "document":
+          body = "📎 Ha inviato un documento";
+          break;
+        default:
+          body = "Nuovo messaggio";
+      }
+
+      const message = {
+        notification: {
+          title: senderName,
+          body,
+        },
+        data: {
+          type: "new_chat_message",
+          familyId: familyId,
+          messageId: messageId,
+          senderId: senderUid,
+          msgType: msgType,
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: "default",
+              badge: 1,
+            },
+          },
+        },
+        tokens: allTokens,
+      };
+
+      // 4) Invia
+      const res = await admin.messaging().sendEachForMulticast(message);
+
+      logger.info("notifyNewChatMessage: send result", {
+        successCount: res.successCount,
+        failureCount: res.failureCount,
+        tokenCount: allTokens.length,
+      });
+    },
+);
