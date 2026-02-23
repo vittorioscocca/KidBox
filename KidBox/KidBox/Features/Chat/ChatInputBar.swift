@@ -24,6 +24,7 @@ struct ChatInputBar: View {
     let onCancelRecord: () -> Void
     let onMediaTap: () -> Void
     let onCameraTap: () -> Void
+    let onDocumentTap: () -> Void
     let onTextChange: () -> Void   // ✅ chiamato ad ogni carattere digitato
     
     @FocusState private var isTextFocused: Bool
@@ -56,6 +57,9 @@ struct ChatInputBar: View {
                 }
                 Button { onCameraTap() } label: {
                     Label("Fotocamera", systemImage: "camera")
+                }
+                Button { onDocumentTap() } label: {
+                    Label("Documento", systemImage: "doc")
                 }
             } label: {
                 Image(systemName: "plus.circle.fill")

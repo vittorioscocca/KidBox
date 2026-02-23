@@ -394,6 +394,8 @@ final class ChatViewModel: ObservableObject {
         case .audio:
             let d = message.mediaDurationSeconds ?? 0
             replyingPreviewText = d > 0 ? "Messaggio vocale • \(formatDuration(d))" : "Messaggio vocale"
+        case .document:
+            replyingPreviewText = "📄 \(message.text ?? "Documento")"
         }
     }
     
@@ -588,6 +590,88 @@ final class ChatViewModel: ObservableObject {
             
             try? FileManager.default.removeItem(at: url)
         }
+    }
+    
+    // MARK: - ─── SEND DOCUMENT ───────────────────────────────────────────────
+    
+    /// Invia un documento scelto dal DocumentPicker.
+    /// Usa `asCopy: true` nel picker, quindi l'URL è già accessibile nel sandbox.
+    func sendDocument(url: URL) {
+        Task { await uploadAndSendDocument(url: url) }
+    }
+    
+    private func uploadAndSendDocument(url: URL) async {
+        guard let modelContext else { return }
+        
+        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let senderName = senderDisplayName()
+        let messageId  = UUID().uuidString
+        let now        = Date()
+        let fileName   = url.lastPathComponent
+        let mimeType   = url.mimeType()
+        
+        isUploadingMedia = true
+        uploadProgress   = 0
+        errorText        = nil
+        
+        // 1) Crea messaggio locale placeholder
+        let msg = KBChatMessage(
+            id:        messageId,
+            familyId:  familyId,
+            senderId:  uid,
+            senderName: senderName,
+            type:      .document,
+            text:      fileName,      // usiamo text per conservare il nome file
+            createdAt: now
+        )
+        msg.syncState = .pendingUpsert
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        do {
+            // 2) Leggi i byte
+            let data = try Data(contentsOf: url)
+            
+            // 3) Upload su Storage
+            let (storagePath, downloadURL) = try await storageService.upload(
+                data:        data,
+                familyId:    familyId,
+                messageId:   messageId,
+                fileName:    fileName,
+                mimeType:    mimeType,
+                progressHandler: { [weak self] p in
+                    Task { @MainActor in self?.uploadProgress = p }
+                }
+            )
+            
+            // 4) Aggiorna locale con URL
+            msg.mediaStoragePath = storagePath
+            msg.mediaURL         = downloadURL
+            msg.syncState        = .pendingUpsert
+            try? modelContext.save()
+            
+            // 5) Scrivi su Firestore
+            let dto = makeDTO(from: msg)
+            try await remoteStore.upsert(dto: dto)
+            
+            msg.syncState     = .synced
+            msg.lastSyncError = nil
+            try? modelContext.save()
+            
+            KBLog.data.info("ChatVM sendDocument OK msgId=\(messageId) file=\(fileName)")
+            
+        } catch {
+            msg.syncState     = .error
+            msg.lastSyncError = error.localizedDescription
+            try? modelContext.save()
+            errorText = "Invio documento fallito: \(error.localizedDescription)"
+            KBLog.data.error("ChatVM sendDocument failed: \(error.localizedDescription)")
+        }
+        
+        isUploadingMedia = false
+        uploadProgress   = 0
+        reloadLocal()
     }
     
     /// Annulla la registrazione senza inviare.
@@ -1078,7 +1162,7 @@ final class ChatViewModel: ObservableObject {
             readByJSON:           nil,   // readBy è gestito solo da markAsRead
             createdAt:            msg.createdAt,
             isDeleted:            msg.isDeleted,
-            deletedFor:           []
+            deletedFor:           []     // gestito solo da addToDeletedFor
         )
     }
 }
@@ -1096,4 +1180,34 @@ final class FirestoreListenerWrapper: ListenerRegistrationProtocol {
     private let inner:  ListenerRegistration
     init(_ inner: any ListenerRegistration) { self.inner = inner }
     func remove() { inner.remove() }
+}
+
+// MARK: - URL helpers
+
+private extension URL {
+    /// Restituisce un MIME type ragionevole basato sull'estensione del file.
+    func mimeType() -> String {
+        let ext = self.pathExtension.lowercased()
+        switch ext {
+        case "pdf":             return "application/pdf"
+        case "doc":             return "application/msword"
+        case "docx":            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "xls":             return "application/vnd.ms-excel"
+        case "xlsx":            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "ppt":             return "application/vnd.ms-powerpoint"
+        case "pptx":            return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        case "txt":             return "text/plain"
+        case "csv":             return "text/csv"
+        case "zip":             return "application/zip"
+        case "rar":             return "application/x-rar-compressed"
+        case "png":             return "image/png"
+        case "jpg", "jpeg":     return "image/jpeg"
+        case "gif":             return "image/gif"
+        case "mp3":             return "audio/mpeg"
+        case "m4a":             return "audio/x-m4a"
+        case "mp4":             return "video/mp4"
+        case "mov":             return "video/quicktime"
+        default:                return "application/octet-stream"
+        }
+    }
 }

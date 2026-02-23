@@ -94,6 +94,9 @@ private struct ChatConversationView: View {
     @State private var cameraImage: UIImage?
     @State private var cameraVideoURL: URL?
     
+    // Document picker
+    @State private var showDocumentPicker = false
+    
     // Reaction picker
     @State private var messageForReaction: KBChatMessage?
     
@@ -160,7 +163,7 @@ private struct ChatConversationView: View {
             viewModel.stopListening()
         }
         .toolbar {
-           // trashButton
+            // trashButton
             if isSelecting {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Annulla") { resetSelection() }
@@ -195,6 +198,12 @@ private struct ChatConversationView: View {
             mediaPickerItems = []
         }
         .sheet(isPresented: $showCamera) { cameraSheet }
+        .sheet(isPresented: $showDocumentPicker) {
+            DocumentPicker { url in
+                viewModel.sendDocument(url: url)
+            }
+            .ignoresSafeArea()
+        }
     }
     
     // MARK: - Subviews estratte
@@ -332,7 +341,7 @@ private struct ChatConversationView: View {
                     Image(systemName: selectedMessageIds.contains(msg.id)
                           ? "checkmark.circle.fill"
                           : "circle")
-                    .font(.system(size: 28, weight: .semibold))       
+                    .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(
                         selectedMessageIds.contains(msg.id) ? Color.accentColor : .secondary
                     )
@@ -470,6 +479,17 @@ private struct ChatConversationView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+            
+        case .document:
+            HStack(spacing: 6) {
+                Image(systemName: "doc.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(viewModel.replyingPreviewText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
     }
     
@@ -574,6 +594,7 @@ private struct ChatConversationView: View {
             onCancelRecord: { viewModel.cancelRecording() },
             onMediaTap: { showMediaPicker = true },
             onCameraTap: { showCamera = true },
+            onDocumentTap: { showDocumentPicker = true },
             onTextChange: { viewModel.userIsTyping() }
         )
     }
@@ -893,3 +914,28 @@ private struct CameraPicker: UIViewControllerRepresentable {
     }
 }
 
+// MARK: - DocumentPicker
+
+private struct DocumentPicker: UIViewControllerRepresentable {
+    let onPick: (URL) -> Void
+    
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
+        picker.allowsMultipleSelection = false
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let parent: DocumentPicker
+        init(_ parent: DocumentPicker) { self.parent = parent }
+        
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            parent.onPick(url)
+        }
+    }
+}

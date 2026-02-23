@@ -171,7 +171,7 @@ struct ChatBubble: View {
         }
         .fixedSize() // important: non deve espandere
     }
-
+    
     
     @ViewBuilder
     private var highlightOverlay: some View {
@@ -269,6 +269,13 @@ struct ChatBubble: View {
                         .font(.caption2)
                     Text(label)
                 }
+                
+            case .document:
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.fill")
+                        .font(.caption2)
+                    Text(repliedTo.text ?? "Documento")
+                }
             }
             
         } else {
@@ -344,6 +351,7 @@ struct ChatBubble: View {
         case .photo:  photoContent
         case .video:  videoContent
         case .audio:  EmptyView()
+        case .document: documentContent
         }
     }
     
@@ -385,6 +393,124 @@ struct ChatBubble: View {
                 .fullScreenCover(isPresented: $showFullScreenVideo) { FullScreenVideoView(url: url) }
             } else { mediaLoadingPlaceholder }
         }
+    }
+    
+    // MARK: - Document
+    
+    @State private var isDownloadingDoc = false
+    @State private var downloadedDocURL: URL?
+    @State private var showQuickLook = false
+    @State private var docDownloadError: String?
+    
+    private var documentContent: some View {
+        Group {
+            if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
+                Button {
+                    guard !isDownloadingDoc else { return }
+                    Task { await downloadAndPreview(remoteURL: remoteURL) }
+                } label: {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            if isDownloadingDoc {
+                                ProgressView()
+                                    .tint(isOwn ? .white : .accentColor)
+                                    .frame(width: 36, height: 36)
+                            } else {
+                                Image(systemName: documentIcon(for: message.text))
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(isOwn ? .white : .accentColor)
+                                    .frame(width: 36)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(message.text ?? "Documento")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(isOwn ? .white : .primary)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                            Text(isDownloadingDoc ? "Download in corso…" : "Tocca per aprire")
+                                .font(.caption2)
+                                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+                        }
+                        
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 4)
+                    .frame(maxWidth: maxBubbleWidth - 48)
+                }
+                .buttonStyle(.plain)
+                .sheet(isPresented: $showQuickLook) {
+                    if let url = downloadedDocURL {
+                        QuickLookPreview(urls: [url], initialIndex: 0)
+                            .ignoresSafeArea()
+                    }
+                }
+                .alert("Errore download", isPresented: .constant(docDownloadError != nil)) {
+                    Button("OK") { docDownloadError = nil }
+                } message: {
+                    Text(docDownloadError ?? "")
+                }
+            } else {
+                // Upload in corso
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .tint(isOwn ? .white : .accentColor)
+                        .frame(width: 36)
+                    Text(message.text ?? "Documento")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .lineLimit(2)
+                }
+                .padding(.horizontal, 4)
+                .frame(maxWidth: maxBubbleWidth - 48)
+            }
+        }
+    }
+    
+    private func downloadAndPreview(remoteURL: URL) async {
+        isDownloadingDoc = true
+        docDownloadError = nil
+        defer { isDownloadingDoc = false }
+        
+        do {
+            let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
+            
+            // Sposta in una cartella temp con il nome file corretto
+            let fileName = message.text ?? remoteURL.lastPathComponent
+            let destURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathComponent(fileName)
+            
+            try FileManager.default.createDirectory(
+                at: destURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            
+            // Se esiste già (download precedente) rimuovilo
+            if FileManager.default.fileExists(atPath: destURL.path) {
+                try FileManager.default.removeItem(at: destURL)
+            }
+            
+            try FileManager.default.moveItem(at: tmpURL, to: destURL)
+            
+            downloadedDocURL = destURL
+            showQuickLook = true
+            
+        } catch {
+            docDownloadError = "Impossibile aprire il documento: \(error.localizedDescription)"
+        }
+    }
+    
+    private func documentIcon(for fileName: String?) -> String {
+        guard let name = fileName?.lowercased() else { return "doc.fill" }
+        if name.hasSuffix(".pdf")                          { return "doc.richtext.fill" }
+        if name.hasSuffix(".doc") || name.hasSuffix(".docx") { return "doc.text.fill" }
+        if name.hasSuffix(".xls") || name.hasSuffix(".xlsx") { return "tablecells.fill" }
+        if name.hasSuffix(".ppt") || name.hasSuffix(".pptx") { return "rectangle.on.rectangle.fill" }
+        if name.hasSuffix(".zip") || name.hasSuffix(".rar")  { return "archivebox.fill" }
+        if name.hasSuffix(".mp3") || name.hasSuffix(".m4a")  { return "music.note" }
+        return "doc.fill"
     }
     
     private func videoCacheKey(urlString: String) -> String {

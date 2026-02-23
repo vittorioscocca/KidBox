@@ -147,12 +147,15 @@ final class ChatStorageService {
     // MARK: - Helpers
     
     /// Restituisce il nome file e il MIME type corretti per ogni tipo di messaggio.
+    /// Nota: per `.document` il fileName reale viene passato direttamente da `sendDocument`,
+    /// quindi questo fallback viene usato solo se serve un default.
     static func fileInfo(for type: KBChatMessageType) -> (fileName: String, mimeType: String) {
         switch type {
-        case .photo: return ("photo.jpg",  "image/jpeg")
-        case .video: return ("video.mp4",  "video/mp4")
-        case .audio: return ("audio.m4a",  "audio/x-m4a")
-        case .text:  return ("file.bin",   "application/octet-stream")
+        case .photo:    return ("photo.jpg",  "image/jpeg")
+        case .video:    return ("video.mp4",  "video/mp4")
+        case .audio:    return ("audio.m4a",  "audio/x-m4a")
+        case .document: return ("document",   "application/octet-stream")
+        case .text:     return ("file.bin",   "application/octet-stream")
         }
     }
 }

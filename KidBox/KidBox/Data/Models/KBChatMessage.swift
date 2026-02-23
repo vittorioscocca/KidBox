@@ -7,6 +7,7 @@ enum KBChatMessageType: String, Codable {
     case audio
     case photo
     case video
+    case document
 }
 
 /// Modello locale di un messaggio della chat familiare.
