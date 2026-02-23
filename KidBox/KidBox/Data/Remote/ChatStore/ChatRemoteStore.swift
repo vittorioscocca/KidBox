@@ -27,6 +27,7 @@ struct RemoteChatMessageDTO {
     let reactionsJSON: String?
     let readByJSON: String?
     let createdAt: Date?
+    let editedAt: Date?
     let isDeleted: Bool
     let deletedFor: [String]          // UIDs per cui il messaggio è nascosto ("elimina per me")
     
@@ -234,6 +235,7 @@ final class ChatRemoteStore {
                 reactionsJSON:        data["reactionsJSON"]        as? String,
                 readByJSON:           readByJSON,
                 createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
+                editedAt:             (data["editedAt"] as? Timestamp)?.dateValue() ?? nil,
                 isDeleted:            data["isDeleted"]            as? Bool ?? false,
                 deletedFor:           deletedFor
             )
@@ -311,6 +313,7 @@ final class ChatRemoteStore {
                             reactionsJSON:        data["reactionsJSON"]        as? String,
                             readByJSON:           readByJSON,
                             createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
+                            editedAt:             (data["editedAt"] as? Timestamp)?.dateValue() ?? nil,
                             isDeleted:            data["isDeleted"] as? Bool ?? false,
                             deletedFor:           deletedFor
                         )

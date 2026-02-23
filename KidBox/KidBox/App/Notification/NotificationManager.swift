@@ -56,6 +56,7 @@ final class NotificationManager: NSObject, ObservableObject {
     /// Supported deep links triggered from push notifications.
     enum DeepLink: Equatable {
         case document(familyId: String, docId: String)
+        case chat(familyId: String)
     }
     
     // MARK: - Deep Link Handling
@@ -77,6 +78,9 @@ final class NotificationManager: NSObject, ObservableObject {
             
             pendingDeepLink = .document(familyId: familyId, docId: docId)
             KBLog.auth.kbInfo("DeepLink set for document")
+        } else if type == "new_chat_message" {       // ← NUOVO
+            guard let familyId = userInfo["familyId"] as? String else { return }
+            pendingDeepLink = .chat(familyId: familyId)
         }
     }
     
@@ -132,6 +136,33 @@ final class NotificationManager: NSObject, ObservableObject {
             KBLog.auth.kbError("Failed reading notification prefs: \(error.localizedDescription)")
             return false
         }
+    }
+    
+    // MARK: - Chat notification preference
+    
+    func fetchNotifyOnNewMessagesPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnNewMessages"] as? Bool {
+                return v
+            }
+            return true  // default: abilitato
+        } catch {
+            return true
+        }
+    }
+    
+    func setNotifyOnNewMessages(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewMessages": enabled]
+        ], merge: true)
+        
+        // Non disabilitiamo i token FCM qui perché potrebbero servire
+        // ancora per i documenti — gestiamo solo la preference
     }
     
     // MARK: - APNs

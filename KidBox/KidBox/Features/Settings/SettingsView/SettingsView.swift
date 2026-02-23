@@ -44,6 +44,14 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
+                Toggle(
+                    "Notifica nuovi messaggi in chat",
+                    isOn: Binding(
+                        get: { vm.notifyOnNewMessages },
+                        set: { vm.toggleNotifyOnNewMessages($0) }
+                    )
+                )
+                .disabled(vm.isLoading)
                 .accessibilityHint("Abilita o disabilita le notifiche quando arrivano nuovi documenti.")
                 
                 if let t = vm.infoText {

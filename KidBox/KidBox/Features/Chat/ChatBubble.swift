@@ -167,6 +167,12 @@ struct ChatBubble: View {
     
     private var timeAndChecks: some View {
         HStack(spacing: 4) {
+            if message.editedAt != nil {
+                Text("Modificato")
+                    .font(.caption2)
+                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            }
+            
             Text(message.createdAt, style: .time)
                 .font(.caption2)
                 .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)

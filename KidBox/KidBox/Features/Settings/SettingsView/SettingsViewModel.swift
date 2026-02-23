@@ -27,6 +27,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnNewDocs: Bool = false
     @Published var infoText: String? = nil
     @Published var isLoading: Bool = false
+    @Published var notifyOnNewMessages: Bool = true
     
     // MARK: - Dependencies
     private let notifications = NotificationManager.shared
@@ -34,6 +35,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Local cache keys
     private enum LocalKeys {
         static let notifyOnNewDocs = "kb_notifyOnNewDocs"   // namespaced
+        static let notifyOnNewMessages = "kb_notifyOnNewMessages"
     }
     
     // MARK: - Init
@@ -42,6 +44,10 @@ final class SettingsViewModel: ObservableObject {
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
         self.notifyOnNewDocs = cached
         KBLog.settings.debug("SettingsVM init cached notifyOnNewDocs=\(cached, privacy: .public)")
+        
+        let cachedChat = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewMessages) as? Bool ?? true
+        self.notifyOnNewMessages = cachedChat
+        KBLog.settings.debug("SettingsVM init cached notifyOnNewMessages=\(cachedChat, privacy: .public)")
     }
     
     // MARK: - Load (called by view .task / onAppear)
@@ -79,6 +85,16 @@ final class SettingsViewModel: ObservableObject {
             // Update local cache.
             UserDefaults.standard.set(remoteValue, forKey: LocalKeys.notifyOnNewDocs)
             KBLog.settings.debug("SettingsVM cached remote notifyOnNewDocs=\(remoteValue, privacy: .public)")
+            
+            
+            let remoteChat = await notifications.fetchNotifyOnNewMessagesPreference()
+            KBLog.settings.info("SettingsVM fetch remote preference done value=\(remoteChat, privacy: .public)")
+            if notifyOnNewMessages != remoteChat {
+                notifyOnNewMessages = remoteChat
+                KBLog.settings.debug("SettingsVM applied remote notifyOnNewDocs=\(remoteChat, privacy: .public)")
+            }
+            UserDefaults.standard.set(remoteChat, forKey: LocalKeys.notifyOnNewMessages)
+            KBLog.settings.debug("SettingsVM cached remote notifyOnNewDocs=\(remoteChat, privacy: .public)")
         }
     }
     
@@ -103,6 +119,22 @@ final class SettingsViewModel: ObservableObject {
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnNewDocs)
                 infoText = error.localizedDescription
                 KBLog.settings.error("SettingsVM setNotifyOnNewDocs failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+    
+    func toggleNotifyOnNewMessages(_ enabled: Bool) {
+        notifyOnNewMessages = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewMessages)
+        
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnNewMessages(enabled)
+                infoText = enabled ? "Notifiche chat attive." : "Notifiche chat disattivate."
+            } catch {
+                notifyOnNewMessages = true  // rollback al default
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewMessages)
+                infoText = error.localizedDescription
             }
         }
     }

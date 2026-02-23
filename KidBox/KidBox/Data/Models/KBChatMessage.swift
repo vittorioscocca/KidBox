@@ -35,6 +35,7 @@ final class KBChatMessage {
     var readByJSON: String?
     
     var createdAt: Date
+    var editedAt: Date?
     var isDeleted: Bool
     
     var syncStateRaw: Int
@@ -90,6 +91,8 @@ final class KBChatMessage {
         }
     }
     
+    var isEdited: Bool { editedAt != nil }
+    
     // MARK: - Init
     
     init(
@@ -104,6 +107,7 @@ final class KBChatMessage {
         mediaDurationSeconds: Int? = nil,
         mediaThumbnailURL: String? = nil,
         createdAt: Date = Date(),
+        editedAt: Date? = nil,
         isDeleted: Bool = false
     ) {
         self.id = id
@@ -119,6 +123,7 @@ final class KBChatMessage {
         self.reactionsJSON = nil
         self.readByJSON = nil
         self.createdAt = createdAt
+        self.editedAt = editedAt
         self.isDeleted = isDeleted
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil

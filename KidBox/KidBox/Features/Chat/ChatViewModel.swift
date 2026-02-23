@@ -293,6 +293,7 @@ final class ChatViewModel: ObservableObject {
             
             existing.senderName    = dto.senderName
             existing.text          = dto.text
+            existing.editedAt      = dto.editedAt
             existing.mediaURL      = dto.mediaURL
             existing.reactionsJSON = dto.reactionsJSON
             
@@ -328,6 +329,7 @@ final class ChatViewModel: ObservableObject {
                 mediaDurationSeconds: dto.mediaDurationSeconds,
                 mediaThumbnailURL: dto.mediaThumbnailURL,
                 createdAt: dto.createdAt ?? Date(),
+                editedAt: dto.editedAt,
                 isDeleted: false
             )
             msg.replyToId      = dto.replyToId
@@ -401,6 +403,7 @@ final class ChatViewModel: ObservableObject {
         // 1) update locale immediato (UI reattiva)
         if let msg = messages.first(where: { $0.id == messageId }) {
             msg.text = trimmed
+            msg.editedAt = Date()
             msg.syncState = .pendingUpsert
             msg.lastSyncError = nil
             try? modelContext.save()
@@ -1327,6 +1330,7 @@ final class ChatViewModel: ObservableObject {
             reactionsJSON:        msg.reactionsJSON,
             readByJSON:           nil,   // readBy è gestito solo da markAsRead
             createdAt:            msg.createdAt,
+            editedAt:             msg.editedAt,
             isDeleted:            msg.isDeleted,
             deletedFor:           []     // gestito solo da addToDeletedFor
         )

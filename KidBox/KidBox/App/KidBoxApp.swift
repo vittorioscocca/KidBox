@@ -114,6 +114,9 @@ struct KidBoxApp: App {
                             docId: docId,
                             modelContext: modelContainer.mainContext
                         )
+                    case .chat:
+                        KBLog.navigation.kbInfo("Deep link -> open chat")
+                        coordinator.navigate(to: .chat)
                     }
                     
                     notifications.consumeDeepLink()
