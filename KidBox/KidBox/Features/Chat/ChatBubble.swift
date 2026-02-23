@@ -32,6 +32,7 @@ struct ChatBubble: View {
     let repliedTo: KBChatMessage?
     let onReplyContextTap: () -> Void
     let highlightedMessageId: String?
+    let searchText: String
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
@@ -275,6 +276,26 @@ struct ChatBubble: View {
         }
     }
     
+    func highlightedText(_ text: String) -> AttributedString {
+        var attr = AttributedString(text)
+        
+        guard !searchText.isEmpty else { return attr }
+        
+        let lower = text.lowercased()
+        let query = searchText.lowercased()
+        
+        var searchRange = lower.startIndex..<lower.endIndex
+        
+        while let range = lower.range(of: query, options: [], range: searchRange) {
+            if let attrRange = Range(range, in: attr) {
+                attr[attrRange].backgroundColor = .yellow.opacity(0.4)
+            }
+            searchRange = range.upperBound..<lower.endIndex
+        }
+        
+        return attr
+    }
+    
     // MARK: - Bubble content (non-audio)
     
     @ViewBuilder
@@ -289,7 +310,7 @@ struct ChatBubble: View {
                     
                     // ✅ Tentativo 1: testo + footer INLINE (una riga)
                     HStack(alignment: .lastTextBaseline, spacing: 6) {
-                        Text(makeAttributedText(text))
+                        Text(highlightedText(text))
                             .font(.body)
                             .foregroundStyle(isOwn ? .white : .primary)
                             .lineLimit(1)
@@ -301,7 +322,7 @@ struct ChatBubble: View {
                     
                     // ✅ Fallback: testo wrappato + footer sotto
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(makeAttributedText(text))
+                        Text(highlightedText(text))
                             .font(.body)
                             .foregroundStyle(isOwn ? .white : .primary)
                             .multilineTextAlignment(.leading)
@@ -339,6 +360,13 @@ struct ChatBubble: View {
                     .fullScreenCover(isPresented: $showFullScreenPhoto) { FullScreenPhotoView(url: url) }
             } else { mediaLoadingPlaceholder }
         }
+    }
+    
+    private func copyTextToPasteboard() {
+        let t = (message.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIPasteboard.general.string = t
     }
     
     private var videoContent: some View {
@@ -516,6 +544,12 @@ struct ChatBubble: View {
     @ViewBuilder
     private var contextMenuItems: some View {
         Button { onLongPress() } label: { Label("Reagisci", systemImage: "face.smiling") }
+        
+        if message.type == .text {
+            Button { copyTextToPasteboard() } label: {
+                Label("Copia", systemImage: "doc.on.doc")
+            }
+        }
         
         if isOwn, message.type == .text, let onEdit {
             Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }

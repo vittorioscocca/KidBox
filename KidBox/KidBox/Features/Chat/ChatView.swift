@@ -13,10 +13,14 @@ import Combine
 
 // MARK: - ChatView (entry point)
 
+
 struct ChatView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
+    
+    @State private var searchText: String = ""
+    @State private var isSearchPresented: Bool = false
     
     private var familyId: String { families.first?.id ?? "" }
     
@@ -25,11 +29,38 @@ struct ChatView: View {
             if familyId.isEmpty {
                 emptyNoFamily
             } else {
-                ChatConversationView(familyId: familyId)
+                ChatConversationView(
+                    familyId: familyId,
+                    searchText: searchText
+                )
             }
         }
         .navigationTitle("Chat famiglia")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button {
+                    isSearchPresented = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                // opzionale: chiudi/clear quando la search è aperta
+                if isSearchPresented {
+                    Button {
+                        searchText = ""
+                        isSearchPresented = false
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+            }
+        }
+        .searchable(
+            text: $searchText,
+            isPresented: $isSearchPresented,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Cerca messaggi"
+        )
     }
     
     private var emptyNoFamily: some View {
@@ -49,6 +80,7 @@ struct ChatView: View {
 private struct ChatConversationView: View {
     
     let familyId: String
+    let searchText: String
     
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel: ChatViewModel
@@ -77,9 +109,12 @@ private struct ChatConversationView: View {
     @State private var hideDateTask: Task<Void, Never>? = nil
     
     @State private var highlightedMessageId: String? = nil
+    @State private var isSearching: Bool = false
+    @State private var searchScrollTarget: String?
     
-    init(familyId: String) {
+    init(familyId: String, searchText: String) {
         self.familyId = familyId
+        self.searchText = searchText
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
     }
     
@@ -197,6 +232,7 @@ private struct ChatConversationView: View {
                             viewModel: viewModel,
                             messageForReaction: $messageForReaction,
                             highlightedMessageId: $highlightedMessageId,
+                            searchText: searchText,
                             onScrollAndHighlight: scrollToAndHighlight
                         )
                     }
@@ -204,6 +240,13 @@ private struct ChatConversationView: View {
                 Color.clear.frame(height: 1).id("bottom")
             }
             .padding(.vertical, 10)
+            .onChange(of: searchScrollTarget) { _, target in
+                guard let target else { return }
+                
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(target, anchor: .center)
+                }
+            }
         }
         .coordinateSpace(name: "scrollArea")
         .onScrollGeometryChange(for: CGFloat.self) { geo in
@@ -246,6 +289,7 @@ private struct ChatConversationView: View {
         @ObservedObject var viewModel: ChatViewModel
         @Binding var messageForReaction: KBChatMessage?
         @Binding var highlightedMessageId: String?
+        let searchText: String
         let onScrollAndHighlight: (String, ScrollViewProxy) -> Void
         
         var body: some View {
@@ -270,7 +314,8 @@ private struct ChatConversationView: View {
                         onScrollAndHighlight(rid, proxy)
                     }
                 },
-                highlightedMessageId: highlightedMessageId
+                highlightedMessageId: highlightedMessageId,
+                searchText: searchText
             )
             .id(msg.id)
         }
@@ -527,7 +572,13 @@ private struct ChatConversationView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         
-        let grouped = Dictionary(grouping: viewModel.messages) { msg in
+        let baseMessages = searchText.isEmpty
+        ? viewModel.messages
+        : viewModel.messages.filter {
+            ($0.text ?? "").localizedCaseInsensitiveContains(searchText)
+        }
+        
+        let grouped = Dictionary(grouping: baseMessages) { msg in
             calendar.startOfDay(for: msg.createdAt)
         }
         
