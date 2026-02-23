@@ -26,6 +26,7 @@ struct ChatBubble: View {
     let onReactionTap: (String) -> Void
     let onLongPress: () -> Void
     let onDelete: () -> Void
+    let onEdit: () -> Void
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
@@ -344,6 +345,11 @@ struct ChatBubble: View {
     @ViewBuilder
     private var contextMenuItems: some View {
         Button { onLongPress() } label: { Label("Reagisci", systemImage: "face.smiling") }
+        
+        if isOwn, message.type == .text {
+            Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
+        }
+        
         if isOwn {
             Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
         }

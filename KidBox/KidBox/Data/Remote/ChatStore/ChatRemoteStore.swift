@@ -111,6 +111,25 @@ final class ChatRemoteStore {
         try await ref.setData(data, merge: true)
     }
     
+    func updateMessageText(familyId: String, messageId: String, text: String) async throws {
+        guard Auth.auth().currentUser != nil else {
+            throw NSError(domain: "KidBox", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+        
+        let ref = db.collection("families")
+            .document(familyId)
+            .collection("chatMessages")
+            .document(messageId)
+        
+        try await ref.setData([
+            "text": text,
+            "isEdited": true,
+            "editedAt": FieldValue.serverTimestamp(),
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+    }
+    
     /// ✅ Segna i messaggi come letti dall'utente corrente.
     /// Usa arrayUnion per aggiungere l'UID senza sovrascrivere gli altri.
     func markAsRead(familyId: String, messageIds: [String], uid: String) async throws {

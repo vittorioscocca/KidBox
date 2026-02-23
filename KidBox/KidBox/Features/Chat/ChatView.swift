@@ -89,6 +89,9 @@ private struct ChatConversationView: View {
             errorBanner
             uploadProgress
             typingBanner
+            if viewModel.isEditing {
+                editingBar
+            }
             Divider()
             inputBar
         }
@@ -141,6 +144,40 @@ private struct ChatConversationView: View {
                 scrollToBottomButton(proxy: proxy)
             }
         }
+    }
+    
+    private var editingBar: some View {
+        HStack(spacing: 10) {
+            Rectangle()
+                .fill(Color.accentColor)
+                .frame(width: 3)
+                .clipShape(Capsule())
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Modifica messaggio")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(viewModel.editingOriginalText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            
+            Spacer(minLength: 0)
+            
+            Button {
+                viewModel.cancelEditing()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemBackground))
+        .fixedSize(horizontal: false, vertical: true)
     }
     
     private func scrollContent(proxy: ScrollViewProxy) -> some View {
@@ -198,7 +235,8 @@ private struct ChatConversationView: View {
             isOwn: msg.senderId == currentUID,
             onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
             onLongPress: { messageForReaction = msg },
-            onDelete: { viewModel.deleteMessage(msg) }
+            onDelete: { viewModel.deleteMessage(msg) },
+            onEdit: { viewModel.startEditing(msg) }
         )
         .id(msg.id)
     }
@@ -298,7 +336,13 @@ private struct ChatConversationView: View {
             isRecording: viewModel.isRecording,
             recordingDuration: viewModel.recordingDuration,
             isSending: viewModel.isSending,
-            onSendText: { viewModel.sendText() },
+            onSendText: {
+                if viewModel.isEditing {
+                    viewModel.commitEditing()
+                } else {
+                    viewModel.sendText()
+                }
+            },
             onStartRecord: { viewModel.startRecording() },
             onStopRecord: { viewModel.stopAndSendRecording() },
             onCancelRecord: { viewModel.cancelRecording() },

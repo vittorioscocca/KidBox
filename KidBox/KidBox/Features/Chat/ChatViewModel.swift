@@ -34,6 +34,9 @@ final class ChatViewModel: ObservableObject {
     // Typing indicators
     @Published var typingUsers: [String] = []   // nomi degli altri che stanno scrivendo
     
+    @Published var editingMessageId: String? = nil
+    @Published var editingOriginalText: String = ""
+    
     // MARK: - Private
     private var modelContext: ModelContext?
     private var listener: (any ListenerRegistrationProtocol)?
@@ -51,6 +54,8 @@ final class ChatViewModel: ObservableObject {
     private var audioRecorder: AVAudioRecorder?
     private var recordingTimer: Timer?
     private var recordingURL: URL?
+    
+    var isEditing: Bool { editingMessageId != nil }
     
     // MARK: - Init
     
@@ -195,6 +200,77 @@ final class ChatViewModel: ObservableObject {
         inputText = ""
         stopTyping()          // smetti di segnalare typing quando invii
         send(type: .text, text: text)
+    }
+    
+    func startEditing(_ message: KBChatMessage) {
+        guard message.senderId == Auth.auth().currentUser?.uid else { return }
+        guard message.type == .text else { return }
+        
+        editingMessageId = message.id
+        editingOriginalText = message.text ?? ""
+        inputText = editingOriginalText
+    }
+    
+    func cancelEditing() {
+        editingMessageId = nil
+        editingOriginalText = ""
+        inputText = ""
+    }
+    
+    func commitEditing() {
+        guard let modelContext else { return }
+        guard let messageId = editingMessageId else { return }
+        
+        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard trimmed != editingOriginalText else { cancelEditing(); return }
+        guard !isSending else { return }
+        
+        stopTyping()
+        isSending = true
+        errorText = nil
+        
+        // 1) update locale immediato (UI reattiva)
+        if let msg = messages.first(where: { $0.id == messageId }) {
+            msg.text = trimmed
+            msg.syncState = .pendingUpsert
+            msg.lastSyncError = nil
+            try? modelContext.save()
+            reloadLocal()
+        }
+        
+        // 2) update remoto
+        Task {
+            do {
+                try await remoteStore.updateMessageText(
+                    familyId: familyId,
+                    messageId: messageId,
+                    text: trimmed
+                )
+                
+                await MainActor.run {
+                    if let msg = self.messages.first(where: { $0.id == messageId }) {
+                        msg.syncState = .synced
+                        try? modelContext.save()
+                        self.reloadLocal()
+                    }
+                    self.isSending = false
+                    self.cancelEditing()
+                }
+            } catch {
+                await MainActor.run {
+                    if let msg = self.messages.first(where: { $0.id == messageId }) {
+                        msg.syncState = .error
+                        msg.lastSyncError = error.localizedDescription
+                        try? modelContext.save()
+                        self.reloadLocal()
+                    }
+                    self.isSending = false
+                    // NON annullo editing: così può riprovare a salvare
+                    self.errorText = error.localizedDescription
+                }
+            }
+        }
     }
     
     // MARK: - ─── TYPING INDICATOR ────────────────────────────────────────────
