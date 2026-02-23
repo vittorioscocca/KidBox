@@ -76,6 +76,8 @@ private struct ChatConversationView: View {
     @State private var showFloatingDate: Bool = false
     @State private var hideDateTask: Task<Void, Never>? = nil
     
+    @State private var highlightedMessageId: String? = nil
+    
     init(familyId: String) {
         self.familyId = familyId
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
@@ -91,6 +93,9 @@ private struct ChatConversationView: View {
             typingBanner
             if viewModel.isEditing {
                 editingBar
+            }
+            if viewModel.isReplying {
+                replyBar
             }
             Divider()
             inputBar
@@ -186,7 +191,7 @@ private struct ChatConversationView: View {
                 ForEach(groupedMessages, id: \.day) { group in
                     daySeparator(group: group)
                     ForEach(group.messages) { msg in
-                        bubbleRow(msg: msg)
+                        bubbleRow(msg: msg, proxy: proxy)
                     }
                 }
                 Color.clear.frame(height: 1).id("bottom")
@@ -229,18 +234,125 @@ private struct ChatConversationView: View {
     }
     
     /// Singola bolla messaggio.
-    private func bubbleRow(msg: KBChatMessage) -> some View {
+    private func bubbleRow(msg: KBChatMessage, proxy: ScrollViewProxy) -> some View {
+        let repliedTo: KBChatMessage? = {
+            guard let rid = msg.replyToId else { return nil }
+            return viewModel.messages.first(where: { $0.id == rid })
+        }()
         let isOwn = msg.senderId == currentUID
         let canAct = isOwn && viewModel.canEditOrDelete(msg)
         return ChatBubble(
             message: msg,
             isOwn: isOwn,
+            currentUID: currentUID,
             onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
             onLongPress: { messageForReaction = msg },
+            onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
             onDelete: canAct ? { viewModel.deleteMessage(msg) } : nil,
-            onEdit: canAct ? { viewModel.startEditing(msg) } : nil
+            onReply: { viewModel.startReply(to: msg) },
+            repliedTo: repliedTo,
+            onReplyContextTap: {
+                guard let rid = msg.replyToId else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    scrollToAndHighlight(rid, proxy: proxy)
+                }
+            },
+            highlightedMessageId: highlightedMessageId
         )
         .id(msg.id)
+    }
+    
+    private func scrollToAndHighlight(_ id: String, proxy: ScrollViewProxy) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            proxy.scrollTo(id, anchor: .center)
+        }
+        
+        // Flash highlight
+        highlightedMessageId = id
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            // evita di spegnere un highlight diverso se nel frattempo l’utente ha tappato altro
+            if highlightedMessageId == id {
+                highlightedMessageId = nil
+            }
+        }
+    }
+    
+    // MARK: - Reply bar (WhatsApp style)
+    
+    private var replyBar: some View {
+        HStack(spacing: 10) {
+            Capsule()
+                .fill(Color.accentColor)
+                .frame(width: 3)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Rispondi a \(viewModel.replyingPreviewName)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+                
+                replyPreviewLine
+            }
+            
+            Spacer(minLength: 0)
+            
+            Button { viewModel.cancelReply() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemBackground))
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    
+    @ViewBuilder
+    private var replyPreviewLine: some View {
+        let kind = viewModel.replyingPreviewKind
+        
+        switch kind {
+        case .photo:
+            HStack(spacing: 8) {
+                if let urlString = viewModel.replyingPreviewMediaURL,
+                   let url = URL(string: urlString) {
+                    // usa la tua CachedAsyncImage già in progetto
+                    CachedAsyncImage(url: url, contentMode: .fill)
+                        .frame(width: 36, height: 36)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.tertiarySystemBackground))
+                        .frame(width: 36, height: 36)
+                }
+                
+                Text("Foto")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            
+        case .audio:
+            Text(viewModel.replyingPreviewText) // già "Messaggio vocale • 0:12"
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            
+        case .video:
+            Text(viewModel.replyingPreviewText.isEmpty ? "🎬 Video" : viewModel.replyingPreviewText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            
+        case .text, .none:
+            Text(viewModel.replyingPreviewText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
     }
     
     /// Pill data flottante stile WhatsApp.
@@ -338,13 +450,7 @@ private struct ChatConversationView: View {
             isRecording: viewModel.isRecording,
             recordingDuration: viewModel.recordingDuration,
             isSending: viewModel.isSending,
-            onSendText: {
-                if viewModel.isEditing {
-                    viewModel.commitEditing()
-                } else {
-                    viewModel.sendText()
-                }
-            },
+            onSendText: { viewModel.sendText() },
             onStartRecord: { viewModel.startRecording() },
             onStopRecord: { viewModel.stopAndSendRecording() },
             onCancelRecord: { viewModel.cancelRecording() },
@@ -525,3 +631,4 @@ private struct CameraPicker: UIViewControllerRepresentable {
         }
     }
 }
+

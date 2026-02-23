@@ -23,10 +23,15 @@ struct ChatBubble: View {
     
     let message: KBChatMessage
     let isOwn: Bool
+    let currentUID: String
     let onReactionTap: (String) -> Void
     let onLongPress: () -> Void
-    let onDelete: (() -> Void)?
     let onEdit: (() -> Void)?
+    let onDelete: (() -> Void)?
+    let onReply: () -> Void
+    let repliedTo: KBChatMessage?
+    let onReplyContextTap: () -> Void
+    let highlightedMessageId: String?
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
@@ -43,6 +48,9 @@ struct ChatBubble: View {
     @State private var showFullScreenPhoto = false
     @State private var showFullScreenVideo = false
     
+    // Swipe-to-reply
+    @State private var swipeX: CGFloat = 0
+    
     private var maxBubbleWidth: CGFloat {
         let w = UIScreen.main.bounds.width
         switch dynamicTypeSize {
@@ -51,6 +59,18 @@ struct ChatBubble: View {
         default:
             return min(w * 0.72, 420)
         }
+    }
+    
+    private var isHighlighted: Bool {
+        highlightedMessageId == message.id
+    }
+    
+    private var highlightFill: Color {
+        isOwn ? Color.white.opacity(0.18) : Color.accentColor.opacity(0.12)
+    }
+    
+    private var highlightStroke: Color {
+        isOwn ? Color.white.opacity(0.85) : Color.accentColor.opacity(0.85)
     }
     
     var body: some View {
@@ -81,6 +101,8 @@ struct ChatBubble: View {
                 bubbleBody
                     .contextMenu { contextMenuItems }
                     .onLongPressGesture { onLongPress() }
+                    .offset(x: swipeX)
+                    .simultaneousGesture(swipeToReplyGesture)
                 
                 if !isOwn { Spacer(minLength: 0) }
             }
@@ -102,6 +124,7 @@ struct ChatBubble: View {
         if message.type == .audio {
             // Audio: larghezza fissa esatta
             VStack(alignment: .leading, spacing: 6) {
+                replyContextHeader
                 audioContent
                 audioBottomRow
             }
@@ -109,6 +132,7 @@ struct ChatBubble: View {
             .padding(.vertical, 10)
             .frame(width: AudioBubble.total)
             .background(bubbleBackground)
+            .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
         } else {
@@ -116,6 +140,7 @@ struct ChatBubble: View {
             // - si restringe al contenuto (no Spacer nel bottomRow)
             // - cappata a maxBubbleWidth
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 6) {
+                replyContextHeader
                 bubbleContent
                 bottomRow
             }
@@ -124,9 +149,131 @@ struct ChatBubble: View {
             .frame(maxWidth: maxBubbleWidth, alignment: isOwn ? .trailing : .leading) // 👈 DOPO
             .fixedSize(horizontal: true, vertical: false) // 👈 PRIMA
             .background(bubbleBackground)
+            .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
         }
+    }
+    
+    @ViewBuilder
+    private var highlightOverlay: some View {
+        if isHighlighted {
+            bubbleShape
+                .fill(isOwn ? Color.white.opacity(0.18) : Color.accentColor.opacity(0.12))
+                .overlay(
+                    bubbleShape.stroke(
+                        isOwn ? Color.white.opacity(0.85) : Color.accentColor.opacity(0.85),
+                        lineWidth: 2
+                    )
+                )
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: isHighlighted)
+        }
+    }
+    
+    // MARK: - Reply context header
+    
+    @ViewBuilder
+    private var replyContextHeader: some View {
+        if message.replyToId != nil {
+            HStack(spacing: 8) {
+                Capsule()
+                    .fill(isOwn ? Color.white.opacity(0.85) : Color.accentColor)
+                    .frame(width: 3)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(replyTitle)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(isOwn ? Color.white.opacity(0.9) : Color.accentColor)
+                        .lineLimit(1)
+                    
+                    replySubtitle
+                        .font(.caption2)
+                        .foregroundStyle(isOwn ? Color.white.opacity(0.75) : Color.secondary)
+                        .lineLimit(1)
+                }
+                
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                isOwn ? Color.white.opacity(0.12) : Color.accentColor.opacity(0.08),
+                in: RoundedRectangle(cornerRadius: 10)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture { onReplyContextTap() }
+        }
+    }
+    
+    private var replyTitle: String {
+        guard let repliedTo else { return "Risposta" }
+        return repliedTo.senderId == currentUID ? "Tu" : (repliedTo.senderName.isEmpty ? "Utente" : repliedTo.senderName)
+    }
+    
+    @ViewBuilder
+    private var replySubtitle: some View {
+        if let repliedTo {
+            switch repliedTo.type {
+                
+            case .text:
+                let t = (repliedTo.text ?? "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                Text(t.isEmpty ? "Messaggio" : t)
+                
+            case .photo:
+                HStack(spacing: 6) {
+                    if let urlString = repliedTo.mediaURL,
+                       let url = URL(string: urlString) {
+                        CachedAsyncImage(url: url, contentMode: .fill)
+                            .frame(width: 18, height: 18)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    Text("Foto")
+                }
+                
+            case .video:
+                HStack(spacing: 6) {
+                    Image(systemName: "video.fill")
+                        .font(.caption2)
+                    Text("Video")
+                }
+                
+            case .audio:
+                let d = repliedTo.mediaDurationSeconds ?? 0
+                let label = d > 0
+                ? "Messaggio vocale • \(formatDuration(d))"
+                : "Messaggio vocale"
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "waveform")
+                        .font(.caption2)
+                    Text(label)
+                }
+            }
+            
+        } else {
+            Text("Messaggio")
+        }
+    }
+    
+    // MARK: - Swipe gesture
+    
+    private var swipeToReplyGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { v in
+                guard v.translation.width > 0 else { return }
+                guard abs(v.translation.width) > abs(v.translation.height) else { return }
+                swipeX = min(28, v.translation.width / 3)
+            }
+            .onEnded { v in
+                let shouldTrigger = v.translation.width > 70 && abs(v.translation.width) > abs(v.translation.height)
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                    swipeX = 0
+                }
+                if shouldTrigger { onReply() }
+            }
     }
     
     // MARK: - Bubble content (non-audio)
@@ -163,6 +310,7 @@ struct ChatBubble: View {
             if let urlString = message.mediaURL, let url = URL(string: urlString) {
                 CachedAsyncImage(url: url, contentMode: .fill)
                     .frame(width: 220, height: 160).clipped()
+                    .overlay(highlightOverlay)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .onTapGesture { showFullScreenPhoto = true }
                     .fullScreenCover(isPresented: $showFullScreenPhoto) { FullScreenPhotoView(url: url) }
@@ -176,6 +324,7 @@ struct ChatBubble: View {
                 ZStack {
                     VideoThumbnailView(videoURL: url, cacheKey: videoCacheKey(urlString: urlString))
                         .frame(width: 220, height: 160).clipped()
+                        .overlay(highlightOverlay)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     Image(systemName: "play.circle.fill").font(.system(size: 44))
                         .foregroundStyle(.white).shadow(radius: 6)
@@ -630,4 +779,3 @@ private extension String {
 private extension Comparable {
     func clamped(to r: ClosedRange<Self>) -> Self { min(max(self, r.lowerBound), r.upperBound) }
 }
-

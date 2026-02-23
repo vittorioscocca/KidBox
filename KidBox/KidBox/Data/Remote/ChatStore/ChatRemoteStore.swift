@@ -23,6 +23,7 @@ struct RemoteChatMessageDTO {
     let mediaURL: String?
     let mediaDurationSeconds: Int?
     let mediaThumbnailURL: String?
+    let replyToId: String?
     let reactionsJSON: String?
     let readByJSON: String?
     let createdAt: Date?
@@ -81,6 +82,7 @@ final class ChatRemoteStore {
         if let url  = dto.mediaURL                     { data["mediaURL"] = url }
         if let dur  = dto.mediaDurationSeconds         { data["mediaDurationSeconds"] = dur }
         if let thu  = dto.mediaThumbnailURL            { data["mediaThumbnailURL"] = thu }
+        if let rid  = dto.replyToId                    { data["replyToId"] = rid }
         if let r    = dto.reactionsJSON                { data["reactionsJSON"] = r }
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
@@ -222,6 +224,7 @@ final class ChatRemoteStore {
                             mediaURL:             data["mediaURL"]             as? String,
                             mediaDurationSeconds: data["mediaDurationSeconds"] as? Int,
                             mediaThumbnailURL:    data["mediaThumbnailURL"]    as? String,
+                            replyToId:            data["replyToId"]            as? String,
                             reactionsJSON:        data["reactionsJSON"]        as? String,
                             readByJSON:           readByJSON,
                             createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
@@ -287,3 +290,4 @@ private extension Array {
         }
     }
 }
+

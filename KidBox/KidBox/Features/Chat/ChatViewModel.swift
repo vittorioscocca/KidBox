@@ -10,8 +10,15 @@ import SwiftUI
 import SwiftData
 import Combine
 import FirebaseAuth
+import FirebaseFirestore
 import AVFoundation
 import OSLog
+
+private extension String {
+    func ifEmpty(_ fallback: String) -> String {
+        self.isEmpty ? fallback : self
+    }
+}
 
 @MainActor
 final class ChatViewModel: ObservableObject {
@@ -36,6 +43,16 @@ final class ChatViewModel: ObservableObject {
     
     @Published var editingMessageId: String? = nil
     @Published var editingOriginalText: String = ""
+    
+    // Reply (WhatsApp-style)
+    @Published var replyingToMessageId: String? = nil
+    @Published var replyingPreviewName: String = ""
+    @Published var replyingPreviewText: String = ""
+    @Published var replyingPreviewKind: KBChatMessageType? = nil
+    @Published var replyingPreviewMediaURL: String? = nil
+    @Published var replyingPreviewAudioDuration: Int? = nil
+    
+    var isReplying: Bool { replyingToMessageId != nil }
     
     // MARK: - Private
     private var modelContext: ModelContext?
@@ -172,6 +189,7 @@ final class ChatViewModel: ObservableObject {
             existing.isDeleted     = dto.isDeleted
             existing.syncState     = .synced
             existing.lastSyncError = nil
+            existing.replyToId = dto.replyToId
         } else {
             guard !dto.isDeleted else { return }
             
@@ -189,6 +207,7 @@ final class ChatViewModel: ObservableObject {
                 createdAt:            dto.createdAt ?? Date(),
                 isDeleted:            false
             )
+            msg.replyToId      = dto.replyToId
             msg.reactionsJSON = dto.reactionsJSON
             msg.readByJSON    = dto.readByJSON        // ✅
             msg.syncState     = .synced
@@ -200,12 +219,26 @@ final class ChatViewModel: ObservableObject {
     // MARK: - ─── SEND TEXT ────────────────────────────────────────────────────
     
     func sendText() {
-        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isSending else { return }
+        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard !isSending else { return }
         
+        // 1) Se sto editando -> salvo modifica (NON invio nuovo)
+        if isEditing {
+            commitEditing()
+            return
+        }
+        
+        // 2) Altrimenti invio nuovo messaggio (con reply opzionale)
+        let replyId = replyingToMessageId   // String?
         inputText = ""
-        stopTyping()          // smetti di segnalare typing quando invii
-        send(type: .text, text: text)
+        
+        if replyId != nil {
+            send(type: .text, text: trimmed, replyToId: replyId)
+            cancelReply()
+        } else {
+            send(type: .text, text: trimmed)
+        }
     }
     
     func startEditing(_ message: KBChatMessage) {
@@ -281,6 +314,47 @@ final class ChatViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    func startReply(to message: KBChatMessage) {
+        if isEditing { cancelEditing() }
+        
+        replyingToMessageId = message.id
+        
+        let name = message.senderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        replyingPreviewName = name.isEmpty ? "Utente" : name
+        
+        replyingPreviewKind = message.type
+        replyingPreviewMediaURL = message.mediaURL
+        replyingPreviewAudioDuration = message.mediaDurationSeconds
+        
+        switch message.type {
+        case .text:
+            replyingPreviewText = (message.text ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .ifEmpty("Messaggio")
+        case .photo:
+            replyingPreviewText = "" // lo mostriamo come thumbnail nella bar
+        case .video:
+            replyingPreviewText = "🎬 Video"
+        case .audio:
+            let d = message.mediaDurationSeconds ?? 0
+            replyingPreviewText = d > 0 ? "Messaggio vocale • \(formatDuration(d))" : "Messaggio vocale"
+        }
+    }
+    
+    func cancelReply() {
+        replyingToMessageId = nil
+        replyingPreviewName = ""
+        replyingPreviewText = ""
+        
+        replyingPreviewKind = nil
+        replyingPreviewMediaURL = nil
+        replyingPreviewAudioDuration = nil
+    }
+    
+    private func formatDuration(_ sec: Int) -> String {
+        String(format: "%d:%02d", sec / 60, sec % 60)
     }
     
     // MARK: - ─── TYPING INDICATOR ────────────────────────────────────────────
@@ -586,6 +660,52 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
+    /// Variante che include il riferimento al messaggio a cui si sta rispondendo.
+    /// Non altera gli altri flussi: crea un nuovo messaggio come sempre, ma valorizza `replyToId`.
+    private func send(type: KBChatMessageType, text: String? = nil, replyToId: String?) {
+        guard let modelContext else { return }
+        
+        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let senderName = senderDisplayName()
+        let messageId  = UUID().uuidString
+        let now        = Date()
+        
+        isSending = true
+        
+        let msg = KBChatMessage(
+            id:        messageId,
+            familyId:  familyId,
+            senderId:  uid,
+            senderName: senderName,
+            type:      type,
+            text:      text,
+            createdAt: now
+        )
+        msg.replyToId = replyToId
+        msg.syncState = .pendingUpsert
+        
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        Task {
+            let dto = makeDTO(from: msg)
+            do {
+                try await remoteStore.upsert(dto: dto)
+                msg.syncState     = .synced
+                msg.lastSyncError = nil
+                try? modelContext.save()
+                KBLog.data.info("ChatVM send OK msgId=\(messageId)")
+            } catch {
+                msg.syncState     = .error
+                msg.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                errorText = "Invio fallito: \(error.localizedDescription)"
+            }
+            isSending = false
+            reloadLocal()
+        }
+    }
     // MARK: - ─── REAZIONI ────────────────────────────────────────────────────
     
     /// Aggiunge o rimuove una reazione emoji da un messaggio.
@@ -662,10 +782,6 @@ final class ChatViewModel: ObservableObject {
     /// Elimina un messaggio (soft delete su Firestore + rimozione locale).
     func deleteMessage(_ message: KBChatMessage) {
         guard let modelContext else { return }
-        guard canEditOrDelete(message) else {
-            errorText = "Puoi eliminare un messaggio solo entro 5 minuti dall'invio."
-            return
-        }
         
         Task {
             do {
@@ -741,6 +857,7 @@ final class ChatViewModel: ObservableObject {
             mediaURL:             msg.mediaURL,
             mediaDurationSeconds: msg.mediaDurationSeconds,
             mediaThumbnailURL:    msg.mediaThumbnailURL,
+            replyToId:            msg.replyToId,
             reactionsJSON:        msg.reactionsJSON,
             readByJSON:           nil,   // readBy è gestito solo da markAsRead
             createdAt:            msg.createdAt,
@@ -758,10 +875,9 @@ protocol ListenerRegistrationProtocol {
 
 /// Wrapper concreto che adatta ListenerRegistration al protocollo.
 /// Non usiamo extension con inheritance perché ListenerRegistration
-/// è una classe Firestore concreta di terze parti.
-import FirebaseFirestore
 final class FirestoreListenerWrapper: ListenerRegistrationProtocol {
-    private let inner: any ListenerRegistration
+    private let inner:  ListenerRegistration
     init(_ inner: any ListenerRegistration) { self.inner = inner }
     func remove() { inner.remove() }
 }
+
