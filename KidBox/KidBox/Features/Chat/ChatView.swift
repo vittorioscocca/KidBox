@@ -102,6 +102,8 @@ private struct ChatConversationView: View {
     
     // Scroll
     @State private var showScrollToBottom = false
+    @State private var showDeleteConfirm: Bool = false
+    @State private var showDeleteBar: Bool = false
     
     // Date pill floating (stile WhatsApp)
     @State private var floatingDateLabel: String = ""
@@ -111,6 +113,9 @@ private struct ChatConversationView: View {
     @State private var highlightedMessageId: String? = nil
     @State private var isSearching: Bool = false
     @State private var searchScrollTarget: String?
+    
+    @State private var isSelecting: Bool = false
+    @State private var selectedMessageIds: Set<String> = []
     
     init(familyId: String, searchText: String) {
         self.familyId = familyId
@@ -132,8 +137,20 @@ private struct ChatConversationView: View {
             if viewModel.isReplying {
                 replyBar
             }
-            Divider()
-            inputBar
+            if isSelecting {
+                ZStack(alignment: .bottom) {
+                    selectionBar
+                    
+                    if showDeleteBar {
+                        deleteOverlayBar
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .zIndex(100)
+                    }
+                }
+            } else {
+                Divider()
+                inputBar
+            }
         }
         .onAppear {
             viewModel.bind(modelContext: modelContext)
@@ -142,7 +159,14 @@ private struct ChatConversationView: View {
         .onDisappear {
             viewModel.stopListening()
         }
-        .toolbar { trashButton }
+        .toolbar {
+           // trashButton
+            if isSelecting {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Annulla") { resetSelection() }
+                }
+            }
+        }
         .confirmationDialog(
             "Svuota chat",
             isPresented: $showClearConfirm,
@@ -232,6 +256,8 @@ private struct ChatConversationView: View {
                             viewModel: viewModel,
                             messageForReaction: $messageForReaction,
                             highlightedMessageId: $highlightedMessageId,
+                            isSelecting: $isSelecting,
+                            selectedMessageIds: $selectedMessageIds,
                             searchText: searchText,
                             onScrollAndHighlight: scrollToAndHighlight
                         )
@@ -289,6 +315,8 @@ private struct ChatConversationView: View {
         @ObservedObject var viewModel: ChatViewModel
         @Binding var messageForReaction: KBChatMessage?
         @Binding var highlightedMessageId: String?
+        @Binding var isSelecting: Bool
+        @Binding var selectedMessageIds: Set<String>
         let searchText: String
         let onScrollAndHighlight: (String, ScrollViewProxy) -> Void
         
@@ -298,26 +326,57 @@ private struct ChatConversationView: View {
             let isOwn = msg.senderId == uid
             let canAct = isOwn && viewModel.canEditOrDelete(msg)
             
-            ChatBubble(
-                message: msg,
-                isOwn: isOwn,
-                currentUID: uid,
-                onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
-                onLongPress: { messageForReaction = msg },
-                onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
-                onDelete: canAct ? { viewModel.deleteMessage(msg) } : nil,
-                onReply: { viewModel.startReply(to: msg) },
-                repliedTo: repliedTo,
-                onReplyContextTap: {
-                    guard let rid = msg.replyToId else { return }
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        onScrollAndHighlight(rid, proxy)
+            HStack(spacing: 8) {
+                
+                if isSelecting {
+                    Image(systemName: selectedMessageIds.contains(msg.id)
+                          ? "checkmark.circle.fill"
+                          : "circle")
+                    .font(.system(size: 28, weight: .semibold))       
+                    .foregroundStyle(
+                        selectedMessageIds.contains(msg.id) ? Color.accentColor : .secondary
+                    )
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        toggleSelection(msg.id)
                     }
-                },
-                highlightedMessageId: highlightedMessageId,
-                searchText: searchText
-            )
-            .id(msg.id)
+                }
+                ChatBubble(
+                    message: msg,
+                    isOwn: isOwn,
+                    currentUID: uid,
+                    onReactionTap: {
+                        emoji in viewModel.toggleReaction(emoji, on: msg)
+                    },
+                    onLongPress: { messageForReaction = msg },
+                    onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
+                    onDelete: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        isSelecting = true
+                        selectedMessageIds.insert(msg.id)
+                    },
+                    onReply: { viewModel.startReply(to: msg) },
+                    repliedTo: repliedTo,
+                    onReplyContextTap: {
+                        guard let rid = msg.replyToId else { return }
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            onScrollAndHighlight(rid, proxy)
+                        }
+                    },
+                    highlightedMessageId: highlightedMessageId,
+                    searchText: searchText
+                )
+                .id(msg.id)
+            }
+        }
+        
+        private func toggleSelection(_ id: String) {
+            if selectedMessageIds.contains(id) {
+                selectedMessageIds.remove(id)
+            } else {
+                selectedMessageIds.insert(id)
+            }
         }
     }
     
@@ -517,6 +576,143 @@ private struct ChatConversationView: View {
             onCameraTap: { showCamera = true },
             onTextChange: { viewModel.userIsTyping() }
         )
+    }
+    
+    private var deleteOverlayBar: some View {
+        VStack(spacing: 0) {
+            
+            HStack {
+                Text("Eliminare \(selectedMessageIds.count) messaggi?")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                        showDeleteBar = false
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+            
+            Divider()
+            
+            VStack(spacing: 0) {
+                
+                Button {
+                    deleteForMe()
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                        showDeleteBar = false
+                    }
+                } label: {
+                    HStack {
+                        Text("Elimina \(selectedMessageIds.count) messaggi per me")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.red)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                }
+                .buttonStyle(.plain)
+                
+                if canDeleteForEveryone {
+                    Divider()
+                    
+                    Button {
+                        deleteForEveryone()
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                            showDeleteBar = false
+                        }
+                    } label: {
+                        HStack {
+                            Text("Elimina \(selectedMessageIds.count) messaggi per tutti")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.red)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: -2)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8) // sta “sopra” la selection bar
+    }
+    
+    private var selectionBar: some View {
+        HStack(spacing: 12) {
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                    showDeleteBar = true
+                }
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+            .disabled(selectedMessageIds.isEmpty)
+            
+            Spacer()
+            
+            Text("\(selectedMessageIds.count) selezionati")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .overlay(Divider(), alignment: .top)
+    }
+    
+    private var canDeleteForEveryone: Bool {
+        
+        guard !selectedMessageIds.isEmpty else { return false }
+        
+        let selected = viewModel.messages.filter {
+            selectedMessageIds.contains($0.id)
+        }
+        
+        // tutti devono essere miei
+        guard selected.allSatisfy({ $0.senderId == currentUID }) else {
+            return false
+        }
+        
+        let now = Date()
+        
+        // tutti entro 5 minuti
+        return selected.allSatisfy {
+            now.timeIntervalSince($0.createdAt) <= 300
+        }
+    }
+    
+    private func deleteForMe() {
+        viewModel.deleteMessagesLocally(ids: Array(selectedMessageIds))
+        resetSelection()
+    }
+    
+    private func deleteForEveryone() {
+        viewModel.deleteMessagesRemotely(ids: Array(selectedMessageIds))
+        resetSelection()
+    }
+    
+    private func resetSelection() {
+        selectedMessageIds.removeAll()
+        isSelecting = false
+        showDeleteBar = false
     }
     
     private var trashButton: some ToolbarContent {

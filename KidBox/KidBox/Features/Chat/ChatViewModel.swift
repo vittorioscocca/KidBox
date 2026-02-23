@@ -137,15 +137,51 @@ final class ChatViewModel: ObservableObject {
     
     // MARK: - Local fetch
     
+    @MainActor
     func reloadLocal() {
         guard let modelContext else { return }
-        let fid = familyId
+        
+        KBLog.data.kbInfo("reloadLocal: start familyId=\(familyId)")
+        logDBStats(reason: "before reloadLocal")
+        
+        let fam = familyId
         let desc = FetchDescriptor<KBChatMessage>(
-            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false },
+            predicate: #Predicate { $0.familyId == fam && $0.isDeleted == false },
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
-        messages = (try? modelContext.fetch(desc)) ?? []
-        KBLog.data.debug("ChatVM reloadLocal count=\(self.messages.count)")
+        
+        do {
+            let rows = try modelContext.fetch(desc)
+            self.messages = rows
+            KBLog.data.kbInfo("reloadLocal: fetched visible messages count=\(rows.count)")
+        } catch {
+            KBLog.data.kbError("reloadLocal: fetch FAILED error=\(error.localizedDescription)")
+        }
+        
+        logDBStats(reason: "after reloadLocal")
+    }
+    
+    @MainActor
+    private func saveContext(_ context: ModelContext, reason: String) {
+        do {
+            try context.save()
+            KBLog.persistence.kbInfo("ChatVM save ok reason=\(reason)")
+        } catch {
+            KBLog.persistence.kbError("ChatVM save FAILED reason=\(reason) error=\(error.localizedDescription)")
+            self.errorText = "Salvataggio locale fallito: \(error.localizedDescription)"
+        }
+    }
+    
+    @MainActor
+    private func logDBStats(reason: String) {
+        guard let modelContext else { return }
+        let fam = familyId
+        let all = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.familyId == fam })
+        let del = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.familyId == fam && $0.isDeleted == true })
+        
+        let total = (try? modelContext.fetchCount(all)) ?? -1
+        let deleted = (try? modelContext.fetchCount(del)) ?? -1
+        KBLog.data.kbInfo("ChatVM dbStats reason=\(reason) total=\(total) deleted=\(deleted)")
     }
     
     // MARK: - Apply remote changes
@@ -172,47 +208,65 @@ final class ChatViewModel: ObservableObject {
     
     private func applyUpsert(dto: RemoteChatMessageDTO, modelContext: ModelContext) {
         let mid = dto.id
+        KBLog.sync.kbInfo("applyUpsert: start id=\(mid) remoteDeleted=\(dto.isDeleted)")
+        
+        // Controlla se questo messaggio è stato eliminato "per me" lato server
+        let myUID = Auth.auth().currentUser?.uid ?? ""
+        let deletedForMe = !myUID.isEmpty && dto.deletedFor.contains(myUID)
+        
         let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
         let existing = try? modelContext.fetch(desc).first
         
         if let existing {
+            let localBefore = existing.isDeleted
+            
             existing.senderName    = dto.senderName
             existing.text          = dto.text
             existing.mediaURL      = dto.mediaURL
             existing.reactionsJSON = dto.reactionsJSON
-            // ✅ Per readBy: merge locale + remoto per evitare race condition ottimistica.
-            // Se localmente ho già segnato come letto, non perdo quella info.
-            let remoteReadBy = dto.readBy
-            let localReadBy  = existing.readBy
-            let merged = Array(Set(localReadBy + remoteReadBy))
-            existing.readBy        = merged
-            existing.isDeleted     = dto.isDeleted
+            
+            let merged = Array(Set(existing.readBy + dto.readBy))
+            existing.readBy = merged
+            
+            // ✅ merge tombstone: non resuscitare mai, rispetta deletedFor server-side
+            existing.isDeleted = localBefore || dto.isDeleted || deletedForMe
+            
             existing.syncState     = .synced
             existing.lastSyncError = nil
-            existing.replyToId = dto.replyToId
+            existing.replyToId     = dto.replyToId
+            
+            KBLog.sync.kbInfo("applyUpsert: merge delete id=\(mid) localWas=\(localBefore) remote=\(dto.isDeleted) deletedForMe=\(deletedForMe) final=\(existing.isDeleted)")
         } else {
-            guard !dto.isDeleted else { return }
+            KBLog.sync.kbInfo("applyUpsert: no existing id=\(mid) remoteDeleted=\(dto.isDeleted) deletedForMe=\(deletedForMe)")
+            
+            // Se eliminato per tutti o per me, non inserire
+            guard !dto.isDeleted && !deletedForMe else {
+                KBLog.sync.kbInfo("applyUpsert: skipping insert id=\(mid) isDeleted=\(dto.isDeleted) deletedForMe=\(deletedForMe)")
+                return
+            }
             
             let msg = KBChatMessage(
-                id:                   dto.id,
-                familyId:             dto.familyId,
-                senderId:             dto.senderId,
-                senderName:           dto.senderName,
-                type:                 KBChatMessageType(rawValue: dto.typeRaw) ?? .text,
-                text:                 dto.text,
-                mediaStoragePath:     dto.mediaStoragePath,
-                mediaURL:             dto.mediaURL,
+                id: dto.id,
+                familyId: dto.familyId,
+                senderId: dto.senderId,
+                senderName: dto.senderName,
+                type: KBChatMessageType(rawValue: dto.typeRaw) ?? .text,
+                text: dto.text,
+                mediaStoragePath: dto.mediaStoragePath,
+                mediaURL: dto.mediaURL,
                 mediaDurationSeconds: dto.mediaDurationSeconds,
-                mediaThumbnailURL:    dto.mediaThumbnailURL,
-                createdAt:            dto.createdAt ?? Date(),
-                isDeleted:            false
+                mediaThumbnailURL: dto.mediaThumbnailURL,
+                createdAt: dto.createdAt ?? Date(),
+                isDeleted: false
             )
             msg.replyToId      = dto.replyToId
-            msg.reactionsJSON = dto.reactionsJSON
-            msg.readByJSON    = dto.readByJSON        // ✅
-            msg.syncState     = .synced
-            msg.lastSyncError = nil
+            msg.reactionsJSON  = dto.reactionsJSON
+            msg.readByJSON     = dto.readByJSON
+            msg.syncState      = .synced
+            msg.lastSyncError  = nil
+            
             modelContext.insert(msg)
+            KBLog.sync.kbInfo("applyUpsert: inserted id=\(mid)")
         }
     }
     
@@ -802,6 +856,168 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Bulk delete (Selection mode)
+    
+    /// Elimina "per me": scrive `arrayUnion([myUID])` nel campo `deletedFor` su Firestore,
+    /// poi marca il messaggio come `isDeleted = true` localmente.
+    /// In questo modo la cancellazione sopravvive a disinstallazioni/reinstallazioni:
+    /// al prossimo sync `applyUpsert` vede il proprio UID in `deletedFor` e non mostra il messaggio.
+    @MainActor
+    func deleteMessagesLocally(ids: [String]) {
+        guard let modelContext else { return }
+        guard !ids.isEmpty else { return }
+        
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        guard !uid.isEmpty else {
+            KBLog.data.kbError("deleteMessagesLocally: no authenticated user, aborting")
+            return
+        }
+        
+        KBLog.data.kbInfo("deleteMessagesLocally: start count=\(ids.count) uid=\(uid)")
+        
+        // 1) Aggiorna subito la UI localmente (ottimistico)
+        var found = 0
+        var missing = 0
+        for id in ids {
+            let mid = id
+            let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
+            if let msg = try? modelContext.fetch(desc).first {
+                found += 1
+                msg.isDeleted = true
+                msg.syncState = .synced
+                msg.lastSyncError = nil
+                KBLog.data.debug("deleteMessagesLocally: mark deleted locally id=\(mid)")
+            } else {
+                missing += 1
+                KBLog.data.kbInfo("deleteMessagesLocally: not found locally id=\(mid)")
+            }
+        }
+        saveContext(modelContext, reason: "deleteMessagesLocally-optimistic")
+        reloadLocal()
+        
+        logDBStats(reason: "after deleteMessagesLocally found=\(found) missing=\(missing)")
+        
+        // 2) Persiste su Firestore: arrayUnion del proprio UID nel campo `deletedFor`
+        //    Se Firestore non è raggiungibile, al prossimo avvio il listener ritornerà
+        //    il documento senza il nostro UID in deletedFor, ma il record SwiftData
+        //    rimarrà isDeleted=true grazie al save ottimistico sopra.
+        //    La vera persistenza a prova di reinstallazione avviene quando la scrittura
+        //    Firestore ha successo.
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for messageId in ids {
+                    group.addTask {
+                        do {
+                            try await self.remoteStore.addToDeletedFor(
+                                familyId: self.familyId,
+                                messageId: messageId,
+                                uid: uid
+                            )
+                            await KBLog.data.debug("deleteMessagesLocally: Firestore deletedFor ok id=\(messageId)")
+                        } catch {
+                            await KBLog.data.kbError("deleteMessagesLocally: Firestore deletedFor FAILED id=\(messageId) err=\(error.localizedDescription)")
+                            // Non mostriamo errore all'utente: la UI è già aggiornata.
+                            // Al prossimo avvio, se SwiftData è intatto, isDeleted rimane true.
+                            // Se l'app viene reinstallata e Firestore non ha ancora il flag,
+                            // il messaggio potrebbe riapparire — accettabile come edge case.
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Elimina "per tutti": soft delete remoto (Firestore) + pulizia media su Storage + hide locale.
+    func deleteMessagesRemotely(ids: [String]) {
+        guard let modelContext else {
+            KBLog.data.error("deleteMessagesRemotely: modelContext is nil")
+            return
+        }
+        guard !ids.isEmpty else {
+            KBLog.data.debug("deleteMessagesRemotely: empty ids → noop")
+            return
+        }
+        
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let now = Date()
+        
+        // Snapshot dei messaggi selezionati (dalla lista UI corrente)
+        let selected = messages.filter { ids.contains($0.id) }
+        guard !selected.isEmpty else {
+            KBLog.data.warning("deleteMessagesRemotely: no selected messages in memory for ids count=\(ids.count, privacy: .public)")
+            return
+        }
+        
+        KBLog.data.info("deleteMessagesRemotely: start selected=\(selected.count, privacy: .public)")
+        
+        // Check difensivo: solo miei + entro 5 minuti
+        guard selected.allSatisfy({ $0.senderId == uid }) else {
+            KBLog.data.warning("deleteMessagesRemotely: blocked (contains non-owned messages) uid=\(uid, privacy: .private)")
+            errorText = "Puoi eliminare per tutti solo messaggi inviati da te."
+            return
+        }
+        
+        guard selected.allSatisfy({ now.timeIntervalSince($0.createdAt) <= 300 }) else {
+            KBLog.data.warning("deleteMessagesRemotely: blocked (older than 5 min)")
+            errorText = "Puoi eliminare per tutti solo entro 5 minuti dall'invio."
+            return
+        }
+        
+        Task {
+            do {
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    for msg in selected {
+                        group.addTask {
+                            // 1) Storage cleanup (best-effort)
+                            if let path = msg.mediaStoragePath {
+                                await KBLog.data.debug("deleteMessagesRemotely: storage delete start path=\(path, privacy: .private)")
+                                do {
+                                    try await self.storageService.delete(storagePath: path)
+                                    await KBLog.data.debug("deleteMessagesRemotely: storage delete ok path=\(path, privacy: .private)")
+                                } catch {
+                                    await KBLog.data.warning("deleteMessagesRemotely: storage delete failed path=\(path, privacy: .private) err=\(error.localizedDescription, privacy: .public)")
+                                }
+                            }
+                            
+                            // 2) Soft delete remoto
+                            await KBLog.data.debug("deleteMessagesRemotely: softDelete start id=\(msg.id, privacy: .private)")
+                            try await self.remoteStore.softDelete(
+                                familyId: self.familyId,
+                                messageId: msg.id
+                            )
+                            await KBLog.data.debug("deleteMessagesRemotely: softDelete ok id=\(msg.id, privacy: .private)")
+                        }
+                    }
+                    try await group.waitForAll()
+                }
+                
+                await MainActor.run {
+                    // Hide locale (tombstone locale)
+                    for msg in selected {
+                        msg.isDeleted = true
+                        msg.syncState = .synced
+                        msg.lastSyncError = nil
+                    }
+                    
+                    do {
+                        try modelContext.save()
+                        KBLog.data.info("deleteMessagesRemotely: local save ok count=\(selected.count, privacy: .public)")
+                    } catch {
+                        KBLog.data.error("deleteMessagesRemotely: local save failed err=\(error.localizedDescription, privacy: .public)")
+                    }
+                    
+                    self.reloadLocal()
+                }
+                
+            } catch {
+                await MainActor.run {
+                    KBLog.data.error("deleteMessagesRemotely: remote softDelete failed err=\(error.localizedDescription, privacy: .public)")
+                    self.errorText = "Eliminazione per tutti fallita: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+    
     // MARK: - ─── READ RECEIPTS ───────────────────────────────────────────────
     
     /// Chiamato da ChatView quando i messaggi diventano visibili.
@@ -861,7 +1077,8 @@ final class ChatViewModel: ObservableObject {
             reactionsJSON:        msg.reactionsJSON,
             readByJSON:           nil,   // readBy è gestito solo da markAsRead
             createdAt:            msg.createdAt,
-            isDeleted:            msg.isDeleted
+            isDeleted:            msg.isDeleted,
+            deletedFor:           []
         )
     }
 }
@@ -880,4 +1097,3 @@ final class FirestoreListenerWrapper: ListenerRegistrationProtocol {
     init(_ inner: any ListenerRegistration) { self.inner = inner }
     func remove() { inner.remove() }
 }
-

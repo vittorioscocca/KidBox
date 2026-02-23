@@ -555,8 +555,12 @@ struct ChatBubble: View {
             Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
         }
         
-        if isOwn, let onDelete {
-            Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
+        if let onDelete {
+            Button(role: .destructive) {
+                onDelete()     // ✅ SOLO QUESTO
+            } label: {
+                Label("Elimina", systemImage: "trash")
+            }
         }
     }
     

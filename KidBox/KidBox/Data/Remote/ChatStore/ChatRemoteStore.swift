@@ -28,6 +28,7 @@ struct RemoteChatMessageDTO {
     let readByJSON: String?
     let createdAt: Date?
     let isDeleted: Bool
+    let deletedFor: [String]          // UIDs per cui il messaggio è nascosto ("elimina per me")
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -132,6 +133,17 @@ final class ChatRemoteStore {
         ], merge: true)
     }
     
+    func addToDeletedFor(familyId: String, messageId: String, uid: String) async throws {
+        let ref = db.collection("families")
+            .document(familyId)
+            .collection("chatMessages")
+            .document(messageId)
+        
+        try await ref.updateData([
+            "deletedFor": FieldValue.arrayUnion([uid])
+        ])
+    }
+    
     /// ✅ Segna i messaggi come letti dall'utente corrente.
     /// Usa arrayUnion per aggiungere l'UID senza sovrascrivere gli altri.
     func markAsRead(familyId: String, messageIds: [String], uid: String) async throws {
@@ -213,6 +225,9 @@ final class ChatRemoteStore {
                             return s
                         }()
                         
+                        // ✅ deletedFor: array di UID per cui il messaggio è nascosto
+                        let deletedFor = data["deletedFor"] as? [String] ?? []
+                        
                         let dto = RemoteChatMessageDTO(
                             id:                   doc.documentID,
                             familyId:             familyId,
@@ -228,7 +243,8 @@ final class ChatRemoteStore {
                             reactionsJSON:        data["reactionsJSON"]        as? String,
                             readByJSON:           readByJSON,
                             createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
-                            isDeleted:            data["isDeleted"] as? Bool ?? false
+                            isDeleted:            data["isDeleted"] as? Bool ?? false,
+                            deletedFor:           deletedFor
                         )
                         return .upsert(dto)
                     }
@@ -290,4 +306,3 @@ private extension Array {
         }
     }
 }
-
