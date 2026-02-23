@@ -35,6 +35,10 @@ final class ChatViewModel: ObservableObject {
     @Published var uploadProgress: Double = 0
     @Published var errorText: String?
     
+    // Paginazione
+    @Published var isLoadingOlder: Bool = false
+    @Published var hasMoreMessages: Bool = true
+    
     // Audio recording
     @Published var isRecording: Bool = false
     @Published var recordingDuration: TimeInterval = 0
@@ -62,6 +66,9 @@ final class ChatViewModel: ObservableObject {
     private var typingDebounceTask: Task<Void, Never>? = nil
     private var cancellables = Set<AnyCancellable>()
     private var isObserving = false
+    
+    // Cursore per la paginazione — il documento Firestore più vecchio attualmente caricato
+    private var oldestDocument: DocumentSnapshot? = nil
     
     private let proximityRouter = ProximityAudioRouter()
     
@@ -101,10 +108,20 @@ final class ChatViewModel: ObservableObject {
         
         listener = FirestoreListenerWrapper(remoteStore.listenMessages(
             familyId: familyId,
-            limit: 100,
+            limit: 50,
             onChange: { [weak self] changes in
                 guard let self else { return }
                 Task { @MainActor in self.applyRemoteChanges(changes) }
+            },
+            onOldestDocument: { [weak self] snapshot in
+                guard let self else { return }
+                Task { @MainActor in
+                    // Salva il cursore solo se non ne abbiamo già uno più vecchio
+                    if self.oldestDocument == nil {
+                        self.oldestDocument = snapshot
+                        KBLog.sync.kbInfo("ChatVM cursor set to \(snapshot.documentID)")
+                    }
+                }
             },
             onError: { [weak self] error in
                 guard let self else { return }
@@ -131,9 +148,62 @@ final class ChatViewModel: ObservableObject {
         typingListener?.remove()
         typingListener = nil
         isObserving = false
+        oldestDocument = nil
+        hasMoreMessages = true
         // Assicura che il nostro indicatore venga rimosso
         Task { try? await remoteStore.setTyping(false, familyId: familyId) }
         KBLog.sync.kbInfo("ChatVM stopListening familyId=\(familyId)")
+    }
+    
+    // MARK: - Paginazione
+    
+    /// Carica i messaggi più vecchi di quelli attualmente in memoria.
+    /// Va chiamato quando l'utente scrolla fino in cima alla lista.
+    @MainActor
+    func loadOlderMessages() {
+        guard !isLoadingOlder,
+              hasMoreMessages,
+              let cursor = oldestDocument,
+              let modelContext else { return }
+        
+        isLoadingOlder = true
+        
+        Task {
+            do {
+                let (dtos, newCursor) = try await remoteStore.fetchOlderMessages(
+                    familyId: familyId,
+                    before: cursor,
+                    limit: 50
+                )
+                
+                await MainActor.run {
+                    if dtos.isEmpty {
+                        // Nessun messaggio precedente — siamo all'inizio della chat
+                        self.hasMoreMessages = false
+                        KBLog.sync.kbInfo("ChatVM pagination: reached beginning of chat")
+                    } else {
+                        // Inserisci i messaggi vecchi in SwiftData
+                        for dto in dtos {
+                            self.applyUpsert(dto: dto, modelContext: modelContext)
+                        }
+                        try? modelContext.save()
+                        
+                        // Aggiorna il cursore
+                        self.oldestDocument = newCursor
+                        if newCursor == nil { self.hasMoreMessages = false }
+                        
+                        self.reloadLocal()
+                        KBLog.sync.kbInfo("ChatVM pagination: loaded \(dtos.count) older messages")
+                    }
+                    self.isLoadingOlder = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorText = "Errore caricamento messaggi: \(error.localizedDescription)"
+                    self.isLoadingOlder = false
+                }
+            }
+        }
     }
     
     // MARK: - Local fetch

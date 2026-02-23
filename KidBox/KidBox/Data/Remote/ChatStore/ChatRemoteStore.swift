@@ -185,12 +185,75 @@ final class ChatRemoteStore {
         ], merge: true)
     }
     
+    // MARK: - INBOUND (Paginazione)
+    
+    /// Fetcha i messaggi più vecchi di `before` (cursor-based pagination).
+    /// Ritorna i DTO in ordine cronologico crescente e il DocumentSnapshot
+    /// del messaggio più vecchio trovato (da usare come cursore per la chiamata successiva).
+    func fetchOlderMessages(
+        familyId: String,
+        before cursor: DocumentSnapshot,
+        limit: Int = 50
+    ) async throws -> (dtos: [RemoteChatMessageDTO], oldestSnapshot: DocumentSnapshot?) {
+        
+        KBLog.sync.kbInfo("ChatRemote fetchOlder before=\(cursor.documentID) limit=\(limit)")
+        
+        let snap = try await db.collection("families")
+            .document(familyId)
+            .collection("chatMessages")
+            .order(by: "createdAt", descending: false)
+            .end(beforeDocument: cursor)   // tutto ciò che viene PRIMA del cursore
+            .limit(toLast: limit)          // prendi gli ultimi N di quell'insieme (i più recenti tra i vecchi)
+            .getDocuments()
+        
+        let dtos = snap.documents.compactMap { doc -> RemoteChatMessageDTO? in
+            let data = doc.data()
+            
+            let readByArray = data["readBy"] as? [String] ?? []
+            let readByJSON: String? = {
+                guard !readByArray.isEmpty,
+                      let d = try? JSONEncoder().encode(readByArray),
+                      let s = String(data: d, encoding: .utf8) else { return nil }
+                return s
+            }()
+            
+            let deletedFor = data["deletedFor"] as? [String] ?? []
+            
+            return RemoteChatMessageDTO(
+                id:                   doc.documentID,
+                familyId:             familyId,
+                senderId:             data["senderId"]             as? String ?? "",
+                senderName:           data["senderName"]           as? String ?? "",
+                typeRaw:              data["type"]                 as? String ?? "text",
+                text:                 data["text"]                 as? String,
+                mediaStoragePath:     data["mediaStoragePath"]     as? String,
+                mediaURL:             data["mediaURL"]             as? String,
+                mediaDurationSeconds: data["mediaDurationSeconds"] as? Int,
+                mediaThumbnailURL:    data["mediaThumbnailURL"]    as? String,
+                replyToId:            data["replyToId"]            as? String,
+                reactionsJSON:        data["reactionsJSON"]        as? String,
+                readByJSON:           readByJSON,
+                createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
+                isDeleted:            data["isDeleted"]            as? Bool ?? false,
+                deletedFor:           deletedFor
+            )
+        }
+        
+        let oldestSnapshot = snap.documents.first  // il più vecchio del batch
+        
+        KBLog.sync.kbInfo("ChatRemote fetchOlder got=\(dtos.count) hasMore=\(oldestSnapshot != nil)")
+        return (dtos: dtos, oldestSnapshot: dtos.count == limit ? oldestSnapshot : nil)
+        // Se abbiamo ricevuto meno di `limit` messaggi, siamo arrivati all'inizio della chat
+        // e oldestSnapshot = nil segnala che non ci sono altri messaggi da caricare
+    }
+    
     // MARK: - INBOUND (Realtime)
     
     func listenMessages(
         familyId: String,
-        limit: Int = 100,
+        limit: Int = 50,
         onChange: @escaping ([ChatRemoteChange]) -> Void,
+        onOldestDocument: ((DocumentSnapshot) -> Void)? = nil,
         onError: @escaping (Error) -> Void
     ) -> ListenerRegistration {
         
@@ -206,6 +269,11 @@ final class ChatRemoteStore {
                     onError(err); return
                 }
                 guard let snap else { return }
+                
+                // Al primo caricamento, comunica il documento più vecchio come cursore
+                if !snap.metadata.hasPendingWrites, let oldest = snap.documents.first {
+                    onOldestDocument?(oldest)
+                }
                 
                 let changes: [ChatRemoteChange] = snap.documentChanges.compactMap { diff in
                     let doc  = diff.document

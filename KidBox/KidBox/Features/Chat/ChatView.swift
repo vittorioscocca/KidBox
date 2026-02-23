@@ -257,6 +257,24 @@ private struct ChatConversationView: View {
     private func scrollContent(proxy: ScrollViewProxy) -> some View {
         ScrollView {
             LazyVStack(spacing: 4) {
+                // Indicatore caricamento messaggi più vecchi
+                if viewModel.isLoadingOlder {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Caricamento messaggi…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                } else if !viewModel.hasMoreMessages && !viewModel.messages.isEmpty {
+                    Text("Inizio della conversazione")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                
                 ForEach(groupedMessages, id: \.day) { group in
                     daySeparator(group: group)
                     ForEach(group.messages) { msg in
@@ -290,6 +308,14 @@ private struct ChatConversationView: View {
         } action: { _, distanceFromBottom in
             withAnimation(.easeInOut(duration: 0.2)) {
                 showScrollToBottom = distanceFromBottom > 200
+            }
+        }
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y
+        } action: { _, offsetY in
+            // Quando l'utente scrolla vicino alla cima, carica i messaggi più vecchi
+            if offsetY < 100 {
+                viewModel.loadOlderMessages()
             }
         }
         .onChange(of: viewModel.messages.count) { _, _ in
