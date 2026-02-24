@@ -60,6 +60,7 @@ struct FamilyLocationView: View {
             FindMyBottomCard(
                 isSharing: viewModel.isSharing,
                 myStatusLine: mySharingStatusLine,
+                myCurrentAddress: viewModel.myCurrentAddress,
                 othersStatusLine: othersSharingLine,
                 hasAnySharedPositions: !viewModel.sharedUsers.isEmpty,
                 deviceName: "Questo iPhone",
@@ -245,6 +246,7 @@ struct FamilyLocationView: View {
 struct FindMyBottomCard: View {
     let isSharing: Bool
     let myStatusLine: String?
+    let myCurrentAddress: String?
     let othersStatusLine: String?
     let hasAnySharedPositions: Bool
     let deviceName: String
@@ -259,21 +261,31 @@ struct FindMyBottomCard: View {
                 Spacer()
             }
             
-            if !hasAnySharedPositions {
+            // Indirizzo corrente se condivide, altrimenti "Nessuna posizione condivisa" in rosso
+            if isSharing, let address = myCurrentAddress {
+                Text(address)
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity)
+            } else if !isSharing {
                 Text("Nessuna posizione condivisa")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity)
             }
             
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
-                    Image(systemName: "location.slash")
+                    // Icona barrata se non condivide, blu se condivide
+                    Image(systemName: isSharing ? "location.fill" : "location.slash")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isSharing ? .blue : .secondary)
                         .frame(width: 28, height: 28)
                         .background(.ultraThinMaterial)
                         .clipShape(Circle())
+                        .animation(.easeInOut(duration: 0.3), value: isSharing)
                     Text("La mia posizione")
                         .font(.system(size: 18, weight: .semibold))
                     Spacer()
@@ -330,6 +342,8 @@ struct FindMyBottomCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        .animation(.easeInOut(duration: 0.3), value: isSharing)
+        .animation(.easeInOut(duration: 0.3), value: myCurrentAddress)
     }
 }
 

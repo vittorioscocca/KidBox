@@ -18,6 +18,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     @Published var isSharing: Bool = false
     @Published var myMode: ShareMode?
     @Published var myExpiresAt: Date?
+    @Published var myCurrentAddress: String? = nil
     
     /// True appena l'utente attiva la condivisione (fix chicken-and-egg):
     /// consente di inviare lat/lon anche prima che il listener ci includa.
@@ -205,6 +206,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         isSharing = false
         myMode = nil
         myExpiresAt = nil
+        myCurrentAddress = nil
         
         expiryTask?.cancel()
         expiryTask = nil
@@ -372,7 +374,20 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             let location = locations.last
         else { return }
         
-        // riscrive anche "name" ad ogni update => niente nomi vecchi
+        // Reverse geocoding per indirizzo nella card
+        Task {
+            let geocoder = CLGeocoder()
+            if let placemark = try? await geocoder.reverseGeocodeLocation(location).first {
+                let street = placemark.thoroughfare ?? ""
+                let number = placemark.subThoroughfare ?? ""
+                let city   = placemark.locality ?? ""
+                let parts  = [street, number, city].filter { !$0.isEmpty }
+                await MainActor.run {
+                    myCurrentAddress = parts.isEmpty ? nil : parts.joined(separator: " ")
+                }
+            }
+        }
+        
         Task {
             await remote.updateLocation(
                 familyId: familyId,

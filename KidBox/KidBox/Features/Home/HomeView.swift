@@ -516,7 +516,6 @@ private struct LocationSharingPulse: View {
     
     var body: some View {
         ZStack {
-            // Onda esterna — più grande e più opaca
             Circle()
                 .fill(Color.green.opacity(0.25))
                 .frame(width: 28, height: 28)
@@ -527,7 +526,6 @@ private struct LocationSharingPulse: View {
                     value: pulsing
                 )
             
-            // Onda intermedia — sfasata di mezzo ciclo
             Circle()
                 .fill(Color.green.opacity(0.35))
                 .frame(width: 20, height: 20)
@@ -538,14 +536,23 @@ private struct LocationSharingPulse: View {
                     value: pulsing
                 )
             
-            // Punto centrale fisso
             Circle()
                 .fill(Color.green)
                 .frame(width: 12, height: 12)
                 .overlay(Circle().stroke(.white, lineWidth: 2))
                 .shadow(color: .green.opacity(0.6), radius: 4, x: 0, y: 0)
         }
-        .onAppear { pulsing = true }
+        // .task viene chiamato ogni volta che la view appare,
+        // incluso il ritorno dalla navigation — a differenza di .onAppear
+        .task {
+            // Reset necessario: se la view era già apparsa con pulsing=true
+            // e viene ri-mostrata, SwiftUI non la ricrea ma .task riparte.
+            // Resettando a false forziamo il ricalcolo dell'animazione.
+            pulsing = false
+            // Piccolo delay per permettere a SwiftUI di registrare il reset
+            try? await Task.sleep(for: .milliseconds(50))
+            pulsing = true
+        }
     }
 }
 
