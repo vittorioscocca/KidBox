@@ -8,6 +8,7 @@ enum KBChatMessageType: String, Codable {
     case photo
     case video
     case document
+    case location
 }
 
 /// Modello locale di un messaggio della chat familiare.
@@ -21,6 +22,9 @@ final class KBChatMessage {
     
     var typeRaw: String
     var text: String?
+    
+    var latitude: Double?
+    var longitude: Double?
     
     var mediaStoragePath: String?
     var mediaURL: String?
@@ -102,6 +106,8 @@ final class KBChatMessage {
         senderName: String,
         type: KBChatMessageType,
         text: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
         mediaStoragePath: String? = nil,
         mediaURL: String? = nil,
         mediaDurationSeconds: Int? = nil,
@@ -116,6 +122,8 @@ final class KBChatMessage {
         self.senderName = senderName
         self.typeRaw = type.rawValue
         self.text = text
+        self.latitude = latitude
+        self.longitude = longitude
         self.mediaStoragePath = mediaStoragePath
         self.mediaURL = mediaURL
         self.mediaDurationSeconds = mediaDurationSeconds

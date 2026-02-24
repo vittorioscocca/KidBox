@@ -9,6 +9,7 @@
 import SwiftUI
 import AVKit
 import AVFoundation
+import MapKit
 
 private enum AudioBubble {
     static let playW:   CGFloat = 32
@@ -285,11 +286,34 @@ struct ChatBubble: View {
                         .font(.caption2)
                     Text(repliedTo.text ?? "Documento")
                 }
+            case .location:
+                locationContent
             }
             
         } else {
             Text("Messaggio")
         }
+    }
+    
+    private var locationContent: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: "location.fill")
+                .foregroundStyle(isOwn ? .white : .accentColor)
+            
+            Text("Posizione condivisa")
+                .font(.caption)
+        }
+        .onTapGesture {
+            openInMaps()
+        }
+    }
+    
+    private func openInMaps() {
+        guard let lat = message.latitude,
+              let lon = message.longitude else { return }
+        
+        let url = URL(string: "http://maps.apple.com/?ll=\(lat),\(lon)")!
+        UIApplication.shared.open(url)
     }
     
     func highlightedText(_ text: String) -> AttributedString {
@@ -310,6 +334,77 @@ struct ChatBubble: View {
         }
         
         return attr
+    }
+    
+    private struct LocationBubbleView: View {
+        
+        let latitude: Double
+        let longitude: Double
+        let isOwn: Bool
+        
+        @State private var cameraPosition: MapCameraPosition
+        
+        init(latitude: Double, longitude: Double, isOwn: Bool) {
+            self.latitude = latitude
+            self.longitude = longitude
+            self.isOwn = isOwn
+            
+            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            
+            _cameraPosition = State(initialValue:
+                    .region(
+                        MKCoordinateRegion(
+                            center: coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        )
+                    )
+            )
+        }
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 6) {
+                
+                Map(position: $cameraPosition) {
+                    Marker("Posizione", coordinate: CLLocationCoordinate2D(
+                        latitude: latitude,
+                        longitude: longitude
+                    ))
+                    .tint(.red)
+                }
+                .frame(height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .allowsHitTesting(false) // niente pan
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "location.fill")
+                        .font(.caption)
+                    
+                    Text("Posizione condivisa")
+                        .font(.caption)
+                }
+                .foregroundStyle(isOwn ? .white : .secondary)
+            }
+            .onTapGesture {
+                openMaps()
+            }
+        }
+        
+        private func openMaps() {
+            let lat = latitude
+            let lon = longitude
+            let label = "Posizione condivisa".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Posizione"
+            
+            // Apple Maps (web URL -> app)
+            let appleURL = URL(string: "http://maps.apple.com/?q=\(label)&ll=\(lat),\(lon)")!
+            
+            // Google Maps (app scheme)
+            if UIApplication.shared.canOpenURL(URL(string: "comgooglemaps://")!) {
+                let googleURL = URL(string: "comgooglemaps://?q=\(lat),\(lon)")!
+                UIApplication.shared.open(googleURL)
+            } else {
+                UIApplication.shared.open(appleURL)
+            }
+        }
     }
     
     // MARK: - Bubble content (non-audio)
@@ -361,6 +456,15 @@ struct ChatBubble: View {
         case .video:  videoContent
         case .audio:  EmptyView()
         case .document: documentContent
+        case .location:
+            if let lat = message.latitude,
+               let lon = message.longitude {
+                LocationBubbleView(
+                    latitude: lat,
+                    longitude: lon,
+                    isOwn: isOwn
+                )
+            }
         }
     }
     

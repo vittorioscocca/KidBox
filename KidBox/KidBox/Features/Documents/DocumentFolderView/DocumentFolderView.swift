@@ -583,6 +583,13 @@ private extension DocumentFolderView {
                         coordinator.pendingOpenDocumentId = nil
                         view.viewModel.openIfPresent(docId: docId)
                     }
+                    
+                    Task {
+                        await CountersService.shared.reset(familyId: view.familyId, field: .documents)
+                        await MainActor.run {
+                            BadgeManager.shared.clearDocuments()
+                        }
+                    }
                 }
                 .onChange(of: coordinator.pendingOpenDocumentId) { _, newDocId in
                     guard let docId = newDocId else { return }

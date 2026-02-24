@@ -11,6 +11,7 @@ import PhotosUI
 import FirebaseAuth
 import Combine
 import UniformTypeIdentifiers
+import MapKit
 
 // MARK: - ChatView (entry point)
 
@@ -89,6 +90,7 @@ private struct ChatConversationView: View {
     // Media picker
     @State private var showMediaPicker = false
     @State private var mediaPickerItems: [PhotosPickerItem] = []
+    @State private var showLocationSheet = false
     
     // Camera
     @State private var showCamera = false
@@ -159,6 +161,12 @@ private struct ChatConversationView: View {
         .onAppear {
             viewModel.bind(modelContext: modelContext)
             viewModel.startListening()
+            Task {
+                await CountersService.shared.reset(familyId: familyId, field: .chat)
+                await MainActor.run {
+                    BadgeManager.shared.clearChat()
+                }
+            }
         }
         .onDisappear {
             viewModel.stopListening()
@@ -517,6 +525,43 @@ private struct ChatConversationView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+        case .location:
+            HStack(spacing: 8) {
+                if let lat = viewModel.replyingPreviewLatitude,
+                   let lon = viewModel.replyingPreviewLongitude {
+                    MiniLocationThumb(latitude: lat, longitude: lon)
+                        .frame(width: 36, height: 36)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.tertiarySystemBackground))
+                        .frame(width: 36, height: 36)
+                }
+                
+                Text("Posizione condivisa")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+    struct MiniLocationThumb: View {
+        let latitude: Double
+        let longitude: Double
+        
+        private var center: CLLocationCoordinate2D {
+            .init(latitude: latitude, longitude: longitude)
+        }
+        
+        var body: some View {
+            Map(initialPosition: .region(MKCoordinateRegion(
+                center: center,
+                span: .init(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            ))) {
+                Marker("", coordinate: center)
+            }
+            .mapStyle(.standard)
+            .allowsHitTesting(false)
         }
     }
     
@@ -646,8 +691,25 @@ private struct ChatConversationView: View {
             onMediaTap: { showMediaPicker = true },
             onCameraTap: { showCamera = true },
             onDocumentTap: { showDocumentPicker = true },
-            onTextChange: { viewModel.userIsTyping() }
+            onTextChange: { viewModel.userIsTyping() },
+            onLocationTap: { showLocationSheet = true }
         )
+        .sheet(isPresented: $showLocationSheet) {
+            LocationPickerSheet { lat, lon in
+                viewModel.sendLocation(latitude: lat, longitude: lon)  // ✅ qui
+            }
+        }
+    }
+    
+    private func sendLocation() {
+        ChatLocationService.shared.requestLocation { location in
+            guard let location else { return }
+            
+            viewModel.sendLocation(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude
+            )
+        }
     }
     
     private var deleteOverlayBar: some View {

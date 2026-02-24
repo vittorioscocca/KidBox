@@ -156,6 +156,8 @@ final class ChatStorageService {
         case .audio:    return ("audio.m4a",  "audio/x-m4a")
         case .document: return ("document",   "application/octet-stream")
         case .text:     return ("file.bin",   "application/octet-stream")
+        case .location: return ("location.json", "application/json")
+            
         }
     }
 }

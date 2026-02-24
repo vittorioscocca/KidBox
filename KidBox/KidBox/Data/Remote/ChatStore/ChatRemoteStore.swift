@@ -29,7 +29,9 @@ struct RemoteChatMessageDTO {
     let createdAt: Date?
     let editedAt: Date?
     let isDeleted: Bool
-    let deletedFor: [String]          // UIDs per cui il messaggio è nascosto ("elimina per me")
+    let deletedFor: [String]
+    let latitude: Double?
+    let longitude: Double?
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -76,6 +78,7 @@ final class ChatRemoteStore {
             "type":       dto.typeRaw,
             "isDeleted":  dto.isDeleted,
             "updatedBy":  uid,
+            "updatedAt":  FieldValue.serverTimestamp(),
             "createdAt":  FieldValue.serverTimestamp()
         ]
         
@@ -86,6 +89,9 @@ final class ChatRemoteStore {
         if let thu  = dto.mediaThumbnailURL            { data["mediaThumbnailURL"] = thu }
         if let rid  = dto.replyToId                    { data["replyToId"] = rid }
         if let r    = dto.reactionsJSON                { data["reactionsJSON"] = r }
+        if let latitude = dto.latitude                 { data["latitude"] = latitude }
+        if let longitude = dto.longitude               { data["longitude"] = longitude }
+        
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
         
@@ -237,7 +243,9 @@ final class ChatRemoteStore {
                 createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
                 editedAt:             (data["editedAt"] as? Timestamp)?.dateValue() ?? nil,
                 isDeleted:            data["isDeleted"]            as? Bool ?? false,
-                deletedFor:           deletedFor
+                deletedFor:           deletedFor,
+                latitude:             data["latitude"]             as? Double,
+                longitude:            data["longitude"]            as? Double
             )
         }
         
@@ -315,7 +323,9 @@ final class ChatRemoteStore {
                             createdAt:            (data["createdAt"] as? Timestamp)?.dateValue(),
                             editedAt:             (data["editedAt"] as? Timestamp)?.dateValue() ?? nil,
                             isDeleted:            data["isDeleted"] as? Bool ?? false,
-                            deletedFor:           deletedFor
+                            deletedFor:           deletedFor,
+                            latitude:             data["latitude"] as? Double,
+                            longitude:            data["longitude"] as? Double
                         )
                         return .upsert(dto)
                     }

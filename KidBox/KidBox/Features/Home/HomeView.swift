@@ -10,6 +10,7 @@ import FirebaseAuth
 import OSLog
 import SwiftData
 import PhotosUI
+import Combine
 
 /// Home screen entry point.
 ///
@@ -131,7 +132,10 @@ struct HomeView: View {
                 .accessibilityLabel("Impostazioni")
             }
         }
-        
+        .onAppear {
+            guard !activeFamilyId.isEmpty else { return }
+            BadgeManager.shared.startListening(familyId: activeFamilyId)
+        }
         // ✅ Picker
         .photosPicker(isPresented: $showHeroPicker, selection: $pickedHeroItem, matching: .images)
         .onChange(of: pickedHeroItem) { _, newItem in
@@ -313,9 +317,12 @@ enum HomeDestination {
 // MARK: - HomeCardGrid
 // Subview separata: riduce drasticamente il tempo di type-check del compilatore.
 
+
 private struct HomeCardGrid: View {
     let hasFamily: Bool
     let onNavigate: (HomeDestination) -> Void
+    
+    @ObservedObject private var badge = BadgeManager.shared
     
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -370,16 +377,32 @@ private struct HomeCardGrid: View {
     }
     
     private var cardChat: some View {
-        HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
-            KBLog.navigation.debug("Home: tap Chat")
-            onNavigate(.chat)
+        ZStack(alignment: .topTrailing) {
+            HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
+                KBLog.navigation.debug("Home: tap Chat")
+                onNavigate(.chat)
+            }
+            
+            if badge.chat > 0 {
+                BadgeView(count: badge.chat)
+                    .padding(.top, 8)
+                    .padding(.trailing, 8)
+            }
         }
     }
     
     private var cardDocumenti: some View {
-        HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
-            KBLog.navigation.debug("Home: tap Documents")
-            onNavigate(.document)
+        ZStack(alignment: .topTrailing) {
+            HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
+                KBLog.navigation.debug("Home: tap Documents")
+                onNavigate(.document)
+            }
+            
+            if badge.documents > 0 {
+                BadgeView(count: badge.documents)
+                    .padding(.top, 8)
+                    .padding(.trailing, 8)
+            }
         }
     }
     
@@ -426,6 +449,31 @@ private struct HomeCardGrid: View {
             KBLog.navigation.debug("Home: tap AskExpert")
             onNavigate(.askExpert)
         }
+    }
+}
+
+private struct BadgeView: View {
+    let count: Int
+    
+    var body: some View {
+        let text = count > 99 ? "99+" : "\(count)"
+        let isCircle = count < 10
+        
+        Text(text)
+            .font(.caption2.bold())
+            .foregroundStyle(.white)
+            .padding(.horizontal, isCircle ? 0 : 7)
+            .frame(width: isCircle ? 18 : nil, height: 18)
+            .background(
+                Group {
+                    if isCircle {
+                        Circle().fill(Color.red)
+                    } else {
+                        Capsule().fill(Color.red)
+                    }
+                }
+            )
+            .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 1)
     }
 }
 

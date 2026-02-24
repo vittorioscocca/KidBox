@@ -6,6 +6,81 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
+/**
+ * Sums chat and documents counters from the given data.
+ * @param {object} data - The counter data object.
+ * @return {{chat: number, documents: number, total: number}}
+ */
+function sumCounters(data) {
+  const chat = data?.chat || 0;
+  const documents = data?.documents || 0;
+  return {chat, documents, total: chat + documents};
+}
+
+/**
+ * Increments a notification counter and returns the updated badge count.
+ * @param {object} params - The parameters.
+ * @param {string} params.familyId - The family ID.
+ * @param {string} params.uid - The user ID.
+ * @param {string} params.field - The counter field to increment.
+ * @return {Promise<number>} The updated badge total.
+ */
+async function incrementCounterAndGetBadge({familyId, uid, field}) {
+  const ref = admin.firestore()
+      .collection("families")
+      .doc(familyId)
+      .collection("counters")
+      .doc(uid);
+
+  const now = admin.firestore.FieldValue.serverTimestamp();
+
+  return await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? snap.data() : {};
+    const counters = sumCounters(data);
+
+    // calcolo "post increment" senza dover rileggere
+    const next = {
+      chat: counters.chat + (field === "chat" ? 1 : 0),
+      documents: counters.documents + (field === "documents" ? 1 : 0),
+    };
+    const badge = next.chat + next.documents;
+
+    tx.set(ref, {
+      [field]: admin.firestore.FieldValue.increment(1),
+      updatedAt: now,
+    }, {merge: true});
+
+    return badge;
+  });
+}
+
+/**
+ * Returns FCM tokens for a user if the given notification preference is enabled.
+ * @param {string} uid - The user ID.
+ * @param {string} prefField - The notification preference field to check.
+ * @return {Promise<string[]>} The list of FCM tokens.
+ */
+async function getUserTokensIfEnabled(uid, prefField) {
+  const userRef = admin.firestore().collection("users").doc(uid);
+  const userSnap = await userRef.get();
+
+  const prefs = userSnap.exists ? userSnap.get("notificationPrefs") : null;
+
+  // default ON se non c'è prefs (come già fai per i messaggi)
+  const enabled = !prefs || prefs[prefField] !== false;
+  if (!enabled) return [];
+
+  const tokensSnap = await userRef.collection("fcmTokens").get();
+  const tokens = [];
+  tokensSnap.forEach((t) => {
+    const tok = t.get("token");
+    if (tok) tokens.push(tok);
+  });
+
+  return tokens;
+}
+
 exports.notifyNewDocument = onDocumentCreated(
     {
       document: "families/{familyId}/documents/{docId}",
@@ -29,15 +104,12 @@ exports.notifyNewDocument = onDocumentCreated(
 
       logger.info("notifyNewDocument triggered", {familyId, docId, uploaderUid});
 
-      // 1) Leggi membri dalla subcollection: families/{familyId}/members/*
-      const membersRef = admin.firestore()
+      // 1️⃣ Leggi membri
+      const membersSnap = await admin.firestore()
           .collection("families")
           .doc(familyId)
-          .collection("members");
-
-      const membersSnap = await membersRef.get();
-
-      logger.info("members snapshot", {size: membersSnap.size});
+          .collection("members")
+          .get();
 
       if (membersSnap.empty) {
         logger.warn("notifyNewDocument: members subcollection is empty");
@@ -53,53 +125,73 @@ exports.notifyNewDocument = onDocumentCreated(
         return;
       }
 
-      // 2) Per ogni membro: controlla pref + leggi tokens
-      const allTokens = [];
-
-      for (const uid of memberUids) {
-        const userRef = admin.firestore().collection("users").doc(uid);
-        const userSnap = await userRef.get();
-
-        const prefs = userSnap.exists ? userSnap.get("notificationPrefs") : null;
-        const enabled = prefs && prefs.notifyOnNewDocs === true;
-
-        logger.info("user prefs", {uid, enabled});
-
-        if (!enabled) continue;
-
-        const tokensSnap = await userRef.collection("fcmTokens").get();
-        tokensSnap.forEach((t) => {
-          const tok = t.get("token");
-          if (tok) allTokens.push(tok);
-        });
-      }
-
-      if (allTokens.length === 0) {
-        logger.info("notifyNewDocument: no tokens to notify");
-        return;
-      }
-
-      // 3) Costruisci notifica
       const title = "Nuovo documento caricato";
       const body = docData.title || docData.fileName || "Documento";
 
-      const message = {
-        notification: {title, body},
-        data: {
-          type: "new_document",
-          familyId: familyId,
-          docId: docId,
-        },
-        tokens: allTokens,
-      };
+      const messagesToSend = [];
 
-      // 4) Invia
-      const res = await admin.messaging().sendEachForMulticast(message);
+      // 2️⃣ Per ogni membro: incrementa counter + badge corretto
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewDocs");
+        if (tokens.length === 0) continue;
+
+        // Incrementa SOLO documents, ma badge = totale
+        const badge = await incrementCounterAndGetBadge({
+          familyId,
+          uid,
+          field: "documents",
+        });
+
+        messagesToSend.push({
+          tokens,
+          notification: {
+            title,
+            body,
+          },
+          data: {
+            type: "new_document",
+            familyId: familyId,
+            docId: docId,
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: "default",
+                badge: badge, // ✅ badge corretto (chat + documents)
+              },
+            },
+          },
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewDocument: no per-user notifications to send");
+        return;
+      }
+
+      // 3️⃣ Invio parallelo per-utente
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) =>
+            admin.messaging().sendEachForMulticast(msg),
+          ),
+      );
+
+      let totalSuccess = 0;
+      let totalFailure = 0;
+
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
 
       logger.info("notifyNewDocument: send result", {
-        successCount: res.successCount,
-        failureCount: res.failureCount,
-        tokenCount: allTokens.length,
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        userTargets: messagesToSend.length,
       });
     },
 );
@@ -251,12 +343,10 @@ exports.notifyNewChatMessage = onDocumentCreated(
         return;
       }
 
-      // Ignora messaggi eliminati
       if (msgData.isDeleted === true) return;
 
       const senderUid = msgData.senderId;
       const senderName = msgData.senderName || "Qualcuno";
-
       if (!senderUid) {
         logger.warn("notifyNewChatMessage: missing senderId");
         return;
@@ -264,7 +354,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
       logger.info("notifyNewChatMessage triggered", {familyId, messageId, senderUid});
 
-      // 1) Leggi membri della famiglia
+      // 1) Membri
       const membersSnap = await admin.firestore()
           .collection("families")
           .doc(familyId)
@@ -276,7 +366,6 @@ exports.notifyNewChatMessage = onDocumentCreated(
         return;
       }
 
-      // Escludi il mittente
       const memberUids = membersSnap.docs
           .map((d) => d.id)
           .filter((uid) => uid && uid !== senderUid);
@@ -286,40 +375,13 @@ exports.notifyNewChatMessage = onDocumentCreated(
         return;
       }
 
-      // 2) Per ogni membro: controlla prefs + raccogli tokens
-      const allTokens = [];
-
-      for (const uid of memberUids) {
-        const userRef = admin.firestore().collection("users").doc(uid);
-        const userSnap = await userRef.get();
-
-        const prefs = userSnap.exists ? userSnap.get("notificationPrefs") : null;
-        // Usa la stessa struttura prefs già esistente, aggiungi notifyOnNewMessages
-        const enabled = !prefs || prefs.notifyOnNewMessages !== false;
-
-        logger.info("user chat prefs", {uid, enabled});
-        if (!enabled) continue;
-
-        const tokensSnap = await userRef.collection("fcmTokens").get();
-        tokensSnap.forEach((t) => {
-          const tok = t.get("token");
-          if (tok) allTokens.push(tok);
-        });
-      }
-
-      if (allTokens.length === 0) {
-        logger.info("notifyNewChatMessage: no tokens to notify");
-        return;
-      }
-
-      // 3) Costruisci body notifica in base al tipo di messaggio
+      // 2) Body in base al tipo
       const msgType = msgData.typeRaw || "text";
       let body;
 
       switch (msgType) {
         case "text":
           body = msgData.text || "Nuovo messaggio";
-          // Tronca se troppo lungo
           if (body.length > 100) body = body.substring(0, 97) + "…";
           break;
         case "photo":
@@ -338,36 +400,68 @@ exports.notifyNewChatMessage = onDocumentCreated(
           body = "Nuovo messaggio";
       }
 
-      const message = {
-        notification: {
-          title: senderName,
-          body,
-        },
-        data: {
-          type: "new_chat_message",
-          familyId: familyId,
-          messageId: messageId,
-          senderId: senderUid,
-          msgType: msgType,
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewMessages");
+        if (tokens.length === 0) continue;
+
+        // Incrementa SOLO chat, badge = totale
+        const badge = await incrementCounterAndGetBadge({
+          familyId,
+          uid,
+          field: "chat",
+        });
+
+        messagesToSend.push({
+          tokens,
+          notification: {
+            title: senderName,
+            body,
+          },
+          data: {
+            type: "new_chat_message",
+            familyId: familyId,
+            messageId: messageId,
+            senderId: senderUid,
+            msgType: msgType,
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: "default",
+                badge: badge, // ✅ badge corretto (chat + documents)
+              },
             },
           },
-        },
-        tokens: allTokens,
-      };
+        });
+      }
 
-      // 4) Invia
-      const res = await admin.messaging().sendEachForMulticast(message);
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewChatMessage: no per-user notifications to send");
+        return;
+      }
+
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+      );
+
+      let totalSuccess = 0;
+      let totalFailure = 0;
+
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
 
       logger.info("notifyNewChatMessage: send result", {
-        successCount: res.successCount,
-        failureCount: res.failureCount,
-        tokenCount: allTokens.length,
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        userTargets: messagesToSend.length,
       });
     },
 );

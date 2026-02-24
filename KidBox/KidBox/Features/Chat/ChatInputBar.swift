@@ -25,7 +25,8 @@ struct ChatInputBar: View {
     let onMediaTap: () -> Void
     let onCameraTap: () -> Void
     let onDocumentTap: () -> Void
-    let onTextChange: () -> Void   // ✅ chiamato ad ogni carattere digitato
+    let onTextChange: () -> Void
+    let onLocationTap: () -> Void
     
     @FocusState private var isTextFocused: Bool
     
@@ -60,6 +61,11 @@ struct ChatInputBar: View {
                 }
                 Button { onDocumentTap() } label: {
                     Label("Documento", systemImage: "doc")
+                }
+                Button {
+                    onLocationTap()
+                } label: {
+                    Label("Invia posizione", systemImage: "location.fill")
                 }
             } label: {
                 Image(systemName: "plus.circle.fill")

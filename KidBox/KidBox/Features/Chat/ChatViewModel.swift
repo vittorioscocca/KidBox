@@ -34,6 +34,8 @@ final class ChatViewModel: ObservableObject {
     @Published var isCompressingMedia: Bool = false
     @Published var uploadProgress: Double = 0
     @Published var errorText: String?
+    @Published var replyingPreviewLatitude: Double?
+    @Published var replyingPreviewLongitude: Double?
     
     // Paginazione
     @Published var isLoadingOlder: Bool = false
@@ -306,6 +308,8 @@ final class ChatViewModel: ObservableObject {
             existing.syncState     = .synced
             existing.lastSyncError = nil
             existing.replyToId     = dto.replyToId
+            existing.latitude  = dto.latitude
+            existing.longitude = dto.longitude
             
             KBLog.sync.kbInfo("applyUpsert: merge delete id=\(mid) localWas=\(localBefore) remote=\(dto.isDeleted) deletedForMe=\(deletedForMe) final=\(existing.isDeleted)")
         } else {
@@ -337,6 +341,8 @@ final class ChatViewModel: ObservableObject {
             msg.readByJSON     = dto.readByJSON
             msg.syncState      = .synced
             msg.lastSyncError  = nil
+            msg.latitude  = dto.latitude
+            msg.longitude = dto.longitude
             
             modelContext.insert(msg)
             KBLog.sync.kbInfo("applyUpsert: inserted id=\(mid)")
@@ -470,6 +476,10 @@ final class ChatViewModel: ObservableObject {
             replyingPreviewText = d > 0 ? "Messaggio vocale • \(formatDuration(d))" : "Messaggio vocale"
         case .document:
             replyingPreviewText = "📄 \(message.text ?? "Documento")"
+        case .location:
+            replyingPreviewText = "📍 Posizione condivisa"
+            replyingPreviewLatitude = message.latitude
+            replyingPreviewLongitude = message.longitude
         }
     }
     
@@ -1305,6 +1315,63 @@ final class ChatViewModel: ObservableObject {
         }
     }
     
+    
+    func sendLocation(latitude: Double, longitude: Double) {
+        guard let modelContext else { return }
+        guard !familyId.isEmpty else { return }
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        let senderName = senderDisplayName()
+        let messageId  = UUID().uuidString
+        let now        = Date()
+        
+        isSending = true
+        
+        let msg = KBChatMessage(
+            id:        messageId,
+            familyId:  familyId,
+            senderId:  uid,
+            senderName: senderName,
+            type:      .location,
+            text:      nil,
+            createdAt: now
+        )
+        
+        msg.latitude  = latitude
+        msg.longitude = longitude
+        msg.syncState = .pendingUpsert
+        
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        Task {
+            let dto = makeDTO(from: msg)
+            
+            do {
+                try await remoteStore.upsert(dto: dto)
+                
+                await MainActor.run {
+                    msg.syncState = .synced
+                    msg.lastSyncError = nil
+                    try? modelContext.save()
+                    self.isSending = false
+                    self.reloadLocal()
+                }
+                
+            } catch {
+                await MainActor.run {
+                    msg.syncState = .error
+                    msg.lastSyncError = error.localizedDescription
+                    try? modelContext.save()
+                    self.errorText = "Invio posizione fallito: \(error.localizedDescription)"
+                    self.isSending = false
+                    self.reloadLocal()
+                }
+            }
+        }
+    }
+    
     // MARK: - Helpers
     
     private func senderDisplayName() -> String {
@@ -1332,7 +1399,9 @@ final class ChatViewModel: ObservableObject {
             createdAt:            msg.createdAt,
             editedAt:             msg.editedAt,
             isDeleted:            msg.isDeleted,
-            deletedFor:           []     // gestito solo da addToDeletedFor
+            deletedFor:           [],
+            latitude:             msg.latitude,
+            longitude:            msg.longitude
         )
     }
 }

@@ -134,7 +134,7 @@ struct KidBoxApp: App {
                 KBLog.sync.kbInfo("ScenePhase active -> startAutoFlush + flushGlobal")
                 SyncCenter.shared.startAutoFlush(modelContext: context)
                 SyncCenter.shared.flushGlobal(modelContext: context)
-                
+                BadgeManager.shared.refreshAppBadge()
             case .inactive:
                 KBLog.sync.kbDebug("ScenePhase inactive")
                 
