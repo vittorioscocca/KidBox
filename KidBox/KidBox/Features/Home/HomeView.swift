@@ -40,6 +40,13 @@ struct HomeView: View {
     @State private var isUploadingHero = false
     @State private var heroUploadError: String?
     
+    @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
+   
+    private var myProfile: KBUserProfile? {
+        guard let uid = Auth.auth().currentUser?.uid else { return nil }
+        return profiles.first(where: { $0.uid == uid })
+    }
+    
     private let heroService = FamilyHeroPhotoService()
     
     private var activeFamily: KBFamily? { families.first }
@@ -114,12 +121,14 @@ struct HomeView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    KBLog.navigation.debug("Home: tap Profile")
                     coordinator.navigate(to: .profile)
                 } label: {
-                    Image(systemName: "person.crop.circle")
+                    ProfileAvatarView(avatarData: myProfile?.avatarData)
+                        .frame(width: 34, height: 34)        // dimensione visiva
+                        .padding(6)                          // aumenta spazio tappabile
+                        .contentShape(Rectangle())           // rende tappabile tutto il rettangolo
                 }
-                .accessibilityLabel("Profilo")
+                .buttonStyle(.plain)
             }
             
             ToolbarItem(placement: .topBarTrailing) {
@@ -175,6 +184,26 @@ struct HomeView: View {
             Button("OK") { heroUploadError = nil }
         } message: {
             Text(heroUploadError ?? "")
+        }
+    }
+    
+    struct ProfileAvatarView: View {
+        let avatarData: Data?
+        
+        var body: some View {
+            Group {
+                if let avatarData, let uiImage = UIImage(data: avatarData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Image(systemName: "person.crop.circle")
+                        .resizable()
+                        .scaledToFill()
+                }
+            }
+            .clipShape(Circle())
+            .overlay(Circle().stroke(.quaternary, lineWidth: 1))
         }
     }
     

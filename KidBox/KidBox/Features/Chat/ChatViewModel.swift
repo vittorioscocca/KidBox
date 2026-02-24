@@ -107,7 +107,9 @@ final class ChatViewModel: ObservableObject {
         isObserving = true
         
         KBLog.sync.kbInfo("ChatVM startListening familyId=\(familyId)")
-        
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let name = senderDisplayName()
+        Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
         listener = FirestoreListenerWrapper(remoteStore.listenMessages(
             familyId: familyId,
             limit: 50,
@@ -131,7 +133,6 @@ final class ChatViewModel: ObservableObject {
             }
         ))
         
-        let uid = Auth.auth().currentUser?.uid ?? ""
         typingListener = FirestoreListenerWrapper(remoteStore.listenTyping(
             familyId: familyId,
             excludeUID: uid,
@@ -152,8 +153,12 @@ final class ChatViewModel: ObservableObject {
         isObserving = false
         oldestDocument = nil
         hasMoreMessages = true
-        // Assicura che il nostro indicatore venga rimosso
-        Task { try? await remoteStore.setTyping(false, familyId: familyId) }
+        
+        // Assicura che il nostro indicatore venga rimosso + name aggiornato
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let name = senderDisplayName()
+        Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
+        
         KBLog.sync.kbInfo("ChatVM stopListening familyId=\(familyId)")
     }
     
@@ -503,7 +508,12 @@ final class ChatViewModel: ObservableObject {
     /// Usa un debounce di 3s: se l'utente smette di scrivere, rimuove l'indicatore.
     func userIsTyping() {
         typingDebounceTask?.cancel()
-        Task { try? await remoteStore.setTyping(true, familyId: familyId) }
+        
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let name = senderDisplayName()
+        
+        Task { await remoteStore.setTyping(true, familyId: familyId, uid: uid, displayName: name) }
+        
         typingDebounceTask = Task {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
@@ -514,7 +524,11 @@ final class ChatViewModel: ObservableObject {
     func stopTyping() {
         typingDebounceTask?.cancel()
         typingDebounceTask = nil
-        Task { try? await remoteStore.setTyping(false, familyId: familyId) }
+        
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let name = senderDisplayName()
+        
+        Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
     }
     
     // MARK: - ─── SEND PHOTO / VIDEO ──────────────────────────────────────────
@@ -1377,8 +1391,37 @@ final class ChatViewModel: ObservableObject {
     private func senderDisplayName() -> String {
         guard let modelContext else { return "Utente" }
         let uid = Auth.auth().currentUser?.uid ?? ""
+        guard !uid.isEmpty else { return "Utente" }
+        
         let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
-        return (try? modelContext.fetch(desc).first)?.displayName ?? "Utente"
+        guard let profile = try? modelContext.fetch(desc).first else { return "Utente" }
+        
+        // 1) prova a costruire nome "canonico" da first/last (se li hai)
+        let first = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let last  = (profile.lastName  ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let canonical = "\(first) \(last)".trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 2) il displayName salvato (quello che la chat usava finora)
+        let stored = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 3) scegli cosa usare
+        let chosen: String
+        if !canonical.isEmpty {
+            chosen = canonical
+        } else if !stored.isEmpty {
+            chosen = stored
+        } else {
+            chosen = "Utente"
+        }
+        
+        // 4) auto-fix: se ho canonical e differisce da stored, aggiorno e salvo
+        if !canonical.isEmpty, canonical != stored {
+            profile.displayName = canonical
+            profile.updatedAt = Date()
+            try? modelContext.save()
+        }
+        
+        return chosen
     }
     
     private func makeDTO(from msg: KBChatMessage) -> RemoteChatMessageDTO {

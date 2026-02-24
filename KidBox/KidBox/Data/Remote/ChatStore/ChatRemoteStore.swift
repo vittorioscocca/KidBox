@@ -341,21 +341,20 @@ final class ChatRemoteStore {
     /// Struttura Firestore: `families/{familyId}/typing/{uid}`
     /// Campi: `isTyping: Bool`, `name: String`, `updatedAt: Timestamp`
     
-    func setTyping(_ isTyping: Bool, familyId: String) async throws {
-        guard let user = Auth.auth().currentUser else { return }
+    func setTyping(_ isTyping: Bool, familyId: String, uid: String, displayName: String) async {
         let ref = db.collection("families")
             .document(familyId)
             .collection("typing")
-            .document(user.uid)
+            .document(uid)
         
-        if isTyping {
+        do {
             try await ref.setData([
-                "isTyping":  true,
-                "name":      user.displayName ?? "Utente",
+                "isTyping": isTyping,
+                "name": displayName,
                 "updatedAt": FieldValue.serverTimestamp()
-            ])
-        } else {
-            try await ref.delete()
+            ], merge: true)
+        } catch {
+            KBLog.sync.error("ChatRemoteStore setTyping failed: \(error.localizedDescription)")
         }
     }
     

@@ -7,41 +7,132 @@
 
 import SwiftUI
 import FirebaseAuth
+import SwiftData
+import PhotosUI
+import CoreLocation
+import MapKit
 import OSLog
+import Combine
 
-/// User profile / account info screen.
-///
-/// Shows basic authentication state and allows the user to sign out.
-///
-/// - Important:
-///   - Be careful with PII in UI/logs. UID is shown for debugging/support and is selectable.
-///   - Logs avoid printing emails. Errors are logged with `.public` to help debugging.
 struct ProfileView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
-    @State private var showDeleteAccountSheet = false
     @Environment(\.modelContext) private var modelContext
+    
+    // Delete
+    @State private var showDeleteAccountSheet = false
     @State private var deleteConfirmText = ""
     @State private var isDeletingAccount = false
     @State private var deleteError: String?
     
+    // Profile fields
+    @State private var firstName: String = ""
+    @State private var lastName: String = ""
+    @State private var familyAddress: String = ""
+    
+    // Avatar
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var avatarData: Data?
+    
+    // Account info
+    @State private var email: String = ""
+    @State private var lastLoginAt: Date?
+    
+    // UI state
+    @State private var saveInfoText: String?
+    @State private var saveErrorText: String?
+    
+    @StateObject private var locationService = OneShotLocationService()
+    
     var body: some View {
         List {
-            Section("Account") {
-                if let user = Auth.auth().currentUser {
-                    Text("UID: \(user.uid)")
-                        .font(.caption)
-                        .textSelection(.enabled)
-                    
-                    if let email = user.email {
-                        Text("Email: \(email)")
-                            .textSelection(.enabled)
+            
+            // MARK: - Profile
+            Section("Profilo") {
+                HStack(spacing: 14) {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        avatarView
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Seleziona foto profilo")
+                    
+                    VStack(alignment: .leading, spacing: 10) {
+                        TextField("Nome", text: $firstName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                        
+                        TextField("Cognome", text: $lastName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                    }
+                }
+                .padding(.vertical, 6)
+                
+                Button {
+                    KBLog.auth.debug("Profile: tap Save")
+                    saveProfile()
+                } label: {
+                    Text("Salva profilo")
+                }
+                
+                if let saveInfoText {
+                    Text(saveInfoText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                if let saveErrorText {
+                    Text(saveErrorText)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                }
+                
+                Text("Il nome usato in chat viene preso da questo profilo.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            
+            // MARK: - Family address
+            Section("Famiglia") {
+                TextField("Indirizzo famiglia", text: $familyAddress, axis: .vertical)
+                    .lineLimit(2...4)
+                
+                Button {
+                    KBLog.app.debug("Profile: tap Detect Address")
+                    detectFamilyAddress()
+                } label: {
+                    HStack {
+                        Image(systemName: "location.fill")
+                        Text(locationService.isWorking ? "Rilevamento..." : "Rileva da posizione")
+                    }
+                }
+                .disabled(locationService.isWorking)
+                
+                if let locError = locationService.errorText {
+                    Text(locError)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                }
+            }
+            
+            // MARK: - Account (NO Firebase UID)
+            Section("Account") {
+                if email.isEmpty {
+                    Text("Email: —")
+                        .foregroundStyle(.secondary)
                 } else {
-                    Text("Non autenticato")
+                    Text("Email: \(email)")
+                        .textSelection(.enabled)
+                }
+                
+                if let lastLoginAt {
+                    Text("Ultimo login: \(lastLoginAt.formatted(date: .abbreviated, time: .shortened))")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Ultimo login: —")
                         .foregroundStyle(.secondary)
                 }
             }
             
+            // MARK: - Actions
             Section {
                 Button(role: .destructive) {
                     KBLog.auth.debug("Logout tap")
@@ -62,9 +153,28 @@ struct ProfileView: View {
         }
         .navigationTitle("Profilo")
         .onAppear {
-            // View logs: keep them minimal to avoid spam in SwiftUI re-renders.
-            let isAuthed = (Auth.auth().currentUser != nil)
-            KBLog.auth.debug("ProfileView appeared authed=\(isAuthed, privacy: .public)")
+            loadAuthInfo()
+            loadLocalProfile()
+        }
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                    await MainActor.run {
+                        self.avatarData = data
+                        self.saveInfoText = "Foto aggiornata."
+                        self.saveErrorText = nil
+                    }
+                    await MainActor.run {
+                        saveProfile() // salva subito così è disponibile in Home
+                    }
+                }
+            }
+        }
+        .onReceive(locationService.$resolvedAddress) { address in
+            guard let address, !address.isEmpty else { return }
+            familyAddress = address
+            saveProfile()
         }
         .sheet(isPresented: $showDeleteAccountSheet) {
             DeleteAccountConfirmSheet(
@@ -102,6 +212,106 @@ struct ProfileView: View {
         }
     }
     
+    // MARK: - Avatar view
+    private var avatarView: some View {
+        Group {
+            if let avatarData, let uiImage = UIImage(data: avatarData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .scaledToFill()
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 72, height: 72)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.quaternary, lineWidth: 1))
+    }
+    
+    // MARK: - Load
+    private func loadAuthInfo() {
+        let user = Auth.auth().currentUser
+        email = user?.email ?? ""
+        lastLoginAt = user?.metadata.lastSignInDate
+        KBLog.auth.debug("ProfileView appeared authed=\((user != nil), privacy: .public)")
+    }
+    
+    private func loadLocalProfile() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+        
+        if let profile = try? modelContext.fetch(desc).first {
+            firstName = profile.firstName ?? ""
+            lastName = profile.lastName ?? ""
+            familyAddress = profile.familyAddress ?? ""
+            avatarData = profile.avatarData
+            
+            // preferisci email da auth, ma se non c’è usa quella locale
+            if email.isEmpty { email = profile.email ?? "" }
+            if lastLoginAt == nil { lastLoginAt = profile.lastLoginAt }
+        }
+    }
+    
+    // MARK: - Save
+    private func saveProfile() {
+        guard let user = Auth.auth().currentUser else {
+            saveErrorText = "Utente non autenticato."
+            return
+        }
+        
+        let uid = user.uid
+        let authEmail = user.email ?? ""
+        
+        do {
+            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+            let existing = try modelContext.fetch(desc).first
+            
+            let profile: KBUserProfile
+            if let existing {
+                profile = existing
+            } else {
+                profile = KBUserProfile(uid: uid)
+                modelContext.insert(profile)
+            }
+            
+            profile.email = authEmail.ifEmpty(profile.email ?? "")
+            profile.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.lastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // IMPORTANT: this is what ChatViewModel uses
+            let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let full = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.displayName = full.isEmpty ? "Utente" : full
+
+            profile.familyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.avatarData = avatarData
+            
+            // last login
+            profile.lastLoginAt = user.metadata.lastSignInDate ?? profile.lastLoginAt
+            profile.updatedAt = Date()
+            
+            try modelContext.save()
+            KBLog.auth.info("Profile saved uid=\(uid, privacy: .public) displayName=\(profile.displayName ?? "nil", privacy: .public)")
+            
+            saveInfoText = "Salvato."
+            saveErrorText = nil
+        } catch {
+            saveErrorText = error.localizedDescription
+            saveInfoText = nil
+            KBLog.auth.error("Profile save FAILED: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+    
+    // MARK: - Location
+    private func detectFamilyAddress() {
+        locationService.requestAddress()
+    }
+    
+    // MARK: - Logout
     private func signOut() {
         do {
             try Auth.auth().signOut()
@@ -112,3 +322,103 @@ struct ProfileView: View {
         }
     }
 }
+
+// MARK: - OneShotLocationService
+@MainActor
+final class OneShotLocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
+    
+    @Published var resolvedAddress: String?
+    @Published var errorText: String?
+    @Published var isWorking: Bool = false
+    
+    private let manager = CLLocationManager()
+    
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
+    
+    func requestAddress() {
+        errorText = nil
+        resolvedAddress = nil
+        isWorking = true
+        
+        let status = manager.authorizationStatus
+        switch status {
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .restricted, .denied:
+            isWorking = false
+            errorText = "Permesso posizione negato. Abilitalo in Impostazioni."
+        case .authorizedAlways, .authorizedWhenInUse, .authorized:
+            manager.requestLocation()
+        @unknown default:
+            isWorking = false
+            errorText = "Stato autorizzazione posizione non supportato."
+        }
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        if status == .authorizedWhenInUse || status == .authorizedAlways {
+            manager.requestLocation()
+        } else if status == .denied || status == .restricted {
+            isWorking = false
+            errorText = "Permesso posizione negato."
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        isWorking = false
+        errorText = error.localizedDescription
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.first else {
+            isWorking = false
+            errorText = "Posizione non disponibile."
+            return
+        }
+        
+        Task {
+            do {
+                guard let request = MKReverseGeocodingRequest(location: location) else {
+                    await MainActor.run {
+                        self.isWorking = false
+                        self.errorText = "Impossibile creare la richiesta di reverse geocoding."
+                    }
+                    return
+                }
+                
+                let mapItems = try await request.mapItems
+                let mapItem = mapItems.first
+                
+                let formatted =
+                mapItem?.address?.fullAddress
+                ?? mapItem?.address?.shortAddress
+                ?? ""
+                
+                await MainActor.run {
+                    self.resolvedAddress = formatted.isEmpty ? nil : formatted
+                    self.isWorking = false
+                    self.errorText = formatted.isEmpty ? "Indirizzo non trovato." : nil
+                }
+                
+            } catch {
+                await MainActor.run {
+                    self.isWorking = false
+                    self.errorText = error.localizedDescription
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Small helper (same one used in ChatViewModel)
+private extension String {
+    func ifEmpty(_ fallback: String) -> String {
+        self.isEmpty ? fallback : self
+    }
+}
+
