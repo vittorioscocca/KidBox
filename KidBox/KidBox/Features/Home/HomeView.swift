@@ -104,7 +104,7 @@ struct HomeView: View {
                 .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
                 
                 // ✅ Grid estratta in subview per evitare type-check timeout
-                HomeCardGrid(hasFamily: hasFamily) { destination in
+                HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
                     navigate(to: destination)
                 }
                 
@@ -318,27 +318,27 @@ struct HomeView: View {
 enum HomeDestination {
     case notes, todo, calendar, care
     case chat, document, expenses, timeline
-    case familyLocation, familyPhotos, familySettings
+    case familyLocation(familyId: String), familyPhotos, familySettings
     case askExpert, profile, settings, inviteCode
     
     /// Mappa verso il Route dell'AppCoordinator.
     var route: Route {
         switch self {
-        case .notes:          return .calendar
-        case .todo:           return .todo
-        case .calendar:       return .calendar
-        case .care:           return .calendar
-        case .chat:           return .chat
-        case .document:       return .document
-        case .expenses:       return .calendar
-        case .timeline:       return .calendar
-        case .familyLocation: return .calendar
-        case .familyPhotos:   return .calendar
-        case .familySettings: return .familySettings
-        case .askExpert:      return .calendar
-        case .profile:        return .profile
-        case .settings:       return .settings
-        case .inviteCode:     return .inviteCode
+        case .notes:                         return .calendar
+        case .todo:                          return .todo
+        case .calendar:                      return .calendar
+        case .care:                          return .calendar
+        case .chat:                          return .chat
+        case .document:                      return .document
+        case .expenses:                      return .calendar
+        case .timeline:                      return .calendar
+        case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
+        case .familyPhotos:                  return .calendar
+        case .familySettings:                return .familySettings
+        case .askExpert:                     return .calendar
+        case .profile:                       return .profile
+        case .settings:                      return .settings
+        case .inviteCode:                    return .inviteCode
         }
     }
 }
@@ -349,6 +349,7 @@ enum HomeDestination {
 
 private struct HomeCardGrid: View {
     let hasFamily: Bool
+    let familyId: String
     let onNavigate: (HomeDestination) -> Void
     
     @ObservedObject private var badge = BadgeManager.shared
@@ -453,7 +454,7 @@ private struct HomeCardGrid: View {
     private var cardPosizione: some View {
         HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
             KBLog.navigation.debug("Home: tap FamilyLocation")
-            onNavigate(.familyLocation)
+            onNavigate(.familyLocation(familyId: familyId))
         }
     }
     

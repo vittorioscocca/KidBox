@@ -43,6 +43,9 @@ struct ProfileView: View {
     
     @StateObject private var locationService = OneShotLocationService()
     
+    private let locationRemoteStore = LocationRemoteStore()
+    private let chatRemoteStore = ChatRemoteStore()
+    
     var body: some View {
         List {
             
@@ -166,7 +169,7 @@ struct ProfileView: View {
                         self.saveErrorText = nil
                     }
                     await MainActor.run {
-                        saveProfile() // salva subito così è disponibile in Home
+                        saveProfile()
                     }
                 }
             }
@@ -249,10 +252,24 @@ struct ProfileView: View {
             familyAddress = profile.familyAddress ?? ""
             avatarData = profile.avatarData
             
-            // preferisci email da auth, ma se non c’è usa quella locale
+            // preferisci email da auth, ma se non c'è usa quella locale
             if email.isEmpty { email = profile.email ?? "" }
             if lastLoginAt == nil { lastLoginAt = profile.lastLoginAt }
         }
+    }
+    
+    private func resolvedFamilyId() -> String? {
+        
+        // 1️⃣ Se il coordinator ha una famiglia attiva, usiamo quella
+        if let active = coordinator.activeFamilyId, !active.isEmpty {
+            return active
+        }
+        
+        // 2️⃣ Fallback: prima famiglia salvata in locale
+        let descriptor = FetchDescriptor<KBFamily>()
+        let families = try? modelContext.fetch(descriptor)
+        
+        return families?.first?.id
     }
     
     // MARK: - Save
@@ -281,12 +298,11 @@ struct ProfileView: View {
             profile.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
             profile.lastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
             
-            // IMPORTANT: this is what ChatViewModel uses
             let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let full = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
             profile.displayName = full.isEmpty ? "Utente" : full
-
+            
             profile.familyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
             profile.avatarData = avatarData
             
@@ -294,8 +310,44 @@ struct ProfileView: View {
             profile.lastLoginAt = user.metadata.lastSignInDate ?? profile.lastLoginAt
             profile.updatedAt = Date()
             
+            // Salva SwiftData PRIMA di fare operazioni remote
             try modelContext.save()
             KBLog.auth.info("Profile saved uid=\(uid, privacy: .public) displayName=\(profile.displayName ?? "nil", privacy: .public)")
+            
+            // FIX: notifica FamilyLocationView (e qualsiasi altro observer) del nuovo nome
+            // così il ViewModel aggiorna myCurrentDisplayName e Firestore in tempo reale.
+            if let displayName = profile.displayName, !displayName.isEmpty, displayName != "Utente" {
+                NotificationCenter.default.post(
+                    name: .kbProfileDisplayNameUpdated,
+                    object: nil,
+                    userInfo: ["displayName": displayName]
+                )
+            }
+            
+            guard
+                !uid.isEmpty,
+                let familyId = resolvedFamilyId()
+            else {
+                KBLog.app.error("Profile remote update aborted: missing familyId")
+                saveInfoText = "Salvato."
+                saveErrorText = nil
+                return
+            }
+            
+            Task {
+                await chatRemoteStore.setTyping(
+                    false,
+                    familyId: familyId,
+                    uid: uid,
+                    displayName: profile.displayName ?? ""
+                )
+                
+                await locationRemoteStore.updateDisplayName(
+                    familyId: familyId,
+                    uid: uid,
+                    displayName: profile.displayName ?? ""
+                )
+            }
             
             saveInfoText = "Salvato."
             saveErrorText = nil
@@ -415,10 +467,9 @@ final class OneShotLocationService: NSObject, ObservableObject, CLLocationManage
     }
 }
 
-// MARK: - Small helper (same one used in ChatViewModel)
+// MARK: - Small helper
 private extension String {
     func ifEmpty(_ fallback: String) -> String {
         self.isEmpty ? fallback : self
     }
 }
-

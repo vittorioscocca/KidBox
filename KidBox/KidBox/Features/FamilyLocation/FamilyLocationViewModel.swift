@@ -1,0 +1,333 @@
+import Foundation
+import SwiftUI
+import MapKit
+import CoreLocation
+import Combine
+internal import os
+import FirebaseAuth
+import FirebaseFirestore
+
+@MainActor
+final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
+    
+    // MARK: - Published
+    
+    @Published var sharedUsers: [SharedUserLocation] = []
+    
+    @Published var isSharing: Bool = false
+    @Published var myMode: ShareMode?
+    @Published var myExpiresAt: Date?
+    
+    /// True appena l'utente attiva la condivisione (fix chicken-and-egg):
+    /// consente di inviare lat/lon anche prima che il listener ci includa.
+    @Published private(set) var sharingRequested: Bool = false
+    
+    // MARK: - Private
+    
+    private let remote = LocationRemoteStore()
+    private var listener: ListenerRegistration?
+    
+    private let locationManager = CLLocationManager()
+    private let familyId: String
+    
+    private var shouldStartLocationUpdates = false
+    private var expiryTask: Task<Void, Never>?
+    
+    /// Manteniamo il nome canonico (SwiftData) passato dalla View,
+    /// così lo riscriviamo anche durante updateLocation (self-healing).
+    private(set) var myCurrentDisplayName: String = "Utente"
+    
+    // MARK: - Init
+    
+    init(familyId: String) {
+        self.familyId = familyId
+        super.init()
+        
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = 10
+    }
+    
+    // MARK: - Lifecycle
+    
+    func start() {
+        listen()
+        requestAuthorizationIfNeeded()
+    }
+    
+    func stop() {
+        listener?.remove()
+        listener = nil
+        
+        expiryTask?.cancel()
+        expiryTask = nil
+        
+        locationManager.stopUpdatingLocation()
+        shouldStartLocationUpdates = false
+    }
+    
+    // MARK: - Firestore listen
+    
+    private func listen() {
+        listener = remote.listen(familyId: familyId) { [weak self] users in
+            Task { @MainActor in
+                guard let self else { return }
+                self.sharedUsers = users
+                self.applyRemoteStateForMeIfNeeded()
+            }
+        }
+    }
+    
+    /// Dopo relaunch (o quando non abbiamo appena premuto un bottone),
+    /// riallinea lo stato UI in base a ciò che Firestore dice su "me".
+    private func applyRemoteStateForMeIfNeeded() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        // Se l'utente ha appena premuto "condividi" in questa sessione,
+        // non sovrascriviamo il suo stato locale col listener (evita flicker).
+        if sharingRequested { return }
+        
+        guard let me = sharedUsers.first(where: { $0.id == uid }) else {
+            // Non risulto in sharing lato remote
+            isSharing = false
+            myMode = nil
+            myExpiresAt = nil
+            
+            expiryTask?.cancel()
+            expiryTask = nil
+            return
+        }
+        
+        // Risulto in sharing lato remote
+        isSharing = true
+        myMode = me.mode
+        myExpiresAt = me.expiresAt
+        
+        // Se temporaneo scaduto → stop forzato
+        if me.mode == .temporary, let exp = me.expiresAt, exp <= Date() {
+            Task { await stopSharing() }
+            return
+        }
+        
+        // Ripristina updates e timer (anche dopo relaunch)
+        sharingRequested = true
+        if me.mode == .temporary {
+            scheduleExpiryStopIfNeeded()
+        } else {
+            expiryTask?.cancel()
+            expiryTask = nil
+        }
+        startLocationUpdatesIfPossible()
+    }
+    
+    // MARK: - Actions
+    
+    func startRealtime(displayName: String) async {
+        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
+        
+        myCurrentDisplayName = displayName
+        
+        // UI immediata
+        sharingRequested = true
+        isSharing = true
+        myMode = .realtime
+        myExpiresAt = nil
+        
+        // no timer
+        expiryTask?.cancel()
+        expiryTask = nil
+        
+        do {
+            try await remote.startSharing(
+                familyId: familyId,
+                uid: uid,
+                name: displayName,
+                mode: .realtime,
+                expiresAt: nil
+            )
+        } catch {
+            KBLog.app.error("FamilyLocation startRealtime failed: \(error.localizedDescription, privacy: .public)")
+            rollbackSharingUI()
+            return
+        }
+        
+        startLocationUpdatesIfPossible()
+    }
+    
+    func startTemporary(hours: Int, displayName: String) async {
+        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
+        
+        myCurrentDisplayName = displayName
+        
+        let expires = Date().addingTimeInterval(Double(hours) * 3600)
+        
+        // UI immediata
+        sharingRequested = true
+        isSharing = true
+        myMode = .temporary
+        myExpiresAt = expires
+        
+        do {
+            try await remote.startSharing(
+                familyId: familyId,
+                uid: uid,
+                name: displayName,
+                mode: .temporary,
+                expiresAt: expires
+            )
+        } catch {
+            KBLog.app.error("FamilyLocation startTemporary failed: \(error.localizedDescription, privacy: .public)")
+            rollbackSharingUI()
+            return
+        }
+        
+        scheduleExpiryStopIfNeeded()
+        startLocationUpdatesIfPossible()
+    }
+    
+    func stopSharing() async {
+        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
+        
+        // UI immediata
+        sharingRequested = false
+        isSharing = false
+        myMode = nil
+        myExpiresAt = nil
+        
+        expiryTask?.cancel()
+        expiryTask = nil
+        
+        await remote.stopSharing(familyId: familyId, uid: uid)
+        
+        locationManager.stopUpdatingLocation()
+        shouldStartLocationUpdates = false
+    }
+    
+    // MARK: - FIX: aggiorna il nome mentre la condivisione è attiva
+    
+    /// Chiama questo ogni volta che il profilo viene salvato o la view appare,
+    /// così il nome su Firestore e su tutti i device è sempre quello corretto.
+    func updateDisplayName(_ name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != "Utente" else { return }
+        guard trimmed != myCurrentDisplayName else { return } // nessun cambiamento, evita write inutile
+        
+        myCurrentDisplayName = trimmed
+        KBLog.app.debug("FamilyLocation updateDisplayName -> \(trimmed, privacy: .public)")
+        
+        guard isSharing, let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
+        
+        Task {
+            await remote.updateDisplayName(familyId: familyId, uid: uid, displayName: trimmed)
+        }
+    }
+    
+    private func rollbackSharingUI() {
+        sharingRequested = false
+        isSharing = false
+        myMode = nil
+        myExpiresAt = nil
+        
+        expiryTask?.cancel()
+        expiryTask = nil
+        
+        locationManager.stopUpdatingLocation()
+        shouldStartLocationUpdates = false
+    }
+    
+    // MARK: - Temporary expiry timer
+    
+    private func scheduleExpiryStopIfNeeded() {
+        expiryTask?.cancel()
+        expiryTask = nil
+        
+        guard sharingRequested, myMode == .temporary, let expiresAt = myExpiresAt else { return }
+        
+        let seconds = expiresAt.timeIntervalSinceNow
+        if seconds <= 0 {
+            Task { await stopSharing() }
+            return
+        }
+        
+        expiryTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(seconds))
+            } catch {
+                return // cancellato
+            }
+            
+            KBLog.app.error("FamilyLocation temporary sharing expired -> auto stop")
+            await self?.stopSharing()
+        }
+    }
+    
+    // MARK: - Authorization & Location
+    
+    private func requestAuthorizationIfNeeded() {
+        let status = locationManager.authorizationStatus
+        switch status {
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways:
+            break
+        case .restricted, .denied:
+            KBLog.app.error("Location permission denied/restricted")
+        @unknown default:
+            break
+        }
+    }
+    
+    private func startLocationUpdatesIfPossible() {
+        let status = locationManager.authorizationStatus
+        
+        switch status {
+        case .authorizedWhenInUse, .authorizedAlways:
+            locationManager.startUpdatingLocation()
+            locationManager.requestLocation() // prova update immediato
+            shouldStartLocationUpdates = false
+            
+        case .notDetermined:
+            shouldStartLocationUpdates = true
+            locationManager.requestWhenInUseAuthorization()
+            
+        case .restricted, .denied:
+            shouldStartLocationUpdates = false
+            KBLog.app.error("Cannot start location updates: permission denied")
+            
+        @unknown default:
+            shouldStartLocationUpdates = false
+        }
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        
+        if (status == .authorizedWhenInUse || status == .authorizedAlways),
+           shouldStartLocationUpdates,
+           sharingRequested {
+            startLocationUpdatesIfPossible()
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard
+            sharingRequested,
+            let uid = Auth.auth().currentUser?.uid,
+            let location = locations.last
+        else { return }
+        
+        // riscrive anche "name" ad ogni update => niente nomi vecchi
+        Task {
+            await remote.updateLocation(
+                familyId: familyId,
+                uid: uid,
+                location: location,
+                displayName: myCurrentDisplayName
+            )
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        KBLog.app.error("Location update failed: \(error.localizedDescription, privacy: .public)")
+    }
+}

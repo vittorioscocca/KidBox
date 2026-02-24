@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 
 /// Represents a navigation destination in KidBox.
 ///
@@ -28,6 +29,7 @@ enum Route: Hashable {
     case inviteCode
     case joinFamily
     case chat
+    case familyLocation(familyId: String)
     
     case document
     case documentsHome

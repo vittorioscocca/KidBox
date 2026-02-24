@@ -237,6 +237,8 @@ final class AppCoordinator: ObservableObject {
             ChildDestinationView(childId: childId)
         case .chat:
             ChatView()
+        case let .familyLocation(familyId):
+            FamilyLocationView(familyId:  familyId)
         }
     }
     
