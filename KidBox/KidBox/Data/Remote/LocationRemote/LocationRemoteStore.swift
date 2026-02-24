@@ -56,7 +56,7 @@ final class LocationRemoteStore {
                     "lat": location.coordinate.latitude,
                     "lon": location.coordinate.longitude,
                     "accuracy": location.horizontalAccuracy,
-                    "name": displayName, // ✅ sempre aggiornato
+                    "name": displayName,
                     "lastUpdateAt": FieldValue.serverTimestamp()
                 ], merge: true)
         } catch {
@@ -114,12 +114,15 @@ final class LocationRemoteStore {
                     
                     let expires = (doc.data()["expiresAt"] as? Timestamp)?.dateValue()
                     
-                    // scarta temporanei scaduti
+                    // Scarta temporanei scaduti
                     if mode == .temporary,
                        let expires,
                        expires < Date() {
                         return nil
                     }
+                    
+                    // Legge avatarURL se presente
+                    let avatarURL = doc.data()["avatarURL"] as? String
                     
                     return SharedUserLocation(
                         id: doc.documentID,
@@ -127,7 +130,8 @@ final class LocationRemoteStore {
                         latitude: lat,
                         longitude: lon,
                         mode: mode,
-                        expiresAt: expires
+                        expiresAt: expires,
+                        avatarURL: avatarURL
                     )
                 }
                 

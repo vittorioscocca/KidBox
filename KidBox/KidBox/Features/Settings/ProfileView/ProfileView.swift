@@ -45,6 +45,7 @@ struct ProfileView: View {
     
     private let locationRemoteStore = LocationRemoteStore()
     private let chatRemoteStore = ChatRemoteStore()
+    private let avatarRemoteStore = AvatarRemoteStore()
     
     var body: some View {
         List {
@@ -347,6 +348,16 @@ struct ProfileView: View {
                     uid: uid,
                     displayName: profile.displayName ?? ""
                 )
+                
+                // Carica avatar su Storage e salva URL in Firestore
+                // così gli altri membri vedono la foto aggiornata sulla mappa
+                if let avatarData = profile.avatarData {
+                    await avatarRemoteStore.uploadAvatar(
+                        imageData: avatarData,
+                        uid: uid,
+                        familyId: familyId
+                    )
+                }
             }
             
             saveInfoText = "Salvato."

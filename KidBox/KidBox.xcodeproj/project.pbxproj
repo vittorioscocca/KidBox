@@ -463,6 +463,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBox/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Serve per scattare e salvare documenti/foto in KidBox.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Con KidBox condicidi la tua posizione con i tuoi familiari";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "KidBox usa il microfono per registrare messaggi vocali in chat.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Consenti l’accesso alla libreria per caricare le foto nei documenti";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -522,6 +524,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBox/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Serve per scattare e salvare documenti/foto in KidBox.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Con KidBox condicidi la tua posizione con i tuoi familiari";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "KidBox usa il microfono per registrare messaggi vocali in chat.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Consenti l’accesso alla libreria per caricare le foto nei documenti";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

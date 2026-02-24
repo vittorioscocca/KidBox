@@ -2,10 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>KidBox usa la tua posizione in background per aggiornarla anche quando l&apos;app non è aperta.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Con KidBox condicidi la tua posizione con i tuoi familiari</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>KidBox usa il microfono per registrare messaggi vocali in chat.</string>
+	<string>KidBox usa la tua posizione per mostrarla ai membri della famiglia.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>KidBox usa la tua posizione in background per aggiornarla anche quando l&apos;app non è aperta.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -20,6 +22,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 </dict>
 </plist>

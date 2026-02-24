@@ -3,6 +3,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 import Combine
+import UserNotifications
 internal import os
 import FirebaseAuth
 import FirebaseFirestore
@@ -46,6 +47,9 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 10
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.showsBackgroundLocationIndicator = true
     }
     
     // MARK: - Lifecycle
@@ -53,6 +57,9 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     func start() {
         listen()
         requestAuthorizationIfNeeded()
+        // Se l'app è stata rilanciata in background da significant location changes,
+        // ripristina il tracking se eravamo in sharing
+        resumeIfNeeded()
     }
     
     func stop() {
@@ -62,8 +69,11 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         expiryTask?.cancel()
         expiryTask = nil
         
-        locationManager.stopUpdatingLocation()
-        shouldStartLocationUpdates = false
+        // NON fermiamo il location manager se stiamo condividendo —
+        // l'app continua in background e significant changes rimane attivo
+        if !sharingRequested {
+            stopLocationUpdates()
+        }
     }
     
     // MARK: - Firestore listen
@@ -127,13 +137,14 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         
         myCurrentDisplayName = displayName
         
-        // UI immediata
         sharingRequested = true
         isSharing = true
         myMode = .realtime
         myExpiresAt = nil
         
-        // no timer
+        saveLocationDefaults(uid: uid, displayName: displayName)
+        setBadge(active: true)
+        
         expiryTask?.cancel()
         expiryTask = nil
         
@@ -161,11 +172,13 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         
         let expires = Date().addingTimeInterval(Double(hours) * 3600)
         
-        // UI immediata
         sharingRequested = true
         isSharing = true
         myMode = .temporary
         myExpiresAt = expires
+        
+        saveLocationDefaults(uid: uid, displayName: displayName)
+        setBadge(active: true)
         
         do {
             try await remote.startSharing(
@@ -188,7 +201,6 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     func stopSharing() async {
         guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
         
-        // UI immediata
         sharingRequested = false
         isSharing = false
         myMode = nil
@@ -197,10 +209,13 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         expiryTask?.cancel()
         expiryTask = nil
         
+        // Rimuovi da UserDefaults
+        clearLocationDefaults()
+        setBadge(active: false)
+        
         await remote.stopSharing(familyId: familyId, uid: uid)
         
-        locationManager.stopUpdatingLocation()
-        shouldStartLocationUpdates = false
+        stopLocationUpdates()
     }
     
     // MARK: - FIX: aggiorna il nome mentre la condivisione è attiva
@@ -231,8 +246,9 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         expiryTask?.cancel()
         expiryTask = nil
         
-        locationManager.stopUpdatingLocation()
-        shouldStartLocationUpdates = false
+        clearLocationDefaults()
+        setBadge(active: false)
+        stopLocationUpdates()
     }
     
     // MARK: - Temporary expiry timer
@@ -267,8 +283,12 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         let status = locationManager.authorizationStatus
         switch status {
         case .notDetermined:
+            // Prima chiediamo WhenInUse, poi upgrade ad Always
             locationManager.requestWhenInUseAuthorization()
-        case .authorizedWhenInUse, .authorizedAlways:
+        case .authorizedWhenInUse:
+            // Abbiamo WhenInUse, chiediamo upgrade ad Always per il background
+            locationManager.requestAlwaysAuthorization()
+        case .authorizedAlways:
             break
         case .restricted, .denied:
             KBLog.app.error("Location permission denied/restricted")
@@ -283,8 +303,18 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         switch status {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.startUpdatingLocation()
-            locationManager.requestLocation() // prova update immediato
+            locationManager.requestLocation()
             shouldStartLocationUpdates = false
+            
+            // Significant changes: risveglia l'app anche se terminata dall'utente
+            // (funziona solo con authorizedAlways)
+            if status == .authorizedAlways {
+                locationManager.startMonitoringSignificantLocationChanges()
+            }
+            
+            if status == .authorizedWhenInUse {
+                locationManager.requestAlwaysAuthorization()
+            }
             
         case .notDetermined:
             shouldStartLocationUpdates = true
@@ -299,13 +329,39 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         }
     }
     
+    private func stopLocationUpdates() {
+        locationManager.stopUpdatingLocation()
+        locationManager.stopMonitoringSignificantLocationChanges()
+        shouldStartLocationUpdates = false
+    }
+    
+    /// Chiamato all'avvio: se Firestore dice che eravamo in sharing (es. app rilanciata
+    /// da iOS dopo significant location change), riparte il tracking immediatamente.
+    private func resumeIfNeeded() {
+        // applyRemoteStateForMeIfNeeded() viene già chiamato dal listener Firestore
+        // appena arriva il primo snapshot — non serve fare altro qui.
+        // Il listener è già partito in start() → listen().
+        KBLog.app.debug("FamilyLocation: resumeIfNeeded — listener will restore state")
+    }
+    
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         
-        if (status == .authorizedWhenInUse || status == .authorizedAlways),
-           shouldStartLocationUpdates,
-           sharingRequested {
-            startLocationUpdatesIfPossible()
+        switch status {
+        case .authorizedWhenInUse:
+            // Upgrade ad Always appena possibile
+            manager.requestAlwaysAuthorization()
+            if shouldStartLocationUpdates, sharingRequested {
+                startLocationUpdatesIfPossible()
+            }
+        case .authorizedAlways:
+            if shouldStartLocationUpdates, sharingRequested {
+                startLocationUpdatesIfPossible()
+            }
+        case .denied, .restricted:
+            KBLog.app.error("Location authorization denied/restricted")
+        default:
+            break
         }
     }
     
@@ -329,5 +385,37 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         KBLog.app.error("Location update failed: \(error.localizedDescription, privacy: .public)")
+    }
+    
+    // MARK: - UserDefaults persistence (per AppDelegate background relaunch)
+    
+    private func saveLocationDefaults(uid: String, displayName: String) {
+        let defaults = UserDefaults.standard
+        defaults.set(uid, forKey: KBLocationDefaults.uid)
+        defaults.set(familyId, forKey: KBLocationDefaults.familyId)
+        defaults.set(displayName, forKey: KBLocationDefaults.displayName)
+        defaults.set(true, forKey: KBLocationDefaults.isSharing)
+        NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
+    }
+    
+    private func clearLocationDefaults() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: KBLocationDefaults.uid)
+        defaults.removeObject(forKey: KBLocationDefaults.familyId)
+        defaults.removeObject(forKey: KBLocationDefaults.displayName)
+        defaults.set(false, forKey: KBLocationDefaults.isSharing)
+        NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
+    }
+    
+    /// Mostra badge 1 sull'icona mentre la condivisione è attiva, lo rimuove quando si ferma.
+    private func setBadge(active: Bool) {
+        Task { @MainActor in
+            do {
+                try await UNUserNotificationCenter.current()
+                    .setBadgeCount(active ? 1 : 0)
+            } catch {
+                KBLog.app.error("FamilyLocation setBadge failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 }

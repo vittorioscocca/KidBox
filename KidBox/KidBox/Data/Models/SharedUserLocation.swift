@@ -15,6 +15,7 @@ struct SharedUserLocation: Identifiable, Equatable {
     let longitude: Double
     let mode: ShareMode
     let expiresAt: Date?
+    let avatarURL: String?      // URL Firebase Storage, nil se non ancora caricato
     
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)

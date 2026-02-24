@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import CoreLocation
 import FirebaseCore
 import FirebaseMessaging
 import UserNotifications
@@ -20,6 +21,7 @@ import OSLog
 /// - Receive FCM token updates (registration token refresh)
 /// - Handle user interaction with notifications (tap)
 /// - Present notifications while app is in foreground
+/// - Handle background location relaunch (significant location changes)
 ///
 /// Notes:
 /// - Avoid logging sensitive notification payload data (could contain PII).
@@ -27,15 +29,18 @@ import OSLog
 final class AppDelegate: NSObject,
                          UIApplicationDelegate,
                          UNUserNotificationCenterDelegate,
-                         MessagingDelegate {
+                         MessagingDelegate,
+                         CLLocationManagerDelegate {
+    
+    // MARK: - Background location manager
+    
+    /// Location manager dedicato al relaunch — separato da quello del ViewModel.
+    /// Serve solo per ricevere il primo evento di significant change che sveglia l'app
+    /// dopo che è stata terminata dall'utente, poi il ViewModel prende il controllo.
+    private var backgroundLocationManager: CLLocationManager?
     
     // MARK: - App lifecycle
     
-    /// Called when the app finishes launching.
-    ///
-    /// Configures Firebase and sets delegates for:
-    /// - `UNUserNotificationCenter` (foreground presentation + tap handling)
-    /// - `Messaging` (FCM token refresh)
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -46,16 +51,43 @@ final class AppDelegate: NSObject,
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
         
-        // 🔔 Notifications delegate (allows banner even in foreground)
+        // 🔔 Notifications delegate
         UNUserNotificationCenter.current().delegate = self
         KBLog.app.kbDebug("UNUserNotificationCenter delegate set")
         
-        // 📩 FCM delegate (token refresh)
+        // 📩 FCM delegate
         Messaging.messaging().delegate = self
         KBLog.app.kbDebug("Messaging delegate set")
+        
         configureMediaURLCache()
-        KBLog.app.kbDebug("Chache configured")
+        KBLog.app.kbDebug("Cache configured")
+        
+        // 📍 Background location relaunch
+        // iOS rilancia l'app con .location nelle launchOptions quando c'è
+        // un significant location change pendente mentre l'app era terminata.
+        // Nota: .location è deprecata in iOS 26 ma funziona ancora —
+        // migreremo a CLLocationUpdate/CLMonitor quando iOS 26 sarà GA.
+        if wasRelauchedForLocation(launchOptions: launchOptions) {
+            KBLog.app.kbInfo("App relaunched by iOS for background location event")
+            setupBackgroundLocationManager()
+        }
+        
         return true
+    }
+    
+    private func setupBackgroundLocationManager() {
+        let manager = CLLocationManager()
+        manager.delegate = self
+        manager.allowsBackgroundLocationUpdates = true
+        backgroundLocationManager = manager
+        manager.startMonitoringSignificantLocationChanges()
+    }
+    
+    /// Controlla se l'app è stata rilanciata da iOS per un location event.
+    /// Usa la raw key string per evitare il warning di deprecazione di .location su iOS 26+.
+    private func wasRelauchedForLocation(launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        let key = UIApplication.LaunchOptionsKey(rawValue: "UIApplicationLaunchOptionsLocationKey")
+        return launchOptions?[key] != nil
     }
     
     func configureMediaURLCache() {
@@ -64,11 +96,47 @@ final class AppDelegate: NSObject,
         URLCache.shared = URLCache(memoryCapacity: memory, diskCapacity: disk, diskPath: "kidbox-media-cache")
     }
     
+    // MARK: - CLLocationManagerDelegate (background relaunch)
+    
+    /// Riceve la posizione quando l'app viene rilanciata in background da iOS.
+    /// In questo momento la UI non è ancora costruita, quindi scriviamo
+    /// direttamente su Firestore tramite LocationRemoteStore.
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        
+        KBLog.app.kbInfo("Background location received lat=\(location.coordinate.latitude) lon=\(location.coordinate.longitude)")
+        
+        // Leggi uid/familyId/displayName da UserDefaults
+        // (salvati dal FamilyLocationViewModel quando l'utente attiva la condivisione)
+        let defaults = UserDefaults.standard
+        guard
+            let uid         = defaults.string(forKey: KBLocationDefaults.uid),
+            let familyId    = defaults.string(forKey: KBLocationDefaults.familyId),
+            let displayName = defaults.string(forKey: KBLocationDefaults.displayName),
+            defaults.bool(forKey: KBLocationDefaults.isSharing)
+        else {
+            KBLog.app.kbDebug("Background location: no active sharing session, skipping")
+            return
+        }
+        
+        let store = LocationRemoteStore()
+        Task {
+            await store.updateLocation(
+                familyId: familyId,
+                uid: uid,
+                location: location,
+                displayName: displayName
+            )
+            KBLog.app.kbInfo("Background location: Firestore update sent uid=\(uid)")
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        KBLog.app.kbError("Background location error: \(error.localizedDescription)")
+    }
+    
     // MARK: - Notification tap handling
     
-    /// Called when the user interacts with a notification (e.g. taps it).
-    ///
-    /// Forwards the notification payload to `NotificationManager` on MainActor.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
@@ -77,7 +145,6 @@ final class AppDelegate: NSObject,
         
         let userInfo = response.notification.request.content.userInfo
         
-        // Forward payload to app-level notification manager.
         await MainActor.run {
             NotificationManager.shared.handleNotificationUserInfo(userInfo)
         }
@@ -85,10 +152,6 @@ final class AppDelegate: NSObject,
     
     // MARK: - APNs registration
     
-    /// Called when APNs successfully registers and provides the device token.
-    ///
-    /// Bridges the APNs token to Firebase Messaging by forwarding it to `NotificationManager`,
-    /// which will set `Messaging.messaging().apnsToken` and (if available) persist the FCM token.
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
@@ -100,7 +163,6 @@ final class AppDelegate: NSObject,
         }
     }
     
-    /// Called when APNs registration fails.
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
@@ -110,10 +172,6 @@ final class AppDelegate: NSObject,
     
     // MARK: - FCM registration token
     
-    /// Called when Firebase Messaging refreshes or generates a new FCM registration token.
-    ///
-    /// - Important: Do not log the full token.
-    ///   Treat it as sensitive and only log non-sensitive metadata (e.g. length).
     func messaging(
         _ messaging: Messaging,
         didReceiveRegistrationToken fcmToken: String?
@@ -132,9 +190,6 @@ final class AppDelegate: NSObject,
     
     // MARK: - Foreground presentation
     
-    /// Called when a notification arrives while the app is in the foreground.
-    ///
-    /// Returning `.banner` ensures the user still sees the notification.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification

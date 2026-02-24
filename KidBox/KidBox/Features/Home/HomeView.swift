@@ -41,7 +41,7 @@ struct HomeView: View {
     @State private var heroUploadError: String?
     
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
-   
+    
     private var myProfile: KBUserProfile? {
         guard let uid = Auth.auth().currentUser?.uid else { return nil }
         return profiles.first(where: { $0.uid == uid })
@@ -124,9 +124,9 @@ struct HomeView: View {
                     coordinator.navigate(to: .profile)
                 } label: {
                     ProfileAvatarView(avatarData: myProfile?.avatarData)
-                        .frame(width: 34, height: 34)        // dimensione visiva
-                        .padding(6)                          // aumenta spazio tappabile
-                        .contentShape(Rectangle())           // rende tappabile tutto il rettangolo
+                        .frame(width: 34, height: 34)
+                        .padding(6)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -312,8 +312,6 @@ struct HomeView: View {
 }
 
 // MARK: - HomeDestination
-// Enum leggero usato da HomeCardGrid per comunicare la destinazione
-// senza dipendere direttamente da Route (evita import ciclici).
 
 enum HomeDestination {
     case notes, todo, calendar, care
@@ -343,9 +341,36 @@ enum HomeDestination {
     }
 }
 
-// MARK: - HomeCardGrid
-// Subview separata: riduce drasticamente il tempo di type-check del compilatore.
+// MARK: - LocationSharingObserver
+// ObservableObject leggero che legge lo stato di sharing da UserDefaults.
+// Si aggiorna quando l'app torna in foreground (scenePhase) o riceve
+// la notifica kbProfileDisplayNameUpdated (riutilizzata come trigger generico).
 
+final class LocationSharingObserver: ObservableObject {
+    @Published private(set) var isSharing: Bool = false
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        refresh()
+        
+        // Aggiorna quando l'app torna in foreground
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .sink { [weak self] _ in self?.refresh() }
+            .store(in: &cancellables)
+        
+        // Aggiorna quando il ViewModel cambia lo stato di sharing
+        NotificationCenter.default.publisher(for: .kbLocationSharingStateChanged)
+            .sink { [weak self] _ in self?.refresh() }
+            .store(in: &cancellables)
+    }
+    
+    func refresh() {
+        isSharing = UserDefaults.standard.bool(forKey: KBLocationDefaults.isSharing)
+    }
+}
+
+// MARK: - HomeCardGrid
 
 private struct HomeCardGrid: View {
     let hasFamily: Bool
@@ -353,6 +378,7 @@ private struct HomeCardGrid: View {
     let onNavigate: (HomeDestination) -> Void
     
     @ObservedObject private var badge = BadgeManager.shared
+    @StateObject private var locationObserver = LocationSharingObserver()
     
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -381,7 +407,6 @@ private struct HomeCardGrid: View {
     private var cardNote: some View {
         HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
             KBLog.navigation.debug("Home: tap Notes")
-            // onNavigate(.notes)
         }
     }
     
@@ -402,7 +427,6 @@ private struct HomeCardGrid: View {
     private var cardCure: some View {
         HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
             KBLog.navigation.debug("Home: tap Care")
-            // onNavigate(.care)
         }
     }
     
@@ -412,7 +436,6 @@ private struct HomeCardGrid: View {
                 KBLog.navigation.debug("Home: tap Chat")
                 onNavigate(.chat)
             }
-            
             if badge.chat > 0 {
                 BadgeView(count: badge.chat)
                     .padding(.top, 8)
@@ -427,7 +450,6 @@ private struct HomeCardGrid: View {
                 KBLog.navigation.debug("Home: tap Documents")
                 onNavigate(.document)
             }
-            
             if badge.documents > 0 {
                 BadgeView(count: badge.documents)
                     .padding(.top, 8)
@@ -439,26 +461,31 @@ private struct HomeCardGrid: View {
     private var cardSpese: some View {
         HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
             KBLog.navigation.debug("Home: tap Expenses")
-            // onNavigate(.expenses)
         }
     }
     
     private var cardTimeline: some View {
         HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
             KBLog.navigation.debug("Home: tap Timeline")
-            // onNavigate(.timeline)
         }
     }
     
-    // ✅ NUOVA — Posizione famiglia
+    // Posizione famiglia — con indicatore pulsante se condivisione attiva
     private var cardPosizione: some View {
-        HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
-            KBLog.navigation.debug("Home: tap FamilyLocation")
-            onNavigate(.familyLocation(familyId: familyId))
+        ZStack(alignment: .topTrailing) {
+            HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
+                KBLog.navigation.debug("Home: tap FamilyLocation")
+                onNavigate(.familyLocation(familyId: familyId))
+            }
+            
+            if locationObserver.isSharing {
+                LocationSharingPulse()
+                    .padding(.top, 8)
+                    .padding(.trailing, 8)
+            }
         }
     }
     
-    // ✅ NUOVA — Foto famiglia
     private var cardFoto: some View {
         HomeCardView(title: "Foto", subtitle: "Album condiviso", systemImage: "photo.stack.fill", tint: .pink) {
             KBLog.navigation.debug("Home: tap FamilyPhotos")
@@ -473,7 +500,6 @@ private struct HomeCardGrid: View {
         }
     }
     
-    // ✅ NUOVA — Chiedi all'Esperto (AI agent)
     private var cardEsperto: some View {
         HomeCardView(title: "Chiedi all'Esperto", subtitle: "Consigli su famiglia e figli", systemImage: "brain.head.profile", tint: .purple) {
             KBLog.navigation.debug("Home: tap AskExpert")
@@ -481,6 +507,49 @@ private struct HomeCardGrid: View {
         }
     }
 }
+
+// MARK: - LocationSharingPulse
+// Punto verde con animazione pulse, identico al badge rosso ma verde e pulsante.
+
+private struct LocationSharingPulse: View {
+    @State private var pulsing = false
+    
+    var body: some View {
+        ZStack {
+            // Onda esterna — più grande e più opaca
+            Circle()
+                .fill(Color.green.opacity(0.25))
+                .frame(width: 28, height: 28)
+                .scaleEffect(pulsing ? 2.2 : 1.0)
+                .opacity(pulsing ? 0 : 0.7)
+                .animation(
+                    .easeOut(duration: 1.4).repeatForever(autoreverses: false),
+                    value: pulsing
+                )
+            
+            // Onda intermedia — sfasata di mezzo ciclo
+            Circle()
+                .fill(Color.green.opacity(0.35))
+                .frame(width: 20, height: 20)
+                .scaleEffect(pulsing ? 1.8 : 1.0)
+                .opacity(pulsing ? 0 : 0.8)
+                .animation(
+                    .easeOut(duration: 1.4).delay(0.4).repeatForever(autoreverses: false),
+                    value: pulsing
+                )
+            
+            // Punto centrale fisso
+            Circle()
+                .fill(Color.green)
+                .frame(width: 12, height: 12)
+                .overlay(Circle().stroke(.white, lineWidth: 2))
+                .shadow(color: .green.opacity(0.6), radius: 4, x: 0, y: 0)
+        }
+        .onAppear { pulsing = true }
+    }
+}
+
+// MARK: - BadgeView
 
 private struct BadgeView: View {
     let count: Int

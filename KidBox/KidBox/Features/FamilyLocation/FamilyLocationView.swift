@@ -2,11 +2,13 @@ import SwiftUI
 import MapKit
 import SwiftData
 import FirebaseAuth
+import FirebaseStorage
 import UIKit
 
 // MARK: - Notification per aggiornamento nome da ProfileView
 extension Notification.Name {
     static let kbProfileDisplayNameUpdated = Notification.Name("kbProfileDisplayNameUpdated")
+    static let kbLocationSharingStateChanged = Notification.Name("kbLocationSharingStateChanged")
 }
 
 struct FamilyLocationView: View {
@@ -40,7 +42,8 @@ struct FamilyLocationView: View {
                     Annotation("", coordinate: user.coordinate) {
                         AvatarMarker(
                             name: user.name,
-                            avatarData: avatarDataFor(uid: user.id)
+                            avatarData: avatarDataFor(uid: user.id),
+                            avatarURL: user.avatarURL
                         )
                     }
                 }
@@ -335,27 +338,70 @@ struct FindMyBottomCard: View {
 private struct AvatarMarker: View {
     let name: String
     let avatarData: Data?
+    let avatarURL: String?
+    
+    @State private var remoteImage: UIImage? = nil
     
     var body: some View {
         VStack(spacing: 4) {
-            Group {
-                if let avatarData, let uiImage = UIImage(data: avatarData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .scaledToFill()
-                }
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
-            .overlay(Circle().stroke(.quaternary, lineWidth: 1))
+            avatarImage
+                .frame(width: 40, height: 40)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(.quaternary, lineWidth: 1))
             
             Text(name)
                 .font(.caption)
                 .bold()
+        }
+        .task(id: avatarURL) {
+            await loadRemoteImageIfNeeded()
+        }
+    }
+    
+    @ViewBuilder
+    private var avatarImage: some View {
+        if let avatarData, let uiImage = UIImage(data: avatarData) {
+            // Immagine locale SwiftData — priorità massima (è il mio stesso profilo)
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+        } else if let remoteImage {
+            // Immagine scaricata da Firebase Storage SDK
+            Image(uiImage: remoteImage)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Image(systemName: "person.crop.circle.fill")
+                .resizable()
+                .scaledToFill()
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    /// Scarica tramite Firebase Storage SDK (gestisce autenticazione automaticamente)
+    private func loadRemoteImageIfNeeded() async {
+        guard avatarData == nil,
+              let avatarURL,
+              let url = URL(string: avatarURL)
+        else {
+            print("AvatarMarker: skip download — avatarData=\(avatarData != nil) avatarURL=\(avatarURL ?? "nil")")
+            return
+        }
+        
+        print("AvatarMarker: downloading from \(avatarURL)")
+        
+        do {
+            let ref = Storage.storage().reference(forURL: url.absoluteString)
+            let data = try await ref.data(maxSize: 2 * 1024 * 1024)
+            print("AvatarMarker: downloaded \(data.count) bytes")
+            if let image = UIImage(data: data) {
+                await MainActor.run { remoteImage = image }
+                print("AvatarMarker: image set OK")
+            } else {
+                print("AvatarMarker: UIImage creation failed")
+            }
+        } catch {
+            print("AvatarMarker: download failed — \(error.localizedDescription)")
         }
     }
 }
