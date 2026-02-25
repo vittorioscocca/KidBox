@@ -317,7 +317,7 @@ enum HomeDestination {
     case notes, todo, calendar, care
     case chat, document, expenses, timeline
     case familyLocation(familyId: String), familyPhotos, familySettings
-    case askExpert, profile, settings, inviteCode
+    case askExpert, profile, settings, inviteCode, shopping
     
     /// Mappa verso il Route dell'AppCoordinator.
     var route: Route {
@@ -337,6 +337,7 @@ enum HomeDestination {
         case .profile:                       return .profile
         case .settings:                      return .settings
         case .inviteCode:                    return .inviteCode
+        case .shopping:                      return .shoppingList
         }
     }
 }
@@ -370,6 +371,22 @@ final class LocationSharingObserver: ObservableObject {
     }
 }
 
+private enum HomeCardID: String, CaseIterable, Codable {
+    case note
+    case todo
+    case shopping
+    case calendar
+    case care
+    case chat
+    case documents
+    case expenses
+    case timeline
+    case location
+    case photos
+    case family
+    case expert
+}
+
 // MARK: - HomeCardGrid
 
 private struct HomeCardGrid: View {
@@ -380,172 +397,249 @@ private struct HomeCardGrid: View {
     @ObservedObject private var badge = BadgeManager.shared
     @StateObject private var locationObserver = LocationSharingObserver()
     
+    @State private var order: [HomeCardID] = []
+    @State private var dragged: HomeCardID?
+    
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
     
+    private var storageKey: String {
+        // Ordine per famiglia (se presente), così ogni famiglia può avere un layout diverso
+        let fam = familyId.isEmpty ? "nofamily" : familyId
+        return "kb.home.cardOrder.\(fam)"
+    }
+    
     var body: some View {
         LazyVGrid(columns: columns, spacing: 12) {
-            cardNote
-            cardTodo
-            cardCalendar
-            cardCure
-            cardChat
-            cardDocumenti
-            cardSpese
-            cardTimeline
-            cardPosizione
-            cardFoto
-            cardFamily
-            cardEsperto
-        }
-    }
-    
-    // MARK: Cards
-    
-    private var cardNote: some View {
-        HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
-            KBLog.navigation.debug("Home: tap Notes")
-        }
-    }
-    
-    private var cardTodo: some View {
-        HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
-            KBLog.navigation.debug("Home: tap Todo")
-            onNavigate(.todo)
-        }
-    }
-    
-    private var cardCalendar: some View {
-        HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
-            KBLog.navigation.debug("Home: tap Calendar")
-            onNavigate(.calendar)
-        }
-    }
-    
-    private var cardCure: some View {
-        HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
-            KBLog.navigation.debug("Home: tap Care")
-        }
-    }
-    
-    private var cardChat: some View {
-        ZStack(alignment: .topTrailing) {
-            HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
-                KBLog.navigation.debug("Home: tap Chat")
-                onNavigate(.chat)
-            }
-            if badge.chat > 0 {
-                BadgeView(count: badge.chat)
-                    .padding(.top, 8)
-                    .padding(.trailing, 8)
-            }
-        }
-    }
-    
-    private var cardDocumenti: some View {
-        ZStack(alignment: .topTrailing) {
-            HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
-                KBLog.navigation.debug("Home: tap Documents")
-                onNavigate(.document)
-            }
-            if badge.documents > 0 {
-                BadgeView(count: badge.documents)
-                    .padding(.top, 8)
-                    .padding(.trailing, 8)
-            }
-        }
-    }
-    
-    private var cardSpese: some View {
-        HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
-            KBLog.navigation.debug("Home: tap Expenses")
-        }
-    }
-    
-    private var cardTimeline: some View {
-        HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
-            KBLog.navigation.debug("Home: tap Timeline")
-        }
-    }
-    
-    // Posizione famiglia — con indicatore pulsante se condivisione attiva
-    /*private var cardPosizione: some View {
-        ZStack(alignment: .topTrailing) {
-            HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
-                KBLog.navigation.debug("Home: tap FamilyLocation")
-                onNavigate(.familyLocation(familyId: familyId))
-            }
-            
-            if locationObserver.isSharing {
-                LocationSharingPulse()
-                    .padding(.top, 8)
-                    .padding(.trailing, 8)
-            }
-        }
-    }*/
-    
-    private var cardPosizione: some View {
-        ZStack {
-            HomeCardView(
-                title: "Posizione",
-                subtitle: "Dove sono tutti",
-                systemImage: "location.fill",
-                tint: .cyan
-            ) {
-                KBLog.navigation.debug("Home: tap FamilyLocation")
-                onNavigate(.familyLocation(familyId: familyId))
-            }
-            
-            // 🔵 Badge unread (ALTO A DESTRA)
-            if badge.location > 0 {
-                VStack {
-                    HStack {
-                        Spacer()
-                        BadgeView(count: badge.location)
+            ForEach(order, id: \.self) { id in
+                cardView(for: id)
+                    .homeCardMasked() // ✅ QUI, non dentro HomeCardView
+                    .onDrag {
+                        dragged = id
+                        return NSItemProvider(object: id.rawValue as NSString)
+                    } preview: {
+                        cardView(for: id)
+                            .homeCardMasked()
+                            .drawingGroup() // più costosa, ma preview-only
                     }
-                    Spacer()
-                }
-                .padding(.top, 8)
-                .padding(.trailing, 8)
+                    .onDrop(of: [.text], delegate: HomeCardDropDelegate(
+                        item: id,
+                        items: $order,
+                        dragged: $dragged,
+                        onChanged: { persist() }
+                    ))
+            }      }
+        .onAppear {
+            if order.isEmpty {
+                order = loadOrder() ?? defaultOrder()
+            }
+        }
+    }
+    
+    // MARK: - Views mapping
+    
+    @ViewBuilder
+    private func cardView(for id: HomeCardID) -> some View {
+        switch id {
+        case .note:
+            HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
+                KBLog.navigation.debug("Home: tap Notes")
+                onNavigate(.notes)
             }
             
-            // 🟢 Pulse sharing (BASSO A DESTRA)
-            if locationObserver.isSharing {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        LocationSharingPulse()
-                    }
+        case .todo:
+            HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
+                KBLog.navigation.debug("Home: tap Todo")
+                onNavigate(.todo)
+            }
+            
+        case .shopping:
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(title: "Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
+                    KBLog.navigation.debug("Home: tap Shopping")
+                    onNavigate(.shopping) // ricordati di aggiungere HomeDestination.shopping + route
                 }
-                .padding(.bottom, 8)
-                .padding(.trailing, 8)
+                if badge.shopping > 0 {
+                    BadgeView(count: badge.shopping)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            }
+            
+        case .calendar:
+            HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
+                KBLog.navigation.debug("Home: tap Calendar")
+                onNavigate(.calendar)
+            }
+            
+        case .care:
+            HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
+                KBLog.navigation.debug("Home: tap Care")
+                onNavigate(.care)
+            }
+            
+        case .chat:
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
+                    KBLog.navigation.debug("Home: tap Chat")
+                    onNavigate(.chat)
+                }
+                if badge.chat > 0 {
+                    BadgeView(count: badge.chat)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            }
+            
+        case .documents:
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
+                    KBLog.navigation.debug("Home: tap Documents")
+                    onNavigate(.document)
+                }
+                if badge.documents > 0 {
+                    BadgeView(count: badge.documents)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            }
+            
+        case .expenses:
+            HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
+                KBLog.navigation.debug("Home: tap Expenses")
+                onNavigate(.expenses)
+            }
+            
+        case .timeline:
+            HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
+                KBLog.navigation.debug("Home: tap Timeline")
+                onNavigate(.timeline)
+            }
+            
+        case .location:
+            ZStack {
+                HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
+                    KBLog.navigation.debug("Home: tap FamilyLocation")
+                    onNavigate(.familyLocation(familyId: familyId))
+                }
+                
+                if badge.location > 0 {
+                    VStack {
+                        HStack { Spacer(); BadgeView(count: badge.location) }
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                    .padding(.trailing, 8)
+                }
+                
+                if locationObserver.isSharing {
+                    VStack {
+                        Spacer()
+                        HStack { Spacer(); LocationSharingPulse() }
+                    }
+                    .padding(.bottom, 8)
+                    .padding(.trailing, 8)
+                }
+            }
+            
+        case .photos:
+            HomeCardView(title: "Foto", subtitle: "Album condiviso", systemImage: "photo.stack.fill", tint: .pink) {
+                KBLog.navigation.debug("Home: tap FamilyPhotos")
+                onNavigate(.familyPhotos)
+            }
+            
+        case .family:
+            HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill", tint: .teal) {
+                KBLog.navigation.debug("Home: tap FamilySettings")
+                onNavigate(.familySettings)
+            }
+            
+        case .expert:
+            HomeCardView(title: "Assistente", subtitle: "Conosce calendario, spesa e documenti", systemImage: "brain.head.profile", tint: .purple) {
+                KBLog.navigation.debug("Home: tap AskExpert")
+                onNavigate(.askExpert)
             }
         }
     }
     
-    private var cardFoto: some View {
-        HomeCardView(title: "Foto", subtitle: "Album condiviso", systemImage: "photo.stack.fill", tint: .pink) {
-            KBLog.navigation.debug("Home: tap FamilyPhotos")
-            onNavigate(.familyPhotos)
+    // MARK: - Order defaults + persistence
+    
+    private func defaultOrder() -> [HomeCardID] {
+        // ordine iniziale (puoi cambiarlo quando vuoi)
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .timeline, .location, .photos, .family, .expert]
+    }
+    
+    private func loadOrder() -> [HomeCardID]? {
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return nil }
+        do {
+            let decoded = try JSONDecoder().decode([HomeCardID].self, from: data)
+            // se in futuro aggiungi nuove card: le appendiamo
+            let missing = defaultOrder().filter { !decoded.contains($0) }
+            return decoded + missing
+        } catch {
+            return nil
         }
     }
     
-    private var cardFamily: some View {
-        HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill", tint: .teal) {
-            KBLog.navigation.debug("Home: tap FamilySettings")
-            onNavigate(.familySettings)
+    private func persist() {
+        do {
+            let data = try JSONEncoder().encode(order)
+            UserDefaults.standard.set(data, forKey: storageKey)
+        } catch {
+            // niente log qui se non vuoi spam, ma volendo un debug una tantum puoi farlo
         }
+    }
+}
+
+private struct HomeCardDropDelegate: DropDelegate {
+    let item: HomeCardID
+    @Binding var items: [HomeCardID]
+    @Binding var dragged: HomeCardID?
+    let onChanged: () -> Void
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        // 👇 Questo fa sparire il "+" verde (copy) e lo trasforma in move
+        DropProposal(operation: .move)
     }
     
-    private var cardEsperto: some View {
-        HomeCardView(title: "Chiedi all'Esperto", subtitle: "Consigli su famiglia e figli", systemImage: "brain.head.profile", tint: .purple) {
-            KBLog.navigation.debug("Home: tap AskExpert")
-            onNavigate(.askExpert)
+    func dropEntered(info: DropInfo) {
+        guard let dragged,
+              dragged != item,
+              let from = items.firstIndex(of: dragged),
+              let to = items.firstIndex(of: item) else { return }
+        
+        withAnimation(.snappy) {
+            items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
         }
+        onChanged()
     }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        dragged = nil
+        return true
+    }
+}
+
+private struct HomeCardMask: ViewModifier {
+    let cornerRadius: CGFloat = 16
+    
+    func body(content: Content) -> some View {
+        content
+            .background(
+                // Base piena: elimina trasparenze negli angoli durante la preview
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .compositingGroup()
+    }
+}
+
+private extension View {
+    func homeCardMasked() -> some View { modifier(HomeCardMask()) }
 }
 
 // MARK: - LocationSharingPulse

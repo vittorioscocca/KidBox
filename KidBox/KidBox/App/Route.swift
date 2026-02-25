@@ -29,6 +29,7 @@ enum Route: Hashable {
     case inviteCode
     case joinFamily
     case chat
+    case shoppingList
     case familyLocation(familyId: String)
     
     case document

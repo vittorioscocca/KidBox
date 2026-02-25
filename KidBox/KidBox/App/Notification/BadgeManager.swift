@@ -19,7 +19,8 @@ final class BadgeManager: ObservableObject {
     
     @Published var chat: Int = 0
     @Published var documents: Int = 0
-    @Published var location: Int = 0   // ✅ NEW
+    @Published var location: Int = 0
+    @Published var shopping: Int = 0
     
     private var listener: ListenerRegistration?
     

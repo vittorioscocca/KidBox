@@ -16,19 +16,7 @@ struct HomeCardView: View {
     let tint: Color
     let action: () -> Void
     
-    init(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        tint: Color = .blue,              // ✅ default
-        action: @escaping () -> Void
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.systemImage = systemImage
-        self.tint = tint
-        self.action = action
-    }
+    private let cornerRadius: CGFloat = 16
     
     var body: some View {
         Button(action: action) {
@@ -36,7 +24,7 @@ struct HomeCardView: View {
                 HStack {
                     Image(systemName: systemImage)
                         .font(.title2)
-                        .foregroundStyle(tint)        // ✅ icona colorata
+                        .foregroundStyle(tint)
                     Spacer()
                 }
                 
@@ -52,13 +40,16 @@ struct HomeCardView: View {
             .padding()
             .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(tint.opacity(0.10))         // ✅ colore “soft”
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(tint.opacity(0.10))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(tint.opacity(0.18), lineWidth: 1) // ✅ bordino leggero
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(tint.opacity(0.18), lineWidth: 1)
             )
+            // ✅ QUESTI DUE RISOLVONO GLI SPIGOLI
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .compositingGroup()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
