@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 import SwiftData
 import PhotosUI
 import CoreLocation
@@ -24,6 +25,10 @@ struct ProfileView: View {
     @State private var isDeletingAccount = false
     @State private var deleteError: String?
     
+    // Alerts
+    @State private var showSaveSuccessAlert = false
+    @State private var showSaveErrorAlert = false
+    
     // Profile fields
     @State private var firstName: String = ""
     @State private var lastName: String = ""
@@ -38,8 +43,17 @@ struct ProfileView: View {
     @State private var lastLoginAt: Date?
     
     // UI state
-    @State private var saveInfoText: String?
     @State private var saveErrorText: String?
+    
+    // Dirty tracking
+    @State private var didLoadInitial = false
+    @State private var isDirty = false
+    
+    // Snapshot of last saved values
+    @State private var savedFirstName: String = ""
+    @State private var savedLastName: String = ""
+    @State private var savedFamilyAddress: String = ""
+    @State private var savedAvatarHash: Int = 0
     
     @StateObject private var locationService = OneShotLocationService()
     
@@ -71,27 +85,20 @@ struct ProfileView: View {
                 }
                 .padding(.vertical, 6)
                 
-                Button {
-                    KBLog.auth.debug("Profile: tap Save")
-                    saveProfile()
-                } label: {
-                    Text("Salva profilo")
+                if isDirty {
+                    Button {
+                        KBLog.auth.debug("Profile: tap Save")
+                        saveProfile()
+                    } label: {
+                        Text("Salva profilo")
+                    }
                 }
                 
-                if let saveInfoText {
-                    Text(saveInfoText)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
                 if let saveErrorText {
                     Text(saveErrorText)
                         .font(.footnote)
                         .foregroundStyle(.red)
                 }
-                
-                Text("Il nome usato in chat viene preso da questo profilo.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
             
             // MARK: - Family address
@@ -117,11 +124,10 @@ struct ProfileView: View {
                 }
             }
             
-            // MARK: - Account (NO Firebase UID)
+            // MARK: - Account
             Section("Account") {
                 if email.isEmpty {
-                    Text("Email: —")
-                        .foregroundStyle(.secondary)
+                    Text("Email: —").foregroundStyle(.secondary)
                 } else {
                     Text("Email: \(email)")
                         .textSelection(.enabled)
@@ -159,6 +165,9 @@ struct ProfileView: View {
         .onAppear {
             loadAuthInfo()
             loadLocalProfile()
+            syncSavedSnapshotFromCurrentState()
+            didLoadInitial = true
+            recomputeDirty()
         }
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
@@ -166,11 +175,10 @@ struct ProfileView: View {
                 if let data = try? await newItem.loadTransferable(type: Data.self) {
                     await MainActor.run {
                         self.avatarData = data
-                        self.saveInfoText = "Foto aggiornata."
                         self.saveErrorText = nil
-                    }
-                    await MainActor.run {
-                        saveProfile()
+                        if didLoadInitial {
+                            recomputeDirty()
+                        }
                     }
                 }
             }
@@ -178,7 +186,28 @@ struct ProfileView: View {
         .onReceive(locationService.$resolvedAddress) { address in
             guard let address, !address.isEmpty else { return }
             familyAddress = address
-            saveProfile()
+            if didLoadInitial {
+                recomputeDirty()
+            }
+        }
+        .onChange(of: firstName) { _, _ in
+            if didLoadInitial { recomputeDirty() }
+        }
+        .onChange(of: lastName) { _, _ in
+            if didLoadInitial { recomputeDirty() }
+        }
+        .onChange(of: familyAddress) { _, _ in
+            if didLoadInitial { recomputeDirty() }
+        }
+        .alert("Profilo salvato ✅", isPresented: $showSaveSuccessAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Nome, cognome e foto sono stati aggiornati.")
+        }
+        .alert("Errore salvataggio", isPresented: $showSaveErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(saveErrorText ?? "Errore sconosciuto")
         }
         .sheet(isPresented: $showDeleteAccountSheet) {
             DeleteAccountConfirmSheet(
@@ -253,30 +282,45 @@ struct ProfileView: View {
             familyAddress = profile.familyAddress ?? ""
             avatarData = profile.avatarData
             
-            // preferisci email da auth, ma se non c'è usa quella locale
             if email.isEmpty { email = profile.email ?? "" }
             if lastLoginAt == nil { lastLoginAt = profile.lastLoginAt }
         }
     }
     
     private func resolvedFamilyId() -> String? {
-        
-        // 1️⃣ Se il coordinator ha una famiglia attiva, usiamo quella
         if let active = coordinator.activeFamilyId, !active.isEmpty {
             return active
         }
-        
-        // 2️⃣ Fallback: prima famiglia salvata in locale
         let descriptor = FetchDescriptor<KBFamily>()
         let families = try? modelContext.fetch(descriptor)
-        
         return families?.first?.id
+    }
+    
+    // MARK: - Dirty helpers
+    private func syncSavedSnapshotFromCurrentState() {
+        savedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedLastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedFamilyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedAvatarHash = avatarData?.hashValue ?? 0
+    }
+    
+    private func recomputeDirty() {
+        let fn = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let ln = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let addr = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        let avHash = avatarData?.hashValue ?? 0
+        
+        isDirty = (fn != savedFirstName) ||
+        (ln != savedLastName) ||
+        (addr != savedFamilyAddress) ||
+        (avHash != savedAvatarHash)
     }
     
     // MARK: - Save
     private func saveProfile() {
         guard let user = Auth.auth().currentUser else {
             saveErrorText = "Utente non autenticato."
+            showSaveErrorAlert = true
             return
         }
         
@@ -307,16 +351,19 @@ struct ProfileView: View {
             profile.familyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
             profile.avatarData = avatarData
             
-            // last login
             profile.lastLoginAt = user.metadata.lastSignInDate ?? profile.lastLoginAt
             profile.updatedAt = Date()
             
-            // Salva SwiftData PRIMA di fare operazioni remote
             try modelContext.save()
             KBLog.auth.info("Profile saved uid=\(uid, privacy: .public) displayName=\(profile.displayName ?? "nil", privacy: .public)")
             
-            // FIX: notifica FamilyLocationView (e qualsiasi altro observer) del nuovo nome
-            // così il ViewModel aggiorna myCurrentDisplayName e Firestore in tempo reale.
+            saveErrorText = nil
+            showSaveSuccessAlert = true
+            
+            // aggiorna snapshot "salvato" e nascondi bottone
+            syncSavedSnapshotFromCurrentState()
+            recomputeDirty()
+            
             if let displayName = profile.displayName, !displayName.isEmpty, displayName != "Utente" {
                 NotificationCenter.default.post(
                     name: .kbProfileDisplayNameUpdated,
@@ -325,46 +372,42 @@ struct ProfileView: View {
                 )
             }
             
-            guard
-                !uid.isEmpty,
-                let familyId = resolvedFamilyId()
-            else {
+            guard !uid.isEmpty, let familyId = resolvedFamilyId() else {
                 KBLog.app.error("Profile remote update aborted: missing familyId")
-                saveInfoText = "Salvato."
-                saveErrorText = nil
                 return
             }
             
             Task {
-                await chatRemoteStore.setTyping(
-                    false,
-                    familyId: familyId,
-                    uid: uid,
-                    displayName: profile.displayName ?? ""
-                )
+                await chatRemoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: profile.displayName ?? "")
+                await locationRemoteStore.updateDisplayName(familyId: familyId, uid: uid, displayName: profile.displayName ?? "")
                 
-                await locationRemoteStore.updateDisplayName(
-                    familyId: familyId,
-                    uid: uid,
-                    displayName: profile.displayName ?? ""
-                )
+                // Aggiorna anche il displayName nel documento members di Firestore,
+                // così gli altri device vedono il nome corretto nella lista famiglia.
+                // Usiamo setData(merge:true) invece di updateData per creare il campo
+                // anche se il documento non ha ancora il campo displayName.
+                if let name = profile.displayName, !name.isEmpty, name != "Utente" {
+                    do {
+                        try await Firestore.firestore()
+                            .collection("families").document(familyId)
+                            .collection("members").document(uid)
+                            .setData([
+                                "displayName": name,
+                                "updatedAt": Timestamp(date: Date())
+                            ], merge: true)
+                        KBLog.app.debug("Profile: updated remote member displayName=\(name, privacy: .public)")
+                    } catch {
+                        KBLog.app.error("Profile: remote member name update failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
                 
-                // Carica avatar su Storage e salva URL in Firestore
-                // così gli altri membri vedono la foto aggiornata sulla mappa
                 if let avatarData = profile.avatarData {
-                    await avatarRemoteStore.uploadAvatar(
-                        imageData: avatarData,
-                        uid: uid,
-                        familyId: familyId
-                    )
+                    await avatarRemoteStore.uploadAvatar(imageData: avatarData, uid: uid, familyId: familyId)
                 }
             }
             
-            saveInfoText = "Salvato."
-            saveErrorText = nil
         } catch {
             saveErrorText = error.localizedDescription
-            saveInfoText = nil
+            showSaveErrorAlert = true
             KBLog.auth.error("Profile save FAILED: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -480,7 +523,5 @@ final class OneShotLocationService: NSObject, ObservableObject, CLLocationManage
 
 // MARK: - Small helper
 private extension String {
-    func ifEmpty(_ fallback: String) -> String {
-        self.isEmpty ? fallback : self
-    }
+    func ifEmpty(_ fallback: String) -> String { self.isEmpty ? fallback : self }
 }

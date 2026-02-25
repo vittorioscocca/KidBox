@@ -4,6 +4,7 @@ const {onDocumentCreated, onDocumentWritten} = require("firebase-functions/v2/fi
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
+const STORAGE_BUCKET = "kidbox-42cd7-eu";
 
 admin.initializeApp();
 
@@ -230,7 +231,7 @@ async function deleteCollection(colRef, batchSize = 300) {
  * @return {Promise<void>}
  */
 async function deleteStoragePrefix(prefix) {
-  const bucket = admin.storage().bucket();
+  const bucket = admin.storage().bucket(STORAGE_BUCKET);
   const [files] = await bucket.getFiles({prefix});
   if (!files.length) return;
 

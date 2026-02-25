@@ -12,6 +12,8 @@ import FirebaseCore
 import FirebaseMessaging
 import UserNotifications
 import OSLog
+import FirebaseStorage
+import Firebase
 
 /// UIApplication delegate for KidBox.
 ///
@@ -51,6 +53,10 @@ final class AppDelegate: NSObject,
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
         
+        let opts = FirebaseApp.app()?.options
+        KBLog.app.kbInfo("✅ PROJECT:\(opts?.projectID ?? "nil")" )
+        KBLog.app.kbInfo("✅ STORAGE_BUCKET:\(opts?.storageBucket ?? "nil")")
+        KBLog.app.kbInfo("✅ STORAGE via Storage.storage:\(Storage.storage().app.options.storageBucket ?? "nil")")
         // 🔔 Notifications delegate
         UNUserNotificationCenter.current().delegate = self
         KBLog.app.kbDebug("UNUserNotificationCenter delegate set")

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 import OSLog
 import SwiftData
 import Combine
@@ -104,8 +105,16 @@ struct FamilySettingsView: View {
             .padding()
         }
         .navigationTitle("Family")
-        .onAppear { onAppearStartRealtime() }
+        .onAppear {
+            onAppearStartRealtime()
+            syncMyMemberName()
+        }
         .onDisappear { onDisappearStopRealtime() }
+        .onReceive(NotificationCenter.default.publisher(for: .kbProfileDisplayNameUpdated)) { notification in
+            guard let name = notification.userInfo?["displayName"] as? String,
+                  !name.isEmpty else { return }
+            updateMyMemberDisplayName(name)
+        }
         .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
             guard let fid = family?.id, fid == revokedFamilyId else { return }
             KBLog.sync.info("FamilySettingsView: currentUserRevoked received familyId=\(revokedFamilyId, privacy: .public)")
@@ -394,6 +403,66 @@ struct FamilySettingsView: View {
             KBLog.sync.error("FamilySettingsView: revoke FAILED err=\(error.localizedDescription, privacy: .public)")
             revokeError = error.localizedDescription
             memberToRevoke = nil
+        }
+    }
+    
+    // MARK: - Name sync helpers
+    
+    /// Chiamato all'onAppear: allinea KBFamilyMember.displayName con KBUserProfile
+    /// (self-healing nel caso in cui il cambio nome sia avvenuto offline o su altro device).
+    private func syncMyMemberName() {
+        let uid = currentUid
+        guard !uid.isEmpty else { return }
+        
+        let profileDesc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+        guard let profile = try? modelContext.fetch(profileDesc).first else { return }
+        
+        let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let name: String
+        if !dn.isEmpty && dn != "Utente" {
+            name = dn
+        } else {
+            let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            name = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        guard !name.isEmpty && name != "Utente" else { return }
+        updateMyMemberDisplayName(name)
+    }
+    
+    /// Aggiorna il displayName del membro corrente:
+    /// 1. Localmente su SwiftData (effetto immediato nella lista)
+    /// 2. Su Firestore (propagato agli altri device)
+    private func updateMyMemberDisplayName(_ name: String) {
+        let uid = currentUid
+        guard !uid.isEmpty, let fid = family?.id else { return }
+        
+        // 1. SwiftData locale
+        let desc = FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate { $0.userId == uid && $0.familyId == fid }
+        )
+        if let member = try? modelContext.fetch(desc).first {
+            guard member.displayName != name else { return } // evita write inutili
+            member.displayName = name
+            try? modelContext.save()
+            KBLog.sync.debug("FamilySettings: updated local member displayName=\(name, privacy: .public)")
+        }
+        
+        // 2. Firestore remoto
+        Task {
+            do {
+                try await Firestore.firestore()
+                    .collection("families").document(fid)
+                    .collection("members").document(uid)
+                    .setData([
+                        "displayName": name,
+                        "updatedAt": Timestamp(date: Date())
+                    ], merge: true)
+                KBLog.sync.debug("FamilySettings: updated remote member displayName=\(name, privacy: .public)")
+            } catch {
+                KBLog.sync.error("FamilySettings: remote member name update failed: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
     

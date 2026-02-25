@@ -111,12 +111,11 @@ final class FamilyMemberRemoteStore {
     
     /// Ensures the current user's member doc has profile fields populated.
     ///
-    /// Behavior (unchanged):
-    /// - If no authenticated user → returns.
-    /// - Writes `displayName/email/photoURL` only if present and non-empty.
-    /// - Uses `merge=true` to avoid overwriting existing fields such as role.
-    /// - Best-effort: logs errors but does not throw.
-    func upsertMyMemberProfileIfNeeded(familyId: String) async {
+    /// - Parameter displayName: Il nome canonico da `KBUserProfile` (firstName + lastName).
+    ///   Se nil o vuoto, si usa `Auth.currentUser.displayName` come fallback.
+    ///   Passare sempre il valore da SwiftData per evitare che Firebase Auth
+    ///   (che non viene aggiornato al cambio profilo) sovrascriva il nome corretto.
+    func upsertMyMemberProfileIfNeeded(familyId: String, displayName: String? = nil) async {
         guard let user = Auth.auth().currentUser else {
             KBLog.auth.kbDebug("upsertMyMemberProfileIfNeeded skipped: no authenticated user")
             return
@@ -137,13 +136,22 @@ final class FamilyMemberRemoteStore {
             "isDeleted": false
         ]
         
-        if let name = user.displayName, !name.isEmpty { data["displayName"] = name }
+        // Priorità: nome passato da KBUserProfile > Auth.currentUser.displayName
+        // Auth.currentUser.displayName NON viene aggiornato quando l'utente cambia
+        // il nome nell'app, quindi usarlo causerebbe il ripristino del nome vecchio.
+        let resolvedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let name = resolvedName, !name.isEmpty, name != "Utente" {
+            data["displayName"] = name
+        } else if let name = user.displayName, !name.isEmpty {
+            data["displayName"] = name
+        }
+        
         if let email = user.email, !email.isEmpty { data["email"] = email }
         if let url = user.photoURL?.absoluteString, !url.isEmpty { data["photoURL"] = url }
         
         do {
             try await ref.setData(data, merge: true)
-            KBLog.sync.kbInfo("Upsert my member profile completed familyId=\(familyId)")
+            KBLog.sync.kbInfo("Upsert my member profile completed familyId=\(familyId) displayName=\(resolvedName ?? "nil")")
         } catch {
             KBLog.sync.kbError("upsertMyMemberProfileIfNeeded failed: \(error.localizedDescription)")
         }

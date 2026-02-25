@@ -164,14 +164,29 @@ final class SyncCenter: ObservableObject {
     
     /// Starts (or restarts) realtime listener for family members.
     ///
-    /// Also attempts a best-effort upsert of the current user's profile fields on Firestore.
+    /// Also attempts a best-effort upsert of the current user's profile fields on Firestore,
+    /// usando il nome da KBUserProfile (SwiftData) come fonte di verità.
     func startMembersRealtime(familyId: String, modelContext: ModelContext) {
         KBLog.sync.kbInfo("startMembersRealtime familyId=\(familyId)")
         stopMembersRealtime()
         
+        // Leggi il displayName canonico da KBUserProfile prima di fare l'upsert,
+        // così Firestore riceve il nome giusto e non quello (vecchio) di Firebase Auth.
+        let myDisplayName: String? = {
+            guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return nil }
+            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+            guard let profile = try? modelContext.fetch(desc).first else { return nil }
+            let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !dn.isEmpty && dn != "Utente" { return dn }
+            let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let composed = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
+            return composed.isEmpty ? nil : composed
+        }()
+        
         // Best-effort: populate "my" profile on Firestore (non-blocking)
-        Task { [familyId] in
-            await membersRemote.upsertMyMemberProfileIfNeeded(familyId: familyId)
+        Task { [familyId, myDisplayName] in
+            await membersRemote.upsertMyMemberProfileIfNeeded(familyId: familyId, displayName: myDisplayName)
         }
         
         membersListener = membersRemote.listenMembers(
@@ -262,7 +277,35 @@ final class SyncCenter: ObservableObject {
                             local.familyId = dto.familyId
                             local.userId = dto.userId
                             local.role = dto.role
-                            local.displayName = dto.displayName
+                            
+                            // FIX: per il membro corrente il displayName canonico è
+                            // KBUserProfile (quello che l'utente ha salvato nel profilo).
+                            // Firestore potrebbe avere ancora il valore vecchio (race
+                            // condition tra write locale e snapshot in arrivo), quindi
+                            // preferiamo sempre il nome locale se disponibile e non vuoto.
+                            // Per gli altri membri usiamo normalmente il valore remoto.
+                            let isMe = dto.userId == Auth.auth().currentUser?.uid
+                            if isMe {
+                                // Leggi il nome canonico da KBUserProfile
+                                let uid = dto.userId
+                                let profileDesc = FetchDescriptor<KBUserProfile>(
+                                    predicate: #Predicate { $0.uid == uid }
+                                )
+                                if let profile = try? modelContext.fetch(profileDesc).first {
+                                    let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let composed = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let localName = (!dn.isEmpty && dn != "Utente") ? dn
+                                    : (!composed.isEmpty ? composed : nil)
+                                    local.displayName = localName ?? dto.displayName
+                                } else {
+                                    local.displayName = dto.displayName
+                                }
+                            } else {
+                                local.displayName = dto.displayName
+                            }
+                            
                             local.email = dto.email
                             local.photoURL = dto.photoURL
                             local.isDeleted = false
@@ -271,12 +314,33 @@ final class SyncCenter: ObservableObject {
                         }
                     } else {
                         let now = Date()
+                        
+                        // FIX: anche alla prima creazione del record locale, usa il nome
+                        // da KBUserProfile se si tratta del membro corrente.
+                        let isMe = dto.userId == Auth.auth().currentUser?.uid
+                        var resolvedDisplayName = dto.displayName
+                        if isMe {
+                            let uid = dto.userId
+                            let profileDesc = FetchDescriptor<KBUserProfile>(
+                                predicate: #Predicate { $0.uid == uid }
+                            )
+                            if let profile = try? modelContext.fetch(profileDesc).first {
+                                let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                let composed = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
+                                let localName = (!dn.isEmpty && dn != "Utente") ? dn
+                                : (!composed.isEmpty ? composed : nil)
+                                resolvedDisplayName = localName ?? dto.displayName
+                            }
+                        }
+                        
                         let m = KBFamilyMember(
                             id: dto.id,
                             familyId: dto.familyId,
                             userId: dto.userId,
                             role: dto.role,
-                            displayName: dto.displayName,
+                            displayName: resolvedDisplayName,
                             email: dto.email,
                             photoURL: dto.photoURL,
                             updatedBy: dto.updatedBy ?? "remote",
