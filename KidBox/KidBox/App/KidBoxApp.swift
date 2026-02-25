@@ -117,6 +117,10 @@ struct KidBoxApp: App {
                     case .chat:
                         KBLog.navigation.kbInfo("Deep link -> open chat")
                         coordinator.navigate(to: .chat)
+                    case .familyLocation(familyId: let familyId):
+                        KBLog.navigation.kbInfo("Deep link -> open family location")
+                        coordinator.setActiveFamily(familyId)
+                        coordinator.navigate(to: .familyLocation(familyId: familyId))
                     }
                     
                     notifications.consumeDeepLink()

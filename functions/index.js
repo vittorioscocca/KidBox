@@ -1,20 +1,22 @@
 /* eslint-disable max-len */
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
-const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+const {onDocumentCreated, onDocumentWritten} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 
 admin.initializeApp();
 
 /**
- * Sums chat and documents counters from the given data.
+ * Sums chat, documents and location counters from the given data.
  * @param {object} data - The counter data object.
- * @return {{chat: number, documents: number, total: number}}
+ * @return {{chat: number, documents: number, location: number, total: number}}
  */
 function sumCounters(data) {
   const chat = data?.chat || 0;
   const documents = data?.documents || 0;
-  return {chat, documents, total: chat + documents};
+  const location = data?.location || 0;
+  return {chat, documents, location, total: chat + documents + location};
 }
 
 /**
@@ -43,8 +45,9 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
     const next = {
       chat: counters.chat + (field === "chat" ? 1 : 0),
       documents: counters.documents + (field === "documents" ? 1 : 0),
+      location: counters.location + (field === "location" ? 1 : 0),
     };
-    const badge = next.chat + next.documents;
+    const badge = next.chat + next.documents + next.location;
 
     tx.set(ref, {
       [field]: admin.firestore.FieldValue.increment(1),
@@ -463,5 +466,208 @@ exports.notifyNewChatMessage = onDocumentCreated(
         failureCount: totalFailure,
         userTargets: messagesToSend.length,
       });
+    },
+);
+exports.notifyLocationSharingChanged = onDocumentWritten(
+    {
+      document: "families/{familyId}/locations/{uid}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const subjectUid = event.params.uid;
+
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      // Se documento cancellato o creato senza after, ignora
+      if (!after) return;
+
+      const beforeIsSharing = before?.isSharing === true;
+      const afterIsSharing = after?.isSharing === true;
+
+      // Trigger solo se cambia isSharing (false->true o true->false)
+      if (beforeIsSharing === afterIsSharing) return;
+
+      logger.info("notifyLocationSharingChanged triggered", {
+        familyId,
+        subjectUid,
+        from: beforeIsSharing,
+        to: afterIsSharing,
+      });
+
+      const locRef = admin.firestore()
+          .collection("families")
+          .doc(familyId)
+          .collection("locations")
+          .doc(subjectUid);
+
+      const COOLDOWN_MS = 15 * 1000;
+      let shouldSend = false;
+
+      await admin.firestore().runTransaction(async (tx) => {
+        const snap = await tx.get(locRef);
+        const data = snap.exists ? snap.data() : {};
+        const last = data?.lastNotifyAt?.toDate ? data.lastNotifyAt.toDate() : null;
+
+        const now = new Date();
+        if (!last || (now.getTime() - last.getTime()) >= COOLDOWN_MS) {
+          shouldSend = true;
+          tx.set(locRef, {
+            lastNotifyAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, {merge: true});
+        }
+      });
+
+      if (!shouldSend) {
+        logger.info("notifyLocationSharingChanged skipped (cooldown)", {
+          familyId,
+          subjectUid,
+        });
+        return;
+      }
+
+      // Nome da after (se mancante fallback)
+      const subjectName = after.name || "Qualcuno";
+
+      // Leggi membri famiglia
+      const membersSnap = await admin.firestore()
+          .collection("families")
+          .doc(familyId)
+          .collection("members")
+          .get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyLocationSharingChanged: members subcollection is empty");
+        return;
+      }
+
+      const targetUids = membersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid && uid !== subjectUid);
+
+      if (targetUids.length === 0) {
+        logger.info("notifyLocationSharingChanged: no targets (only subject?)");
+        return;
+      }
+
+      const title = "Posizione";
+      const body = afterIsSharing ?
+        `${subjectName} sta condividendo la posizione` :
+        `${subjectName} ha smesso di condividere la posizione`;
+
+      const mode = after.mode || null; // "realtime" / "temporary"
+      const expiresAt = after.expiresAt || null; // Timestamp o null
+
+      const messagesToSend = [];
+
+      for (const uid of targetUids) {
+        // Pref: notifyOnLocationSharing (default ON se non esiste prefs)
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnLocationSharing");
+        if (tokens.length === 0) continue;
+
+        const badge = await incrementCounterAndGetBadge({
+          familyId,
+          uid,
+          field: "location",
+        });
+
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {
+            type: afterIsSharing ? "location_sharing_started" : "location_sharing_stopped",
+            familyId: familyId,
+            uid: subjectUid,
+            name: subjectName,
+            mode: mode ? String(mode) : "",
+            expiresAt: expiresAt ? String(expiresAt.seconds || "") : "",
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: "default",
+                badge: badge,
+              },
+            },
+          },
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyLocationSharingChanged: no per-user notifications to send");
+        return;
+      }
+
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+      );
+
+      let totalSuccess = 0;
+      let totalFailure = 0;
+
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+
+      logger.info("notifyLocationSharingChanged: send result", {
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        userTargets: messagesToSend.length,
+      });
+    },
+);
+exports.expireTemporaryLocations = onSchedule(
+    {
+      schedule: "every 5 minutes",
+      region: "europe-west1",
+      timeZone: "Europe/Rome",
+    },
+    async () => {
+      const now = admin.firestore.Timestamp.now();
+
+      // collectionGroup per /families/{familyId}/locations/{uid}
+      const q = admin.firestore()
+          .collectionGroup("locations")
+          .where("isSharing", "==", true)
+          .where("mode", "==", "temporary")
+          .where("expiresAt", "<=", now);
+
+      const snap = await q.get();
+      if (snap.empty) {
+        logger.info("expireTemporaryLocations: nothing to expire");
+        return;
+      }
+
+      logger.info("expireTemporaryLocations: expiring count=" + snap.size);
+
+      const batchSize = 300;
+      let batch = admin.firestore().batch();
+      let i = 0;
+
+      for (const doc of snap.docs) {
+        batch.set(doc.ref, {
+          isSharing: false,
+          stoppedReason: "expired",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true});
+
+        i++;
+        if (i % batchSize === 0) {
+          await batch.commit();
+          batch = admin.firestore().batch();
+        }
+      }
+
+      if (i % batchSize !== 0) {
+        await batch.commit();
+      }
+
+      logger.info("expireTemporaryLocations: completed expired=" + i);
     },
 );

@@ -28,6 +28,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var infoText: String? = nil
     @Published var isLoading: Bool = false
     @Published var notifyOnNewMessages: Bool = true
+    @Published var notifyOnLocationSharing: Bool = false
     
     // MARK: - Dependencies
     private let notifications = NotificationManager.shared
@@ -36,6 +37,7 @@ final class SettingsViewModel: ObservableObject {
     private enum LocalKeys {
         static let notifyOnNewDocs = "kb_notifyOnNewDocs"   // namespaced
         static let notifyOnNewMessages = "kb_notifyOnNewMessages"
+        static let notifyOnLocationSharing = "kb_notifyOnLocationSharing"
     }
     
     // MARK: - Init
@@ -48,6 +50,10 @@ final class SettingsViewModel: ObservableObject {
         let cachedChat = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewMessages) as? Bool ?? true
         self.notifyOnNewMessages = cachedChat
         KBLog.settings.debug("SettingsVM init cached notifyOnNewMessages=\(cachedChat, privacy: .public)")
+        
+        let cachedLoc = UserDefaults.standard.object(forKey: LocalKeys.notifyOnLocationSharing) as? Bool ?? false
+        self.notifyOnLocationSharing = cachedLoc
+        KBLog.settings.debug("SettingsVM init cached notifyOnLocationSharing=\(cachedLoc, privacy: .public)")
     }
     
     // MARK: - Load (called by view .task / onAppear)
@@ -135,6 +141,24 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnNewMessages = true  // rollback al default
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewMessages)
                 infoText = error.localizedDescription
+            }
+        }
+    }
+    
+    func toggleNotifyOnLocationSharing(_ enabled: Bool) {
+        notifyOnLocationSharing = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnLocationSharing)
+        
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnLocationSharing(enabled)
+                infoText = enabled ? "Notifiche posizione attive." : "Notifiche posizione disattivate."
+            } catch {
+                // rollback (scegli tu il default; io torno a false)
+                notifyOnLocationSharing = false
+                UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnLocationSharing)
+                infoText = error.localizedDescription
+                KBLog.settings.error("SettingsVM setNotifyOnLocationSharing failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

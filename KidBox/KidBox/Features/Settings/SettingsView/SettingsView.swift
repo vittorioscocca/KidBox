@@ -52,6 +52,18 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
+                Toggle(
+                    "Notifiche posizione (inizio/fine condivisione)",
+                    isOn: Binding(
+                        get: { vm.notifyOnLocationSharing },
+                        set: { newValue in
+                            KBLog.settings.info("Toggle notifyOnLocationSharing set=\(newValue, privacy: .public)")
+                            vm.notifyOnLocationSharing = newValue
+                            vm.toggleNotifyOnLocationSharing(newValue)
+                        }
+                    )
+                )
+                .disabled(vm.isLoading)
                 .accessibilityHint("Abilita o disabilita le notifiche quando arrivano nuovi documenti.")
                 
                 if let t = vm.infoText {

@@ -19,15 +19,15 @@ final class BadgeManager: ObservableObject {
     
     @Published var chat: Int = 0
     @Published var documents: Int = 0
+    @Published var location: Int = 0   // ✅ NEW
     
     private var listener: ListenerRegistration?
     
     private init() {}
     
-    // MARK: - Start listening
-    
     func startListening(familyId: String) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard !familyId.isEmpty else { return }
         
         stopListening()
         
@@ -48,12 +48,14 @@ final class BadgeManager: ObservableObject {
                 
                 let chatCount = data["chat"] as? Int ?? 0
                 let docCount  = data["documents"] as? Int ?? 0
+                let locCount  = data["location"] as? Int ?? 0   // ✅ NEW
                 
                 Task { @MainActor in
                     self.chat = chatCount
                     self.documents = docCount
+                    self.location = locCount
                     
-                    let total = chatCount + docCount
+                    let total = chatCount + docCount + locCount
                     UNUserNotificationCenter.current().setBadgeCount(total) { error in
                         if let error {
                             print("Failed to set badge count:", error)
@@ -63,17 +65,13 @@ final class BadgeManager: ObservableObject {
             }
     }
     
-    // MARK: - Stop listening
-    
     func stopListening() {
         listener?.remove()
         listener = nil
     }
     
-    // MARK: - Manual reset app badge (safety)
-    
     func refreshAppBadge() {
-        let total = chat + documents
+        let total = chat + documents + location
         UNUserNotificationCenter.current().setBadgeCount(total) { error in
             if let error {
                 print("Failed to set badge count:", error)
@@ -83,4 +81,5 @@ final class BadgeManager: ObservableObject {
     
     @MainActor func clearChat() { self.chat = 0 }
     @MainActor func clearDocuments() { self.documents = 0 }
+    @MainActor func clearLocation() { self.location = 0 } // ✅ NEW
 }

@@ -78,6 +78,9 @@ struct FamilyLocationView: View {
         .onAppear {
             viewModel.start()
             syncDisplayNameToViewModel()
+            Task {
+                await CountersService.shared.reset(familyId: familyId, field: .location)
+            }
         }
         .onDisappear { viewModel.stop() }
         .onReceive(NotificationCenter.default.publisher(for: .kbProfileDisplayNameUpdated)) { notification in

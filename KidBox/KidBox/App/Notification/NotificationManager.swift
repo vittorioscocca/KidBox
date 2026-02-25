@@ -57,6 +57,7 @@ final class NotificationManager: NSObject, ObservableObject {
     enum DeepLink: Equatable {
         case document(familyId: String, docId: String)
         case chat(familyId: String)
+        case familyLocation(familyId: String)   // ✅ NEW
     }
     
     // MARK: - Deep Link Handling
@@ -81,6 +82,13 @@ final class NotificationManager: NSObject, ObservableObject {
         } else if type == "new_chat_message" {       // ← NUOVO
             guard let familyId = userInfo["familyId"] as? String else { return }
             pendingDeepLink = .chat(familyId: familyId)
+        } else if type == "location_sharing_started" || type == "location_sharing_stopped" {
+            guard let familyId = userInfo["familyId"] as? String else {
+                KBLog.auth.kbError("Invalid location payload (missing familyId)")
+                return
+            }
+            pendingDeepLink = .familyLocation(familyId: familyId)
+            KBLog.auth.kbInfo("DeepLink set for familyLocation familyId=\(familyId)")
         }
     }
     
@@ -163,6 +171,34 @@ final class NotificationManager: NSObject, ObservableObject {
         
         // Non disabilitiamo i token FCM qui perché potrebbero servire
         // ancora per i documenti — gestiamo solo la preference
+    }
+    
+    func fetchNotifyOnLocationSharingPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return false }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnLocationSharing"] as? Bool {
+                return v
+            }
+            return false
+        } catch {
+            return false
+        }
+    }
+    
+    func setNotifyOnLocationSharing(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnLocationSharing": enabled]
+        ], merge: true)
+        
+        // se ON: assicuriamoci permessi + token
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+        // se OFF: NON rimuovo i token (potrebbero servire per chat/docs)
     }
     
     // MARK: - APNs

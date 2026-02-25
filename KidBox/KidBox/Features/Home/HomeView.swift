@@ -471,7 +471,7 @@ private struct HomeCardGrid: View {
     }
     
     // Posizione famiglia — con indicatore pulsante se condivisione attiva
-    private var cardPosizione: some View {
+    /*private var cardPosizione: some View {
         ZStack(alignment: .topTrailing) {
             HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
                 KBLog.navigation.debug("Home: tap FamilyLocation")
@@ -482,6 +482,46 @@ private struct HomeCardGrid: View {
                 LocationSharingPulse()
                     .padding(.top, 8)
                     .padding(.trailing, 8)
+            }
+        }
+    }*/
+    
+    private var cardPosizione: some View {
+        ZStack {
+            HomeCardView(
+                title: "Posizione",
+                subtitle: "Dove sono tutti",
+                systemImage: "location.fill",
+                tint: .cyan
+            ) {
+                KBLog.navigation.debug("Home: tap FamilyLocation")
+                onNavigate(.familyLocation(familyId: familyId))
+            }
+            
+            // 🔵 Badge unread (ALTO A DESTRA)
+            if badge.location > 0 {
+                VStack {
+                    HStack {
+                        Spacer()
+                        BadgeView(count: badge.location)
+                    }
+                    Spacer()
+                }
+                .padding(.top, 8)
+                .padding(.trailing, 8)
+            }
+            
+            // 🟢 Pulse sharing (BASSO A DESTRA)
+            if locationObserver.isSharing {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        LocationSharingPulse()
+                    }
+                }
+                .padding(.bottom, 8)
+                .padding(.trailing, 8)
             }
         }
     }

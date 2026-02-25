@@ -13,6 +13,7 @@ import OSLog
 enum CountersField: String {
     case chat
     case documents
+    case location
 }
 
 final class CountersService {
