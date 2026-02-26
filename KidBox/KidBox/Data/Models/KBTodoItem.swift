@@ -33,6 +33,9 @@ final class KBTodoItem {
     var isDeleted: Bool
     var listId: String?
     
+    var reminderEnabled: Bool = false
+    var reminderId: String? = nil   // identifier UNUserNotificationCenter
+    
     // ✅ M3 (make optional for migration safety)
     var syncStateRaw: Int?
     var lastSyncError: String?

@@ -117,9 +117,6 @@ struct TodoHomeView: View {
         }
         .onDisappear {
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime (reset didStartRealtime)")
-            SyncCenter.shared.stopTodoListRealtime()
-            SyncCenter.shared.stopTodoRealtime()
-            didStartRealtime = false
         }
         .sheet(isPresented: $showListEditor) {
             listEditorSheet

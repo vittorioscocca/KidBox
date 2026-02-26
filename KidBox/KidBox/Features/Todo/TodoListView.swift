@@ -129,8 +129,6 @@ struct TodoListView: View {
         }
         .onDisappear {
             KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId) -> stopTodoRealtime + restart for home")
-            
-            SyncCenter.shared.stopTodoRealtime()
         }
     }
     
@@ -172,6 +170,13 @@ struct TodoListView: View {
                             .padding(.vertical, 2)
                             .background(Capsule().fill(Color.red.opacity(0.2)))
                             .foregroundStyle(.red)
+                    }
+                    
+                    if todo.reminderEnabled {
+                        Image(systemName: "bell.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .accessibilityLabel("Promemoria attivo")
                     }
                 }
             }
