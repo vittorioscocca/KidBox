@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import OSLog
 
 struct TodoHomeView: View {
     
@@ -24,6 +25,32 @@ struct TodoHomeView: View {
     
     @Query(sort: \KBTodoItem.updatedAt, order: .reverse)
     private var allTodos: [KBTodoItem]
+    
+    // UI state create/edit list
+    @State private var showListEditor = false
+    @State private var listNameDraft = ""
+    @State private var editingListId: String? = nil
+    
+    // ✅ Sync
+    @State private var didStartRealtime = false
+    private let remote = TodoRemoteStore()
+    
+    // Trace id per correlare log durante la vita della view
+    @State private var viewTrace: String = {
+        let s = UUID().uuidString
+        return String(s.prefix(8))
+    }()
+    
+    private var activeFamily: KBFamily? { families.first }
+    private var activeChild: KBChild? { activeFamily?.children.first }
+    
+    private var familyId: String { activeFamily?.id ?? "" }
+    private var childId: String { activeChild?.id ?? "" }
+    
+    private var visibleLists: [KBTodoList] {
+        guard !familyId.isEmpty, !childId.isEmpty else { return [] }
+        return allLists.filter { $0.familyId == familyId && $0.childId == childId && !$0.isDeleted }
+    }
     
     private var visibleTodos: [KBTodoItem] {
         guard !familyId.isEmpty, !childId.isEmpty else { return [] }
@@ -45,48 +72,20 @@ struct TodoHomeView: View {
         }.count
     }
     
-    private var allCount: Int {
-        visibleTodos.filter { !$0.isDone }.count
-    }
+    private var allCount: Int { visibleTodos.filter { !$0.isDone }.count }
     
     private var assignedToMeCount: Int {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         return visibleTodos.filter { !$0.isDone && $0.assignedTo == uid }.count
     }
     
-    private var completedCount: Int {
-        visibleTodos.filter { $0.isDone }.count
-    }
+    private var completedCount: Int { visibleTodos.filter { $0.isDone }.count }
     
-    private var notCompletedCount: Int {
-        visibleTodos.filter { !$0.isDone }.count
-    }
+    private var notCompletedCount: Int { visibleTodos.filter { !$0.isDone }.count }
     
     private var notAssignedToMeCount: Int {
         let uid = Auth.auth().currentUser?.uid ?? ""
-        return visibleTodos.filter {
-            !$0.isDone && $0.assignedTo != uid
-        }.count
-    }
-    
-    // UI state create/edit list
-    @State private var showListEditor = false
-    @State private var listNameDraft = ""
-    @State private var editingListId: String? = nil
-    
-    // ✅ Sync
-    @State private var didStartRealtime = false
-    private let remote = TodoRemoteStore()
-    
-    private var activeFamily: KBFamily? { families.first }
-    private var activeChild: KBChild? { activeFamily?.children.first }
-    
-    private var familyId: String { activeFamily?.id ?? "" }
-    private var childId: String { activeChild?.id ?? "" }
-    
-    private var visibleLists: [KBTodoList] {
-        guard !familyId.isEmpty, !childId.isEmpty else { return [] }
-        return allLists.filter { $0.familyId == familyId && $0.childId == childId && !$0.isDeleted }
+        return visibleTodos.filter { !$0.isDone && $0.assignedTo != uid }.count
     }
     
     var body: some View {
@@ -101,6 +100,7 @@ struct TodoHomeView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap + newList familyId=\(familyId) childId=\(childId)")
                     editingListId = nil
                     listNameDraft = ""
                     showListEditor = true
@@ -111,37 +111,83 @@ struct TodoHomeView: View {
             }
         }
         .onAppear {
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onAppear familyId=\(familyId) childId=\(childId) didStartRealtime=\(didStartRealtime) lists=\(visibleLists.count) todosVisible=\(visibleTodos.count)")
+            logCounters("onAppear")
             startRealtimeIfNeeded()
         }
         .onDisappear {
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime (reset didStartRealtime)")
             SyncCenter.shared.stopTodoListRealtime()
             SyncCenter.shared.stopTodoRealtime()
             didStartRealtime = false
         }
         .sheet(isPresented: $showListEditor) {
             listEditorSheet
+                .onAppear {
+                    KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] listEditorSheet appeared editingListId=\(editingListId ?? "nil")")
+                }
+                .onDisappear {
+                    KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] listEditorSheet disappeared")
+                }
+        }
+        // Log “se cambia qualcosa” (utile per vedere flicker o refresh)
+        .onChange(of: allTodos.count) { _, newValue in
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] allTodos.count changed -> \(newValue) visible=\(visibleTodos.count)")
+        }
+        .onChange(of: allLists.count) { _, newValue in
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] allLists.count changed -> \(newValue) visible=\(visibleLists.count)")
         }
     }
     
     // MARK: - Realtime
     
     private func startRealtimeIfNeeded() {
-        guard !didStartRealtime, !familyId.isEmpty, !childId.isEmpty else { return }
+        guard !didStartRealtime else {
+            KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] startRealtimeIfNeeded skipped: didStartRealtime=true")
+            return
+        }
+        guard !familyId.isEmpty, !childId.isEmpty else {
+            KBLog.sync.kbInfo("[TodoHomeView][\(viewTrace)] startRealtimeIfNeeded skipped: missing familyId/childId familyId=\(familyId) childId=\(childId)")
+            return
+        }
+        
         didStartRealtime = true
+        
+        KBLog.sync.kbInfo("[TodoHomeView][\(viewTrace)] startTodoListRealtime familyId=\(familyId) childId=\(childId)")
         SyncCenter.shared.startTodoListRealtime(
             familyId: familyId,
             childId: childId,
             modelContext: modelContext,
             remote: remote
         )
-        // ✅ Avvia il listener dei todo per aggiornare i contatori in realtime.
-        // Viene anche riavviato da TodoListView.onDisappear al ritorno dalla lista.
+        
+        KBLog.sync.kbInfo("[TodoHomeView][\(viewTrace)] startTodoRealtime (for counters) familyId=\(familyId) childId=\(childId)")
         SyncCenter.shared.startTodoRealtime(
             familyId: familyId,
             childId: childId,
             modelContext: modelContext,
             remote: remote
         )
+        
+        Task { @MainActor in
+            KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] flush (startRealtimeIfNeeded)")
+            await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+        }
+    }
+    
+    // MARK: - Counters logging
+    
+    private func logCounters(_ label: String) {
+        let sampleTodoIds = visibleTodos.prefix(6).map(\.id).joined(separator: ",")
+        let sampleListIds = visibleLists.prefix(6).map(\.id).joined(separator: ",")
+        
+        KBLog.todo.kbDebug("""
+        [TodoHomeView][\(viewTrace)] counters[\(label)]
+        listsVisible=\(visibleLists.count) listIds=[\(sampleListIds)]
+        todosVisible=\(visibleTodos.count) todoIds=[\(sampleTodoIds)]
+        today=\(todayCount) allNotDone=\(allCount) assignedToMe=\(assignedToMeCount)
+        completed=\(completedCount) notCompleted=\(notCompletedCount) notAssignedToMe=\(notAssignedToMeCount)
+        """)
     }
     
     // MARK: - Cards
@@ -161,6 +207,7 @@ struct TodoHomeView: View {
                     icon: "calendar",
                     tint: .orange
                 ) {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap card=today fid=\(fid) cid=\(cid) count=\(todayCount)")
                     coordinator.navigate(to: .todoSmart(familyId: fid, childId: cid, kind: .today))
                 }
                 
@@ -170,6 +217,7 @@ struct TodoHomeView: View {
                     icon: "list.bullet",
                     tint: .blue
                 ) {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap card=all fid=\(fid) cid=\(cid) count=\(allCount)")
                     coordinator.navigate(to: .todoSmart(familyId: fid, childId: cid, kind: .all))
                 }
             }
@@ -181,6 +229,7 @@ struct TodoHomeView: View {
                     icon: "person.fill.checkmark",
                     tint: .teal
                 ) {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap card=assignedToMe fid=\(fid) cid=\(cid) count=\(assignedToMeCount)")
                     coordinator.navigate(to: .todoSmart(familyId: fid, childId: cid, kind: .assignedToMe))
                 }
                 
@@ -190,6 +239,7 @@ struct TodoHomeView: View {
                     icon: "checkmark.seal.fill",
                     tint: .green
                 ) {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap card=completed fid=\(fid) cid=\(cid) count=\(completedCount)")
                     coordinator.navigate(to: .todoSmart(familyId: fid, childId: cid, kind: .completed))
                 }
             }
@@ -201,6 +251,7 @@ struct TodoHomeView: View {
                     icon: "person.crop.circle.badge.xmark",
                     tint: .purple
                 ) {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap card=notAssignedToMe fid=\(fid) cid=\(cid) count=\(notAssignedToMeCount)")
                     coordinator.navigate(to: .todoSmart(familyId: fid, childId: cid, kind: .notAssignedToMe))
                 }
                 
@@ -210,6 +261,7 @@ struct TodoHomeView: View {
                     icon: "circle",
                     tint: .red
                 ) {
+                    KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap card=notCompleted fid=\(fid) cid=\(cid) count=\(notCompletedCount)")
                     coordinator.navigate(to: .todoSmart(familyId: fid, childId: cid, kind: .notCompleted))
                 }
             }
@@ -223,25 +275,21 @@ struct TodoHomeView: View {
         tint: Color,
         action: @escaping () -> Void
     ) -> some View {
-        
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
-                
                 HStack {
                     Image(systemName: icon)
                         .font(.title3)
                         .foregroundStyle(tint)
                     
                     Spacer()
+                    
                     if count > 0 {
                         Text(count > 99 ? "99+" : "\(count)")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(.white)
                             .padding(6)
-                            .background(
-                                Circle()
-                                    .fill(tint)
-                            )
+                            .background(Circle().fill(tint))
                     }
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
@@ -278,9 +326,8 @@ struct TodoHomeView: View {
                 VStack(spacing: 10) {
                     ForEach(visibleLists) { list in
                         Button {
-                            coordinator.navigate(
-                                to: .todoList(familyId: list.familyId, childId: list.childId, listId: list.id)
-                            )
+                            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap list open listId=\(list.id) fid=\(list.familyId) cid=\(list.childId)")
+                            coordinator.navigate(to: .todoList(familyId: list.familyId, childId: list.childId, listId: list.id))
                         } label: {
                             HStack {
                                 Image(systemName: "list.bullet")
@@ -300,11 +347,13 @@ struct TodoHomeView: View {
                         .buttonStyle(.plain)
                         .contextMenu {
                             Button("Modifica") {
+                                KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] context edit listId=\(list.id)")
                                 editingListId = list.id
                                 listNameDraft = list.name
                                 showListEditor = true
                             }
                             Button("Elimina", role: .destructive) {
+                                KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] context delete listId=\(list.id)")
                                 deleteList(list)
                             }
                         }
@@ -322,11 +371,15 @@ struct TodoHomeView: View {
             .navigationTitle(editingListId == nil ? "Nuova lista" : "Modifica lista")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Salva") { saveList() }
-                        .disabled(listNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button("Salva") {
+                        KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap saveList editingListId=\(editingListId ?? "nil")")
+                        saveList()
+                    }
+                    .disabled(listNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Annulla") {
+                        KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] tap cancel listEditor editingListId=\(editingListId ?? "nil")")
                         showListEditor = false
                         editingListId = nil
                         listNameDraft = ""
@@ -338,37 +391,52 @@ struct TodoHomeView: View {
     
     // MARK: - Actions
     
-    
     private func saveList() {
-        guard !familyId.isEmpty, !childId.isEmpty else { return }
+        guard !familyId.isEmpty, !childId.isEmpty else {
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] saveList aborted: missing familyId/childId")
+            return
+        }
         
         let name = listNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
+        guard !name.isEmpty else {
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] saveList aborted: empty name")
+            return
+        }
         
         let listId: String
+        let now = Date()
         
         if let eid = editingListId,
            let list = visibleLists.first(where: { $0.id == eid }) {
             // modifica esistente
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] saveList update listId=\(eid)")
             list.name = name
-            list.updatedAt = Date()
+            list.updatedAt = now
             listId = list.id
         } else {
             // nuova lista
-            let list = KBTodoList(
-                familyId: familyId,
-                childId: childId,
-                name: name
-            )
+            let list = KBTodoList(familyId: familyId, childId: childId, name: name)
             modelContext.insert(list)
             listId = list.id
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] saveList create listId=\(listId)")
         }
         
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] saveList save OK listId=\(listId)")
+        } catch {
+            KBLog.todo.kbError("[TodoHomeView][\(viewTrace)] saveList save FAIL listId=\(listId) err=\(String(describing: error))")
+        }
         
         // ✅ Sync remoto
+        KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] enqueueTodoListUpsert listId=\(listId) fid=\(familyId)")
         SyncCenter.shared.enqueueTodoListUpsert(listId: listId, familyId: familyId, modelContext: modelContext)
-        Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: remote) }
+        
+        Task { @MainActor in
+            KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] flush (saveList) listId=\(listId)")
+            await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+            logCounters("after saveList flush")
+        }
         
         showListEditor = false
         self.editingListId = nil
@@ -378,45 +446,67 @@ struct TodoHomeView: View {
     private func deleteList(_ list: KBTodoList) {
         let listId = list.id
         let fid = familyId
+        let cid = childId
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
+        
+        KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] deleteList START listId=\(listId) fid=\(fid) cid=\(cid)")
         
         // 🔹 1) Trova tutti i todo collegati
         let desc = FetchDescriptor<KBTodoItem>(
             predicate: #Predicate {
                 $0.familyId == fid &&
-                $0.childId == childId &&
+                $0.childId == cid &&
                 $0.listId == listId &&
                 $0.isDeleted == false
             }
         )
         
         let todosToDelete = (try? modelContext.fetch(desc)) ?? []
+        let sample = todosToDelete.prefix(10).map(\.id).joined(separator: ",")
+        
+        KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] deleteList fetched todosToDelete=\(todosToDelete.count) sampleIds=[\(sample)]")
         
         // 🔹 2) Soft delete todos
         for todo in todosToDelete {
+            let before = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
+            
             todo.isDeleted = true
             todo.syncState = .pendingDelete
             todo.lastSyncError = nil
+            todo.updatedBy = uid
+            todo.updatedAt = now
             
-            SyncCenter.shared.enqueueTodoDelete(
-                todoId: todo.id,
-                familyId: fid,
-                modelContext: modelContext
-            )
+            let after = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] deleteList todoId=\(todo.id) BEFORE \(before) AFTER \(after)")
+            
+            KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] enqueueTodoDelete todoId=\(todo.id) fid=\(fid)")
+            SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: fid, modelContext: modelContext)
         }
         
         // 🔹 3) Soft delete lista
+        // 🔹 3) Soft delete lista
         list.isDeleted = true
-        try? modelContext.save()
+        list.updatedAt = now
+        // NB: KBTodoList non ha updatedBy -> non settarlo
+        KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] deleteList listId=\(listId) set isDeleted=true updatedAt=\(now)")
+        
+        do {
+            try modelContext.save()
+            KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] deleteList local save OK listId=\(listId)")
+        } catch {
+            KBLog.todo.kbError("[TodoHomeView][\(viewTrace)] deleteList local save FAIL listId=\(listId) err=\(String(describing: error))")
+        }
         
         // 🔹 4) Sync lista
-        SyncCenter.shared.enqueueTodoListDelete(
-            listId: listId,
-            familyId: fid,
-            modelContext: modelContext
-        )
+        KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] enqueueTodoListDelete listId=\(listId) fid=\(fid)")
+        SyncCenter.shared.enqueueTodoListDelete(listId: listId, familyId: fid, modelContext: modelContext)
         
-        Task {
+        Task { @MainActor in
+            KBLog.sync.kbInfo("[TodoHomeView][\(viewTrace)] flush (deleteList) listId=\(listId) todosToDelete=\(todosToDelete.count)")
             await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] deleteList DONE listId=\(listId)")
+            logCounters("after deleteList flush")
         }
     }
 }

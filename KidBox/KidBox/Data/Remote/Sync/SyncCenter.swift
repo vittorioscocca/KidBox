@@ -721,10 +721,10 @@ final class SyncCenter: ObservableObject {
         case "delete":
             try await remote.softDelete(todoId: tid, familyId: op.familyId)
             
-            if let todo {
-                todo.syncState = .synced
-                todo.lastSyncError = nil
-                try modelContext.save()
+            if let todo = try? fetchTodo(id: op.entityId, modelContext: modelContext) {
+                KBLog.sync.kbInfo("[todo][outbound] delete OK -> HARD DELETE local id=\(todo.id)")
+                modelContext.delete(todo)
+                try? modelContext.save()
             }
             
         default:
@@ -947,71 +947,180 @@ final class SyncCenter: ObservableObject {
     // MARK: - Apply inbound (Realtime)
     
     /// Applies realtime Todo changes to local SwiftData.
+    
+    /// Applies realtime Todo changes to local SwiftData.
     private func applyTodoInbound(changes: [TodoRemoteChange], modelContext: ModelContext) {
-        if !changes.isEmpty {
-            KBLog.sync.kbDebug("applyTodoInbound changes=\(changes.count)")
+        guard !changes.isEmpty else { return }
+        
+        // Batch correlation id (useful when listeners restart and re-emit full snapshots).
+        let batch = String(UUID().uuidString.prefix(8))
+        
+        func dtoSummary(_ dto: TodoRemoteDTO) -> String {
+            let ua = dto.updatedAt?.description ?? "nil"
+            let ub = dto.updatedBy ?? "nil"
+            let lid = dto.listId ?? "nil"
+            return "id=\(dto.id) listId=\(lid) childId=\(dto.childId) isDeleted=\(dto.isDeleted) isDone=\(dto.isDone) updatedAt=\(ua) updatedBy=\(ub)"
         }
+        
+        func todoSummary(_ todo: KBTodoItem) -> String {
+            "id=\(todo.id) listId=\(todo.listId ?? "nil") isDeleted=\(todo.isDeleted) isDone=\(todo.isDone) updatedAt=\(todo.updatedAt) syncState=\(String(describing: todo.syncState))"
+        }
+        
+        KBLog.sync.kbInfo("[todo][inbound][\(batch)] START changes=\(changes.count)")
         
         do {
             for change in changes {
                 switch change {
+                    
                 case .upsert(let dto):
-                    // 🛡️ Se il remoto dice isDeleted=true, non creare MAI il record localmente.
-                    // fetchOrCreateTodo lo creerebbe con isDeleted=false causando un flash
-                    // nei contatori prima che isDeleted=true venga applicato.
+                    KBLog.sync.kbDebug("[todo][inbound][\(batch)] CHANGE upsert dto=\(dtoSummary(dto))")
+                    
+                    // 1) Remote soft-delete sent as an upsert with isDeleted=true
                     if dto.isDeleted {
                         if let existing = try fetchTodo(id: dto.id, modelContext: modelContext) {
-                            // Esiste localmente: rimuovilo fisicamente (hard delete)
-                            // così la @Query non lo vede più
+                            KBLog.sync.kbInfo("[todo][inbound][\(batch)] remote isDeleted=true -> HARD DELETE local=\(todoSummary(existing))")
                             modelContext.delete(existing)
-                            KBLog.sync.kbDebug("applyTodoInbound: hard deleted existing id=\(dto.id)")
+                            KBLog.sync.kbDebug("[todo][inbound][\(batch)] hard deleted id=\(dto.id)")
+                        } else {
+                            KBLog.sync.kbDebug("[todo][inbound][\(batch)] remote isDeleted=true but local missing id=\(dto.id)")
                         }
-                        // Non esiste: non fare nulla
                         continue
                     }
                     
-                    let todo = try fetchOrCreateTodo(
-                        id: dto.id,
-                        familyId: dto.familyId,
-                        childId: dto.childId,
-                        listId: dto.listId,
-                        modelContext: modelContext
-                    )
-                    
-                    let remoteUpdatedAt = dto.updatedAt ?? Date.distantPast
-                    if remoteUpdatedAt >= todo.updatedAt {
-                        todo.familyId = dto.familyId
-                        todo.childId = dto.childId
-                        todo.listId = dto.listId
-                        todo.title = dto.title
-                        todo.isDone = dto.isDone
-                        todo.isDeleted = false
-                        todo.notes = dto.notes
-                        todo.dueAt = dto.dueAt
-                        todo.doneAt = dto.doneAt
-                        todo.doneBy = dto.doneBy
-                        todo.updatedAt = remoteUpdatedAt
-                        todo.updatedBy = dto.updatedBy ?? todo.updatedBy
-                        todo.assignedTo = dto.assignedTo
-                        todo.createdBy = dto.createdBy ?? todo.createdBy
-                        todo.priorityRaw = dto.priority ?? 0
-                        todo.syncState = .synced
-                        todo.lastSyncError = nil
+                    // 2) Upsert with anti-resurrect
+                    // Fetch existing FIRST (so we can decide to ignore before creating/overwriting).
+                    if let existing = try fetchTodo(id: dto.id, modelContext: modelContext) {
+                        
+                        // ✅ Anti-resurrect: if local is deleted OR pendingDelete, ignore remote "alive" upsert.
+                        if existing.isDeleted || existing.syncState == .pendingDelete {
+                            KBLog.sync.kbInfo("""
+                        [todo][inbound][\(batch)] IGNORE upsert (anti-resurrect) id=\(dto.id)
+                        local=\(todoSummary(existing))
+                        remote=\(dtoSummary(dto))
+                        """)
+                            continue
+                        }
+                        
+                        // Compare timestamps safely (nil remote means "unknown/old" -> do not override newer local)
+                        let remoteUpdatedAt = dto.updatedAt ?? Date.distantPast
+                        let localUpdatedAt  = existing.updatedAt
+                        
+                        if remoteUpdatedAt >= localUpdatedAt {
+                            KBLog.sync.kbDebug("[todo][inbound][\(batch)] APPLY existing remote>=local remoteUpdatedAt=\(remoteUpdatedAt) localUpdatedAt=\(localUpdatedAt)")
+                            
+                            existing.familyId = dto.familyId
+                            existing.childId = dto.childId
+                            existing.listId = dto.listId
+                            
+                            // PII: do not log title/notes, but we still update them.
+                            existing.title = dto.title
+                            existing.notes = dto.notes
+                            
+                            existing.isDone = dto.isDone
+                            existing.isDeleted = false
+                            
+                            existing.dueAt = dto.dueAt
+                            existing.doneAt = dto.doneAt
+                            existing.doneBy = dto.doneBy
+                            
+                            existing.assignedTo = dto.assignedTo
+                            existing.priorityRaw = dto.priority ?? 0
+                            
+                            // updatedAt/updatedBy safe unwrap
+                            existing.updatedAt = remoteUpdatedAt
+                            if let ub = dto.updatedBy, !ub.isEmpty {
+                                existing.updatedBy = ub
+                            }
+                            
+                            if let cb = dto.createdBy, !cb.isEmpty {
+                                existing.createdBy = cb
+                            }
+                            
+                            existing.syncState = .synced
+                            existing.lastSyncError = nil
+                            
+                            KBLog.sync.kbDebug("[todo][inbound][\(batch)] APPLIED -> \(todoSummary(existing))")
+                        } else {
+                            KBLog.sync.kbDebug("""
+                        [todo][inbound][\(batch)] IGNORE existing remote<local
+                        remoteUpdatedAt=\(remoteUpdatedAt) localUpdatedAt=\(localUpdatedAt)
+                        local=\(todoSummary(existing))
+                        remote=\(dtoSummary(dto))
+                        """)
+                        }
+                        
+                    } else {
+                        // No local existing: create new local todo from dto
+                        KBLog.sync.kbDebug("[todo][inbound][\(batch)] CREATE missing local id=\(dto.id) remote=\(dtoSummary(dto))")
+                        
+                        let created = try fetchOrCreateTodo(
+                            id: dto.id,
+                            familyId: dto.familyId,
+                            childId: dto.childId,
+                            listId: dto.listId,
+                            modelContext: modelContext
+                        )
+                        
+                        let remoteUpdatedAt = dto.updatedAt ?? Date()
+                        
+                        created.familyId = dto.familyId
+                        created.childId = dto.childId
+                        created.listId = dto.listId
+                        
+                        created.title = dto.title
+                        created.notes = dto.notes
+                        
+                        created.isDone = dto.isDone
+                        created.isDeleted = false
+                        
+                        created.dueAt = dto.dueAt
+                        created.doneAt = dto.doneAt
+                        created.doneBy = dto.doneBy
+                        
+                        created.assignedTo = dto.assignedTo
+                        created.priorityRaw = dto.priority ?? 0
+                        
+                        created.updatedAt = remoteUpdatedAt
+                        if let ub = dto.updatedBy, !ub.isEmpty {
+                            created.updatedBy = ub
+                        }
+                        if let cb = dto.createdBy, !cb.isEmpty {
+                            created.createdBy = cb
+                        }
+                        
+                        created.syncState = .synced
+                        created.lastSyncError = nil
+                        
+                        KBLog.sync.kbDebug("[todo][inbound][\(batch)] CREATED -> \(todoSummary(created))")
                     }
                     
                 case .remove(let id):
+                    // NOTE: if Firestore query filters out deleted docs,
+                    // a remote soft-delete can arrive as `.remove`.
+                    KBLog.sync.kbDebug("[todo][inbound][\(batch)] CHANGE remove id=\(id)")
+                    
                     if let existing = try fetchTodo(id: id, modelContext: modelContext) {
+                        KBLog.sync.kbInfo("[todo][inbound][\(batch)] remove -> HARD DELETE local=\(todoSummary(existing))")
                         modelContext.delete(existing)
+                        KBLog.sync.kbDebug("[todo][inbound][\(batch)] hard deleted id=\(id)")
+                    } else {
+                        KBLog.sync.kbDebug("[todo][inbound][\(batch)] remove for missing id=\(id)")
                     }
                 }
             }
             
-            try modelContext.save()
+            do {
+                try modelContext.save()
+                KBLog.sync.kbInfo("[todo][inbound][\(batch)] SAVE OK")
+            } catch {
+                KBLog.sync.kbError("[todo][inbound][\(batch)] SAVE FAIL err=\(String(describing: error))")
+            }
             
         } catch {
-            KBLog.sync.kbError("Realtime applyTodoInbound failed: \(error.localizedDescription)")
+            KBLog.sync.kbError("[todo][inbound][\(batch)] APPLY FAIL err=\(String(describing: error))")
         }
     }
+    
     
     private func fetchTodo(id: String, modelContext: ModelContext) throws -> KBTodoItem? {
         let pid = id
@@ -1127,3 +1236,4 @@ extension SyncCenter {
         Self._currentUserRevoked.eraseToAnyPublisher()
     }
 }
+

@@ -99,18 +99,40 @@ final class FamilyReadRemoteStore {
     
     private var db: Firestore { Firestore.firestore() }
     
+    // MARK: - Logging helpers
+    
+    /// Short trace id to correlate logs for a single fetch call.
+    private func traceId() -> String {
+        String(UUID().uuidString.prefix(8))
+    }
+    
+    /// Milliseconds elapsed since `start`.
+    private func elapsedMs(since start: DispatchTime) -> Int {
+        let end = DispatchTime.now().uptimeNanoseconds
+        let begin = start.uptimeNanoseconds
+        return Int((end - begin) / 1_000_000)
+    }
+    
     /// Fetches the family root document.
     ///
     /// - Throws: If the document does not exist or required fields are missing.
     func fetchFamily(familyId: String) async throws -> RemoteFamilyRead {
-        KBLog.sync.kbInfo("fetchFamily started familyId=\(familyId)")
+        let tid = traceId()
+        let t0 = DispatchTime.now()
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchFamily start familyId=\(familyId)")
         
-        let snap = try await db.collection("families")
-            .document(familyId)
-            .getDocument()
+        var snap: DocumentSnapshot
+        do {
+            snap = try await db.collection("families")
+                .document(familyId)
+                .getDocument()
+        } catch {
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchFamily FAIL familyId=\(familyId) ms=\(elapsedMs(since: t0)) err=\(String(describing: error))")
+            throw error
+        }
         
         guard snap.exists else {
-            KBLog.sync.kbError("fetchFamily: document does not exist familyId=\(familyId)")
+            KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchFamily missing doc familyId=\(familyId) ms=\(elapsedMs(since: t0))")
             // ✅ Fallback: crea un documento minimo
             let ownerUid = Auth.auth().currentUser?.uid ?? "unknown"
             try await db.collection("families").document(familyId).setData([
@@ -120,20 +142,20 @@ final class FamilyReadRemoteStore {
                 "updatedAt": FieldValue.serverTimestamp()
             ], merge: true)
             
-            KBLog.sync.kbInfo("fetchFamily: created missing family doc familyId=\(familyId)")
+            KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchFamily created missing doc familyId=\(familyId) ms=\(elapsedMs(since: t0))")
             return .init(id: familyId, name: "Famiglia", ownerUid: ownerUid)
         }
         
         guard let data = snap.data(),
               let name = data["name"] as? String
         else {
-            KBLog.sync.kbError("fetchFamily failed: missing fields familyId=\(familyId)")
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchFamily missing required fields familyId=\(familyId) ms=\(elapsedMs(since: t0))")
             throw NSError(domain: "KidBox", code: -10)
         }
         
         let ownerUid = (data["ownerUid"] as? String) ?? ""
         
-        KBLog.sync.kbInfo("fetchFamily completed familyId=\(familyId)")
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchFamily done familyId=\(familyId) ms=\(elapsedMs(since: t0))")
         return .init(id: familyId, name: name, ownerUid: ownerUid)
     }
     
@@ -141,12 +163,20 @@ final class FamilyReadRemoteStore {
     ///
     /// - Returns: Array of decoded children. Invalid rows are skipped.
     func fetchChildren(familyId: String) async throws -> [RemoteChildRead] {
-        KBLog.sync.kbInfo("fetchChildren started familyId=\(familyId)")
+        let tid = traceId()
+        let t0 = DispatchTime.now()
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchChildren start familyId=\(familyId)")
         
-        let qs = try await db.collection("families")
-            .document(familyId)
-            .collection("children")
-            .getDocuments()
+        var qs: QuerySnapshot
+        do {
+            qs = try await db.collection("families")
+                .document(familyId)
+                .collection("children")
+                .getDocuments()
+        } catch {
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchChildren FAIL familyId=\(familyId) ms=\(elapsedMs(since: t0)) err=\(String(describing: error))")
+            throw error
+        }
         
         let items: [RemoteChildRead] = qs.documents.compactMap { doc in
             let d = doc.data()
@@ -160,7 +190,7 @@ final class FamilyReadRemoteStore {
             )
         }
         
-        KBLog.sync.kbInfo("fetchChildren completed familyId=\(familyId) count=\(items.count)")
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchChildren done familyId=\(familyId) ms=\(elapsedMs(since: t0)) docs=\(qs.documents.count) decoded=\(items.count) skipped=\(max(0, qs.documents.count - items.count))")
         return items
     }
     
@@ -168,12 +198,20 @@ final class FamilyReadRemoteStore {
     ///
     /// - Returns: Array of decoded routines. Invalid rows are skipped.
     func fetchRoutines(familyId: String) async throws -> [RemoteRoutineRead] {
-        KBLog.sync.kbInfo("fetchRoutines started familyId=\(familyId)")
+        let tid = traceId()
+        let t0 = DispatchTime.now()
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchRoutines start familyId=\(familyId)")
         
-        let qs = try await db.collection("families")
-            .document(familyId)
-            .collection("routines")
-            .getDocuments()
+        var qs: QuerySnapshot
+        do {
+            qs = try await db.collection("families")
+                .document(familyId)
+                .collection("routines")
+                .getDocuments()
+        } catch {
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchRoutines FAIL familyId=\(familyId) ms=\(elapsedMs(since: t0)) err=\(String(describing: error))")
+            throw error
+        }
         
         let items: [RemoteRoutineRead] = qs.documents.compactMap { doc in
             let d = doc.data()
@@ -194,7 +232,7 @@ final class FamilyReadRemoteStore {
             )
         }
         
-        KBLog.sync.kbInfo("fetchRoutines completed familyId=\(familyId) count=\(items.count)")
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchRoutines done familyId=\(familyId) ms=\(elapsedMs(since: t0)) docs=\(qs.documents.count) decoded=\(items.count) skipped=\(max(0, qs.documents.count - items.count))")
         return items
     }
     
@@ -202,13 +240,21 @@ final class FamilyReadRemoteStore {
     ///
     /// - Returns: Array of decoded todos. Invalid rows are skipped.
     func fetchTodos(familyId: String) async throws -> [RemoteTodoRead] {
-        KBLog.sync.kbInfo("fetchTodos started familyId=\(familyId)")
+        let tid = traceId()
+        let t0 = DispatchTime.now()
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchTodos start familyId=\(familyId)")
         
-        let qs = try await db.collection("families")
-            .document(familyId)
-            .collection("todos")
-            .whereField("isDeleted", isEqualTo: false)
-            .getDocuments()
+        var qs: QuerySnapshot
+        do {
+            qs = try await db.collection("families")
+                .document(familyId)
+                .collection("todos")
+                .whereField("isDeleted", isEqualTo: false)
+                .getDocuments()
+        } catch {
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchTodos FAIL familyId=\(familyId) ms=\(elapsedMs(since: t0)) err=\(String(describing: error))")
+            throw error
+        }
         
         let items: [RemoteTodoRead] = qs.documents.compactMap { doc in
             let d = doc.data()
@@ -237,7 +283,7 @@ final class FamilyReadRemoteStore {
             )
         }
         
-        KBLog.sync.kbInfo("fetchTodos completed familyId=\(familyId) count=\(items.count)")
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchTodos done familyId=\(familyId) ms=\(elapsedMs(since: t0)) docs=\(qs.documents.count) decoded=\(items.count) skipped=\(max(0, qs.documents.count - items.count))")
         return items
     }
     
@@ -245,13 +291,21 @@ final class FamilyReadRemoteStore {
     ///
     /// - Returns: Array of decoded lists. Invalid rows are skipped.
     func fetchTodoLists(familyId: String) async throws -> [RemoteTodoListRead] {
-        KBLog.sync.kbInfo("fetchTodoLists started familyId=\(familyId)")
+        let tid = traceId()
+        let t0 = DispatchTime.now()
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchTodoLists start familyId=\(familyId)")
         
-        let qs = try await db.collection("families")
-            .document(familyId)
-            .collection("todoLists")
-            .whereField("isDeleted", isEqualTo: false)
-            .getDocuments()
+        var qs: QuerySnapshot
+        do {
+            qs = try await db.collection("families")
+                .document(familyId)
+                .collection("todoLists")
+                .whereField("isDeleted", isEqualTo: false)
+                .getDocuments()
+        } catch {
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchTodoLists FAIL familyId=\(familyId) ms=\(elapsedMs(since: t0)) err=\(String(describing: error))")
+            throw error
+        }
         
         let items: [RemoteTodoListRead] = qs.documents.compactMap { doc in
             let d = doc.data()
@@ -269,7 +323,7 @@ final class FamilyReadRemoteStore {
             )
         }
         
-        KBLog.sync.kbInfo("fetchTodoLists completed familyId=\(familyId) count=\(items.count)")
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchTodoLists done familyId=\(familyId) ms=\(elapsedMs(since: t0)) docs=\(qs.documents.count) decoded=\(items.count) skipped=\(max(0, qs.documents.count - items.count))")
         return items
     }
     
@@ -277,12 +331,20 @@ final class FamilyReadRemoteStore {
     ///
     /// - Returns: Array of decoded events. Invalid rows are skipped.
     func fetchEvents(familyId: String) async throws -> [RemoteEventRead] {
-        KBLog.sync.kbInfo("fetchEvents started familyId=\(familyId)")
+        let tid = traceId()
+        let t0 = DispatchTime.now()
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchEvents start familyId=\(familyId)")
         
-        let qs = try await db.collection("families")
-            .document(familyId)
-            .collection("events")
-            .getDocuments()
+        var qs: QuerySnapshot
+        do {
+            qs = try await db.collection("families")
+                .document(familyId)
+                .collection("events")
+                .getDocuments()
+        } catch {
+            KBLog.sync.kbError("[FamilyReadRemoteStore][\(tid)] fetchEvents FAIL familyId=\(familyId) ms=\(elapsedMs(since: t0)) err=\(String(describing: error))")
+            throw error
+        }
         
         let items: [RemoteEventRead] = qs.documents.compactMap { doc in
             let d = doc.data()
@@ -307,7 +369,8 @@ final class FamilyReadRemoteStore {
             )
         }
         
-        KBLog.sync.kbInfo("fetchEvents completed familyId=\(familyId) count=\(items.count)")
+        KBLog.sync.kbInfo("[FamilyReadRemoteStore][\(tid)] fetchEvents done familyId=\(familyId) ms=\(elapsedMs(since: t0)) docs=\(qs.documents.count) decoded=\(items.count) skipped=\(max(0, qs.documents.count - items.count))")
         return items
     }
 }
+

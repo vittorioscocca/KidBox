@@ -1,13 +1,7 @@
-//
-//  TodoListView.swift
-//  KidBox
-//
-//  Created by vscocca on 05/02/26.
-//
-
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import OSLog
 
 struct TodoListView: View {
     
@@ -30,6 +24,12 @@ struct TodoListView: View {
     // Query per recuperare il nome della lista
     @Query private var allLists: [KBTodoList]
     
+    // Trace per correlare log durante la vita della view
+    @State private var viewTrace: String = {
+        let s = UUID().uuidString
+        return String(s.prefix(8))
+    }()
+    
     // MARK: - Init
     
     init(familyId: String, childId: String, listId: String) {
@@ -40,8 +40,6 @@ struct TodoListView: View {
         let fid = familyId
         let cid = childId
         
-        // Predicato semplice senza confronto su opzionali (listId è String? in KBTodoItem)
-        // Il filtro per listId viene fatto in Swift tramite visibleTodos
         _todos = Query(
             filter: #Predicate<KBTodoItem> { t in
                 t.familyId == fid &&
@@ -50,6 +48,9 @@ struct TodoListView: View {
             },
             sort: [SortDescriptor(\KBTodoItem.createdAt, order: .reverse)]
         )
+        
+        // Log init (no @State here, quindi loggo “base”)
+        KBLog.todo.kbDebug("TodoListView init familyId=\(familyId) childId=\(childId) listId=\(listId)")
     }
     
     // MARK: - Computed
@@ -58,9 +59,8 @@ struct TodoListView: View {
         allLists.first(where: { $0.id == listId })?.name ?? "Lista"
     }
     
-    // Filtro Swift per listId (evita problemi col predicato su String?)
     private var visibleTodos: [KBTodoItem] {
-        todos.filter { $0.listId == listId }
+        todos.filter { $0.listId == listId && !$0.isDeleted}
     }
     
     // MARK: - Body
@@ -81,6 +81,7 @@ struct TodoListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap + addTodo listId=\(listId)")
                     editingTodoId = nil
                     showEditSheet = true
                 } label: {
@@ -96,11 +97,24 @@ struct TodoListView: View {
                 listName: listName,
                 todoIdToEdit: editingTodoId
             )
+            .onAppear {
+                KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] TodoEditView appeared todoIdToEdit=\(editingTodoId ?? "nil") listId=\(listId)")
+            }
+            .onDisappear {
+                KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] TodoEditView disappeared listId=\(listId)")
+            }
         }
         .onAppear {
+            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onAppear listId=\(listId) didStartRealtime=\(didStartRealtime) todosQueryCount=\(todos.count) visibleCount=\(visibleTodos.count)")
+            
+            // Log “sample” id visibili (prime 5)
+            let sample = visibleTodos.prefix(5).map(\.id).joined(separator: ",")
+            KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] visible sample ids=[\(sample)]")
+            
             guard !didStartRealtime else { return }
             didStartRealtime = true
             
+            KBLog.sync.kbInfo("[TodoListView][\(viewTrace)] startTodoRealtime familyId=\(familyId) childId=\(childId)")
             SyncCenter.shared.startTodoRealtime(
                 familyId: familyId,
                 childId: childId,
@@ -108,21 +122,15 @@ struct TodoListView: View {
                 remote: remote
             )
             
-            Task {
+            Task { @MainActor in
+                KBLog.sync.kbDebug("[TodoListView][\(viewTrace)] flush (onAppear)")
                 await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
             }
         }
         .onDisappear {
-            // Quando usciamo dalla lista, stoppiamo il listener dei todo
-            // e lo riattiviamo subito per la home (che non ha onAppear richiamato
-            // perché è già nello stack di navigazione).
+            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId) -> stopTodoRealtime + restart for home")
+            
             SyncCenter.shared.stopTodoRealtime()
-            SyncCenter.shared.startTodoRealtime(
-                familyId: familyId,
-                childId: childId,
-                modelContext: modelContext,
-                remote: remote
-            )
         }
     }
     
@@ -131,6 +139,7 @@ struct TodoListView: View {
     private func row(_ todo: KBTodoItem) -> some View {
         HStack(spacing: 12) {
             Button {
+                KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] tap toggleDone todoId=\(todo.id) isDone=\(todo.isDone)")
                 Task { await toggleDone(todo) }
             } label: {
                 Image(systemName: todo.isDone ? "checkmark.circle.fill" : "circle")
@@ -171,6 +180,7 @@ struct TodoListView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
+            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap edit todoId=\(todo.id) listId=\(listId)")
             editingTodoId = todo.id
             showEditSheet = true
         }
@@ -188,6 +198,8 @@ struct TodoListView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         
+        let before = "isDone=\(todo.isDone) isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue)"
+        
         todo.isDone.toggle()
         todo.updatedBy = uid
         todo.updatedAt = now
@@ -195,27 +207,77 @@ struct TodoListView: View {
         todo.doneBy = todo.isDone ? uid : nil
         todo.syncState = .pendingUpsert
         
-        try? modelContext.save()
+        let after = "isDone=\(todo.isDone) isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue)"
         
+        KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] toggleDone todoId=\(todo.id) BEFORE \(before) AFTER \(after)")
+        
+        do {
+            try modelContext.save()
+            KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] toggleDone save OK todoId=\(todo.id)")
+        } catch {
+            KBLog.todo.kbError("[TodoListView][\(viewTrace)] toggleDone save FAIL todoId=\(todo.id) err=\(String(describing: error))")
+        }
+        
+        KBLog.sync.kbDebug("[TodoListView][\(viewTrace)] enqueueTodoUpsert todoId=\(todo.id)")
         SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: familyId, modelContext: modelContext)
+        
+        KBLog.sync.kbDebug("[TodoListView][\(viewTrace)] flush (toggleDone) todoId=\(todo.id)")
         await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
     }
     
     private func deleteTodos(offsets: IndexSet) {
         Task { @MainActor in
             let uid = Auth.auth().currentUser?.uid ?? "local"
+            let now = Date()
+            
+            KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] deleteTodos offsets=\(offsets) visibleCount=\(visibleTodos.count) listId=\(listId)")
+            
+            // Snapshot ids pre-delete (prime 10)
+            let preIds = visibleTodos.prefix(10).map(\.id).joined(separator: ",")
+            KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] deleteTodos PRE visibleIds=[\(preIds)]")
             
             for index in offsets {
+                guard visibleTodos.indices.contains(index) else {
+                    KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] deleteTodos indexOutOfRange index=\(index) visibleCount=\(visibleTodos.count)")
+                    continue
+                }
+                
                 let todo = visibleTodos[index]
+                let before = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
+                
                 todo.isDeleted = true
                 todo.updatedBy = uid
+                todo.updatedAt = now
                 todo.syncState = .pendingDelete
+                todo.lastSyncError = nil
                 
+                let after = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
+                
+                KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] deleteTodos todoId=\(todo.id) BEFORE \(before) AFTER \(after)")
+                
+                KBLog.sync.kbDebug("[TodoListView][\(viewTrace)] enqueueTodoDelete todoId=\(todo.id)")
                 SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: familyId, modelContext: modelContext)
             }
             
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+                
+                KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] deleteTodos save OK")
+                
+                DispatchQueue.main.async {
+                    let ids = visibleTodos.map(\.id).joined(separator: ",")
+                    KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] NEXT TICK visibleCount=\(visibleTodos.count) ids=[\(ids)]")
+                }
+            } catch {
+                KBLog.todo.kbError("[TodoListView][\(viewTrace)] deleteTodos save FAIL err=\(String(describing: error))")
+            }
+            
+            KBLog.sync.kbDebug("[TodoListView][\(viewTrace)] flush (deleteTodos)")
             await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+            
+            // Snapshot post-delete (prime 10)
+            let postIds = visibleTodos.prefix(10).map(\.id).joined(separator: ",")
+            KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] deleteTodos POST visibleIds=[\(postIds)] visibleCount=\(visibleTodos.count)")
         }
     }
 }
