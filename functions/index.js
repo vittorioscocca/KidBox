@@ -17,7 +17,8 @@ function sumCounters(data) {
   const chat = data?.chat || 0;
   const documents = data?.documents || 0;
   const location = data?.location || 0;
-  return {chat, documents, location, total: chat + documents + location};
+  const todos = data?.todos || 0;
+  return {chat, documents, location, todos, total: chat + documents + location + todos};
 }
 
 /**
@@ -47,8 +48,9 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
       chat: counters.chat + (field === "chat" ? 1 : 0),
       documents: counters.documents + (field === "documents" ? 1 : 0),
       location: counters.location + (field === "location" ? 1 : 0),
+      todos: counters.todos + (field === "todos" ? 1 : 0),
     };
-    const badge = next.chat + next.documents + next.location;
+    const badge = next.chat + next.documents + next.location + next.todos;
 
     tx.set(ref, {
       [field]: admin.firestore.FieldValue.increment(1),
@@ -670,5 +672,103 @@ exports.expireTemporaryLocations = onSchedule(
       }
 
       logger.info("expireTemporaryLocations: completed expired=" + i);
+    },
+);
+exports.notifyTodoAssigned = onDocumentWritten(
+    {
+      document: "families/{familyId}/todos/{todoId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const todoId = event.params.todoId;
+
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      if (!after) return; // ignore delete
+      if (after.isDeleted === true) return;
+
+      const newAssignee = after.assignedTo || null;
+      const oldAssignee = before?.assignedTo || null;
+      const updatedBy = after.updatedBy;
+
+      if (!newAssignee) return;
+      if (newAssignee === updatedBy) return;
+
+      let shouldNotify = false;
+      let notificationType = "todo_assigned";
+
+      // 1️⃣ Nuovo todo
+      if (!before) {
+        shouldNotify = true;
+      }
+
+      // 2️⃣ Cambio assegnatario
+      if (before && oldAssignee !== newAssignee) {
+        shouldNotify = true;
+      }
+
+      // 3️⃣ Cambio scadenza
+      if (before && oldAssignee === newAssignee) {
+        const beforeDue = before.dueAt?.toMillis?.() || null;
+        const afterDue = after.dueAt?.toMillis?.() || null;
+
+        if (beforeDue !== afterDue) {
+          shouldNotify = true;
+          notificationType = "todo_due_changed";
+        }
+      }
+
+      if (!shouldNotify) return;
+
+      logger.info("notifyTodoAssigned triggered", {
+        familyId,
+        todoId,
+        newAssignee,
+      });
+
+      const tokens = await getUserTokensIfEnabled(
+          newAssignee,
+          "notifyOnTodoAssigned",
+      );
+
+      if (tokens.length === 0) return;
+
+      const badge = await incrementCounterAndGetBadge({
+        familyId,
+        uid: newAssignee,
+        field: "todos",
+      });
+
+      const payload = {
+        tokens,
+        notification: {
+          title: "Nuovo To-Do",
+          body: after.title || "Hai un nuovo promemoria",
+        },
+        data: {
+          type: notificationType,
+          familyId,
+          childId: after.childId || "",
+          listId: after.listId || "",
+          todoId,
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: "default",
+              badge: badge,
+            },
+          },
+        },
+      };
+
+      const result = await admin.messaging().sendEachForMulticast(payload);
+
+      logger.info("notifyTodoAssigned send result", {
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+      });
     },
 );

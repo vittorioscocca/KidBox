@@ -121,6 +121,11 @@ struct KidBoxApp: App {
                         KBLog.navigation.kbInfo("Deep link -> open family location")
                         coordinator.setActiveFamily(familyId)
                         coordinator.navigate(to: .familyLocation(familyId: familyId))
+                    case .todo(familyId: let familyId, childId: let childId, listId: let listId, todoId: let todoId):
+                        KBLog.navigation.kbInfo("[DeepLink] todo -> navigate todoList listId=\(listId) todoId=\(todoId)")
+                        TodoHighlightStore.shared.set(todoId)
+                        coordinator.navigate(to: .todoList(familyId: familyId, childId: childId, listId: listId))
+                        NotificationManager.shared.consumeDeepLink()
                     }
                     
                     notifications.consumeDeepLink()

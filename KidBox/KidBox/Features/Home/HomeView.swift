@@ -450,9 +450,16 @@ private struct HomeCardGrid: View {
             }
             
         case .todo:
-            HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
-                KBLog.navigation.debug("Home: tap Todo")
-                onNavigate(.todo)
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
+                    KBLog.navigation.debug("Home: tap Todo")
+                    onNavigate(.todo)
+                }
+                if badge.todos > 0 {
+                    BadgeView(count: badge.todos)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
             }
             
         case .shopping:

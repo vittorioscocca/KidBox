@@ -64,6 +64,14 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
+                Toggle(
+                    "Notifiche Todo (assegnazioni/scadenze)",
+                    isOn: Binding(
+                        get: { vm.notifyOnTodos },
+                        set: { vm.toggleNotifyOnTodos($0) }
+                    )
+                )
+                .disabled(vm.isLoading)
                 .accessibilityHint("Abilita o disabilita le notifiche quando arrivano nuovi documenti.")
                 
                 if let t = vm.infoText {

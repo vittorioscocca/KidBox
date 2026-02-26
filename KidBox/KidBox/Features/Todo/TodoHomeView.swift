@@ -114,6 +114,13 @@ struct TodoHomeView: View {
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onAppear familyId=\(familyId) childId=\(childId) didStartRealtime=\(didStartRealtime) lists=\(visibleLists.count) todosVisible=\(visibleTodos.count)")
             logCounters("onAppear")
             startRealtimeIfNeeded()
+            guard !familyId.isEmpty else { return }
+            
+            // 1️⃣ reset su Firestore
+            Task { await CountersService.shared.reset(familyId: familyId, field: .todos) }
+            
+            // 2️⃣ azzera subito badge locale (UX immediata)
+            BadgeManager.shared.clearTodos()
         }
         .onDisappear {
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime (reset didStartRealtime)")

@@ -29,6 +29,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var notifyOnNewMessages: Bool = true
     @Published var notifyOnLocationSharing: Bool = false
+    @Published var notifyOnTodos: Bool = true
     
     // MARK: - Dependencies
     private let notifications = NotificationManager.shared
@@ -38,6 +39,8 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnNewDocs = "kb_notifyOnNewDocs"   // namespaced
         static let notifyOnNewMessages = "kb_notifyOnNewMessages"
         static let notifyOnLocationSharing = "kb_notifyOnLocationSharing"
+        static let notifyOnTodos = "kb_notifyOnTodos"
+        
     }
     
     // MARK: - Init
@@ -54,6 +57,10 @@ final class SettingsViewModel: ObservableObject {
         let cachedLoc = UserDefaults.standard.object(forKey: LocalKeys.notifyOnLocationSharing) as? Bool ?? false
         self.notifyOnLocationSharing = cachedLoc
         KBLog.settings.debug("SettingsVM init cached notifyOnLocationSharing=\(cachedLoc, privacy: .public)")
+        
+        let cachedTodos = UserDefaults.standard.object(forKey: LocalKeys.notifyOnTodos) as? Bool ?? true
+        self.notifyOnTodos = cachedTodos
+        KBLog.settings.debug("SettingsVM init cached notifyOnLocationSharing=\(cachedTodos, privacy: .public)")
     }
     
     // MARK: - Load (called by view .task / onAppear)
@@ -101,6 +108,20 @@ final class SettingsViewModel: ObservableObject {
             }
             UserDefaults.standard.set(remoteChat, forKey: LocalKeys.notifyOnNewMessages)
             KBLog.settings.debug("SettingsVM cached remote notifyOnNewDocs=\(remoteChat, privacy: .public)")
+            
+            // ---- TODO notifications ----
+            
+            KBLog.settings.debug("SettingsVM fetch remote Todo preference start")
+            let remoteTodo = await notifications.fetchNotifyOnTodoAssignedPreference()
+            KBLog.settings.info("SettingsVM fetch remote Todo preference done value=\(remoteTodo, privacy: .public)")
+            
+            if notifyOnTodos != remoteTodo {
+                notifyOnTodos = remoteTodo
+                KBLog.settings.debug("SettingsVM applied remote notifyOnTodos=\(remoteTodo, privacy: .public)")
+            }
+            
+            UserDefaults.standard.set(remoteTodo, forKey: LocalKeys.notifyOnTodos)
+            KBLog.settings.debug("SettingsVM cached remote notifyOnTodos=\(remoteTodo, privacy: .public)")
         }
     }
     
@@ -159,6 +180,23 @@ final class SettingsViewModel: ObservableObject {
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnLocationSharing)
                 infoText = error.localizedDescription
                 KBLog.settings.error("SettingsVM setNotifyOnLocationSharing failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+    
+    func toggleNotifyOnTodos(_ enabled: Bool) {
+        notifyOnTodos = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnTodos)
+        
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnTodoAssigned(enabled)
+                
+                infoText = enabled ? "Notifiche Todo attive." : "Notifiche Todo disattivate."
+            } catch {
+                notifyOnTodos = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnTodos)
+                infoText = error.localizedDescription
             }
         }
     }

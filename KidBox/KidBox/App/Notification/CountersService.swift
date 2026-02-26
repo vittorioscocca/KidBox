@@ -14,6 +14,7 @@ enum CountersField: String {
     case chat
     case documents
     case location
+    case todos 
 }
 
 final class CountersService {

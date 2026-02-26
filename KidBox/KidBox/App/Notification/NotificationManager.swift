@@ -57,7 +57,8 @@ final class NotificationManager: NSObject, ObservableObject {
     enum DeepLink: Equatable {
         case document(familyId: String, docId: String)
         case chat(familyId: String)
-        case familyLocation(familyId: String)   // ✅ NEW
+        case familyLocation(familyId: String)
+        case todo(familyId: String, childId: String, listId: String, todoId: String)
     }
     
     // MARK: - Deep Link Handling
@@ -89,7 +90,48 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .familyLocation(familyId: familyId)
             KBLog.auth.kbInfo("DeepLink set for familyLocation familyId=\(familyId)")
+        } else if type == "todo_assigned" || type == "todo_reassigned" || type == "todo_due_changed" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let childId  = userInfo["childId"] as? String,
+                let listId   = userInfo["listId"] as? String,
+                let todoId   = userInfo["todoId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid todo payload (missing ids)")
+                return
+            }
+            
+            pendingDeepLink = .todo(familyId: familyId, childId: childId, listId: listId, todoId: todoId)
+            KBLog.auth.kbInfo("DeepLink set for todo familyId=\(familyId) listId=\(listId) todoId=\(todoId)")
         }
+    }
+    
+    func fetchNotifyOnTodoAssignedPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true } // default ON
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnTodoAssigned"] as? Bool {
+                return v
+            }
+            return true
+        } catch {
+            return true
+        }
+    }
+    
+    func setNotifyOnTodoAssigned(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnTodoAssigned": enabled]
+        ], merge: true)
+        
+        // Se ON: garantisci permessi + token (come location)
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+        // Se OFF: NON rimuovere token (possono servire per chat/docs)
     }
     
     /// Clears current deep link after navigation is handled.
