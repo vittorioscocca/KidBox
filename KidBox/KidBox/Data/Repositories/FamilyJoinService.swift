@@ -334,6 +334,7 @@ final class FamilyJoinService {
                     familyId: familyId,
                     childId: t.childId,
                     title: t.title,
+                    listId: t.listId,
                     notes: t.notes,
                     dueAt: t.dueAt,
                     isDone: t.isDone,

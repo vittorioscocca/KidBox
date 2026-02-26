@@ -43,14 +43,27 @@ struct RemoteTodoRead {
     let id: String
     let childId: String
     let title: String
+    let listId: String?
     let notes: String?
     let dueAt: Date?
     let isDone: Bool
     let doneAt: Date?
     let doneBy: String?
+    let assignedTo: String?
+    let createdBy: String?
+    let priority: Int?
     let updatedAt: Date?
     let updatedBy: String?
     let isDeleted: Bool
+}
+
+/// TodoList snapshot read from Firestore.
+struct RemoteTodoListRead {
+    let id: String
+    let childId: String
+    let name: String
+    let isDeleted: Bool
+    let updatedAt: Date?
 }
 
 /// Event snapshot read from Firestore.
@@ -199,6 +212,7 @@ final class FamilyReadRemoteStore {
         
         let items: [RemoteTodoRead] = qs.documents.compactMap { doc in
             let d = doc.data()
+            
             guard
                 let childId = d["childId"] as? String,
                 let title = d["title"] as? String
@@ -208,11 +222,15 @@ final class FamilyReadRemoteStore {
                 id: doc.documentID,
                 childId: childId,
                 title: title,
+                listId: d["listId"] as? String,
                 notes: d["notes"] as? String,
                 dueAt: (d["dueAt"] as? Timestamp)?.dateValue(),
                 isDone: (d["isDone"] as? Bool) ?? false,
                 doneAt: (d["doneAt"] as? Timestamp)?.dateValue(),
                 doneBy: d["doneBy"] as? String,
+                assignedTo: d["assignedTo"] as? String,
+                createdBy: d["createdBy"] as? String,
+                priority: d["priority"] as? Int,
                 updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue(),
                 updatedBy: d["updatedBy"] as? String,
                 isDeleted: (d["isDeleted"] as? Bool) ?? false
@@ -220,6 +238,38 @@ final class FamilyReadRemoteStore {
         }
         
         KBLog.sync.kbInfo("fetchTodos completed familyId=\(familyId) count=\(items.count)")
+        return items
+    }
+    
+    /// Fetches all todoList documents under a family where `isDeleted == false`.
+    ///
+    /// - Returns: Array of decoded lists. Invalid rows are skipped.
+    func fetchTodoLists(familyId: String) async throws -> [RemoteTodoListRead] {
+        KBLog.sync.kbInfo("fetchTodoLists started familyId=\(familyId)")
+        
+        let qs = try await db.collection("families")
+            .document(familyId)
+            .collection("todoLists")
+            .whereField("isDeleted", isEqualTo: false)
+            .getDocuments()
+        
+        let items: [RemoteTodoListRead] = qs.documents.compactMap { doc in
+            let d = doc.data()
+            guard
+                let childId = d["childId"] as? String,
+                let name = d["name"] as? String
+            else { return nil }
+            
+            return RemoteTodoListRead(
+                id: doc.documentID,
+                childId: childId,
+                name: name,
+                isDeleted: (d["isDeleted"] as? Bool) ?? false,
+                updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue()
+            )
+        }
+        
+        KBLog.sync.kbInfo("fetchTodoLists completed familyId=\(familyId) count=\(items.count)")
         return items
     }
     

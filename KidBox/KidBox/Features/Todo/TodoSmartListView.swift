@@ -1,90 +1,105 @@
 //
-//  TodoListView.swift
+//  TodoSmartListView.swift
 //  KidBox
 //
-//  Created by vscocca on 05/02/26.
+//  Created by vscocca on 25/02/26.
 //
 
 import SwiftUI
 import SwiftData
 import FirebaseAuth
 
-struct TodoListView: View {
+struct TodoSmartListView: View {
     
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var coordinator: AppCoordinator
-    
     @Query private var todos: [KBTodoItem]
     @Query private var members: [KBFamilyMember]
     
     private let remote = TodoRemoteStore()
-    
     private let familyId: String
     private let childId: String
-    private let listId: String
+    private let kind: TodoSmartKind
     
+    @State private var didStartRealtime = false
     @State private var showEditSheet = false
     @State private var editingTodoId: String? = nil
-    @State private var didStartRealtime = false
     
-    // Query per recuperare il nome della lista
-    @Query private var allLists: [KBTodoList]
-    
-    // MARK: - Init
-    
-    init(familyId: String, childId: String, listId: String) {
+    init(familyId: String, childId: String, kind: TodoSmartKind) {
         self.familyId = familyId
         self.childId = childId
-        self.listId = listId
+        self.kind = kind
         
-        let fid = familyId
-        let cid = childId
-        
-        // Predicato semplice senza confronto su opzionali (listId è String? in KBTodoItem)
-        // Il filtro per listId viene fatto in Swift tramite visibleTodos
+        // ✅ Query base: semplice, il compiler non impazzisce
         _todos = Query(
             filter: #Predicate<KBTodoItem> { t in
-                t.familyId == fid &&
-                t.childId == cid &&
+                t.familyId == familyId &&
+                t.childId == childId &&
                 t.isDeleted == false
             },
-            sort: [SortDescriptor(\KBTodoItem.createdAt, order: .reverse)]
+            sort: [SortDescriptor(\KBTodoItem.updatedAt, order: .reverse)]
         )
     }
     
-    // MARK: - Computed
+    // MARK: - Filtro Swift per kind
     
-    private var listName: String {
-        allLists.first(where: { $0.id == listId })?.name ?? "Lista"
-    }
-    
-    // Filtro Swift per listId (evita problemi col predicato su String?)
-    private var visibleTodos: [KBTodoItem] {
-        todos.filter { $0.listId == listId }
+    private var filteredTodos: [KBTodoItem] {
+        let me = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
+        let startOfDay = Calendar.current.startOfDay(for: now)
+        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) ?? now
+        
+        switch kind {
+        case .all:
+            return todos
+            
+        case .today:
+            return todos.filter { t in
+                guard !t.isDone, let due = t.dueAt else { return false }
+                return due >= startOfDay && due < endOfDay
+            }
+            
+        case .assignedToMe:
+            return todos.filter { t in
+                !t.isDone && t.assignedTo == me
+            }
+            
+        case .notAssignedToMe:
+            return todos.filter { t in
+                !t.isDone && t.assignedTo != me
+            }
+            
+        case .completed:
+            return todos.filter { $0.isDone }
+            
+        case .notCompleted:
+            return todos.filter { !$0.isDone }
+        }
     }
     
     // MARK: - Body
     
     var body: some View {
         List {
-            if visibleTodos.isEmpty {
-                Text("Nessun To-Do")
+            if filteredTodos.isEmpty {
+                Text("Nessun elemento")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(visibleTodos) { todo in
+                ForEach(filteredTodos) { todo in
                     row(todo)
                 }
                 .onDelete(perform: deleteTodos)
             }
         }
-        .navigationTitle(listName)
+        .navigationTitle(title)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    editingTodoId = nil
-                    showEditSheet = true
-                } label: {
-                    Image(systemName: "plus")
+            if kind != .completed {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        editingTodoId = nil
+                        showEditSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -92,8 +107,7 @@ struct TodoListView: View {
             TodoEditView(
                 familyId: familyId,
                 childId: childId,
-                listId: listId,
-                listName: listName,
+                listId: "",
                 todoIdToEdit: editingTodoId
             )
         }
@@ -108,25 +122,25 @@ struct TodoListView: View {
                 remote: remote
             )
             
-            Task {
-                await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
-            }
+            Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: remote) }
         }
         .onDisappear {
-            // Quando usciamo dalla lista, stoppiamo il listener dei todo
-            // e lo riattiviamo subito per la home (che non ha onAppear richiamato
-            // perché è già nello stack di navigazione).
             SyncCenter.shared.stopTodoRealtime()
-            SyncCenter.shared.startTodoRealtime(
-                familyId: familyId,
-                childId: childId,
-                modelContext: modelContext,
-                remote: remote
-            )
         }
     }
     
-    // MARK: - Row
+    // MARK: - Helpers
+    
+    private var title: String {
+        switch kind {
+        case .today:            return "Oggi"
+        case .all:              return "Tutti"
+        case .assignedToMe:     return "Assegnati a me"
+        case .completed:        return "Completati"
+        case .notAssignedToMe:  return "Non assegnati a me"
+        case .notCompleted:     return "Non Completati"
+        }
+    }
     
     private func row(_ todo: KBTodoItem) -> some View {
         HStack(spacing: 12) {
@@ -176,8 +190,6 @@ struct TodoListView: View {
         }
     }
     
-    // MARK: - Helpers
-    
     private func displayName(for uid: String?) -> String? {
         guard let uid else { return nil }
         return members.first(where: { $0.userId == uid })?.displayName
@@ -205,8 +217,8 @@ struct TodoListView: View {
         Task { @MainActor in
             let uid = Auth.auth().currentUser?.uid ?? "local"
             
-            for index in offsets {
-                let todo = visibleTodos[index]
+            for i in offsets {
+                let todo = filteredTodos[i]
                 todo.isDeleted = true
                 todo.updatedBy = uid
                 todo.syncState = .pendingDelete

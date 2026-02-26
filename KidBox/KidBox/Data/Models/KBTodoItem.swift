@@ -31,14 +31,24 @@ final class KBTodoItem {
     var updatedAt: Date
     var updatedBy: String
     var isDeleted: Bool
+    var listId: String?
     
     // ✅ M3 (make optional for migration safety)
     var syncStateRaw: Int?
     var lastSyncError: String?
     
+    var assignedTo: String?        // uid membro famiglia
+    var createdBy: String?         // separato da updatedBy
+    var priorityRaw: Int? 
+    
     var syncState: KBSyncState {
         get { KBSyncState(rawValue: syncStateRaw ?? KBSyncState.synced.rawValue) ?? .synced }
         set { syncStateRaw = newValue.rawValue }
+    }
+    
+    var priority: Int {
+        get { priorityRaw ?? 0 }
+        set { priorityRaw = newValue }
     }
     
     init(
@@ -46,6 +56,7 @@ final class KBTodoItem {
         familyId: String,
         childId: String,
         title: String,
+        listId: String?,
         notes: String? = nil,
         dueAt: Date? = nil,
         isDone: Bool = false,
@@ -60,6 +71,7 @@ final class KBTodoItem {
         self.familyId = familyId
         self.childId = childId
         self.title = title
+        self.listId = listId
         self.notes = notes
         self.dueAt = dueAt
         self.isDone = isDone
@@ -69,6 +81,9 @@ final class KBTodoItem {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isDeleted = isDeleted
+        self.assignedTo = nil
+        self.createdBy = updatedBy
+        self.priorityRaw = 0
         
         // default for new records
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue

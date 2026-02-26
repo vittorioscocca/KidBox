@@ -11,4 +11,5 @@ enum SyncEntityType: String {
     case documentCategory 
     case event
     case familyBundle
+    case todoList
 }

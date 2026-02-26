@@ -212,7 +212,7 @@ final class AppCoordinator: ObservableObject {
         case .calendar:
             Text("Calendar")
         case .todo:
-            TodoListView()
+            TodoHomeView()
         case .settings:
             SettingsView()
         case .familySettings:
@@ -241,6 +241,14 @@ final class AppCoordinator: ObservableObject {
             FamilyLocationView(familyId:  familyId)
         case .shoppingList:
             ShoppingListView()
+        case .todoList(familyId: let familyId, childId: let childId, listId: let listId):
+            TodoListView(
+                familyId: familyId,
+                childId: childId,
+                listId: listId
+            )
+        case .todoSmart(familyId: let familyId, childId: let childId, kind: let kind):
+            TodoSmartListView(familyId: familyId, childId: childId, kind: kind)
         }
     }
     

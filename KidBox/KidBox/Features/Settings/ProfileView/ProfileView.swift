@@ -398,6 +398,20 @@ struct ProfileView: View {
                     } catch {
                         KBLog.app.error("Profile: remote member name update failed: \(error.localizedDescription, privacy: .public)")
                     }
+                    
+                    // ✅ Aggiorna anche il KBFamilyMember locale in SwiftData
+                    // così tutte le view (todo, chat, ecc.) vedono subito il nome corretto
+                    await MainActor.run {
+                        let desc = FetchDescriptor<KBFamilyMember>(
+                            predicate: #Predicate { $0.userId == uid && $0.familyId == familyId }
+                        )
+                        if let member = try? modelContext.fetch(desc).first {
+                            member.displayName = name
+                            member.updatedAt = Date()
+                            try? modelContext.save()
+                            KBLog.app.debug("Profile: updated local KBFamilyMember displayName=\(name, privacy: .public)")
+                        }
+                    }
                 }
                 
                 if let avatarData = profile.avatarData {

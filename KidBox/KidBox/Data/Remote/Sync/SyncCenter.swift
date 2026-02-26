@@ -32,6 +32,7 @@ final class SyncCenter: ObservableObject {
     // MARK: - Realtime (Inbound)
     
     private var todoListener: ListenerRegistration?
+    private var todoListListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
     
     private let membersRemote = FamilyMemberRemoteStore()
@@ -99,6 +100,7 @@ final class SyncCenter: ObservableObject {
         
         stopMembersRealtime()
         stopTodoRealtime()
+        stopTodoListRealtime()
         stopChildrenRealtime()
         stopFamilyBundleRealtime()
         stopDocumentsRealtime()
@@ -144,6 +146,45 @@ final class SyncCenter: ObservableObject {
         }
         todoListener?.remove()
         todoListener = nil
+    }
+    
+    // MARK: - TodoList Realtime
+    
+    /// Avvia il listener realtime per le liste todo di una famiglia/figlio.
+    func startTodoListRealtime(
+        familyId: String,
+        childId: String,
+        modelContext: ModelContext,
+        remote: TodoRemoteStore
+    ) {
+        KBLog.sync.kbInfo("startTodoListRealtime familyId=\(familyId) childId=\(childId)")
+        stopTodoListRealtime()
+        
+        todoListListener = remote.listenTodoLists(
+            familyId: familyId,
+            childId: childId,
+            onChange: { [weak self] changes in
+                guard let self else { return }
+                self.applyTodoListInbound(changes: changes, familyId: familyId, modelContext: modelContext)
+            },
+            onError: { [weak self] err in
+                guard let self else { return }
+                if Self.isPermissionDenied(err) {
+                    Task { @MainActor in
+                        self.handleFamilyAccessLost(familyId: familyId, source: "todoLists", error: err)
+                    }
+                }
+            }
+        )
+    }
+    
+    /// Ferma il listener realtime per le liste.
+    func stopTodoListRealtime() {
+        if todoListListener != nil {
+            KBLog.sync.kbInfo("stopTodoListRealtime")
+        }
+        todoListListener?.remove()
+        todoListListener = nil
     }
     
     // MARK: - Local wipe guard
@@ -470,6 +511,30 @@ final class SyncCenter: ObservableObject {
         )
     }
     
+    func enqueueTodoListUpsert(listId: String, familyId: String, modelContext: ModelContext) {
+        // ⚠️ Richiede SyncEntityType.todoList nel tuo enum SyncEntityType:
+        //    case todoList = "todoList"
+        KBLog.sync.kbDebug("enqueueTodoListUpsert familyId=\(familyId) listId=\(listId)")
+        upsertOp(
+            familyId: familyId,
+            entityType: SyncEntityType.todoList.rawValue,
+            entityId: listId,
+            opType: "upsert",
+            modelContext: modelContext
+        )
+    }
+    
+    func enqueueTodoListDelete(listId: String, familyId: String, modelContext: ModelContext) {
+        KBLog.sync.kbDebug("enqueueTodoListDelete familyId=\(familyId) listId=\(listId)")
+        upsertOp(
+            familyId: familyId,
+            entityType: SyncEntityType.todoList.rawValue,
+            entityId: listId,
+            opType: "delete",
+            modelContext: modelContext
+        )
+    }
+    
     func enqueueTodoDelete(todoId: String, familyId: String, modelContext: ModelContext) {
         KBLog.sync.kbDebug("enqueueTodoDelete familyId=\(familyId) todoId=\(todoId)")
         upsertOp(
@@ -568,6 +633,9 @@ final class SyncCenter: ObservableObject {
             case SyncEntityType.todo.rawValue:
                 try await processTodo(op: op, modelContext: modelContext, remote: remote)
                 
+            case SyncEntityType.todoList.rawValue:
+                try await processTodoList(op: op, modelContext: modelContext, remote: remote)
+                
             case SyncEntityType.document.rawValue:
                 try await processDocument(op: op, modelContext: modelContext, remote: documentRemote)
                 
@@ -588,7 +656,12 @@ final class SyncCenter: ObservableObject {
             
             modelContext.delete(op)
             try modelContext.save()
-            try updateFamilyLastSyncAt(familyId: op.familyId, modelContext: modelContext, error: nil)
+            try updateFamilyLastSyncAt(
+                familyId: op.familyId,
+                modelContext: modelContext,
+                value: nil,
+                error: nil
+            )
             
             KBLog.sync.kbDebug("sync op OK entity=\(op.entityTypeRaw) opType=\(op.opType) id=\(op.entityId)")
             
@@ -598,7 +671,12 @@ final class SyncCenter: ObservableObject {
             op.nextRetryAt = Date().addingTimeInterval(backoffSeconds(attempts: op.attempts))
             try? modelContext.save()
             
-            try? updateFamilyLastSyncAt(familyId: op.familyId, modelContext: modelContext, error: op.lastError)
+            try? updateFamilyLastSyncAt(
+                familyId: op.familyId,
+                modelContext: modelContext,
+                value: nil,
+                error: op.lastError
+            )
             
             KBLog.sync.kbError("sync op failed entity=\(op.entityTypeRaw) opType=\(op.opType) id=\(op.entityId) err=\(error.localizedDescription)")
         }
@@ -625,7 +703,15 @@ final class SyncCenter: ObservableObject {
                 familyId: todo.familyId,
                 childId: todo.childId,
                 title: todo.title,
-                isDone: todo.isDone
+                listId: todo.listId,
+                isDone: todo.isDone,
+                notes: todo.notes,
+                dueAt: todo.dueAt,
+                doneAt: todo.doneAt,
+                doneBy: todo.doneBy,
+                assignedTo: todo.assignedTo,
+                createdBy: todo.createdBy,
+                priority: todo.priorityRaw
             ))
             
             todo.syncState = .synced
@@ -647,15 +733,102 @@ final class SyncCenter: ObservableObject {
         }
     }
     
+    /// Processa un'operazione outbox per una KBTodoList.
+    private func processTodoList(op: KBSyncOp, modelContext: ModelContext, remote: TodoRemoteStore) async throws {
+        let lid = op.entityId
+        let desc = FetchDescriptor<KBTodoList>(predicate: #Predicate { $0.id == lid })
+        let list = try modelContext.fetch(desc).first
+        
+        switch op.opType {
+        case "upsert":
+            guard let list else { return }
+            try await remote.upsertList(list: list)
+            
+        case "delete":
+            try await remote.softDeleteList(listId: lid, familyId: op.familyId)
+            
+        default:
+            throw NSError(domain: "KidBox.Sync", code: -2200,
+                          userInfo: [NSLocalizedDescriptionKey: "Unknown opType for todoList: \(op.opType)"])
+        }
+    }
+    
+    /// Applica inbound le modifiche alle liste todo da Firestore → SwiftData (LWW).
+    private func applyTodoListInbound(
+        changes: [TodoListRemoteChange],
+        familyId: String,
+        modelContext: ModelContext
+    ) {
+        do {
+            for change in changes {
+                switch change {
+                case .upsert(let dto):
+                    let lid = dto.id
+                    let desc = FetchDescriptor<KBTodoList>(predicate: #Predicate { $0.id == lid })
+                    
+                    if let existing = try modelContext.fetch(desc).first {
+                        let remoteTs = dto.updatedAt ?? Date.distantPast
+                        if remoteTs >= existing.updatedAt {
+                            existing.name = dto.name
+                            existing.isDeleted = dto.isDeleted
+                            existing.updatedAt = remoteTs
+                        }
+                    } else if !dto.isDeleted {
+                        // nuova lista arrivata dal remoto: la creiamo localmente
+                        let list = KBTodoList(
+                            id: dto.id,
+                            familyId: dto.familyId,
+                            childId: dto.childId,
+                            name: dto.name,
+                            createdAt: dto.updatedAt ?? Date(),
+                            updatedAt: dto.updatedAt ?? Date(),
+                            isDeleted: false
+                        )
+                        modelContext.insert(list)
+                        KBLog.sync.kbDebug("applyTodoListInbound: inserita lista remota name=\(dto.name) id=\(dto.id)")
+                    }
+                    
+                case .remove(let id):
+                    let lid = id
+                    let desc = FetchDescriptor<KBTodoList>(predicate: #Predicate { $0.id == lid })
+                    if let existing = try modelContext.fetch(desc).first {
+                        modelContext.delete(existing)
+                    }
+                }
+            }
+            
+            try modelContext.save()
+            
+        } catch {
+            KBLog.sync.kbError("applyTodoListInbound failed: \(error.localizedDescription)")
+        }
+    }
+    
     private func backoffSeconds(attempts: Int) -> TimeInterval {
         min(pow(2.0, Double(max(0, attempts - 1))), 300.0)
     }
     
-    private func updateFamilyLastSyncAt(familyId: String, modelContext: ModelContext, error: String?) throws {
+    private func updateFamilyLastSyncAt(
+        familyId: String,
+        modelContext: ModelContext,
+        value: Date?,
+        error: String?
+    ) throws {
         let fid = familyId
         let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
+        
         if let fam = try modelContext.fetch(desc).first {
-            fam.lastSyncAt = Date()
+            
+            if let value {
+                if let current = fam.lastSyncAt {
+                    if value > current {
+                        fam.lastSyncAt = value
+                    }
+                } else {
+                    fam.lastSyncAt = value
+                }
+            }
+            
             fam.lastSyncError = error
             try modelContext.save()
         }
@@ -680,23 +853,69 @@ final class SyncCenter: ObservableObject {
         KBLog.sync.kbInfo("pullTodoIncremental started familyId=\(familyId) childId=\(childId)")
         
         do {
-            let since = try fetchFamilyLastSyncAt(familyId: familyId, modelContext: modelContext) ?? .distantPast
-            let dtos = try await remote.fetchTodosUpdatedSince(familyId: familyId, childId: childId, since: since)
+            let since = try fetchFamilyLastSyncAt(
+                familyId: familyId,
+                modelContext: modelContext
+            ) ?? .distantPast
             
-            KBLog.sync.kbDebug("pullTodoIncremental dtos=\(dtos.count)")
+            let dtos = try await remote.fetchTodosUpdatedSince(
+                familyId: familyId,
+                childId: childId,
+                since: since
+            )
+            
+            KBLog.sync.kbDebug("pullTodoIncremental dtos=\(dtos.count) since=\(since)")
+            
+            var maxRemoteUpdatedAt: Date? = nil
             
             for dto in dtos {
-                let todo = try fetchOrCreateTodo(id: dto.id, modelContext: modelContext)
                 
-                let remoteUpdatedAt = dto.updatedAt ?? Date.distantPast
+                let remoteUpdatedAt = dto.updatedAt ?? .distantPast
+                
+                if maxRemoteUpdatedAt == nil || remoteUpdatedAt > maxRemoteUpdatedAt! {
+                    maxRemoteUpdatedAt = remoteUpdatedAt
+                }
+                
+                // 🛡️ isDeleted=true: hard delete locale se esiste, altrimenti skip
+                if dto.isDeleted {
+                    if let existing = try fetchTodo(id: dto.id, modelContext: modelContext) {
+                        modelContext.delete(existing)
+                    }
+                    continue
+                }
+                
+                let todo = try fetchOrCreateTodo(
+                    id: dto.id,
+                    familyId: dto.familyId,
+                    childId: dto.childId,
+                    listId: dto.listId,
+                    modelContext: modelContext
+                )
+                
                 if remoteUpdatedAt >= todo.updatedAt {
+                    
                     todo.familyId = dto.familyId
                     todo.childId = dto.childId
+                    
+                    if let lid = dto.listId {
+                        todo.listId = lid
+                    }
+                    
                     todo.title = dto.title
                     todo.isDone = dto.isDone
-                    todo.isDeleted = dto.isDeleted
+                    todo.isDeleted = false
+                    
+                    todo.notes = dto.notes
+                    todo.dueAt = dto.dueAt
+                    todo.doneAt = dto.doneAt
+                    todo.doneBy = dto.doneBy
+                    
                     todo.updatedAt = remoteUpdatedAt
                     todo.updatedBy = dto.updatedBy ?? todo.updatedBy
+                    
+                    todo.assignedTo = dto.assignedTo
+                    todo.createdBy = dto.createdBy ?? todo.createdBy
+                    todo.priorityRaw = dto.priority ?? 0
                     
                     todo.syncState = .synced
                     todo.lastSyncError = nil
@@ -704,21 +923,30 @@ final class SyncCenter: ObservableObject {
             }
             
             try modelContext.save()
-            try updateFamilyLastSyncAt(familyId: familyId, modelContext: modelContext, error: nil)
+            
+            try updateFamilyLastSyncAt(
+                familyId: familyId,
+                modelContext: modelContext,
+                value: maxRemoteUpdatedAt,
+                error: nil
+            )
             
             KBLog.sync.kbInfo("pullTodoIncremental completed familyId=\(familyId)")
             
         } catch {
             KBLog.sync.kbError("pullTodoIncremental failed: \(error.localizedDescription)")
-            try? updateFamilyLastSyncAt(familyId: familyId, modelContext: modelContext, error: error.localizedDescription)
+            try? updateFamilyLastSyncAt(
+                familyId: familyId,
+                modelContext: modelContext,
+                value: nil,
+                error: error.localizedDescription
+            )
         }
     }
     
     // MARK: - Apply inbound (Realtime)
     
     /// Applies realtime Todo changes to local SwiftData.
-    ///
-    /// Behavior unchanged.
     private func applyTodoInbound(changes: [TodoRemoteChange], modelContext: ModelContext) {
         if !changes.isEmpty {
             KBLog.sync.kbDebug("applyTodoInbound changes=\(changes.count)")
@@ -728,24 +956,50 @@ final class SyncCenter: ObservableObject {
             for change in changes {
                 switch change {
                 case .upsert(let dto):
-                    let todo = try fetchOrCreateTodo(id: dto.id, modelContext: modelContext)
+                    // 🛡️ Se il remoto dice isDeleted=true, non creare MAI il record localmente.
+                    // fetchOrCreateTodo lo creerebbe con isDeleted=false causando un flash
+                    // nei contatori prima che isDeleted=true venga applicato.
+                    if dto.isDeleted {
+                        if let existing = try fetchTodo(id: dto.id, modelContext: modelContext) {
+                            // Esiste localmente: rimuovilo fisicamente (hard delete)
+                            // così la @Query non lo vede più
+                            modelContext.delete(existing)
+                            KBLog.sync.kbDebug("applyTodoInbound: hard deleted existing id=\(dto.id)")
+                        }
+                        // Non esiste: non fare nulla
+                        continue
+                    }
+                    
+                    let todo = try fetchOrCreateTodo(
+                        id: dto.id,
+                        familyId: dto.familyId,
+                        childId: dto.childId,
+                        listId: dto.listId,
+                        modelContext: modelContext
+                    )
                     
                     let remoteUpdatedAt = dto.updatedAt ?? Date.distantPast
                     if remoteUpdatedAt >= todo.updatedAt {
                         todo.familyId = dto.familyId
                         todo.childId = dto.childId
+                        todo.listId = dto.listId
                         todo.title = dto.title
                         todo.isDone = dto.isDone
-                        todo.isDeleted = dto.isDeleted
+                        todo.isDeleted = false
+                        todo.notes = dto.notes
+                        todo.dueAt = dto.dueAt
+                        todo.doneAt = dto.doneAt
+                        todo.doneBy = dto.doneBy
                         todo.updatedAt = remoteUpdatedAt
                         todo.updatedBy = dto.updatedBy ?? todo.updatedBy
-                        
+                        todo.assignedTo = dto.assignedTo
+                        todo.createdBy = dto.createdBy ?? todo.createdBy
+                        todo.priorityRaw = dto.priority ?? 0
                         todo.syncState = .synced
                         todo.lastSyncError = nil
                     }
                     
                 case .remove(let id):
-                    // Usually unused (soft delete), but keep safe.
                     if let existing = try fetchTodo(id: id, modelContext: modelContext) {
                         modelContext.delete(existing)
                     }
@@ -765,17 +1019,26 @@ final class SyncCenter: ObservableObject {
         return try modelContext.fetch(desc).first
     }
     
-    private func fetchOrCreateTodo(id: String, modelContext: ModelContext) throws -> KBTodoItem {
+    private func fetchOrCreateTodo(
+        id: String,
+        familyId: String,
+        childId: String,
+        listId: String?,
+        modelContext: ModelContext
+    ) throws -> KBTodoItem {
+        
         if let existing = try fetchTodo(id: id, modelContext: modelContext) {
             return existing
         }
         
         let now = Date()
+        
         let todo = KBTodoItem(
             id: id,
-            familyId: "",
-            childId: "",
+            familyId: familyId,
+            childId: childId,
             title: "",
+            listId: listId,
             notes: nil,
             dueAt: nil,
             isDone: false,
@@ -783,7 +1046,7 @@ final class SyncCenter: ObservableObject {
             doneBy: nil,
             updatedBy: "remote",
             createdAt: now,
-            updatedAt: now,
+            updatedAt: .distantPast,
             isDeleted: false
         )
         
@@ -798,7 +1061,6 @@ final class SyncCenter: ObservableObject {
 // MARK: - Remote incremental fetch (same file => can access private db)
 
 extension TodoRemoteStore {
-    
     /// Fetches todos updated after a given date (server-side filter on updatedAt).
     ///
     /// Notes:
@@ -809,20 +1071,29 @@ extension TodoRemoteStore {
             .document(familyId)
             .collection("todos")
             .whereField("childId", isEqualTo: childId)
-            .whereField("updatedAt", isGreaterThan: Timestamp(date: since))
+            .whereField("updatedAt", isGreaterThanOrEqualTo: Timestamp(date: since))
             .getDocuments()
-        
         return snap.documents.map { doc in
             let data = doc.data()
+            let listId = data["listId"] as? String
+            
             return TodoRemoteDTO(
                 id: doc.documentID,
                 familyId: familyId,
                 childId: data["childId"] as? String ?? "",
                 title: data["title"] as? String ?? "",
+                listId: listId,
                 isDone: data["isDone"] as? Bool ?? false,
                 isDeleted: data["isDeleted"] as? Bool ?? false,
+                notes: data["notes"] as? String,
+                dueAt: (data["dueAt"] as? Timestamp)?.dateValue(),
+                doneAt: (data["doneAt"] as? Timestamp)?.dateValue(),
+                doneBy: data["doneBy"] as? String,
                 updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),
-                updatedBy: data["updatedBy"] as? String
+                updatedBy: data["updatedBy"] as? String,
+                assignedTo: data["assignedTo"] as? String,
+                createdBy: data["createdBy"] as? String,
+                priority: data["priority"] as? Int
             )
         }
     }

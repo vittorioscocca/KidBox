@@ -15,6 +15,16 @@ import SwiftData
 ///
 /// - Note: Routes are intentionally coarse-grained; feature-specific sub-flows
 ///   can be handled by dedicated coordinators later.
+
+enum TodoSmartKind: String, Codable, Hashable {
+    case today
+    case all
+    case assignedToMe
+    case completed
+    case notAssignedToMe
+    case notCompleted
+}
+
 import Foundation
 
 enum Route: Hashable {
@@ -31,11 +41,11 @@ enum Route: Hashable {
     case chat
     case shoppingList
     case familyLocation(familyId: String)
-    
+    case todoList(familyId: String, childId: String, listId: String)
     case document
     case documentsHome
     case documentsCategory(familyId: String, categoryId: String, title: String)
-    
+    case todoSmart(familyId: String, childId: String, kind: TodoSmartKind)
     case editChild(familyId: String, childId: String)
     
     case setupFamily               // create

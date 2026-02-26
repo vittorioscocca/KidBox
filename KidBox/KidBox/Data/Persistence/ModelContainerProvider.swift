@@ -38,6 +38,7 @@ enum ModelContainerProvider {
             KBRoutineCheck.self,
             KBEvent.self,
             KBTodoItem.self,
+            KBTodoList.self,
             KBCustodySchedule.self,
             KBUserProfile.self,
             KBDocument.self,
