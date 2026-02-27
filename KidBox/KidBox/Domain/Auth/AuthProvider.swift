@@ -10,6 +10,7 @@ import Foundation
 enum AuthProvider: String, CaseIterable, Identifiable {
     case apple
     case google
+    case facebook
     
     var id: String { rawValue }
 }

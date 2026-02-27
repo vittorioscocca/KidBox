@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7C11ACD42F3629A500EB83F7 /* FirebaseStorage */; };
+		7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7C4C85532F51ABA80054A4C3 /* FacebookLogin */; };
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 7CE572032F47900B008FE22B /* FirebaseFunctions */; };
 		7CFC51EA2F33DACC0086D687 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51E92F33DACC0086D687 /* FirebaseCore */; };
@@ -81,6 +82,7 @@
 				7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */,
 				7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */,
 				7CFC52122F33F93E0086D687 /* GoogleSignIn in Frameworks */,
+				7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */,
 				7CFC51F72F33E9000086D687 /* FirebaseAuth in Frameworks */,
 				7CFC51EC2F33DACC0086D687 /* FirebaseFirestore in Frameworks */,
 				7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */,
@@ -160,6 +162,7 @@
 				7C11ACD42F3629A500EB83F7 /* FirebaseStorage */,
 				7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */,
 				7CE572032F47900B008FE22B /* FirebaseFunctions */,
+				7C4C85532F51ABA80054A4C3 /* FacebookLogin */,
 			);
 			productName = KidBox;
 			productReference = 7CFC515D2F3378CB0086D687 /* KidBox.app */;
@@ -246,6 +249,7 @@
 			packageReferences = (
 				7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				7CFC52102F33F93E0086D687 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				7C4C85522F51ABA80054A4C3 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7CFC515E2F3378CB0086D687 /* Products */;
@@ -703,6 +707,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		7C4C85522F51ABA80054A4C3 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.1.0;
+			};
+		};
 		7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
@@ -726,6 +738,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		7C4C85532F51ABA80054A4C3 /* FacebookLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7C4C85522F51ABA80054A4C3 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookLogin;
 		};
 		7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */ = {
 			isa = XCSwiftPackageProductDependency;
