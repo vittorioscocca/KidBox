@@ -94,10 +94,9 @@ struct KidBoxApp: App {
                     
                     if handledByFacebook {
                         KBLog.auth.kbInfo("onOpenURL handled by Facebook SDK")
-                        // Trigger post-login sync flush (anche per FB)
                         let context = modelContainer.mainContext
                         KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Facebook)")
-                        SyncCenter.shared.flushGlobal(modelContext: context)
+                        Task { SyncCenter.shared.flushGlobal(modelContext: context) }
                         return
                     }
                     

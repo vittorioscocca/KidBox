@@ -21,13 +21,38 @@ struct LoginView: View {
     )
     
     @State private var showEmailAuth = false
+    @Environment(\.colorScheme) private var colorScheme
     
-    // Sfondo crema esattamente come nello screenshot di riferimento
-    private let cream = Color(red: 0.961, green: 0.957, blue: 0.945)
+    // MARK: - Dynamic theme
+    
+    private var backgroundColor: Color {
+        // Light: crema come nello screenshot
+        // Dark: system background (quasi nero) per integrarsi col sistema
+        colorScheme == .dark
+        ? Color(.systemBackground)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var primaryText: Color { .primary }
+    private var secondaryText: Color { .secondary }
+    
+    private var primaryButtonBackground: Color {
+        // In dark evitiamo nero pieno: meglio secondarySystemBackground
+        colorScheme == .dark ? Color(.secondarySystemBackground) : .black
+    }
+    
+    private var primaryButtonForeground: Color {
+        colorScheme == .dark ? .primary : .white
+    }
+    
+    private var overlayScrim: Color {
+        // leggermente diverso in dark per non "lavare" tutto
+        colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.05)
+    }
     
     var body: some View {
         ZStack {
-            cream.ignoresSafeArea()
+            backgroundColor.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
@@ -75,36 +100,51 @@ struct LoginView: View {
                     Spacer().frame(height: 40)
                 }
             }
+            .disabled(vm.isBusy) // blocca interazione sotto
+            .blur(radius: vm.isBusy ? 1 : 0)
+            
+            if vm.isBusy {
+                overlayScrim
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Accesso in corso…")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(primaryText)
+                }
+                .padding(16)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .transition(.opacity)
+            }
         }
         .sheet(isPresented: $showEmailAuth) {
             EmailAuthView(vm: vm)
         }
         .onAppear { KBLog.navigation.kbDebug("LoginView appeared") }
         .onDisappear { KBLog.navigation.kbDebug("LoginView disappeared") }
+        .animation(.default, value: vm.isBusy)
     }
     
     // MARK: - Logo
     
     private var logoSection: some View {
         VStack(spacing: 16) {
-            // Icona app (usa il tuo asset, fallback a simbolo SF)
-            Image("AppIcon-Login")   // metti qui il nome del tuo asset, oppure usa sotto
+            Image("AppIcon-Login")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 52, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-            // Se non hai l'asset, commenta le 5 righe sopra e decommenta questa:
-            // Image(systemName: "figure.2.and.child.holdinghands")
-            //     .font(.system(size: 44))
-            //     .foregroundStyle(.primary)
             
             Text("KidBox")
                 .font(.system(size: 36, weight: .semibold, design: .serif))
-                .foregroundStyle(.primary)
+                .foregroundStyle(primaryText)
             
             Text("La tua famiglia,\nin un'unica app.")
                 .font(.system(size: 26, weight: .medium, design: .serif))
-                .foregroundStyle(.primary)
+                .foregroundStyle(primaryText)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
         }
@@ -116,7 +156,9 @@ struct LoginView: View {
         ProviderButton(
             label: "Continua con Google",
             icon: { GoogleIcon() },
-            isLoading: vm.isBusy
+            isLoading: vm.isBusy,
+            background: primaryButtonBackground,
+            foreground: primaryButtonForeground
         ) {
             KBLog.auth.kbInfo("LoginView Google tapped")
             guard let vc = UIApplication.shared.topMostViewController else { return }
@@ -125,14 +167,12 @@ struct LoginView: View {
     }
     
     private var appleButton: some View {
-        // Usiamo l'overlay trick per mantenere il look nativo Apple
-        // ma wrappato nello stesso stile nero degli altri bottoni
         ZStack {
             SignInWithAppleButton(.signIn) { _ in } onCompletion: { _ in }
                 .frame(height: 52)
                 .clipShape(Capsule())
             
-            // Overlay trasparente che intercetta il tap e usa il nostro vm
+            // Overlay che mantiene stile coerente col tema
             Button {
                 KBLog.auth.kbInfo("LoginView Apple tapped")
                 guard let windowScene = UIApplication.shared.connectedScenes
@@ -140,18 +180,17 @@ struct LoginView: View {
                       let window = windowScene.keyWindow else { return }
                 vm.signInApple(window: window)
             } label: {
-                // Bottone con stesso stile degli altri per coerenza visiva
                 HStack(spacing: 10) {
                     Image(systemName: "apple.logo")
                         .font(.system(size: 18, weight: .semibold))
                     Text("Continua con Apple")
                         .font(.system(size: 16, weight: .semibold))
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(primaryButtonForeground)
                 .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .frame(height: 52)
-                .background(Color.black, in: Capsule())
+                .background(primaryButtonBackground, in: Capsule())
             }
             .buttonStyle(.plain)
             .opacity(vm.isBusy ? 0.6 : 1)
@@ -164,7 +203,9 @@ struct LoginView: View {
         ProviderButton(
             label: "Continua con Facebook",
             icon: { FacebookIcon() },
-            isLoading: vm.isBusy
+            isLoading: vm.isBusy,
+            background: primaryButtonBackground,
+            foreground: primaryButtonForeground
         ) {
             KBLog.auth.kbInfo("LoginView Facebook tapped")
             guard let vc = UIApplication.shared.topMostViewController else { return }
@@ -182,37 +223,39 @@ struct LoginView: View {
                 Text("Continua con email")
                     .font(.system(size: 16, weight: .semibold))
             }
-            .foregroundStyle(.primary)
+            .foregroundStyle(primaryText)
             .padding(.horizontal, 20)
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: 52)
             .background(
                 Capsule()
-                    .strokeBorder(Color.primary.opacity(0.25), lineWidth: 1.5)
+                    .strokeBorder(primaryText.opacity(0.25), lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)
+        .disabled(vm.isBusy)
+        .opacity(vm.isBusy ? 0.6 : 1)
     }
     
-    // MARK: - Divisore
+    // MARK: - Divider
     
     private var divider: some View {
         HStack(spacing: 12) {
             Rectangle()
-                .fill(Color.primary.opacity(0.15))
+                .fill(primaryText.opacity(0.15))
                 .frame(height: 1)
             
             Circle()
-                .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1)
+                .strokeBorder(primaryText.opacity(0.2), lineWidth: 1)
                 .frame(width: 24, height: 24)
                 .overlay(
                     Text("o")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(secondaryText)
                 )
             
             Rectangle()
-                .fill(Color.primary.opacity(0.15))
+                .fill(primaryText.opacity(0.15))
                 .frame(height: 1)
         }
     }
@@ -222,7 +265,6 @@ struct LoginView: View {
     private var legalFooter: some View {
         let privacyURL = URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!
         let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
-        
         
         var attributed = AttributedString("Continuando, accetti i Termini di Servizio e la Privacy Policy di KidBox.")
         
@@ -238,7 +280,7 @@ struct LoginView: View {
         
         return Text(attributed)
             .font(.system(size: 12))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(secondaryText)
             .multilineTextAlignment(.center)
     }
 }
@@ -249,6 +291,8 @@ private struct ProviderButton<Icon: View>: View {
     let label: String
     let icon: () -> Icon
     let isLoading: Bool
+    let background: Color
+    let foreground: Color
     let action: () -> Void
     
     var body: some View {
@@ -259,11 +303,11 @@ private struct ProviderButton<Icon: View>: View {
                 Text(isLoading ? "Accesso…" : label)
                     .font(.system(size: 16, weight: .semibold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(foreground)
             .padding(.horizontal, 20)
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: 52)
-            .background(Color.black, in: Capsule())
+            .background(background, in: Capsule())
             .opacity(isLoading ? 0.6 : 1)
         }
         .buttonStyle(.plain)
@@ -275,7 +319,6 @@ private struct ProviderButton<Icon: View>: View {
 
 private struct GoogleIcon: View {
     var body: some View {
-        // Cerchio colorato con la G di Google — vettoriale puro, nessuna dipendenza asset
         ZStack {
             Circle().fill(.white).frame(width: 22, height: 22)
             Text("G")

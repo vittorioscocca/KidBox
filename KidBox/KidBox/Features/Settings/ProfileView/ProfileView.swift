@@ -165,6 +165,7 @@ struct ProfileView: View {
         .onAppear {
             loadAuthInfo()
             loadLocalProfile()
+            Task { await loadRemoteUserProfile() }
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()
@@ -328,6 +329,7 @@ struct ProfileView: View {
         let authEmail = user.email ?? ""
         
         do {
+            // 1) Upsert profilo locale (SwiftData)
             let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
             let existing = try modelContext.fetch(desc).first
             
@@ -341,10 +343,10 @@ struct ProfileView: View {
             
             profile.email = authEmail.ifEmpty(profile.email ?? "")
             profile.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-            profile.lastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.lastName  = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
             
             let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let ln = (profile.lastName  ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let full = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
             profile.displayName = full.isEmpty ? "Utente" : full
             
@@ -355,8 +357,10 @@ struct ProfileView: View {
             profile.updatedAt = Date()
             
             try modelContext.save()
-            KBLog.auth.info("Profile saved uid=\(uid, privacy: .public) displayName=\(profile.displayName ?? "nil", privacy: .public)")
             
+            KBLog.auth.info("Profile saved (local) uid=\(uid, privacy: .public) displayName=\(profile.displayName ?? "nil", privacy: .public)")
+            
+            // 2) UI feedback
             saveErrorText = nil
             showSaveSuccessAlert = true
             
@@ -372,19 +376,59 @@ struct ProfileView: View {
                 )
             }
             
-            guard !uid.isEmpty, let familyId = resolvedFamilyId() else {
-                KBLog.app.error("Profile remote update aborted: missing familyId")
-                return
-            }
-            
+            // 3) Remote sync (Firestore/Storage) - SEMPRE users/{uid}
             Task {
+                // 3.a) Salva profilo utente globale (persistente tra logout/login)
+                do {
+                    try await Firestore.firestore()
+                        .collection("users").document(uid)
+                        .setData([
+                            "firstName": profile.firstName ?? "",
+                            "lastName": profile.lastName ?? "",
+                            "displayName": profile.displayName ?? "",
+                            "familyAddress": profile.familyAddress ?? "",
+                            "email": profile.email ?? "",
+                            "updatedAt": Timestamp(date: Date())
+                        ], merge: true)
+                    
+                    KBLog.app.debug("Profile: saved to users/\(uid, privacy: .public)")
+                } catch {
+                    KBLog.app.error("Profile: users/\(uid, privacy: .public) save failed: \(error.localizedDescription, privacy: .public)")
+                }
+                
+                // 2) ✅ upload avatar USER-scoped + salva avatarURL su users/{uid}
+                if let avatarData = profile.avatarData {
+                    do {
+                        var avatarURL: String?
+                        if let familyId = resolvedFamilyId(){
+                            avatarURL = await avatarRemoteStore.uploadAvatar(imageData: avatarData, uid: uid, familyId: familyId)
+                        } else {
+                            avatarURL = await avatarRemoteStore.uploadUserAvatar(imageData: avatarData, uid: uid)
+                        }
+                        
+                        try await Firestore.firestore()
+                            .collection("users").document(uid)
+                            .setData([
+                                "avatarURL": avatarURL ?? "",
+                                "updatedAt": Timestamp(date: Date())
+                            ], merge: true)
+                        
+                        KBLog.app.debug("Profile: saved avatarURL to users/\(uid, privacy: .public)")
+                    } catch {
+                        KBLog.app.error("Profile: avatar upload failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
+                
+                // 3.b) Aggiornamenti “family scoped” SOLO se abbiamo familyId
+                guard !uid.isEmpty, let familyId = resolvedFamilyId() else {
+                    KBLog.app.debug("Profile: skip family-scoped updates (missing familyId)")
+                    return
+                }
+                
                 await chatRemoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: profile.displayName ?? "")
                 await locationRemoteStore.updateDisplayName(familyId: familyId, uid: uid, displayName: profile.displayName ?? "")
                 
-                // Aggiorna anche il displayName nel documento members di Firestore,
-                // così gli altri device vedono il nome corretto nella lista famiglia.
-                // Usiamo setData(merge:true) invece di updateData per creare il campo
-                // anche se il documento non ha ancora il campo displayName.
+                // Aggiorna displayName nel members/{uid} della famiglia
                 if let name = profile.displayName, !name.isEmpty, name != "Utente" {
                     do {
                         try await Firestore.firestore()
@@ -394,13 +438,13 @@ struct ProfileView: View {
                                 "displayName": name,
                                 "updatedAt": Timestamp(date: Date())
                             ], merge: true)
+                        
                         KBLog.app.debug("Profile: updated remote member displayName=\(name, privacy: .public)")
                     } catch {
                         KBLog.app.error("Profile: remote member name update failed: \(error.localizedDescription, privacy: .public)")
                     }
                     
-                    // ✅ Aggiorna anche il KBFamilyMember locale in SwiftData
-                    // così tutte le view (todo, chat, ecc.) vedono subito il nome corretto
+                    // Aggiorna KBFamilyMember locale in SwiftData (main actor)
                     await MainActor.run {
                         let desc = FetchDescriptor<KBFamilyMember>(
                             predicate: #Predicate { $0.userId == uid && $0.familyId == familyId }
@@ -414,6 +458,7 @@ struct ProfileView: View {
                     }
                 }
                 
+                // Upload avatar (family scoped nella tua implementazione attuale)
                 if let avatarData = profile.avatarData {
                     await avatarRemoteStore.uploadAvatar(imageData: avatarData, uid: uid, familyId: familyId)
                 }
@@ -437,8 +482,64 @@ struct ProfileView: View {
             try Auth.auth().signOut()
             KBLog.auth.info("Logout OK")
             coordinator.resetToRoot()
+            coordinator.signOut(modelContext: modelContext)
         } catch {
             KBLog.auth.error("Logout failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+    
+    private func loadRemoteUserProfile() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        do {
+            let snap = try await Firestore.firestore().collection("users").document(uid).getDocument()
+            guard let data = snap.data() else { return }
+            
+            let remoteFirstName = data["firstName"] as? String
+            let remoteLastName  = data["lastName"] as? String
+            let remoteAddress   = data["familyAddress"] as? String
+            
+            await MainActor.run {
+                if let v = remoteFirstName, !v.isEmpty { firstName = v }
+                if let v = remoteLastName,  !v.isEmpty { lastName = v }
+                if let v = remoteAddress,   !v.isEmpty { familyAddress = v }
+            }
+            
+            Task {
+                guard let uid = Auth.auth().currentUser?.uid else { return }
+                guard avatarData == nil else { return }
+                
+                let familyId = resolvedFamilyId() // può essere nil
+                
+                do {
+                    let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyId)
+                    await MainActor.run { avatarData = data }
+                    KBLog.app.debug("Profile: avatar downloaded bytes=\(data.count, privacy: .public)")
+                } catch {
+                    KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            
+            // Aggiorna anche SwiftData (così resta cache locale)
+            await MainActor.run {
+                let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+                let existing = try? modelContext.fetch(desc).first
+                let profile = existing ?? KBUserProfile(uid: uid)
+                if existing == nil { modelContext.insert(profile) }
+                
+                profile.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+                profile.lastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+                profile.familyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+                profile.avatarData = avatarData
+                profile.updatedAt = Date()
+                try? modelContext.save()
+                
+                syncSavedSnapshotFromCurrentState()
+                recomputeDirty()
+            }
+            
+        } catch {
+            KBLog.app.error("Profile: users/\(uid, privacy: .public) load failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

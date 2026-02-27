@@ -66,6 +66,7 @@ struct HomeView: View {
         guard let s = activeFamily?.heroPhotoURL, !s.isEmpty else { return nil }
         return URL(string: s)
     }
+    private let avatarRemoteStore = AvatarRemoteStore()
     
     /// Initial crop values for the cropper UI (persisted on KBFamily).
     private var initialCrop: HeroCrop {
@@ -153,6 +154,9 @@ struct HomeView: View {
             KBLog.sync.debug("Home: hero picker item selected -> prepare crop")
             Task { await prepareHeroCrop(item: newItem) }
         }
+        .task {
+            await bootstrapMyAvatarIfNeeded()
+        }
         
         // ✅ Cropper sheet
         .sheet(isPresented: $showHeroCropper) {
@@ -184,6 +188,37 @@ struct HomeView: View {
             Button("OK") { heroUploadError = nil }
         } message: {
             Text(heroUploadError ?? "")
+        }
+    }
+    
+    @MainActor
+    private func bootstrapMyAvatarIfNeeded() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        // Se già ce l'hai localmente, stop
+        if let data = myProfile?.avatarData, !data.isEmpty { return }
+        
+        // familyId opzionale (se non ce l’hai, fallback non scatta)
+        let familyId = activeFamily?.id
+        
+        do {
+            let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyId)
+            
+            // upsert profilo locale
+            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+            let existing = try? modelContext.fetch(desc).first
+            
+            let profile = existing ?? KBUserProfile(uid: uid)
+            if existing == nil { modelContext.insert(profile) }
+            
+            profile.avatarData = data
+            profile.updatedAt = Date()
+            
+            try? modelContext.save()
+            
+            KBLog.app.debug("Home: bootstrap avatar OK uid=\(uid, privacy: .public) bytes=\(data.count, privacy: .public)")
+        } catch {
+            KBLog.app.error("Home: bootstrap avatar failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     

@@ -8,5 +8,5 @@
 #include? "Facebook.local.xcconfig"
 
 // Default safe values (repo safe)
-FACEBOOK_APP_ID =
-FACEBOOK_CLIENT_TOKEN =
+FACEBOOK_APP_ID = $(FACEBOOK_APP_ID_LOCAL)
+FACEBOOK_CLIENT_TOKEN = $(FACEBOOK_CLIENT_TOKEN_LOCAL)
