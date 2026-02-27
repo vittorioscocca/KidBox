@@ -54,6 +54,12 @@ struct TodoEditView: View {
         self.listId = listId
         self.listName = listName
         
+        let fid = familyId
+        _members = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.displayName
+        )
+        
         // ✅ Query solo del todo che sto editando (se nil -> empty)
         if let todoIdToEdit {
             _editTodos = Query(filter: #Predicate<KBTodoItem> { $0.id == todoIdToEdit })
@@ -71,7 +77,19 @@ struct TodoEditView: View {
     private var assigneeLabel: String {
         guard let assignedTo else { return "Nessuno" }
         if assignedTo == currentUID { return "Me" }
-        return familyMembers.first(where: { $0.userId == assignedTo })?.displayName ?? "Membro"
+        return resolvedMemberName(uid: assignedTo)
+    }
+    
+    private func resolvedMemberName(uid: String) -> String {
+        if uid == currentUID { return "Me" }
+        guard let m = familyMembers.first(where: { $0.userId == uid }) else {
+            return uid // fallback: mostra uid grezzo invece di "Membro"
+        }
+        let name = (m.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty { return name }
+        // fallback su email se displayName vuoto
+        let email = (m.email ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return email.isEmpty ? "Membro" : email
     }
     
     private var canSave: Bool {
@@ -185,6 +203,7 @@ struct TodoEditView: View {
                 }
             }
             .onAppear {
+                KBLog.app.kbInfo("TodoEditView familyMembers: \(familyMembers.map { m in "\(m.userId) → \(m.displayName ?? "NIL")" }.joined(separator: ", "))")
                 hydrateIfEditing()
             }
             .onChange(of: hasDate) { _, isOn in
@@ -233,6 +252,7 @@ struct TodoEditView: View {
         isUrgent = (t.priorityRaw ?? 0) == 1
         assignedTo = t.assignedTo
         wantsReminder = (t.dueAt != nil) ? t.reminderEnabled : false
+        
     }
     
     // MARK: - Save
@@ -395,7 +415,7 @@ struct AssigneePickerView: View {
                         dismiss()
                     } label: {
                         HStack {
-                            Text("Io")
+                            Text("Me")
                             Text(meDisplayName.map { "(\($0))" } ?? "")
                                 .foregroundStyle(.secondary)
                             Spacer()

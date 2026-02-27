@@ -40,6 +40,7 @@ final class ChatViewModel: ObservableObject {
     // Paginazione
     @Published var isLoadingOlder: Bool = false
     @Published var hasMoreMessages: Bool = true
+    @Published var isPaginating: Bool = false
     
     // Audio recording
     @Published var isRecording: Bool = false
@@ -174,6 +175,7 @@ final class ChatViewModel: ObservableObject {
               let modelContext else { return }
         
         isLoadingOlder = true
+        isPaginating   = true
         
         Task {
             do {
@@ -203,11 +205,13 @@ final class ChatViewModel: ObservableObject {
                         KBLog.sync.kbInfo("ChatVM pagination: loaded \(dtos.count) older messages")
                     }
                     self.isLoadingOlder = false
+                    self.isPaginating   = false
                 }
             } catch {
                 await MainActor.run {
                     self.errorText = "Errore caricamento messaggi: \(error.localizedDescription)"
                     self.isLoadingOlder = false
+                    self.isPaginating   = false
                 }
             }
         }
@@ -230,7 +234,27 @@ final class ChatViewModel: ObservableObject {
         
         do {
             let rows = try modelContext.fetch(desc)
-            self.messages = rows
+            
+            // ── Merge intelligente: evita di rimpiazzare l'intero array ──────────
+            // Se la lista è identica (stesso count, stessi id in ordine) non toccare
+            // l'array — SwiftUI non ri-renderizza nulla e lo scroll rimane fermo.
+            let newIds  = rows.map(\.id)
+            let currIds = messages.map(\.id)
+            
+            if newIds == currIds {
+                // Nessun messaggio aggiunto/rimosso: aggiorna solo i metadati
+                // (syncState, reactions, readBy, ecc.) senza sostituire l'array.
+                let lookup = Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0) })
+                for i in messages.indices {
+                    if let fresh = lookup[messages[i].id] {
+                        messages[i] = fresh
+                    }
+                }
+            } else {
+                // L'array è cambiato (nuovi messaggi o eliminazioni): aggiorna.
+                self.messages = rows
+            }
+            
             KBLog.data.kbInfo("reloadLocal: fetched visible messages count=\(rows.count)")
         } catch {
             KBLog.data.kbError("reloadLocal: fetch FAILED error=\(error.localizedDescription)")

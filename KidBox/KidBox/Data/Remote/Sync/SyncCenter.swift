@@ -286,6 +286,16 @@ final class SyncCenter: ObservableObject {
             
             var seenIds = Set<String>()
             
+            func bestRemoteName(_ dto: FamilyMemberRemoteDTO) -> String? {
+                // se nel tuo DTO non hai `name`, lascia solo displayName/email
+                let dn = (dto.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let email = (dto.email ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                if !dn.isEmpty { return dn }
+                if !email.isEmpty { return email }
+                return nil
+            }
+            
             for change in changes {
                 switch change {
                     
@@ -326,25 +336,39 @@ final class SyncCenter: ObservableObject {
                             // preferiamo sempre il nome locale se disponibile e non vuoto.
                             // Per gli altri membri usiamo normalmente il valore remoto.
                             let isMe = dto.userId == Auth.auth().currentUser?.uid
+                            
                             if isMe {
-                                // Leggi il nome canonico da KBUserProfile
+                                // per me: preferisci SEMPRE KBUserProfile se ha un nome buono
                                 let uid = dto.userId
-                                let profileDesc = FetchDescriptor<KBUserProfile>(
-                                    predicate: #Predicate { $0.uid == uid }
-                                )
+                                let profileDesc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
                                 if let profile = try? modelContext.fetch(profileDesc).first {
                                     let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                     let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                     let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                     let composed = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
-                                    let localName = (!dn.isEmpty && dn != "Utente") ? dn
-                                    : (!composed.isEmpty ? composed : nil)
-                                    local.displayName = localName ?? dto.displayName
-                                } else {
-                                    local.displayName = dto.displayName
+                                    
+                                    let localBest = (!dn.isEmpty && dn != "Utente") ? dn : (!composed.isEmpty ? composed : "")
+                                    if !localBest.isEmpty {
+                                        local.displayName = localBest
+                                    } else if let remoteBest = bestRemoteName(dto) {
+                                        // fallback remoto solo se utile
+                                        if (local.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                            local.displayName = remoteBest
+                                        }
+                                    }
+                                } else if let remoteBest = bestRemoteName(dto) {
+                                    if (local.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                        local.displayName = remoteBest
+                                    }
                                 }
                             } else {
-                                local.displayName = dto.displayName
+                                // per gli altri: usa "bestRemote", ma NON peggiorare se già c'è un nome buono
+                                if let remoteBest = bestRemoteName(dto) {
+                                    let current = (local.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                                    if current.isEmpty || current == "Utente" || current != remoteBest{
+                                        local.displayName = remoteBest
+                                    }
+                                }
                             }
                             
                             local.email = dto.email
@@ -359,22 +383,22 @@ final class SyncCenter: ObservableObject {
                         // FIX: anche alla prima creazione del record locale, usa il nome
                         // da KBUserProfile se si tratta del membro corrente.
                         let isMe = dto.userId == Auth.auth().currentUser?.uid
-                        var resolvedDisplayName = dto.displayName
+                        var resolvedDisplayName: String? = nil
+                        
                         if isMe {
                             let uid = dto.userId
-                            let profileDesc = FetchDescriptor<KBUserProfile>(
-                                predicate: #Predicate { $0.uid == uid }
-                            )
+                            let profileDesc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
                             if let profile = try? modelContext.fetch(profileDesc).first {
                                 let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                 let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                 let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                                 let composed = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
-                                let localName = (!dn.isEmpty && dn != "Utente") ? dn
-                                : (!composed.isEmpty ? composed : nil)
-                                resolvedDisplayName = localName ?? dto.displayName
+                                resolvedDisplayName = (!dn.isEmpty && dn != "Utente") ? dn : (!composed.isEmpty ? composed : nil)
                             }
                         }
+                        
+                        // fallback remoto sempre
+                        resolvedDisplayName = resolvedDisplayName ?? bestRemoteName(dto) ?? "Membro"
                         
                         let m = KBFamilyMember(
                             id: dto.id,

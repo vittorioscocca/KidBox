@@ -265,7 +265,6 @@ private struct ChatConversationView: View {
     private func scrollContent(proxy: ScrollViewProxy) -> some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                // Indicatore caricamento messaggi più vecchi
                 if viewModel.isLoadingOlder {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
@@ -275,6 +274,7 @@ private struct ChatConversationView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
+                    .id("loadingOlder")       // ← id fisso, non rimbalza
                 } else if !viewModel.hasMoreMessages && !viewModel.messages.isEmpty {
                     Text("Inizio della conversazione")
                         .font(.caption)
@@ -304,7 +304,6 @@ private struct ChatConversationView: View {
             .padding(.vertical, 10)
             .onChange(of: searchScrollTarget) { _, target in
                 guard let target else { return }
-                
                 withAnimation(.easeInOut(duration: 0.25)) {
                     proxy.scrollTo(target, anchor: .center)
                 }
@@ -320,13 +319,16 @@ private struct ChatConversationView: View {
         }
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y
-        } action: { _, offsetY in
-            // Quando l'utente scrolla vicino alla cima, carica i messaggi più vecchi
-            if offsetY < 100 {
+        } action: { oldOffset, newOffset in
+            // ✅ Carica older solo se si sta scrollando VERSO l'alto (offset decresce)
+            // e solo se non è già in caricamento — evita trigger ripetuti
+            if newOffset < 80 && newOffset < oldOffset && !viewModel.isLoadingOlder {
                 viewModel.loadOlderMessages()
             }
         }
-        .onChange(of: viewModel.messages.count) { _, _ in
+        // ✅ Scroll in fondo SOLO quando arriva un nuovo messaggio in coda (non durante la paginazione)
+        .onChange(of: viewModel.messages.last?.id) { _, lastId in
+            guard lastId != nil, !viewModel.isPaginating else { return }
             withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
             viewModel.markVisibleMessagesAsRead()
         }

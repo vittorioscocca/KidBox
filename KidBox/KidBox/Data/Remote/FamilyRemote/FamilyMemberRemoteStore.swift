@@ -136,13 +136,11 @@ final class FamilyMemberRemoteStore {
             "isDeleted": false
         ]
         
-        // Priorità: nome passato da KBUserProfile > Auth.currentUser.displayName
-        // Auth.currentUser.displayName NON viene aggiornato quando l'utente cambia
-        // il nome nell'app, quindi usarlo causerebbe il ripristino del nome vecchio.
+        // Scrivi displayName SOLO se abbiamo un valore canonico da KBUserProfile.
+        // MAI usare Auth.currentUser.displayName: non viene aggiornato quando
+        // l'utente cambia il nome nell'app e causerebbe il ripristino del vecchio valore.
         let resolvedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let name = resolvedName, !name.isEmpty, name != "Utente" {
-            data["displayName"] = name
-        } else if let name = user.displayName, !name.isEmpty {
             data["displayName"] = name
         }
         

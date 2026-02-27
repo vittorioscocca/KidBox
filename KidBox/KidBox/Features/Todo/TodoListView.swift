@@ -210,27 +210,14 @@ struct TodoListView: View {
             }
             .buttonStyle(.plain)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(todo.title)
-                    .strikethrough(todo.isDone)
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                HStack(spacing: 8) {
-                    if let name = displayName(for: todo.assignedTo) {
-                        Label(name, systemImage: "person.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    
-                    if let due = todo.dueAt {
-                        Text(due.formatted(.dateTime.day().month().hour().minute()))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
+            VStack(alignment: .leading, spacing: 5) {
+                // Riga 1: titolo + urgente + promemoria
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(todo.title)
+                        .strikethrough(todo.isDone)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     if (todo.priorityRaw ?? 0) == 1 {
                         Text("Urgente")
@@ -239,6 +226,7 @@ struct TodoListView: View {
                             .padding(.vertical, 2)
                             .background(Capsule().fill(Color.red.opacity(0.2)))
                             .foregroundStyle(.red)
+                            .fixedSize()
                     }
                     
                     if todo.reminderEnabled {
@@ -246,6 +234,46 @@ struct TodoListView: View {
                             .font(.caption)
                             .foregroundStyle(.orange)
                             .accessibilityLabel("Promemoria attivo")
+                    }
+                }
+                
+                // Riga 2: assignee · scadenza
+                let hasAssignee = displayName(for: todo.assignedTo) != nil
+                let hasDue = todo.dueAt != nil
+                
+                if hasAssignee || hasDue {
+                    HStack(spacing: 4) {
+                        if let name = displayName(for: todo.assignedTo) {
+                            Image(systemName: "person.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(name)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .layoutPriority(hasDue ? 0 : 1)
+                        }
+                        
+                        if let due = todo.dueAt {
+                            if hasAssignee {
+                                Text("·")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                                    .fixedSize()
+                            }
+                            Image(systemName: "clock")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(due.formatted(.dateTime.day().month(.abbreviated).hour().minute()))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .layoutPriority(1)
+                        }
+                        
+                        Spacer(minLength: 0)
                     }
                 }
             }
