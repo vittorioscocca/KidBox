@@ -146,11 +146,10 @@ struct LoginView: View {
                         .font(.system(size: 18, weight: .semibold))
                     Text("Continua con Apple")
                         .font(.system(size: 16, weight: .semibold))
-                    Spacer()
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 20)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .frame(height: 52)
                 .background(Color.black, in: Capsule())
             }
@@ -182,11 +181,10 @@ struct LoginView: View {
                     .font(.system(size: 16))
                 Text("Continua con email")
                     .font(.system(size: 16, weight: .semibold))
-                Spacer()
             }
             .foregroundStyle(.primary)
             .padding(.horizontal, 20)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: 52)
             .background(
                 Capsule()
@@ -222,16 +220,26 @@ struct LoginView: View {
     // MARK: - Footer
     
     private var legalFooter: some View {
-        Group {
-            Text("Continuando, accetti i ")
-            + Text("Termini di Servizio").underline()
-            + Text(" e la ")
-            + Text("Privacy Policy").underline()
-            + Text(" di KidBox.")
+        let privacyURL = URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!
+        let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
+        
+        
+        var attributed = AttributedString("Continuando, accetti i Termini di Servizio e la Privacy Policy di KidBox.")
+        
+        if let termsRange = attributed.range(of: "Termini di Servizio") {
+            attributed[termsRange].link = termsURL
+            attributed[termsRange].underlineStyle = .single
         }
-        .font(.system(size: 12))
-        .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
+        
+        if let privacyRange = attributed.range(of: "Privacy Policy") {
+            attributed[privacyRange].link = privacyURL
+            attributed[privacyRange].underlineStyle = .single
+        }
+        
+        return Text(attributed)
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
     }
 }
 
@@ -250,11 +258,10 @@ private struct ProviderButton<Icon: View>: View {
                     .frame(width: 22, height: 22)
                 Text(isLoading ? "Accesso…" : label)
                     .font(.system(size: 16, weight: .semibold))
-                Spacer()
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 20)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: 52)
             .background(Color.black, in: Capsule())
             .opacity(isLoading ? 0.6 : 1)

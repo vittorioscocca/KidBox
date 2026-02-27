@@ -222,7 +222,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					7CFC515C2F3378CB0086D687 = {
 						CreatedOnToolsVersion = 26.2;
@@ -359,6 +359,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -382,6 +383,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -421,6 +423,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -437,6 +440,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -449,6 +453,7 @@
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -467,7 +472,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBox/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Serve per scattare e salvare documenti/foto in KidBox.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Con KidBox condicidi la tua posizione con i tuoi familiari";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "KidBox usa la tua posizione per mostrarla ai membri della famiglia.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "KidBox usa il microfono per registrare messaggi vocali in chat.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Consenti l’accesso alla libreria per caricare le foto nei documenti";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -510,6 +517,7 @@
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -528,7 +536,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBox/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Serve per scattare e salvare documenti/foto in KidBox.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Con KidBox condicidi la tua posizione con i tuoi familiari";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "KidBox usa la tua posizione per mostrarla ai membri della famiglia.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "KidBox usa il microfono per registrare messaggi vocali in chat.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Consenti l’accesso alla libreria per caricare le foto nei documenti";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -569,6 +579,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -595,6 +606,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -620,6 +632,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -645,6 +658,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;

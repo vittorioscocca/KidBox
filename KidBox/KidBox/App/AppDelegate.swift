@@ -14,6 +14,7 @@ import UserNotifications
 import OSLog
 import FirebaseStorage
 import Firebase
+import FBSDKCoreKit
 
 /// UIApplication delegate for KidBox.
 ///
@@ -53,6 +54,12 @@ final class AppDelegate: NSObject,
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
         
+        ApplicationDelegate.shared.application(
+            application,
+            didFinishLaunchingWithOptions: launchOptions
+        )
+        KBLog.app.kbInfo("Facebook SDK configured")
+        
         let opts = FirebaseApp.app()?.options
         KBLog.app.kbInfo("✅ PROJECT:\(opts?.projectID ?? "nil")" )
         KBLog.app.kbInfo("✅ STORAGE_BUCKET:\(opts?.storageBucket ?? "nil")")
@@ -81,6 +88,25 @@ final class AppDelegate: NSObject,
         return true
     }
     
+    func scene(
+        _ scene: UIScene,
+        openURLContexts URLContexts: Set<UIOpenURLContext>
+    ) {
+        guard let urlContext = URLContexts.first else { return }
+        
+        let url = urlContext.url
+        let options = urlContext.options
+        
+        ApplicationDelegate.shared.application(
+            UIApplication.shared,
+            open: url,
+            sourceApplication: options.sourceApplication,
+            annotation: options.annotation
+        )
+        
+        KBLog.app.kbDebug("Facebook openURL handled via UIScene")
+    }
+
     private func setupBackgroundLocationManager() {
         let manager = CLLocationManager()
         manager.delegate = self

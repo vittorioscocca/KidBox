@@ -10,6 +10,7 @@ import SwiftData
 import OSLog
 import GoogleSignIn
 import FirebaseAuth
+import FBSDKCoreKit
 
 /// Main application entry point for KidBox.
 ///
@@ -81,12 +82,32 @@ struct KidBoxApp: App {
             
             // MARK: URL handling (Google Sign-In)
                 .onOpenURL { url in
-                    KBLog.auth.kbInfo("onOpenURL received (GoogleSignIn handler)")
+                    KBLog.auth.kbInfo("onOpenURL received url=\(url.absoluteString)")
+                    
+                    // 1) Facebook (se è un callback FB, lo gestisce e STOP)
+                    let handledByFacebook = ApplicationDelegate.shared.application(
+                        UIApplication.shared,
+                        open: url,
+                        sourceApplication: nil,
+                        annotation: nil
+                    )
+                    
+                    if handledByFacebook {
+                        KBLog.auth.kbInfo("onOpenURL handled by Facebook SDK")
+                        // Trigger post-login sync flush (anche per FB)
+                        let context = modelContainer.mainContext
+                        KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Facebook)")
+                        SyncCenter.shared.flushGlobal(modelContext: context)
+                        return
+                    }
+                    
+                    // 2) Google
+                    KBLog.auth.kbInfo("onOpenURL forwarded to GoogleSignIn handler")
                     GIDSignIn.sharedInstance.handle(url)
                     
                     // Trigger post-login / post-deeplink sync flush.
                     let context = modelContainer.mainContext
-                    KBLog.sync.kbInfo("Triggering post-URL flushGlobal")
+                    KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Google/other)")
                     SyncCenter.shared.flushGlobal(modelContext: context)
                 }
             
