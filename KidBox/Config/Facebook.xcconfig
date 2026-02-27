@@ -1,0 +1,12 @@
+//
+//  Facebook.xcconfig
+//  KidBox
+//
+//  Created by vscocca on 27/02/26.
+//
+
+#include? "Facebook.local.xcconfig"
+
+// Default safe values (repo safe)
+FACEBOOK_APP_ID =
+FACEBOOK_CLIENT_TOKEN =
