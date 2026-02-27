@@ -52,11 +52,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		7C4C855C2F51EB7D0054A4C3 /* Config */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Config;
-			sourceTree = "<group>";
-		};
 		7CFC515F2F3378CB0086D687 /* KidBox */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -114,7 +109,6 @@
 		7CFC51542F3378CB0086D687 = {
 			isa = PBXGroup;
 			children = (
-				7C4C855C2F51EB7D0054A4C3 /* Config */,
 				7CFC515F2F3378CB0086D687 /* KidBox */,
 				7CFC516F2F3378CD0086D687 /* KidBoxTests */,
 				7CFC51792F3378CD0086D687 /* KidBoxUITests */,
@@ -156,7 +150,6 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				7C4C855C2F51EB7D0054A4C3 /* Config */,
 				7CFC515F2F3378CB0086D687 /* KidBox */,
 			);
 			name = KidBox;
@@ -334,7 +327,7 @@
 /* Begin XCBuildConfiguration section */
 		7CFC517E2F3378CD0086D687 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 7C4C855C2F51EB7D0054A4C3 /* Config */;
+			baseConfigurationReferenceAnchor = 7CFC515F2F3378CB0086D687 /* KidBox */;
 			baseConfigurationReferenceRelativePath = Facebook.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -400,7 +393,7 @@
 		};
 		7CFC517F2F3378CD0086D687 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 7C4C855C2F51EB7D0054A4C3 /* Config */;
+			baseConfigurationReferenceAnchor = 7CFC515F2F3378CB0086D687 /* KidBox */;
 			baseConfigurationReferenceRelativePath = Facebook.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
