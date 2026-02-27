@@ -22,9 +22,9 @@
 		</dict>
 	</array>
 	<key>FacebookAppID</key>
-	<string>25962552233393986</string>
+	<string>$(FACEBOOK_APP_ID)</string>
 	<key>FacebookClientToken</key>
-	<string>REDACTED_FACEBOOK_CLIENT_TOKEN}</string>
+	<string>$(FACEBOOK_CLIENT_TOKEN)</string>
 	<key>FacebookDisplayName</key>
 	<string>KidBox</string>
 	<key>LSApplicationQueriesSchemes</key>
