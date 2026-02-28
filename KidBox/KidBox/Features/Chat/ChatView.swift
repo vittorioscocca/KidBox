@@ -187,6 +187,7 @@ private struct ChatConversationView: View {
             }
         }
         .background(backgroundColor)
+        .environmentObject(LinkPreviewStore.shared)
         .onAppear {
             viewModel.bind(modelContext: modelContext)
             viewModel.startListening()
@@ -339,7 +340,6 @@ private struct ChatConversationView: View {
             }
         }
         .coordinateSpace(name: "scrollArea")
-        .environmentObject(LinkPreviewStore.shared)
         // ✅ Estrae direttamente un Bool invece di CGFloat: l'action scatta solo
         // quando il valore booleano cambia (mostra/nascondi bottone), non ad ogni pixel.
         .onScrollGeometryChange(for: Bool.self) { geo in
@@ -535,16 +535,39 @@ private struct ChatConversationView: View {
                 .lineLimit(1)
             
         case .video:
-            Text(viewModel.replyingPreviewText.isEmpty ? "🎬 Video" : viewModel.replyingPreviewText)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 8) {
+                if let urlString = viewModel.replyingPreviewMediaURL,
+                   let url = URL(string: urlString) {
+                    VideoThumbnailView(videoURL: url, cacheKey: "reply_" + urlString)
+                        .frame(width: 36, height: 36)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(pillBackground)
+                        .frame(width: 36, height: 36)
+                        .overlay(Image(systemName: "video.fill").font(.caption))
+                }
+                Text("Video")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
             
         case .text, .none:
-            Text(viewModel.replyingPreviewText)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 8) {
+                if let url = ChatLinkDetector.firstURL(in: viewModel.replyingPreviewText) {
+                    LinkPreviewThumb(
+                        url: url,
+                        size: ChatThumbStyle.composerReplySize,
+                        corner: ChatThumbStyle.composerCorner
+                    )
+                }
+                Text(viewModel.replyingPreviewText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
             
         case .document:
             HStack(spacing: 6) {
@@ -574,25 +597,6 @@ private struct ChatConversationView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-        }
-    }
-    struct MiniLocationThumb: View {
-        let latitude: Double
-        let longitude: Double
-        
-        private var center: CLLocationCoordinate2D {
-            .init(latitude: latitude, longitude: longitude)
-        }
-        
-        var body: some View {
-            Map(initialPosition: .region(MKCoordinateRegion(
-                center: center,
-                span: .init(latitudeDelta: 0.01, longitudeDelta: 0.01)
-            ))) {
-                Marker("", coordinate: center)
-            }
-            .mapStyle(.standard)
-            .allowsHitTesting(false)
         }
     }
     

@@ -68,6 +68,11 @@ struct ChatBubble: View {
         }
     }
     
+    private enum ChatMediaStyle {
+        static let size = CGSize(width: 220, height: 160)
+        static let corner: CGFloat = 14
+    }
+    
     private var isHighlighted: Bool {
         highlightedMessageId == message.id
     }
@@ -403,25 +408,29 @@ struct ChatBubble: View {
             case .text:
                 let t = (repliedTo.text ?? "")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                Text(t.isEmpty ? "Messaggio" : t)
+                
+                if let url = extractFirstURL(from: t) {
+                    HStack(spacing: 8) {
+                        LinkPreviewThumb(
+                            url: url,
+                            size: ChatThumbStyle.composerReplySize,
+                            corner: ChatThumbStyle.replyCorner
+                        )
+                        Text(url.host ?? "Link")
+                    }
+                } else {
+                    Text(t.isEmpty ? "Messaggio" : t)
+                }
                 
             case .photo:
-                HStack(spacing: 6) {
-                    if let urlString = repliedTo.mediaURL,
-                       let url = URL(string: urlString)
-                    {
-                        CachedAsyncImage(url: url, contentMode: .fill)
-                            .frame(width: 18, height: 18)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
+                HStack(spacing: 8) {
+                    replyThumb(for: repliedTo)
                     Text("Foto")
                 }
                 
             case .video:
-                HStack(spacing: 6) {
-                    Image(systemName: "video.fill")
-                        .font(.caption2)
+                HStack(spacing: 8) {
+                    replyThumb(for: repliedTo)
                     Text("Video")
                 }
                 
@@ -444,8 +453,12 @@ struct ChatBubble: View {
                         .font(.caption2)
                     Text(repliedTo.text ?? "Documento")
                 }
+                
             case .location:
-                locationContent
+                HStack(spacing: 8) {
+                    replyThumb(for: repliedTo)
+                    Text("Posizione condivisa")
+                }
             }
             
         } else {
@@ -543,7 +556,10 @@ struct ChatBubble: View {
                     )
                     .tint(.red)
                 }
-                .frame(width: 220, height: 160)
+                .frame(
+                    width: ChatMediaStyle.size.width,
+                    height: ChatMediaStyle.size.height
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .allowsHitTesting(false)
             }
@@ -588,7 +604,7 @@ struct ChatBubble: View {
         switch message.type {
         case .text:
             let text = message.text ?? ""
-            let linkURL = extractFirstURL(from: text)
+            let linkURL = ChatLinkDetector.firstURL(in: text)
             
             VStack(alignment: .leading, spacing: 4) {
                 
@@ -675,7 +691,10 @@ struct ChatBubble: View {
             {
                 ZStack(alignment: .bottomTrailing) {
                     CachedAsyncImage(url: remoteURL, contentMode: .fill)
-                        .frame(width: 220, height: 160).clipped()
+                        .frame(
+                            width: ChatMediaStyle.size.width,
+                            height: ChatMediaStyle.size.height
+                        )
                         .overlay(highlightOverlay)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     
@@ -683,7 +702,10 @@ struct ChatBubble: View {
                         Color.black.opacity(0.35)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         ProgressView().tint(.white)
-                            .frame(width: 220, height: 160)
+                            .frame(
+                                width: ChatMediaStyle.size.width,
+                                height: ChatMediaStyle.size.height
+                            )
                     }
                     
                     timeAndChecksOverlayOnMedia
@@ -735,7 +757,10 @@ struct ChatBubble: View {
                         videoURL: remoteURL,
                         cacheKey: videoCacheKey(urlString: urlString)
                     )
-                    .frame(width: 220, height: 160)
+                    .frame(
+                        width: ChatMediaStyle.size.width,
+                        height: ChatMediaStyle.size.height
+                    )
                     .clipped()
                     .overlay(highlightOverlay)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -766,7 +791,10 @@ struct ChatBubble: View {
                         }
                     }
                 }
-                .frame(width: 220, height: 160)   // <-- IMPORTANTISSIMO
+                .frame(
+                    width: ChatMediaStyle.size.width,
+                    height: ChatMediaStyle.size.height
+                )
                 .contentShape(Rectangle())
                 .onTapGesture {
                     guard !isDownloadingMedia else { return }
@@ -820,6 +848,82 @@ struct ChatBubble: View {
         } catch {
             mediaDownloadError = error.localizedDescription
         }
+    }
+    
+    @ViewBuilder
+    private func replyThumb(for msg: KBChatMessage) -> some View {
+        switch msg.type {
+            
+        case .photo:
+            if let urlString = msg.mediaURL, let url = URL(string: urlString) {
+                CachedAsyncImage(url: url, contentMode: .fill)
+                    .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
+                    .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
+                    .clipped()
+            } else {
+                replyThumbPlaceholder
+            }
+            
+        case .video:
+            // Se hai già una thumbnail URL salvata, usa quella (super leggero)
+            if let t = msg.mediaThumbnailURL, let tu = URL(string: t) {
+                CachedAsyncImage(url: tu, contentMode: .fill)
+                frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
+                    .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
+                    .clipped()
+            } else if let urlString = msg.mediaURL, let url = URL(string: urlString) {
+                // Fallback: genera thumb dal video (più costoso ma ok in piccolo)
+                VideoThumbnailView(videoURL: url, cacheKey: videoCacheKey(urlString: urlString))
+                    .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
+                    .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
+                    .clipped()
+            } else {
+                replyThumbPlaceholder
+            }
+            
+        case .location:
+            if let lat = msg.latitude, let lon = msg.longitude {
+                MiniLocationThumb(latitude: lat, longitude: lon)
+                    .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
+                    .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
+            } else {
+                replyThumbPlaceholder
+            }
+            
+        case .text:
+            if let t = msg.text, let url = ChatLinkDetector.firstURL(in: t) {
+                LinkPreviewThumb(url: url, size: ChatThumbStyle.composerReplySize, corner: ChatThumbStyle.replyCorner)
+            }
+            
+        default:
+            EmptyView()
+        }
+    }
+    
+    struct MiniLocationThumb: View {
+        let latitude: Double
+        let longitude: Double
+        
+        private var center: CLLocationCoordinate2D {
+            .init(latitude: latitude, longitude: longitude)
+        }
+        
+        var body: some View {
+            Map(initialPosition: .region(MKCoordinateRegion(
+                center: center,
+                span: .init(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            ))) {
+                Marker("", coordinate: center)
+            }
+            .mapStyle(.standard)
+            .allowsHitTesting(false)
+        }
+    }
+    
+    private var replyThumbPlaceholder: some View {
+        RoundedRectangle(cornerRadius: ChatThumbStyle.replyCorner)
+            .fill(Color.primary.opacity(0.08))
+            .frame(width: ChatThumbStyle.composerReplySize, height: ChatThumbStyle.composerReplySize)
     }
     
     // MARK: - Document
@@ -1225,7 +1329,10 @@ struct ChatBubble: View {
             RoundedRectangle(cornerRadius: 10).fill(
                 Color(.tertiarySystemBackground)
             )
-            .frame(width: 220, height: 140)
+            .frame(
+                width: ChatMediaStyle.size.width,
+                height: ChatMediaStyle.size.height
+            )
             ProgressView()
         }
     }
@@ -1532,22 +1639,14 @@ private struct LinkPreviewView: View {
     private func card(_ meta: LinkPreviewMetadata) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if let iu = meta.imageURL {
-                AsyncImage(url: iu) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 110)
-                            .clipped()
-                    default:
-                        // Stessa altezza anche durante il caricamento immagine
-                        Color.clear.frame(height: 110)
-                    }
-                }
+                CachedAsyncImage(url: iu, contentMode: .fill)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 110)
+                    .clipped()
             } else {
-                // Nessuna immagine OG: riserviamo comunque lo spazio
-                Color.clear.frame(height: 110)
+                RoundedRectangle(cornerRadius: 0)
+                    .fill(bg.opacity(0.35))
+                    .frame(height: 110)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(url.host ?? url.absoluteString)
