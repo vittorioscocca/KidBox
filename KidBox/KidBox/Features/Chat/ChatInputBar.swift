@@ -29,6 +29,26 @@ struct ChatInputBar: View {
     let onLocationTap: () -> Void
     
     @FocusState private var isTextFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Theme (same as LoginView / HomeView / ProfileView / ChatView)
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
+    
+    private var fieldBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+        : Color(.secondarySystemBackground)
+    }
+    
+    private var recordingBarBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+        : Color(.secondarySystemBackground)
+    }
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -42,7 +62,7 @@ struct ChatInputBar: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .background(Color(.systemBackground))
+        .background(backgroundColor)
         .animation(.easeInOut(duration: 0.15), value: isRecording)
     }
     
@@ -96,7 +116,7 @@ struct ChatInputBar: View {
                         if !isRecording { onTextChange() }
                     }
             }
-            .background(Color(.secondarySystemBackground))
+            .background(fieldBackground)
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
@@ -191,7 +211,7 @@ struct ChatInputBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(Color(.secondarySystemBackground))
+        .background(recordingBarBackground)
     }
     
     // MARK: - Helpers

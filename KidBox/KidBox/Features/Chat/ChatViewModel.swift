@@ -113,7 +113,7 @@ final class ChatViewModel: ObservableObject {
         Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
         listener = FirestoreListenerWrapper(remoteStore.listenMessages(
             familyId: familyId,
-            limit: 50,
+            limit: 150,
             onChange: { [weak self] changes in
                 guard let self else { return }
                 Task { @MainActor in self.applyRemoteChanges(changes) }
@@ -182,7 +182,7 @@ final class ChatViewModel: ObservableObject {
                 let (dtos, newCursor) = try await remoteStore.fetchOlderMessages(
                     familyId: familyId,
                     before: cursor,
-                    limit: 50
+                    limit: 150
                 )
                 
                 await MainActor.run {
@@ -666,33 +666,33 @@ final class ChatViewModel: ObservableObject {
     /// Target: lato lungo max 1920px, qualità 0.75 → tipicamente 200-600 KB.
     private func compressPhoto(data: Data) async -> Data {
         await Task.detached(priority: .userInitiated) {
-            // Usa CGImageSource per supportare HEIC, HEIF, JPEG, PNG e qualsiasi formato
-            guard
-                let source  = CGImageSourceCreateWithData(data as CFData, nil),
-                let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil)
-            else {
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
                 return data
             }
             
-            let original = UIImage(cgImage: cgImage)
-            let size     = original.size
+            // Leggi size originali senza decodificare full
+            let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+            let w = (props?[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
+            let h = (props?[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
             let maxSide: CGFloat = 1920
             
-            let scale: CGFloat = (size.width > maxSide || size.height > maxSide)
-            ? maxSide / max(size.width, size.height)
-            : 1.0
+            let scale = (max(w, h) > maxSide && max(w, h) > 0) ? (maxSide / max(w, h)) : 1.0
+            let targetMaxPixel = Int((max(w, h) * scale).rounded())
             
-            let newSize = scale < 1
-            ? CGSize(width: (size.width  * scale).rounded(),
-                     height: (size.height * scale).rounded())
-            : size
+            // ✅ QUESTO è il punto chiave: WithTransform = true applica EXIF orientation
+            let options: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: max(targetMaxPixel, 1),
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true
+            ]
             
-            let renderer = UIGraphicsImageRenderer(size: newSize)
-            let resized  = renderer.image { _ in
-                original.draw(in: CGRect(origin: .zero, size: newSize))
+            guard let cgThumb = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+                return data
             }
             
-            return resized.jpegData(compressionQuality: 0.75) ?? data
+            let ui = UIImage(cgImage: cgThumb) // ormai è già “dritta”
+            return ui.jpegData(compressionQuality: 0.75) ?? data
         }.value
     }
     

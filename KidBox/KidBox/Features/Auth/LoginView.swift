@@ -26,10 +26,8 @@ struct LoginView: View {
     // MARK: - Dynamic theme
     
     private var backgroundColor: Color {
-        // Light: crema come nello screenshot
-        // Dark: system background (quasi nero) per integrarsi col sistema
         colorScheme == .dark
-        ? Color(.systemBackground)
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
         : Color(red: 0.961, green: 0.957, blue: 0.945)
     }
     
@@ -37,16 +35,14 @@ struct LoginView: View {
     private var secondaryText: Color { .secondary }
     
     private var primaryButtonBackground: Color {
-        // In dark evitiamo nero pieno: meglio secondarySystemBackground
-        colorScheme == .dark ? Color(.secondarySystemBackground) : .black
+        colorScheme == .dark ? .white : .black
     }
     
     private var primaryButtonForeground: Color {
-        colorScheme == .dark ? .primary : .white
+        colorScheme == .dark ? .black : .white
     }
     
     private var overlayScrim: Color {
-        // leggermente diverso in dark per non "lavare" tutto
         colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.05)
     }
     
@@ -100,7 +96,7 @@ struct LoginView: View {
                     Spacer().frame(height: 40)
                 }
             }
-            .disabled(vm.isBusy) // blocca interazione sotto
+            .disabled(vm.isBusy)
             .blur(radius: vm.isBusy ? 1 : 0)
             
             if vm.isBusy {
@@ -172,7 +168,6 @@ struct LoginView: View {
                 .frame(height: 52)
                 .clipShape(Capsule())
             
-            // Overlay che mantiene stile coerente col tema
             Button {
                 KBLog.auth.kbInfo("LoginView Apple tapped")
                 guard let windowScene = UIApplication.shared.connectedScenes
@@ -318,9 +313,13 @@ private struct ProviderButton<Icon: View>: View {
 // MARK: - Google Icon
 
 private struct GoogleIcon: View {
+    @Environment(\.colorScheme) private var colorScheme
+    
     var body: some View {
         ZStack {
-            Circle().fill(.white).frame(width: 22, height: 22)
+            Circle()
+                .fill(colorScheme == .dark ? Color.black : Color.white)
+                .frame(width: 22, height: 22)
             Text("G")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Color(red: 0.26, green: 0.52, blue: 0.96))
@@ -331,14 +330,16 @@ private struct GoogleIcon: View {
 // MARK: - Facebook Icon
 
 private struct FacebookIcon: View {
+    @Environment(\.colorScheme) private var colorScheme
+    
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color(red: 0.23, green: 0.35, blue: 0.60))
+                .fill(colorScheme == .dark ? Color.black : Color(red: 0.23, green: 0.35, blue: 0.60))
                 .frame(width: 22, height: 22)
             Text("f")
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(colorScheme == .dark ? Color(red: 0.23, green: 0.35, blue: 0.60) : .white)
         }
     }
 }

@@ -8,6 +8,16 @@
 import SwiftUI
 import UIKit
 
+extension UIImage {
+    func fixedOrientation() -> UIImage {
+        guard imageOrientation != .up else { return self }
+        UIGraphicsBeginImageContextWithOptions(size, false, scale)
+        defer { UIGraphicsEndImageContext() }
+        draw(in: CGRect(origin: .zero, size: size))
+        return UIGraphicsGetImageFromCurrentImageContext() ?? self
+    }
+}
+
 struct CachedAsyncImage: View {
     let url: URL
     var contentMode: ContentMode = .fill
@@ -49,11 +59,13 @@ struct CachedAsyncImage: View {
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
             if let ui = UIImage(data: data) {
-                ImageMemoryCache.shared.set(ui, for: url)
-                self.image = ui
+                let fixed = ui.fixedOrientation()
+                print("orientation:", ui.imageOrientation.rawValue)// <-- QUI
+                ImageMemoryCache.shared.set(fixed, for: url) // <-- cache del fixed
+                self.image = fixed
             }
         } catch {
-            // se fallisce lasciamo placeholder
+            // placeholder
         }
     }
 }

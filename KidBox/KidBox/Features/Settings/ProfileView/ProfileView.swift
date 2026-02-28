@@ -18,6 +18,21 @@ import Combine
 struct ProfileView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView / HomeView)
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    /// Background delle celle/sezioni della List
+    private var cellBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     // Delete
     @State private var showDeleteAccountSheet = false
@@ -84,6 +99,7 @@ struct ProfileView: View {
                     }
                 }
                 .padding(.vertical, 6)
+                .listRowBackground(cellBackground)
                 
                 if isDirty {
                     Button {
@@ -92,12 +108,14 @@ struct ProfileView: View {
                     } label: {
                         Text("Salva profilo")
                     }
+                    .listRowBackground(cellBackground)
                 }
                 
                 if let saveErrorText {
                     Text(saveErrorText)
                         .font(.footnote)
                         .foregroundStyle(.red)
+                        .listRowBackground(cellBackground)
                 }
             }
             
@@ -105,6 +123,7 @@ struct ProfileView: View {
             Section("Famiglia") {
                 TextField("Indirizzo famiglia", text: $familyAddress, axis: .vertical)
                     .lineLimit(2...4)
+                    .listRowBackground(cellBackground)
                 
                 Button {
                     KBLog.app.debug("Profile: tap Detect Address")
@@ -116,11 +135,13 @@ struct ProfileView: View {
                     }
                 }
                 .disabled(locationService.isWorking)
+                .listRowBackground(cellBackground)
                 
                 if let locError = locationService.errorText {
                     Text(locError)
                         .font(.footnote)
                         .foregroundStyle(.red)
+                        .listRowBackground(cellBackground)
                 }
             }
             
@@ -128,17 +149,21 @@ struct ProfileView: View {
             Section("Account") {
                 if email.isEmpty {
                     Text("Email: —").foregroundStyle(.secondary)
+                        .listRowBackground(cellBackground)
                 } else {
                     Text("Email: \(email)")
                         .textSelection(.enabled)
+                        .listRowBackground(cellBackground)
                 }
                 
                 if let lastLoginAt {
                     Text("Ultimo login: \(lastLoginAt.formatted(date: .abbreviated, time: .shortened))")
                         .foregroundStyle(.secondary)
+                        .listRowBackground(cellBackground)
                 } else {
                     Text("Ultimo login: —")
                         .foregroundStyle(.secondary)
+                        .listRowBackground(cellBackground)
                 }
             }
             
@@ -151,6 +176,7 @@ struct ProfileView: View {
                     Text("Logout")
                 }
                 .accessibilityLabel("Logout")
+                .listRowBackground(cellBackground)
                 
                 Button(role: .destructive) {
                     deleteConfirmText = ""
@@ -159,8 +185,11 @@ struct ProfileView: View {
                 } label: {
                     Text("Elimina account")
                 }
+                .listRowBackground(cellBackground)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Profilo")
         .onAppear {
             loadAuthInfo()

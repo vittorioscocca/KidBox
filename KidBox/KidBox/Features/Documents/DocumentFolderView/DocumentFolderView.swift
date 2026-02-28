@@ -36,6 +36,26 @@ struct DocumentFolderView: View {
     
     // MARK: - Env
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView / HomeView / ProfileView / ChatView)
+    var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
+    
+    var pillBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+        : Color(.tertiarySystemBackground)
+    }
     
     // MARK: - Input
     let familyId: String
@@ -130,6 +150,7 @@ struct DocumentFolderView: View {
                 content
             }
         }
+        .background(backgroundColor)
     }
     
     // MARK: - Header
@@ -161,7 +182,7 @@ struct DocumentFolderView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color(.tertiarySystemBackground), in: Capsule())
+            .background(pillBackground, in: Capsule())
         }
         .padding(.horizontal)
         .padding(.top, 12)
@@ -173,7 +194,7 @@ struct DocumentFolderView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             ZStack {
-                Circle().fill(Color(.tertiarySystemBackground)).frame(width: 72, height: 72)
+                Circle().fill(pillBackground).frame(width: 72, height: 72)
                 Image(systemName: "doc.text.magnifyingglass")
                     .font(.title2).foregroundStyle(.secondary)
             }
@@ -242,6 +263,7 @@ struct DocumentFolderView: View {
             }
             .padding()
         }
+        .background(backgroundColor)
     }
     
     // MARK: - LIST ─────────────────────────────────────────────────────────
@@ -299,6 +321,8 @@ struct DocumentFolderView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
     }
     
     // MARK: - Context menus ────────────────────────────────────────────────

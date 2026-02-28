@@ -27,6 +27,20 @@ struct HomeView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     @Query private var members: [KBFamilyMember]
@@ -78,46 +92,50 @@ struct HomeView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                
-                // HERO
-                HomeHeroCard(
-                    title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
-                    subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
-                    dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide)),
-                    rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
-                    photoURL: heroPhotoURL,
-                    photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,
-                    scale: activeFamily?.heroPhotoScale ?? 1.0,
-                    offsetX: activeFamily?.heroPhotoOffsetX ?? 0.0,
-                    offsetY: activeFamily?.heroPhotoOffsetY ?? 0.0,
-                    isBusy: isUploadingHero
-                ) {
-                    if hasFamily {
-                        KBLog.navigation.debug("Home: tap hero -> open picker familyId=\(activeFamilyId, privacy: .public)")
-                        showHeroPicker = true
-                    } else {
-                        KBLog.navigation.debug("Home: tap hero without family -> go FamilySettings")
-                        coordinator.navigate(to: .familySettings)
+        ZStack {
+            backgroundColor.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 14) {
+                    
+                    // HERO
+                    HomeHeroCard(
+                        title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
+                        subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
+                        dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide)),
+                        rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
+                        photoURL: heroPhotoURL,
+                        photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,
+                        scale: activeFamily?.heroPhotoScale ?? 1.0,
+                        offsetX: activeFamily?.heroPhotoOffsetX ?? 0.0,
+                        offsetY: activeFamily?.heroPhotoOffsetY ?? 0.0,
+                        isBusy: isUploadingHero
+                    ) {
+                        if hasFamily {
+                            KBLog.navigation.debug("Home: tap hero -> open picker familyId=\(activeFamilyId, privacy: .public)")
+                            showHeroPicker = true
+                        } else {
+                            KBLog.navigation.debug("Home: tap hero without family -> go FamilySettings")
+                            coordinator.navigate(to: .familySettings)
+                        }
+                    }
+                    .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
+                    
+                    // ✅ Grid estratta in subview per evitare type-check timeout
+                    HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
+                        navigate(to: destination)
+                    }
+                    
+                    if showInvite {
+                        InviteCardView {
+                            KBLog.navigation.debug("Home: tap InviteCard -> inviteCode")
+                            coordinator.navigate(to: .inviteCode)
+                        }
                     }
                 }
-                .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
-                
-                // ✅ Grid estratta in subview per evitare type-check timeout
-                HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
-                    navigate(to: destination)
-                }
-                
-                if showInvite {
-                    InviteCardView {
-                        KBLog.navigation.debug("Home: tap InviteCard -> inviteCode")
-                        coordinator.navigate(to: .inviteCode)
-                    }
-                }
+                .padding()
             }
-            .padding()
-        }
+        } // ZStack
         .navigationTitle("KidBox")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -145,6 +163,7 @@ struct HomeView: View {
         .onAppear {
             guard !activeFamilyId.isEmpty else { return }
             BadgeManager.shared.startListening(familyId: activeFamilyId)
+            
         }
         // ✅ Picker
         .photosPicker(isPresented: $showHeroPicker, selection: $pickedHeroItem, matching: .images)
@@ -153,6 +172,7 @@ struct HomeView: View {
             guard !isUploadingHero else { return }
             KBLog.sync.debug("Home: hero picker item selected -> prepare crop")
             Task { await prepareHeroCrop(item: newItem) }
+            Task { await bootstrapMyAvatarIfNeeded() }
         }
         .task {
             await bootstrapMyAvatarIfNeeded()
@@ -193,32 +213,28 @@ struct HomeView: View {
     
     @MainActor
     private func bootstrapMyAvatarIfNeeded() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
         
-        // Se già ce l'hai localmente, stop
-        if let data = myProfile?.avatarData, !data.isEmpty { return }
         
-        // familyId opzionale (se non ce l’hai, fallback non scatta)
-        let familyId = activeFamily?.id
-        
-        do {
-            let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyId)
+        Task {
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+            if let avatarData = myProfile?.avatarData, !avatarData.isEmpty { return }
             
-            // upsert profilo locale
-            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
-            let existing = try? modelContext.fetch(desc).first
+            let familyIdOrNil: String? = activeFamilyId.isEmpty ? nil : activeFamilyId
             
-            let profile = existing ?? KBUserProfile(uid: uid)
-            if existing == nil { modelContext.insert(profile) }
-            
-            profile.avatarData = data
-            profile.updatedAt = Date()
-            
-            try? modelContext.save()
-            
-            KBLog.app.debug("Home: bootstrap avatar OK uid=\(uid, privacy: .public) bytes=\(data.count, privacy: .public)")
-        } catch {
-            KBLog.app.error("Home: bootstrap avatar failed: \(error.localizedDescription, privacy: .public)")
+            do {
+                let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyIdOrNil)
+                let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+                let existing = try? modelContext.fetch(desc).first
+                let profile = existing ?? KBUserProfile(uid: uid)
+                await MainActor.run {
+                    profile.avatarData = data
+                    profile.updatedAt = Date()
+                    try? modelContext.save()
+                }
+                KBLog.app.debug("Profile: avatar downloaded bytes=\(data.count, privacy: .public)")
+            } catch {
+                KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
     
@@ -665,14 +681,21 @@ private struct HomeCardDropDelegate: DropDelegate {
 }
 
 private struct HomeCardMask: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
+    
     let cornerRadius: CGFloat = 16
     
     func body(content: Content) -> some View {
         content
             .background(
-                // Base piena: elimina trasparenze negli angoli durante la preview
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
+                    .fill(cardBackground)
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))

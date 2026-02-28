@@ -19,7 +19,14 @@ import MapKit
 struct ChatView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
     
     @State private var searchText: String = ""
     @State private var isSearchPresented: Bool = false
@@ -74,6 +81,7 @@ struct ChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+        .background(backgroundColor)
     }
 }
 
@@ -85,7 +93,27 @@ private struct ChatConversationView: View {
     let searchText: String
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var viewModel: ChatViewModel
+    
+    // MARK: - Theme
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var barBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.secondarySystemBackground)
+    }
+    
+    private var pillBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+        : pillBackground
+    }
     
     // Media picker
     @State private var showMediaPicker = false
@@ -158,6 +186,7 @@ private struct ChatConversationView: View {
                 inputBar
             }
         }
+        .background(backgroundColor)
         .onAppear {
             viewModel.bind(modelContext: modelContext)
             viewModel.startListening()
@@ -258,7 +287,7 @@ private struct ChatConversationView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color(.secondarySystemBackground))
+        .background(barBackground)
         .fixedSize(horizontal: false, vertical: true)
     }
     
@@ -310,19 +339,21 @@ private struct ChatConversationView: View {
             }
         }
         .coordinateSpace(name: "scrollArea")
-        .onScrollGeometryChange(for: CGFloat.self) { geo in
-            geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height
-        } action: { _, distanceFromBottom in
+        .environmentObject(LinkPreviewStore.shared)
+        // ✅ Estrae direttamente un Bool invece di CGFloat: l'action scatta solo
+        // quando il valore booleano cambia (mostra/nascondi bottone), non ad ogni pixel.
+        .onScrollGeometryChange(for: Bool.self) { geo in
+            geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height > 200
+        } action: { _, shouldShow in
             withAnimation(.easeInOut(duration: 0.2)) {
-                showScrollToBottom = distanceFromBottom > 200
+                showScrollToBottom = shouldShow
             }
         }
-        .onScrollGeometryChange(for: CGFloat.self) { geo in
-            geo.contentOffset.y
-        } action: { oldOffset, newOffset in
-            // ✅ Carica older solo se si sta scrollando VERSO l'alto (offset decresce)
-            // e solo se non è già in caricamento — evita trigger ripetuti
-            if newOffset < 80 && newOffset < oldOffset && !viewModel.isLoadingOlder {
+        // ✅ Estrae Bool anche qui: scatta solo quando si entra nella zona "load older"
+        .onScrollGeometryChange(for: Bool.self) { geo in
+            geo.contentOffset.y < 80
+        } action: { wasNearTop, isNearTop in
+            if isNearTop && !wasNearTop && !viewModel.isLoadingOlder {
                 viewModel.loadOlderMessages()
             }
         }
@@ -348,7 +379,10 @@ private struct ChatConversationView: View {
     private func daySeparatorDetector(label: String) -> some View {
         GeometryReader { geo -> Color in
             let frame = geo.frame(in: .named("scrollArea"))
-            if frame.minY < 60 && frame.minY > -frame.height {
+            // ✅ Guard su label cambiata: evita di chiamare showFloatingPill (setState)
+            // ad ogni singolo frame dello scroll — era la causa principale dei re-render
+            // continui che rallentavano la LazyVStack con bubble link-preview.
+            if frame.minY < 60 && frame.minY > -frame.height && floatingDateLabel != label {
                 DispatchQueue.main.async { showFloatingPill(label: label) }
             }
             return Color.clear
@@ -373,7 +407,6 @@ private struct ChatConversationView: View {
             let canAct = isOwn && viewModel.canEditOrDelete(msg)
             
             HStack(spacing: 8) {
-                
                 if isSelecting {
                     Image(systemName: selectedMessageIds.contains(msg.id)
                           ? "checkmark.circle.fill"
@@ -384,17 +417,13 @@ private struct ChatConversationView: View {
                     )
                     .frame(width: 40, height: 40)
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        toggleSelection(msg.id)
-                    }
+                    .onTapGesture { toggleSelection(msg.id) }
                 }
                 ChatBubble(
                     message: msg,
                     isOwn: isOwn,
                     currentUID: uid,
-                    onReactionTap: {
-                        emoji in viewModel.toggleReaction(emoji, on: msg)
-                    },
+                    onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
                     onLongPress: { messageForReaction = msg },
                     onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
                     onDelete: {
@@ -469,7 +498,7 @@ private struct ChatConversationView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color(.secondarySystemBackground))
+        .background(barBackground)
         .fixedSize(horizontal: false, vertical: true)
     }
     
@@ -489,7 +518,7 @@ private struct ChatConversationView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 } else {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(pillBackground)
                         .frame(width: 36, height: 36)
                 }
                 
@@ -536,7 +565,7 @@ private struct ChatConversationView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 } else {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(pillBackground)
                         .frame(width: 36, height: 36)
                 }
                 
@@ -864,7 +893,7 @@ private struct ChatConversationView: View {
         CameraPicker(image: $cameraImage, videoURL: $cameraVideoURL)
             .ignoresSafeArea()
             .onDisappear {
-                if let img = cameraImage, let data = img.jpegData(compressionQuality: 0.85) {
+                if let img = cameraImage, let data = img.fixedOrientation().jpegData(compressionQuality: 0.85) {
                     viewModel.sendMedia(data: data, type: .photo)
                 } else if let url = cameraVideoURL, let data = try? Data(contentsOf: url) {
                     viewModel.sendMedia(data: data, type: .video)
