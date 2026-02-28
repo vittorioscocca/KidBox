@@ -15,7 +15,6 @@ import MapKit
 
 // MARK: - ChatView (entry point)
 
-
 struct ChatView: View {
     
     @Environment(\.modelContext) private var modelContext
@@ -38,22 +37,16 @@ struct ChatView: View {
             if familyId.isEmpty {
                 emptyNoFamily
             } else {
-                ChatConversationView(
-                    familyId: familyId,
-                    searchText: searchText
-                )
+                ChatConversationView(familyId: familyId, searchText: searchText)
             }
         }
         .navigationTitle("Chat famiglia")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button {
-                    isSearchPresented = true
-                } label: {
+                Button { isSearchPresented = true } label: {
                     Image(systemName: "magnifyingglass")
                 }
-                // opzionale: chiudi/clear quando la search è aperta
                 if isSearchPresented {
                     Button {
                         searchText = ""
@@ -85,217 +78,71 @@ struct ChatView: View {
     }
 }
 
-// MARK: - ChatConversationView
+// MARK: - DayGroup
+// Definita a livello file così ChatMessageList può usarla senza essere nested
 
-private struct ChatConversationView: View {
+struct ChatDayGroup: Identifiable {
+    let day: String
+    let label: String
+    let messages: [KBChatMessage]
+    var id: String { day }
+}
+
+// MARK: - ChatMessageList
+//
+// Struct SEPARATA da ChatConversationView.
+// Contiene ScrollView, LazyVStack, pill flottante e bottone scroll-to-bottom.
+// I suoi @State interni (pill, showScrollToBottom) NON propagano re-render
+// al parent — quindi typing/upload/read-receipts nel viewModel non toccano
+// mai la lista messaggi.
+
+private struct ChatMessageList: View {
     
-    let familyId: String
+    // Dati stabili — cambiano solo quando arriva un nuovo messaggio
+    let dayGroups: [ChatDayGroup]
+    let isLoadingOlder: Bool
+    let hasMoreMessages: Bool
+    let messagesIsEmpty: Bool
+    let lastMessageId: String?
+    let isPaginating: Bool
+    let searchScrollTarget: String?
+    
+    // Binding verso il parent (per reaction picker, highlight, selezione)
+    @Binding var messageForReaction: KBChatMessage?
+    @Binding var highlightedMessageId: String?
+    @Binding var isSelecting: Bool
+    @Binding var selectedMessageIds: Set<String>
+    
     let searchText: String
     
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var viewModel: ChatViewModel
+    // Callbacks verso il parent — non causano re-render della lista
+    let onNearTop: () -> Void
+    let onMarkRead: () -> Void
+    let onBubbleRow: (KBChatMessage, ScrollViewProxy) -> BubbleRowView
     
-    // MARK: - Theme
-    private var backgroundColor: Color {
-        colorScheme == .dark
-        ? Color(red: 0.13, green: 0.13, blue: 0.13)
-        : Color(red: 0.961, green: 0.957, blue: 0.945)
-    }
-    
-    private var barBackground: Color {
-        colorScheme == .dark
-        ? Color(red: 0.18, green: 0.18, blue: 0.18)
-        : Color(.secondarySystemBackground)
-    }
-    
-    private var pillBackground: Color {
-        colorScheme == .dark
-        ? Color(red: 0.22, green: 0.22, blue: 0.22)
-        : pillBackground
-    }
-    
-    // Media picker
-    @State private var showMediaPicker = false
-    @State private var mediaPickerItems: [PhotosPickerItem] = []
-    @State private var showLocationSheet = false
-    
-    // Camera
-    @State private var showCamera = false
-    @State private var cameraImage: UIImage?
-    @State private var cameraVideoURL: URL?
-    
-    // Document picker
-    @State private var showDocumentPicker = false
-    
-    // Reaction picker
-    @State private var messageForReaction: KBChatMessage?
-    
-    // Clear chat
-    @State private var showClearConfirm = false
-    
-    // Scroll
+    // MARK: - State interni (scoped a questa struct, non propagano su)
     @State private var showScrollToBottom = false
-    @State private var showDeleteConfirm: Bool = false
-    @State private var showDeleteBar: Bool = false
-    
-    // Date pill floating (stile WhatsApp)
     @State private var floatingDateLabel: String = ""
     @State private var showFloatingDate: Bool = false
     @State private var hideDateTask: Task<Void, Never>? = nil
     
-    @State private var highlightedMessageId: String? = nil
-    @State private var isSearching: Bool = false
-    @State private var searchScrollTarget: String?
-    
-    @State private var isSelecting: Bool = false
-    @State private var selectedMessageIds: Set<String> = []
-    
-    init(familyId: String, searchText: String) {
-        self.familyId = familyId
-        self.searchText = searchText
-        _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
-    }
-    
-    // MARK: - Body
-    
     var body: some View {
-        VStack(spacing: 0) {
-            messageList
-            errorBanner
-            uploadProgress
-            typingBanner
-            if viewModel.isEditing {
-                editingBar
-            }
-            if viewModel.isReplying {
-                replyBar
-            }
-            if isSelecting {
-                ZStack(alignment: .bottom) {
-                    selectionBar
-                    
-                    if showDeleteBar {
-                        deleteOverlayBar
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .zIndex(100)
-                    }
-                }
-            } else {
-                Divider()
-                inputBar
-            }
-        }
-        .background(backgroundColor)
-        .environmentObject(LinkPreviewStore.shared)
-        .onAppear {
-            viewModel.bind(modelContext: modelContext)
-            viewModel.startListening()
-            Task {
-                await CountersService.shared.reset(familyId: familyId, field: .chat)
-                await MainActor.run {
-                    BadgeManager.shared.clearChat()
-                }
-            }
-        }
-        .onDisappear {
-            viewModel.stopListening()
-        }
-        .toolbar {
-            // trashButton
-            if isSelecting {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Annulla") { resetSelection() }
-                }
-            }
-        }
-        .confirmationDialog(
-            "Svuota chat",
-            isPresented: $showClearConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Elimina tutti i messaggi", role: .destructive) { viewModel.clearChat() }
-            Button("Annulla", role: .cancel) {}
-        } message: {
-            Text("Questa azione eliminerà tutti i messaggi per tutti i membri della famiglia. Non è reversibile.")
-        }
-        .sheet(item: $messageForReaction) { msg in
-            ReactionPickerSheet(message: msg) { emoji in
-                viewModel.toggleReaction(emoji, on: msg)
-            }
-            .presentationDetents([.height(120)])
-        }
-        .photosPicker(
-            isPresented: $showMediaPicker,
-            selection: $mediaPickerItems,
-            maxSelectionCount: 1,
-            matching: .any(of: [.images, .videos])
-        )
-        .onChange(of: mediaPickerItems) { _, items in
-            guard let item = items.first else { return }
-            Task { await handlePickedMedia(item) }
-            mediaPickerItems = []
-        }
-        .sheet(isPresented: $showCamera) { cameraSheet }
-        .sheet(isPresented: $showDocumentPicker) {
-            DocumentPicker { url in
-                viewModel.sendDocument(url: url)
-            }
-            .ignoresSafeArea()
-        }
-    }
-    
-    // MARK: - Subviews estratte
-    
-    /// Lista messaggi con scroll, floating pill e freccia in basso.
-    private var messageList: some View {
         ScrollViewReader { proxy in
             ZStack(alignment: .top) {
-                scrollContent(proxy: proxy)
+                scrollBody(proxy: proxy)
                 floatingDatePill
                 scrollToBottomButton(proxy: proxy)
             }
         }
     }
     
-    private var editingBar: some View {
-        HStack(spacing: 10) {
-            Rectangle()
-                .fill(Color.accentColor)
-                .frame(width: 3)
-                .clipShape(Capsule())
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Modifica messaggio")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                Text(viewModel.editingOriginalText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            
-            Spacer(minLength: 0)
-            
-            Button {
-                viewModel.cancelEditing()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(barBackground)
-        .fixedSize(horizontal: false, vertical: true)
-    }
+    // MARK: - Scroll body
     
-    private func scrollContent(proxy: ScrollViewProxy) -> some View {
+    private func scrollBody(proxy: ScrollViewProxy) -> some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                if viewModel.isLoadingOlder {
+                // Header: loading / inizio conversazione
+                if isLoadingOlder {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
                         Text("Caricamento messaggi…")
@@ -304,8 +151,8 @@ private struct ChatConversationView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .id("loadingOlder")       // ← id fisso, non rimbalza
-                } else if !viewModel.hasMoreMessages && !viewModel.messages.isEmpty {
+                    .id("loadingOlder")
+                } else if !hasMoreMessages && !messagesIsEmpty {
                     Text("Inizio della conversazione")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -313,25 +160,18 @@ private struct ChatConversationView: View {
                         .padding(.vertical, 12)
                 }
                 
-                ForEach(groupedMessages, id: \.day) { group in
+                // Messaggi raggruppati per giorno
+                ForEach(dayGroups) { group in
                     daySeparator(group: group)
                     ForEach(group.messages) { msg in
-                        BubbleRowView(
-                            msg: msg,
-                            proxy: proxy,
-                            viewModel: viewModel,
-                            messageForReaction: $messageForReaction,
-                            highlightedMessageId: $highlightedMessageId,
-                            isSelecting: $isSelecting,
-                            selectedMessageIds: $selectedMessageIds,
-                            searchText: searchText,
-                            onScrollAndHighlight: scrollToAndHighlight
-                        )
+                        onBubbleRow(msg, proxy).equatable()
                     }
                 }
+                
                 Color.clear.frame(height: 1).id("bottom")
             }
             .padding(.vertical, 10)
+            // Scroll to search result
             .onChange(of: searchScrollTarget) { _, target in
                 guard let target else { return }
                 withAnimation(.easeInOut(duration: 0.25)) {
@@ -339,9 +179,7 @@ private struct ChatConversationView: View {
                 }
             }
         }
-        .coordinateSpace(name: "scrollArea")
-        // ✅ Estrae direttamente un Bool invece di CGFloat: l'action scatta solo
-        // quando il valore booleano cambia (mostra/nascondi bottone), non ad ogni pixel.
+        // Mostra/nascondi bottone scroll-to-bottom
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height > 200
         } action: { _, shouldShow in
@@ -349,258 +187,52 @@ private struct ChatConversationView: View {
                 showScrollToBottom = shouldShow
             }
         }
-        // ✅ Estrae Bool anche qui: scatta solo quando si entra nella zona "load older"
+        // Carica messaggi più vecchi quando si arriva in cima
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.contentOffset.y < 80
         } action: { wasNearTop, isNearTop in
-            if isNearTop && !wasNearTop && !viewModel.isLoadingOlder {
-                viewModel.loadOlderMessages()
-            }
+            if isNearTop && !wasNearTop { onNearTop() }
         }
-        // ✅ Scroll in fondo SOLO quando arriva un nuovo messaggio in coda (non durante la paginazione)
-        .onChange(of: viewModel.messages.last?.id) { _, lastId in
-            guard lastId != nil, !viewModel.isPaginating else { return }
+        // Scroll automatico in fondo all'arrivo di un nuovo messaggio
+        .onChange(of: lastMessageId) { _, id in
+            guard id != nil, !isPaginating else { return }
             withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-            viewModel.markVisibleMessagesAsRead()
+            onMarkRead()
         }
         .onAppear {
             proxy.scrollTo("bottom", anchor: .bottom)
-            viewModel.markVisibleMessagesAsRead()
+            onMarkRead()
         }
     }
     
-    /// Separatore giorno con rilevamento posizione per la floating pill.
-    private func daySeparator(group: DayGroup) -> some View {
+    // MARK: - Day separator con pill flottante
+    
+    private func daySeparator(group: ChatDayGroup) -> some View {
         ChatDaySeparator(label: group.label)
             .id("day-\(group.day)")
-            .background(daySeparatorDetector(label: group.label))
+        // onScrollVisibilityChange è lo swap pulito del vecchio GeometryReader:
+        // non fa layout pass extra, scatta solo quando la view entra/esce dal viewport.
+            .onScrollVisibilityChange(threshold: 0.01) { isVisible in
+                if isVisible { showFloatingPill(label: group.label) }
+            }
     }
     
-    private func daySeparatorDetector(label: String) -> some View {
-        GeometryReader { geo -> Color in
-            let frame = geo.frame(in: .named("scrollArea"))
-            // ✅ Guard su label cambiata: evita di chiamare showFloatingPill (setState)
-            // ad ogni singolo frame dello scroll — era la causa principale dei re-render
-            // continui che rallentavano la LazyVStack con bubble link-preview.
-            if frame.minY < 60 && frame.minY > -frame.height && floatingDateLabel != label {
-                DispatchQueue.main.async { showFloatingPill(label: label) }
-            }
-            return Color.clear
-        }
-    }
-    
-    private struct BubbleRowView: View {
-        let msg: KBChatMessage
-        let proxy: ScrollViewProxy
-        @ObservedObject var viewModel: ChatViewModel
-        @Binding var messageForReaction: KBChatMessage?
-        @Binding var highlightedMessageId: String?
-        @Binding var isSelecting: Bool
-        @Binding var selectedMessageIds: Set<String>
-        let searchText: String
-        let onScrollAndHighlight: (String, ScrollViewProxy) -> Void
-        
-        var body: some View {
-            let repliedTo = viewModel.messages.first(where: { $0.id == msg.replyToId })
-            let uid = Auth.auth().currentUser?.uid ?? ""
-            let isOwn = msg.senderId == uid
-            let canAct = isOwn && viewModel.canEditOrDelete(msg)
-            
-            HStack(spacing: 8) {
-                if isSelecting {
-                    Image(systemName: selectedMessageIds.contains(msg.id)
-                          ? "checkmark.circle.fill"
-                          : "circle")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(
-                        selectedMessageIds.contains(msg.id) ? Color.accentColor : .secondary
-                    )
-                    .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
-                    .onTapGesture { toggleSelection(msg.id) }
-                }
-                ChatBubble(
-                    message: msg,
-                    isOwn: isOwn,
-                    currentUID: uid,
-                    onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
-                    onLongPress: { messageForReaction = msg },
-                    onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
-                    onDelete: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        isSelecting = true
-                        selectedMessageIds.insert(msg.id)
-                    },
-                    onReply: { viewModel.startReply(to: msg) },
-                    repliedTo: repliedTo,
-                    onReplyContextTap: {
-                        guard let rid = msg.replyToId else { return }
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            onScrollAndHighlight(rid, proxy)
-                        }
-                    },
-                    highlightedMessageId: highlightedMessageId,
-                    searchText: searchText
-                )
-                .id(msg.id)
-            }
-        }
-        
-        private func toggleSelection(_ id: String) {
-            if selectedMessageIds.contains(id) {
-                selectedMessageIds.remove(id)
-            } else {
-                selectedMessageIds.insert(id)
+    private func showFloatingPill(label: String) {
+        guard floatingDateLabel != label else { return }
+        floatingDateLabel = label
+        withAnimation(.easeInOut(duration: 0.2)) { showFloatingDate = true }
+        hideDateTask?.cancel()
+        hideDateTask = Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) { showFloatingDate = false }
             }
         }
     }
     
-    private func scrollToAndHighlight(_ id: String, proxy: ScrollViewProxy) {
-        withAnimation(.easeInOut(duration: 0.25)) {
-            proxy.scrollTo(id, anchor: .center)
-        }
-        
-        // Flash highlight
-        highlightedMessageId = id
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-            // evita di spegnere un highlight diverso se nel frattempo l’utente ha tappato altro
-            if highlightedMessageId == id {
-                highlightedMessageId = nil
-            }
-        }
-    }
+    // MARK: - Floating pill
     
-    // MARK: - Reply bar (WhatsApp style)
-    
-    private var replyBar: some View {
-        HStack(spacing: 10) {
-            Capsule()
-                .fill(Color.accentColor)
-                .frame(width: 3)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Rispondi a \(viewModel.replyingPreviewName)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .lineLimit(1)
-                
-                replyPreviewLine
-            }
-            
-            Spacer(minLength: 0)
-            
-            Button { viewModel.cancelReply() } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(barBackground)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    
-    @ViewBuilder
-    private var replyPreviewLine: some View {
-        let kind = viewModel.replyingPreviewKind
-        
-        switch kind {
-        case .photo:
-            HStack(spacing: 8) {
-                if let urlString = viewModel.replyingPreviewMediaURL,
-                   let url = URL(string: urlString) {
-                    // usa la tua CachedAsyncImage già in progetto
-                    CachedAsyncImage(url: url, contentMode: .fill)
-                        .frame(width: 36, height: 36)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(pillBackground)
-                        .frame(width: 36, height: 36)
-                }
-                
-                Text("Foto")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            
-        case .audio:
-            Text(viewModel.replyingPreviewText) // già "Messaggio vocale • 0:12"
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            
-        case .video:
-            HStack(spacing: 8) {
-                if let urlString = viewModel.replyingPreviewMediaURL,
-                   let url = URL(string: urlString) {
-                    VideoThumbnailView(videoURL: url, cacheKey: "reply_" + urlString)
-                        .frame(width: 36, height: 36)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(pillBackground)
-                        .frame(width: 36, height: 36)
-                        .overlay(Image(systemName: "video.fill").font(.caption))
-                }
-                Text("Video")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            
-        case .text, .none:
-            HStack(spacing: 8) {
-                if let url = ChatLinkDetector.firstURL(in: viewModel.replyingPreviewText) {
-                    LinkPreviewThumb(
-                        url: url,
-                        size: ChatThumbStyle.composerReplySize,
-                        corner: ChatThumbStyle.composerCorner
-                    )
-                }
-                Text(viewModel.replyingPreviewText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            
-        case .document:
-            HStack(spacing: 6) {
-                Image(systemName: "doc.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(viewModel.replyingPreviewText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-        case .location:
-            HStack(spacing: 8) {
-                if let lat = viewModel.replyingPreviewLatitude,
-                   let lon = viewModel.replyingPreviewLongitude {
-                    MiniLocationThumb(latitude: lat, longitude: lon)
-                        .frame(width: 36, height: 36)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(pillBackground)
-                        .frame(width: 36, height: 36)
-                }
-                
-                Text("Posizione condivisa")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-        }
-    }
-    
-    /// Pill data flottante stile WhatsApp.
     @ViewBuilder
     private var floatingDatePill: some View {
         if showFloatingDate {
@@ -619,7 +251,8 @@ private struct ChatConversationView: View {
         }
     }
     
-    /// Freccia "vai in fondo" stile WhatsApp.
+    // MARK: - Scroll to bottom button
+    
     @ViewBuilder
     private func scrollToBottomButton(proxy: ScrollViewProxy) -> some View {
         if showScrollToBottom {
@@ -643,6 +276,498 @@ private struct ChatConversationView: View {
             .zIndex(9)
         }
     }
+}
+
+// MARK: - BubbleRowView
+//
+// Struct SEPARATA (non nested). Riceve tutto come parametri value-type o callback.
+// NON osserva il viewModel → si re-renderizza solo quando cambia msg o i binding.
+
+struct BubbleRowView: View, Equatable {
+    static func == (lhs: BubbleRowView, rhs: BubbleRowView) -> Bool {
+        lhs.msg.id == rhs.msg.id &&
+        lhs.msg.text == rhs.msg.text &&
+        lhs.msg.reactions == rhs.msg.reactions &&
+        lhs.msg.syncState == rhs.msg.syncState &&
+        lhs.msg.readBy == rhs.msg.readBy &&
+        lhs.highlightedMessageId == rhs.highlightedMessageId &&
+        lhs.isSelecting == rhs.isSelecting &&
+        lhs.selectedMessageIds == rhs.selectedMessageIds
+    }
+    let msg: KBChatMessage
+    let proxy: ScrollViewProxy
+    let repliedTo: KBChatMessage?
+    let isOwn: Bool
+    let canAct: Bool
+    @Binding var messageForReaction: KBChatMessage?
+    @Binding var highlightedMessageId: String?
+    @Binding var isSelecting: Bool
+    @Binding var selectedMessageIds: Set<String>
+    let searchText: String
+    let onScrollAndHighlight: (String, ScrollViewProxy) -> Void
+    let onReactionTap: (String) -> Void
+    let onEdit: (() -> Void)?
+    let onDelete: () -> Void
+    let onReply: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            if isSelecting {
+                Image(systemName: selectedMessageIds.contains(msg.id)
+                      ? "checkmark.circle.fill"
+                      : "circle")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(
+                    selectedMessageIds.contains(msg.id) ? Color.accentColor : .secondary
+                )
+                .frame(width: 40, height: 40)
+                .contentShape(Rectangle())
+                .onTapGesture { toggleSelection(msg.id) }
+            }
+            ChatBubble(
+                message: msg,
+                isOwn: isOwn,
+                currentUID: Auth.auth().currentUser?.uid ?? "",
+                onReactionTap: onReactionTap,
+                onLongPress: { messageForReaction = msg },
+                onEdit: canAct ? onEdit : nil,
+                onDelete: onDelete,
+                onReply: onReply,
+                repliedTo: repliedTo,
+                onReplyContextTap: {
+                    guard let rid = msg.replyToId else { return }
+                    onScrollAndHighlight(rid, proxy)
+                },
+                highlightedMessageId: highlightedMessageId,
+                searchText: searchText
+            )
+            .id(msg.id)
+        }
+    }
+    
+    private func toggleSelection(_ id: String) {
+        if selectedMessageIds.contains(id) {
+            selectedMessageIds.remove(id)
+        } else {
+            selectedMessageIds.insert(id)
+        }
+    }
+}
+
+// MARK: - ChatConversationView
+
+private struct ChatConversationView: View {
+    
+    let familyId: String
+    let searchText: String
+    
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var viewModel: ChatViewModel
+    @State private var dayGroups: [ChatDayGroup] = []
+    
+    // MARK: - Theme
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var barBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.secondarySystemBackground)
+    }
+    
+    private var pillBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+        : Color(.tertiarySystemBackground)
+    }
+    
+    // Media picker
+    @State private var showMediaPicker = false
+    @State private var mediaPickerItems: [PhotosPickerItem] = []
+    @State private var showLocationSheet = false
+    
+    // Camera
+    @State private var showCamera = false
+    @State private var cameraImage: UIImage?
+    @State private var cameraVideoURL: URL?
+    
+    // Document picker
+    @State private var showDocumentPicker = false
+    
+    // Reaction picker
+    @State private var messageForReaction: KBChatMessage?
+    
+    // Clear chat
+    @State private var showClearConfirm = false
+    
+    // Delete
+    @State private var showDeleteConfirm: Bool = false
+    @State private var showDeleteBar: Bool = false
+    
+    // Highlight / search
+    @State private var highlightedMessageId: String? = nil
+    @State private var isSearching: Bool = false
+    @State private var searchScrollTarget: String?
+    
+    // Selezione multipla
+    @State private var isSelecting: Bool = false
+    @State private var selectedMessageIds: Set<String> = []
+    
+    init(familyId: String, searchText: String) {
+        self.familyId = familyId
+        self.searchText = searchText
+        _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
+    }
+    
+    // MARK: - Body
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // ChatMessageList è una struct separata: i suoi @State interni
+            // (pill, showScrollToBottom) non propagano re-render qui.
+            // Quando viewModel pubblica typing/upload/read, questo VStack
+            // si ri-renderizza, ma SwiftUI confronta i parametri di ChatMessageList
+            // — se dayGroups e lastMessageId non sono cambiati, la lista NON viene
+            // ricreata.
+            ChatMessageList(
+                dayGroups: dayGroups,
+                isLoadingOlder: viewModel.isLoadingOlder,
+                hasMoreMessages: viewModel.hasMoreMessages,
+                messagesIsEmpty: viewModel.messages.isEmpty,
+                lastMessageId: viewModel.messages.last?.id,
+                isPaginating: viewModel.isPaginating,
+                searchScrollTarget: searchScrollTarget,
+                messageForReaction: $messageForReaction,
+                highlightedMessageId: $highlightedMessageId,
+                isSelecting: $isSelecting,
+                selectedMessageIds: $selectedMessageIds,
+                searchText: searchText,
+                onNearTop: {
+                    if !viewModel.isLoadingOlder { viewModel.loadOlderMessages() }
+                },
+                onMarkRead: {
+                    viewModel.markVisibleMessagesAsRead()
+                },
+                onBubbleRow: { msg, proxy in
+                    makeBubbleRow(msg: msg, proxy: proxy)
+                }
+            )
+            
+            errorBanner
+            uploadProgress
+            typingBanner
+            
+            if viewModel.isEditing {
+                editingBar
+            }
+            if viewModel.isReplying {
+                replyBar
+            }
+            if isSelecting {
+                ZStack(alignment: .bottom) {
+                    selectionBar
+                    if showDeleteBar {
+                        deleteOverlayBar
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .zIndex(100)
+                    }
+                }
+            } else {
+                Divider()
+                inputBar
+            }
+        }
+        .background(backgroundColor)
+        .environmentObject(LinkPreviewStore.shared)
+        .onAppear {
+            viewModel.bind(modelContext: modelContext)
+            viewModel.startListening()
+            dayGroups = buildGroups()
+            Task {
+                await CountersService.shared.reset(familyId: familyId, field: .chat)
+                await MainActor.run { BadgeManager.shared.clearChat() }
+            }
+        }
+        .onDisappear {
+            viewModel.stopListening()
+        }
+        .toolbar {
+            if isSelecting {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Annulla") { resetSelection() }
+                }
+            }
+        }
+        .confirmationDialog("Svuota chat", isPresented: $showClearConfirm, titleVisibility: .visible) {
+            Button("Elimina tutti i messaggi", role: .destructive) { viewModel.clearChat() }
+            Button("Annulla", role: .cancel) {}
+        } message: {
+            Text("Questa azione eliminerà tutti i messaggi per tutti i membri della famiglia. Non è reversibile.")
+        }
+        .sheet(item: $messageForReaction) { msg in
+            ReactionPickerSheet(message: msg) { emoji in
+                viewModel.toggleReaction(emoji, on: msg)
+            }
+            .presentationDetents([.height(120)])
+        }
+        .photosPicker(
+            isPresented: $showMediaPicker,
+            selection: $mediaPickerItems,
+            maxSelectionCount: 1,
+            matching: .any(of: [.images, .videos])
+        )
+        .onChange(of: mediaPickerItems) { _, items in
+            guard let item = items.first else { return }
+            Task { await handlePickedMedia(item) }
+            mediaPickerItems = []
+        }
+        .onChange(of: searchText) { _, _ in
+            dayGroups = buildGroups()
+        }
+        .onChange(of: viewModel.messages.last?.id) { _, _ in
+            guard !viewModel.isPaginating else { return }
+            dayGroups = buildGroups()
+        }
+        .onChange(of: viewModel.messages.count) { _, _ in
+            guard !viewModel.isPaginating else { return }
+            dayGroups = buildGroups()
+        }
+        .sheet(isPresented: $showCamera) { cameraSheet }
+        .sheet(isPresented: $showDocumentPicker) {
+            DocumentPicker { url in viewModel.sendDocument(url: url) }
+                .ignoresSafeArea()
+        }
+    }
+    
+    // MARK: - buildGroups
+    
+    private func buildGroups() -> [ChatDayGroup] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        
+        let baseMessages = searchText.isEmpty
+        ? viewModel.messages
+        : viewModel.messages.filter {
+            ($0.text ?? "").localizedCaseInsensitiveContains(searchText)
+        }
+        
+        let grouped = Dictionary(grouping: baseMessages) { msg in
+            calendar.startOfDay(for: msg.createdAt)
+        }
+        
+        return grouped.keys.sorted().map { day in
+            let daysAgo = calendar.dateComponents([.day], from: day, to: today).day ?? 0
+            let label = Self.dayLabel(for: day, daysAgo: daysAgo)
+            return ChatDayGroup(
+                day: formatter.string(from: day),
+                label: label,
+                messages: (grouped[day] ?? []).sorted { $0.createdAt < $1.createdAt }
+            )
+        }
+    }
+    
+    private static func dayLabel(for date: Date, daysAgo: Int) -> String {
+        switch daysAgo {
+        case 0: return "Oggi"
+        case 1: return "Ieri"
+        case 2...6:
+            return date.formatted(
+                Date.FormatStyle().weekday(.wide).locale(Locale(identifier: "it_IT"))
+            ).capitalized
+        default:
+            return date.formatted(
+                Date.FormatStyle()
+                    .weekday(.wide).day().month(.abbreviated)
+                    .locale(Locale(identifier: "it_IT"))
+            ).capitalized
+        }
+    }
+    
+    // MARK: - makeBubbleRow
+    // Funzione helper che calcola i dati dal viewModel PRIMA di passarli a BubbleRowView.
+    // BubbleRowView riceve solo valori semplici → non osserva il viewModel → niente re-render.
+    
+    private func makeBubbleRow(msg: KBChatMessage, proxy: ScrollViewProxy) -> BubbleRowView {
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let isOwn = msg.senderId == uid
+        let canAct = isOwn && viewModel.canEditOrDelete(msg)
+        return BubbleRowView(
+            msg: msg,
+            proxy: proxy,
+            repliedTo: viewModel.messages.first(where: { $0.id == msg.replyToId }),
+            isOwn: isOwn,
+            canAct: canAct,
+            messageForReaction: $messageForReaction,
+            highlightedMessageId: $highlightedMessageId,
+            isSelecting: $isSelecting,
+            selectedMessageIds: $selectedMessageIds,
+            searchText: searchText,
+            onScrollAndHighlight: scrollToAndHighlight,
+            onReactionTap: { emoji in viewModel.toggleReaction(emoji, on: msg) },
+            onEdit: canAct ? { viewModel.startEditing(msg) } : nil,
+            onDelete: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                isSelecting = true
+                selectedMessageIds.insert(msg.id)
+            },
+            onReply: { viewModel.startReply(to: msg) }
+        )
+    }
+    
+    // MARK: - scrollToAndHighlight
+    
+    private func scrollToAndHighlight(_ id: String, proxy: ScrollViewProxy) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            proxy.scrollTo(id, anchor: .center)
+        }
+        highlightedMessageId = id
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            if highlightedMessageId == id { highlightedMessageId = nil }
+        }
+    }
+    
+    // MARK: - Editing bar
+    
+    private var editingBar: some View {
+        HStack(spacing: 10) {
+            Rectangle()
+                .fill(Color.accentColor)
+                .frame(width: 3)
+                .clipShape(Capsule())
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Modifica messaggio")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(viewModel.editingOriginalText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            Button { viewModel.cancelEditing() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(barBackground)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    
+    // MARK: - Reply bar
+    
+    private var replyBar: some View {
+        HStack(spacing: 10) {
+            Capsule()
+                .fill(Color.accentColor)
+                .frame(width: 3)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Rispondi a \(viewModel.replyingPreviewName)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+                replyPreviewLine
+            }
+            Spacer(minLength: 0)
+            Button { viewModel.cancelReply() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(barBackground)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    
+    @ViewBuilder
+    private var replyPreviewLine: some View {
+        let kind = viewModel.replyingPreviewKind
+        switch kind {
+        case .photo:
+            HStack(spacing: 8) {
+                if let urlString = viewModel.replyingPreviewMediaURL,
+                   let url = URL(string: urlString) {
+                    CachedAsyncImage(url: url, contentMode: .fill)
+                        .frame(width: 36, height: 36)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(pillBackground)
+                        .frame(width: 36, height: 36)
+                }
+                Text("Foto")
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        case .audio:
+            Text(viewModel.replyingPreviewText)
+                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+        case .video:
+            HStack(spacing: 8) {
+                if let urlString = viewModel.replyingPreviewMediaURL,
+                   let url = URL(string: urlString) {
+                    VideoThumbnailView(videoURL: url, cacheKey: "reply_" + urlString)
+                        .frame(width: 36, height: 36)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(pillBackground)
+                        .frame(width: 36, height: 36)
+                        .overlay(Image(systemName: "video.fill").font(.caption))
+                }
+                Text("Video")
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        case .text, .none:
+            HStack(spacing: 8) {
+                if let url = ChatLinkDetector.firstURL(in: viewModel.replyingPreviewText) {
+                    LinkPreviewThumb(
+                        url: url,
+                        size: ChatThumbStyle.composerReplySize,
+                        corner: ChatThumbStyle.composerCorner
+                    )
+                }
+                Text(viewModel.replyingPreviewText)
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        case .document:
+            HStack(spacing: 6) {
+                Image(systemName: "doc.fill").font(.caption2).foregroundStyle(.secondary)
+                Text(viewModel.replyingPreviewText)
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        case .location:
+            HStack(spacing: 8) {
+                if let lat = viewModel.replyingPreviewLatitude,
+                   let lon = viewModel.replyingPreviewLongitude {
+                    MiniLocationThumb(latitude: lat, longitude: lon)
+                        .frame(width: 36, height: 36)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(pillBackground)
+                        .frame(width: 36, height: 36)
+                }
+                Text("Posizione condivisa")
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
+    }
+    
+    // MARK: - Banners
     
     @ViewBuilder
     private var errorBanner: some View {
@@ -657,32 +782,25 @@ private struct ChatConversationView: View {
     private var uploadProgress: some View {
         if viewModel.isCompressingMedia {
             HStack(spacing: 8) {
-                ProgressView()
-                    .controlSize(.small)
+                ProgressView().controlSize(.small)
                 Text("Compressione in corso…")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 16).padding(.vertical, 6)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         } else if viewModel.isUploadingMedia {
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text("Invio in corso…")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     Text("\(Int(viewModel.uploadProgress * 100))%")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
-                ProgressView(value: viewModel.uploadProgress)
-                    .tint(.accentColor)
+                ProgressView(value: viewModel.uploadProgress).tint(.accentColor)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 16).padding(.vertical, 6)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
@@ -691,15 +809,12 @@ private struct ChatConversationView: View {
     private var typingBanner: some View {
         if !viewModel.typingUsers.isEmpty {
             HStack(spacing: 6) {
-                // Tre puntini animati
                 TypingDotsView()
                 Text(typingLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 16).padding(.vertical, 6)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(.easeInOut(duration: 0.2), value: viewModel.typingUsers)
         }
@@ -712,6 +827,8 @@ private struct ChatConversationView: View {
         default: return "Tutti stanno scrivendo…"
         }
     }
+    
+    // MARK: - Input bar
     
     private var inputBar: some View {
         ChatInputBar(
@@ -731,25 +848,15 @@ private struct ChatConversationView: View {
         )
         .sheet(isPresented: $showLocationSheet) {
             LocationPickerSheet { lat, lon in
-                viewModel.sendLocation(latitude: lat, longitude: lon)  // ✅ qui
+                viewModel.sendLocation(latitude: lat, longitude: lon)
             }
         }
     }
     
-    private func sendLocation() {
-        ChatLocationService.shared.requestLocation { location in
-            guard let location else { return }
-            
-            viewModel.sendLocation(
-                latitude: location.coordinate.latitude,
-                longitude: location.coordinate.longitude
-            )
-        }
-    }
+    // MARK: - Delete bars
     
     private var deleteOverlayBar: some View {
         VStack(spacing: 0) {
-            
             HStack {
                 Text("Eliminare \(selectedMessageIds.count) messaggi?")
                     .font(.subheadline.weight(.semibold))
@@ -766,14 +873,11 @@ private struct ChatConversationView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 10)
             
             Divider()
             
             VStack(spacing: 0) {
-                
                 Button {
                     deleteForMe()
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
@@ -782,18 +886,15 @@ private struct ChatConversationView: View {
                 } label: {
                     HStack {
                         Text("Elimina \(selectedMessageIds.count) messaggi per me")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.red)
+                            .font(.body.weight(.semibold)).foregroundStyle(.red)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
+                    .padding(.horizontal, 16).padding(.vertical, 14)
                 }
                 .buttonStyle(.plain)
                 
                 if canDeleteForEveryone {
                     Divider()
-                    
                     Button {
                         deleteForEveryone()
                         withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
@@ -802,12 +903,10 @@ private struct ChatConversationView: View {
                     } label: {
                         HStack {
                             Text("Elimina \(selectedMessageIds.count) messaggi per tutti")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(.red)
+                                .font(.body.weight(.semibold)).foregroundStyle(.red)
                             Spacer()
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
+                        .padding(.horizontal, 16).padding(.vertical, 14)
                     }
                     .buttonStyle(.plain)
                 }
@@ -817,7 +916,7 @@ private struct ChatConversationView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: -2)
         .padding(.horizontal, 12)
-        .padding(.bottom, 8) // sta “sopra” la selection bar
+        .padding(.bottom, 8)
     }
     
     private var selectionBar: some View {
@@ -841,31 +940,23 @@ private struct ChatConversationView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16).padding(.vertical, 12)
         .background(.ultraThinMaterial)
         .overlay(Divider(), alignment: .top)
     }
     
+    // MARK: - Helpers
+    
+    private var currentUID: String {
+        Auth.auth().currentUser?.uid ?? ""
+    }
+    
     private var canDeleteForEveryone: Bool {
-        
         guard !selectedMessageIds.isEmpty else { return false }
-        
-        let selected = viewModel.messages.filter {
-            selectedMessageIds.contains($0.id)
-        }
-        
-        // tutti devono essere miei
-        guard selected.allSatisfy({ $0.senderId == currentUID }) else {
-            return false
-        }
-        
+        let selected = viewModel.messages.filter { selectedMessageIds.contains($0.id) }
+        guard selected.allSatisfy({ $0.senderId == currentUID }) else { return false }
         let now = Date()
-        
-        // tutti entro 5 minuti
-        return selected.allSatisfy {
-            now.timeIntervalSince($0.createdAt) <= 300
-        }
+        return selected.allSatisfy { now.timeIntervalSince($0.createdAt) <= 300 }
     }
     
     private func deleteForMe() {
@@ -884,6 +975,26 @@ private struct ChatConversationView: View {
         showDeleteBar = false
     }
     
+    private func sendLocation() {
+        ChatLocationService.shared.requestLocation { location in
+            guard let location else { return }
+            viewModel.sendLocation(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude
+            )
+        }
+    }
+    
+    private func handlePickedMedia(_ item: PhotosPickerItem) async {
+        let isVideo = item.supportedContentTypes.contains {
+            $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.conforms(to: .mpeg4Movie)
+        }
+        let type: KBChatMessageType = isVideo ? .video : .photo
+        if let data = try? await item.loadTransferable(type: Data.self) {
+            viewModel.sendMedia(data: data, type: type)
+        }
+    }
+    
     private var trashButton: some ToolbarContent {
         ToolbarItem(placement: .navigationBarTrailing) {
             Button { showClearConfirm = true } label: {
@@ -897,104 +1008,16 @@ private struct ChatConversationView: View {
         CameraPicker(image: $cameraImage, videoURL: $cameraVideoURL)
             .ignoresSafeArea()
             .onDisappear {
-                if let img = cameraImage, let data = img.fixedOrientation().jpegData(compressionQuality: 0.85) {
+                if let img = cameraImage,
+                   let data = img.fixedOrientation().jpegData(compressionQuality: 0.85) {
                     viewModel.sendMedia(data: data, type: .photo)
-                } else if let url = cameraVideoURL, let data = try? Data(contentsOf: url) {
+                } else if let url = cameraVideoURL,
+                          let data = try? Data(contentsOf: url) {
                     viewModel.sendMedia(data: data, type: .video)
                 }
                 cameraImage = nil
                 cameraVideoURL = nil
             }
-    }
-    
-    // MARK: - Helpers
-    
-    private var currentUID: String {
-        Auth.auth().currentUser?.uid ?? ""
-    }
-    
-    // MARK: - Raggruppamento per giorno
-    
-    struct DayGroup: Identifiable {
-        let day: String
-        let label: String
-        let messages: [KBChatMessage]
-        var id: String { day }
-    }
-    
-    private static func dayLabel(for date: Date, daysAgo: Int) -> String {
-        switch daysAgo {
-        case 0:  return "Oggi"
-        case 1:  return "Ieri"
-        case 2...6:
-            return date.formatted(
-                Date.FormatStyle()
-                    .weekday(.wide)
-                    .locale(Locale(identifier: "it_IT"))
-            ).capitalized
-        default:
-            return date.formatted(
-                Date.FormatStyle()
-                    .weekday(.wide)
-                    .day()
-                    .month(.abbreviated)
-                    .locale(Locale(identifier: "it_IT"))
-            ).capitalized
-        }
-    }
-    
-    var groupedMessages: [DayGroup] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        
-        let baseMessages = searchText.isEmpty
-        ? viewModel.messages
-        : viewModel.messages.filter {
-            ($0.text ?? "").localizedCaseInsensitiveContains(searchText)
-        }
-        
-        let grouped = Dictionary(grouping: baseMessages) { msg in
-            calendar.startOfDay(for: msg.createdAt)
-        }
-        
-        return grouped.keys.sorted().map { day in
-            let daysAgo = calendar.dateComponents([.day], from: day, to: today).day ?? 0
-            let label = Self.dayLabel(for: day, daysAgo: daysAgo)
-            return DayGroup(
-                day: formatter.string(from: day),
-                label: label,
-                messages: grouped[day]!.sorted { $0.createdAt < $1.createdAt }
-            )
-        }
-    }
-    
-    // MARK: - Floating pill
-    
-    private func showFloatingPill(label: String) {
-        floatingDateLabel = label
-        withAnimation(.easeInOut(duration: 0.2)) { showFloatingDate = true }
-        hideDateTask?.cancel()
-        hideDateTask = Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation(.easeInOut(duration: 0.3)) { showFloatingDate = false }
-            }
-        }
-    }
-    
-    private func handlePickedMedia(_ item: PhotosPickerItem) async {
-        // Controlla su TUTTI i contentTypes, non solo il primo
-        let isVideo = item.supportedContentTypes.contains {
-            $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.conforms(to: .mpeg4Movie)
-        }
-        let type: KBChatMessageType = isVideo ? .video : .photo
-        
-        if let data = try? await item.loadTransferable(type: Data.self) {
-            viewModel.sendMedia(data: data, type: type)
-        }
     }
 }
 
@@ -1002,7 +1025,6 @@ private struct ChatConversationView: View {
 
 private struct TypingDotsView: View {
     @State private var phase = 0
-    
     private let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
     
     var body: some View {
@@ -1015,9 +1037,7 @@ private struct TypingDotsView: View {
                     .animation(.easeInOut(duration: 0.3), value: phase)
             }
         }
-        .onReceive(timer) { _ in
-            phase = (phase + 1) % 3
-        }
+        .onReceive(timer) { _ in phase = (phase + 1) % 3 }
     }
 }
 

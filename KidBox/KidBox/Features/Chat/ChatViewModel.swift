@@ -242,16 +242,10 @@ final class ChatViewModel: ObservableObject {
             let currIds = messages.map(\.id)
             
             if newIds == currIds {
-                // Nessun messaggio aggiunto/rimosso: aggiorna solo i metadati
-                // (syncState, reactions, readBy, ecc.) senza sostituire l'array.
-                let lookup = Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0) })
-                for i in messages.indices {
-                    if let fresh = lookup[messages[i].id] {
-                        messages[i] = fresh
-                    }
-                }
+                // NIENTE: i tuoi KBChatMessage sono reference (SwiftData @Model),
+                // quando cambi proprietà (reactions/readBy/syncState) la row si aggiorna.
+                return
             } else {
-                // L'array è cambiato (nuovi messaggi o eliminazioni): aggiorna.
                 self.messages = rows
             }
             

@@ -19,6 +19,13 @@ private enum AudioBubble {
     static let total: CGFloat = inner + 24  // + paddingH 12+12
 }
 
+// In ChatBubble.swift, fuori dalla struct
+private extension NSDataDetector {
+    static let linkDetector: NSDataDetector? = try? NSDataDetector(
+        types: NSTextCheckingResult.CheckingType.link.rawValue
+    )
+}
+
 struct ChatBubble: View {
     
     let message: KBChatMessage
@@ -46,9 +53,11 @@ struct ChatBubble: View {
     @State private var dragProgress: Double = 0.0
     @State private var playbackRate: Float = 1.0
     
+    // FIX 1: containerWidth letto una sola volta con .onGeometryChange
+    // invece di un GeometryReader nel body che triggera re-render continui.
     @State private var containerWidth: CGFloat = 0
     
-    // Media QuickLook (foto, video, documento)
+    // Media QuickLook
     @State private var isDownloadingMedia = false
     @State private var downloadedMediaURL: URL?
     @State private var showMediaQuickLook = false
@@ -57,11 +66,50 @@ struct ChatBubble: View {
     // Swipe-to-reply
     @State private var swipeX: CGFloat = 0
     
+    // FIX 2: firstURL e attributedText precalcolati una volta sola,
+    // non ricalcolati ad ogni render del body.
+    // NSDataDetector è costoso — chiamarlo nel body causava 32ms per bubble.
+    private let cachedLinkURL: URL?
+    private let cachedHighlightedText: AttributedString
+    
+    init(
+        message: KBChatMessage,
+        isOwn: Bool,
+        currentUID: String,
+        onReactionTap: @escaping (String) -> Void,
+        onLongPress: @escaping () -> Void,
+        onEdit: (() -> Void)?,
+        onDelete: (() -> Void)?,
+        onReply: @escaping () -> Void,
+        repliedTo: KBChatMessage?,
+        onReplyContextTap: @escaping () -> Void,
+        highlightedMessageId: String?,
+        searchText: String
+    ) {
+        self.message = message
+        self.isOwn = isOwn
+        self.currentUID = currentUID
+        self.onReactionTap = onReactionTap
+        self.onLongPress = onLongPress
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+        self.onReply = onReply
+        self.repliedTo = repliedTo
+        self.onReplyContextTap = onReplyContextTap
+        self.highlightedMessageId = highlightedMessageId
+        self.searchText = searchText
+        
+        // Calcolo fatto UNA SOLA VOLTA alla creazione della struct,
+        // non ad ogni chiamata del body.
+        let text = message.text ?? ""
+        self.cachedLinkURL = Self.extractFirstURL(from: text)
+        self.cachedHighlightedText = Self.buildHighlightedText(text, searchText: searchText)
+    }
+    
     private var maxBubbleWidth: CGFloat {
         let w = max(containerWidth, 0)
         switch dynamicTypeSize {
-        case .accessibility1, .accessibility2, .accessibility3, .accessibility4,
-                .accessibility5:
+        case .accessibility1, .accessibility2, .accessibility3, .accessibility4, .accessibility5:
             return min(w * 0.68, 420)
         default:
             return min(w * 0.72, 420)
@@ -73,34 +121,20 @@ struct ChatBubble: View {
         static let corner: CGFloat = 14
     }
     
-    private var isHighlighted: Bool {
-        highlightedMessageId == message.id
-    }
-    
-    private var highlightFill: Color {
-        isOwn ? Color.white.opacity(0.18) : Color.accentColor.opacity(0.12)
-    }
-    
-    private var highlightStroke: Color {
-        isOwn ? Color.white.opacity(0.85) : Color.accentColor.opacity(0.85)
-    }
+    private var isHighlighted: Bool { highlightedMessageId == message.id }
     
     private var hasLinkPreview: Bool {
         guard message.type == .text else { return false }
-        return extractFirstURL(from: message.text ?? "") != nil
+        return cachedLinkURL != nil
     }
     
     private var shouldConstrainToMaxWidth: Bool {
-        // Se c'è reply header o link preview, vogliamo una larghezza "stabile" e non full screen
         (message.replyToId != nil) || hasLinkPreview
     }
     
     var body: some View {
         VStack(alignment: isOwn ? .trailing : .leading, spacing: 2) {
-            
-            let name = message.senderName.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+            let name = message.senderName.trimmingCharacters(in: .whitespacesAndNewlines)
             let displayName = isOwn ? "Tu" : (name.isEmpty ? "Utente" : name)
             Text(displayName)
                 .font(.caption2.weight(.semibold))
@@ -119,7 +153,6 @@ struct ChatBubble: View {
                                 .foregroundStyle(.white)
                         )
                 }
-                
                 if isOwn { Spacer(minLength: 0) }
                 
                 bubbleBody
@@ -128,24 +161,14 @@ struct ChatBubble: View {
                     .gesture(
                         DragGesture(minimumDistance: 20)
                             .onChanged { v in
-                                guard
-                                    abs(v.translation.width)
-                                        > abs(v.translation.height)
-                                else { return }
+                                guard abs(v.translation.width) > abs(v.translation.height) else { return }
                                 guard v.translation.width > 0 else { return }
                                 swipeX = min(28, v.translation.width / 3)
                             }
                             .onEnded { v in
-                                let shouldTrigger =
-                                v.translation.width > 70
-                                && abs(v.translation.width)
-                                > abs(v.translation.height)
-                                withAnimation(
-                                    .spring(
-                                        response: 0.25,
-                                        dampingFraction: 0.8
-                                    )
-                                ) { swipeX = 0 }
+                                let shouldTrigger = v.translation.width > 70
+                                && abs(v.translation.width) > abs(v.translation.height)
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { swipeX = 0 }
                                 if shouldTrigger { onReply() }
                             }
                     )
@@ -158,15 +181,11 @@ struct ChatBubble: View {
                 reactionRow.padding(.horizontal, isOwn ? 16 : 54)
             }
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear { containerWidth = proxy.size.width }
-                    .onChange(of: proxy.size.width) { oldValue, newValue in
-                        containerWidth = newValue
-                    }
-            }
-        )
+        // FIX 1: onGeometryChange legge la larghezza una volta sola
+        // e aggiorna @State solo quando cambia davvero (non ad ogni frame).
+        // Il vecchio GeometryReader in .background() triggerava un layout pass
+        // extra per ogni bubble ad ogni frame dello scroll.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { containerWidth = $0 }
         .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
         .padding(.vertical, 2)
         .onDisappear {
@@ -180,7 +199,6 @@ struct ChatBubble: View {
     @ViewBuilder
     private var bubbleBody: some View {
         if message.type == .audio {
-            // Audio: larghezza fissa esatta
             VStack(alignment: .leading, spacing: 6) {
                 replyContextHeader
                 audioContent
@@ -193,10 +211,7 @@ struct ChatBubble: View {
             .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
-        } else if message.type == .photo || message.type == .video
-        {
-            // Foto, video, posizione: nessuna cornice colorata
-            // clipShape e shadow applicati al solo contenuto visivo (non al VStack esterno)
+        } else if message.type == .photo || message.type == .video {
             if message.replyToId != nil {
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 0) {
                     replyContextHeader
@@ -216,7 +231,6 @@ struct ChatBubble: View {
                     .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
             }
         } else if message.type == .document {
-            // Document: come testo ma con allowsHitTesting esplicito per non bloccare il swipe
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 6) {
                 replyContextHeader
                 bubbleContent
@@ -229,9 +243,8 @@ struct ChatBubble: View {
             .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
-            .contentShape(Rectangle())  // superficie completa per il swipe
+            .contentShape(Rectangle())
         } else if message.type == .location {
-            // Location: serve contentShape per ricevere il swipe nonostante la Map interna
             Group {
                 if message.replyToId != nil {
                     VStack(alignment: isOwn ? .trailing : .leading, spacing: 0) {
@@ -252,9 +265,9 @@ struct ChatBubble: View {
                         .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
                 }
             }
-            .contentShape(Rectangle())   // ← questo è il fix: swipe ricevuto anche sulla mappa
-            
+            .contentShape(Rectangle())
         } else {
+            // Testo
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 6) {
                 replyContextHeader
                 bubbleContent
@@ -273,77 +286,87 @@ struct ChatBubble: View {
         }
     }
     
-    private var timeAndChecksOverlayOnMedia: some View {
-        HStack(spacing: 4) {
-            if message.editedAt != nil {
-                Text("Modificato")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.85))
-            }
-            
-            Text(message.createdAt, style: .time)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.9))
-            
-            if isOwn { syncIconOverlayOnMedia }
-        }
-        .fixedSize()
-    }
+    // MARK: - Bubble content
     
     @ViewBuilder
-    private var syncIconOverlayOnMedia: some View {
-        switch message.syncState {
-        case .pendingUpsert, .pendingDelete:
-            Image(systemName: "clock")
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.85))
-        case .error:
-            Image(systemName: "exclamationmark.circle.fill")
-                .font(.caption2)
-                .foregroundStyle(.yellow) // su sfondo scuro è più leggibile del rosso
-        case .synced:
-            let isRead = !message.readBy.isEmpty
-            HStack(spacing: -4) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.9))
-                Image(systemName: "checkmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(isRead ? .white.opacity(0.9) : .white.opacity(0.0))
+    private var bubbleContent: some View {
+        switch message.type {
+        case .text:
+            // FIX 2: usa cachedLinkURL e cachedHighlightedText precalcolati nell'init,
+            // invece di chiamare NSDataDetector e costruire AttributedString ad ogni render.
+            VStack(alignment: .leading, spacing: 4) {
+                if let url = cachedLinkURL {
+                    Text(cachedHighlightedText)
+                        .font(.body)
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    LinkPreviewView(url: url, isOwn: isOwn)
+                    
+                    HStack {
+                        Spacer(minLength: 0)
+                        timeAndChecks
+                    }
+                } else {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .lastTextBaseline, spacing: 6) {
+                            Text(cachedHighlightedText)
+                                .font(.body)
+                                .foregroundStyle(isOwn ? .white : .primary)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: true)
+                            timeAndChecks
+                        }
+                        .fixedSize(horizontal: true, vertical: true)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(cachedHighlightedText)
+                                .font(.body)
+                                .foregroundStyle(isOwn ? .white : .primary)
+                                .multilineTextAlignment(.leading)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack {
+                                Spacer(minLength: 0)
+                                timeAndChecks
+                            }
+                        }
+                        .frame(maxWidth: max(maxBubbleWidth - 24, 100), alignment: .leading)
+                    }
+                }
+            }
+            
+        case .photo: photoContent
+        case .video: videoContent
+        case .audio: EmptyView()
+        case .document: documentContent
+        case .location:
+            if let lat = message.latitude, let lon = message.longitude {
+                ZStack(alignment: .bottomTrailing) {
+                    LocationBubbleView(latitude: lat, longitude: lon, isOwn: isOwn)
+                    timeAndChecksOverlayOnMedia
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                        .padding(6)
+                }
             }
         }
     }
     
-    private var timeAndChecks: some View {
-        HStack(spacing: 4) {
-            if message.editedAt != nil {
-                Text("Modificato")
-                    .font(.caption2)
-                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
-            }
-            
-            Text(message.createdAt, style: .time)
-                .font(.caption2)
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
-            if isOwn { syncIcon }
-        }
-        .fixedSize()  // important: non deve espandere
-    }
+    // MARK: - Highlight overlay
     
     @ViewBuilder
     private var highlightOverlay: some View {
         if isHighlighted {
             bubbleShape
-                .fill(
-                    isOwn
-                    ? Color.white.opacity(0.18)
-                    : Color.accentColor.opacity(0.12)
-                )
+                .fill(isOwn ? Color.white.opacity(0.18) : Color.accentColor.opacity(0.12))
                 .overlay(
                     bubbleShape.stroke(
-                        isOwn
-                        ? Color.white.opacity(0.85)
-                        : Color.accentColor.opacity(0.85),
+                        isOwn ? Color.white.opacity(0.85) : Color.accentColor.opacity(0.85),
                         lineWidth: 2
                     )
                 )
@@ -361,31 +384,22 @@ struct ChatBubble: View {
                 Capsule()
                     .fill(isOwn ? Color.white.opacity(0.85) : Color.accentColor)
                     .frame(width: 3)
-                
                 VStack(alignment: .leading, spacing: 2) {
                     Text(replyTitle)
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(
-                            isOwn ? Color.white.opacity(0.9) : Color.accentColor
-                        )
+                        .foregroundStyle(isOwn ? Color.white.opacity(0.9) : Color.accentColor)
                         .lineLimit(1)
-                    
                     replySubtitle
                         .font(.caption2)
-                        .foregroundStyle(
-                            isOwn ? Color.white.opacity(0.75) : Color.secondary
-                        )
+                        .foregroundStyle(isOwn ? Color.white.opacity(0.75) : Color.secondary)
                         .lineLimit(1)
                 }
-                
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .background(
-                isOwn
-                ? Color.white.opacity(0.12)
-                : Color.accentColor.opacity(0.08),
+                isOwn ? Color.white.opacity(0.12) : Color.accentColor.opacity(0.08),
                 in: RoundedRectangle(cornerRadius: 10)
             )
             .contentShape(Rectangle())
@@ -404,12 +418,9 @@ struct ChatBubble: View {
     private var replySubtitle: some View {
         if let repliedTo {
             switch repliedTo.type {
-                
             case .text:
-                let t = (repliedTo.text ?? "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if let url = extractFirstURL(from: t) {
+                let t = (repliedTo.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                if let url = Self.extractFirstURL(from: t) {
                     HStack(spacing: 8) {
                         LinkPreviewThumb(
                             url: url,
@@ -421,46 +432,34 @@ struct ChatBubble: View {
                 } else {
                     Text(t.isEmpty ? "Messaggio" : t)
                 }
-                
             case .photo:
                 HStack(spacing: 8) {
                     replyThumb(for: repliedTo)
                     Text("Foto")
                 }
-                
             case .video:
                 HStack(spacing: 8) {
                     replyThumb(for: repliedTo)
                     Text("Video")
                 }
-                
             case .audio:
                 let d = repliedTo.mediaDurationSeconds ?? 0
-                let label =
-                d > 0
-                ? "Messaggio vocale • \(formatDuration(d))"
-                : "Messaggio vocale"
-                
+                let label = d > 0 ? "Messaggio vocale • \(formatDuration(d))" : "Messaggio vocale"
                 HStack(spacing: 6) {
-                    Image(systemName: "waveform")
-                        .font(.caption2)
+                    Image(systemName: "waveform").font(.caption2)
                     Text(label)
                 }
-                
             case .document:
                 HStack(spacing: 6) {
-                    Image(systemName: "doc.fill")
-                        .font(.caption2)
+                    Image(systemName: "doc.fill").font(.caption2)
                     Text(repliedTo.text ?? "Documento")
                 }
-                
             case .location:
                 HStack(spacing: 8) {
                     replyThumb(for: repliedTo)
                     Text("Posizione condivisa")
                 }
             }
-            
         } else {
             Text("Messaggio")
         }
@@ -470,214 +469,72 @@ struct ChatBubble: View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: "location.fill")
                 .foregroundStyle(isOwn ? .white : .accentColor)
-            
-            Text("Posizione condivisa")
-                .font(.caption)
+            Text("Posizione condivisa").font(.caption)
         }
-        .onTapGesture {
-            openInMaps()
-        }
+        .onTapGesture { openInMaps() }
     }
     
     private func openInMaps() {
-        guard let lat = message.latitude,
-              let lon = message.longitude
-        else { return }
-        
+        guard let lat = message.latitude, let lon = message.longitude else { return }
         let url = URL(string: "http://maps.apple.com/?ll=\(lat),\(lon)")!
         UIApplication.shared.open(url)
     }
     
-    func highlightedText(_ text: String) -> AttributedString {
-        var attr = AttributedString(text)
-        
-        guard !searchText.isEmpty else { return attr }
-        
-        let lower = text.lowercased()
-        let query = searchText.lowercased()
-        
-        var searchRange = lower.startIndex..<lower.endIndex
-        
-        while let range = lower.range(
-            of: query,
-            options: [],
-            range: searchRange
-        ) {
-            if let attrRange = Range(range, in: attr) {
-                attr[attrRange].backgroundColor = .yellow.opacity(0.4)
-            }
-            searchRange = range.upperBound..<lower.endIndex
-        }
-        
-        return attr
-    }
+    // MARK: - Time & Checks
     
-    private struct LocationBubbleView: View {
-        
-        let latitude: Double
-        let longitude: Double
-        let isOwn: Bool
-        
-        @State private var cameraPosition: MapCameraPosition
-        
-        init(latitude: Double, longitude: Double, isOwn: Bool) {
-            self.latitude = latitude
-            self.longitude = longitude
-            self.isOwn = isOwn
-            
-            let coordinate = CLLocationCoordinate2D(
-                latitude: latitude,
-                longitude: longitude
-            )
-            
-            _cameraPosition = State(
-                initialValue:
-                        .region(
-                            MKCoordinateRegion(
-                                center: coordinate,
-                                span: MKCoordinateSpan(
-                                    latitudeDelta: 0.01,
-                                    longitudeDelta: 0.01
-                                )
-                            )
-                        )
-            )
-        }
-        
-        var body: some View {
-            ZStack(alignment: .bottomLeading) {
-                Map(position: $cameraPosition) {
-                    Marker(
-                        "Posizione",
-                        coordinate: CLLocationCoordinate2D(
-                            latitude: latitude,
-                            longitude: longitude
-                        )
-                    )
-                    .tint(.red)
-                }
-                .frame(
-                    width: ChatMediaStyle.size.width,
-                    height: ChatMediaStyle.size.height
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .allowsHitTesting(false)
+    private var timeAndChecksOverlayOnMedia: some View {
+        HStack(spacing: 4) {
+            if message.editedAt != nil {
+                Text("Modificato").font(.caption2).foregroundStyle(.white.opacity(0.85))
             }
-            .contentShape(Rectangle())
-            // ✅ FIX: simultaneousGesture permette al tap di coesistere
-            // col DragGesture del parent bubble (swipe-to-reply)
-            .simultaneousGesture(
-                TapGesture().onEnded {
-                    openMaps()
-                }
-            )
+            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(.white.opacity(0.9))
+            if isOwn { syncIconOverlayOnMedia }
         }
-        
-        private func openMaps() {
-            let lat = latitude
-            let lon = longitude
-            let label =
-            "Posizione condivisa".addingPercentEncoding(
-                withAllowedCharacters: .urlQueryAllowed
-            ) ?? "Posizione"
-            
-            // Apple Maps (web URL -> app)
-            let appleURL = URL(
-                string: "http://maps.apple.com/?q=\(label)&ll=\(lat),\(lon)"
-            )!
-            
-            // Google Maps (app scheme)
-            if UIApplication.shared.canOpenURL(URL(string: "comgooglemaps://")!)
-            {
-                let googleURL = URL(string: "comgooglemaps://?q=\(lat),\(lon)")!
-                UIApplication.shared.open(googleURL)
-            } else {
-                UIApplication.shared.open(appleURL)
-            }
-        }
+        .fixedSize()
     }
-    
-    // MARK: - Bubble content (non-audio)
     
     @ViewBuilder
-    private var bubbleContent: some View {
-        switch message.type {
-        case .text:
-            let text = message.text ?? ""
-            let linkURL = ChatLinkDetector.firstURL(in: text)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                
-                if let url = linkURL {
-                    // Con link: testo semplice → preview → timeAndChecks solo in fondo
-                    Text(highlightedText(text))
-                        .font(.body)
-                        .foregroundStyle(isOwn ? .white : .primary)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    LinkPreviewView(url: url, isOwn: isOwn)
-                    
-                    HStack {
-                        Spacer(minLength: 0)
-                        timeAndChecks
-                    }
-                } else {
-                    // Senza link: inline se ci sta, altrimenti testo + ora sotto
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .lastTextBaseline, spacing: 6) {
-                            Text(highlightedText(text))
-                                .font(.body)
-                                .foregroundStyle(isOwn ? .white : .primary)
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: true)
-                            timeAndChecks
-                        }
-                        .fixedSize(horizontal: true, vertical: true)
-                        
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(highlightedText(text))
-                                .font(.body)
-                                .foregroundStyle(isOwn ? .white : .primary)
-                                .multilineTextAlignment(.leading)
-                                .lineLimit(nil)
-                                .fixedSize(horizontal: false, vertical: true)
-                            HStack {
-                                Spacer(minLength: 0)
-                                timeAndChecks
-                            }
-                        }
-                        .frame(
-                            maxWidth: max(maxBubbleWidth - 24, 100),
-                            alignment: .leading
-                        )
-                    }
-                }
+    private var syncIconOverlayOnMedia: some View {
+        switch message.syncState {
+        case .pendingUpsert, .pendingDelete:
+            Image(systemName: "clock").font(.caption2).foregroundStyle(.white.opacity(0.85))
+        case .error:
+            Image(systemName: "exclamationmark.circle.fill").font(.caption2).foregroundStyle(.yellow)
+        case .synced:
+            let isRead = !message.readBy.isEmpty
+            HStack(spacing: -4) {
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isRead ? .white.opacity(0.9) : .white.opacity(0.0))
             }
-        case .photo: photoContent
-        case .video: videoContent
-        case .audio: EmptyView()
-        case .document: documentContent
-        case .location:
-            if let lat = message.latitude,
-               let lon = message.longitude
-            {
-                ZStack(alignment: .bottomTrailing) {
-                    LocationBubbleView(
-                        latitude: lat,
-                        longitude: lon,
-                        isOwn: isOwn
-                    )
-                    timeAndChecksOverlayOnMedia
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 5)
-                        .background(.black.opacity(0.55), in: Capsule())
-                        .overlay(
-                            Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1)
-                        )
-                        .padding(6)
-                }
+        }
+    }
+    
+    private var timeAndChecks: some View {
+        HStack(spacing: 4) {
+            if message.editedAt != nil {
+                Text("Modificato").font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            }
+            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            if isOwn { syncIcon }
+        }
+        .fixedSize()
+    }
+    
+    @ViewBuilder
+    private var syncIcon: some View {
+        switch message.syncState {
+        case .pendingUpsert, .pendingDelete:
+            Image(systemName: "clock").font(.caption2).foregroundStyle(.white.opacity(0.6))
+        case .error:
+            Image(systemName: "exclamationmark.circle.fill").font(.caption2).foregroundStyle(.red)
+        case .synced:
+            let isRead = !message.readBy.isEmpty
+            HStack(spacing: -4) {
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isRead ? Color.white : Color.white.opacity(0.6))
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isRead ? Color.white : Color.clear)
             }
         }
     }
@@ -686,88 +543,49 @@ struct ChatBubble: View {
     
     private var photoContent: some View {
         Group {
-            if let urlString = message.mediaURL,
-               let remoteURL = URL(string: urlString)
-            {
+            if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 ZStack(alignment: .bottomTrailing) {
                     CachedAsyncImage(url: remoteURL, contentMode: .fill)
-                        .frame(
-                            width: ChatMediaStyle.size.width,
-                            height: ChatMediaStyle.size.height
-                        )
+                        .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
                         .overlay(highlightOverlay)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     
                     if isDownloadingMedia {
-                        Color.black.opacity(0.35)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        Color.black.opacity(0.35).clipShape(RoundedRectangle(cornerRadius: 10))
                         ProgressView().tint(.white)
-                            .frame(
-                                width: ChatMediaStyle.size.width,
-                                height: ChatMediaStyle.size.height
-                            )
+                            .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
                     }
                     
                     timeAndChecksOverlayOnMedia
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 7).padding(.vertical, 5)
                         .background(.black.opacity(0.55), in: Capsule())
-                        .overlay(
-                            Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1)
-                        )
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
                         .padding(6)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
                     guard !isDownloadingMedia else { return }
-                    Task {
-                        await downloadAndPreviewMedia(
-                            remoteURL: remoteURL,
-                            fileName: "immagine.jpg"
-                        )
-                    }
+                    Task { await downloadAndPreviewMedia(remoteURL: remoteURL, fileName: "immagine.jpg") }
                 }
-                .mediaQuickLookSheet(
-                    url: $downloadedMediaURL,
-                    isPresented: $showMediaQuickLook,
-                    error: $mediaDownloadError
-                )
+                .mediaQuickLookSheet(url: $downloadedMediaURL, isPresented: $showMediaQuickLook, error: $mediaDownloadError)
             } else {
                 mediaLoadingPlaceholder
             }
         }
     }
     
-    private func copyTextToPasteboard() {
-        let t = (message.text ?? "").trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        guard !t.isEmpty else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        UIPasteboard.general.string = t
-    }
-    
     private var videoContent: some View {
         Group {
-            if let urlString = message.mediaURL,
-               let remoteURL = URL(string: urlString)
-            {
+            if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 ZStack {
-                    VideoThumbnailView(
-                        videoURL: remoteURL,
-                        cacheKey: videoCacheKey(urlString: urlString)
-                    )
-                    .frame(
-                        width: ChatMediaStyle.size.width,
-                        height: ChatMediaStyle.size.height
-                    )
-                    .clipped()
-                    .overlay(highlightOverlay)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    VideoThumbnailView(videoURL: remoteURL, cacheKey: videoCacheKey(urlString: urlString))
+                        .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
+                        .clipped()
+                        .overlay(highlightOverlay)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                     
                     if isDownloadingMedia {
-                        Color.black.opacity(0.35)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        Color.black.opacity(0.35).clipShape(RoundedRectangle(cornerRadius: 10))
                         ProgressView().tint(.white)
                     } else {
                         Image(systemName: "play.circle.fill")
@@ -781,68 +599,39 @@ struct ChatBubble: View {
                         HStack {
                             Spacer()
                             timeAndChecksOverlayOnMedia
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 5)
+                                .padding(.horizontal, 7).padding(.vertical, 5)
                                 .background(.black.opacity(0.55), in: Capsule())
-                                .overlay(
-                                    Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1)
-                                )
+                                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
                                 .padding(6)
                         }
                     }
                 }
-                .frame(
-                    width: ChatMediaStyle.size.width,
-                    height: ChatMediaStyle.size.height
-                )
+                .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
                 .contentShape(Rectangle())
                 .onTapGesture {
                     guard !isDownloadingMedia else { return }
                     let ext = remoteURL.pathExtension.isEmpty ? "mp4" : remoteURL.pathExtension
-                    Task {
-                        await downloadAndPreviewMedia(
-                            remoteURL: remoteURL,
-                            fileName: "video.\(ext)"
-                        )
-                    }
+                    Task { await downloadAndPreviewMedia(remoteURL: remoteURL, fileName: "video.\(ext)") }
                 }
-                .mediaQuickLookSheet(
-                    url: $downloadedMediaURL,
-                    isPresented: $showMediaQuickLook,
-                    error: $mediaDownloadError
-                )
+                .mediaQuickLookSheet(url: $downloadedMediaURL, isPresented: $showMediaQuickLook, error: $mediaDownloadError)
             } else {
                 mediaLoadingPlaceholder
             }
         }
     }
     
-    // MARK: - Shared download + QuickLook
-    
-    private func downloadAndPreviewMedia(remoteURL: URL, fileName: String) async
-    {
+    private func downloadAndPreviewMedia(remoteURL: URL, fileName: String) async {
         isDownloadingMedia = true
         mediaDownloadError = nil
         defer { isDownloadingMedia = false }
-        
         do {
-            let (tmpURL, _) = try await URLSession.shared.download(
-                from: remoteURL
-            )
-            
+            let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
             let destURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
                 .appendingPathComponent(fileName)
-            
-            try FileManager.default.createDirectory(
-                at: destURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            if FileManager.default.fileExists(atPath: destURL.path) {
-                try FileManager.default.removeItem(at: destURL)
-            }
+            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: destURL.path) { try FileManager.default.removeItem(at: destURL) }
             try FileManager.default.moveItem(at: tmpURL, to: destURL)
-            
             downloadedMediaURL = destURL
             showMediaQuickLook = true
         } catch {
@@ -853,48 +642,35 @@ struct ChatBubble: View {
     @ViewBuilder
     private func replyThumb(for msg: KBChatMessage) -> some View {
         switch msg.type {
-            
         case .photo:
             if let urlString = msg.mediaURL, let url = URL(string: urlString) {
                 CachedAsyncImage(url: url, contentMode: .fill)
                     .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
                     .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
                     .clipped()
-            } else {
-                replyThumbPlaceholder
-            }
-            
+            } else { replyThumbPlaceholder }
         case .video:
-            // Se hai già una thumbnail URL salvata, usa quella (super leggero)
             if let t = msg.mediaThumbnailURL, let tu = URL(string: t) {
                 CachedAsyncImage(url: tu, contentMode: .fill)
-                frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
+                    .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
                     .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
                     .clipped()
             } else if let urlString = msg.mediaURL, let url = URL(string: urlString) {
-                // Fallback: genera thumb dal video (più costoso ma ok in piccolo)
                 VideoThumbnailView(videoURL: url, cacheKey: videoCacheKey(urlString: urlString))
                     .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
                     .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
                     .clipped()
-            } else {
-                replyThumbPlaceholder
-            }
-            
+            } else { replyThumbPlaceholder }
         case .location:
             if let lat = msg.latitude, let lon = msg.longitude {
                 MiniLocationThumb(latitude: lat, longitude: lon)
                     .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
                     .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
-            } else {
-                replyThumbPlaceholder
-            }
-            
+            } else { replyThumbPlaceholder }
         case .text:
             if let t = msg.text, let url = ChatLinkDetector.firstURL(in: t) {
                 LinkPreviewThumb(url: url, size: ChatThumbStyle.composerReplySize, corner: ChatThumbStyle.replyCorner)
             }
-            
         default:
             EmptyView()
         }
@@ -903,11 +679,7 @@ struct ChatBubble: View {
     struct MiniLocationThumb: View {
         let latitude: Double
         let longitude: Double
-        
-        private var center: CLLocationCoordinate2D {
-            .init(latitude: latitude, longitude: longitude)
-        }
-        
+        private var center: CLLocationCoordinate2D { .init(latitude: latitude, longitude: longitude) }
         var body: some View {
             Map(initialPosition: .region(MKCoordinateRegion(
                 center: center,
@@ -935,9 +707,7 @@ struct ChatBubble: View {
     
     private var documentContent: some View {
         Group {
-            if let urlString = message.mediaURL,
-               let remoteURL = URL(string: urlString)
-            {
+            if let urlString = message.mediaURL, let remoteURL = URL(string: urlString) {
                 Button {
                     guard !isDownloadingDoc else { return }
                     Task { await downloadAndPreviewDoc(remoteURL: remoteURL) }
@@ -946,37 +716,22 @@ struct ChatBubble: View {
                         HStack(spacing: 12) {
                             ZStack {
                                 if isDownloadingDoc {
-                                    ProgressView()
-                                        .tint(isOwn ? .white : .accentColor)
-                                        .frame(width: 36, height: 36)
+                                    ProgressView().tint(isOwn ? .white : .accentColor).frame(width: 36, height: 36)
                                 } else {
-                                    Image(
-                                        systemName: documentIcon(
-                                            for: message.text
-                                        )
-                                    )
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(
-                                        isOwn ? .white : .accentColor
-                                    )
-                                    .frame(width: 36)
+                                    Image(systemName: documentIcon(for: message.text))
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(isOwn ? .white : .accentColor)
+                                        .frame(width: 36)
                                 }
                             }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(message.text ?? "Documento")
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(isOwn ? .white : .primary)
-                                    .lineLimit(2)
-                                    .multilineTextAlignment(.leading)
-                                Text(
-                                    isDownloadingDoc
-                                    ? "Download in corso…"
-                                    : "Tocca per aprire"
-                                )
-                                .font(.caption2)
-                                .foregroundStyle(
-                                    isOwn ? .white.opacity(0.7) : .secondary
-                                )
+                                    .lineLimit(2).multilineTextAlignment(.leading)
+                                Text(isDownloadingDoc ? "Download in corso…" : "Tocca per aprire")
+                                    .font(.caption2)
+                                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
                             }
                         }
                         .padding(.horizontal, 4)
@@ -985,29 +740,20 @@ struct ChatBubble: View {
                     .frame(maxWidth: max(maxBubbleWidth - 48, 100))
                 }
                 .buttonStyle(.plain)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 20)   // lascia passare il swipe al padre
-                        .onChanged { _ in }
-                )
+                .simultaneousGesture(DragGesture(minimumDistance: 20).onChanged { _ in })
                 .sheet(isPresented: $showQuickLook) {
                     if let url = downloadedDocURL {
-                        QuickLookPreview(urls: [url], initialIndex: 0)
-                            .ignoresSafeArea()
+                        QuickLookPreview(urls: [url], initialIndex: 0).ignoresSafeArea()
                     }
                 }
-                .alert(
-                    "Errore download",
-                    isPresented: .constant(docDownloadError != nil)
-                ) {
+                .alert("Errore download", isPresented: .constant(docDownloadError != nil)) {
                     Button("OK") { docDownloadError = nil }
                 } message: {
                     Text(docDownloadError ?? "")
                 }
             } else {
                 HStack(spacing: 12) {
-                    ProgressView()
-                        .tint(isOwn ? .white : .accentColor)
-                        .frame(width: 36)
+                    ProgressView().tint(isOwn ? .white : .accentColor).frame(width: 36)
                     Text(message.text ?? "Documento")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(isOwn ? .white : .primary)
@@ -1024,55 +770,34 @@ struct ChatBubble: View {
         docDownloadError = nil
         defer { isDownloadingDoc = false }
         do {
-            let (tmpURL, _) = try await URLSession.shared.download(
-                from: remoteURL
-            )
+            let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
             let fileName = message.text ?? remoteURL.lastPathComponent
             let destURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
                 .appendingPathComponent(fileName)
-            try FileManager.default.createDirectory(
-                at: destURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            if FileManager.default.fileExists(atPath: destURL.path) {
-                try FileManager.default.removeItem(at: destURL)
-            }
+            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: destURL.path) { try FileManager.default.removeItem(at: destURL) }
             try FileManager.default.moveItem(at: tmpURL, to: destURL)
             downloadedDocURL = destURL
             showQuickLook = true
         } catch {
-            docDownloadError =
-            "Impossibile aprire il documento: \(error.localizedDescription)"
+            docDownloadError = "Impossibile aprire il documento: \(error.localizedDescription)"
         }
     }
     
     private func documentIcon(for fileName: String?) -> String {
         guard let name = fileName?.lowercased() else { return "doc.fill" }
         if name.hasSuffix(".pdf") { return "doc.richtext.fill" }
-        if name.hasSuffix(".doc") || name.hasSuffix(".docx") {
-            return "doc.text.fill"
-        }
-        if name.hasSuffix(".xls") || name.hasSuffix(".xlsx") {
-            return "tablecells.fill"
-        }
-        if name.hasSuffix(".ppt") || name.hasSuffix(".pptx") {
-            return "rectangle.on.rectangle.fill"
-        }
-        if name.hasSuffix(".zip") || name.hasSuffix(".rar") {
-            return "archivebox.fill"
-        }
-        if name.hasSuffix(".mp3") || name.hasSuffix(".m4a") {
-            return "music.note"
-        }
+        if name.hasSuffix(".doc") || name.hasSuffix(".docx") { return "doc.text.fill" }
+        if name.hasSuffix(".xls") || name.hasSuffix(".xlsx") { return "tablecells.fill" }
+        if name.hasSuffix(".ppt") || name.hasSuffix(".pptx") { return "rectangle.on.rectangle.fill" }
+        if name.hasSuffix(".zip") || name.hasSuffix(".rar") { return "archivebox.fill" }
+        if name.hasSuffix(".mp3") || name.hasSuffix(".m4a") { return "music.note" }
         return "doc.fill"
     }
     
     private func videoCacheKey(urlString: String) -> String {
-        if var c = URLComponents(string: urlString) {
-            c.query = nil
-            return c.string ?? urlString
-        }
+        if var c = URLComponents(string: urlString) { c.query = nil; return c.string ?? urlString }
         return urlString
     }
     
@@ -1080,39 +805,23 @@ struct ChatBubble: View {
     
     private var audioContent: some View {
         HStack(alignment: .center, spacing: AudioBubble.spacing) {
-            Button {
-                toggleAudio()
-            } label: {
-                Image(
-                    systemName: isPlayingAudio
-                    ? "pause.circle.fill" : "play.circle.fill"
-                )
-                .font(.title2)
-                .foregroundStyle(isOwn ? .white : .accentColor)
+            Button { toggleAudio() } label: {
+                Image(systemName: isPlayingAudio ? "pause.circle.fill" : "play.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(isOwn ? .white : .accentColor)
             }
             .buttonStyle(.plain)
             .frame(width: AudioBubble.playW, height: AudioBubble.playW)
-            .accessibilityLabel(
-                isPlayingAudio ? "Pausa audio" : "Riproduci audio"
-            )
+            .accessibilityLabel(isPlayingAudio ? "Pausa audio" : "Riproduci audio")
             
-            scrubbableWaveform
-                .frame(width: AudioBubble.waveW, height: 24)
+            scrubbableWaveform.frame(width: AudioBubble.waveW, height: 24)
             
-            Button {
-                cyclePlaybackRate()
-            } label: {
+            Button { cyclePlaybackRate() } label: {
                 Text(playbackRateLabel)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(isOwn ? .white : .accentColor)
                     .frame(width: AudioBubble.rateW, height: 28)
-                    .background(
-                        Capsule().fill(
-                            isOwn
-                            ? Color.white.opacity(0.25)
-                            : Color.accentColor.opacity(0.15)
-                        )
-                    )
+                    .background(Capsule().fill(isOwn ? Color.white.opacity(0.25) : Color.accentColor.opacity(0.15)))
             }
             .buttonStyle(.plain)
             .frame(width: AudioBubble.rateW)
@@ -1126,56 +835,34 @@ struct ChatBubble: View {
             ZStack(alignment: .leading) {
                 HStack(spacing: 2) {
                     ForEach(0..<20, id: \.self) { i in
-                        let played =
-                        Double(i) / 20.0
-                        < (isDraggingSlider
-                           ? dragProgress : playbackProgress)
+                        let played = Double(i) / 20.0 < (isDraggingSlider ? dragProgress : playbackProgress)
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(
-                                isOwn
-                                ? (played
-                                   ? Color.white
-                                   : Color.white.opacity(0.35))
-                                : (played
-                                   ? Color.accentColor
-                                   : Color.accentColor.opacity(0.3))
-                            )
+                            .fill(isOwn
+                                  ? (played ? Color.white : Color.white.opacity(0.35))
+                                  : (played ? Color.accentColor : Color.accentColor.opacity(0.3)))
                             .frame(width: 5, height: waveformHeight(index: i))
                     }
                 }
                 let prog = isDraggingSlider ? dragProgress : playbackProgress
                 Circle()
                     .fill(isOwn ? Color.white : Color.accentColor)
-                    .frame(
-                        width: isDraggingSlider ? 14 : 10,
-                        height: isDraggingSlider ? 14 : 10
-                    )
+                    .frame(width: isDraggingSlider ? 14 : 10, height: isDraggingSlider ? 14 : 10)
                     .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 1)
-                    .offset(
-                        x: prog * geo.size.width - (isDraggingSlider ? 7 : 5)
-                    )
-                    .animation(
-                        .easeInOut(duration: 0.1),
-                        value: isDraggingSlider
-                    )
+                    .offset(x: prog * geo.size.width - (isDraggingSlider ? 7 : 5))
+                    .animation(.easeInOut(duration: 0.1), value: isDraggingSlider)
             }
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { v in
-                        let p = (v.location.x / geo.size.width).clamped(
-                            to: 0...1
-                        )
+                        let p = (v.location.x / geo.size.width).clamped(to: 0...1)
                         dragProgress = p
                         isDraggingSlider = true
                         stopProgressTimer()
-                        audioPlayer?.currentTime =
-                        p * (audioPlayer?.duration ?? 0)
+                        audioPlayer?.currentTime = p * (audioPlayer?.duration ?? 0)
                     }
                     .onEnded { v in
-                        let p = (v.location.x / geo.size.width).clamped(
-                            to: 0...1
-                        )
+                        let p = (v.location.x / geo.size.width).clamped(to: 0...1)
                         isDraggingSlider = false
                         playbackProgress = p
                         if let player = audioPlayer {
@@ -1193,65 +880,26 @@ struct ChatBubble: View {
         CGFloat(6 + abs((message.id.hashValue ^ (index &* 31)) % 15))
     }
     
-    // MARK: - Bottom rows
-    
-    // Audio: durata a sx, orario a dx — larghezza fissa
     private var audioBottomRow: some View {
         HStack(spacing: 4) {
             if let dur = message.mediaDurationSeconds {
-                Text(
-                    isDraggingSlider
-                    ? formatDuration(Int(dragProgress * Double(dur)))
-                    : formatDuration(dur)
-                )
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
-                .animation(.none, value: isDraggingSlider)
+                Text(isDraggingSlider ? formatDuration(Int(dragProgress * Double(dur))) : formatDuration(dur))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+                    .animation(.none, value: isDraggingSlider)
             }
             Spacer(minLength: 0)
-            Text(message.createdAt, style: .time)
-                .font(.caption2)
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             if isOwn { syncIcon }
         }
         .frame(width: AudioBubble.inner)
     }
     
-    // Testo/foto/video: NO Spacer — la bubble si restringe al contenuto
     private var bottomRow: some View {
         HStack(spacing: 4) {
             Spacer(minLength: 0)
-            Text(message.createdAt, style: .time)
-                .font(.caption2)
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             if isOwn { syncIcon }
-        }
-    }
-    
-    @ViewBuilder
-    private var syncIcon: some View {
-        switch message.syncState {
-        case .pendingUpsert, .pendingDelete:
-            Image(systemName: "clock").font(.caption2).foregroundStyle(
-                .white.opacity(0.6)
-            )
-        case .error:
-            Image(systemName: "exclamationmark.circle.fill").font(.caption2)
-                .foregroundStyle(.red)
-        case .synced:
-            let isRead = !message.readBy.isEmpty
-            HStack(spacing: -4) {
-                Image(systemName: "checkmark").font(
-                    .system(size: 9, weight: .bold)
-                )
-                .foregroundStyle(
-                    isRead ? Color.white : Color.white.opacity(0.6)
-                )
-                Image(systemName: "checkmark").font(
-                    .system(size: 9, weight: .bold)
-                )
-                .foregroundStyle(isRead ? Color.white : Color.clear)
-            }
         }
     }
     
@@ -1259,27 +907,16 @@ struct ChatBubble: View {
     
     private var reactionRow: some View {
         HStack(spacing: 4) {
-            ForEach(Array(message.reactions.keys.sorted()), id: \.self) {
-                emoji in
+            ForEach(Array(message.reactions.keys.sorted()), id: \.self) { emoji in
                 let count = message.reactions[emoji]?.count ?? 0
-                Button {
-                    onReactionTap(emoji)
-                } label: {
+                Button { onReactionTap(emoji) } label: {
                     HStack(spacing: 2) {
                         Text(emoji).font(.caption)
-                        if count > 1 {
-                            Text("\(count)").font(.caption2.bold())
-                                .foregroundStyle(.secondary)
-                        }
+                        if count > 1 { Text("\(count)").font(.caption2.bold()).foregroundStyle(.secondary) }
                     }
                     .padding(.horizontal, 6).padding(.vertical, 3)
                     .background(Color(.tertiarySystemBackground), in: Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(
-                            Color.primary.opacity(0.08),
-                            lineWidth: 1
-                        )
-                    )
+                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
@@ -1291,85 +928,55 @@ struct ChatBubble: View {
     @ViewBuilder
     private var contextMenuItems: some View {
         Button { onReply() } label: { Label("Rispondi", systemImage: "arrowshape.turn.up.left") }
-        Button {
-            onLongPress()
-        } label: {
-            Label("Reagisci", systemImage: "face.smiling")
-        }
-        
+        Button { onLongPress() } label: { Label("Reagisci", systemImage: "face.smiling") }
         if message.type == .text {
-            Button {
-                copyTextToPasteboard()
-            } label: {
-                Label("Copia", systemImage: "doc.on.doc")
-            }
+            Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
         }
-        
         if isOwn, message.type == .text, let onEdit {
-            Button {
-                onEdit()
-            } label: {
-                Label("Modifica", systemImage: "pencil")
-            }
+            Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
         }
-        
         if let onDelete {
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
-                Label("Elimina", systemImage: "trash")
-            }
+            Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
         }
+    }
+    
+    private func copyTextToPasteboard() {
+        let t = (message.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIPasteboard.general.string = t
     }
     
     // MARK: - Placeholder
     
     private var mediaLoadingPlaceholder: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10).fill(
-                Color(.tertiarySystemBackground)
-            )
-            .frame(
-                width: ChatMediaStyle.size.width,
-                height: ChatMediaStyle.size.height
-            )
+            RoundedRectangle(cornerRadius: 10).fill(Color(.tertiarySystemBackground))
+                .frame(width: ChatMediaStyle.size.width, height: ChatMediaStyle.size.height)
             ProgressView()
         }
     }
     
-    // MARK: - Link helpers
+    // MARK: - Static helpers (usati nell'init, non nel body)
     
-    private func extractFirstURL(from text: String) -> URL? {
-        guard
-            let d = try? NSDataDetector(
-                types: NSTextCheckingResult.CheckingType.link.rawValue
-            )
-        else { return nil }
-        return d.firstMatch(
-            in: text,
-            range: NSRange(text.startIndex..., in: text)
-        ).flatMap { $0.url }
+    // FIX 2: static per sottolineare che non accedono a self e possono
+    // essere chiamati nell'init senza catturare la struct in modo ricorsivo.
+    static func extractFirstURL(from text: String) -> URL? {
+        guard let d = NSDataDetector.linkDetector else { return nil }
+        return d.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)).flatMap { $0.url }
     }
     
-    private func makeAttributedText(_ text: String) -> AttributedString {
-        var attr =
-        (try? AttributedString(markdown: text)) ?? AttributedString(text)
-        guard
-            let d = try? NSDataDetector(
-                types: NSTextCheckingResult.CheckingType.link.rawValue
-            )
-        else { return attr }
-        d.enumerateMatches(
-            in: text,
-            range: NSRange(text.startIndex..., in: text)
-        ) { m, _, _ in
-            guard let m, let url = m.url,
-                  let sr = Range(m.range, in: text), let ar = Range(sr, in: attr)
-            else { return }
-            attr[ar].link = url
-            attr[ar].foregroundColor =
-            isOwn ? UIColor.white : UIColor.systemBlue
-            attr[ar].underlineStyle = .single
+    static func buildHighlightedText(_ text: String, searchText: String) -> AttributedString {
+        var attr = AttributedString(text)
+        guard !searchText.isEmpty else { return attr }
+        let lower = text.lowercased()
+        let query = searchText.lowercased()
+        var searchRange = lower.startIndex..<lower.endIndex
+        while let range = lower.range(of: query, options: [], range: searchRange) {
+            if let attrRange = Range(range, in: attr) {
+                attr[attrRange].backgroundColor = .yellow.opacity(0.4)
+            }
+            searchRange = range.upperBound..<lower.endIndex
         }
         return attr
     }
@@ -1408,10 +1015,7 @@ struct ChatBubble: View {
         case 1.5: playbackRate = 2.0
         default: playbackRate = 1.0
         }
-        if let p = audioPlayer, isPlayingAudio {
-            p.enableRate = true
-            p.rate = playbackRate
-        }
+        if let p = audioPlayer, isPlayingAudio { p.enableRate = true; p.rate = playbackRate }
     }
     
     // MARK: - Audio player
@@ -1427,9 +1031,7 @@ struct ChatBubble: View {
         if let player = audioPlayer {
             do {
                 try configureAudioSession()
-                try AVAudioSession.sharedInstance().overrideOutputAudioPort(
-                    .speaker
-                )
+                try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
                 proximityRouter.start()
             } catch {}
             if player.currentTime >= player.duration - 0.05 {
@@ -1441,16 +1043,12 @@ struct ChatBubble: View {
             startProgressTimer()
             return
         }
-        guard let us = message.mediaURL, let url = URL(string: us) else {
-            return
-        }
+        guard let us = message.mediaURL, let url = URL(string: us) else { return }
         Task {
             do {
                 let (data, _) = try await URLSession.shared.data(from: url)
                 try configureAudioSession()
-                try AVAudioSession.sharedInstance().overrideOutputAudioPort(
-                    .speaker
-                )
+                try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
                 proximityRouter.start()
                 let player = try AVAudioPlayer(data: data)
                 player.enableRate = true
@@ -1483,9 +1081,7 @@ struct ChatBubble: View {
     }
     
     private func loadPlayerAndSeek(to progress: Double) async {
-        guard let us = message.mediaURL, let url = URL(string: us) else {
-            return
-        }
+        guard let us = message.mediaURL, let url = URL(string: us) else { return }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             try configureAudioSession()
@@ -1514,14 +1110,9 @@ struct ChatBubble: View {
     
     private func startProgressTimer() {
         progressTimer?.invalidate()
-        progressTimer = Timer.scheduledTimer(
-            withTimeInterval: 0.1,
-            repeats: true
-        ) { _ in
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
             guard let p = audioPlayer, p.duration > 0 else { return }
-            DispatchQueue.main.async {
-                playbackProgress = p.currentTime / p.duration
-            }
+            DispatchQueue.main.async { playbackProgress = p.currentTime / p.duration }
         }
     }
     
@@ -1532,11 +1123,7 @@ struct ChatBubble: View {
     
     private func configureAudioSession() throws {
         let s = AVAudioSession.sharedInstance()
-        try s.setCategory(
-            .playAndRecord,
-            mode: .spokenAudio,
-            options: [.allowBluetoothHFP, .allowBluetoothA2DP]
-        )
+        try s.setCategory(.playAndRecord, mode: .spokenAudio, options: [.allowBluetoothHFP, .allowBluetoothA2DP])
         try s.setActive(true, options: .notifyOthersOnDeactivation)
     }
     
@@ -1545,7 +1132,49 @@ struct ChatBubble: View {
     }
 }
 
-// MARK: - QuickLook sheet modifier (per foto e video)
+// MARK: - LocationBubbleView
+
+private struct LocationBubbleView: View {
+    let latitude: Double
+    let longitude: Double
+    let isOwn: Bool
+    @State private var cameraPosition: MapCameraPosition
+    
+    init(latitude: Double, longitude: Double, isOwn: Bool) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.isOwn = isOwn
+        _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )))
+    }
+    
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            Map(position: $cameraPosition) {
+                Marker("Posizione", coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude)).tint(.red)
+            }
+            .frame(width: 220, height: 160)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .allowsHitTesting(false)
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(TapGesture().onEnded { openMaps() })
+    }
+    
+    private func openMaps() {
+        let label = "Posizione condivisa".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Posizione"
+        let appleURL = URL(string: "http://maps.apple.com/?q=\(label)&ll=\(latitude),\(longitude)")!
+        if UIApplication.shared.canOpenURL(URL(string: "comgooglemaps://")!) {
+            UIApplication.shared.open(URL(string: "comgooglemaps://?q=\(latitude),\(longitude)")!)
+        } else {
+            UIApplication.shared.open(appleURL)
+        }
+    }
+}
+
+// MARK: - QuickLook sheet modifier
 
 extension View {
     fileprivate func mediaQuickLookSheet(
@@ -1556,16 +1185,14 @@ extension View {
         self
             .sheet(isPresented: isPresented) {
                 if let u = url.wrappedValue {
-                    QuickLookPreview(urls: [u], initialIndex: 0)
-                        .ignoresSafeArea()
+                    QuickLookPreview(urls: [u], initialIndex: 0).ignoresSafeArea()
                 }
             }
-            .alert("Errore", isPresented: .constant(error.wrappedValue != nil))
-        {
-            Button("OK") { error.wrappedValue = nil }
-        } message: {
-            Text(error.wrappedValue ?? "")
-        }
+            .alert("Errore", isPresented: .constant(error.wrappedValue != nil)) {
+                Button("OK") { error.wrappedValue = nil }
+            } message: {
+                Text(error.wrappedValue ?? "")
+            }
     }
 }
 
@@ -1573,12 +1200,8 @@ extension View {
 
 final class ChatBubbleAudioDelegate: NSObject, AVAudioPlayerDelegate {
     var onFinish: (() -> Void)?
-    func audioPlayerDidFinishPlaying(
-        _ player: AVAudioPlayer,
-        successfully flag: Bool
-    ) { onFinish?() }
-    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?)
-    { onFinish?() }
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) { onFinish?() }
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) { onFinish?() }
 }
 
 // MARK: - LinkPreviewView
@@ -1588,10 +1211,6 @@ private struct LinkPreviewView: View {
     let isOwn: Bool
     
     @EnvironmentObject private var store: LinkPreviewStore
-    
-    // Altezza totale riservata sempre: immagine 110 + testo ~60 = 170pt.
-    // Sia il placeholder che la card finale occupano esattamente questo spazio,
-    // così la LazyVStack non ricalcola mai la posizione delle bubble sopra.
     private let reservedHeight: CGFloat = 170
     
     var body: some View {
@@ -1600,28 +1219,20 @@ private struct LinkPreviewView: View {
             case .none, .loading:
                 placeholder
             case .ready(let meta):
-                Button { UIApplication.shared.open(url) } label: { card(meta) }
-                    .buttonStyle(.plain)
+                Button { UIApplication.shared.open(url) } label: { card(meta) }.buttonStyle(.plain)
             case .failed:
-                // Anche in caso di fallimento manteniamo l'altezza riservata
-                // con un placeholder invisibile, così non c'è resize nemmeno in questo caso.
                 Color.clear.frame(height: reservedHeight)
             }
         }
-        .frame(minHeight: reservedHeight)   // garantisce altezza minima sempre uguale
+        .frame(minHeight: reservedHeight)
         .onAppear { store.fetchIfNeeded(for: url) }
     }
     
-    // Placeholder con stessa struttura della card: immagine skeleton + testo skeleton
     private var placeholder: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Zona immagine skeleton
-            RoundedRectangle(cornerRadius: 0)
-                .fill(bg.opacity(0.5))
-                .frame(maxWidth: .infinity)
-                .frame(height: 110)
+            RoundedRectangle(cornerRadius: 0).fill(bg.opacity(0.5))
+                .frame(maxWidth: .infinity).frame(height: 110)
                 .overlay(ProgressView().tint(isOwn ? .white : .accentColor))
-            // Zona testo skeleton
             VStack(alignment: .leading, spacing: 6) {
                 RoundedRectangle(cornerRadius: 3).fill(bg.opacity(0.6)).frame(width: 80, height: 9)
                 RoundedRectangle(cornerRadius: 3).fill(bg.opacity(0.5)).frame(width: 140, height: 11)
@@ -1640,27 +1251,19 @@ private struct LinkPreviewView: View {
         VStack(alignment: .leading, spacing: 0) {
             if let iu = meta.imageURL {
                 CachedAsyncImage(url: iu, contentMode: .fill)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 110)
-                    .clipped()
+                    .frame(maxWidth: .infinity).frame(height: 110).clipped()
             } else {
-                RoundedRectangle(cornerRadius: 0)
-                    .fill(bg.opacity(0.35))
-                    .frame(height: 110)
+                RoundedRectangle(cornerRadius: 0).fill(bg.opacity(0.35)).frame(height: 110)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(url.host ?? url.absoluteString)
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
-                    .lineLimit(1)
+                    .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary).lineLimit(1)
                 if let t = meta.title, !t.isEmpty {
-                    Text(t).font(.caption.weight(.semibold))
-                        .foregroundStyle(isOwn ? .white : .primary).lineLimit(2)
+                    Text(t).font(.caption.weight(.semibold)).foregroundStyle(isOwn ? .white : .primary).lineLimit(2)
                 }
                 if let d = meta.description, !d.isEmpty {
-                    Text(d).font(.caption2)
-                        .foregroundStyle(isOwn ? .white.opacity(0.8) : .secondary)
-                        .lineLimit(2)
+                    Text(d).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.8) : .secondary).lineLimit(2)
                 }
             }
             .padding(8)
