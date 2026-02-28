@@ -922,8 +922,20 @@ private struct ChatConversationView: View {
         switch daysAgo {
         case 0:  return "Oggi"
         case 1:  return "Ieri"
-        case 2...6: return date.formatted(.dateTime.weekday(.wide)).capitalized
-        default: return date.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)).capitalized
+        case 2...6:
+            return date.formatted(
+                Date.FormatStyle()
+                    .weekday(.wide)
+                    .locale(Locale(identifier: "it_IT"))
+            ).capitalized
+        default:
+            return date.formatted(
+                Date.FormatStyle()
+                    .weekday(.wide)
+                    .day()
+                    .month(.abbreviated)
+                    .locale(Locale(identifier: "it_IT"))
+            ).capitalized
         }
     }
     

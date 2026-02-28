@@ -80,6 +80,16 @@ struct ChatBubble: View {
         isOwn ? Color.white.opacity(0.85) : Color.accentColor.opacity(0.85)
     }
     
+    private var hasLinkPreview: Bool {
+        guard message.type == .text else { return false }
+        return extractFirstURL(from: message.text ?? "") != nil
+    }
+    
+    private var shouldConstrainToMaxWidth: Bool {
+        // Se c'è reply header o link preview, vogliamo una larghezza "stabile" e non full screen
+        (message.replyToId != nil) || hasLinkPreview
+    }
+    
     var body: some View {
         VStack(alignment: isOwn ? .trailing : .leading, spacing: 2) {
             
@@ -247,11 +257,55 @@ struct ChatBubble: View {
             .padding(.horizontal, 12)
             .padding(.top, 10)
             .padding(.bottom, 20)
-            //.frame(maxWidth: maxBubbleWidth)
+            .frame(
+                maxWidth: shouldConstrainToMaxWidth ? maxBubbleWidth : nil,
+                alignment: isOwn ? .trailing : .leading
+            )
             .background(bubbleBackground)
             .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
+        }
+    }
+    
+    private var timeAndChecksOverlayOnMedia: some View {
+        HStack(spacing: 4) {
+            if message.editedAt != nil {
+                Text("Modificato")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            
+            Text(message.createdAt, style: .time)
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.9))
+            
+            if isOwn { syncIconOverlayOnMedia }
+        }
+        .fixedSize()
+    }
+    
+    @ViewBuilder
+    private var syncIconOverlayOnMedia: some View {
+        switch message.syncState {
+        case .pendingUpsert, .pendingDelete:
+            Image(systemName: "clock")
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.85))
+        case .error:
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.caption2)
+                .foregroundStyle(.yellow) // su sfondo scuro è più leggibile del rosso
+        case .synced:
+            let isRead = !message.readBy.isEmpty
+            HStack(spacing: -4) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isRead ? .white.opacity(0.9) : .white.opacity(0.0))
+            }
         }
     }
     
@@ -599,10 +653,13 @@ struct ChatBubble: View {
                         longitude: lon,
                         isOwn: isOwn
                     )
-                    timeAndChecks
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(.black.opacity(0.4), in: Capsule())
+                    timeAndChecksOverlayOnMedia
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                        )
                         .padding(6)
                 }
             }
@@ -629,10 +686,13 @@ struct ChatBubble: View {
                             .frame(width: 220, height: 160)
                     }
                     
-                    timeAndChecks
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(.black.opacity(0.4), in: Capsule())
+                    timeAndChecksOverlayOnMedia
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                        )
                         .padding(6)
                 }
                 .contentShape(Rectangle())
@@ -695,10 +755,13 @@ struct ChatBubble: View {
                         Spacer()
                         HStack {
                             Spacer()
-                            timeAndChecks
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 4)
-                                .background(.black.opacity(0.4), in: Capsule())
+                            timeAndChecksOverlayOnMedia
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 5)
+                                .background(.black.opacity(0.55), in: Capsule())
+                                .overlay(
+                                    Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                                )
                                 .padding(6)
                         }
                     }
