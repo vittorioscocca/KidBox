@@ -226,7 +226,7 @@ final class AppDelegate: NSObject,
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        KBLog.auth.kbDebug("Notification received in foreground (willPresent)")
-        return [.banner, .sound, .badge]
+        KBLog.auth.kbDebug("Notification received in foreground (suppressed)")
+        return []   // ✅ niente banner, niente suono, niente badge in foreground
     }
 }
