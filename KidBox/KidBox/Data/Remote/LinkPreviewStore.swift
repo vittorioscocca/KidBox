@@ -145,7 +145,7 @@ actor LinkMetadataService {
 }
 
 private extension String {
-    var htmlEntityDecoded: String {
+    nonisolated var htmlEntityDecoded: String {
         [("&amp;","&"),("&lt;","<"),("&gt;",">"),("&quot;","\""),
          ("&#39;","'"),("&apos;","'"),("&nbsp;"," ")]
             .reduce(self) { $0.replacingOccurrences(of: $1.0, with: $1.1) }

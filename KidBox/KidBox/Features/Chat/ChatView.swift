@@ -809,6 +809,12 @@ private struct ChatConversationView: View {
     private var typingBanner: some View {
         if !viewModel.typingUsers.isEmpty {
             HStack(spacing: 6) {
+                // Avatar circolari piccoli degli utenti che scrivono
+                HStack(spacing: -6) {
+                    ForEach(viewModel.typingUsers.prefix(3), id: \.self) { name in
+                        TypingAvatarView(name: name)
+                    }
+                }
                 TypingDotsView()
                 Text(typingLabel)
                     .font(.caption).foregroundStyle(.secondary)
@@ -1038,6 +1044,38 @@ private struct TypingDotsView: View {
             }
         }
         .onReceive(timer) { _ in phase = (phase + 1) % 3 }
+    }
+}
+
+// MARK: - TypingAvatarView
+
+private struct TypingAvatarView: View {
+    let name: String
+    
+    private var initials: String {
+        let parts = name.split(separator: " ")
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1) + parts[1].prefix(1))
+        }
+        return String(name.prefix(2))
+    }
+    
+    // Colore deterministico basato sul nome
+    private var color: Color {
+        let colors: [Color] = [
+            .orange, .purple, .pink, .teal, .indigo, .green, .blue, .red
+        ]
+        let hash = abs(name.unicodeScalars.reduce(0) { $0 &+ Int($1.value) })
+        return colors[hash % colors.count]
+    }
+    
+    var body: some View {
+        Text(initials.uppercased())
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 22, height: 22)
+            .background(color, in: Circle())
+            .overlay(Circle().stroke(Color(.systemBackground), lineWidth: 1.5))
     }
 }
 

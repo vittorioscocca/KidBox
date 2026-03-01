@@ -7,8 +7,10 @@
 
 import AVFoundation
 import AVKit
+import FirebaseStorage
 import MapKit
 import SwiftUI
+import SwiftData
 
 private enum AudioBubble {
     static let playW: CGFloat = 32
@@ -46,9 +48,10 @@ struct ChatBubble: View {
     @State private var dragProgress: Double = 0.0
     @State private var playbackRate: Float = 1.0
     
-    // FIX 1: containerWidth letto una sola volta con .onGeometryChange
-    // invece di un GeometryReader nel body che triggera re-render continui.
-    @State private var containerWidth: CGFloat = 0
+    // Larghezza dello schermo calcolata una sola volta — evita @State containerWidth
+    // che causava un secondo layout pass su ogni bubble al primo render
+    // (measureBackwards nel LazyVStack).
+    private static let screenWidth: CGFloat = UIScreen.main.bounds.width
     
     // Media QuickLook
     @State private var isDownloadingMedia = false
@@ -129,7 +132,7 @@ struct ChatBubble: View {
     }
     
     private var maxBubbleWidth: CGFloat {
-        let w = max(containerWidth, 0)
+        let w = Self.screenWidth
         switch dynamicTypeSize {
         case .accessibility1, .accessibility2, .accessibility3, .accessibility4, .accessibility5:
             return min(w * 0.68, 420)
@@ -166,16 +169,13 @@ struct ChatBubble: View {
             
             HStack(alignment: .bottom, spacing: 8) {
                 if !isOwn {
-                    Circle()
-                        .fill(avatarColor)
-                        .frame(width: 32, height: 32)
-                        .overlay(
-                            Text(message.senderName.prefix(1).uppercased())
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                        )
+                    SenderAvatarView(
+                        senderId: message.senderId,
+                        familyId: message.familyId,
+                        senderName: message.senderName,
+                        fallbackColor: avatarColor
+                    )
                 }
-                if isOwn { Spacer(minLength: 0) }
                 
                 bubbleBody
                     .contextMenu { contextMenuItems }
@@ -194,8 +194,10 @@ struct ChatBubble: View {
                                 if shouldTrigger { onReply() }
                             }
                     )
-                
-                if !isOwn { Spacer(minLength: 0) }
+                    .frame(
+                        maxWidth: .infinity,
+                        alignment: isOwn ? .trailing : .leading
+                    )
             }
             .padding(.horizontal, 12)
             
@@ -203,11 +205,6 @@ struct ChatBubble: View {
                 reactionRow.padding(.horizontal, isOwn ? 16 : 54)
             }
         }
-        // FIX 1: onGeometryChange legge la larghezza una volta sola
-        // e aggiorna @State solo quando cambia davvero (non ad ogni frame).
-        // Il vecchio GeometryReader in .background() triggerava un layout pass
-        // extra per ogni bubble ad ogni frame dello scroll.
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { containerWidth = $0 }
         .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
         .padding(.vertical, 2)
         .onDisappear {
@@ -1308,6 +1305,132 @@ private struct LinkPreviewView: View {
     
     private var bg: Color {
         isOwn ? .white.opacity(0.15) : Color(.tertiarySystemBackground)
+    }
+}
+
+// MARK: - SenderAvatarCache
+//
+// Cache in-memory delle immagini avatar per la sessione corrente.
+// Priorità:
+//   1) Cache in-memory (già caricato in questa sessione)
+//   2) KBUserProfile.avatarData nel ModelContext locale (SwiftData, zero rete)
+//   3) Firebase Storage: users/{uid}/avatar.jpg  (user-scoped)
+//   4) Firebase Storage: families/{familyId}/avatars/{uid}.jpg  (family-scoped)
+// I dati scaricati da Storage vengono salvati in KBUserProfile.avatarData
+// così le sessioni successive non fanno più rete.
+
+final class SenderAvatarCache {
+    static let shared = SenderAvatarCache()
+    private init() {}
+    
+    private var cache: [String: Any] = [:]   // UIImage | NSNull
+    private var inFlight: Set<String> = []
+    
+    func cachedImage(for uid: String) -> UIImage? { cache[uid] as? UIImage }
+    func isFailed(for uid: String) -> Bool { cache[uid] is NSNull }
+    
+    func loadImage(
+        for uid: String,
+        familyId: String,
+        modelContext: ModelContext
+    ) async -> UIImage? {
+        // 1) cache in-memory
+        if let img = cache[uid] as? UIImage { return img }
+        if cache[uid] is NSNull { return nil }
+        if inFlight.contains(uid) { return nil }
+        inFlight.insert(uid)
+        defer { inFlight.remove(uid) }
+        
+        // 2) SwiftData locale
+        let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+        if let profile = try? modelContext.fetch(desc).first,
+           let data = profile.avatarData,
+           let img = UIImage(data: data) {
+            cache[uid] = img
+            return img
+        }
+        
+        // 3+4) Firebase Storage
+        let storage = Storage.storage()
+        let img: UIImage?
+        
+        if let i = await downloadImage(ref: storage.reference().child("users/\(uid)/avatar.jpg")) {
+            img = i
+        } else if !familyId.isEmpty,
+                  let i = await downloadImage(ref: storage.reference().child("families/\(familyId)/avatars/\(uid).jpg")) {
+            img = i
+        } else {
+            img = nil
+        }
+        
+        guard let img else {
+            cache[uid] = NSNull()
+            return nil
+        }
+        
+        cache[uid] = img
+        
+        // Persisti in locale così la prossima sessione non fa rete
+        if let data = img.jpegData(compressionQuality: 0.8) {
+            let desc2 = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+            if let profile = try? modelContext.fetch(desc2).first {
+                profile.avatarData = data
+                try? modelContext.save()
+            }
+        }
+        
+        return img
+    }
+    
+    private func downloadImage(ref: StorageReference) async -> UIImage? {
+        do {
+            let data = try await ref.data(maxSize: 5 * 1024 * 1024)
+            return UIImage(data: data)
+        } catch {
+            return nil
+        }
+    }
+}
+
+// MARK: - SenderAvatarView
+
+struct SenderAvatarView: View {
+    let senderId: String
+    let familyId: String
+    let senderName: String
+    let fallbackColor: Color
+    
+    @Environment(\.modelContext) private var modelContext
+    @State private var image: UIImage? = nil
+    
+    var body: some View {
+        // ZStack con dimensione fissa e stabile: SwiftUI non rimisura mai questa view,
+        // anche quando image passa da nil a UIImage — evita measureBackwards nel LazyVStack.
+        ZStack {
+            Circle().fill(fallbackColor)
+            if let img = image {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .clipShape(Circle())
+            } else {
+                Text(senderName.prefix(1).uppercased())
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(width: 32, height: 32)
+        .fixedSize()
+        .task(id: senderId) {
+            guard !senderId.isEmpty else { return }
+            if let img = await SenderAvatarCache.shared.loadImage(
+                for: senderId,
+                familyId: familyId,
+                modelContext: modelContext
+            ) {
+                await MainActor.run { image = img }
+            }
+        }
     }
 }
 
