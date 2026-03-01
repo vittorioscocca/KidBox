@@ -19,13 +19,6 @@ private enum AudioBubble {
     static let total: CGFloat = inner + 24  // + paddingH 12+12
 }
 
-// In ChatBubble.swift, fuori dalla struct
-private extension NSDataDetector {
-    static let linkDetector: NSDataDetector? = try? NSDataDetector(
-        types: NSTextCheckingResult.CheckingType.link.rawValue
-    )
-}
-
 struct ChatBubble: View {
     
     let message: KBChatMessage
@@ -66,11 +59,24 @@ struct ChatBubble: View {
     // Swipe-to-reply
     @State private var swipeX: CGFloat = 0
     
-    // FIX 2: firstURL e attributedText precalcolati una volta sola,
-    // non ricalcolati ad ogni render del body.
-    // NSDataDetector è costoso — chiamarlo nel body causava 32ms per bubble.
+    // Valori precalcolati nell'init — mai ricalcolati nel body
     private let cachedLinkURL: URL?
     private let cachedHighlightedText: AttributedString
+    // URL del messaggio citato in risposta — anche questo estratto nell'init
+    // perché replySubtitle è un @ViewBuilder nel body e chiamarci extractFirstURL
+    // causava DynamicBody.updateValue → NSDataDetector ad ogni layout pass.
+    private let cachedReplyLinkURL: URL?
+    // FIX 3: ora formattata una volta sola nell'init.
+    // Text(date, style: .time) chiama ICUDateFormatter ad ogni layout pass
+    // (visibile nel call stack: FormatStyleStorage → ICUDateFormatter → icu::SimpleDateFormat).
+    private let cachedTimeString: String
+    
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        f.dateStyle = .none
+        return f
+    }()
     
     init(
         message: KBChatMessage,
@@ -104,6 +110,22 @@ struct ChatBubble: View {
         let text = message.text ?? ""
         self.cachedLinkURL = Self.extractFirstURL(from: text)
         self.cachedHighlightedText = Self.buildHighlightedText(text, searchText: searchText)
+        self.cachedTimeString = Self.timeFormatter.string(from: message.createdAt)
+        // URL del replied-to message — calcolata qui, non nel body
+        if let rt = repliedTo, rt.type == .text {
+            let rt = (rt.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            self.cachedReplyLinkURL = Self.extractFirstURL(from: rt)
+        } else {
+            self.cachedReplyLinkURL = nil
+        }
+    }
+    
+    // FIX 4: sostituisce ViewThatFits — decisione O(1) invece di doppia misurazione layout.
+    // ViewThatFits causava specialized LazyStack measureBackwards nel call stack
+    // (315ms su 5.69s totali di CPU durante lo scroll).
+    private var textIsShort: Bool {
+        let text = message.text ?? ""
+        return text.count <= 30 && !text.contains("\n")
     }
     
     private var maxBubbleWidth: CGFloat {
@@ -310,7 +332,9 @@ struct ChatBubble: View {
                         timeAndChecks
                     }
                 } else {
-                    ViewThatFits(in: .horizontal) {
+                    // FIX 4: if/else esplicito invece di ViewThatFits.
+                    // ViewThatFits misura entrambe le alternative ad ogni layout pass.
+                    if textIsShort {
                         HStack(alignment: .lastTextBaseline, spacing: 6) {
                             Text(cachedHighlightedText)
                                 .font(.body)
@@ -320,7 +344,7 @@ struct ChatBubble: View {
                             timeAndChecks
                         }
                         .fixedSize(horizontal: true, vertical: true)
-                        
+                    } else {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(cachedHighlightedText)
                                 .font(.body)
@@ -420,7 +444,7 @@ struct ChatBubble: View {
             switch repliedTo.type {
             case .text:
                 let t = (repliedTo.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                if let url = Self.extractFirstURL(from: t) {
+                if let url = cachedReplyLinkURL {
                     HStack(spacing: 8) {
                         LinkPreviewThumb(
                             url: url,
@@ -487,7 +511,7 @@ struct ChatBubble: View {
             if message.editedAt != nil {
                 Text("Modificato").font(.caption2).foregroundStyle(.white.opacity(0.85))
             }
-            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(.white.opacity(0.9))
+            Text(cachedTimeString).font(.caption2).foregroundStyle(.white.opacity(0.9))
             if isOwn { syncIconOverlayOnMedia }
         }
         .fixedSize()
@@ -515,7 +539,7 @@ struct ChatBubble: View {
             if message.editedAt != nil {
                 Text("Modificato").font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             }
-            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            Text(cachedTimeString).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             if isOwn { syncIcon }
         }
         .fixedSize()
@@ -668,7 +692,7 @@ struct ChatBubble: View {
                     .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
             } else { replyThumbPlaceholder }
         case .text:
-            if let t = msg.text, let url = ChatLinkDetector.firstURL(in: t) {
+            if let url = cachedReplyLinkURL {
                 LinkPreviewThumb(url: url, size: ChatThumbStyle.composerReplySize, corner: ChatThumbStyle.replyCorner)
             }
         default:
@@ -889,7 +913,7 @@ struct ChatBubble: View {
                     .animation(.none, value: isDraggingSlider)
             }
             Spacer(minLength: 0)
-            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            Text(cachedTimeString).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             if isOwn { syncIcon }
         }
         .frame(width: AudioBubble.inner)
@@ -898,7 +922,7 @@ struct ChatBubble: View {
     private var bottomRow: some View {
         HStack(spacing: 4) {
             Spacer(minLength: 0)
-            Text(message.createdAt, style: .time).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            Text(cachedTimeString).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
             if isOwn { syncIcon }
         }
     }
@@ -962,9 +986,16 @@ struct ChatBubble: View {
     // FIX 2: static per sottolineare che non accedono a self e possono
     // essere chiamati nell'init senza catturare la struct in modo ricorsivo.
     static func extractFirstURL(from text: String) -> URL? {
-        guard let d = NSDataDetector.linkDetector else { return nil }
+        guard let d = Self.sharedLinkDetector else { return nil }
         return d.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)).flatMap { $0.url }
     }
+    
+    // Singleton: NSDataDetector è costoso da istanziare (~5-10ms la prima volta).
+    // Ricrearlo ad ogni bubble (anche nell'init) causava il DynamicBody.updateValue
+    // che vedevi nel call stack. Un'istanza condivisa e thread-safe risolve.
+    private static let sharedLinkDetector: NSDataDetector? = try? NSDataDetector(
+        types: NSTextCheckingResult.CheckingType.link.rawValue
+    )
     
     static func buildHighlightedText(_ text: String, searchText: String) -> AttributedString {
         var attr = AttributedString(text)

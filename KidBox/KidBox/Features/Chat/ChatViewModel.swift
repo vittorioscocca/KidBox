@@ -44,15 +44,18 @@ final class ChatViewModel: ObservableObject {
     
     // Audio recording
     @Published var isRecording: Bool = false
-    @Published var recordingDuration: TimeInterval = 0
+    // FIX 2: recordingDuration non è più @Published.
+    var recordingDuration: TimeInterval = 0
     
-    // Typing indicators
-    @Published var typingUsers: [String] = []   // nomi degli altri che stanno scrivendo
+    // FIX 3: typingUsers aggiornato con throttle
+    @Published var typingUsers: [String] = []
+    private var pendingTypingUsers: [String]? = nil
+    private var typingThrottleTask: Task<Void, Never>? = nil
     
     @Published var editingMessageId: String? = nil
     @Published var editingOriginalText: String = ""
     
-    // Reply (WhatsApp-style)
+    // Reply
     @Published var replyingToMessageId: String? = nil
     @Published var replyingPreviewName: String = ""
     @Published var replyingPreviewText: String = ""
@@ -69,26 +72,21 @@ final class ChatViewModel: ObservableObject {
     private var typingDebounceTask: Task<Void, Never>? = nil
     private var cancellables = Set<AnyCancellable>()
     private var isObserving = false
-    
-    // Cursore per la paginazione — il documento Firestore più vecchio attualmente caricato
     private var oldestDocument: DocumentSnapshot? = nil
-    
     private let proximityRouter = ProximityAudioRouter()
-    
     private let remoteStore = ChatRemoteStore()
     private let storageService = ChatStorageService()
-    
-    // Audio recorder
     private var audioRecorder: AVAudioRecorder?
     private var recordingTimer: Timer?
     private var recordingURL: URL?
     
+    // FIX 4: debounce reloadLocal per evitare stutter mentre scrolli
+    private var reloadTask: Task<Void, Never>?
+    
     var isEditing: Bool { editingMessageId != nil }
     
-    /// Restituisce `true` solo se NON sono ancora trascorsi 5 minuti dall'invio del messaggio.
     func canEditOrDelete(_ message: KBChatMessage) -> Bool {
-        let elapsed = Date().timeIntervalSince(message.createdAt)
-        return elapsed < 5 * 60
+        Date().timeIntervalSince(message.createdAt) < 5 * 60
     }
     
     // MARK: - Init
@@ -108,9 +106,11 @@ final class ChatViewModel: ObservableObject {
         isObserving = true
         
         KBLog.sync.kbInfo("ChatVM startListening familyId=\(familyId)")
+        
         let uid = Auth.auth().currentUser?.uid ?? ""
         let name = senderDisplayName()
         Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
+        
         listener = FirestoreListenerWrapper(remoteStore.listenMessages(
             familyId: familyId,
             limit: 150,
@@ -121,7 +121,6 @@ final class ChatViewModel: ObservableObject {
             onOldestDocument: { [weak self] snapshot in
                 guard let self else { return }
                 Task { @MainActor in
-                    // Salva il cursore solo se non ne abbiamo già uno più vecchio
                     if self.oldestDocument == nil {
                         self.oldestDocument = snapshot
                         KBLog.sync.kbInfo("ChatVM cursor set to \(snapshot.documentID)")
@@ -139,23 +138,45 @@ final class ChatViewModel: ObservableObject {
             excludeUID: uid,
             onChange: { [weak self] names in
                 guard let self else { return }
-                Task { @MainActor in self.typingUsers = names }
+                Task { @MainActor in self.scheduleTypingUpdate(names) }
             }
         ))
         
+        // Primo load
         reloadLocal()
+    }
+    
+    // FIX 3: accumula gli update e pubblica al massimo una volta ogni 500ms
+    private func scheduleTypingUpdate(_ names: [String]) {
+        pendingTypingUsers = names
+        guard typingThrottleTask == nil else { return }
+        typingThrottleTask = Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            if let pending = pendingTypingUsers {
+                typingUsers = pending
+                pendingTypingUsers = nil
+            }
+            typingThrottleTask = nil
+        }
     }
     
     func stopListening() {
         listener?.remove()
         listener = nil
+        
         typingListener?.remove()
         typingListener = nil
+        
+        typingThrottleTask?.cancel()
+        typingThrottleTask = nil
+        
+        reloadTask?.cancel()
+        reloadTask = nil
+        
         isObserving = false
         oldestDocument = nil
         hasMoreMessages = true
         
-        // Assicura che il nostro indicatore venga rimosso + name aggiornato
         let uid = Auth.auth().currentUser?.uid ?? ""
         let name = senderDisplayName()
         Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
@@ -165,8 +186,6 @@ final class ChatViewModel: ObservableObject {
     
     // MARK: - Paginazione
     
-    /// Carica i messaggi più vecchi di quelli attualmente in memoria.
-    /// Va chiamato quando l'utente scrolla fino in cima alla lista.
     @MainActor
     func loadOlderMessages() {
         guard !isLoadingOlder,
@@ -175,7 +194,7 @@ final class ChatViewModel: ObservableObject {
               let modelContext else { return }
         
         isLoadingOlder = true
-        isPaginating   = true
+        isPaginating = true
         
         Task {
             do {
@@ -187,31 +206,28 @@ final class ChatViewModel: ObservableObject {
                 
                 await MainActor.run {
                     if dtos.isEmpty {
-                        // Nessun messaggio precedente — siamo all'inizio della chat
                         self.hasMoreMessages = false
-                        KBLog.sync.kbInfo("ChatVM pagination: reached beginning of chat")
                     } else {
-                        // Inserisci i messaggi vecchi in SwiftData
                         for dto in dtos {
                             self.applyUpsert(dto: dto, modelContext: modelContext)
                         }
                         try? modelContext.save()
                         
-                        // Aggiorna il cursore
                         self.oldestDocument = newCursor
                         if newCursor == nil { self.hasMoreMessages = false }
                         
-                        self.reloadLocal()
-                        KBLog.sync.kbInfo("ChatVM pagination: loaded \(dtos.count) older messages")
+                        // FIX 4: debounce reload dopo paginazione (non sparare fetch multipli)
+                        self.requestReloadLocal(debounceMs: 120, reason: "pagination")
                     }
+                    
                     self.isLoadingOlder = false
-                    self.isPaginating   = false
+                    self.isPaginating = false
                 }
             } catch {
                 await MainActor.run {
                     self.errorText = "Errore caricamento messaggi: \(error.localizedDescription)"
                     self.isLoadingOlder = false
-                    self.isPaginating   = false
+                    self.isPaginating = false
                 }
             }
         }
@@ -219,12 +235,22 @@ final class ChatViewModel: ObservableObject {
     
     // MARK: - Local fetch
     
+    /// FIX 4: chiamalo nei punti "caldi" invece di reloadLocal() diretto
+    func requestReloadLocal(debounceMs: Int = 120, reason: String = "") {
+        reloadTask?.cancel()
+        reloadTask = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(nanoseconds: UInt64(debounceMs) * 1_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                self.reloadLocal()
+            }
+        }
+    }
+    
     @MainActor
     func reloadLocal() {
         guard let modelContext else { return }
-        
-        KBLog.data.kbInfo("reloadLocal: start familyId=\(familyId)")
-        logDBStats(reason: "before reloadLocal")
         
         let fam = familyId
         let desc = FetchDescriptor<KBChatMessage>(
@@ -235,49 +261,29 @@ final class ChatViewModel: ObservableObject {
         do {
             let rows = try modelContext.fetch(desc)
             
-            // ── Merge intelligente: evita di rimpiazzare l'intero array ──────────
-            // Se la lista è identica (stesso count, stessi id in ordine) non toccare
-            // l'array — SwiftUI non ri-renderizza nulla e lo scroll rimane fermo.
+            // IMPORTANTISSIMO: se l'ordine e gli id sono identici,
+            // NON sostituire l'array => niente jump / niente re-layout massivo.
             let newIds  = rows.map(\.id)
             let currIds = messages.map(\.id)
-            
             if newIds == currIds {
-                // NIENTE: i tuoi KBChatMessage sono reference (SwiftData @Model),
-                // quando cambi proprietà (reactions/readBy/syncState) la row si aggiorna.
                 return
-            } else {
-                self.messages = rows
             }
             
-            KBLog.data.kbInfo("reloadLocal: fetched visible messages count=\(rows.count)")
+            self.messages = rows
+            KBLog.data.kbInfo("reloadLocal: fetched \(rows.count) messages familyId=\(familyId)")
         } catch {
-            KBLog.data.kbError("reloadLocal: fetch FAILED error=\(error.localizedDescription)")
+            KBLog.data.kbError("reloadLocal: FAILED error=\(error.localizedDescription)")
         }
-        
-        logDBStats(reason: "after reloadLocal")
     }
     
     @MainActor
     private func saveContext(_ context: ModelContext, reason: String) {
         do {
             try context.save()
-            KBLog.persistence.kbInfo("ChatVM save ok reason=\(reason)")
         } catch {
             KBLog.persistence.kbError("ChatVM save FAILED reason=\(reason) error=\(error.localizedDescription)")
             self.errorText = "Salvataggio locale fallito: \(error.localizedDescription)"
         }
-    }
-    
-    @MainActor
-    private func logDBStats(reason: String) {
-        guard let modelContext else { return }
-        let fam = familyId
-        let all = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.familyId == fam })
-        let del = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.familyId == fam && $0.isDeleted == true })
-        
-        let total = (try? modelContext.fetchCount(all)) ?? -1
-        let deleted = (try? modelContext.fetchCount(del)) ?? -1
-        KBLog.data.kbInfo("ChatVM dbStats reason=\(reason) total=\(total) deleted=\(deleted)")
     }
     
     // MARK: - Apply remote changes
@@ -289,6 +295,7 @@ final class ChatViewModel: ObservableObject {
             switch change {
             case .upsert(let dto):
                 applyUpsert(dto: dto, modelContext: modelContext)
+                
             case .remove(let id):
                 let mid = id
                 let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
@@ -299,21 +306,19 @@ final class ChatViewModel: ObservableObject {
         }
         
         try? modelContext.save()
-        reloadLocal()
+        
+        // FIX 4: invece di reloadLocal immediato (che può scattare durante scroll)
+        requestReloadLocal(debounceMs: 120, reason: "applyRemoteChanges")
     }
     
     private func applyUpsert(dto: RemoteChatMessageDTO, modelContext: ModelContext) {
         let mid = dto.id
-        KBLog.sync.kbInfo("applyUpsert: start id=\(mid) remoteDeleted=\(dto.isDeleted)")
-        
-        // Controlla se questo messaggio è stato eliminato "per me" lato server
         let myUID = Auth.auth().currentUser?.uid ?? ""
         let deletedForMe = !myUID.isEmpty && dto.deletedFor.contains(myUID)
         
         let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
-        let existing = try? modelContext.fetch(desc).first
         
-        if let existing {
+        if let existing = try? modelContext.fetch(desc).first {
             let localBefore = existing.isDeleted
             
             existing.senderName    = dto.senderName
@@ -322,27 +327,18 @@ final class ChatViewModel: ObservableObject {
             existing.mediaURL      = dto.mediaURL
             existing.reactionsJSON = dto.reactionsJSON
             
-            let merged = Array(Set(existing.readBy + dto.readBy))
-            existing.readBy = merged
-            
-            // ✅ merge tombstone: non resuscitare mai, rispetta deletedFor server-side
+            existing.readBy = Array(Set(existing.readBy + dto.readBy))
             existing.isDeleted = localBefore || dto.isDeleted || deletedForMe
             
             existing.syncState     = .synced
             existing.lastSyncError = nil
-            existing.replyToId     = dto.replyToId
-            existing.latitude  = dto.latitude
-            existing.longitude = dto.longitude
             
-            KBLog.sync.kbInfo("applyUpsert: merge delete id=\(mid) localWas=\(localBefore) remote=\(dto.isDeleted) deletedForMe=\(deletedForMe) final=\(existing.isDeleted)")
+            existing.replyToId  = dto.replyToId
+            existing.latitude   = dto.latitude
+            existing.longitude  = dto.longitude
+            
         } else {
-            KBLog.sync.kbInfo("applyUpsert: no existing id=\(mid) remoteDeleted=\(dto.isDeleted) deletedForMe=\(deletedForMe)")
-            
-            // Se eliminato per tutti o per me, non inserire
-            guard !dto.isDeleted && !deletedForMe else {
-                KBLog.sync.kbInfo("applyUpsert: skipping insert id=\(mid) isDeleted=\(dto.isDeleted) deletedForMe=\(deletedForMe)")
-                return
-            }
+            guard !dto.isDeleted && !deletedForMe else { return }
             
             let msg = KBChatMessage(
                 id: dto.id,
@@ -359,34 +355,30 @@ final class ChatViewModel: ObservableObject {
                 editedAt: dto.editedAt,
                 isDeleted: false
             )
-            msg.replyToId      = dto.replyToId
-            msg.reactionsJSON  = dto.reactionsJSON
-            msg.readByJSON     = dto.readByJSON
-            msg.syncState      = .synced
-            msg.lastSyncError  = nil
-            msg.latitude  = dto.latitude
-            msg.longitude = dto.longitude
+            msg.replyToId     = dto.replyToId
+            msg.reactionsJSON = dto.reactionsJSON
+            msg.readByJSON    = dto.readByJSON
+            msg.syncState     = .synced
+            msg.lastSyncError = nil
+            msg.latitude      = dto.latitude
+            msg.longitude     = dto.longitude
             
             modelContext.insert(msg)
-            KBLog.sync.kbInfo("applyUpsert: inserted id=\(mid)")
         }
     }
     
-    // MARK: - ─── SEND TEXT ────────────────────────────────────────────────────
+    // MARK: - ─── SEND TEXT ───────────────────────────────────────────────────
     
     func sendText() {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        guard !isSending else { return }
+        guard !trimmed.isEmpty, !isSending else { return }
         
-        // 1) Se sto editando -> salvo modifica (NON invio nuovo)
         if isEditing {
             commitEditing()
             return
         }
         
-        // 2) Altrimenti invio nuovo messaggio (con reply opzionale)
-        let replyId = replyingToMessageId   // String?
+        let replyId = replyingToMessageId
         inputText = ""
         
         if replyId != nil {
@@ -398,8 +390,9 @@ final class ChatViewModel: ObservableObject {
     }
     
     func startEditing(_ message: KBChatMessage) {
-        guard message.senderId == Auth.auth().currentUser?.uid else { return }
-        guard message.type == .text else { return }
+        guard message.senderId == Auth.auth().currentUser?.uid,
+              message.type == .text else { return }
+        
         guard canEditOrDelete(message) else {
             errorText = "Puoi modificare un messaggio solo entro 5 minuti dall'invio."
             return
@@ -417,8 +410,8 @@ final class ChatViewModel: ObservableObject {
     }
     
     func commitEditing() {
-        guard let modelContext else { return }
-        guard let messageId = editingMessageId else { return }
+        guard let modelContext,
+              let messageId = editingMessageId else { return }
         
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -429,17 +422,16 @@ final class ChatViewModel: ObservableObject {
         isSending = true
         errorText = nil
         
-        // 1) update locale immediato (UI reattiva)
+        // update locale immediato
         if let msg = messages.first(where: { $0.id == messageId }) {
             msg.text = trimmed
             msg.editedAt = Date()
             msg.syncState = .pendingUpsert
             msg.lastSyncError = nil
             try? modelContext.save()
-            reloadLocal()
+            // NON serve reloadLocal: @Model si aggiorna da sola
         }
         
-        // 2) update remoto
         Task {
             do {
                 try await remoteStore.updateMessageText(
@@ -452,7 +444,6 @@ final class ChatViewModel: ObservableObject {
                     if let msg = self.messages.first(where: { $0.id == messageId }) {
                         msg.syncState = .synced
                         try? modelContext.save()
-                        self.reloadLocal()
                     }
                     self.isSending = false
                     self.cancelEditing()
@@ -463,10 +454,8 @@ final class ChatViewModel: ObservableObject {
                         msg.syncState = .error
                         msg.lastSyncError = error.localizedDescription
                         try? modelContext.save()
-                        self.reloadLocal()
                     }
                     self.isSending = false
-                    // NON annullo editing: così può riprovare a salvare
                     self.errorText = error.localizedDescription
                 }
             }
@@ -491,7 +480,7 @@ final class ChatViewModel: ObservableObject {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .ifEmpty("Messaggio")
         case .photo:
-            replyingPreviewText = "" // lo mostriamo come thumbnail nella bar
+            replyingPreviewText = ""
         case .video:
             replyingPreviewText = "🎬 Video"
         case .audio:
@@ -510,26 +499,23 @@ final class ChatViewModel: ObservableObject {
         replyingToMessageId = nil
         replyingPreviewName = ""
         replyingPreviewText = ""
-        
         replyingPreviewKind = nil
         replyingPreviewMediaURL = nil
         replyingPreviewAudioDuration = nil
+        replyingPreviewLatitude = nil
+        replyingPreviewLongitude = nil
     }
     
     private func formatDuration(_ sec: Int) -> String {
         String(format: "%d:%02d", sec / 60, sec % 60)
     }
     
-    // MARK: - ─── TYPING INDICATOR ────────────────────────────────────────────
+    // MARK: - ─── TYPING ──────────────────────────────────────────────────────
     
-    /// Chiamato dal ChatInputBar ogni volta che il testo cambia.
-    /// Usa un debounce di 3s: se l'utente smette di scrivere, rimuove l'indicatore.
     func userIsTyping() {
         typingDebounceTask?.cancel()
-        
         let uid = Auth.auth().currentUser?.uid ?? ""
         let name = senderDisplayName()
-        
         Task { await remoteStore.setTyping(true, familyId: familyId, uid: uid, displayName: name) }
         
         typingDebounceTask = Task {
@@ -545,13 +531,11 @@ final class ChatViewModel: ObservableObject {
         
         let uid = Auth.auth().currentUser?.uid ?? ""
         let name = senderDisplayName()
-        
         Task { await remoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: name) }
     }
     
     // MARK: - ─── SEND PHOTO / VIDEO ──────────────────────────────────────────
     
-    /// Chiamato dopo che l'utente ha scelto una foto/video dalla libreria o fotocamera.
     func sendMedia(data: Data, type: KBChatMessageType) {
         guard !isUploadingMedia else { return }
         Task { await uploadAndSend(data: data, type: type) }
@@ -560,16 +544,14 @@ final class ChatViewModel: ObservableObject {
     private func uploadAndSend(data: Data, type: KBChatMessageType) async {
         guard let modelContext else { return }
         
-        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let uid = Auth.auth().currentUser?.uid ?? "local"
         let senderName = senderDisplayName()
-        let messageId  = UUID().uuidString
-        let now        = Date()
-        
+        let messageId = UUID().uuidString
+        let now = Date()
         let (fileName, mimeType) = ChatStorageService.fileInfo(for: type)
         
         errorText = nil
         
-        // 1) Comprimi PRIMA di creare il messaggio locale (nessuna rotella prematura)
         let uploadData: Data
         do {
             switch type {
@@ -577,103 +559,89 @@ final class ChatViewModel: ObservableObject {
                 isCompressingMedia = true
                 uploadData = await compressPhoto(data: data)
                 isCompressingMedia = false
-                KBLog.data.info("ChatVM photo compressed: \(data.count) → \(uploadData.count) bytes")
             case .video:
                 isCompressingMedia = true
                 uploadData = try await compressVideo(data: data)
                 isCompressingMedia = false
-                KBLog.data.info("ChatVM video compressed: \(data.count) → \(uploadData.count) bytes")
             default:
                 uploadData = data
             }
         } catch {
             isCompressingMedia = false
             errorText = "Compressione fallita: \(error.localizedDescription)"
-            KBLog.data.error("ChatVM compress failed: \(error.localizedDescription)")
             return
         }
         
-        // 2) Solo ora crea il messaggio locale — appare nella lista senza rotella
         isUploadingMedia = true
-        uploadProgress   = 0
+        uploadProgress = 0
         
         let msg = KBChatMessage(
-            id:        messageId,
-            familyId:  familyId,
-            senderId:  uid,
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
             senderName: senderName,
-            type:      type,
+            type: type,
             createdAt: now
         )
         msg.syncState = .pendingUpsert
         modelContext.insert(msg)
         try? modelContext.save()
-        // ⚠️ NON fare reloadLocal qui: mediaURL è ancora nil e la bubble mostrerebbe la rotella
+        
+        // mostra subito il placeholder in lista
+        reloadLocal()
         
         do {
-            // 3) Upload su Storage
             let (storagePath, downloadURL) = try await storageService.upload(
-                data:        uploadData,
-                familyId:    familyId,
-                messageId:   messageId,
-                fileName:    fileName,
-                mimeType:    mimeType,
+                data: uploadData,
+                familyId: familyId,
+                messageId: messageId,
+                fileName: fileName,
+                mimeType: mimeType,
                 progressHandler: { [weak self] p in
                     Task { @MainActor in self?.uploadProgress = p }
                 }
             )
             
-            // 4) Aggiorna locale con URL — solo ORA la bubble può renderizzarsi correttamente
             msg.mediaStoragePath = storagePath
-            msg.mediaURL         = downloadURL
-            msg.syncState        = .pendingUpsert
+            msg.mediaURL = downloadURL
+            msg.syncState = .pendingUpsert
             try? modelContext.save()
-            reloadLocal()   // ← prima apparizione della bubble, già con l'immagine
             
-            // 5) Scrivi su Firestore
+            // qui serve per far apparire la thumb/immagine
+            reloadLocal()
+            
             let dto = makeDTO(from: msg)
             try await remoteStore.upsert(dto: dto)
             
-            msg.syncState     = .synced
+            msg.syncState = .synced
             msg.lastSyncError = nil
             try? modelContext.save()
-            reloadLocal()
-            
-            KBLog.data.info("ChatVM sendMedia OK msgId=\(messageId)")
             
         } catch {
-            msg.syncState     = .error
+            msg.syncState = .error
             msg.lastSyncError = error.localizedDescription
             try? modelContext.save()
             errorText = "Invio media fallito: \(error.localizedDescription)"
-            KBLog.data.error("ChatVM sendMedia failed: \(error.localizedDescription)")
         }
         
         isUploadingMedia = false
-        uploadProgress   = 0
-        reloadLocal()
+        uploadProgress = 0
     }
     
     // MARK: - ─── COMPRESSION ─────────────────────────────────────────────────
     
-    /// Ridimensiona e ricomprime una foto JPEG.
-    /// Target: lato lungo max 1920px, qualità 0.75 → tipicamente 200-600 KB.
     private func compressPhoto(data: Data) async -> Data {
         await Task.detached(priority: .userInitiated) {
-            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
-                return data
-            }
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return data }
             
-            // Leggi size originali senza decodificare full
             let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
             let w = (props?[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
             let h = (props?[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
-            let maxSide: CGFloat = 1920
             
+            let maxSide: CGFloat = 1920
             let scale = (max(w, h) > maxSide && max(w, h) > 0) ? (maxSide / max(w, h)) : 1.0
             let targetMaxPixel = Int((max(w, h) * scale).rounded())
             
-            // ✅ QUESTO è il punto chiave: WithTransform = true applica EXIF orientation
             let options: [CFString: Any] = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceThumbnailMaxPixelSize: max(targetMaxPixel, 1),
@@ -685,13 +653,10 @@ final class ChatViewModel: ObservableObject {
                 return data
             }
             
-            let ui = UIImage(cgImage: cgThumb) // ormai è già “dritta”
-            return ui.jpegData(compressionQuality: 0.75) ?? data
+            return UIImage(cgImage: cgThumb).jpegData(compressionQuality: 0.75) ?? data
         }.value
     }
     
-    /// Ricodifica un video usando `AVAssetExportSession` con preset Medium.
-    /// Target: tipicamente 5-15 MB per un minuto di video a 720p.
     private func compressVideo(data: Data) async throws -> Data {
         let inputURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + ".mp4")
@@ -699,14 +664,10 @@ final class ChatViewModel: ObservableObject {
         defer { try? FileManager.default.removeItem(at: inputURL) }
         
         let asset = AVURLAsset(url: inputURL)
-        
         guard let session = AVAssetExportSession(
             asset: asset,
             presetName: AVAssetExportPresetMediumQuality
-        ) else {
-            KBLog.data.kbError("ChatVM compressVideo: cannot create export session")
-            return data
-        }
+        ) else { return data }
         
         let outputURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + ".mp4")
@@ -715,27 +676,25 @@ final class ChatViewModel: ObservableObject {
         do {
             try await session.export(to: outputURL, as: .mp4, isolation: .none)
         } catch {
-            KBLog.data.kbError("ChatVM compressVideo export failed: \(error.localizedDescription)")
-            return data   // fallback: invia originale
+            return data
         }
         
         return (try? Data(contentsOf: outputURL)) ?? data
     }
     
-    // MARK: - ─── SEND AUDIO ───────────────────────────────────────────────────
+    // MARK: - ─── SEND AUDIO ──────────────────────────────────────────────────
     
-    /// Avvia la registrazione audio (hold-to-record).
     func startRecording() {
         let session = AVAudioSession.sharedInstance()
-        guard (try? session.setCategory(.playAndRecord, mode: .default)) != nil else { return }
-        guard (try? session.setActive(true)) != nil else { return }
+        guard (try? session.setCategory(.playAndRecord, mode: .default)) != nil,
+              (try? session.setActive(true)) != nil else { return }
         
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("chat_audio_\(UUID().uuidString).m4a")
         
         let settings: [String: Any] = [
-            AVFormatIDKey:         Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey:       44100,
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 44100,
             AVNumberOfChannelsKey: 1,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
@@ -743,9 +702,9 @@ final class ChatViewModel: ObservableObject {
         guard let recorder = try? AVAudioRecorder(url: url, settings: settings) else { return }
         recorder.record()
         
-        audioRecorder  = recorder
-        recordingURL   = url
-        isRecording    = true
+        audioRecorder = recorder
+        recordingURL = url
+        isRecording = true
         recordingDuration = 0
         
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
@@ -754,59 +713,122 @@ final class ChatViewModel: ObservableObject {
                 self.recordingDuration = self.audioRecorder?.currentTime ?? 0
             }
         }
-        
-        KBLog.data.info("ChatVM recording started")
     }
     
-    /// Ferma e invia il vocale (chiamato quando l'utente rilascia il tasto).
     func stopAndSendRecording() {
-        guard isRecording, let recorder = audioRecorder, let url = recordingURL else { return }
+        guard isRecording,
+              let recorder = audioRecorder,
+              let url = recordingURL else { return }
         
-        // Prendiamo la durata PRIMA di azzerare refs (Double, non Int)
         let seconds = recorder.currentTime
         
         recorder.stop()
         recordingTimer?.invalidate()
         recordingTimer = nil
         
-        // Reset stato UI subito (così la barra torna normale anche se upload fallisce)
         isRecording = false
         recordingDuration = 0
-        
         audioRecorder = nil
         recordingURL = nil
         
-        // Durata minima: evita invii accidentali, ma non blocca vocali brevi
-        let minSeconds: TimeInterval = 0.4
-        guard seconds >= minSeconds else {
+        guard seconds >= 0.4 else {
             try? FileManager.default.removeItem(at: url)
-            KBLog.data.info("ChatVM audio too short: \(seconds, format: .fixed(precision: 2))s (min=\(minSeconds, format: .fixed(precision: 2))s)")
             return
         }
         
-        // Arrotonda a secondi interi (minimo 1)
         let durationSeconds = max(1, Int(seconds.rounded()))
         
         Task {
             do {
                 let data = try Data(contentsOf: url)
-                KBLog.data.info("ChatVM audio ready bytes=\(data.count) dur=\(durationSeconds)s")
                 await uploadAndSendAudio(data: data, duration: durationSeconds)
             } catch {
                 await MainActor.run {
                     self.errorText = "Audio non leggibile: \(error.localizedDescription)"
                 }
-                KBLog.data.error("ChatVM audio read failed: \(error.localizedDescription)")
             }
-            
             try? FileManager.default.removeItem(at: url)
         }
     }
     
+    func cancelRecording() {
+        audioRecorder?.stop()
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+        
+        isRecording = false
+        recordingDuration = 0
+        
+        if let url = recordingURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+        recordingURL = nil
+        audioRecorder = nil
+    }
+    
+    private func uploadAndSendAudio(data: Data, duration: Int) async {
+        guard let modelContext else { return }
+        
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let senderName = senderDisplayName()
+        let messageId = UUID().uuidString
+        let now = Date()
+        
+        isUploadingMedia = true
+        uploadProgress = 0
+        
+        let msg = KBChatMessage(
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
+            senderName: senderName,
+            type: .audio,
+            mediaDurationSeconds: duration,
+            createdAt: now
+        )
+        msg.syncState = .pendingUpsert
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        do {
+            let (storagePath, downloadURL) = try await storageService.upload(
+                data: data,
+                familyId: familyId,
+                messageId: messageId,
+                fileName: "audio.m4a",
+                mimeType: "audio/x-m4a",
+                progressHandler: { [weak self] p in
+                    Task { @MainActor in self?.uploadProgress = p }
+                }
+            )
+            
+            msg.mediaStoragePath = storagePath
+            msg.mediaURL = downloadURL
+            msg.mediaDurationSeconds = duration
+            msg.syncState = .pendingUpsert
+            try? modelContext.save()
+            
+            let dto = makeDTO(from: msg)
+            try await remoteStore.upsert(dto: dto)
+            
+            msg.syncState = .synced
+            msg.lastSyncError = nil
+            try? modelContext.save()
+            
+        } catch {
+            msg.syncState = .error
+            msg.lastSyncError = error.localizedDescription
+            try? modelContext.save()
+            errorText = "Invio audio fallito: \(error.localizedDescription)"
+        }
+        
+        isUploadingMedia = false
+        uploadProgress = 0
+    }
+    
     // MARK: - ─── SEND DOCUMENT ───────────────────────────────────────────────
     
-    /// Invia un documento scelto dal DocumentPicker.
-    /// Usa `asCopy: true` nel picker, quindi l'URL è già accessibile nel sandbox.
     func sendDocument(url: URL) {
         Task { await uploadAndSendDocument(url: url) }
     }
@@ -814,25 +836,25 @@ final class ChatViewModel: ObservableObject {
     private func uploadAndSendDocument(url: URL) async {
         guard let modelContext else { return }
         
-        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let uid = Auth.auth().currentUser?.uid ?? "local"
         let senderName = senderDisplayName()
-        let messageId  = UUID().uuidString
-        let now        = Date()
-        let fileName   = url.lastPathComponent
-        let mimeType   = url.mimeType()
+        let messageId = UUID().uuidString
+        let now = Date()
+        
+        let fileName = url.lastPathComponent
+        let mimeType = url.mimeType()
         
         isUploadingMedia = true
-        uploadProgress   = 0
-        errorText        = nil
+        uploadProgress = 0
+        errorText = nil
         
-        // 1) Crea messaggio locale placeholder
         let msg = KBChatMessage(
-            id:        messageId,
-            familyId:  familyId,
-            senderId:  uid,
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
             senderName: senderName,
-            type:      .document,
-            text:      fileName,      // usiamo text per conservare il nome file
+            type: .document,
+            text: fileName,
             createdAt: now
         )
         msg.syncState = .pendingUpsert
@@ -841,125 +863,40 @@ final class ChatViewModel: ObservableObject {
         reloadLocal()
         
         do {
-            // 2) Leggi i byte
             let data = try Data(contentsOf: url)
             
-            // 3) Upload su Storage
             let (storagePath, downloadURL) = try await storageService.upload(
-                data:        data,
-                familyId:    familyId,
-                messageId:   messageId,
-                fileName:    fileName,
-                mimeType:    mimeType,
+                data: data,
+                familyId: familyId,
+                messageId: messageId,
+                fileName: fileName,
+                mimeType: mimeType,
                 progressHandler: { [weak self] p in
                     Task { @MainActor in self?.uploadProgress = p }
                 }
             )
             
-            // 4) Aggiorna locale con URL
             msg.mediaStoragePath = storagePath
-            msg.mediaURL         = downloadURL
-            msg.syncState        = .pendingUpsert
+            msg.mediaURL = downloadURL
+            msg.syncState = .pendingUpsert
             try? modelContext.save()
             
-            // 5) Scrivi su Firestore
             let dto = makeDTO(from: msg)
             try await remoteStore.upsert(dto: dto)
             
-            msg.syncState     = .synced
+            msg.syncState = .synced
             msg.lastSyncError = nil
             try? modelContext.save()
             
-            KBLog.data.info("ChatVM sendDocument OK msgId=\(messageId) file=\(fileName)")
-            
         } catch {
-            msg.syncState     = .error
+            msg.syncState = .error
             msg.lastSyncError = error.localizedDescription
             try? modelContext.save()
             errorText = "Invio documento fallito: \(error.localizedDescription)"
-            KBLog.data.error("ChatVM sendDocument failed: \(error.localizedDescription)")
         }
         
         isUploadingMedia = false
-        uploadProgress   = 0
-        reloadLocal()
-    }
-    
-    /// Annulla la registrazione senza inviare.
-    func cancelRecording() {
-        audioRecorder?.stop()
-        recordingTimer?.invalidate()
-        recordingTimer    = nil
-        isRecording       = false
-        recordingDuration = 0
-        if let url = recordingURL { try? FileManager.default.removeItem(at: url) }
-        recordingURL  = nil
-        audioRecorder = nil
-        KBLog.data.info("ChatVM recording cancelled")
-    }
-    
-    private func uploadAndSendAudio(data: Data, duration: Int) async {
-        guard let modelContext else { return }
-        
-        let uid        = Auth.auth().currentUser?.uid ?? "local"
-        let senderName = senderDisplayName()
-        let messageId  = UUID().uuidString
-        let now        = Date()
-        
-        isUploadingMedia = true
-        uploadProgress   = 0
-        
-        let msg = KBChatMessage(
-            id:                   messageId,
-            familyId:             familyId,
-            senderId:             uid,
-            senderName:           senderName,
-            type:                 .audio,
-            mediaDurationSeconds: duration,
-            createdAt:            now
-        )
-        msg.syncState = .pendingUpsert
-        modelContext.insert(msg)
-        try? modelContext.save()
-        reloadLocal()
-        
-        do {
-            let (storagePath, downloadURL) = try await storageService.upload(
-                data:      data,
-                familyId:  familyId,
-                messageId: messageId,
-                fileName:  "audio.m4a",
-                mimeType:  "audio/x-m4a",
-                progressHandler: { [weak self] p in
-                    Task { @MainActor in self?.uploadProgress = p }
-                }
-            )
-            
-            msg.mediaStoragePath     = storagePath
-            msg.mediaURL             = downloadURL
-            msg.mediaDurationSeconds = duration
-            msg.syncState            = .pendingUpsert
-            try? modelContext.save()
-            
-            let dto = makeDTO(from: msg)
-            try await remoteStore.upsert(dto: dto)
-            
-            msg.syncState     = .synced
-            msg.lastSyncError = nil
-            try? modelContext.save()
-            
-            KBLog.data.info("ChatVM sendAudio OK msgId=\(messageId)")
-            
-        } catch {
-            msg.syncState     = .error
-            msg.lastSyncError = error.localizedDescription
-            try? modelContext.save()
-            errorText = "Invio audio fallito: \(error.localizedDescription)"
-        }
-        
-        isUploadingMedia = false
-        uploadProgress   = 0
-        reloadLocal()
+        uploadProgress = 0
     }
     
     // MARK: - ─── SEND (core) ─────────────────────────────────────────────────
@@ -967,20 +904,20 @@ final class ChatViewModel: ObservableObject {
     private func send(type: KBChatMessageType, text: String? = nil) {
         guard let modelContext else { return }
         
-        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let uid = Auth.auth().currentUser?.uid ?? "local"
         let senderName = senderDisplayName()
-        let messageId  = UUID().uuidString
-        let now        = Date()
+        let messageId = UUID().uuidString
+        let now = Date()
         
         isSending = true
         
         let msg = KBChatMessage(
-            id:        messageId,
-            familyId:  familyId,
-            senderId:  uid,
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
             senderName: senderName,
-            type:      type,
-            text:      text,
+            type: type,
+            text: text,
             createdAt: now
         )
         msg.syncState = .pendingUpsert
@@ -989,45 +926,40 @@ final class ChatViewModel: ObservableObject {
         try? modelContext.save()
         reloadLocal()
         
-        // Firestore immediato
         Task {
             let dto = makeDTO(from: msg)
             do {
                 try await remoteStore.upsert(dto: dto)
-                msg.syncState     = .synced
+                msg.syncState = .synced
                 msg.lastSyncError = nil
                 try? modelContext.save()
-                KBLog.data.info("ChatVM send OK msgId=\(messageId)")
             } catch {
-                msg.syncState     = .error
+                msg.syncState = .error
                 msg.lastSyncError = error.localizedDescription
                 try? modelContext.save()
                 errorText = "Invio fallito: \(error.localizedDescription)"
             }
             isSending = false
-            reloadLocal()
         }
     }
     
-    /// Variante che include il riferimento al messaggio a cui si sta rispondendo.
-    /// Non altera gli altri flussi: crea un nuovo messaggio come sempre, ma valorizza `replyToId`.
     private func send(type: KBChatMessageType, text: String? = nil, replyToId: String?) {
         guard let modelContext else { return }
         
-        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let uid = Auth.auth().currentUser?.uid ?? "local"
         let senderName = senderDisplayName()
-        let messageId  = UUID().uuidString
-        let now        = Date()
+        let messageId = UUID().uuidString
+        let now = Date()
         
         isSending = true
         
         let msg = KBChatMessage(
-            id:        messageId,
-            familyId:  familyId,
-            senderId:  uid,
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
             senderName: senderName,
-            type:      type,
-            text:      text,
+            type: type,
+            text: text,
             createdAt: now
         )
         msg.replyToId = replyToId
@@ -1041,23 +973,21 @@ final class ChatViewModel: ObservableObject {
             let dto = makeDTO(from: msg)
             do {
                 try await remoteStore.upsert(dto: dto)
-                msg.syncState     = .synced
+                msg.syncState = .synced
                 msg.lastSyncError = nil
                 try? modelContext.save()
-                KBLog.data.info("ChatVM send OK msgId=\(messageId)")
             } catch {
-                msg.syncState     = .error
+                msg.syncState = .error
                 msg.lastSyncError = error.localizedDescription
                 try? modelContext.save()
                 errorText = "Invio fallito: \(error.localizedDescription)"
             }
             isSending = false
-            reloadLocal()
         }
     }
+    
     // MARK: - ─── REAZIONI ────────────────────────────────────────────────────
     
-    /// Aggiunge o rimuove una reazione emoji da un messaggio.
     func toggleReaction(_ emoji: String, on message: KBChatMessage) {
         guard let modelContext else { return }
         
@@ -1071,36 +1001,32 @@ final class ChatViewModel: ObservableObject {
             reactions[emoji, default: []].append(uid)
         }
         
-        message.reactions     = reactions
-        message.syncState     = .pendingUpsert
+        message.reactions = reactions
+        message.syncState = .pendingUpsert
         message.lastSyncError = nil
         try? modelContext.save()
-        reloadLocal()
         
-        // Firestore immediato
         Task {
             do {
                 try await remoteStore.updateReactions(
-                    familyId:      familyId,
-                    messageId:     message.id,
+                    familyId: familyId,
+                    messageId: message.id,
                     reactionsJSON: message.reactionsJSON
                 )
                 message.syncState = .synced
                 try? modelContext.save()
             } catch {
-                message.syncState     = .error
+                message.syncState = .error
                 message.lastSyncError = error.localizedDescription
                 try? modelContext.save()
             }
         }
     }
     
-    // MARK: - ─── CLEAR CHAT ──────────────────────────────────────────────────
+    // MARK: - ─── CLEAR / DELETE ──────────────────────────────────────────────
     
-    /// Elimina TUTTI i messaggi della famiglia — media su Storage + soft delete su Firestore + locale.
     func clearChat() {
         guard let modelContext else { return }
-        
         let snapshot = messages
         
         Task {
@@ -1117,143 +1043,83 @@ final class ChatViewModel: ObservableObject {
                     }
                 }
             }
+            
             await MainActor.run {
                 for msg in snapshot { modelContext.delete(msg) }
                 try? modelContext.save()
                 reloadLocal()
-                KBLog.data.info("ChatVM clearChat done — \(snapshot.count) msgs")
             }
         }
     }
     
-    // MARK: - ─── DELETE ───────────────────────────────────────────────────────
-    
-    /// Elimina un messaggio (soft delete su Firestore + rimozione locale).
     func deleteMessage(_ message: KBChatMessage) {
         guard let modelContext else { return }
         
         Task {
             do {
-                // Elimina media dallo Storage se presente
                 if let path = message.mediaStoragePath {
                     try? await storageService.delete(storagePath: path)
                 }
-                // Soft delete su Firestore
                 try await remoteStore.softDelete(familyId: familyId, messageId: message.id)
-                // Rimozione locale
                 modelContext.delete(message)
                 try? modelContext.save()
                 reloadLocal()
-                KBLog.data.info("ChatVM deleteMessage OK msgId=\(message.id)")
             } catch {
                 errorText = "Eliminazione fallita: \(error.localizedDescription)"
             }
         }
     }
     
-    // MARK: - Bulk delete (Selection mode)
-    
-    /// Elimina "per me": scrive `arrayUnion([myUID])` nel campo `deletedFor` su Firestore,
-    /// poi marca il messaggio come `isDeleted = true` localmente.
-    /// In questo modo la cancellazione sopravvive a disinstallazioni/reinstallazioni:
-    /// al prossimo sync `applyUpsert` vede il proprio UID in `deletedFor` e non mostra il messaggio.
     @MainActor
     func deleteMessagesLocally(ids: [String]) {
-        guard let modelContext else { return }
-        guard !ids.isEmpty else { return }
+        guard let modelContext, !ids.isEmpty else { return }
         
         let uid = Auth.auth().currentUser?.uid ?? ""
-        guard !uid.isEmpty else {
-            KBLog.data.kbError("deleteMessagesLocally: no authenticated user, aborting")
-            return
-        }
+        guard !uid.isEmpty else { return }
         
-        KBLog.data.kbInfo("deleteMessagesLocally: start count=\(ids.count) uid=\(uid)")
-        
-        // 1) Aggiorna subito la UI localmente (ottimistico)
-        var found = 0
-        var missing = 0
         for id in ids {
             let mid = id
             let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
             if let msg = try? modelContext.fetch(desc).first {
-                found += 1
                 msg.isDeleted = true
                 msg.syncState = .synced
                 msg.lastSyncError = nil
-                KBLog.data.debug("deleteMessagesLocally: mark deleted locally id=\(mid)")
-            } else {
-                missing += 1
-                KBLog.data.kbInfo("deleteMessagesLocally: not found locally id=\(mid)")
             }
         }
+        
         saveContext(modelContext, reason: "deleteMessagesLocally-optimistic")
         reloadLocal()
         
-        logDBStats(reason: "after deleteMessagesLocally found=\(found) missing=\(missing)")
-        
-        // 2) Persiste su Firestore: arrayUnion del proprio UID nel campo `deletedFor`
-        //    Se Firestore non è raggiungibile, al prossimo avvio il listener ritornerà
-        //    il documento senza il nostro UID in deletedFor, ma il record SwiftData
-        //    rimarrà isDeleted=true grazie al save ottimistico sopra.
-        //    La vera persistenza a prova di reinstallazione avviene quando la scrittura
-        //    Firestore ha successo.
         Task {
             await withTaskGroup(of: Void.self) { group in
                 for messageId in ids {
                     group.addTask {
-                        do {
-                            try await self.remoteStore.addToDeletedFor(
-                                familyId: self.familyId,
-                                messageId: messageId,
-                                uid: uid
-                            )
-                            await KBLog.data.debug("deleteMessagesLocally: Firestore deletedFor ok id=\(messageId)")
-                        } catch {
-                            await KBLog.data.kbError("deleteMessagesLocally: Firestore deletedFor FAILED id=\(messageId) err=\(error.localizedDescription)")
-                            // Non mostriamo errore all'utente: la UI è già aggiornata.
-                            // Al prossimo avvio, se SwiftData è intatto, isDeleted rimane true.
-                            // Se l'app viene reinstallata e Firestore non ha ancora il flag,
-                            // il messaggio potrebbe riapparire — accettabile come edge case.
-                        }
+                        try? await self.remoteStore.addToDeletedFor(
+                            familyId: self.familyId,
+                            messageId: messageId,
+                            uid: uid
+                        )
                     }
                 }
             }
         }
     }
     
-    /// Elimina "per tutti": soft delete remoto (Firestore) + pulizia media su Storage + hide locale.
     func deleteMessagesRemotely(ids: [String]) {
-        guard let modelContext else {
-            KBLog.data.error("deleteMessagesRemotely: modelContext is nil")
-            return
-        }
-        guard !ids.isEmpty else {
-            KBLog.data.debug("deleteMessagesRemotely: empty ids → noop")
-            return
-        }
+        guard let modelContext, !ids.isEmpty else { return }
         
         let uid = Auth.auth().currentUser?.uid ?? ""
         let now = Date()
         
-        // Snapshot dei messaggi selezionati (dalla lista UI corrente)
         let selected = messages.filter { ids.contains($0.id) }
-        guard !selected.isEmpty else {
-            KBLog.data.warning("deleteMessagesRemotely: no selected messages in memory for ids count=\(ids.count, privacy: .public)")
-            return
-        }
+        guard !selected.isEmpty else { return }
         
-        KBLog.data.info("deleteMessagesRemotely: start selected=\(selected.count, privacy: .public)")
-        
-        // Check difensivo: solo miei + entro 5 minuti
         guard selected.allSatisfy({ $0.senderId == uid }) else {
-            KBLog.data.warning("deleteMessagesRemotely: blocked (contains non-owned messages) uid=\(uid, privacy: .private)")
             errorText = "Puoi eliminare per tutti solo messaggi inviati da te."
             return
         }
         
         guard selected.allSatisfy({ now.timeIntervalSince($0.createdAt) <= 300 }) else {
-            KBLog.data.warning("deleteMessagesRemotely: blocked (older than 5 min)")
             errorText = "Puoi eliminare per tutti solo entro 5 minuti dall'invio."
             return
         }
@@ -1263,50 +1129,29 @@ final class ChatViewModel: ObservableObject {
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     for msg in selected {
                         group.addTask {
-                            // 1) Storage cleanup (best-effort)
                             if let path = msg.mediaStoragePath {
-                                await KBLog.data.debug("deleteMessagesRemotely: storage delete start path=\(path, privacy: .private)")
-                                do {
-                                    try await self.storageService.delete(storagePath: path)
-                                    await KBLog.data.debug("deleteMessagesRemotely: storage delete ok path=\(path, privacy: .private)")
-                                } catch {
-                                    await KBLog.data.warning("deleteMessagesRemotely: storage delete failed path=\(path, privacy: .private) err=\(error.localizedDescription, privacy: .public)")
-                                }
+                                try? await self.storageService.delete(storagePath: path)
                             }
-                            
-                            // 2) Soft delete remoto
-                            await KBLog.data.debug("deleteMessagesRemotely: softDelete start id=\(msg.id, privacy: .private)")
                             try await self.remoteStore.softDelete(
                                 familyId: self.familyId,
                                 messageId: msg.id
                             )
-                            await KBLog.data.debug("deleteMessagesRemotely: softDelete ok id=\(msg.id, privacy: .private)")
                         }
                     }
                     try await group.waitForAll()
                 }
                 
                 await MainActor.run {
-                    // Hide locale (tombstone locale)
                     for msg in selected {
                         msg.isDeleted = true
                         msg.syncState = .synced
                         msg.lastSyncError = nil
                     }
-                    
-                    do {
-                        try modelContext.save()
-                        KBLog.data.info("deleteMessagesRemotely: local save ok count=\(selected.count, privacy: .public)")
-                    } catch {
-                        KBLog.data.error("deleteMessagesRemotely: local save failed err=\(error.localizedDescription, privacy: .public)")
-                    }
-                    
+                    try? modelContext.save()
                     self.reloadLocal()
                 }
-                
             } catch {
                 await MainActor.run {
-                    KBLog.data.error("deleteMessagesRemotely: remote softDelete failed err=\(error.localizedDescription, privacy: .public)")
                     self.errorText = "Eliminazione per tutti fallita: \(error.localizedDescription)"
                 }
             }
@@ -1315,61 +1160,61 @@ final class ChatViewModel: ObservableObject {
     
     // MARK: - ─── READ RECEIPTS ───────────────────────────────────────────────
     
-    /// Chiamato da ChatView quando i messaggi diventano visibili.
-    /// Segna come letti tutti i messaggi degli altri che l'utente non ha ancora letto.
     func markVisibleMessagesAsRead() {
         let uid = Auth.auth().currentUser?.uid ?? ""
         guard !uid.isEmpty else { return }
         
-        // Solo i messaggi di altri, non ancora letti da me, già sincronizzati
-        let unread = messages.filter { msg in
-            msg.senderId != uid &&
-            !msg.readBy.contains(uid) &&
-            msg.syncState == .synced
+        let unread = messages.filter {
+            $0.senderId != uid &&
+            !$0.readBy.contains(uid) &&
+            $0.syncState == .synced
         }
         guard !unread.isEmpty else { return }
         
         let ids = unread.map(\.id)
-        
-        // Aggiorna localmente subito (UI reattiva)
         guard let modelContext else { return }
+        
         for msg in unread {
             var rb = msg.readBy
             rb.append(uid)
             msg.readBy = rb
         }
         try? modelContext.save()
-        reloadLocal()
         
-        // Poi su Firestore in background
+        // IMPORTANT: niente reloadLocal qui (è una delle cause di stutter)
         Task {
-            try? await remoteStore.markAsRead(familyId: familyId, messageIds: ids, uid: uid)
+            try? await remoteStore.markAsRead(
+                familyId: familyId,
+                messageIds: ids,
+                uid: uid
+            )
         }
     }
     
+    // MARK: - ─── SEND LOCATION ───────────────────────────────────────────────
     
     func sendLocation(latitude: Double, longitude: Double) {
-        guard let modelContext else { return }
-        guard !familyId.isEmpty else { return }
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let modelContext,
+              !familyId.isEmpty,
+              let uid = Auth.auth().currentUser?.uid else { return }
         
         let senderName = senderDisplayName()
-        let messageId  = UUID().uuidString
-        let now        = Date()
+        let messageId = UUID().uuidString
+        let now = Date()
         
         isSending = true
         
         let msg = KBChatMessage(
-            id:        messageId,
-            familyId:  familyId,
-            senderId:  uid,
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
             senderName: senderName,
-            type:      .location,
-            text:      nil,
+            type: .location,
+            text: nil,
             createdAt: now
         )
         
-        msg.latitude  = latitude
+        msg.latitude = latitude
         msg.longitude = longitude
         msg.syncState = .pendingUpsert
         
@@ -1379,18 +1224,14 @@ final class ChatViewModel: ObservableObject {
         
         Task {
             let dto = makeDTO(from: msg)
-            
             do {
                 try await remoteStore.upsert(dto: dto)
-                
                 await MainActor.run {
                     msg.syncState = .synced
                     msg.lastSyncError = nil
                     try? modelContext.save()
                     self.isSending = false
-                    self.reloadLocal()
                 }
-                
             } catch {
                 await MainActor.run {
                     msg.syncState = .error
@@ -1398,7 +1239,6 @@ final class ChatViewModel: ObservableObject {
                     try? modelContext.save()
                     self.errorText = "Invio posizione fallito: \(error.localizedDescription)"
                     self.isSending = false
-                    self.reloadLocal()
                 }
             }
         }
@@ -1408,21 +1248,19 @@ final class ChatViewModel: ObservableObject {
     
     private func senderDisplayName() -> String {
         guard let modelContext else { return "Utente" }
+        
         let uid = Auth.auth().currentUser?.uid ?? ""
         guard !uid.isEmpty else { return "Utente" }
         
         let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
         guard let profile = try? modelContext.fetch(desc).first else { return "Utente" }
         
-        // 1) prova a costruire nome "canonico" da first/last (se li hai)
         let first = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let last  = (profile.lastName  ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let canonical = "\(first) \(last)".trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // 2) il displayName salvato (quello che la chat usava finora)
         let stored = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // 3) scegli cosa usare
         let chosen: String
         if !canonical.isEmpty {
             chosen = canonical
@@ -1432,7 +1270,6 @@ final class ChatViewModel: ObservableObject {
             chosen = "Utente"
         }
         
-        // 4) auto-fix: se ho canonical e differisce da stored, aggiorno e salvo
         if !canonical.isEmpty, canonical != stored {
             profile.displayName = canonical
             profile.updatedAt = Date()
@@ -1444,40 +1281,37 @@ final class ChatViewModel: ObservableObject {
     
     private func makeDTO(from msg: KBChatMessage) -> RemoteChatMessageDTO {
         RemoteChatMessageDTO(
-            id:                   msg.id,
-            familyId:             msg.familyId,
-            senderId:             msg.senderId,
-            senderName:           msg.senderName,
-            typeRaw:              msg.typeRaw,
-            text:                 msg.text,
-            mediaStoragePath:     msg.mediaStoragePath,
-            mediaURL:             msg.mediaURL,
+            id: msg.id,
+            familyId: msg.familyId,
+            senderId: msg.senderId,
+            senderName: msg.senderName,
+            typeRaw: msg.typeRaw,
+            text: msg.text,
+            mediaStoragePath: msg.mediaStoragePath,
+            mediaURL: msg.mediaURL,
             mediaDurationSeconds: msg.mediaDurationSeconds,
-            mediaThumbnailURL:    msg.mediaThumbnailURL,
-            replyToId:            msg.replyToId,
-            reactionsJSON:        msg.reactionsJSON,
-            readByJSON:           nil,   // readBy è gestito solo da markAsRead
-            createdAt:            msg.createdAt,
-            editedAt:             msg.editedAt,
-            isDeleted:            msg.isDeleted,
-            deletedFor:           [],
-            latitude:             msg.latitude,
-            longitude:            msg.longitude
+            mediaThumbnailURL: msg.mediaThumbnailURL,
+            replyToId: msg.replyToId,
+            reactionsJSON: msg.reactionsJSON,
+            readByJSON: nil,
+            createdAt: msg.createdAt,
+            editedAt: msg.editedAt,
+            isDeleted: msg.isDeleted,
+            deletedFor: [],
+            latitude: msg.latitude,
+            longitude: msg.longitude
         )
     }
 }
 
 // MARK: - ListenerRegistrationProtocol
 
-/// Protocollo per rendere testabile il listener di Firestore.
 protocol ListenerRegistrationProtocol {
     func remove()
 }
 
-/// Wrapper concreto che adatta ListenerRegistration al protocollo.
-/// Non usiamo extension con inheritance perché ListenerRegistration
 final class FirestoreListenerWrapper: ListenerRegistrationProtocol {
-    private let inner:  ListenerRegistration
+    private let inner: ListenerRegistration
     init(_ inner: any ListenerRegistration) { self.inner = inner }
     func remove() { inner.remove() }
 }
@@ -1485,29 +1319,27 @@ final class FirestoreListenerWrapper: ListenerRegistrationProtocol {
 // MARK: - URL helpers
 
 private extension URL {
-    /// Restituisce un MIME type ragionevole basato sull'estensione del file.
     func mimeType() -> String {
-        let ext = self.pathExtension.lowercased()
-        switch ext {
-        case "pdf":             return "application/pdf"
-        case "doc":             return "application/msword"
-        case "docx":            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        case "xls":             return "application/vnd.ms-excel"
-        case "xlsx":            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        case "ppt":             return "application/vnd.ms-powerpoint"
-        case "pptx":            return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        case "txt":             return "text/plain"
-        case "csv":             return "text/csv"
-        case "zip":             return "application/zip"
-        case "rar":             return "application/x-rar-compressed"
-        case "png":             return "image/png"
-        case "jpg", "jpeg":     return "image/jpeg"
-        case "gif":             return "image/gif"
-        case "mp3":             return "audio/mpeg"
-        case "m4a":             return "audio/x-m4a"
-        case "mp4":             return "video/mp4"
-        case "mov":             return "video/quicktime"
-        default:                return "application/octet-stream"
+        switch pathExtension.lowercased() {
+        case "pdf":         return "application/pdf"
+        case "doc":         return "application/msword"
+        case "docx":        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "xls":         return "application/vnd.ms-excel"
+        case "xlsx":        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "ppt":         return "application/vnd.ms-powerpoint"
+        case "pptx":        return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        case "txt":         return "text/plain"
+        case "csv":         return "text/csv"
+        case "zip":         return "application/zip"
+        case "rar":         return "application/x-rar-compressed"
+        case "png":         return "image/png"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "gif":         return "image/gif"
+        case "mp3":         return "audio/mpeg"
+        case "m4a":         return "audio/x-m4a"
+        case "mp4":         return "video/mp4"
+        case "mov":         return "video/quicktime"
+        default:            return "application/octet-stream"
         }
     }
 }
