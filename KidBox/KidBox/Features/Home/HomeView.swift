@@ -368,7 +368,7 @@ enum HomeDestination {
     case notes, todo, calendar, care
     case chat, document, expenses, timeline
     case familyLocation(familyId: String), familyPhotos, familySettings
-    case askExpert, profile, settings, inviteCode, shopping
+    case askExpert, profile, settings, inviteCode, shopping(familyId: String)
     
     /// Mappa verso il Route dell'AppCoordinator.
     var route: Route {
@@ -388,7 +388,7 @@ enum HomeDestination {
         case .profile:                       return .profile
         case .settings:                      return .settings
         case .inviteCode:                    return .inviteCode
-        case .shopping:                      return .shoppingList
+        case .shopping(let familyID):        return .shoppingList(familyId: familyID)
         }
     }
 }
@@ -515,9 +515,9 @@ private struct HomeCardGrid: View {
             
         case .shopping:
             ZStack(alignment: .topTrailing) {
-                HomeCardView(title: "Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
+                HomeCardView(title: "Lista della Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
                     KBLog.navigation.debug("Home: tap Shopping")
-                    onNavigate(.shopping) // ricordati di aggiungere HomeDestination.shopping + route
+                    onNavigate(.shopping(familyId: familyId))
                 }
                 if badge.shopping > 0 {
                     BadgeView(count: badge.shopping)

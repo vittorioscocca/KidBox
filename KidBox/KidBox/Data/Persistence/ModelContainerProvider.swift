@@ -44,7 +44,8 @@ enum ModelContainerProvider {
             KBDocument.self,
             KBDocumentCategory.self,
             KBSyncOp.self,
-            KBChatMessage.self
+            KBChatMessage.self,
+            KBGroceryItem.self
         ])
         
         let configuration = ModelConfiguration(

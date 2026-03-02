@@ -244,8 +244,8 @@ final class AppCoordinator: ObservableObject {
             ChatView()
         case let .familyLocation(familyId):
             FamilyLocationView(familyId:  familyId)
-        case .shoppingList:
-            ShoppingListView()
+        case .shoppingList(familyId: let familyId):
+            GroceryListView(familyId: familyId)
         case .todoList(familyId: let familyId, childId: let childId, listId: let listId):
             TodoListView(
                 familyId: familyId,

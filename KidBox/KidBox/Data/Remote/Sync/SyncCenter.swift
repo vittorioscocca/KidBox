@@ -34,6 +34,7 @@ final class SyncCenter: ObservableObject {
     private var todoListener: ListenerRegistration?
     private var todoListListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
+    var groceryListener: ListenerRegistration?
     
     private let membersRemote = FamilyMemberRemoteStore()
     
@@ -452,6 +453,36 @@ final class SyncCenter: ObservableObject {
             
         } catch {
             KBLog.sync.kbError("applyMembersInbound failed: \(error.localizedDescription)")
+        }
+    }
+    
+    func flushGrocery(modelContext: ModelContext) async {
+        guard !isFlushing else { return }
+        isFlushing = true
+        defer { isFlushing = false }
+        
+        do {
+            let now = Date()
+            let et = SyncEntityType.grocery.rawValue
+            let desc = FetchDescriptor<KBSyncOp>(
+                predicate: #Predicate { $0.entityTypeRaw == et && $0.nextRetryAt <= now },
+                sortBy: [SortDescriptor(\KBSyncOp.createdAt, order: .forward)]
+            )
+            let ops = try modelContext.fetch(desc)
+            for op in ops {
+                do {
+                    try await processGrocery(op: op, modelContext: modelContext)
+                    modelContext.delete(op)
+                    try? modelContext.save()
+                } catch {
+                    op.attempts += 1
+                    op.lastError = error.localizedDescription
+                    op.nextRetryAt = Date().addingTimeInterval(backoffSeconds(attempts: op.attempts))
+                    try? modelContext.save()
+                }
+            }
+        } catch {
+            KBLog.sync.kbError("flushGrocery fetch failed: \(error.localizedDescription)")
         }
     }
     
