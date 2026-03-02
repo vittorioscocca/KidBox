@@ -13,4 +13,5 @@ enum SyncEntityType: String {
     case familyBundle
     case todoList
     case grocery
+    case note
 }

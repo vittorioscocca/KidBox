@@ -35,6 +35,7 @@ final class SyncCenter: ObservableObject {
     private var todoListListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
     var groceryListener: ListenerRegistration?
+    var notesListener: ListenerRegistration?
     
     private let membersRemote = FamilyMemberRemoteStore()
     
@@ -211,25 +212,6 @@ final class SyncCenter: ObservableObject {
     func startMembersRealtime(familyId: String, modelContext: ModelContext) {
         KBLog.sync.kbInfo("startMembersRealtime familyId=\(familyId)")
         stopMembersRealtime()
-        
-        // Leggi il displayName canonico da KBUserProfile prima di fare l'upsert,
-        // così Firestore riceve il nome giusto e non quello (vecchio) di Firebase Auth.
-        let myDisplayName: String? = {
-            guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return nil }
-            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
-            guard let profile = try? modelContext.fetch(desc).first else { return nil }
-            let dn = (profile.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            if !dn.isEmpty && dn != "Utente" { return dn }
-            let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let composed = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
-            return composed.isEmpty ? nil : composed
-        }()
-        
-        // Best-effort: populate "my" profile on Firestore (non-blocking)
-        Task { [familyId, myDisplayName] in
-            await membersRemote.upsertMyMemberProfileIfNeeded(familyId: familyId, displayName: myDisplayName)
-        }
         
         membersListener = membersRemote.listenMembers(
             familyId: familyId,
@@ -489,6 +471,7 @@ final class SyncCenter: ObservableObject {
     // MARK: - Remotes (default)
     
     private let todoRemote = TodoRemoteStore()
+    let notesRemote = NotesRemoteStore()
     
     // MARK: - Auto flush
     
@@ -700,6 +683,9 @@ final class SyncCenter: ObservableObject {
             case SyncEntityType.event.rawValue:
                 throw NSError(domain: "KidBox.Sync", code: -2002,
                               userInfo: [NSLocalizedDescriptionKey: "Event sync not implemented yet"])
+            
+            case SyncEntityType.note.rawValue:
+                try await processNote(op: op, modelContext: modelContext)
                 
             case SyncEntityType.familyBundle.rawValue:
                 try await self.processFamilyBundle(op: op, modelContext: modelContext)

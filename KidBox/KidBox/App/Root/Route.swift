@@ -50,4 +50,14 @@ enum Route: Hashable {
     
     case setupFamily               // create
     case editFamily(familyId: String, childId: String) // edit
+    
+    // MARK: - Pediatria
+    case pediatricHome(familyId: String, childId: String)
+    case pediatricMedicalRecord(familyId: String, childId: String)
+    case pediatricVisits(familyId: String, childId: String)
+    case pediatricVaccines(familyId: String, childId: String)
+    case pediatricTreatments(familyId: String, childId: String)
+    // MARK: - Note
+    case notesHome(familyId: String)
+    case noteDetail(familyId: String, noteId: String)
 }

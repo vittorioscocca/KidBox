@@ -130,7 +130,7 @@ struct GroceryEditView: View {
         let trimmedCategory = category.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedNotes    = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        let remote = GroceryRemoteStore()
+        let _ = GroceryRemoteStore()
         
         if let id = itemIdToEdit {
             // Update existing

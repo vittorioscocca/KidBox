@@ -365,22 +365,22 @@ struct HomeView: View {
 // MARK: - HomeDestination
 
 enum HomeDestination {
-    case notes, todo, calendar, care
-    case chat, document, expenses, timeline
+    case notes(familyId: String), todo, calendar, care
+    case chat, document, expenses
     case familyLocation(familyId: String), familyPhotos, familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
+    case pediatric(familyId: String, childId: String)
     
     /// Mappa verso il Route dell'AppCoordinator.
     var route: Route {
         switch self {
-        case .notes:                         return .calendar
+        case .notes(let familyId):           return .notesHome(familyId: familyId)
         case .todo:                          return .todo
         case .calendar:                      return .calendar
-        case .care:                          return .calendar
+        case .care:                          return .calendar  // legacy, non usato
         case .chat:                          return .chat
         case .document:                      return .document
         case .expenses:                      return .calendar
-        case .timeline:                      return .calendar
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
         case .familyPhotos:                  return .calendar
         case .familySettings:                return .familySettings
@@ -389,6 +389,7 @@ enum HomeDestination {
         case .settings:                      return .settings
         case .inviteCode:                    return .inviteCode
         case .shopping(let familyID):        return .shoppingList(familyId: familyID)
+        case .pediatric(let fid, let cid):   return .pediatricHome(familyId: fid, childId: cid)
         }
     }
 }
@@ -431,7 +432,6 @@ private enum HomeCardID: String, CaseIterable, Codable {
     case chat
     case documents
     case expenses
-    case timeline
     case location
     case photos
     case family
@@ -497,7 +497,7 @@ private struct HomeCardGrid: View {
         case .note:
             HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
                 KBLog.navigation.debug("Home: tap Notes")
-                onNavigate(.notes)
+                onNavigate(.notes(familyId: familyId))
             }
             
         case .todo:
@@ -533,9 +533,9 @@ private struct HomeCardGrid: View {
             }
             
         case .care:
-            HomeCardView(title: "Cure", subtitle: "Promemoria e fatto/non fatto", systemImage: "cross.case", tint: .red) {
+            HomeCardView(title: "Pediatria", subtitle: "Baby tracker", systemImage: "cross.case", tint: .red) {
                 KBLog.navigation.debug("Home: tap Care")
-                onNavigate(.care)
+                onNavigate(.pediatric(familyId: familyId, childId: ""))
             }
             
         case .chat:
@@ -568,12 +568,6 @@ private struct HomeCardGrid: View {
             HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
                 KBLog.navigation.debug("Home: tap Expenses")
                 onNavigate(.expenses)
-            }
-            
-        case .timeline:
-            HomeCardView(title: "Timeline", subtitle: "Storia e tappe", systemImage: "clock.arrow.circlepath", tint: .indigo) {
-                KBLog.navigation.debug("Home: tap Timeline")
-                onNavigate(.timeline)
             }
             
         case .location:
@@ -626,7 +620,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .timeline, .location, .photos, .family, .expert]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .location, .photos, .family, .expert]
     }
     
     private func loadOrder() -> [HomeCardID]? {

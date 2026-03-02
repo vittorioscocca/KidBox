@@ -254,6 +254,20 @@ final class AppCoordinator: ObservableObject {
             )
         case .todoSmart(familyId: let familyId, childId: let childId, kind: let kind):
             TodoSmartListView(familyId: familyId, childId: childId, kind: kind)
+        case .pediatricHome(familyId: let familyId, childId: let childId):
+            PediatricHomeView(familyId: familyId, childId: childId)
+        case .pediatricMedicalRecord(familyId: let familyId, childId: let childId):
+            PediatricHomeView(familyId: familyId, childId: childId)
+        case .pediatricVisits(familyId: let familyId, childId: let childId):
+            PediatricHomeView(familyId: familyId, childId: childId)
+        case .pediatricVaccines(familyId: let familyId, childId: let childId):
+            PediatricHomeView(familyId: familyId, childId: childId)
+        case .pediatricTreatments(familyId: let familyId, childId: let childId):
+            PediatricHomeView(familyId: familyId, childId: childId)
+        case .notesHome(familyId: let familyId):
+            NotesHomeView(familyId: familyId)
+        case .noteDetail(familyId: let familyId, noteId: let noteId):
+            NoteDetailView(familyId: familyId, noteId: noteId)
         }
     }
     
