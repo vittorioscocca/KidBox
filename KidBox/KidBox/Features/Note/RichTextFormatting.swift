@@ -200,6 +200,10 @@ final class RichTextFormatter {
     }
     
     private static func toggleList(kind: ListKind, in tv: UITextView) {
+        if kind == .checklist {
+            toggleChecklistPrefix(in: tv)
+            return
+        }
         let sel  = tv.selectedRange
         let ns   = tv.attributedText.string as NSString
         let effective: NSRange = sel.length > 0
@@ -237,6 +241,130 @@ final class RichTextFormatter {
         : NSRange(location: effective.location + effective.length, length: 0)
     }
     
+    private static func toggleChecklistPrefix(in tv: UITextView) {
+        let full = tv.attributedText ?? NSAttributedString()
+        let ms = NSMutableAttributedString(attributedString: full)
+        
+        let sel = tv.selectedRange
+        let ns = ms.string as NSString
+        let fullLen = ns.length
+        if fullLen == 0 { return }
+        
+        let effective: NSRange = sel.length > 0
+        ? NSRange(location: max(0, min(sel.location, fullLen)), length: max(0, min(sel.length, fullLen - max(0, min(sel.location, fullLen)))))
+        : ns.paragraphRange(for: NSRange(location: max(0, min(sel.location, fullLen - 1)), length: 0))
+        
+        // 1) Precompute paragraph ranges ONCE (no mutations while collecting)
+        let expanded = ns.paragraphRange(for: effective)
+        var paragraphs: [NSRange] = []
+        
+        var idx = expanded.location
+        while idx < expanded.location + expanded.length, idx < fullLen {
+            let pr = ns.paragraphRange(for: NSRange(location: idx, length: 0))
+            if pr.length == 0 { break }
+            paragraphs.append(pr)
+            let next = pr.location + pr.length
+            if next <= idx { break }
+            idx = next
+        }
+        
+        if paragraphs.isEmpty { return }
+        
+        // 2) Decide if we are removing (allHave) or adding
+        var allHave = true
+        for pr in paragraphs {
+            let line = ns.substring(with: pr).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !(line.hasPrefix("○ ") || line.hasPrefix("◉ ")) {
+                allHave = false
+                break
+            }
+        }
+        
+        // 3) Mutate in REVERSE so earlier ranges don't shift
+        for prOriginal in paragraphs.reversed() {
+            let currentNS = ms.string as NSString
+            let curLen = currentNS.length
+            if curLen == 0 { break }
+            
+            // Clamp paragraph range to current length (because ms may have changed)
+            let prLoc = max(0, min(prOriginal.location, curLen))
+            let prEnd = min(prLoc + prOriginal.length, curLen)
+            let prLen = max(0, prEnd - prLoc)
+            if prLen == 0 { continue }
+            let pr = NSRange(location: prLoc, length: prLen)
+            
+            var line = currentNS.substring(with: pr)
+            let hasNL = line.hasSuffix("\n")
+            if hasNL { line.removeLast() }
+            
+            let lineLen = max(0, pr.length - (hasNL ? 1 : 0))
+            if lineLen == 0 { continue }
+            let lineRange = NSRange(location: pr.location, length: lineLen)
+            
+            let str = currentNS.substring(with: lineRange)
+            
+            // safe paragraphStyle fetch index
+            let styleIndex = min(max(0, pr.location), ms.length - 1)
+            let ps = (ms.attribute(.paragraphStyle, at: styleIndex, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle
+            ?? NSMutableParagraphStyle()
+            
+            if allHave {
+                // remove prefix "○ " / "◉ "
+                if str.hasPrefix("○ ") || str.hasPrefix("◉ ") {
+                    if lineRange.location + 2 <= ms.length {
+                        ms.replaceCharacters(in: NSRange(location: lineRange.location, length: 2), with: "")
+                    }
+                }
+                
+                ps.firstLineHeadIndent = 0
+                ps.headIndent = 0
+                ps.tabStops = []
+                ps.defaultTabInterval = 0
+                ps.textLists = []
+                
+                // Apply style (clamped)
+                let safePrEnd = min(pr.location + pr.length, ms.length)
+                let safePr = NSRange(location: pr.location, length: max(0, safePrEnd - pr.location))
+                if safePr.length > 0 {
+                    ms.addAttribute(.paragraphStyle, value: ps, range: safePr)
+                }
+                
+                // Clear checked styling (clamped)
+                let safeLineEnd = min(lineRange.location + lineRange.length, ms.length)
+                let safeLine = NSRange(location: lineRange.location, length: max(0, safeLineEnd - lineRange.location))
+                if safeLine.length > 0 {
+                    ms.removeAttribute(.strikethroughStyle, range: safeLine)
+                    ms.addAttribute(.foregroundColor, value: UIColor.label, range: safeLine)
+                }
+                
+            } else {
+                // add prefix if missing
+                if !(str.hasPrefix("○ ") || str.hasPrefix("◉ ")) {
+                    if lineRange.location <= ms.length {
+                        ms.replaceCharacters(in: NSRange(location: lineRange.location, length: 0), with: "○ ")
+                    }
+                }
+                
+                // indent to align after circle
+                let indent: CGFloat = 28
+                ps.firstLineHeadIndent = indent
+                ps.headIndent = indent
+                ps.tabStops = [NSTextTab(textAlignment: .left, location: indent)]
+                ps.defaultTabInterval = indent
+                ps.textLists = [] // IMPORTANT: not a bullet list
+                
+                let safePrEnd = min(pr.location + pr.length, ms.length)
+                let safePr = NSRange(location: pr.location, length: max(0, safePrEnd - pr.location))
+                if safePr.length > 0 {
+                    ms.addAttribute(.paragraphStyle, value: ps, range: safePr)
+                }
+            }
+        }
+        
+        tv.textStorage.setAttributedString(ms)
+        tv.selectedRange = sel
+    }
+    
     private static func allParagraphsHaveList(_ text: NSAttributedString,
                                               selection: NSRange,
                                               markerFormat: String) -> Bool {
@@ -256,54 +384,53 @@ final class RichTextFormatter {
     /// Returns true if a checklist marker was hit and toggled.
     @discardableResult
     static func handleChecklistTap(at point: CGPoint, in tv: UITextView) -> Bool {
-        let lm  = tv.layoutManager
-        let tc  = tv.textContainer
+        let lm = tv.layoutManager
+        let tc = tv.textContainer
         let ins = tv.textContainerInset
         let adj = CGPoint(x: point.x - ins.left, y: point.y - ins.top)
         
+        // solo se tap nella colonna marker
+        guard adj.x < 28 else { return false }
+        
         var frac: CGFloat = 0
-        let charIdx = lm.characterIndex(for: adj, in: tc,
-                                        fractionOfDistanceBetweenInsertionPoints: &frac)
-        let fullLen = tv.attributedText.length
-        guard charIdx < fullLen else { return false }
+        let idx = lm.characterIndex(for: adj, in: tc, fractionOfDistanceBetweenInsertionPoints: &frac)
+        let full = tv.attributedText ?? NSAttributedString()
+        guard full.length > 0, idx < full.length else { return false }
         
-        let ns        = tv.attributedText.string as NSString
-        let paraRange = ns.paragraphRange(for: NSRange(location: charIdx, length: 0))
+        let ns = full.string as NSString
+        let para = ns.paragraphRange(for: NSRange(location: idx, length: 0))
         
-        guard let ps   = tv.attributedText.attribute(.paragraphStyle,
-                                                     at: paraRange.location,
-                                                     effectiveRange: nil) as? NSParagraphStyle,
-              let item = ps.textLists.first,
-              item.markerFormat == .circle || item.markerFormat == .disc
-        else { return false }
+        var line = ns.substring(with: para)
+        if line.hasSuffix("\n") { line.removeLast() }
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Only react if tap is inside marker area
-        guard adj.x < ps.headIndent + 10 else { return false }
+        // IMPORTANT: solo checklist testuale, non liste bullet/numerate
+        guard trimmed.hasPrefix("○ ") || trimmed.hasPrefix("◉ ") else { return false }
         
-        let isChecked = (item.markerFormat == .disc)   // disc = filled = "checked"
-        let newFormat: NSTextList.MarkerFormat = isChecked ? .circle : .disc
-        let newList  = NSTextList(markerFormat: newFormat, options: 0)
+        let ms = NSMutableAttributedString(attributedString: full)
         
-        let newPS    = (ps.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
-        if !newPS.textLists.isEmpty { newPS.textLists[newPS.textLists.count - 1] = newList }
+        // toggle first char at paragraph start
+        let start = para.location
+        guard start < ms.length else { return false }
         
-        let text = mutableCopy(tv)
-        text.addAttribute(.paragraphStyle, value: newPS, range: paraRange)
+        let first = (ms.string as NSString).substring(with: NSRange(location: start, length: 1))
+        let willCheck = (first == "○")
+        ms.replaceCharacters(in: NSRange(location: start, length: 1), with: willCheck ? "◉" : "○")
         
-        // Visual feedback: strikethrough + gray when checked
-        let textRange = NSRange(
-            location: paraRange.location,
-            length: paraRange.length - (ns.substring(with: paraRange).hasSuffix("\n") ? 1 : 0)
-        )
-        if !isChecked {
-            text.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
-            text.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: textRange)
-        } else {
-            text.removeAttribute(.strikethroughStyle, range: textRange)
-            text.addAttribute(.foregroundColor, value: UIColor.label, range: textRange)
+        // style whole line (no newline)
+        let hasNL = ns.substring(with: para).hasSuffix("\n")
+        let lineRange = NSRange(location: para.location, length: max(0, para.length - (hasNL ? 1 : 0)))
+        if lineRange.length > 0, lineRange.location + lineRange.length <= ms.length {
+            if willCheck {
+                ms.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: lineRange)
+                ms.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: lineRange)
+            } else {
+                ms.removeAttribute(.strikethroughStyle, range: lineRange)
+                ms.addAttribute(.foregroundColor, value: UIColor.label, range: lineRange)
+            }
         }
         
-        tv.textStorage.setAttributedString(text)
+        tv.textStorage.setAttributedString(ms)
         return true
     }
     

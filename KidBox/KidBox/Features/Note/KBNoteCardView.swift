@@ -1,18 +1,19 @@
 //
-//  NoteCardView.swift
+//  KBNoteCardView.swift
 //  KidBox
-//
-//  Created by vscocca on 02/03/26.
 //
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct KBNoteCardView: View {
     let note: KBNote
     let members: [KBFamilyMember]
-    /// Query corrente dalla home. Se vuota non viene applicato nessun highlight.
     var searchQuery: String = ""
+    
+    // ✅ Cache preview (plain text) to avoid heavy HTML parsing during render
+    @State private var previewPlain: String = " "
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -20,7 +21,7 @@ struct KBNoteCardView: View {
                 .font(.headline)
                 .lineLimit(1)
             
-            Text(highlightedText(note.body.isEmpty ? " " : note.body))
+            Text(highlightedText(previewPlain))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
@@ -46,12 +47,42 @@ struct KBNoteCardView: View {
         .frame(maxWidth: .infinity, minHeight: 110, maxHeight: 110, alignment: .leading)
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        // ✅ compute preview once, and recompute only when body changes
+        .task(id: note.body) {
+            await rebuildPreview(from: note.body)
+        }
+    }
+    
+    // MARK: - Preview building (async + cached)
+    
+    @MainActor
+    private func rebuildPreview(from htmlOrPlain: String) async {
+        // Fast path
+        let trimmed = htmlOrPlain.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            previewPlain = " "
+            return
+        }
+        if !trimmed.contains("<") {
+            // Already plain
+            previewPlain = trimmed
+            return
+        }
+        
+        // Heavy path: do it off the main thread
+        let result: String = await Task.detached(priority: .utility) {
+            return htmlOrPlain.htmlToPlainTextHeavy()
+        }.value
+        
+        let clean = result
+            .replacingOccurrences(of: "\u{00a0}", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        previewPlain = clean.isEmpty ? " " : clean
     }
     
     // MARK: - Highlight
     
-    /// Restituisce un AttributedString con tutte le occorrenze di `searchQuery`
-    /// evidenziate in giallo. Case e diacritic insensitive.
     private func highlightedText(_ input: String) -> AttributedString {
         var attributed = AttributedString(input)
         
@@ -62,10 +93,8 @@ struct KBNoteCardView: View {
         var searchRange = input.startIndex..<input.endIndex
         
         while let range = input.range(of: q, options: options, range: searchRange) {
-            // Converti Range<String.Index> → Range<AttributedString.Index>
             if let attrRange = Range(range, in: attributed) {
-                attributed[attrRange].backgroundColor = .yellow
-                attributed[attrRange].foregroundColor = .black
+                attributed[attrRange].backgroundColor = .yellow.opacity(0.35)
             }
             searchRange = range.upperBound..<input.endIndex
         }
@@ -82,5 +111,24 @@ struct KBNoteCardView: View {
         if !name.isEmpty { return name }
         let email = (m.email ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return email.isEmpty ? "" : email
+    }
+}
+
+// MARK: - HTML -> plain text (heavy)
+
+private extension String {
+    /// Heavy conversion: call this off-main (uses NSAttributedString HTML importer).
+    func htmlToPlainTextHeavy() -> String {
+        guard let data = self.data(using: .utf8) else { return self }
+        
+        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+            .documentType: NSAttributedString.DocumentType.html,
+            .characterEncoding: String.Encoding.utf8.rawValue
+        ]
+        
+        if let attr = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
+            return attr.string
+        }
+        return self
     }
 }

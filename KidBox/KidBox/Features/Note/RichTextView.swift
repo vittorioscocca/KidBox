@@ -91,19 +91,17 @@ struct RichTextView: UIViewRepresentable {
         }
         
         // ✅ Toolbar sopra tastiera (stabile, stile Notes)
+        // ✅ Toolbar sopra tastiera (stabile, stile Notes)
         let accessory = RichTextAccessoryView(
-            onCommand: { cmd in
-                RichTextFormatter.toggle(cmd, in: tv)
-            },
             onDismiss: { tv.resignFirstResponder() }
         )
-        tv.inputAccessoryView = accessory
         
-        // (opzionale) tap recognizer checklist se lo usi
+        tv.inputAccessoryView = accessory
         let tapGR = UITapGestureRecognizer(target: context.coordinator,
                                            action: #selector(Coordinator.handleChecklistTap(_:)))
         tapGR.delegate = context.coordinator
         tv.addGestureRecognizer(tapGR)
+        accessory.attach(to: tv)
         
         return tv
     }
@@ -157,7 +155,19 @@ struct RichTextView: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             guard !isProgrammaticUpdate else { return }
             if isShowingPlaceholder { return }
+            
             parent.html = textView.attributedText.toHTML() ?? ""
+            
+            if let acc = textView.inputAccessoryView as? RichTextAccessoryView {
+                acc.refreshFromTextView()
+            }
+        }
+        
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            guard !isProgrammaticUpdate else { return }
+            if let acc = textView.inputAccessoryView as? RichTextAccessoryView {
+                acc.refreshFromTextView()
+            }
         }
         
         // Checklist tap (optional)
@@ -165,8 +175,8 @@ struct RichTextView: UIViewRepresentable {
             guard let tv = gr.view as? UITextView else { return }
             let pt = gr.location(in: tv)
             if RichTextFormatter.handleChecklistTap(at: pt, in: tv) {
-                guard !isShowingPlaceholder else { return }
                 parent.html = tv.attributedText.toHTML() ?? ""
+                (tv.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
             }
         }
         
@@ -217,6 +227,92 @@ struct RichTextView: UIViewRepresentable {
             
             tv.textStorage.setAttributedString(full)
             tv.selectedRange = NSRange(location: clampedSel.location + insertedLen, length: 0)
+            return true
+        }
+        
+        func textView(_ textView: UITextView,
+                      shouldChangeTextIn range: NSRange,
+                      replacementText text: String) -> Bool {
+            
+            // Auto-continue checklist on Return
+            if text == "\n" {
+                return handleChecklistReturn(textView, range: range)
+            }
+            
+            // Exit checklist on backspace when item is empty (optional but consigliato)
+            if text.isEmpty, range.length == 1 {
+                return handleChecklistBackspace(textView, range: range)
+            }
+            
+            return true
+        }
+        
+        private func handleChecklistReturn(_ tv: UITextView, range: NSRange) -> Bool {
+            let full = tv.attributedText ?? NSAttributedString()
+            let ns = full.string as NSString
+            let fullLen = ns.length
+            let loc = max(0, min(range.location, fullLen))
+            
+            // current paragraph
+            let paraRange = ns.paragraphRange(for: NSRange(location: loc, length: 0))
+            var line = ns.substring(with: paraRange)
+            if line.hasSuffix("\n") { line.removeLast() }
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Only if this is a checklist line (○ / ◉)
+            let isChecklist = trimmed.hasPrefix("○ ") || trimmed.hasPrefix("◉ ")
+            guard isChecklist else { return true }
+            
+            // If the line is ONLY the marker (empty item) -> exit checklist (insert plain newline, remove marker)
+            if trimmed == "○" || trimmed == "◉" || trimmed == "○ " || trimmed == "◉ " {
+                let ms = NSMutableAttributedString(attributedString: full)
+                // remove first char marker at paragraph start if present
+                let start = paraRange.location
+                if start < ms.length {
+                    let firstChar = (ms.string as NSString).substring(with: NSRange(location: start, length: 1))
+                    if firstChar == "○" || firstChar == "◉" {
+                        // remove "○ " (2 chars) if available
+                        let removeLen = min(2, ms.length - start)
+                        ms.replaceCharacters(in: NSRange(location: start, length: removeLen), with: "")
+                    }
+                }
+                tv.textStorage.setAttributedString(ms)
+                // insert plain newline at caret
+                tv.insertText("\n")
+                return false
+            }
+            
+            // Otherwise: continue checklist with newline + "○ "
+            tv.insertText("\n○ ")
+            return false
+        }
+        
+        private func handleChecklistBackspace(_ tv: UITextView, range: NSRange) -> Bool {
+            let full = tv.attributedText ?? NSAttributedString()
+            let ns = full.string as NSString
+            let fullLen = ns.length
+            let loc = max(0, min(range.location, fullLen))
+            
+            let paraRange = ns.paragraphRange(for: NSRange(location: max(0, loc-1), length: 0))
+            var line = ns.substring(with: paraRange)
+            if line.hasSuffix("\n") { line.removeLast() }
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // If item is empty checklist -> remove marker and stop list
+            if trimmed == "○" || trimmed == "◉" || trimmed == "○ " || trimmed == "◉ " {
+                let ms = NSMutableAttributedString(attributedString: full)
+                let start = paraRange.location
+                if start < ms.length {
+                    let firstChar = (ms.string as NSString).substring(with: NSRange(location: start, length: 1))
+                    if firstChar == "○" || firstChar == "◉" {
+                        let removeLen = min(2, ms.length - start)
+                        ms.replaceCharacters(in: NSRange(location: start, length: removeLen), with: "")
+                    }
+                }
+                tv.textStorage.setAttributedString(ms)
+                return false
+            }
+            
             return true
         }
         
