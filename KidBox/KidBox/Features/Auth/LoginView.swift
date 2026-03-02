@@ -128,7 +128,7 @@ struct LoginView: View {
     
     private var logoSection: some View {
         VStack(spacing: 16) {
-            Image("AppIcon-Login")
+            Image("LoginIcon")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 52, height: 52)

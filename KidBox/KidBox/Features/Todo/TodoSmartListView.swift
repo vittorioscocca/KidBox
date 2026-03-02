@@ -23,6 +23,7 @@ struct TodoSmartListView: View {
     @State private var didStartRealtime = false
     @State private var showEditSheet = false
     @State private var editingTodoId: String? = nil
+    @State private var showDeleteAllCompletedAlert = false
     
     init(familyId: String, childId: String, kind: TodoSmartKind) {
         self.familyId = familyId
@@ -101,7 +102,24 @@ struct TodoSmartListView: View {
                         Image(systemName: "plus")
                     }
                 }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .destructive) {
+                        showDeleteAllCompletedAlert = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .disabled(filteredTodos.isEmpty)
+                }
             }
+        }
+        .alert("Elimina completati", isPresented: $showDeleteAllCompletedAlert) {
+            Button("Elimina", role: .destructive) {
+                deleteAllCompleted()
+            }
+            Button("Annulla", role: .cancel) {}
+        } message: {
+            Text("Vuoi eliminare tutti i to-do completati? L'operazione non è reversibile.")
         }
         .sheet(isPresented: $showEditSheet) {
             TodoEditView(
@@ -211,6 +229,26 @@ struct TodoSmartListView: View {
         
         SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: familyId, modelContext: modelContext)
         await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+    }
+    
+    private func deleteAllCompleted() {
+        Task { @MainActor in
+            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let now = Date()
+            
+            for todo in filteredTodos {
+                todo.isDeleted = true
+                todo.updatedBy = uid
+                todo.updatedAt = now
+                todo.syncState = .pendingDelete
+                todo.lastSyncError = nil
+                
+                SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: familyId, modelContext: modelContext)
+            }
+            
+            try? modelContext.save()
+            await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+        }
     }
     
     private func deleteTodos(offsets: IndexSet) {

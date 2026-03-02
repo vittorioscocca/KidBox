@@ -23,7 +23,12 @@ struct RootGateView: View {
     
     var body: some View {
         Group {
-            if !coordinator.isAuthenticated {
+            if coordinator.isCheckingAuth {
+                // Firebase non ha ancora risposto — mostra sfondo arancione
+                // per evitare il flash della login screen
+                Color(red: 0.95, green: 0.38, blue: 0.10)
+                    .ignoresSafeArea()
+            } else if !coordinator.isAuthenticated {
                 LoginView()
             } else {
                 HomeView()

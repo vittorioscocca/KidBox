@@ -45,6 +45,9 @@ struct KidBoxApp: App {
     /// Shared notifications manager (push deep link bridge).
     @StateObject private var notifications = NotificationManager.shared
     
+    /// ← AGGIUNTO: visibilità launch screen animato
+    @State private var showLaunch = true
+    
     // MARK: - Init
     
     /// Initializes the app and prepares the persistence layer.
@@ -77,80 +80,97 @@ struct KidBoxApp: App {
     
     var body: some Scene {
         WindowGroup {
-            RootHostView()
-                .environmentObject(coordinator)
-            
-            // MARK: URL handling (Google Sign-In)
-                .onOpenURL { url in
-                    KBLog.auth.kbInfo("onOpenURL received url=\(url.absoluteString)")
-                    
-                    // 1) Facebook (se è un callback FB, lo gestisce e STOP)
-                    let handledByFacebook = ApplicationDelegate.shared.application(
-                        UIApplication.shared,
-                        open: url,
-                        sourceApplication: nil,
-                        annotation: nil
-                    )
-                    
-                    if handledByFacebook {
-                        KBLog.auth.kbInfo("onOpenURL handled by Facebook SDK")
-                        let context = modelContainer.mainContext
-                        KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Facebook)")
-                        Task { SyncCenter.shared.flushGlobal(modelContext: context) }
-                        return
-                    }
-                    
-                    // 2) Google
-                    KBLog.auth.kbInfo("onOpenURL forwarded to GoogleSignIn handler")
-                    GIDSignIn.sharedInstance.handle(url)
-                    
-                    // Trigger post-login / post-deeplink sync flush.
-                    let context = modelContainer.mainContext
-                    KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Google/other)")
-                    SyncCenter.shared.flushGlobal(modelContext: context)
-                }
-            
-            // MARK: Debug-only services
-                .task {
-#if DEBUG
-                    KBLog.sync.kbDebug("DEBUG FirestorePingService ping()")
-                    FirestorePingService().ping { _ in }
-#endif
-                }
-            
-            // MARK: Push deep link consumption
-                .onReceive(notifications.$pendingDeepLink) { link in
-                    guard let link else { return }
-                    
-                    KBLog.auth.kbInfo("Pending deep link received")
-                    
-                    switch link {
-                    case .document(let familyId, let docId):
-                        KBLog.navigation.kbInfo("Deep link -> open document")
-                        // Passa il modelContext così il coordinator può risalire
-                        // la catena di cartelle direttamente da SwiftData.
-                        coordinator.openDocumentFromPush(
-                            familyId: familyId,
-                            docId: docId,
-                            modelContext: modelContainer.mainContext
+            // ← AGGIUNTO: ZStack per sovrapporre il launch screen
+            ZStack {
+                RootHostView()
+                    .environmentObject(coordinator)
+                
+                // MARK: URL handling (Google Sign-In)
+                    .onOpenURL { url in
+                        KBLog.auth.kbInfo("onOpenURL received url=\(url.absoluteString)")
+                        
+                        // 1) Facebook (se è un callback FB, lo gestisce e STOP)
+                        let handledByFacebook = ApplicationDelegate.shared.application(
+                            UIApplication.shared,
+                            open: url,
+                            sourceApplication: nil,
+                            annotation: nil
                         )
-                    case .chat:
-                        KBLog.navigation.kbInfo("Deep link -> open chat")
-                        coordinator.navigate(to: .chat)
-                    case .familyLocation(familyId: let familyId):
-                        KBLog.navigation.kbInfo("Deep link -> open family location")
-                        coordinator.setActiveFamily(familyId)
-                        coordinator.navigate(to: .familyLocation(familyId: familyId))
-                    case .todo(familyId: let familyId, childId: let childId, listId: let listId, todoId: let todoId):
-                        KBLog.navigation.kbInfo("[DeepLink] todo -> navigate todoList listId=\(listId) todoId=\(todoId)")
-                        TodoHighlightStore.shared.set(todoId)
-                        coordinator.navigate(to: .todoList(familyId: familyId, childId: childId, listId: listId))
-                        NotificationManager.shared.consumeDeepLink()
+                        
+                        if handledByFacebook {
+                            KBLog.auth.kbInfo("onOpenURL handled by Facebook SDK")
+                            let context = modelContainer.mainContext
+                            KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Facebook)")
+                            Task { SyncCenter.shared.flushGlobal(modelContext: context) }
+                            return
+                        }
+                        
+                        // 2) Google
+                        KBLog.auth.kbInfo("onOpenURL forwarded to GoogleSignIn handler")
+                        GIDSignIn.sharedInstance.handle(url)
+                        
+                        // Trigger post-login / post-deeplink sync flush.
+                        let context = modelContainer.mainContext
+                        KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Google/other)")
+                        SyncCenter.shared.flushGlobal(modelContext: context)
                     }
-                    
-                    notifications.consumeDeepLink()
-                    KBLog.auth.kbDebug("Deep link consumed")
+                
+                // MARK: Debug-only services
+                    .task {
+#if DEBUG
+                        KBLog.sync.kbDebug("DEBUG FirestorePingService ping()")
+                        FirestorePingService().ping { _ in }
+#endif
+                    }
+                
+                // MARK: Push deep link consumption
+                    .onReceive(notifications.$pendingDeepLink) { link in
+                        guard let link else { return }
+                        
+                        KBLog.auth.kbInfo("Pending deep link received")
+                        
+                        switch link {
+                        case .document(let familyId, let docId):
+                            KBLog.navigation.kbInfo("Deep link -> open document")
+                            coordinator.openDocumentFromPush(
+                                familyId: familyId,
+                                docId: docId,
+                                modelContext: modelContainer.mainContext
+                            )
+                        case .chat:
+                            KBLog.navigation.kbInfo("Deep link -> open chat")
+                            coordinator.navigate(to: .chat)
+                        case .familyLocation(familyId: let familyId):
+                            KBLog.navigation.kbInfo("Deep link -> open family location")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.navigate(to: .familyLocation(familyId: familyId))
+                        case .todo(familyId: let familyId, childId: let childId, listId: let listId, todoId: let todoId):
+                            KBLog.navigation.kbInfo("[DeepLink] todo -> navigate todoList listId=\(listId) todoId=\(todoId)")
+                            TodoHighlightStore.shared.set(todoId)
+                            coordinator.navigate(to: .todoList(familyId: familyId, childId: childId, listId: listId))
+                            NotificationManager.shared.consumeDeepLink()
+                        }
+                        
+                        notifications.consumeDeepLink()
+                        KBLog.auth.kbDebug("Deep link consumed")
+                    }
+                
+                // ← AGGIUNTO: launch screen animato sopra tutto
+                if showLaunch {
+                    LaunchScreenView()
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .zIndex(1)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) {
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    showLaunch = false
+                                }
+                            }
+                        }
                 }
+                
+            } // ← chiude ZStack
         }
         .modelContainer(modelContainer)
         

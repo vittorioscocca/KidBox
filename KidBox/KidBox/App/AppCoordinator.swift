@@ -37,6 +37,10 @@ final class AppCoordinator: ObservableObject {
     /// Whether there is a currently authenticated Firebase user.
     @Published private(set) var isAuthenticated: Bool = false
     
+    /// True finché Firebase non ha risposto con lo stato auth iniziale.
+    /// Evita il flash della login screen all'avvio quando l'utente è già loggato.
+    @Published private(set) var isCheckingAuth: Bool = true
+    
     /// Cached Firebase UID of the current user (if authenticated).
     @Published private(set) var uid: String?
     
@@ -117,6 +121,7 @@ final class AppCoordinator: ObservableObject {
         authHandle = Auth.auth().addStateDidChangeListener { _, user in
             // The listener may call back on a non-main thread; we re-enter MainActor explicitly.
             Task { @MainActor in
+                self.isCheckingAuth = false  // ← Firebase ha risposto: nascondi lo splash
                 if let user {
                     self.isAuthenticated = true
                     self.uid = user.uid
