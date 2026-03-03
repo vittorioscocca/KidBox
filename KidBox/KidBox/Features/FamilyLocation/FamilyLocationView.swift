@@ -76,13 +76,17 @@ struct FamilyLocationView: View {
         .navigationTitle("Posizione")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            BadgeManager.shared.activeSections.insert("location")
             viewModel.start()
             syncDisplayNameToViewModel()
             Task {
                 await CountersService.shared.reset(familyId: familyId, field: .location)
             }
         }
-        .onDisappear { viewModel.stop() }
+        .onDisappear {
+            viewModel.stop()
+            BadgeManager.shared.activeSections.remove("location")
+        }
         .onReceive(NotificationCenter.default.publisher(for: .kbProfileDisplayNameUpdated)) { notification in
             if let name = notification.userInfo?["displayName"] as? String {
                 viewModel.updateDisplayName(name)

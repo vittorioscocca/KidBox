@@ -2,6 +2,8 @@
 //  NotesHomeView.swift
 //  KidBox
 //
+//  Created by vscocca on 02/03/26.
+//
 
 import SwiftUI
 import SwiftData
@@ -17,14 +19,16 @@ struct NotesHomeView: View {
     
     @State private var searchQuery = ""
     @State private var pinnedIds: Set<String> = []
+    @State private var isSelecting = false
+    @State private var selectedIds: Set<String> = []
     
-    // MARK: - Sezioni temporali (come Apple Notes)
+    // MARK: - Sezioni temporali
     
     private enum NoteSection: String {
-        case pinned   = "In evidenza"
-        case week7    = "Ultimi 7 giorni"
-        case days30   = "Ultimi 30 giorni"
-        case older    = "Più vecchie"
+        case pinned = "In evidenza"
+        case week7  = "Ultimi 7 giorni"
+        case days30 = "Ultimi 30 giorni"
+        case older  = "Più vecchie"
     }
     
     private var sectioned: [(NoteSection, [KBNote])] {
@@ -37,10 +41,10 @@ struct NotesHomeView: View {
         let now = Date()
         let cal = Calendar.current
         
-        var pinned:  [KBNote] = []
-        var week7:   [KBNote] = []
-        var days30:  [KBNote] = []
-        var older:   [KBNote] = []
+        var pinned: [KBNote] = []
+        var week7:  [KBNote] = []
+        var days30: [KBNote] = []
+        var older:  [KBNote] = []
         
         for note in filtered.sorted(by: { $0.updatedAt > $1.updatedAt }) {
             if pinnedIds.contains(note.id) {
@@ -48,9 +52,9 @@ struct NotesHomeView: View {
                 continue
             }
             let days = cal.dateComponents([.day], from: note.updatedAt, to: now).day ?? 0
-            if days <= 7        { week7.append(note) }
-            else if days <= 30  { days30.append(note) }
-            else                { older.append(note) }
+            if days <= 7       { week7.append(note) }
+            else if days <= 30 { days30.append(note) }
+            else               { older.append(note) }
         }
         
         return [
@@ -59,6 +63,10 @@ struct NotesHomeView: View {
             (.days30, days30),
             (.older,  older),
         ].filter { !$1.isEmpty }
+    }
+    
+    private var allVisibleIds: [String] {
+        sectioned.flatMap { $0.1 }.map { $0.id }
     }
     
     init(familyId: String) {
@@ -74,6 +82,8 @@ struct NotesHomeView: View {
         )
     }
     
+    // MARK: - Body
+    
     var body: some View {
         contentView
             .navigationTitle("Note")
@@ -81,18 +91,60 @@ struct NotesHomeView: View {
             .onAppear {
                 SyncCenter.shared.startNotesRealtime(familyId: familyId, modelContext: modelContext)
                 loadPinned()
+                BadgeManager.shared.activeSections.insert("notes")  // ← attivo
+                Task {
+                    BadgeManager.shared.clearNotes()
+                    await CountersService.shared.reset(familyId: familyId, field: .notes)
+                }
             }
             .onDisappear {
                 SyncCenter.shared.stopNotesRealtime()
+                BadgeManager.shared.activeSections.remove("notes")  // ← non più attivo
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { createNewNote() } label: {
-                        Image(systemName: "square.and.pencil")
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if isSelecting {
+                        Button("Fine") {
+                            isSelecting = false
+                            selectedIds = []
+                        }
+                    } else {
+                        Button("Seleziona") {
+                            isSelecting = true
+                        }
+                        Button { createNewNote() } label: {
+                            Image(systemName: "square.and.pencil")
+                        }
+                    }
+                }
+                
+                ToolbarItemGroup(placement: .bottomBar) {
+                    if isSelecting {
+                        Button(role: .destructive) {
+                            deleteSelected()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trash")
+                                Text(selectedIds.isEmpty ? "Elimina" : "Elimina (\(selectedIds.count))")
+                            }
+                            .foregroundStyle(selectedIds.isEmpty ? .secondary : Color.red)
+                        }
+                        .disabled(selectedIds.isEmpty)
+                        
+                        Spacer()
+                        
+                        Button {
+                            let all = allVisibleIds
+                            selectedIds = selectedIds.count == all.count ? [] : Set(all)
+                        } label: {
+                            Text(selectedIds.count == allVisibleIds.count ? "Deseleziona tutto" : "Seleziona tutto")
+                        }
                     }
                 }
             }
     }
+    
+    // MARK: - Content
     
     @ViewBuilder
     private var contentView: some View {
@@ -105,48 +157,72 @@ struct NotesHomeView: View {
                 ForEach(sectioned, id: \.0.rawValue) { section, sectionNotes in
                     Section(section.rawValue) {
                         ForEach(sectionNotes, id: \.id) { note in
-                            Button {
-                                coordinator.navigate(to: .noteDetail(familyId: familyId, noteId: note.id))
-                            } label: {
-                                HStack(spacing: 6) {
-                                    if pinnedIds.contains(note.id) {
-                                        Image(systemName: "pin.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(.orange)
-                                    }
-                                    KBNoteCardView(
-                                        note: note,
-                                        members: members,
-                                        searchQuery: searchQuery
-                                    )
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            // Swipe sinistra → elimina
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    delete(note)
-                                } label: {
-                                    Label("Elimina", systemImage: "trash")
-                                }
-                            }
-                            // Swipe destra → pin/unpin
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    togglePin(note)
-                                } label: {
-                                    Label(
-                                        pinnedIds.contains(note.id) ? "Rimuovi" : "In evidenza",
-                                        systemImage: pinnedIds.contains(note.id) ? "pin.slash" : "pin"
-                                    )
-                                }
-                                .tint(.orange)
-                            }
+                            noteRow(note)
                         }
                     }
                 }
             }
-            .listStyle(.insetGrouped)  // ← card arrotondate come Apple Notes
+            .listStyle(.insetGrouped)
+            .animation(.default, value: isSelecting)
+        }
+    }
+    
+    @ViewBuilder
+    private func noteRow(_ note: KBNote) -> some View {
+        Button {
+            if isSelecting {
+                if selectedIds.contains(note.id) {
+                    selectedIds.remove(note.id)
+                } else {
+                    selectedIds.insert(note.id)
+                }
+            } else {
+                coordinator.navigate(to: .noteDetail(familyId: familyId, noteId: note.id))
+            }
+        } label: {
+            HStack(spacing: 10) {
+                if isSelecting {
+                    Image(systemName: selectedIds.contains(note.id) ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(selectedIds.contains(note.id) ? Color.accentColor : .secondary)
+                        .animation(.spring(response: 0.2), value: selectedIds.contains(note.id))
+                }
+                
+                if pinnedIds.contains(note.id) {
+                    Image(systemName: "pin.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+                
+                KBNoteCardView(
+                    note: note,
+                    members: members,
+                    searchQuery: searchQuery
+                )
+            }
+        }
+        .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelecting) {
+            if !isSelecting {
+                Button(role: .destructive) {
+                    delete(note)
+                } label: {
+                    Label("Elimina", systemImage: "trash")
+                }
+            }
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: !isSelecting) {
+            if !isSelecting {
+                Button {
+                    togglePin(note)
+                } label: {
+                    Label(
+                        pinnedIds.contains(note.id) ? "Rimuovi" : "In evidenza",
+                        systemImage: pinnedIds.contains(note.id) ? "pin.slash" : "pin"
+                    )
+                }
+                .tint(.orange)
+            }
         }
     }
     
@@ -166,6 +242,33 @@ struct NotesHomeView: View {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
+    private func deleteSelected() {
+        guard !selectedIds.isEmpty else { return }
+        let toDelete = notes.filter { selectedIds.contains($0.id) }
+        
+        for note in toDelete {
+            note.isDeleted = true
+            note.syncState = .pendingDelete
+            note.lastSyncError = nil
+            pinnedIds.remove(note.id)
+        }
+        
+        try? modelContext.save()
+        savePinned()
+        
+        for note in toDelete {
+            SyncCenter.shared.enqueueNoteDelete(
+                noteId: note.id,
+                familyId: familyId,
+                modelContext: modelContext
+            )
+        }
+        
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        selectedIds = []
+        isSelecting = false
+    }
+    
     private func togglePin(_ note: KBNote) {
         if pinnedIds.contains(note.id) {
             pinnedIds.remove(note.id)
@@ -174,6 +277,8 @@ struct NotesHomeView: View {
         }
         savePinned()
     }
+    
+    // MARK: - Pin persistence
     
     private var pinnedKey: String { "kb.notes.pinned.\(familyId)" }
     
@@ -186,7 +291,7 @@ struct NotesHomeView: View {
     }
 }
 
-// MARK: - Empty / No results
+// MARK: - Empty state
 
 private struct NotesEmptyStateView: View {
     let onNewNote: () -> Void
@@ -207,6 +312,8 @@ private struct NotesEmptyStateView: View {
         .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+
+// MARK: - No results state
 
 private struct NotesNoResultsView: View {
     let query: String

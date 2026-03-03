@@ -131,6 +131,7 @@ struct GroceryListView: View {
             Text("Vuoi eliminare tutti i prodotti già acquistati?")
         }
         .onAppear {
+            BadgeManager.shared.activeSections.insert("shopping")
             guard !didStartRealtime else { return }
             didStartRealtime = true
             SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
@@ -138,6 +139,7 @@ struct GroceryListView: View {
         }
         .onDisappear {
             SyncCenter.shared.stopGroceryRealtime()
+            BadgeManager.shared.activeSections.remove("shopping")
         }
     }
     

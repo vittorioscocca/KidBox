@@ -111,6 +111,7 @@ struct TodoHomeView: View {
             }
         }
         .onAppear {
+            BadgeManager.shared.activeSections.insert("todos")
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onAppear familyId=\(familyId) childId=\(childId) didStartRealtime=\(didStartRealtime) lists=\(visibleLists.count) todosVisible=\(visibleTodos.count)")
             logCounters("onAppear")
             startRealtimeIfNeeded()
@@ -123,6 +124,7 @@ struct TodoHomeView: View {
             BadgeManager.shared.clearTodos()
         }
         .onDisappear {
+            BadgeManager.shared.activeSections.remove("todos")
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime (reset didStartRealtime)")
         }
         .sheet(isPresented: $showListEditor) {

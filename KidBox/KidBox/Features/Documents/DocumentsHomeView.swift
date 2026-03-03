@@ -36,12 +36,18 @@ struct DocumentsHomeView: View {
         .navigationTitle("Documenti")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            BadgeManager.shared.activeSections.insert("documents")
             KBLog.ui.info("DocumentsHomeView appeared familyId=\(familyId.isEmpty ? "EMPTY" : familyId, privacy: .public)")
         }
         .onChange(of: families.first?.id) { _, newValue in
             let fid = newValue ?? ""
             KBLog.ui.info("DocumentsHomeView active family changed familyId=\(fid.isEmpty ? "EMPTY" : fid, privacy: .public)")
         }
+        .onDisappear(){
+            BadgeManager.shared.activeSections.remove("documents")
+
+        }
+        
     }
     
     private var emptyNoFamily: some View {

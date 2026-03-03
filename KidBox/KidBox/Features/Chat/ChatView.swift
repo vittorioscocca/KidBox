@@ -484,6 +484,7 @@ private struct ChatConversationView: View {
         .background(backgroundColor)
         .environmentObject(LinkPreviewStore.shared)
         .onAppear {
+            BadgeManager.shared.activeSections.insert("chat")
             viewModel.bind(modelContext: modelContext)
             viewModel.startListening()
             dayGroups = buildGroups()
@@ -494,6 +495,8 @@ private struct ChatConversationView: View {
         }
         .onDisappear {
             viewModel.stopListening()
+            BadgeManager.shared.activeSections.remove("chat")
+
         }
         .toolbar {
             if isSelecting {

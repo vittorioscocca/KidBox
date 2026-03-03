@@ -16,6 +16,7 @@ import UserNotifications
 final class BadgeManager: ObservableObject {
     
     static let shared = BadgeManager()
+    var activeSections: Set<String> = []
     
     @Published var chat: Int = 0
     @Published var documents: Int = 0
@@ -56,20 +57,17 @@ final class BadgeManager: ObservableObject {
                 let shoppingCount = data["shopping"]  as? Int ?? 0   // ← NEW
                 let notesCount    = data["notes"]     as? Int ?? 0   // ← NEW
                 
-                Task { @MainActor in
-                    self.chat      = chatCount
-                    self.documents = docCount
-                    self.location  = locCount
-                    self.todos     = todoCount
-                    self.shopping  = shoppingCount   // ← NEW
-                    self.notes     = notesCount      // ← NEW
+                DispatchQueue.main.async {
+                    if !self.activeSections.contains("chat")      { self.chat      = chatCount }
+                    if !self.activeSections.contains("documents") { self.documents = docCount }
+                    if !self.activeSections.contains("location")  { self.location  = locCount }
+                    if !self.activeSections.contains("todos")     { self.todos     = todoCount }
+                    if !self.activeSections.contains("shopping")  { self.shopping  = shoppingCount }
+                    if !self.activeSections.contains("notes")     { self.notes     = notesCount }
                     
-                    let total = chatCount + docCount + locCount + todoCount
-                    + shoppingCount + notesCount
+                    let total = self.chat + self.documents + self.location + self.todos + self.shopping + self.notes
                     UNUserNotificationCenter.current().setBadgeCount(total) { error in
-                        if let error {
-                            print("Failed to set badge count:", error)
-                        }
+                        if let error { print("Failed to set badge count:", error) }
                     }
                 }
             }
