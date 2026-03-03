@@ -29,7 +29,7 @@ struct NoteLiquidBarView: View {
     let onDismiss: () -> Void
     
     private let btnSize: CGFloat  = 36
-    private let iconSize: CGFloat = 16
+    private let iconSize: CGFloat = 18
     
     var body: some View {
         HStack(spacing: 0) {
@@ -88,7 +88,7 @@ struct NoteLiquidBarView: View {
     private var aaButton: some View {
         Button { model.isExpanded.toggle() } label: {
             Text("Aa")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundStyle(model.isExpanded
                                  ? Color.accentColor
                                  : Color.primary.opacity(0.80))

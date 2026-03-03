@@ -33,8 +33,9 @@ final class RichUITextView: UITextView {
 
 struct RichTextView: UIViewRepresentable {
     @Binding var html: String
-    var placeholder: String = ""
-    var baseFont: UIFont    = .preferredFont(forTextStyle: .body)
+    var placeholder: String  = ""
+    var baseFont: UIFont     = .preferredFont(forTextStyle: .body)
+    var focusTrigger: UUID?  = nil   // cambia valore per richiedere il focus
     
     func makeUIView(context: Context) -> UITextView {
         let tv = RichUITextView()
@@ -63,7 +64,11 @@ struct RichTextView: UIViewRepresentable {
         }
         
         // ✅ Accessory view: NON usare translatesAutoresizingMaskIntoConstraints=false
-        let accessory = RichTextAccessoryView(onDismiss: { tv.resignFirstResponder() })
+        let accessory = RichTextAccessoryView(onDismiss: {
+            // Prima chiudi il pannello espanso (se aperto), poi abbassa la tastiera
+            (tv.inputAccessoryView as? RichTextAccessoryView)?.model.isExpanded = false
+            tv.resignFirstResponder()
+        })
         tv.inputAccessoryView = accessory
         
         let tapGR = UITapGestureRecognizer(target: context.coordinator,
@@ -78,6 +83,13 @@ struct RichTextView: UIViewRepresentable {
     func updateUIView(_ uiView: UITextView, context: Context) {
         context.coordinator.isProgrammaticUpdate = true
         defer { context.coordinator.isProgrammaticUpdate = false }
+        
+        // Focus richiesto dal titolo (tasto Avanti)
+        if let trigger = focusTrigger, trigger != context.coordinator.lastFocusTrigger {
+            context.coordinator.lastFocusTrigger = trigger
+            DispatchQueue.main.async { uiView.becomeFirstResponder() }
+        }
+        
         let currentHTML = uiView.attributedText.toHTML() ?? ""
         guard currentHTML != html else { return }
         if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont) {
@@ -92,6 +104,7 @@ struct RichTextView: UIViewRepresentable {
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         let parent: RichTextView
         var isProgrammaticUpdate = false
+        var lastFocusTrigger: UUID? = nil
         private var isShowingPlaceholder = false
         
         init(_ parent: RichTextView) { self.parent = parent }

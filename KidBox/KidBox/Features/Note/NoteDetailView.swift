@@ -14,13 +14,28 @@ struct NoteDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
     
-    @State private var titleText: String = ""
-    @State private var bodyHTML:  String = ""
-    @State private var isDirty           = false
-    @State private var note: KBNote?     = nil
-    @State private var bodyFocusTrigger: UUID? = nil
+    // ✅ @Query osserva automaticamente i cambiamenti da SyncCenter (listener realtime)
+    @Query private var queriedNotes: [KBNote]
     
-    @State private var isSharePresented = false
+    // Stato locale — fonte di verità mentre la nota è aperta
+    @State private var titleText: String   = ""
+    @State private var bodyHTML:  String   = ""
+    @State private var isDirty            = false
+    @State private var note: KBNote?      = nil
+    @State private var bodyFocusTrigger: UUID? = nil
+    @State private var isSharePresented   = false
+    
+    // ✅ Versione remota ricevuta mentre editing è attivo:
+    //    tenuta da parte e applicata solo quando si esce senza salvare.
+    @State private var pendingRemoteTitle: String? = nil
+    @State private var pendingRemoteBody:  String? = nil
+    
+    init(familyId: String, noteId: String) {
+        self.familyId = familyId
+        self.noteId   = noteId
+        let nid = noteId
+        _queriedNotes = Query(filter: #Predicate<KBNote> { $0.id == nid })
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -31,36 +46,45 @@ struct NoteDetailView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-            .fixedSize(horizontal: false, vertical: true)   // ← altezza stretta al contenuto
+            .fixedSize(horizontal: false, vertical: true)
             .onChange(of: titleText) { isDirty = true }
             
-            Divider()
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-            
             // ── Corpo ─────────────────────────────────────────────────────
-            RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…")
-                .onChange(of: bodyHTML) { isDirty = true }
+            RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
+                         focusTrigger: bodyFocusTrigger)
+            .onChange(of: bodyHTML) { isDirty = true }
         }
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { loadOrCreate() }
-        .onDisappear { saveIfNeeded() }
+        .onAppear  { loadOrCreate() }
+        .onDisappear { handleDisappear() }
+        
+        // ✅ Ascolta aggiornamenti da SwiftData (es. listener realtime che aggiorna la nota)
+        //    MA li applica all'UI solo se non stiamo editando (isDirty = false).
+        .onChange(of: noteRemoteVersion) { _ in
+            guard let n = queriedNotes.first else { return }
+            if isDirty {
+                // Editing in corso: salva la versione remota per dopo, non sovrascrivere
+                pendingRemoteTitle = n.title
+                pendingRemoteBody  = n.body
+            } else {
+                // Nessuna modifica locale: aggiorna l'UI con il remoto
+                titleText = n.title
+                bodyHTML  = n.body
+                note      = n
+            }
+        }
+        
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
-                    Button {
-                        isSharePresented = true
-                    } label: {
+                    Button { isSharePresented = true } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
                     .disabled(titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                               bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     
-                    Button {
-                        saveIfNeeded()
-                        dismiss()
-                    } label: {
+                    Button { saveAndDismiss() } label: {
                         Image(systemName: "checkmark").font(.headline)
                     }
                     .disabled(!isDirty)
@@ -75,13 +99,17 @@ struct NoteDetailView: View {
         }
     }
     
+    // MARK: - Computed: versione remota della nota per onChange
+    
+    /// Proxy per rilevare aggiornamenti remoti: cambia ogni volta che SwiftData aggiorna la nota.
+    private var noteRemoteVersion: Date {
+        queriedNotes.first?.updatedAt ?? .distantPast
+    }
+    
     // MARK: - Load / Create
     
     private func loadOrCreate() {
-        let nid  = noteId
-        let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
-        
-        if let existing = try? modelContext.fetch(desc).first {
+        if let existing = queriedNotes.first {
             note      = existing
             titleText = existing.title
             bodyHTML  = existing.body
@@ -89,6 +117,7 @@ struct NoteDetailView: View {
             return
         }
         
+        // Crea nuova nota
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let n = KBNote(
             id: noteId, familyId: familyId,
@@ -109,11 +138,32 @@ struct NoteDetailView: View {
         isDirty   = false
     }
     
+    // MARK: - Disappear
+    
+    private func handleDisappear() {
+        if isDirty {
+            // L'utente ha modificato: salva le modifiche locali
+            commitSave()
+        }
+        // Non applicare il pendingRemote: se l'utente ha salvato,
+        // il sync aggiornerà Firestore con la versione corretta.
+        // Se non ha salvato (back senza salvare), le modifiche vengono scartate
+        // e la prossima apertura rilegge da SwiftData (che ha già il remoto).
+    }
+    
+    private func saveAndDismiss() {
+        commitSave()
+        dismiss()
+    }
+    
     // MARK: - Save
     
-    private func saveIfNeeded() {
-        guard let note, isDirty else { return }
+    private func commitSave() {
+        guard let note else { return }
+        guard isDirty else { return }
+        
         let uid = Auth.auth().currentUser?.uid ?? "local"
+        
         note.title         = titleText
         note.body          = bodyHTML
         note.updatedAt     = .now
@@ -121,10 +171,17 @@ struct NoteDetailView: View {
         note.updatedByName = ""
         note.syncState     = .pendingUpsert
         note.lastSyncError = nil
+        
         try? modelContext.save()
-        SyncCenter.shared.enqueueNoteUpsert(noteId: note.id, familyId: familyId, modelContext: modelContext)
+        
+        SyncCenter.shared.enqueueNoteUpsert(
+            noteId: note.id, familyId: familyId, modelContext: modelContext
+        )
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
-        isDirty = false
+        
+        isDirty            = false
+        pendingRemoteTitle = nil
+        pendingRemoteBody  = nil
     }
 }
 
