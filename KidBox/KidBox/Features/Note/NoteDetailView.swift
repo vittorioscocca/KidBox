@@ -12,44 +12,44 @@ struct NoteDetailView: View {
     let noteId: String
     
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)      private var dismiss
     
-    @State private var note: KBNote?
     @State private var titleText: String = ""
-    @State private var bodyHTML: String = ""   // ✅ HTML
-    @State private var isDirty = false
+    @State private var bodyHTML:  String = ""
+    @State private var isDirty           = false
+    @State private var note: KBNote?     = nil
+    @State private var bodyFocusTrigger: UUID? = nil
     
     @State private var isSharePresented = false
-    @State private var shareText = ""
     
     var body: some View {
-        VStack(spacing: 0) {
-            TextField("Titolo", text: $titleText)
-                .font(.title2.weight(.bold))
-                .padding(.horizontal)
-                .padding(.top)
-                .onChange(of: titleText) { _, _ in isDirty = true }
+        VStack(alignment: .leading, spacing: 0) {
             
+            // ── Titolo ────────────────────────────────────────────────────
+            NoteTitleTextField(text: $titleText, placeholder: "Titolo") {
+                bodyFocusTrigger = UUID()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .fixedSize(horizontal: false, vertical: true)   // ← altezza stretta al contenuto
+            .onChange(of: titleText) { isDirty = true }
+            
+            Divider()
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+            
+            // ── Corpo ─────────────────────────────────────────────────────
             RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…")
-                .padding(.horizontal, 8)
-                .onChange(of: bodyHTML) { _, _ in isDirty = true }
+                .onChange(of: bodyHTML) { isDirty = true }
         }
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { loadOrCreate() }
-        .onDisappear { if isDirty { save() } }
+        .onDisappear { saveIfNeeded() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
                     Button {
-                        let title = titleText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let bodyPlain = bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines)
-                        
-                        var out = ""
-                        if !title.isEmpty { out += "\(title)\n\n" }
-                        out += bodyPlain
-                        
-                        shareText = out
                         isSharePresented = true
                     } label: {
                         Image(systemName: "square.and.arrow.up")
@@ -58,7 +58,7 @@ struct NoteDetailView: View {
                               bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     
                     Button {
-                        save()
+                        saveIfNeeded()
                         dismiss()
                     } label: {
                         Image(systemName: "checkmark").font(.headline)
@@ -68,67 +68,62 @@ struct NoteDetailView: View {
             }
         }
         .sheet(isPresented: $isSharePresented) {
-            ShareSheet(items: [shareText]).ignoresSafeArea()
+            let title = titleText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let body  = bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines)
+            let text  = [title, body].filter { !$0.isEmpty }.joined(separator: "\n\n")
+            ShareSheet(items: [text]).ignoresSafeArea()
         }
     }
     
+    // MARK: - Load / Create
+    
     private func loadOrCreate() {
-        let nid = noteId
+        let nid  = noteId
         let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
         
         if let existing = try? modelContext.fetch(desc).first {
-            note = existing
+            note      = existing
             titleText = existing.title
-            bodyHTML = existing.body
-            isDirty = false
+            bodyHTML  = existing.body
+            isDirty   = false
             return
         }
         
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        
         let n = KBNote(
-            id: noteId,
-            familyId: familyId,
-            title: "",
-            body: "", // HTML
-            createdBy: uid,
-            createdByName: "",
-            updatedBy: uid,
-            updatedByName: "",
-            createdAt: .now,
-            updatedAt: .now,
+            id: noteId, familyId: familyId,
+            title: "", body: "",
+            createdBy: uid, createdByName: "",
+            updatedBy: uid, updatedByName: "",
+            createdAt: .now, updatedAt: .now,
             isDeleted: false
         )
-        n.syncState = .synced
+        n.syncState     = .synced
         n.lastSyncError = nil
-        
         modelContext.insert(n)
         try? modelContext.save()
         
-        note = n
+        note      = n
         titleText = ""
-        bodyHTML = ""
-        isDirty = false
+        bodyHTML  = ""
+        isDirty   = false
     }
     
-    private func save() {
+    // MARK: - Save
+    
+    private func saveIfNeeded() {
         guard let note, isDirty else { return }
-        
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        
-        note.title = titleText
-        note.body = bodyHTML
-        note.updatedAt = .now
-        note.updatedBy = uid
+        note.title         = titleText
+        note.body          = bodyHTML
+        note.updatedAt     = .now
+        note.updatedBy     = uid
         note.updatedByName = ""
-        note.syncState = .pendingUpsert
+        note.syncState     = .pendingUpsert
         note.lastSyncError = nil
-        
         try? modelContext.save()
-        
         SyncCenter.shared.enqueueNoteUpsert(noteId: note.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
-        
         isDirty = false
     }
 }
@@ -143,17 +138,16 @@ private struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+// MARK: - String extension
+
 private extension String {
     func htmlToPlainText() -> String {
-        if !self.contains("<") { return self }
-        guard let data = self.data(using: .utf8) else { return self }
+        guard self.contains("<"), let data = self.data(using: .utf8) else { return self }
         let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
             .documentType: NSAttributedString.DocumentType.html,
             .characterEncoding: String.Encoding.utf8.rawValue
         ]
-        if let attr = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
-            return attr.string
-        }
-        return self
+        return (try? NSAttributedString(data: data, options: options,
+                                        documentAttributes: nil))?.string ?? self
     }
 }

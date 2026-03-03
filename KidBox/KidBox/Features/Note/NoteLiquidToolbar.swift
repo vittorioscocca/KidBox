@@ -2,205 +2,210 @@
 //  NoteLiquidToolbar.swift
 //  KidBox
 //
+//  Contiene tutta la UI della toolbar:
+//    • LiquidPressStyle      – stile bottone spring
+//    • NoteLiquidBarView     – barra 44pt fissa (vive in inputAccessoryView)
+//    • NoteLiquidPanelView   – pannello stili flottante (aggiunto sulla window)
+//
 
 import SwiftUI
 
-struct NoteLiquidToolbar: View {
+// MARK: - Press style
+
+struct LiquidPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.83 : 1.0)
+            .animation(.spring(response: 0.17, dampingFraction: 0.52),
+                       value: configuration.isPressed)
+    }
+}
+
+// MARK: - NoteLiquidBarView  (44pt, sempre visibile sopra la tastiera)
+
+struct NoteLiquidBarView: View {
     @ObservedObject var model: RichTextToolbarModel
     let onCommand: (RichTextCommand) -> Void
     let onDismiss: () -> Void
     
-    // sizes (tweak)
-    private let iconSize: CGFloat = 18
-    private let pillSize: CGFloat = 40
-    private let radius: CGFloat = 16
+    private let btnSize: CGFloat  = 36
+    private let iconSize: CGFloat = 16
     
     var body: some View {
-        VStack(spacing: 8) {
-            if model.isExpanded {
-                expandedPanel
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            baseRow
-        }
-        .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 0)
-        .background(Color(.systemBackground)) // opaco => niente "gap" visivo
-        .overlay(
-            Rectangle().frame(height: 0.5).foregroundStyle(Color(.separator)),
-            alignment: .top
-        )
-    }
-    
-    private var baseRow: some View {
-        HStack(spacing: 10) {
-            liquidTextPill("Aa", isOn: model.isExpanded) {
-                model.isExpanded.toggle()
-            }
-            
-            Divider().frame(height: 26)
+        HStack(spacing: 0) {
+            aaButton
+            sep()
             
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    liquidIconPill("bold", isOn: model.isBold) { onCommand(.bold) }
-                    liquidIconPill("italic", isOn: model.isItalic) { onCommand(.italic) }
-                    liquidIconPill("underline", isOn: model.isUnderline) { onCommand(.underline) }
-                    liquidIconPill("strikethrough", isOn: model.isStrikethrough) { onCommand(.strikethrough) }
-                    
-                    Divider().frame(height: 26)
-                    
-                    liquidIconPill("list.bullet", isOn: model.activeList == .bullet) { onCommand(.bullet) }
-                    liquidIconPill("list.number", isOn: model.activeList == .number) { onCommand(.number) }
-                    
-                    // checklist icon bigger
-                    liquidIconPill(model.activeList == .checklist ? "checkmark.circle.fill" : "checkmark.circle",
-                                   isOn: model.activeList == .checklist,
-                                   iconScale: 1.08) {
-                        onCommand(.checklist)
-                    }
-                    
-                    Divider().frame(height: 26)
-                    
-                    liquidIconPill("decrease.indent", isOn: false) { onCommand(.indentLess) }
-                    liquidIconPill("increase.indent", isOn: false) { onCommand(.indentMore) }
+                HStack(spacing: 2) {
+                    // Inline
+                    icon("bold",          on: model.isBold)          { onCommand(.bold) }
+                    icon("italic",        on: model.isItalic)        { onCommand(.italic) }
+                    icon("underline",     on: model.isUnderline)     { onCommand(.underline) }
+                    icon("strikethrough", on: model.isStrikethrough) { onCommand(.strikethrough) }
+                    sep()
+                    // Liste (mutuamente esclusive)
+                    icon("list.bullet",
+                         on: model.activeList == .bullet)   { onCommand(.bullet) }
+                    icon("list.number",
+                         on: model.activeList == .number)   { onCommand(.number) }
+                    icon(model.activeList == .checklist
+                         ? "checkmark.circle.fill"
+                         : "checkmark.circle",
+                         on: model.activeList == .checklist) { onCommand(.checklist) }
+                    sep()
+                    // Indentazione
+                    icon("decrease.indent", on: false) { onCommand(.indentLess) }
+                    icon("increase.indent", on: false) { onCommand(.indentMore) }
                 }
-                .padding(.horizontal, 2)
+                .padding(.horizontal, 4)
             }
             
-            liquidIconPill("keyboard.chevron.compact.down", isOn: false) { onDismiss() }
-        }
-        .frame(height: 48)
-    }
-    
-    private var expandedPanel: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Button {
-                    model.isExpanded = false
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chevron.left")
-                        Text("Indietro")
-                    }
-                    .font(.system(size: 15, weight: .semibold))
-                }
-                .buttonStyle(.plain)
-                
-                Spacer()
-                
-                Text("Formattazione")
-                    .font(.system(size: 15, weight: .semibold))
+            sep()
+            
+            // Chiudi tastiera
+            Button(action: onDismiss) {
+                Image(systemName: "keyboard.chevron.compact.down")
+                    .font(.system(size: iconSize, weight: .medium))
                     .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                Button {
-                    model.isExpanded = false
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(width: 34, height: 34)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(.plain)
+                    .frame(width: btnSize, height: btnSize)
             }
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    liquidChip("Intestazione") { onCommand(.h1) }
-                    liquidChip("Sottointestazione") { onCommand(.h2) }
-                    liquidChip("Corpo") { onCommand(.body) }
-                    
-                    Divider().frame(height: 26)
-                    
-                    liquidIconPill("list.bullet", isOn: model.activeList == .bullet) { onCommand(.bullet) }
-                    liquidIconPill("list.number", isOn: model.activeList == .number) { onCommand(.number) }
-                    
-                    liquidIconPill(model.activeList == .checklist ? "checkmark.circle.fill" : "checkmark.circle",
-                                   isOn: model.activeList == .checklist,
-                                   iconScale: 1.08) {
-                        onCommand(.checklist)
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
+            .buttonStyle(LiquidPressStyle())
+            .padding(.trailing, 6)
         }
-        .padding(10)
-        .background(.ultraThinMaterial)
-        .overlay(
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .frame(height: 44)
+        .padding(.leading, 6)
+        .background(Color.clear)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color.primary.opacity(0.09))
+                .frame(height: 0.33)
+        }
     }
     
-    // MARK: - Liquid components
+    // MARK: Aa button
     
-    private func liquidIconPill(_ sf: String, isOn: Bool, iconScale: CGFloat = 1.0, _ action: @escaping () -> Void) -> some View {
+    private var aaButton: some View {
+        Button { model.isExpanded.toggle() } label: {
+            Text("Aa")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(model.isExpanded
+                                 ? Color.accentColor
+                                 : Color.primary.opacity(0.80))
+                .frame(width: 46, height: btnSize)
+                .background {
+                    if model.isExpanded {
+                        Capsule().fill(Color.accentColor.opacity(0.13))
+                    }
+                }
+        }
+        .buttonStyle(LiquidPressStyle())
+        .padding(.horizontal, 2)
+    }
+    
+    // MARK: Helpers
+    
+    private func icon(_ sf: String, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: sf)
-                .font(.system(size: iconSize * iconScale, weight: .semibold))
-                .frame(width: pillSize, height: pillSize)
-                .foregroundStyle(isOn ? Color.white : Color.primary)
-                .background(
-                    ZStack {
-                        if isOn {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.accentColor)
-                        } else {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                                )
-                        }
+                .font(.system(size: iconSize, weight: .medium))
+                .foregroundStyle(on ? Color.accentColor : Color.primary.opacity(0.72))
+                .frame(width: btnSize, height: btnSize)
+                .background {
+                    if on {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.accentColor.opacity(0.13))
                     }
-                )
+                }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(LiquidPressStyle())
     }
     
-    private func liquidTextPill(_ title: String, isOn: Bool, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 16, weight: .semibold))
-                .frame(width: 48, height: pillSize)
-                .foregroundStyle(isOn ? Color.white : Color.primary)
-                .background(
-                    ZStack {
-                        if isOn {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.accentColor)
-                        } else {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                                )
-                        }
-                    }
+    private func sep() -> some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.10))
+            .frame(width: 0.33, height: 18)
+            .padding(.horizontal, 4)
+    }
+}
+
+// MARK: - NoteLiquidPanelView  (flottante sulla window, sopra la tastiera)
+
+struct NoteLiquidPanelView: View {
+    @ObservedObject var model: RichTextToolbarModel
+    let onCommand: (RichTextCommand) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            
+            // Header
+            HStack {
+                Text("Stile testo")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .textCase(.uppercase)
+                    .kerning(0.7)
+                Spacer()
+                Button { model.isExpanded = false } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 19))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Card stili
+            HStack(spacing: 8) {
+                styleCard("T", "Intestazione", .bold,     22) { onCommand(.heading) }
+                styleCard("T", "Sottoint.",    .semibold, 17) { onCommand(.subheading) }
+                styleCard("T", "Corpo",        .regular,  14) { onCommand(.body) }
+            }
+        }
+        .padding(12)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.regularMaterial)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [.white.opacity(0.30), Color.primary.opacity(0.06)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.5
                 )
         }
-        .buttonStyle(.plain)
+        .shadow(color: .black.opacity(0.13), radius: 16, x: 0, y: 4)
     }
     
-    private func liquidChip(_ title: String, _ action: @escaping () -> Void) -> some View {
+    private func styleCard(_ preview: String, _ label: String,
+                           _ weight: Font.Weight, _ size: CGFloat,
+                           action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            VStack(spacing: 2) {
+                Text(preview)
+                    .font(.system(size: size, weight: weight))
+                    .foregroundStyle(Color.primary)
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.primary.opacity(0.055))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(LiquidPressStyle())
     }
 }

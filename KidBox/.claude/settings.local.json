@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add KidBox/Features/Note/NoteLiquidToolbar.swift KidBox/Features/Note/RichTextAccessoryView.swift)",
+      "Bash(git commit:*)",
+      "Bash(git -C /Users/vscocca/KidBox/KidBox status)",
+      "Bash(git -C:*)"
+    ]
+  }
+}
