@@ -367,6 +367,31 @@ final class AppCoordinator: ObservableObject {
         }
     }
     
+    @MainActor
+    func openNoteFromPush(familyId: String, noteId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")
+        
+        Task { @MainActor in
+            // 1. Forza sync immediato delle note prima di cercare localmente
+            await SyncCenter.shared.fetchNotesOnce(familyId: familyId, modelContext: modelContext)
+            
+            // 2. Ora cerca localmente
+            let nid = noteId
+            let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+            
+            path.removeAll()
+            if found {
+                path.append(.notesHome(familyId: familyId))
+                path.append(.noteDetail(familyId: familyId, noteId: noteId))
+                KBLog.navigation.kbInfo("openNoteFromPush: navigating to noteDetail")
+            } else {
+                path.append(.notesHome(familyId: familyId))
+                KBLog.navigation.kbError("openNoteFromPush: note not found after fetch, fallback to notesHome")
+            }
+        }
+    }
+    
     /// Resets navigation to the root (clears the NavigationStack path).
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")

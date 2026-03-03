@@ -18,7 +18,11 @@ function sumCounters(data) {
   const documents = data?.documents || 0;
   const location = data?.location || 0;
   const todos = data?.todos || 0;
-  return {chat, documents, location, todos, total: chat + documents + location + todos};
+  const shopping = data?.shopping || 0;
+  const notes = data?.notes || 0;
+
+  const total = chat + documents + location + todos + shopping + notes;
+  return {chat, documents, location, todos, shopping, notes, total};
 }
 
 /**
@@ -31,10 +35,8 @@ function sumCounters(data) {
  */
 async function incrementCounterAndGetBadge({familyId, uid, field}) {
   const ref = admin.firestore()
-      .collection("families")
-      .doc(familyId)
-      .collection("counters")
-      .doc(uid);
+      .collection("families").doc(familyId)
+      .collection("counters").doc(uid);
 
   const now = admin.firestore.FieldValue.serverTimestamp();
 
@@ -43,14 +45,21 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
     const data = snap.exists ? snap.data() : {};
     const counters = sumCounters(data);
 
-    // calcolo "post increment" senza dover rileggere
     const next = {
       chat: counters.chat + (field === "chat" ? 1 : 0),
       documents: counters.documents + (field === "documents" ? 1 : 0),
       location: counters.location + (field === "location" ? 1 : 0),
       todos: counters.todos + (field === "todos" ? 1 : 0),
+      shopping: counters.shopping + (field === "shopping" ? 1 : 0),
+      notes: counters.notes + (field === "notes" ? 1 : 0),
     };
-    const badge = next.chat + next.documents + next.location + next.todos;
+
+    let badge = Math.floor(
+        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes,
+    );
+
+    // safety net: APNS vuole un intero valido
+    if (!Number.isFinite(badge) || badge < 0) badge = 0;
 
     tx.set(ref, {
       [field]: admin.firestore.FieldValue.increment(1),
@@ -278,7 +287,8 @@ async function deleteFamilyCompletely(familyId) {
 
 exports.deleteAccount = onCall(
     {region: "europe-west1",
-      invoker: "public"},
+      invoker: "public",
+    },
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) {
@@ -770,5 +780,271 @@ exports.notifyTodoAssigned = onDocumentWritten(
         successCount: result.successCount,
         failureCount: result.failureCount,
       });
+
+      result.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          console.error("FCM error detail:", resp.error?.code, resp.error?.message);
+        }
+      });
+
+      logger.info("notifyTodoAssigned send result", {
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+      });
+    },
+);
+/**
+ * Resolves a display name for a uid within a family.
+ * 1st: families/{familyId}/members/{uid}.displayName
+ * 2nd: users/{uid}.displayName
+ * Fallback: "Un membro della famiglia"
+ *
+ * Needed because GroceryRemoteDTO / NoteRemoteDTO do not carry a *ByName field.
+ *
+ * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<string>}
+ */
+async function resolveMemberName(familyId, uid) {
+  try {
+    const memberSnap = await admin.firestore()
+        .collection("families").doc(familyId)
+        .collection("members").doc(uid)
+        .get();
+
+    if (memberSnap.exists) {
+      const name = memberSnap.get("displayName") || memberSnap.get("name");
+      if (name) return name;
+    }
+
+    const userSnap = await admin.firestore()
+        .collection("users").doc(uid)
+        .get();
+
+    if (userSnap.exists) {
+      const name = userSnap.get("displayName") || userSnap.get("name");
+      if (name) return name;
+    }
+  } catch (e) {
+    logger.warn("resolveMemberName failed", {uid, error: e.message});
+  }
+
+  return "Un membro della famiglia";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// notifyNewGroceryItem
+//
+// Path reale Firestore: families/{familyId}/groceries/{itemId}
+// Fonte: GroceryRemoteStore.swift → col(familyId:) usa .collection("groceries")
+//
+// Counter : shopping
+// Pref key: notifyOnNewGroceryItem  (default ON se prefs assente)
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.notifyNewGroceryItem = onDocumentCreated(
+    {
+      document: "families/{familyId}/groceries/{itemId}", // ← "groceries" non "groceryItems"
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const itemId = event.params.itemId;
+
+      const itemData = event.data ? event.data.data() : null;
+      if (!itemData) {
+        logger.warn("notifyNewGroceryItem: missing item data");
+        return;
+      }
+
+      // Skip se già soft-deleted alla creazione (edge case)
+      if (itemData.isDeleted === true) return;
+
+      // createdBy è il campo canonico — vedi GroceryRemoteStore.upsert()
+      const creatorUid = itemData.createdBy || itemData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewGroceryItem: missing creatorUid");
+        return;
+      }
+
+      logger.info("notifyNewGroceryItem triggered", {familyId, itemId, creatorUid});
+
+      // GroceryRemoteDTO non ha *ByName → risolviamo da members subcollection
+      // (admin SDK bypassa le Firestore security rules, nessuna regola aggiuntiva necessaria)
+      const creatorName = await resolveMemberName(familyId, creatorUid);
+
+      const membersSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("members").get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewGroceryItem: members subcollection is empty");
+        return;
+      }
+
+      const memberUids = membersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid && uid !== creatorUid);
+
+      if (memberUids.length === 0) {
+        logger.info("notifyNewGroceryItem: no targets");
+        return;
+      }
+
+      // item.name corrisponde a KBGroceryItem.name / GroceryRemoteDTO.name
+      const itemName = itemData.name || "Prodotto";
+      const title = "Lista della spesa 🛒";
+      const body = `${creatorName} ha aggiunto: ${itemName}`;
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewGroceryItem");
+        if (tokens.length === 0) continue;
+
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "shopping"});
+
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {
+            type: "new_grocery_item",
+            familyId: familyId,
+            itemId: itemId,
+          },
+          apns: {
+            payload: {aps: {sound: "default", badge}},
+          },
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewGroceryItem: no per-user notifications to send");
+        return;
+      }
+
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+      );
+
+      let totalSuccess = 0; let totalFailure = 0;
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+
+      logger.info("notifyNewGroceryItem: send result",
+          {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// notifyNewNote
+// Trigger : families/{familyId}/notes/{noteId}  — onDocumentCreated
+// Counter : notes
+// Pref key: notifyOnNewNote  (default ON)
+//
+// IMPORTANT: note title/body are E2E-encrypted (NoteCryptoService).
+// The function intentionally uses a generic body — encrypted content
+// must never be sent in plain text via push payload.
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.notifyNewNote = onDocumentCreated(
+    {
+      document: "families/{familyId}/notes/{noteId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const noteId = event.params.noteId;
+
+      const noteData = event.data ? event.data.data() : null;
+      if (!noteData) {
+        logger.warn("notifyNewNote: missing note data");
+        return;
+      }
+
+      if (noteData.isDeleted === true) return;
+
+      // createdBy matches KBNote / NoteRemoteDTO
+      const creatorUid = noteData.createdBy || noteData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewNote: missing creatorUid");
+        return;
+      }
+
+      logger.info("notifyNewNote triggered", {familyId, noteId, creatorUid});
+
+      const creatorName = await resolveMemberName(familyId, creatorUid);
+
+      const membersSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("members").get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewNote: members subcollection is empty");
+        return;
+      }
+
+      const memberUids = membersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid && uid !== creatorUid);
+
+      if (memberUids.length === 0) {
+        logger.info("notifyNewNote: no targets");
+        return;
+      }
+
+      // Generic body — title is encrypted, never readable server-side
+      const title = "📝 Nuova nota";
+      const body = `${creatorName} ha aggiunto una nuova nota`;
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewNote");
+        if (tokens.length === 0) continue;
+
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "notes"});
+
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {
+            type: "new_note",
+            familyId,
+            noteId,
+          },
+          apns: {
+            payload: {aps: {sound: "default", badge}},
+          },
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewNote: no per-user notifications to send");
+        return;
+      }
+
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+      );
+
+      let totalSuccess = 0; let totalFailure = 0;
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+
+      logger.info("notifyNewNote: send result",
+          {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );

@@ -149,6 +149,19 @@ struct KidBoxApp: App {
                             TodoHighlightStore.shared.set(todoId)
                             coordinator.navigate(to: .todoList(familyId: familyId, childId: childId, listId: listId))
                             NotificationManager.shared.consumeDeepLink()
+                        case .groceryItem(let familyId, _):
+                            KBLog.navigation.kbInfo("Deep link -> open shopping list")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.navigate(to: .shoppingList(familyId: familyId))
+                        case .note(let familyId, let noteId):
+                            KBLog.navigation.kbInfo("Deep link -> open note noteId=\(noteId)")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.openNoteFromPush(
+                                familyId: familyId,
+                                noteId: noteId,
+                                modelContext: modelContainer.mainContext
+                            )
+                            NotificationManager.shared.consumeDeepLink()
                         }
                         
                         notifications.consumeDeepLink()

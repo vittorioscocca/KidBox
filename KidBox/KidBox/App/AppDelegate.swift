@@ -214,7 +214,7 @@ final class AppDelegate: NSObject,
         }
         
         KBLog.auth.kbInfo("FCM token received length=\(token.count)")
-        
+        print("🔑 FCM TOKEN: \(token)")
         Task { @MainActor in
             await NotificationManager.shared.handleFCMToken(token)
         }

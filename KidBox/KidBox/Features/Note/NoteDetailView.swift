@@ -34,7 +34,7 @@ struct NoteDetailView: View {
         self.familyId = familyId
         self.noteId   = noteId
         let nid = noteId
-        _queriedNotes = Query(filter: #Predicate<KBNote> { $0.id == nid })
+        _queriedNotes = Query(filter: #Predicate<KBNote> { $0.id == nid && $0.familyId == familyId })
     }
     
     var body: some View {
@@ -56,7 +56,14 @@ struct NoteDetailView: View {
         }
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear  { loadOrCreate() }
+        .onAppear  {
+            loadOrCreate()
+            Task { @MainActor in
+                BadgeManager.shared.clearNotes()
+                BadgeManager.shared.refreshAppBadge()
+                await CountersService.shared.reset(familyId: familyId, field: .notes)
+            }
+        }
         .onDisappear { handleDisappear() }
         
         // ✅ Ascolta aggiornamenti da SwiftData (es. listener realtime che aggiorna la nota)

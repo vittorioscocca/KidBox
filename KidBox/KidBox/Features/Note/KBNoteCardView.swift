@@ -12,97 +12,83 @@ struct KBNoteCardView: View {
     let members: [KBFamilyMember]
     var searchQuery: String = ""
     
-    // ✅ Cache preview (plain text) to avoid heavy HTML parsing during render
     @State private var previewPlain: String = " "
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 2) {
+            // Titolo bold
             Text(highlightedText(note.title.isEmpty ? "Senza titolo" : note.title))
-                .font(.headline)
+                .font(.system(.body, design: .default, weight: .semibold))
                 .lineLimit(1)
+                .foregroundStyle(.primary)
             
-            Text(highlightedText(previewPlain))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Spacer(minLength: 0)
-            
-            HStack(spacing: 4) {
-                let editorName = resolvedName(uid: note.updatedBy)
-                if !editorName.isEmpty {
-                    Text("✍️ \(editorName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                Spacer()
-                Text(note.updatedAt, style: .date)
-                    .font(.caption)
+            // Data + anteprima corpo
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(formattedDate(note.updatedAt))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                
+                Text(highlightedText(previewPlain))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            
+            // Autore
+            let editorName = resolvedName(uid: note.updatedBy)
+            if !editorName.isEmpty {
+                Text("Autore: \(editorName)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 110, maxHeight: 110, alignment: .leading)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        // ✅ compute preview once, and recompute only when body changes
+        .padding(.vertical, 2)
         .task(id: note.body) {
             await rebuildPreview(from: note.body)
         }
     }
     
-    // MARK: - Preview building (async + cached)
+    private func formattedDate(_ date: Date) -> String {
+        let cal = Calendar.current
+        if cal.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        } else if cal.isDateInYesterday(date) {
+            return "Ieri"
+        } else if let days = cal.dateComponents([.day], from: date, to: Date()).day, days < 7 {
+            return date.formatted(.dateTime.weekday(.wide))
+        } else {
+            return date.formatted(.dateTime.day().month(.twoDigits).year(.twoDigits))
+        }
+    }
     
     @MainActor
     private func rebuildPreview(from htmlOrPlain: String) async {
-        // Fast path
         let trimmed = htmlOrPlain.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            previewPlain = " "
-            return
-        }
-        if !trimmed.contains("<") {
-            // Already plain
-            previewPlain = trimmed
-            return
-        }
-        
-        // Heavy path: do it off the main thread
+        if trimmed.isEmpty { previewPlain = "Nessun contenuto"; return }
+        if !trimmed.contains("<") { previewPlain = trimmed; return }
         let result: String = await Task.detached(priority: .utility) {
-            return htmlOrPlain.htmlToPlainTextHeavy()
+            htmlOrPlain.htmlToPlainTextHeavy()
         }.value
-        
         let clean = result
             .replacingOccurrences(of: "\u{00a0}", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        previewPlain = clean.isEmpty ? " " : clean
+        previewPlain = clean.isEmpty ? "Nessun contenuto" : clean
     }
-    
-    // MARK: - Highlight
     
     private func highlightedText(_ input: String) -> AttributedString {
         var attributed = AttributedString(input)
-        
         let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return attributed }
-        
         let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
         var searchRange = input.startIndex..<input.endIndex
-        
         while let range = input.range(of: q, options: options, range: searchRange) {
             if let attrRange = Range(range, in: attributed) {
-                attributed[attrRange].backgroundColor = .yellow.opacity(0.35)
+                attributed[attrRange].backgroundColor = .yellow.opacity(0.5)
             }
             searchRange = range.upperBound..<input.endIndex
         }
-        
         return attributed
     }
-    
-    // MARK: - Name resolution
     
     private func resolvedName(uid: String) -> String {
         guard !uid.isEmpty else { return "" }
@@ -114,18 +100,13 @@ struct KBNoteCardView: View {
     }
 }
 
-// MARK: - HTML -> plain text (heavy)
-
 private extension String {
-    /// Heavy conversion: call this off-main (uses NSAttributedString HTML importer).
     func htmlToPlainTextHeavy() -> String {
         guard let data = self.data(using: .utf8) else { return self }
-        
         let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
             .documentType: NSAttributedString.DocumentType.html,
             .characterEncoding: String.Encoding.utf8.rawValue
         ]
-        
         if let attr = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
             return attr.string
         }

@@ -162,7 +162,10 @@ extension SyncCenter {
                         let remoteTs = dto.updatedAt ?? Date.distantPast
                         let localTs  = existing.updatedAt
                         
-                        guard remoteTs >= localTs else {
+                        // Eccezione: accetta il remoto se la nota locale è vuota (es. creata da deep link prima della sync)
+                        let localIsEmpty = existing.title.isEmpty && existing.body.isEmpty
+                        
+                        guard remoteTs >= localTs || localIsEmpty else {
                             KBLog.sync.kbDebug("[note][inbound] IGNORE remote<local id=\(dto.id)")
                             continue
                         }
@@ -224,6 +227,34 @@ extension SyncCenter {
             
         } catch {
             KBLog.sync.kbError("[note][inbound] APPLY FAIL err=\(error.localizedDescription)")
+        }
+    }
+    
+    // Fetch one-shot delle note da Firestore (per deep link da push)
+    func fetchNotesOnce(familyId: String, modelContext: ModelContext) async {
+        await withCheckedContinuation { continuation in
+            var resolved = false
+            _ = notesRemote.listenNotes(
+                familyId: familyId,
+                onChange: { [weak self] changes in
+                    guard let self, !resolved else { return }
+                    resolved = true
+                    self.applyNotesInbound(changes: changes, familyId: familyId, modelContext: modelContext)
+                    continuation.resume()
+                },
+                onError: { _ in
+                    guard !resolved else { return }
+                    resolved = true
+                    continuation.resume()
+                }
+            )
+            // Timeout di sicurezza: 5 secondi
+            Task {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                guard !resolved else { return }
+                resolved = true
+                continuation.resume()
+            }
         }
     }
 }

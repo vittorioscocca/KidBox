@@ -495,9 +495,21 @@ private struct HomeCardGrid: View {
     private func cardView(for id: HomeCardID) -> some View {
         switch id {
         case .note:
-            HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
-                KBLog.navigation.debug("Home: tap Notes")
-                onNavigate(.notes(familyId: familyId))
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
+                    KBLog.navigation.debug("Home: tap Notes")
+                    // reset badge note prima di navigare
+                    Task {
+                        BadgeManager.shared.clearNotes()
+                        await CountersService.shared.reset(familyId: familyId, field: .notes)
+                    }
+                    onNavigate(.notes(familyId: familyId))
+                }
+                if badge.notes > 0 {
+                    BadgeView(count: badge.notes)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
             }
             
         case .todo:
@@ -517,6 +529,11 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Lista della Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
                     KBLog.navigation.debug("Home: tap Shopping")
+                    // reset badge spesa prima di navigare
+                    Task {
+                        BadgeManager.shared.clearShopping()
+                        await CountersService.shared.reset(familyId: familyId, field: .shopping)
+                    }
                     onNavigate(.shopping(familyId: familyId))
                 }
                 if badge.shopping > 0 {

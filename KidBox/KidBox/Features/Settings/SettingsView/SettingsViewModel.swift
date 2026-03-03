@@ -16,10 +16,6 @@ import OSLog
 /// - Provide a stable UX by reading cached preferences immediately.
 /// - Sync preferences with a remote source of truth via `NotificationManager`.
 /// - Persist the latest known value locally in `UserDefaults`.
-///
-/// Logging strategy:
-/// - Log *events* (load start/end, remote fetch, user toggle, success/failure).
-/// - Avoid noisy logs on every minor state assignment.
 @MainActor
 final class SettingsViewModel: ObservableObject {
     
@@ -30,22 +26,24 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnNewMessages: Bool = true
     @Published var notifyOnLocationSharing: Bool = false
     @Published var notifyOnTodos: Bool = true
+    @Published var notifyOnNewGroceryItem: Bool = true   // ← NEW
+    @Published var notifyOnNewNote: Bool = true          // ← NEW
     
     // MARK: - Dependencies
     private let notifications = NotificationManager.shared
     
     // MARK: - Local cache keys
     private enum LocalKeys {
-        static let notifyOnNewDocs = "kb_notifyOnNewDocs"   // namespaced
-        static let notifyOnNewMessages = "kb_notifyOnNewMessages"
-        static let notifyOnLocationSharing = "kb_notifyOnLocationSharing"
-        static let notifyOnTodos = "kb_notifyOnTodos"
-        
+        static let notifyOnNewDocs          = "kb_notifyOnNewDocs"
+        static let notifyOnNewMessages      = "kb_notifyOnNewMessages"
+        static let notifyOnLocationSharing  = "kb_notifyOnLocationSharing"
+        static let notifyOnTodos            = "kb_notifyOnTodos"
+        static let notifyOnNewGroceryItem   = "kb_notifyOnNewGroceryItem"   // ← NEW
+        static let notifyOnNewNote          = "kb_notifyOnNewNote"          // ← NEW
     }
     
     // MARK: - Init
     init() {
-        // Initialize immediately from local cache for a stable UX.
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
         self.notifyOnNewDocs = cached
         KBLog.settings.debug("SettingsVM init cached notifyOnNewDocs=\(cached, privacy: .public)")
@@ -60,88 +58,77 @@ final class SettingsViewModel: ObservableObject {
         
         let cachedTodos = UserDefaults.standard.object(forKey: LocalKeys.notifyOnTodos) as? Bool ?? true
         self.notifyOnTodos = cachedTodos
-        KBLog.settings.debug("SettingsVM init cached notifyOnLocationSharing=\(cachedTodos, privacy: .public)")
+        KBLog.settings.debug("SettingsVM init cached notifyOnTodos=\(cachedTodos, privacy: .public)")
+        
+        // ← NEW
+        let cachedGrocery = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewGroceryItem) as? Bool ?? true
+        self.notifyOnNewGroceryItem = cachedGrocery
+        KBLog.settings.debug("SettingsVM init cached notifyOnNewGroceryItem=\(cachedGrocery, privacy: .public)")
+        
+        let cachedNote = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewNote) as? Bool ?? true
+        self.notifyOnNewNote = cachedNote
+        KBLog.settings.debug("SettingsVM init cached notifyOnNewNote=\(cachedNote, privacy: .public)")
     }
     
-    // MARK: - Load (called by view .task / onAppear)
+    // MARK: - Load
     func load() {
         KBLog.settings.debug("SettingsVM load requested")
         
-        // 1) Refresh from local cache (cheap, immediate).
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
         if notifyOnNewDocs != cached {
             notifyOnNewDocs = cached
-            KBLog.settings.debug("SettingsVM applied cached notifyOnNewDocs=\(cached, privacy: .public)")
         }
         
-        // 2) Sync with remote source of truth.
         Task { @MainActor in
             isLoading = true
             defer { isLoading = false }
             
             infoText = nil
             
-            KBLog.settings.debug("SettingsVM refreshAuthorizationStatus start")
             await notifications.refreshAuthorizationStatus()
-            KBLog.settings.debug("SettingsVM refreshAuthorizationStatus end")
             
-            KBLog.settings.debug("SettingsVM fetch remote preference start")
+            // Docs
             let remoteValue = await notifications.fetchNotifyOnNewDocsPreference()
-            KBLog.settings.info("SettingsVM fetch remote preference done value=\(remoteValue, privacy: .public)")
-            
-            // Update UI only if it actually changed.
-            if notifyOnNewDocs != remoteValue {
-                notifyOnNewDocs = remoteValue
-                KBLog.settings.debug("SettingsVM applied remote notifyOnNewDocs=\(remoteValue, privacy: .public)")
-            }
-            
-            // Update local cache.
+            if notifyOnNewDocs != remoteValue { notifyOnNewDocs = remoteValue }
             UserDefaults.standard.set(remoteValue, forKey: LocalKeys.notifyOnNewDocs)
-            KBLog.settings.debug("SettingsVM cached remote notifyOnNewDocs=\(remoteValue, privacy: .public)")
             
-            
+            // Chat
             let remoteChat = await notifications.fetchNotifyOnNewMessagesPreference()
-            KBLog.settings.info("SettingsVM fetch remote preference done value=\(remoteChat, privacy: .public)")
-            if notifyOnNewMessages != remoteChat {
-                notifyOnNewMessages = remoteChat
-                KBLog.settings.debug("SettingsVM applied remote notifyOnNewDocs=\(remoteChat, privacy: .public)")
-            }
+            if notifyOnNewMessages != remoteChat { notifyOnNewMessages = remoteChat }
             UserDefaults.standard.set(remoteChat, forKey: LocalKeys.notifyOnNewMessages)
-            KBLog.settings.debug("SettingsVM cached remote notifyOnNewDocs=\(remoteChat, privacy: .public)")
             
-            // ---- TODO notifications ----
-            
-            KBLog.settings.debug("SettingsVM fetch remote Todo preference start")
+            // Todos
             let remoteTodo = await notifications.fetchNotifyOnTodoAssignedPreference()
-            KBLog.settings.info("SettingsVM fetch remote Todo preference done value=\(remoteTodo, privacy: .public)")
-            
-            if notifyOnTodos != remoteTodo {
-                notifyOnTodos = remoteTodo
-                KBLog.settings.debug("SettingsVM applied remote notifyOnTodos=\(remoteTodo, privacy: .public)")
-            }
-            
+            if notifyOnTodos != remoteTodo { notifyOnTodos = remoteTodo }
             UserDefaults.standard.set(remoteTodo, forKey: LocalKeys.notifyOnTodos)
-            KBLog.settings.debug("SettingsVM cached remote notifyOnTodos=\(remoteTodo, privacy: .public)")
+            
+            // Shopping  ← NEW
+            let remoteGrocery = await notifications.fetchNotifyOnNewGroceryItemPreference()
+            KBLog.settings.info("SettingsVM fetch remote grocery pref=\(remoteGrocery, privacy: .public)")
+            if notifyOnNewGroceryItem != remoteGrocery { notifyOnNewGroceryItem = remoteGrocery }
+            UserDefaults.standard.set(remoteGrocery, forKey: LocalKeys.notifyOnNewGroceryItem)
+            
+            // Notes  ← NEW
+            let remoteNote = await notifications.fetchNotifyOnNewNotePreference()
+            KBLog.settings.info("SettingsVM fetch remote note pref=\(remoteNote, privacy: .public)")
+            if notifyOnNewNote != remoteNote { notifyOnNewNote = remoteNote }
+            UserDefaults.standard.set(remoteNote, forKey: LocalKeys.notifyOnNewNote)
         }
     }
     
-    // MARK: - User action
+    // MARK: - User actions (existing)
+    
     func toggleNotifyOnNewDocs(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnNewDocs requested enabled=\(enabled, privacy: .public)")
+        KBLog.settings.info("SettingsVM toggleNotifyOnNewDocs enabled=\(enabled, privacy: .public)")
         infoText = nil
-        
-        // Immediate UX + immediate local cache update.
         notifyOnNewDocs = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewDocs)
-        KBLog.settings.debug("SettingsVM optimistic set + cached enabled=\(enabled, privacy: .public)")
         
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewDocs(enabled)
                 infoText = enabled ? "Notifiche attive." : "Notifiche disattivate."
-                KBLog.settings.info("SettingsVM setNotifyOnNewDocs OK enabled=\(enabled, privacy: .public)")
             } catch {
-                // Rollback local + UI. (Keeps your existing logic: rollback to false)
                 notifyOnNewDocs = false
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnNewDocs)
                 infoText = error.localizedDescription
@@ -159,7 +146,7 @@ final class SettingsViewModel: ObservableObject {
                 try await notifications.setNotifyOnNewMessages(enabled)
                 infoText = enabled ? "Notifiche chat attive." : "Notifiche chat disattivate."
             } catch {
-                notifyOnNewMessages = true  // rollback al default
+                notifyOnNewMessages = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewMessages)
                 infoText = error.localizedDescription
             }
@@ -175,7 +162,6 @@ final class SettingsViewModel: ObservableObject {
                 try await notifications.setNotifyOnLocationSharing(enabled)
                 infoText = enabled ? "Notifiche posizione attive." : "Notifiche posizione disattivate."
             } catch {
-                // rollback (scegli tu il default; io torno a false)
                 notifyOnLocationSharing = false
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnLocationSharing)
                 infoText = error.localizedDescription
@@ -191,12 +177,51 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnTodoAssigned(enabled)
-                
                 infoText = enabled ? "Notifiche Todo attive." : "Notifiche Todo disattivate."
             } catch {
                 notifyOnTodos = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnTodos)
                 infoText = error.localizedDescription
+            }
+        }
+    }
+    
+    // MARK: - Shopping toggle  ← NEW
+    
+    func toggleNotifyOnNewGroceryItem(_ enabled: Bool) {
+        KBLog.settings.info("SettingsVM toggleNotifyOnNewGroceryItem enabled=\(enabled, privacy: .public)")
+        notifyOnNewGroceryItem = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewGroceryItem)
+        
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnNewGroceryItem(enabled)
+                infoText = enabled ? "Notifiche spesa attive." : "Notifiche spesa disattivate."
+            } catch {
+                notifyOnNewGroceryItem = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewGroceryItem)
+                infoText = error.localizedDescription
+                KBLog.settings.error("SettingsVM setNotifyOnNewGroceryItem failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+    
+    // MARK: - Notes toggle  ← NEW
+    
+    func toggleNotifyOnNewNote(_ enabled: Bool) {
+        KBLog.settings.info("SettingsVM toggleNotifyOnNewNote enabled=\(enabled, privacy: .public)")
+        notifyOnNewNote = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewNote)
+        
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnNewNote(enabled)
+                infoText = enabled ? "Notifiche note attive." : "Notifiche note disattivate."
+            } catch {
+                notifyOnNewNote = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewNote)
+                infoText = error.localizedDescription
+                KBLog.settings.error("SettingsVM setNotifyOnNewNote failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

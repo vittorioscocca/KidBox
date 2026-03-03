@@ -22,6 +22,7 @@ final class BadgeManager: ObservableObject {
     @Published var location: Int = 0
     @Published var shopping: Int = 0
     @Published var todos: Int = 0
+    @Published var notes: Int = 0      // ← NEW
     
     private var listener: ListenerRegistration?
     
@@ -48,18 +49,23 @@ final class BadgeManager: ObservableObject {
                 
                 let data = snap?.data() ?? [:]
                 
-                let chatCount = data["chat"] as? Int ?? 0
-                let docCount  = data["documents"] as? Int ?? 0
-                let locCount  = data["location"] as? Int ?? 0
-                let todoCount = data["todos"] as? Int ?? 0
+                let chatCount     = data["chat"]      as? Int ?? 0
+                let docCount      = data["documents"] as? Int ?? 0
+                let locCount      = data["location"]  as? Int ?? 0
+                let todoCount     = data["todos"]     as? Int ?? 0
+                let shoppingCount = data["shopping"]  as? Int ?? 0   // ← NEW
+                let notesCount    = data["notes"]     as? Int ?? 0   // ← NEW
                 
                 Task { @MainActor in
-                    self.chat = chatCount
+                    self.chat      = chatCount
                     self.documents = docCount
-                    self.location = locCount
-                    self.todos = todoCount
+                    self.location  = locCount
+                    self.todos     = todoCount
+                    self.shopping  = shoppingCount   // ← NEW
+                    self.notes     = notesCount      // ← NEW
                     
                     let total = chatCount + docCount + locCount + todoCount
+                    + shoppingCount + notesCount
                     UNUserNotificationCenter.current().setBadgeCount(total) { error in
                         if let error {
                             print("Failed to set badge count:", error)
@@ -75,7 +81,7 @@ final class BadgeManager: ObservableObject {
     }
     
     func refreshAppBadge() {
-        let total = chat + documents + location + todos
+        let total = chat + documents + location + todos + shopping + notes
         UNUserNotificationCenter.current().setBadgeCount(total) { error in
             if let error {
                 print("Failed to set badge count:", error)
@@ -83,8 +89,10 @@ final class BadgeManager: ObservableObject {
         }
     }
     
-    @MainActor func clearChat() { self.chat = 0 }
+    @MainActor func clearChat()      { self.chat      = 0 }
     @MainActor func clearDocuments() { self.documents = 0 }
-    @MainActor func clearLocation() { self.location = 0 }
-    @MainActor func clearTodos() { self.todos = 0 }
+    @MainActor func clearLocation()  { self.location  = 0 }
+    @MainActor func clearTodos()     { self.todos     = 0 }
+    @MainActor func clearShopping()  { self.shopping  = 0 }   // ← NEW
+    @MainActor func clearNotes()     { self.notes     = 0 }   // ← NEW
 }

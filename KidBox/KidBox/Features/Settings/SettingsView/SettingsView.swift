@@ -10,12 +10,6 @@ import Combine
 internal import os
 
 /// App settings screen.
-///
-/// - Note:
-///   Uses `.task` to load settings once per view lifecycle (better than `onAppear` for async work).
-/// - Important:
-///   In SwiftUI, avoid logging in `body` (it can be recomputed many times).
-///   Prefer `.task` / `.onAppear` with lightweight logs.
 struct SettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @StateObject private var vm = SettingsViewModel()
@@ -36,7 +30,6 @@ struct SettingsView: View {
                     isOn: Binding(
                         get: { vm.notifyOnNewDocs },
                         set: { newValue in
-                            // Log the user intent, not every render.
                             KBLog.settings.info("Toggle notifyOnNewDocs set=\(newValue, privacy: .public)")
                             vm.notifyOnNewDocs = newValue
                             vm.toggleNotifyOnNewDocs(newValue)
@@ -44,6 +37,7 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
+                
                 Toggle(
                     "Notifica nuovi messaggi in chat",
                     isOn: Binding(
@@ -52,6 +46,7 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
+                
                 Toggle(
                     "Notifiche posizione (inizio/fine condivisione)",
                     isOn: Binding(
@@ -64,6 +59,7 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
+                
                 Toggle(
                     "Notifiche Todo (assegnazioni/scadenze)",
                     isOn: Binding(
@@ -72,7 +68,34 @@ struct SettingsView: View {
                     )
                 )
                 .disabled(vm.isLoading)
-                .accessibilityHint("Abilita o disabilita le notifiche quando arrivano nuovi documenti.")
+                
+                // ── NEW ───────────────────────────────────────────────────
+                Toggle(
+                    "Notifiche lista della spesa",
+                    isOn: Binding(
+                        get: { vm.notifyOnNewGroceryItem },
+                        set: { newValue in
+                            KBLog.settings.info("Toggle notifyOnNewGroceryItem set=\(newValue, privacy: .public)")
+                            vm.toggleNotifyOnNewGroceryItem(newValue)
+                        }
+                    )
+                )
+                .disabled(vm.isLoading)
+                .accessibilityHint("Ricevi una notifica quando un membro aggiunge un prodotto alla lista della spesa.")
+                
+                Toggle(
+                    "Notifiche nuove note",
+                    isOn: Binding(
+                        get: { vm.notifyOnNewNote },
+                        set: { newValue in
+                            KBLog.settings.info("Toggle notifyOnNewNote set=\(newValue, privacy: .public)")
+                            vm.toggleNotifyOnNewNote(newValue)
+                        }
+                    )
+                )
+                .disabled(vm.isLoading)
+                .accessibilityHint("Ricevi una notifica quando un membro crea una nuova nota.")
+                // ── END NEW ───────────────────────────────────────────────
                 
                 if let t = vm.infoText {
                     Text(t)

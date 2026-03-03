@@ -6,9 +6,6 @@
 //
 
 //
-//  NotificationManager.swift
-//  KidBox
-//
 //  Centralized push notification manager.
 //
 //  Responsibilities:
@@ -59,6 +56,8 @@ final class NotificationManager: NSObject, ObservableObject {
         case chat(familyId: String)
         case familyLocation(familyId: String)
         case todo(familyId: String, childId: String, listId: String, todoId: String)
+        case groceryItem(familyId: String, itemId: String)   // ← NEW
+        case note(familyId: String, noteId: String)          // ← NEW
     }
     
     // MARK: - Deep Link Handling
@@ -77,12 +76,13 @@ final class NotificationManager: NSObject, ObservableObject {
                 KBLog.auth.kbError("Invalid new_document payload")
                 return
             }
-            
             pendingDeepLink = .document(familyId: familyId, docId: docId)
             KBLog.auth.kbInfo("DeepLink set for document")
-        } else if type == "new_chat_message" {       // ← NUOVO
+            
+        } else if type == "new_chat_message" {
             guard let familyId = userInfo["familyId"] as? String else { return }
             pendingDeepLink = .chat(familyId: familyId)
+            
         } else if type == "location_sharing_started" || type == "location_sharing_stopped" {
             guard let familyId = userInfo["familyId"] as? String else {
                 KBLog.auth.kbError("Invalid location payload (missing familyId)")
@@ -90,24 +90,46 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .familyLocation(familyId: familyId)
             KBLog.auth.kbInfo("DeepLink set for familyLocation familyId=\(familyId)")
+            
         } else if type == "todo_assigned" || type == "todo_reassigned" || type == "todo_due_changed" {
             guard
                 let familyId = userInfo["familyId"] as? String,
-                let childId  = userInfo["childId"] as? String,
-                let listId   = userInfo["listId"] as? String,
-                let todoId   = userInfo["todoId"] as? String
+                let childId  = userInfo["childId"]  as? String,
+                let listId   = userInfo["listId"]   as? String,
+                let todoId   = userInfo["todoId"]   as? String
             else {
                 KBLog.auth.kbError("Invalid todo payload (missing ids)")
                 return
             }
-            
             pendingDeepLink = .todo(familyId: familyId, childId: childId, listId: listId, todoId: todoId)
             KBLog.auth.kbInfo("DeepLink set for todo familyId=\(familyId) listId=\(listId) todoId=\(todoId)")
+            
+        } else if type == "new_grocery_item" {            // ← NEW
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let itemId   = userInfo["itemId"]   as? String
+            else {
+                KBLog.auth.kbError("Invalid new_grocery_item payload")
+                return
+            }
+            pendingDeepLink = .groceryItem(familyId: familyId, itemId: itemId)
+            KBLog.auth.kbInfo("DeepLink set for groceryItem familyId=\(familyId) itemId=\(itemId)")
+            
+        } else if type == "new_note" {                    // ← NEW
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let noteId   = userInfo["noteId"]   as? String
+            else {
+                KBLog.auth.kbError("Invalid new_note payload")
+                return
+            }
+            pendingDeepLink = .note(familyId: familyId, noteId: noteId)
+            KBLog.auth.kbInfo("DeepLink set for note familyId=\(familyId) noteId=\(noteId)")
         }
     }
     
     func fetchNotifyOnTodoAssignedPreference() async -> Bool {
-        guard let uid = Auth.auth().currentUser?.uid else { return true } // default ON
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
         do {
             let snap = try await db.collection("users").document(uid).getDocument()
             if let prefs = snap.get("notificationPrefs") as? [String: Any],
@@ -127,12 +149,68 @@ final class NotificationManager: NSObject, ObservableObject {
             "notificationPrefs": ["notifyOnTodoAssigned": enabled]
         ], merge: true)
         
-        // Se ON: garantisci permessi + token (come location)
         if enabled {
             try await enablePushNotificationsForCurrentUser()
         }
-        // Se OFF: NON rimuovere token (possono servire per chat/docs)
     }
+    
+    // MARK: - Shopping notification preference  ← NEW
+    
+    func fetchNotifyOnNewGroceryItemPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnNewGroceryItem"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+    
+    func setNotifyOnNewGroceryItem(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewGroceryItem": enabled]
+        ], merge: true)
+        
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+    
+    // MARK: - Notes notification preference  ← NEW
+    
+    func fetchNotifyOnNewNotePreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnNewNote"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+    
+    func setNotifyOnNewNote(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewNote": enabled]
+        ], merge: true)
+        
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+    
+    // MARK: - Existing preferences (unchanged)
     
     /// Clears current deep link after navigation is handled.
     func consumeDeepLink() {
@@ -142,16 +220,14 @@ final class NotificationManager: NSObject, ObservableObject {
     
     // MARK: - Authorization
     
-    /// Refreshes notification authorization status from system settings.
     func refreshAuthorizationStatus() async {
         KBLog.auth.kbDebug("Refreshing authorization status")
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         authorizationStatus = settings.authorizationStatus
     }
     
-    // MARK: - Preferences
+    // MARK: - Preferences (existing)
     
-    /// Reads `notifyOnNewDocs` preference from Firestore.
     func fetchNotifyOnNewDocsPreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else {
             KBLog.auth.kbDebug("No authenticated user while reading prefs")
@@ -188,8 +264,6 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - Chat notification preference
-    
     func fetchNotifyOnNewMessagesPreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return true }
         do {
@@ -198,7 +272,7 @@ final class NotificationManager: NSObject, ObservableObject {
                let v = prefs["notifyOnNewMessages"] as? Bool {
                 return v
             }
-            return true  // default: abilitato
+            return true
         } catch {
             return true
         }
@@ -210,9 +284,6 @@ final class NotificationManager: NSObject, ObservableObject {
         try await db.collection("users").document(uid).setData([
             "notificationPrefs": ["notifyOnNewMessages": enabled]
         ], merge: true)
-        
-        // Non disabilitiamo i token FCM qui perché potrebbero servire
-        // ancora per i documenti — gestiamo solo la preference
     }
     
     func fetchNotifyOnLocationSharingPreference() async -> Bool {
@@ -236,16 +307,13 @@ final class NotificationManager: NSObject, ObservableObject {
             "notificationPrefs": ["notifyOnLocationSharing": enabled]
         ], merge: true)
         
-        // se ON: assicuriamoci permessi + token
         if enabled {
             try await enablePushNotificationsForCurrentUser()
         }
-        // se OFF: NON rimuovo i token (potrebbero servire per chat/docs)
     }
     
     // MARK: - APNs
     
-    /// Links APNs token with Firebase Messaging and persists FCM if available.
     func handleAPNSToken(_ deviceToken: Data) async {
         KBLog.auth.kbDebug("Handling APNs token")
         
@@ -263,7 +331,6 @@ final class NotificationManager: NSObject, ObservableObject {
     
     // MARK: - Toggle
     
-    /// Updates notifyOnNewDocs preference and enables/disables push.
     func setNotifyOnNewDocs(_ enabled: Bool) async throws {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
@@ -288,7 +355,6 @@ final class NotificationManager: NSObject, ObservableObject {
     
     // MARK: - Enable
     
-    /// Requests permission and registers for remote notifications.
     func enablePushNotificationsForCurrentUser() async throws {
         KBLog.auth.kbDebug("Enabling push notifications")
         
@@ -310,7 +376,6 @@ final class NotificationManager: NSObject, ObservableObject {
     
     // MARK: - Disable
     
-    /// Disables push notifications and removes FCM tokens.
     func disablePushNotificationsForCurrentUser() async throws {
         KBLog.auth.kbInfo("User disabled notifications")
         
@@ -331,7 +396,6 @@ final class NotificationManager: NSObject, ObservableObject {
     
     // MARK: - Token Persistence
     
-    /// Persists FCM token under users/{uid}/fcmTokens/{token}
     func persistFCMToken(_ token: String) async throws {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
@@ -347,7 +411,6 @@ final class NotificationManager: NSObject, ObservableObject {
         KBLog.auth.kbDebug("FCM token stored")
     }
     
-    /// Handles FCM token refresh.
     func handleFCMToken(_ token: String) async {
         do {
             try await persistFCMToken(token)
