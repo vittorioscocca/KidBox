@@ -3,7 +3,6 @@
 //  KidBox
 //
 
-
 import Combine
 import SwiftUI
 import SwiftData
@@ -96,8 +95,6 @@ final class TreatmentAttachmentService {
         }
         
         // "Referti" figlia di Salute
-        // Cerca per parentId esatto OPPURE per titolo tra tutti i figli di qualsiasi "Salute"
-        // (gestisce il caso account B dove Salute ha ID diverso da account A)
         let referti: KBDocumentCategory
         let sid = salute.id
         let saluteIds = Set(all.filter { $0.title == "Salute" }.map { $0.id })
@@ -105,7 +102,6 @@ final class TreatmentAttachmentService {
             $0.title == "Referti" &&
             ($0.parentId == sid || saluteIds.contains($0.parentId ?? ""))
         }) {
-            // Riusa — se parentId punta a Salute diversa, non importa: il contenuto è lo stesso
             referti = existing
         } else {
             let nextOrder = (all
@@ -150,15 +146,12 @@ final class TreatmentAttachmentService {
         let title       = url.deletingPathExtension().lastPathComponent
         let storagePath = "families/\(familyId)/treatment-attachments/\(treatmentId)/\(docId)/\(fileName).kbenc"
         
-        // Cartelle Salute/Referti (crea se non esistono)
         let (_, referti) = ensureHealthFolders(familyId: familyId, modelContext: modelContext)
         
-        // Cache locale
         guard let localRelPath = try? DocumentLocalCache.write(
             familyId: familyId, docId: docId, fileName: fileName, data: data
         ) else { return nil }
         
-        // KBDocument in cartella Referti
         let doc = KBDocument(
             id: docId,
             familyId: familyId,
@@ -182,12 +175,10 @@ final class TreatmentAttachmentService {
         modelContext.insert(doc)
         try? modelContext.save()
         
-        // Accoda sync Firestore metadata
         SyncCenter.shared.enqueueDocumentUpsert(
             documentId: doc.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
-        // Upload Firebase Storage — path già costruito, non passa per DocumentStorageService
         Task.detached {
             do {
                 guard let encrypted = try? await DocumentCryptoService.encrypt(
@@ -222,12 +213,8 @@ final class TreatmentAttachmentService {
         return doc
     }
     
-    
     // MARK: - Download remoto (auto, account B)
     
-    /// Scarica e decripta un allegato arrivato da Firestore sull'account B.
-    /// Chiamato automaticamente da applyDocumentInbound quando localPath è nil.
-    // Traccia i download in corso per evitare duplicati
     private static var downloadingDocIds = Set<String>()
     
     func downloadRemoteAttachment(
@@ -277,7 +264,6 @@ final class TreatmentAttachmentService {
             
             try? FileManager.default.removeItem(at: tmpURL)
             
-            // Aggiorna localPath nel KBDocument
             await MainActor.run {
                 let did = docId
                 let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
@@ -298,13 +284,9 @@ final class TreatmentAttachmentService {
                     let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
                     if let doc = try modelContext.fetch(desc).first {
                         doc.lastSyncError = error.localizedDescription
-                        
                         if notFound {
-                            // ✅ blocca retry infinito
-                            doc.localPath = "__missing__"   // sentinella
-                            // opzionale: doc.downloadURL = nil  // se vuoi disinnescare anche su URL
+                            doc.localPath = "__missing__"
                         }
-                        
                         try? modelContext.save()
                     }
                 } catch { }
@@ -313,15 +295,13 @@ final class TreatmentAttachmentService {
             KBLog.sync.kbError("downloadRemoteAttachment failed docId=\(docId): \(error.localizedDescription)")
         }
     }
-
+    
     private func isStorageNotFound(_ error: Error) -> Bool {
         let ns = error as NSError
-        // FirebaseStorage usa error domain StorageErrorDomain
         if ns.domain == StorageErrorDomain,
            ns.code == StorageErrorCode.objectNotFound.rawValue {
             return true
         }
-        // fallback: a volte nel localizedDescription compare "does not exist"
         if ns.localizedDescription.lowercased().contains("does not exist") { return true }
         return false
     }
@@ -332,13 +312,11 @@ final class TreatmentAttachmentService {
         let path  = doc.storagePath
         let local = doc.localPath
         
-        // 1) Rimuovi file locale
         if let lp = local, !lp.isEmpty {
             DocumentLocalCache.deleteFile(localPath: lp)
         }
         doc.localPath = nil
         
-        // 2) Enqueue HARD delete su Firestore (non upsert)
         SyncCenter.shared.enqueueDocumentDelete(
             documentId: doc.id,
             familyId: doc.familyId,
@@ -346,7 +324,6 @@ final class TreatmentAttachmentService {
         )
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
-        // 3) Best-effort delete su Storage
         if !path.isEmpty {
             Task.detached {
                 do {
@@ -392,7 +369,6 @@ final class TreatmentAttachmentService {
             onKeyMissing(); return
         }
         
-        // Cache locale
         if let localPath = doc.localPath, !localPath.isEmpty,
            DocumentLocalCache.exists(localPath: localPath) != nil {
             do {
@@ -407,7 +383,6 @@ final class TreatmentAttachmentService {
             return
         }
         
-        // Download da Firebase
         Task {
             do {
                 let url = try await downloadAndDecrypt(doc: doc, modelContext: modelContext)
@@ -478,13 +453,95 @@ final class TreatmentAttachmentService {
     }
 }
 
+// MARK: - AttachmentSourcePickerSheet
+
+struct AttachmentSourcePickerSheet: View {
+    let onCamera:   () -> Void
+    let onGallery:  () -> Void
+    let onDocument: () -> Void
+    
+    private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color(.systemGray4))
+                .frame(width: 36, height: 4)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
+            
+            Text("Aggiungi allegato")
+                .font(.subheadline.bold())
+                .padding(.bottom, 16)
+            
+            Divider()
+            
+            Button {
+                onCamera()
+            } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle().fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+                        Image(systemName: "camera.fill").foregroundStyle(tint)
+                    }
+                    Text("Scatta foto").font(.subheadline)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            
+            Divider().padding(.leading, 70)
+            
+            Button {
+                onGallery()
+            } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle().fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+                        Image(systemName: "photo.fill.on.rectangle.fill").foregroundStyle(tint)
+                    }
+                    Text("Libreria foto").font(.subheadline)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            
+            Divider().padding(.leading, 70)
+            
+            Button {
+                onDocument()
+            } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle().fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+                        Image(systemName: "doc.fill").foregroundStyle(tint)
+                    }
+                    Text("Documento / File").font(.subheadline)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            
+            Spacer()
+        }
+        .foregroundStyle(.primary)
+        .background(Color(.systemBackground))
+    }
+}
+
 // MARK: - TreatmentAttachmentPicker (Wizard step 3)
 
 struct TreatmentAttachmentPicker: View {
     
     @Binding var pendingURLs: [URL]
+    let onAddTapped: () -> Void
     private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
-    @State private var showImporter = false
     
     var body: some View {
         GroupBox {
@@ -497,8 +554,16 @@ struct TreatmentAttachmentPicker: View {
                     VStack(spacing: 6) {
                         ForEach(pendingURLs, id: \.absoluteString) { url in
                             HStack(spacing: 8) {
-                                Image(systemName: fileIcon(url.pathExtension.lowercased()))
-                                    .foregroundStyle(tint)
+                                if let img = UIImage(contentsOfFile: url.path) {
+                                    Image(uiImage: img)
+                                        .resizable().scaledToFill()
+                                        .frame(width: 32, height: 32)
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                } else {
+                                    Image(systemName: fileIcon(url.pathExtension.lowercased()))
+                                        .foregroundStyle(tint)
+                                        .frame(width: 32, height: 32)
+                                }
                                 Text(url.lastPathComponent)
                                     .font(.caption).lineLimit(1)
                                 Spacer()
@@ -516,10 +581,10 @@ struct TreatmentAttachmentPicker: View {
                     }
                 }
                 
-                Button { showImporter = true } label: {
+                Button { onAddTapped() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus.circle.fill").foregroundStyle(tint)
-                        Text("Aggiungi documento").font(.subheadline).foregroundStyle(tint)
+                        Text("Aggiungi allegato").font(.subheadline).foregroundStyle(tint)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
@@ -530,13 +595,6 @@ struct TreatmentAttachmentPicker: View {
                 Text("Visibili anche in Documenti › Salute › Referti")
                     .font(.caption2).foregroundStyle(.secondary)
             }
-        }
-        .fileImporter(
-            isPresented: $showImporter,
-            allowedContentTypes: [.item],
-            allowsMultipleSelection: true
-        ) { result in
-            if let urls = try? result.get() { pendingURLs.append(contentsOf: urls) }
         }
     }
     
@@ -551,6 +609,38 @@ struct TreatmentAttachmentPicker: View {
     }
 }
 
+// MARK: - ImagePickerView (UIKit bridge)
+
+struct ImagePickerView: UIViewControllerRepresentable {
+    let sourceType: UIImagePickerController.SourceType
+    let onPick: (UIImage) -> Void
+    
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.delegate   = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onPick: (UIImage) -> Void
+        init(onPick: @escaping (UIImage) -> Void) { self.onPick = onPick }
+        
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            picker.dismiss(animated: true)
+            if let img = info[.originalImage] as? UIImage { onPick(img) }
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+    }
+}
+
 // MARK: - TreatmentAttachmentsSection (TreatmentDetailView)
 
 struct TreatmentAttachmentsSection: View {
@@ -558,14 +648,15 @@ struct TreatmentAttachmentsSection: View {
     let treatment: KBTreatment
     @Environment(\.modelContext) private var modelContext
     
-    // ✅ @Query invece di @State manuale: SwiftData notifica automaticamente
-    // ogni cambio (insert, isDeleted=true, sync remoto) senza reload() manuale.
     @Query private var attachments: [KBDocument]
     
-    @State private var isUploading   = false
-    @State private var showImporter  = false
+    @State private var isUploading        = false
+    @State private var showSourcePicker   = false
+    @State private var showImporter       = false
+    @State private var showGallery        = false
+    @State private var showCamera         = false
     @State private var previewURL:   URL? = nil
-    @State private var showKeyAlert  = false
+    @State private var showKeyAlert       = false
     @State private var errorText:    String? = nil
     
     private let tint    = Color(red: 0.6, green: 0.45, blue: 0.85)
@@ -595,7 +686,7 @@ struct TreatmentAttachmentsSection: View {
                 if isUploading {
                     ProgressView().scaleEffect(0.8)
                 } else {
-                    Button { showImporter = true } label: {
+                    Button { showSourcePicker = true } label: {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(tint).font(.title3)
                     }
@@ -627,31 +718,54 @@ struct TreatmentAttachmentsSection: View {
                 .fill(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
         )
-        // @Query si aggiorna da sola — nessun onAppear/reload necessario
-        // Ascoltiamo il bus solo per aggiornare isUploading
         .onReceive(KBEventBus.shared.stream) { (event: KBAppEvent) in
             if case .treatmentAttachmentPending(_, let tid, _, _) = event,
                tid == treatment.id {
                 isUploading = true
-                // Nascondi spinner dopo 3s (upload in background)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) { isUploading = false }
             }
         }
+        // ── Sheet scelta sorgente (dal basso, nativo) ──
+        .sheet(isPresented: $showSourcePicker) {
+            AttachmentSourcePickerSheet(
+                onCamera: {
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showCamera = true }
+                },
+                onGallery: {
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showGallery = true }
+                },
+                onDocument: {
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
+                }
+            )
+            .presentationDetents([.height(250)])
+            .presentationDragIndicator(.visible)
+        }
+        // ── Galleria ──
+        .sheet(isPresented: $showGallery) {
+            ImagePickerView(sourceType: .photoLibrary) { image in
+                if let url = saveImageToTemp(image) { emitUpload(urls: [url]) }
+            }
+        }
+        // ── Camera ──
+        .sheet(isPresented: $showCamera) {
+            ImagePickerView(sourceType: .camera) { image in
+                if let url = saveImageToTemp(image) { emitUpload(urls: [url]) }
+            }
+        }
+        // ── Documento ──
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes: [.item],
             allowsMultipleSelection: true
         ) { result in
             guard let urls = try? result.get() else { return }
-            // Upload direttamente da Detail (non passa dal wizard)
-            KBEventBus.shared.emit(KBAppEvent.treatmentAttachmentPending(
-                urls: urls,
-                treatmentId: treatment.id,
-                familyId: treatment.familyId,
-                childId: treatment.childId
-            ))
-            // @Query si aggiorna da sola quando il KBDocument viene inserito
+            emitUpload(urls: urls)
         }
+        // ── Preview ──
         .sheet(isPresented: Binding(
             get: { previewURL != nil },
             set: { if !$0 { previewURL = nil } }
@@ -665,6 +779,25 @@ struct TreatmentAttachmentsSection: View {
         } message: {
             Text("Chiave di crittografia non trovata. Verifica le impostazioni famiglia.")
         }
+    }
+    
+    // MARK: - Helpers
+    
+    private func emitUpload(urls: [URL]) {
+        KBEventBus.shared.emit(KBAppEvent.treatmentAttachmentPending(
+            urls: urls,
+            treatmentId: treatment.id,
+            familyId: treatment.familyId,
+            childId: treatment.childId
+        ))
+    }
+    
+    private func saveImageToTemp(_ image: UIImage) -> URL? {
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".jpg")
+        try? data.write(to: url)
+        return url
     }
     
     private func attachmentRow(_ doc: KBDocument) -> some View {
@@ -700,7 +833,6 @@ struct TreatmentAttachmentsSection: View {
             
             Button {
                 service.delete(doc, modelContext: modelContext)
-                // @Query reagisce automaticamente all'isDeleted=true
             } label: {
                 Image(systemName: "trash").foregroundStyle(.red).font(.subheadline)
             }

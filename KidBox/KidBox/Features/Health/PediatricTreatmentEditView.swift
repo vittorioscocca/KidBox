@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 import UserNotifications
+import UniformTypeIdentifiers
 
 struct PediatricTreatmentEditView: View {
     
@@ -22,7 +23,7 @@ struct PediatricTreatmentEditView: View {
     @State private var reminderEnabled = false
     
     // Step 1 - Farmaco
-    @State private var drugName       = ""
+    @State private var drugName         = ""
     @State private var activeIngredient = ""
     
     // Step 2 - Dose e frequenza
@@ -31,7 +32,7 @@ struct PediatricTreatmentEditView: View {
     @State private var isLongTerm     = false
     @State private var durationDays   = 5
     @State private var dailyFrequency = 1
-    @State private var notifGranted = false
+    @State private var notifGranted   = false
     @State private var pendingAttachmentURLs: [URL] = []
     
     // Step 3 - Orari e data inizio
@@ -44,19 +45,26 @@ struct PediatricTreatmentEditView: View {
     @State private var currentStep = 0
     private let totalSteps = 4
     
+    // Allegati — gestiti al livello root per evitare problemi
+    // con confirmationDialog annidato in ScrollView
+    @State private var showAttachmentDialog   = false
+    @State private var showAttachmentImporter = false
+    @State private var showAttachmentGallery  = false
+    @State private var showAttachmentCamera   = false
+    
     private let tint        = Color(red: 0.6, green: 0.45, blue: 0.85)
     private let units       = ["ml", "mg", "gocce", "compresse", "bustine"]
-    private let freqOptions = [(1, "1 volta al giorno", "mattina"),
-                               (2, "2 volte al giorno", "mattina, sera"),
-                               (3, "3 volte al giorno", "mattina, pranzo, sera"),
-                               (4, "4 volte al giorno", "mattina, pranzo, sera, notte")]
+    private let freqOptions = [(1, "1 volta al giorno",   "mattina"),
+                               (2, "2 volte al giorno",   "mattina, sera"),
+                               (3, "3 volte al giorno",   "mattina, pranzo, sera"),
+                               (4, "4 volte al giorno",   "mattina, pranzo, sera, notte")]
     
     private var defaultTimes: [String] {
         switch dailyFrequency {
-        case 1: return ["08:00"]
-        case 2: return ["08:00", "20:00"]
-        case 3: return ["08:00", "14:00", "20:00"]
-        case 4: return ["08:00", "13:00", "18:00", "23:00"]
+        case 1:  return ["08:00"]
+        case 2:  return ["08:00", "20:00"]
+        case 3:  return ["08:00", "14:00", "20:00"]
+        case 4:  return ["08:00", "13:00", "18:00", "23:00"]
         default: return ["08:00"]
         }
     }
@@ -80,9 +88,9 @@ struct PediatricTreatmentEditView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         switch currentStep {
-                        case 0: step0_drug
-                        case 1: step1_dose
-                        case 2: step2_schedule
+                        case 0:  step0_drug
+                        case 1:  step1_dose
+                        case 2:  step2_schedule
                         default: step3_confirm
                         }
                     }
@@ -95,7 +103,9 @@ struct PediatricTreatmentEditView: View {
             .navigationTitle(isEditing ? "Modifica Cura" : "Nuova Cura")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Annulla") { dismiss() }
+                }
             }
             .onAppear {
                 loadIfEditing()
@@ -104,10 +114,39 @@ struct PediatricTreatmentEditView: View {
                     notifGranted = s.authorizationStatus == .authorized
                 }
             }
+            // ── Allegati: dialog e picker al livello NavigationStack ──
+            .sheet(isPresented: $showAttachmentDialog) {
+                AttachmentSourcePickerSheet(
+                    onCamera:   { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentCamera   = true } },
+                    onGallery:  { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentGallery  = true } },
+                    onDocument: { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentImporter = true } }
+                )
+                .presentationDetents([.height(220)])
+                .presentationDragIndicator(.visible)
+            }
+            .fileImporter(
+                isPresented: $showAttachmentImporter,
+                allowedContentTypes: [.item],
+                allowsMultipleSelection: true
+            ) { result in
+                if let urls = try? result.get() {
+                    pendingAttachmentURLs.append(contentsOf: urls)
+                }
+            }
+            .sheet(isPresented: $showAttachmentGallery) {
+                ImagePickerView(sourceType: .photoLibrary) { image in
+                    if let url = saveImageToTemp(image) { pendingAttachmentURLs.append(url) }
+                }
+            }
+            .sheet(isPresented: $showAttachmentCamera) {
+                ImagePickerView(sourceType: .camera) { image in
+                    if let url = saveImageToTemp(image) { pendingAttachmentURLs.append(url) }
+                }
+            }
         }
     }
     
-    // MARK: Progress bar
+    // MARK: - Progress bar
     
     private var progressBar: some View {
         HStack(spacing: 4) {
@@ -121,13 +160,13 @@ struct PediatricTreatmentEditView: View {
         .padding(.vertical, 10)
     }
     
-    // MARK: Step 0 — Farmaco
+    // MARK: - Step 0 — Farmaco
     
     private var step0_drug: some View {
         DrugSelectorStep(drugName: $drugName, activeIngredient: $activeIngredient)
     }
     
-    // MARK: Step 1 — Dose e frequenza
+    // MARK: - Step 1 — Dose e frequenza
     
     private var step1_dose: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -141,7 +180,9 @@ struct PediatricTreatmentEditView: View {
                 }
                 VStack(alignment: .leading) {
                     Text(drugName.isEmpty ? "Farmaco" : drugName).font(.subheadline.bold())
-                    if !activeIngredient.isEmpty { Text(activeIngredient).font(.caption).foregroundStyle(.secondary) }
+                    if !activeIngredient.isEmpty {
+                        Text(activeIngredient).font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding()
@@ -150,7 +191,8 @@ struct PediatricTreatmentEditView: View {
             // Dosaggio
             GroupBox {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Dosaggio", systemImage: "drop.fill").font(.subheadline.bold()).foregroundStyle(.blue)
+                    Label("Dosaggio", systemImage: "drop.fill")
+                        .font(.subheadline.bold()).foregroundStyle(.blue)
                     HStack(spacing: 8) {
                         TextField("0", value: $dosageValue, format: .number)
                             .keyboardType(.decimalPad)
@@ -158,7 +200,6 @@ struct PediatricTreatmentEditView: View {
                             .padding(10)
                             .background(Color(.systemGray6))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
-                        
                         Picker("Unità", selection: $dosageUnit) {
                             ForEach(units, id: \.self) { Text($0).tag($0) }
                         }
@@ -170,14 +211,16 @@ struct PediatricTreatmentEditView: View {
             // Durata
             GroupBox {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Durata", systemImage: "calendar").font(.subheadline.bold()).foregroundStyle(.orange)
+                    Label("Durata", systemImage: "calendar")
+                        .font(.subheadline.bold()).foregroundStyle(.orange)
                     Toggle("Cura a lungo termine", isOn: $isLongTerm)
                     if !isLongTerm {
                         HStack {
                             Button { if durationDays > 1 { durationDays -= 1 } } label: {
                                 Image(systemName: "minus.circle.fill").font(.title2).foregroundStyle(tint)
                             }
-                            Text("\(durationDays)").font(.title2.bold()).foregroundStyle(tint).frame(width: 40)
+                            Text("\(durationDays)")
+                                .font(.title2.bold()).foregroundStyle(tint).frame(width: 40)
                             Button { durationDays += 1 } label: {
                                 Image(systemName: "plus.circle.fill").font(.title2).foregroundStyle(tint)
                             }
@@ -190,19 +233,26 @@ struct PediatricTreatmentEditView: View {
             // Frequenza
             GroupBox {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Frequenza", systemImage: "clock").font(.subheadline.bold()).foregroundStyle(tint)
+                    Label("Frequenza", systemImage: "clock")
+                        .font(.subheadline.bold()).foregroundStyle(tint)
                     ForEach(freqOptions, id: \.0) { (freq, label, sub) in
                         HStack {
                             ZStack {
-                                Circle().fill(dailyFrequency == freq ? tint : Color(.systemGray5)).frame(width: 30, height: 30)
-                                Text("\(freq)x").font(.caption.bold()).foregroundStyle(dailyFrequency == freq ? .white : .secondary)
+                                Circle()
+                                    .fill(dailyFrequency == freq ? tint : Color(.systemGray5))
+                                    .frame(width: 30, height: 30)
+                                Text("\(freq)x")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(dailyFrequency == freq ? .white : .secondary)
                             }
                             VStack(alignment: .leading) {
                                 Text(label).font(.subheadline)
                                 Text(sub).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            if dailyFrequency == freq { Image(systemName: "checkmark").foregroundStyle(tint) }
+                            if dailyFrequency == freq {
+                                Image(systemName: "checkmark").foregroundStyle(tint)
+                            }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -216,7 +266,7 @@ struct PediatricTreatmentEditView: View {
         }
     }
     
-    // MARK: Step 2 — Orari
+    // MARK: - Step 2 — Orari
     
     private var step2_schedule: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -228,8 +278,7 @@ struct PediatricTreatmentEditView: View {
                     
                     Divider()
                     
-                    Text("Orari somministrazione")
-                        .font(.subheadline.bold())
+                    Text("Orari somministrazione").font(.subheadline.bold())
                     Text("Imposta gli orari per \(dailyFrequency) dos\(dailyFrequency == 1 ? "e" : "i") giornalier\(dailyFrequency == 1 ? "a" : "e")")
                         .font(.caption).foregroundStyle(.secondary)
                     
@@ -248,10 +297,10 @@ struct PediatricTreatmentEditView: View {
             // Riepilogo
             GroupBox("Riepilogo") {
                 VStack(spacing: 6) {
-                    row(label: "Durata", value: isLongTerm ? "A lungo termine" : "\(durationDays) giorni")
+                    row(label: "Durata",      value: isLongTerm ? "A lungo termine" : "\(durationDays) giorni")
                     row(label: "Data inizio", value: startDate.formatted(.dateTime.day().month(.abbreviated).year()))
                     if !isLongTerm {
-                        row(label: "Data fine", value: endDate.formatted(.dateTime.day().month(.abbreviated).year()))
+                        row(label: "Data fine",   value: endDate.formatted(.dateTime.day().month(.abbreviated).year()))
                         row(label: "Dosi totali", value: "\(totalDoses)")
                     }
                 }
@@ -268,7 +317,7 @@ struct PediatricTreatmentEditView: View {
         .font(.subheadline)
     }
     
-    // MARK: Step 3 — Conferma
+    // MARK: - Step 3 — Conferma
     
     private var step3_confirm: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -283,18 +332,24 @@ struct PediatricTreatmentEditView: View {
                         }
                         VStack(alignment: .leading) {
                             Text(drugName.isEmpty ? "Farmaco" : drugName).font(.subheadline.bold())
-                            if !activeIngredient.isEmpty { Text(activeIngredient).font(.caption).foregroundStyle(.secondary) }
+                            if !activeIngredient.isEmpty {
+                                Text(activeIngredient).font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     }
                     Divider()
-                    row(label: "Dosaggio", value: "\(dosageValue, default: "%.0f") \(dosageUnit)")
+                    row(label: "Dosaggio",  value: "\(dosageValue, default: "%.0f") \(dosageUnit)")
                     if !isLongTerm { row(label: "Durata", value: "\(durationDays) giorni") }
                     row(label: "Frequenza", value: "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno")
                     Divider()
                     Text("Orari somministrazione:").font(.caption).foregroundStyle(.secondary)
                     ForEach(Array(zip(["Mattina","Pranzo","Sera","Notte"], times)), id: \.0) { label, time in
-                        HStack { Text(label); Spacer(); Text(time).foregroundStyle(tint).bold() }
-                            .font(.subheadline)
+                        HStack {
+                            Text(label)
+                            Spacer()
+                            Text(time).foregroundStyle(tint).bold()
+                        }
+                        .font(.subheadline)
                     }
                     if !isLongTerm {
                         Divider()
@@ -355,14 +410,19 @@ struct PediatricTreatmentEditView: View {
             }
             
             GroupBox("Note") {
-                TextField("Note aggiuntive (opzionale)", text: $notes, axis: .vertical).lineLimit(2...4)
+                TextField("Note aggiuntive (opzionale)", text: $notes, axis: .vertical)
+                    .lineLimit(2...4)
             }
             
-            TreatmentAttachmentPicker(pendingURLs: $pendingAttachmentURLs)
+            // ── Allegati: onAddTapped delega al livello root ──
+            TreatmentAttachmentPicker(
+                pendingURLs: $pendingAttachmentURLs,
+                onAddTapped: { showAttachmentDialog = true }
+            )
         }
     }
     
-    // MARK: Bottom bar
+    // MARK: - Bottom bar
     
     private var bottomBar: some View {
         HStack(spacing: 12) {
@@ -404,23 +464,33 @@ struct PediatricTreatmentEditView: View {
         }
     }
     
-    // MARK: Load & Save
+    // MARK: - Helpers
+    
+    private func saveImageToTemp(_ image: UIImage) -> URL? {
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".jpg")
+        try? data.write(to: url)
+        return url
+    }
+    
+    // MARK: - Load & Save
     
     private func loadIfEditing() {
         guard let tid = treatmentId else { return }
         let desc = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.id == tid })
         guard let t = try? modelContext.fetch(desc).first else { return }
-        drugName        = t.drugName
+        drugName         = t.drugName
         activeIngredient = t.activeIngredient ?? ""
-        dosageValue     = t.dosageValue
-        dosageUnit      = t.dosageUnit
-        isLongTerm      = t.isLongTerm
-        durationDays    = t.durationDays
-        dailyFrequency  = t.dailyFrequency
-        startDate       = t.startDate
-        times           = t.scheduleTimes.isEmpty ? defaultTimes : t.scheduleTimes
-        notes           = t.notes ?? ""
-        currentStep     = 0
+        dosageValue      = t.dosageValue
+        dosageUnit       = t.dosageUnit
+        isLongTerm       = t.isLongTerm
+        durationDays     = t.durationDays
+        dailyFrequency   = t.dailyFrequency
+        startDate        = t.startDate
+        times            = t.scheduleTimes.isEmpty ? defaultTimes : t.scheduleTimes
+        notes            = t.notes ?? ""
+        currentStep      = 0
     }
     
     @MainActor
@@ -475,9 +545,6 @@ struct PediatricTreatmentEditView: View {
             TreatmentNotificationManager.cancel(treatmentId: treatment.id)
         }
         
-        // ✅ Upload allegati PRIMA del dismiss
-        // così TreatmentDetailView li trova già in SwiftData all'onAppear
-        // ✅ Event-driven — nessuna dipendenza diretta
         if !pendingAttachmentURLs.isEmpty {
             KBEventBus.shared.emit(.treatmentAttachmentPending(
                 urls:        pendingAttachmentURLs,
@@ -490,19 +557,19 @@ struct PediatricTreatmentEditView: View {
     }
     
     private func applyFields(to t: KBTreatment, uid: String, now: Date, endDate: Date?) {
-        t.drugName        = drugName
+        t.drugName         = drugName
         t.activeIngredient = activeIngredient.isEmpty ? nil : activeIngredient
-        t.dosageValue     = dosageValue
-        t.dosageUnit      = dosageUnit
-        t.isLongTerm      = isLongTerm
-        t.durationDays    = durationDays
-        t.startDate       = startDate
-        t.endDate         = endDate
-        t.dailyFrequency  = dailyFrequency
-        t.scheduleTimes   = times
-        t.notes           = notes.isEmpty ? nil : notes
-        t.updatedBy       = uid
-        t.updatedAt       = now
+        t.dosageValue      = dosageValue
+        t.dosageUnit       = dosageUnit
+        t.isLongTerm       = isLongTerm
+        t.durationDays     = durationDays
+        t.startDate        = startDate
+        t.endDate          = endDate
+        t.dailyFrequency   = dailyFrequency
+        t.scheduleTimes    = times
+        t.notes            = notes.isEmpty ? nil : notes
+        t.updatedBy        = uid
+        t.updatedAt        = now
     }
 }
 

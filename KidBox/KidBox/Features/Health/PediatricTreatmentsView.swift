@@ -141,22 +141,27 @@ struct PediatricTreatmentsView: View {
                     Image(systemName: "pills.fill").foregroundStyle(tint)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(t.drugName).font(.subheadline.bold())
+                    HStack(spacing: 6) {
+                        Text(t.drugName).font(.subheadline.bold())
+                        // ✅ NUOVO: badge promemoria attivo
+                        if t.reminderEnabled && t.isActive {
+                            Image(systemName: "bell.fill")
+                                .font(.caption2)
+                                .foregroundStyle(tint)
+                        }
+                    }
                     Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.dailyFrequency) volt\(t.dailyFrequency == 1 ? "a" : "e") al giorno")
                         .font(.caption).foregroundStyle(tint)
                     if !t.isActive {
-                        // Qualsiasi cura interrotta — sia fissa che lungo termine
                         Label("Interrotta", systemImage: "stop.circle.fill")
                             .font(.caption2).foregroundStyle(.orange)
                     } else if t.isLongTerm {
-                        // Attiva a lungo termine
                         HStack(spacing: 8) {
                             Label("A lungo termine", systemImage: "infinity")
                                 .font(.caption2).foregroundStyle(.secondary)
                             TreatmentDoseCounter(treatment: t)
                         }
                     } else {
-                        // Attiva durata fissa
                         HStack(spacing: 8) {
                             TreatmentProgressLabel(treatment: t)
                         }
