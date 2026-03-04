@@ -172,8 +172,27 @@ struct PediatricTreatmentsView: View {
     
     private func deleteItems(offsets: IndexSet, from list: [KBTreatment]) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        for i in offsets { list[i].isDeleted = true; list[i].updatedBy = uid; list[i].updatedAt = Date() }
-        try? modelContext.save()
+        let now = Date()
+        
+        for i in offsets {
+            let t = list[i]
+            t.isDeleted  = true
+            t.updatedBy  = uid
+            t.updatedAt  = now
+            t.syncState  = .pendingUpsert   // anti-resurrect OK
+            t.lastSyncError = nil
+            
+            try? modelContext.save()
+            
+            // ✅ FIX #1: enqueue DELETE, non upsert
+            SyncCenter.shared.enqueueTreatmentDelete(
+                treatmentId: t.id,
+                familyId: familyId,
+                modelContext: modelContext
+            )
+        }
+        
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
 }
 

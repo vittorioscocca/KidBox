@@ -599,11 +599,15 @@ struct TreatmentDetailView: View {
     private func deleteTreatment() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         TreatmentNotificationManager.cancel(treatmentId: treatment.id)
-        treatment.isDeleted = true
-        treatment.updatedAt = Date()
-        treatment.updatedBy = uid
+        
+        treatment.isDeleted  = true
+        treatment.updatedAt  = Date()
+        treatment.updatedBy  = uid
+        treatment.syncState  = .pendingUpsert   // anti-resurrect
+        treatment.lastSyncError = nil
         try? modelContext.save()
-        // ← enqueue delete (rimuove anche su Firestore)
+        
+        // ✅ FIX: enqueueTreatmentDelete, non Upsert
         SyncCenter.shared.enqueueTreatmentDelete(
             treatmentId: treatment.id,
             familyId: treatment.familyId,

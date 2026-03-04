@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 
 // MARK: - DTOs
 
@@ -106,7 +107,7 @@ final class TreatmentRemoteStore {
             "isDeleted":        dto.isDeleted,
             "reminderEnabled":  dto.reminderEnabled,
             "updatedBy":        dto.updatedBy,
-            "updatedAt":        FieldValue.serverTimestamp(),
+            "updatedAt":        Timestamp(date: dto.updatedAt ?? Date()),
         ]
         if let ai = dto.activeIngredient { data["activeIngredient"] = ai }
         if let ed = dto.endDate          { data["endDate"] = Timestamp(date: ed) }
@@ -122,12 +123,14 @@ final class TreatmentRemoteStore {
     }
     
     func deleteTreatment(familyId: String, treatmentId: String) async throws {
+        let uid = Auth.auth().currentUser?.uid ?? "remote"   // se qui non puoi usare Auth, passalo come parametro
         try await db.collection("families")
             .document(familyId)
             .collection("treatments")
             .document(treatmentId)
             .updateData([
                 "isDeleted": true,
+                "updatedBy": uid,
                 "updatedAt": FieldValue.serverTimestamp()
             ])
     }
@@ -219,10 +222,11 @@ final class TreatmentRemoteStore {
         let data = doc.data()
         guard
             let childId   = data["childId"]   as? String,
-            let drugName  = data["drugName"]   as? String,
-            let updatedBy = data["updatedBy"]  as? String,
+            let drugName  = data["drugName"]  as? String,
             let startDate = (data["startDate"] as? Timestamp)?.dateValue()
         else { return nil }
+        
+        let updatedBy = data["updatedBy"] as? String ?? "remote"
         
         return RemoteTreatmentDTO(
             id:               doc.documentID,

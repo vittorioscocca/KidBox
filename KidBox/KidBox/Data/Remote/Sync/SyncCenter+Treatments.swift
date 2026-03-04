@@ -96,11 +96,16 @@ extension SyncCenter {
                             continue
                         }
                         
-                        // LWW
                         if remoteStamp >= local.updatedAt {
-                            applyTreatmentFields(local, from: dto)
-                            local.syncState    = .synced
-                            local.lastSyncError = nil
+                            // ✅ FIX #3: se il remoto dice isDeleted, rimuovi anche localmente
+                            if dto.isDeleted {
+                                modelContext.delete(local)
+                                KBLog.sync.kbDebug("applyTreatmentsInbound: deleted locally id=\(tid)")
+                            } else {
+                                applyTreatmentFields(local, from: dto)
+                                local.syncState     = .synced
+                                local.lastSyncError = nil
+                            }
                         }
                     } else {
                         // Nuovo dal remoto
