@@ -516,16 +516,17 @@ struct PediatricTreatmentEditView: View {
                 startDate: startDate, endDate: ed,
                 dailyFrequency: dailyFrequency, scheduleTimes: times,
                 isActive: true, notes: notes.isEmpty ? nil : notes,
-                reminderEnabled: reminderEnabled,
+                reminderEnabled: false,   // ✅ sempre false su Firebase — è preferenza locale
                 createdAt: now, updatedAt: now, updatedBy: uid, createdBy: uid
             )
-            t.reminderEnabled = reminderEnabled
             modelContext.insert(t)
             treatment = t
         }
         
         do {
             try modelContext.save()
+            // ✅ Sync Firestore PRIMA di toccare reminderEnabled
+            // così reminderEnabled non viene mai incluso nel payload remoto
             SyncCenter.shared.enqueueTreatmentUpsert(
                 treatmentId: treatment.id,
                 familyId: familyId,
@@ -535,6 +536,12 @@ struct PediatricTreatmentEditView: View {
         } catch {
             return
         }
+        
+        // ✅ Imposta reminderEnabled SOLO in locale, DOPO il sync
+        // Non chiama modelContext.save() di nuovo per evitare di
+        // innescare un secondo sync con il valore aggiornato
+        treatment.reminderEnabled = reminderEnabled
+        try? modelContext.save()
         
         if reminderEnabled {
             Task {
