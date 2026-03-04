@@ -18,6 +18,7 @@ struct PediatricHomeView: View {
     
     // ✅ Filtra per childId — nome e emoji corretti
     @Query private var children: [KBChild]
+    @Query private var members:  [KBFamilyMember]
     
     @Query private var allTreatments: [KBTreatment]
     @Query private var allVaccines: [KBVaccine]
@@ -31,6 +32,7 @@ struct PediatricHomeView: View {
         let fid = familyId
         
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
+        _members  = Query(filter: #Predicate<KBFamilyMember> { $0.userId == cid })
         
         _allTreatments = Query(filter: #Predicate<KBTreatment> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true
@@ -44,8 +46,9 @@ struct PediatricHomeView: View {
     }
     
     private var child: KBChild?    { children.first }
-    private var childName: String  { child?.name ?? "Bambino" }
-    private var childEmoji: String { child?.avatarEmoji ?? "👶" }
+    private var member: KBFamilyMember? { members.first }
+    private var childName: String  { child?.name ?? member?.displayName ?? "Profilo" }
+    private var childEmoji: String { child?.avatarEmoji ?? "🧑" }
     private var activeTreatmentsCount: Int { allTreatments.count }
     
     var body: some View {
@@ -83,7 +86,7 @@ struct PediatricHomeView: View {
             }
             .padding(.vertical)
         }
-        .navigationTitle("Pediatria")
+        .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
     }
     

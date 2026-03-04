@@ -26,6 +26,7 @@ struct RemoteDocumentDTO {
     let downloadURL: String?
     
     let isDeleted: Bool
+    let notes: String?
     let updatedAt: Date?
     let updatedBy: String?
 }
@@ -100,6 +101,10 @@ final class DocumentRemoteStore {
         
         if let downloadURL = dto.downloadURL {
             data["downloadURL"] = downloadURL
+        }
+        
+        if let notes = dto.notes {
+            data["notes"] = notes
         }
         
         try await ref.setData(data, merge: true)
@@ -200,6 +205,7 @@ final class DocumentRemoteStore {
                         storagePath: data["storagePath"] as? String ?? "",
                         downloadURL: data["downloadURL"] as? String,
                         isDeleted: data["isDeleted"] as? Bool ?? false,
+                        notes: data["notes"] as? String,
                         updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),
                         updatedBy: data["updatedBy"] as? String
                     )

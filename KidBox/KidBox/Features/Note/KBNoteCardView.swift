@@ -67,7 +67,7 @@ struct KBNoteCardView: View {
         if trimmed.isEmpty { previewPlain = "Nessun contenuto"; return }
         if !trimmed.contains("<") { previewPlain = trimmed; return }
         let result: String = await Task.detached(priority: .utility) {
-            htmlOrPlain.htmlToPlainTextHeavy()
+            await htmlOrPlain.htmlToPlainTextHeavy()
         }.value
         let clean = result
             .replacingOccurrences(of: "\u{00a0}", with: " ")

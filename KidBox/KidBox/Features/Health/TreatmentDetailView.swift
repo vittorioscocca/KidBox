@@ -2,8 +2,7 @@
 //  TreatmentDetailView.swift
 //  KidBox
 //
-//  Created by vscocca on 03/03/26.
-//
+//  Dettaglio cura: progresso, tracking dosi per giorno, orari, estendi, elimina.
 
 import SwiftUI
 import SwiftData
@@ -24,8 +23,10 @@ struct TreatmentDetailView: View {
     // Giorno selezionato nella timeline (0-based offset da startDate)
     @State private var selectedDayOffset = 0
     @State private var showExtendSheet   = false
+    @State private var showTimeEditor    = false
     @State private var showConfirmDose: ConfirmDoseContext? = nil
-    @State private var showDeleteConfirm = false
+    @State private var showDeleteConfirm  = false
+    @State private var showStopConfirm    = false
     
     private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
     
@@ -73,7 +74,10 @@ struct TreatmentDetailView: View {
     }
     
     private var currentDayOffset: Int {
-        let days = Calendar.current.dateComponents([.day], from: treatment.startDate, to: Date()).day ?? 0
+        let cal      = Calendar.current
+        let startDay = cal.startOfDay(for: treatment.startDate)
+        let today    = cal.startOfDay(for: Date())
+        let days     = cal.dateComponents([.day], from: startDay, to: today).day ?? 0
         return max(0, min(days, totalDays - 1))
     }
     
@@ -87,9 +91,10 @@ struct TreatmentDetailView: View {
                 slotIndex: slotIdx,
                 scheduledTime: timeStr,
                 slotLabel: ["Mattina","Pranzo","Sera","Notte"][safe: slotIdx] ?? "Dose \(slotIdx+1)",
-                taken:   log?.taken ?? false,
-                takenAt: log?.takenAt,
-                logId:   log?.id
+                taken:     log?.taken ?? false,
+                isSkipped: log != nil && (log?.taken == false),
+                takenAt:   log?.takenAt,
+                logId:     log?.id
             )
         }
     }
@@ -123,9 +128,14 @@ struct TreatmentDetailView: View {
                 scheduleInfoCard
                     .padding()
                 
+                TreatmentAttachmentsSection(treatment: treatment)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                
                 dangerZone
                     .padding(.horizontal)
-                    .padding(.bottom, 32)
+                    .padding(.top, 8)
+                    .padding(.bottom, 40)
             }
         }
         .background(Color(.systemGroupedBackground))
@@ -139,6 +149,9 @@ struct TreatmentDetailView: View {
         .onAppear { selectedDayOffset = currentDayOffset }
         .sheet(isPresented: $showExtendSheet) {
             ExtendTreatmentSheet(treatment: treatment)
+        }
+        .sheet(isPresented: $showTimeEditor) {
+            EditScheduleTimesSheet(treatment: treatment)
         }
         .sheet(item: $showConfirmDose) { ctx in
             ConfirmDoseSheet(
@@ -154,6 +167,12 @@ struct TreatmentDetailView: View {
             Button("Annulla", role: .cancel) { }
         } message: {
             Text("La cura verrà rimossa da tutti i dispositivi.")
+        }
+        .confirmationDialog("Interrompere la cura?", isPresented: $showStopConfirm) {
+            Button("Interrompi", role: .destructive) { stopTreatment() }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("La cura verrà segnata come inattiva. Puoi riattivarla in seguito.")
         }
     }
     
@@ -313,10 +332,10 @@ struct TreatmentDetailView: View {
             // Clock icon
             ZStack {
                 Circle()
-                    .fill(slot.taken ? tint.opacity(0.1) : Color(.systemGray6))
+                    .fill(slot.taken ? tint.opacity(0.1) : slot.isSkipped ? Color.orange.opacity(0.1) : Color(.systemGray6))
                     .frame(width: 40, height: 40)
-                Image(systemName: "clock.fill")
-                    .foregroundStyle(slot.taken ? tint : .secondary)
+                Image(systemName: slot.isSkipped ? "xmark" : "clock.fill")
+                    .foregroundStyle(slot.taken ? tint : slot.isSkipped ? .orange : .secondary)
                     .font(.subheadline)
             }
             
@@ -325,6 +344,9 @@ struct TreatmentDetailView: View {
                 if slot.taken, let at = slot.takenAt {
                     Text("Presa: \(at.formatted(.dateTime.hour().minute()))")
                         .font(.caption).foregroundStyle(.green)
+                } else if slot.isSkipped {
+                    Label("Saltata", systemImage: "xmark.circle.fill")
+                        .font(.caption).foregroundStyle(.orange)
                 } else {
                     Text("Da prendere").font(.caption).foregroundStyle(.secondary)
                 }
@@ -333,13 +355,23 @@ struct TreatmentDetailView: View {
             Spacer()
             
             if slot.taken {
-                // Annulla
+                // Annulla presa
                 Button {
                     undoDose(slot: slot)
                 } label: {
                     Text("Annulla").font(.caption).foregroundStyle(tint)
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .background(Capsule().stroke(tint.opacity(0.4)))
+                }
+                .buttonStyle(.plain)
+            } else if slot.isSkipped {
+                // Riprendi (annulla salto)
+                Button {
+                    undoDose(slot: slot)
+                } label: {
+                    Text("Riprendi").font(.caption).foregroundStyle(.orange)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Capsule().stroke(Color.orange.opacity(0.4)))
                 }
                 .buttonStyle(.plain)
             } else {
@@ -398,9 +430,7 @@ struct TreatmentDetailView: View {
                 .font(.subheadline)
             }
             
-            Button {
-                // TODO: aprire orari editor
-            } label: {
+            Button { showTimeEditor = true } label: {
                 Label("Personalizza orari", systemImage: "clock.badge.checkmark")
                     .frame(maxWidth: .infinity).padding(12)
                     .background(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.4)))
@@ -417,22 +447,25 @@ struct TreatmentDetailView: View {
     
     private var dangerZone: some View {
         VStack(spacing: 10) {
-            Button {
-                // Interrompi cura
-                let uid = Auth.auth().currentUser?.uid ?? "local"
-                treatment.isActive  = false
-                treatment.updatedAt = Date()
-                treatment.updatedBy = uid
-                try? modelContext.save()
-                dismiss()
-            } label: {
-                Label("Interrompi cura", systemImage: "stop.circle")
-                    .frame(maxWidth: .infinity).padding()
-                    .background(RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.orange.opacity(0.08)))
-                    .foregroundStyle(.orange).font(.subheadline.bold())
+            if treatment.isActive {
+                Button { showStopConfirm = true } label: {
+                    Label("Interrompi cura", systemImage: "stop.circle")
+                        .frame(maxWidth: .infinity).padding()
+                        .background(RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.orange.opacity(0.08)))
+                        .foregroundStyle(.orange).font(.subheadline.bold())
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button { reactivateTreatment() } label: {
+                    Label("Riattiva cura", systemImage: "play.circle")
+                        .frame(maxWidth: .infinity).padding()
+                        .background(RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.green.opacity(0.08)))
+                        .foregroundStyle(.green).font(.subheadline.bold())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             
             Button { showDeleteConfirm = true } label: {
                 Label("Elimina", systemImage: "trash")
@@ -462,8 +495,14 @@ struct TreatmentDetailView: View {
             existing.takenAt   = takenAt
             existing.updatedAt = now
             existing.updatedBy = uid
+            try? modelContext.save()
+            SyncCenter.shared.enqueueDoseLogUpsert(
+                logId: existing.id,      // ← usa `existing` non `log`
+                familyId: treatment.familyId,
+                modelContext: modelContext
+            )
         } else {
-            let log = KBDoseLog(
+            let newLog = KBDoseLog(
                 familyId: treatment.familyId,
                 childId:  treatment.childId,
                 treatmentId: treatment.id,
@@ -474,35 +513,87 @@ struct TreatmentDetailView: View {
                 taken: true,
                 updatedBy: uid
             )
-            modelContext.insert(log)
+            modelContext.insert(newLog)
+            try? modelContext.save()
+            SyncCenter.shared.enqueueDoseLogUpsert(
+                logId: newLog.id,        // ← usa `newLog`
+                familyId: treatment.familyId,
+                modelContext: modelContext
+            )
         }
-        try? modelContext.save()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
     private func skipDose(slot: SlotViewModel) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
+        let doseLog: KBDoseLog
         if let existing = doseLogs.first(where: { $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex }) {
             existing.taken     = false
             existing.takenAt   = nil
             existing.updatedAt = Date()
             existing.updatedBy = uid
+            doseLog = existing
         } else {
-            let log = KBDoseLog(
+            let newLog = KBDoseLog(
                 familyId: treatment.familyId, childId: treatment.childId,
                 treatmentId: treatment.id,
                 dayNumber: slot.dayNumber, slotIndex: slot.slotIndex,
                 scheduledTime: slot.scheduledTime,
                 takenAt: nil, taken: false, updatedBy: uid
             )
-            modelContext.insert(log)
+            modelContext.insert(newLog)
+            doseLog = newLog
         }
         try? modelContext.save()
+        SyncCenter.shared.enqueueDoseLogUpsert(
+            logId: doseLog.id,
+            familyId: treatment.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
     private func undoDose(slot: SlotViewModel) {
         guard let log = doseLogs.first(where: { $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex }) else { return }
         modelContext.delete(log)
         try? modelContext.save()
+        
+        SyncCenter.shared.enqueueDoseLogDelete(
+            logId: log.id,
+            familyId: treatment.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+    }
+    
+    private func stopTreatment() {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        treatment.isActive  = false
+        treatment.updatedAt = Date()
+        treatment.updatedBy = uid
+        try? modelContext.save()
+        SyncCenter.shared.enqueueTreatmentUpsert(
+            treatmentId: treatment.id,
+            familyId: treatment.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        dismiss()
+    }
+    
+    private func reactivateTreatment() {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        treatment.isActive  = true
+        treatment.updatedAt = Date()
+        treatment.updatedBy = uid
+        try? modelContext.save()
+        SyncCenter.shared.enqueueTreatmentUpsert(
+            treatmentId: treatment.id,
+            familyId: treatment.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        // Nessun dismiss — rimane nel detail
     }
     
     private func deleteTreatment() {
@@ -512,6 +603,13 @@ struct TreatmentDetailView: View {
         treatment.updatedAt = Date()
         treatment.updatedBy = uid
         try? modelContext.save()
+        // ← enqueue delete (rimuove anche su Firestore)
+        SyncCenter.shared.enqueueTreatmentDelete(
+            treatmentId: treatment.id,
+            familyId: treatment.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()
     }
 }
@@ -524,6 +622,7 @@ struct SlotViewModel {
     let scheduledTime: String
     let slotLabel:     String
     let taken:         Bool
+    let isSkipped:     Bool   // log esiste ma taken=false
     let takenAt:       Date?
     let logId:         String?
 }
@@ -548,9 +647,12 @@ struct ConfirmDoseSheet: View {
     let onConfirm: (Date) -> Void
     
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedDate = Date()
+    @State private var selectedDate   = Date()
+    @State private var selectedOffset: TimeInterval? = nil   // traccia quale rapido è attivo
     
-    private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint  = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let green = Color(red: 0.3, green: 0.7, blue: 0.45)
+    
     private let quickOptions: [(String, TimeInterval)] = [
         ("Adesso",    0),
         ("30 min fa", -30 * 60),
@@ -560,81 +662,99 @@ struct ConfirmDoseSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 8) {
-                    ZStack {
-                        Circle().fill(tint.opacity(0.1)).frame(width: 56, height: 56)
-                        Image(systemName: "pills.fill").font(.title2).foregroundStyle(tint)
-                    }
-                    Text(context.drugName).font(.title3.bold())
-                    Text(String(format: "%.0f", context.dosageValue) + " \(context.dosageUnit)")
-                        .font(.subheadline).foregroundStyle(tint)
-                    Text("Quando hai dato la medicina?")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                }
-                .padding(.top)
-                
-                // Quick select
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("SELEZIONE RAPIDA")
-                        .font(.caption.bold()).foregroundStyle(.secondary)
-                        .padding(.horizontal)
+            ScrollView {
+                VStack(spacing: 20) {
                     
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        ForEach(quickOptions, id: \.0) { label, offset in
-                            Button {
-                                selectedDate = Date().addingTimeInterval(offset)
-                            } label: {
-                                Text(label)
-                                    .frame(maxWidth: .infinity).padding(14)
-                                    .background(RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color(.systemBackground))
-                                        .shadow(color: .black.opacity(0.06), radius: 4))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.primary)
+                    // ── Header ──
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle().fill(tint.opacity(0.1)).frame(width: 56, height: 56)
+                            Image(systemName: "pills.fill").font(.title2).foregroundStyle(tint)
+                        }
+                        Text(context.drugName).font(.title3.bold())
+                        Text(String(format: "%.0f", context.dosageValue) + " \(context.dosageUnit)")
+                            .font(.subheadline).foregroundStyle(tint)
+                        Text("Quando hai dato la medicina?")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 8)
+                    
+                    // ── Selezione rapida ──
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("SELEZIONE RAPIDA")
+                            .font(.caption.bold()).foregroundStyle(.secondary)
+                        
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                            ForEach(quickOptions, id: \.0) { label, offset in
+                                let isSelected = selectedOffset == offset
+                                Button {
+                                    selectedOffset = offset
+                                    selectedDate   = Date().addingTimeInterval(offset)
+                                } label: {
+                                    Text(label)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(isSelected ? green.opacity(0.12) : Color(.systemBackground))
+                                                .shadow(color: .black.opacity(isSelected ? 0 : 0.06), radius: 4)
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(isSelected ? green : Color.clear, lineWidth: 1.5)
+                                        )
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(isSelected ? green : .primary)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal)
-                }
-                
-                // Date picker
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("SELEZIONA DATA E ORA")
-                        .font(.caption.bold()).foregroundStyle(.secondary)
-                        .padding(.horizontal)
                     
-                    HStack {
-                        Image(systemName: "calendar.badge.clock").foregroundStyle(tint)
-                        DatePicker("", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
-                            .labelsHidden()
+                    // ── Data e ora personalizzata ──
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("SELEZIONA DATA E ORA")
+                            .font(.caption.bold()).foregroundStyle(.secondary)
+                        
+                        // DatePicker .graphical aggiorna sempre visivamente
+                        DatePicker(
+                            "",
+                            selection: $selectedDate,
+                            in: ...Date(),
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.graphical)
+                        .tint(tint)
+                        .onChange(of: selectedDate) { _, _ in
+                            // Se l'utente modifica manualmente, deseleziona i rapidi
+                            selectedOffset = nil
+                        }
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color(.systemBackground))
+                                .shadow(color: .black.opacity(0.05), radius: 4)
+                        )
                     }
-                    .padding(14)
-                    .background(RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemBackground))
-                        .shadow(color: .black.opacity(0.06), radius: 4))
                     .padding(.horizontal)
+                    
+                    // ── Conferma ──
+                    Button {
+                        onConfirm(selectedDate)
+                        dismiss()
+                    } label: {
+                        Label("Conferma dose", systemImage: "checkmark.circle.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 14).fill(green))
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
                 }
-                
-                Spacer()
-                
-                // Confirm button
-                Button {
-                    onConfirm(selectedDate)
-                    dismiss()
-                } label: {
-                    Label("Conferma dose", systemImage: "checkmark.circle.fill")
-                        .frame(maxWidth: .infinity).padding()
-                        .background(RoundedRectangle(cornerRadius: 14).fill(
-                            Color(red: 0.3, green: 0.7, blue: 0.45)
-                        ))
-                        .foregroundStyle(.white).font(.headline)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal)
-                .padding(.bottom)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Conferma dose")
@@ -645,7 +765,7 @@ struct ConfirmDoseSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
     }
 }
 
@@ -746,6 +866,114 @@ struct ExtendTreatmentSheet: View {
         treatment.updatedAt = Date()
         treatment.updatedBy = uid
         try? modelContext.save()
+        dismiss()
+    }
+}
+
+// MARK: - Edit Schedule Times Sheet
+
+struct EditScheduleTimesSheet: View {
+    
+    @Bindable var treatment: KBTreatment
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss)      private var dismiss
+    
+    @State private var editedTimes: [String] = []
+    private let tint  = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let labels = ["Mattina", "Pranzo", "Sera", "Notte"]
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Header info
+                VStack(spacing: 6) {
+                    ZStack {
+                        Circle().fill(tint.opacity(0.1)).frame(width: 52, height: 52)
+                        Image(systemName: "clock.badge.checkmark").font(.title2).foregroundStyle(tint)
+                    }
+                    Text("Personalizza orari")
+                        .font(.title3.bold())
+                    Text("Imposta gli orari per \(treatment.dailyFrequency) dos\(treatment.dailyFrequency == 1 ? "e" : "i") giornalier\(treatment.dailyFrequency == 1 ? "a" : "e")")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                .padding(.top, 20).padding(.bottom, 12)
+                
+                // Time pickers
+                VStack(spacing: 0) {
+                    ForEach(editedTimes.indices, id: \.self) { i in
+                        HStack {
+                            ZStack {
+                                Circle().fill(tint.opacity(0.1)).frame(width: 32, height: 32)
+                                Text("\(i+1)").font(.caption.bold()).foregroundStyle(tint)
+                            }
+                            Text(labels[safe: i] ?? "Dose \(i+1)")
+                                .font(.subheadline)
+                            Spacer()
+                            TimePickerField(timeString: $editedTimes[i])
+                        }
+                        .padding(.horizontal).padding(.vertical, 10)
+                        
+                        if i < editedTimes.count - 1 {
+                            Divider().padding(.leading, 56)
+                        }
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: .black.opacity(0.05), radius: 6))
+                .padding()
+                
+                Spacer()
+                
+                // Salva
+                Button { saveTimes() } label: {
+                    Text("Salva orari")
+                        .frame(maxWidth: .infinity).padding()
+                        .background(RoundedRectangle(cornerRadius: 14).fill(tint))
+                        .foregroundStyle(.white).font(.headline)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal).padding(.bottom, 24)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Orari somministrazione")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Annulla") { dismiss() }
+                }
+            }
+            .onAppear {
+                editedTimes = treatment.scheduleTimes.isEmpty
+                ? Array(repeating: "08:00", count: treatment.dailyFrequency)
+                : treatment.scheduleTimes
+            }
+        }
+        .presentationDetents([.medium])
+    }
+    
+    private func saveTimes() {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        treatment.scheduleTimes = editedTimes
+        treatment.updatedAt     = Date()
+        treatment.updatedBy     = uid
+        try? modelContext.save()
+        
+        SyncCenter.shared.enqueueTreatmentUpsert(
+            treatmentId: treatment.id,
+            familyId: treatment.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        // Rischedula notifiche se attive
+        if treatment.reminderEnabled {
+            TreatmentNotificationManager.cancel(treatmentId: treatment.id)
+            TreatmentNotificationManager.schedule(
+                treatment: treatment,
+                childName: ""
+            )
+        }
         dismiss()
     }
 }

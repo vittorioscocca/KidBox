@@ -68,7 +68,7 @@ struct NoteDetailView: View {
         
         // ✅ Ascolta aggiornamenti da SwiftData (es. listener realtime che aggiorna la nota)
         //    MA li applica all'UI solo se non stiamo editando (isDirty = false).
-        .onChange(of: noteRemoteVersion) { _ in
+        .onChange(of: noteRemoteVersion) { _, _ in
             guard let n = queriedNotes.first else { return }
             if isDirty {
                 // Editing in corso: salva la versione remota per dopo, non sovrascrivere

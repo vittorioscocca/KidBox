@@ -550,7 +550,7 @@ private struct HomeCardGrid: View {
             }
             
         case .care:
-            HomeCardView(title: "Pediatria", subtitle: "Baby tracker", systemImage: "cross.case", tint: .red) {
+            HomeCardView(title: "Salute", subtitle: "Health tracker", systemImage: "cross.case", tint: .red) {
                 KBLog.navigation.debug("Home: tap Care")
                 onNavigate(.pediatric(familyId: familyId, childId: ""))
             }

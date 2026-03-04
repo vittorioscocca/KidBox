@@ -14,4 +14,6 @@ enum SyncEntityType: String {
     case todoList
     case grocery
     case note
+    case treatment
+    case doseLog
 }

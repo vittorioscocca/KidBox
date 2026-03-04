@@ -1,9 +1,6 @@
 //
 //  KBDoseLog.swift
 //  KidBox
-//
-//  Created by vscocca on 03/03/26.
-//
 
 import Foundation
 import SwiftData
@@ -12,29 +9,22 @@ import SwiftData
 final class KBDoseLog {
     
     @Attribute(.unique) var id: String
-    var familyId: String
-    var childId:  String
+    var familyId:    String
+    var childId:     String
     var treatmentId: String
     
-    /// Giorno della cura (1-based)
-    var dayNumber: Int
-    
-    /// Slot orario (0 = mattina, 1 = pranzo, ...)
-    var slotIndex: Int
-    
-    /// Orario schedulato (es. "08:00")
+    var dayNumber:     Int
+    var slotIndex:     Int
     var scheduledTime: String
+    var takenAt:       Date?
+    var taken:         Bool
     
-    /// Data/ora in cui è stata effettivamente somministrata
-    var takenAt: Date?
-    
-    /// true = presa, false = saltata
-    var taken: Bool
-    
-    // Sync
-    var createdAt:  Date
-    var updatedAt:  Date
-    var updatedBy:  String?
+    var isDeleted:     Bool
+    var createdAt:     Date
+    var updatedAt:     Date
+    var updatedBy:     String?
+    var syncStatus:    Int        // KBSyncState.rawValue
+    var lastSyncError: String?
     
     init(
         id: String = UUID().uuidString,
@@ -46,6 +36,7 @@ final class KBDoseLog {
         scheduledTime: String,
         takenAt: Date? = nil,
         taken: Bool = false,
+        isDeleted: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         updatedBy: String? = nil
@@ -59,8 +50,17 @@ final class KBDoseLog {
         self.scheduledTime = scheduledTime
         self.takenAt       = takenAt
         self.taken         = taken
+        self.isDeleted     = isDeleted
         self.createdAt     = createdAt
         self.updatedAt     = updatedAt
         self.updatedBy     = updatedBy
+        self.syncStatus    = KBSyncState.synced.rawValue
+    }
+}
+
+extension KBDoseLog {
+    var syncState: KBSyncState {
+        get { KBSyncState(rawValue: syncStatus) ?? .synced }
+        set { syncStatus = newValue.rawValue }
     }
 }

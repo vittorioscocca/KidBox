@@ -144,12 +144,22 @@ struct PediatricTreatmentsView: View {
                     Text(t.drugName).font(.subheadline.bold())
                     Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.dailyFrequency) volt\(t.dailyFrequency == 1 ? "a" : "e") al giorno")
                         .font(.caption).foregroundStyle(tint)
-                    if !t.isLongTerm, let day = t.currentDay {
-                        Label("Giorno \(day) di \(t.durationDays)  –  0/\(t.totalDoses)", systemImage: "calendar")
-                            .font(.caption2).foregroundStyle(.secondary)
+                    if !t.isActive {
+                        // Qualsiasi cura interrotta — sia fissa che lungo termine
+                        Label("Interrotta", systemImage: "stop.circle.fill")
+                            .font(.caption2).foregroundStyle(.orange)
                     } else if t.isLongTerm {
-                        Label("Cura a lungo termine", systemImage: "infinity")
-                            .font(.caption2).foregroundStyle(.secondary)
+                        // Attiva a lungo termine
+                        HStack(spacing: 8) {
+                            Label("A lungo termine", systemImage: "infinity")
+                                .font(.caption2).foregroundStyle(.secondary)
+                            TreatmentDoseCounter(treatment: t)
+                        }
+                    } else {
+                        // Attiva durata fissa
+                        HStack(spacing: 8) {
+                            TreatmentProgressLabel(treatment: t)
+                        }
                     }
                 }
                 Spacer()
@@ -250,5 +260,59 @@ struct PediatricMedicalRecordView: View {
         }
         try? modelContext.save()
         isSaving = false
+    }
+}
+
+// MARK: - TreatmentDoseCounter
+
+/// Subview con @Query propria per contare le dosi prese in tempo reale
+private struct TreatmentDoseCounter: View {
+    
+    let treatment: KBTreatment
+    @Query private var logs: [KBDoseLog]
+    
+    init(treatment: KBTreatment) {
+        self.treatment = treatment
+        let tid = treatment.id
+        _logs = Query(filter: #Predicate<KBDoseLog> {
+            $0.treatmentId == tid && $0.taken == true
+        })
+    }
+    
+    var body: some View {
+        let total = treatment.isLongTerm ? "∞" : "\(treatment.totalDoses)"
+        Label("\(logs.count)/\(total) Dosi", systemImage: "calendar")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+    }
+}
+
+private struct TreatmentProgressLabel: View {
+    let treatment: KBTreatment
+    @Query private var logs: [KBDoseLog]
+    
+    init(treatment: KBTreatment) {
+        self.treatment = treatment
+        let tid = treatment.id
+        _logs = Query(filter: #Predicate<KBDoseLog> {
+            $0.treatmentId == tid && $0.taken == true
+        })
+    }
+    
+    private var currentDay: Int {
+        let cal      = Calendar.current
+        let startDay = cal.startOfDay(for: treatment.startDate)
+        let today    = cal.startOfDay(for: Date())
+        let days     = cal.dateComponents([.day], from: startDay, to: today).day ?? 0
+        return min(days + 1, treatment.durationDays)
+    }
+    
+    var body: some View {
+        Label(
+            "Giorno \(currentDay) di \(treatment.durationDays)  –  \(logs.count)/\(treatment.totalDoses)",
+            systemImage: "calendar"
+        )
+        .font(.caption2)
+        .foregroundStyle(.secondary)
     }
 }

@@ -29,8 +29,9 @@ final class KBDocument {
     var fileSize: Int64
     
     // Storage
-    var storagePath: String  
+    var storagePath: String
     var downloadURL: String?
+    var notes: String?          // tag libero, es. "treatment:{id}"
     
     // Dates
     var createdAt: Date
@@ -59,6 +60,7 @@ final class KBDocument {
         localPath: String? = nil,
         storagePath: String,
         downloadURL: String?,
+        notes: String? = nil,
         updatedBy: String,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -75,6 +77,7 @@ final class KBDocument {
         self.localPath = localPath
         self.storagePath = storagePath
         self.downloadURL = downloadURL
+        self.notes = notes
         self.updatedBy = updatedBy
         self.createdAt = createdAt
         self.updatedAt = updatedAt

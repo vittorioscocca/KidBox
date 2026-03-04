@@ -32,6 +32,7 @@ struct PediatricTreatmentEditView: View {
     @State private var durationDays   = 5
     @State private var dailyFrequency = 1
     @State private var notifGranted = false
+    @State private var pendingAttachmentURLs: [URL] = []
     
     // Step 3 - Orari e data inizio
     @State private var startDate      = Date()
@@ -356,6 +357,8 @@ struct PediatricTreatmentEditView: View {
             GroupBox("Note") {
                 TextField("Note aggiuntive (opzionale)", text: $notes, axis: .vertical).lineLimit(2...4)
             }
+            
+            TreatmentAttachmentPicker(pendingURLs: $pendingAttachmentURLs)
         }
     }
     
@@ -447,14 +450,20 @@ struct PediatricTreatmentEditView: View {
                 createdAt: now, updatedAt: now, updatedBy: uid, createdBy: uid
             )
             t.reminderEnabled = reminderEnabled
-            modelContext.insert(t)   // ← PRIMA del save
+            modelContext.insert(t)
             treatment = t
         }
         
         do {
-            try modelContext.save()  // ← sincrono, non try?
+            try modelContext.save()
+            SyncCenter.shared.enqueueTreatmentUpsert(
+                treatmentId: treatment.id,
+                familyId: familyId,
+                modelContext: modelContext
+            )
+            SyncCenter.shared.flushGlobal(modelContext: modelContext)
         } catch {
-            return                   // ← non fare dismiss se fallisce
+            return
         }
         
         if reminderEnabled {
@@ -466,7 +475,18 @@ struct PediatricTreatmentEditView: View {
             TreatmentNotificationManager.cancel(treatmentId: treatment.id)
         }
         
-        dismiss()  // ← solo dopo save OK
+        // ✅ Upload allegati PRIMA del dismiss
+        // così TreatmentDetailView li trova già in SwiftData all'onAppear
+        // ✅ Event-driven — nessuna dipendenza diretta
+        if !pendingAttachmentURLs.isEmpty {
+            KBEventBus.shared.emit(.treatmentAttachmentPending(
+                urls:        pendingAttachmentURLs,
+                treatmentId: treatment.id,
+                familyId:    familyId,
+                childId:     childId
+            ))
+        }
+        dismiss()
     }
     
     private func applyFields(to t: KBTreatment, uid: String, now: Date, endDate: Date?) {

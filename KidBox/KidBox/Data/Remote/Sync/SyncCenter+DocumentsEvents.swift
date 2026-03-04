@@ -215,6 +215,26 @@ extension SyncCenter {
                         
                         local.syncState = .synced
                         local.lastSyncError = nil
+                        
+                        // 📎 Auto-download allegati treatment arrivati dal remoto
+                        let isTreatmentAttachment = dto.notes?.hasPrefix("treatment:") == true
+                        let missingLocal = local.localPath == nil || local.localPath?.isEmpty == true
+                        if isTreatmentAttachment && missingLocal && !dto.isDeleted,
+                           let dlURL = dto.downloadURL, !dlURL.isEmpty {
+                            let docId       = local.id
+                            let familyId    = local.familyId
+                            let storagePath = local.storagePath
+                            let fileName    = local.fileName
+                            Task.detached {
+                                await TreatmentAttachmentService.shared.downloadRemoteAttachment(
+                                    docId:        docId,
+                                    familyId:     familyId,
+                                    storagePath:  storagePath,
+                                    fileName:     fileName,
+                                    modelContext: modelContext
+                                )
+                            }
+                        }
                     }
                     
                 case .remove(let id):
@@ -346,6 +366,7 @@ extension SyncCenter {
                 storagePath: doc.storagePath,
                 downloadURL: doc.downloadURL,
                 isDeleted: doc.isDeleted,
+                notes: doc.notes,
                 updatedAt: doc.updatedAt,
                 updatedBy: doc.updatedBy
             )

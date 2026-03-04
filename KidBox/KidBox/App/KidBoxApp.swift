@@ -117,6 +117,7 @@ struct KidBoxApp: App {
                 
                 // MARK: Debug-only services
                     .task {
+                        TreatmentAttachmentService.shared.start(modelContext: modelContainer.mainContext)
 #if DEBUG
                         KBLog.sync.kbDebug("DEBUG FirestorePingService ping()")
                         FirestorePingService().ping { _ in }
