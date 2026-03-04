@@ -2,19 +2,7 @@
 //  TreatmentAttachmentService.swift
 //  KidBox
 //
-//  Ascolta KBEventBus per .treatmentAttachmentPending
-//  e crea KBDocument in Documenti > Salute > Referti.
-//
-//  INTEGRAZIONE:
-//  - Chiama TreatmentAttachmentService.shared.start(modelContext:)
-//    una sola volta all'avvio app (KidBoxApp.swift o SyncCenter.startAll)
-//  - Il wizard emette KBEventBus.shared.emit(.treatmentAttachmentPending(...))
-//    e fa subito dismiss() — nessuna dipendenza diretta
-//
-//  DA CANCELLARE rispetto all'implementazione precedente:
-//  - Il Task { for url in urls { await TreatmentAttachmentService.shared.upload(...) } dismiss() }
-//    nel save() del wizard
-//  - Qualsiasi chiamata diretta a TreatmentAttachmentService.shared.upload() dall'esterno
+
 
 import Combine
 import SwiftUI
@@ -197,6 +185,7 @@ final class TreatmentAttachmentService {
         // Accoda sync Firestore metadata
         SyncCenter.shared.enqueueDocumentUpsert(
             documentId: doc.id, familyId: familyId, modelContext: modelContext)
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         // Upload Firebase Storage — path già costruito, non passa per DocumentStorageService
         Task.detached {
@@ -238,6 +227,9 @@ final class TreatmentAttachmentService {
     
     /// Scarica e decripta un allegato arrivato da Firestore sull'account B.
     /// Chiamato automaticamente da applyDocumentInbound quando localPath è nil.
+    // Traccia i download in corso per evitare duplicati
+    private static var downloadingDocIds = Set<String>()
+    
     func downloadRemoteAttachment(
         docId:        String,
         familyId:     String,
@@ -298,22 +290,72 @@ final class TreatmentAttachmentService {
             
         } catch {
             KBLog.sync.kbError("downloadRemoteAttachment failed docId=\(docId): \(error.localizedDescription)")
+            let notFound = isStorageNotFound(error)
+            
+            await MainActor.run {
+                do {
+                    let did = docId
+                    let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
+                    if let doc = try modelContext.fetch(desc).first {
+                        doc.lastSyncError = error.localizedDescription
+                        
+                        if notFound {
+                            // ✅ blocca retry infinito
+                            doc.localPath = "__missing__"   // sentinella
+                            // opzionale: doc.downloadURL = nil  // se vuoi disinnescare anche su URL
+                        }
+                        
+                        try? modelContext.save()
+                    }
+                } catch { }
+            }
+            
+            KBLog.sync.kbError("downloadRemoteAttachment failed docId=\(docId): \(error.localizedDescription)")
         }
+    }
+
+    private func isStorageNotFound(_ error: Error) -> Bool {
+        let ns = error as NSError
+        // FirebaseStorage usa error domain StorageErrorDomain
+        if ns.domain == StorageErrorDomain,
+           ns.code == StorageErrorCode.objectNotFound.rawValue {
+            return true
+        }
+        // fallback: a volte nel localizedDescription compare "does not exist"
+        if ns.localizedDescription.lowercased().contains("does not exist") { return true }
+        return false
     }
     
     // MARK: - Delete (soft)
     
     func delete(_ doc: KBDocument, modelContext: ModelContext) {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
-        doc.isDeleted = true
-        doc.updatedAt = Date()
-        doc.updatedBy = uid
-        try? modelContext.save()
-        SyncCenter.shared.enqueueDocumentUpsert(
-            documentId: doc.id, familyId: doc.familyId, modelContext: modelContext)
-        let path = doc.storagePath
-        Task.detached {
-            try? await Storage.storage().reference(withPath: path).delete()
+        let path  = doc.storagePath
+        let local = doc.localPath
+        
+        // 1) Rimuovi file locale
+        if let lp = local, !lp.isEmpty {
+            DocumentLocalCache.deleteFile(localPath: lp)
+        }
+        doc.localPath = nil
+        
+        // 2) Enqueue HARD delete su Firestore (non upsert)
+        SyncCenter.shared.enqueueDocumentDelete(
+            documentId: doc.id,
+            familyId: doc.familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        // 3) Best-effort delete su Storage
+        if !path.isEmpty {
+            Task.detached {
+                do {
+                    try await Storage.storage().reference(withPath: path).delete()
+                    await KBLog.sync.kbInfo("Storage delete OK path=\(path)")
+                } catch {
+                    await KBLog.sync.kbError("Storage delete failed path=\(path) err=\(error.localizedDescription)")
+                }
+            }
         }
     }
     

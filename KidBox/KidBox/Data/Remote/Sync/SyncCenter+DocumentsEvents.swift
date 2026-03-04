@@ -209,10 +209,9 @@ extension SyncCenter {
                         local.storagePath = dto.storagePath
                         local.downloadURL = dto.downloadURL
                         local.isDeleted = dto.isDeleted
-                        
+                        local.notes = dto.notes
                         local.updatedAt = remoteStamp
                         local.updatedBy = dto.updatedBy ?? local.updatedBy
-                        
                         local.syncState = .synced
                         local.lastSyncError = nil
                         

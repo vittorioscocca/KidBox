@@ -185,4 +185,18 @@ enum DocumentLocalCache {
         KBLog.storage.kbInfo("TEMP file ready docId=\(doc.id)")
         return tempURL
     }
+    
+    // MARK: - Delete
+    
+    /// Rimuove un file dalla cache locale. Best-effort: non lancia errori.
+    static func deleteFile(localPath: String) {
+        guard !localPath.isEmpty else { return }
+        do {
+            let url = try resolve(localPath: localPath)
+            try FileManager.default.removeItem(at: url)
+            KBLog.persistence.kbInfo("Cache deleteFile OK localPath=\(localPath)")
+        } catch {
+            KBLog.persistence.kbDebug("Cache deleteFile skip (already gone) localPath=\(localPath) err=\(error.localizedDescription)")
+        }
+    }
 }
