@@ -156,37 +156,100 @@ struct DocumentFolderView: View {
     // MARK: - Header
     
     private var header: some View {
-        HStack(spacing: 10) {
-            // Segmented picker lista/grid
-            Picker("", selection: Binding(
-                get: { viewModel.layout },
-                set: { viewModel.layout = $0 }
-            )) {
-                ForEach(LayoutMode.allCases) { m in
-                    Image(systemName: m == .grid ? "square.grid.2x2" : "list.bullet")
-                        .tag(m)
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                // Segmented picker lista/grid
+                Picker("", selection: Binding(
+                    get: { viewModel.layout },
+                    set: { viewModel.layout = $0 }
+                )) {
+                    ForEach(LayoutMode.allCases) { m in
+                        Image(systemName: m == .grid ? "square.grid.2x2" : "list.bullet")
+                            .tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 80)
+                
+                Spacer()
+                
+                // Contatore
+                HStack(spacing: 4) {
+                    Image(systemName: "folder").font(.caption2).foregroundStyle(.secondary)
+                    Text("\(viewModel.folders.count)").font(.caption.bold()).foregroundStyle(.secondary)
+                    Text("·").foregroundStyle(.tertiary)
+                    Image(systemName: "doc").font(.caption2).foregroundStyle(.secondary)
+                    Text("\(viewModel.docs.count)").font(.caption.bold()).foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(pillBackground, in: Capsule())
+            }
+            .padding(.horizontal)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            
+            // Sort bar stile Dropbox
+            sortBar
+        }
+    }
+    
+    /// Barra di ordinamento orizzontale scrollabile
+    private var sortBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(DocumentFolderViewModel.SortMode.allCases) { mode in
+                    sortChip(mode)
                 }
             }
-            .pickerStyle(.segmented)
-            .frame(width: 80)
-            
-            Spacer()
-            
-            // Contatore
-            HStack(spacing: 4) {
-                Image(systemName: "folder").font(.caption2).foregroundStyle(.secondary)
-                Text("\(viewModel.folders.count)").font(.caption.bold()).foregroundStyle(.secondary)
-                Text("·").foregroundStyle(.tertiary)
-                Image(systemName: "doc").font(.caption2).foregroundStyle(.secondary)
-                Text("\(viewModel.docs.count)").font(.caption.bold()).foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(pillBackground, in: Capsule())
+            .padding(.horizontal)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal)
-        .padding(.top, 12)
-        .padding(.bottom, 10)
+        .background(backgroundColor)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+    }
+    
+    @ViewBuilder
+    private func sortChip(_ mode: DocumentFolderViewModel.SortMode) -> some View {
+        let isActive = viewModel.sortMode == mode
+        Button {
+            if isActive {
+                viewModel.toggleNameSort()
+            } else {
+                viewModel.sortMode = mode
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: mode.systemImage)
+                    .font(.caption2)
+                Text(mode.rawValue)
+                    .font(.caption.weight(isActive ? .semibold : .regular))
+                if isActive {
+                    Image(systemName: viewModel.nameSortOrder == .asc ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(
+                isActive
+                ? Color.accentColor.opacity(0.15)
+                : pillBackground,
+                in: Capsule()
+            )
+            .overlay(
+                Capsule().strokeBorder(
+                    isActive ? Color.accentColor.opacity(0.4) : Color.clear,
+                    lineWidth: 1
+                )
+            )
+            .foregroundStyle(isActive ? Color.accentColor : Color.secondary)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: isActive)
+        .animation(.easeInOut(duration: 0.15), value: viewModel.nameSortOrder)
     }
     
     // MARK: - Empty state
@@ -234,6 +297,7 @@ struct DocumentFolderView: View {
                     } label: {
                         FolderGridCard(
                             title: f.title,
+                            updatedAt: f.updatedAt,
                             isSelecting: viewModel.isSelecting,
                             isSelected: viewModel.isSelected(item)
                         )
@@ -282,7 +346,7 @@ struct DocumentFolderView: View {
                             SelectionBadge(isSelected: viewModel.isSelected(item))
                                 .frame(width: 28, height: 28)
                         }
-                        FolderRow(title: f.title)
+                        FolderRow(title: f.title, updatedAt: f.updatedAt)
                     }
                     .contentShape(Rectangle())
                 }
@@ -465,13 +529,6 @@ private extension DocumentFolderView {
                     Image(systemName: "trash")
                 }
                 .accessibilityLabel("Elimina selezionati")
-            }
-            
-            // Sort
-            Button { viewModel.toggleNameSort() } label: {
-                Image(systemName: viewModel.nameSortOrder == .asc
-                      ? "arrow.up.arrow.down.circle"
-                      : "arrow.up.arrow.down.circle.fill")
             }
             
             // Menu +

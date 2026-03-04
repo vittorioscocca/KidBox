@@ -2,13 +2,10 @@
 //  KBTreatment.swift
 //  KidBox
 //
-//  Created by vscocca on 02/03/26.
-//
 
 import Foundation
 import SwiftData
 
-/// Una cura farmacologica: farmaco + dosaggio + frequenza giornaliera + durata.
 @Model
 final class KBTreatment {
     
@@ -17,39 +14,34 @@ final class KBTreatment {
     var childId: String
     
     // MARK: - Farmaco
-    var drugName: String            // es. "Tachipirina"
-    var activeIngredient: String?   // es. "Paracetamolo"
+    var drugName: String
+    var activeIngredient: String?
     
     // MARK: - Dosaggio
-    var dosageValue: Double         // es. 10
-    var dosageUnit: String          // es. "ml", "mg", "gocce", "compresse"
+    var dosageValue: Double
+    var dosageUnit: String
     
     // MARK: - Durata
-    var isLongTerm: Bool            // cura a lungo termine (senza fine)
-    var durationDays: Int           // giorni (ignorato se isLongTerm)
+    var isLongTerm: Bool
+    var durationDays: Int
     var startDate: Date
-    var endDate: Date?              // calcolato: startDate + durationDays
+    var endDate: Date?
     
-    // MARK: - Frequenza (numero di dosi/giorno)
-    var dailyFrequency: Int         // 1, 2, 3, 4 …
-    
-    /// Orari delle dosi serializzati come "HH:mm,HH:mm,HH:mm"
+    // MARK: - Frequenza
+    var dailyFrequency: Int
     var scheduleTimesRaw: String
     
     var scheduleTimes: [String] {
-        get {
-            scheduleTimesRaw.split(separator: ",")
-                .map(String.init)
-                .filter { !$0.isEmpty }
-        }
-        set {
-            scheduleTimesRaw = newValue.joined(separator: ",")
-        }
+        get { scheduleTimesRaw.split(separator: ",").map(String.init).filter { !$0.isEmpty } }
+        set { scheduleTimesRaw = newValue.joined(separator: ",") }
     }
     
     // MARK: - Stato
     var isActive: Bool
     var notes: String?
+    
+    // MARK: - Promemoria  ← NUOVO
+    var reminderEnabled: Bool
     
     // MARK: - Soft delete
     var isDeleted: Bool
@@ -67,20 +59,20 @@ final class KBTreatment {
         set { syncStateRaw = newValue.rawValue }
     }
     
-    // MARK: - Computed helpers
+    // MARK: - Computed
     
-    /// Dosi totali = frequenza × durata
     var totalDoses: Int {
         isLongTerm ? -1 : dailyFrequency * durationDays
     }
     
-    /// Giorno corrente della cura (1-based), nil se terminata o non ancora iniziata
     var currentDay: Int? {
         guard isActive, !isLongTerm else { return nil }
         let days = Calendar.current.dateComponents([.day], from: startDate, to: Date()).day ?? 0
         let day = days + 1
         return (1...durationDays).contains(day) ? day : nil
     }
+    
+    // MARK: - Init
     
     init(
         id: String = UUID().uuidString,
@@ -98,6 +90,7 @@ final class KBTreatment {
         scheduleTimes: [String] = ["08:00"],
         isActive: Bool = true,
         notes: String? = nil,
+        reminderEnabled: Bool = false,
         isDeleted: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -119,6 +112,7 @@ final class KBTreatment {
         self.scheduleTimesRaw = scheduleTimes.joined(separator: ",")
         self.isActive         = isActive
         self.notes            = notes
+        self.reminderEnabled  = reminderEnabled
         self.isDeleted        = isDeleted
         self.createdAt        = createdAt
         self.updatedAt        = updatedAt

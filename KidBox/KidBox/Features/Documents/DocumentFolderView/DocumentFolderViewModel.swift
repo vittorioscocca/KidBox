@@ -95,6 +95,28 @@ final class DocumentFolderViewModel: ObservableObject {
     }
     @Published var nameSortOrder: NameSortOrder = .asc
     
+    /// Modalità di ordinamento principale
+    enum SortMode: String, CaseIterable, Identifiable {
+        case name    = "Nome"
+        case type    = "Tipo di file"
+        case date    = "Data modifica"
+        case size    = "Dimensioni"
+        var id: String { rawValue }
+        var systemImage: String {
+            switch self {
+            case .name: return "character.cursor.ibeam"
+            case .type: return "doc.text.magnifyingglass"
+            case .date: return "clock"
+            case .size: return "externaldrive"
+            }
+        }
+    }
+    @AppStorage("documentsSortMode") private var _sortModeRaw: String = SortMode.name.rawValue
+    var sortMode: SortMode {
+        get { SortMode(rawValue: _sortModeRaw) ?? .name }
+        set { _sortModeRaw = newValue.rawValue; applySort() }
+    }
+    
     enum SelectionItem: Hashable, Identifiable {
         case folder(String)
         case doc(String)
@@ -122,15 +144,46 @@ final class DocumentFolderViewModel: ObservableObject {
     
     // MARK: - Sorting
     
-    private func applyNameSort() {
+    private func applySort() {
         let isAsc = (nameSortOrder == .asc)
-        folders.sort {
-            let r = $0.title.localizedCaseInsensitiveCompare($1.title)
-            return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
-        }
-        docs.sort {
-            let r = $0.title.localizedCaseInsensitiveCompare($1.title)
-            return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
+        switch sortMode {
+        case .name:
+            folders.sort {
+                let r = $0.title.localizedCaseInsensitiveCompare($1.title)
+                return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
+            }
+            docs.sort {
+                let r = $0.title.localizedCaseInsensitiveCompare($1.title)
+                return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
+            }
+        case .type:
+            // Cartelle sempre prima, poi documenti raggruppati per estensione
+            folders.sort {
+                let r = $0.title.localizedCaseInsensitiveCompare($1.title)
+                return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
+            }
+            docs.sort {
+                let extA = ($0.title as NSString).pathExtension.lowercased()
+                let extB = ($1.title as NSString).pathExtension.lowercased()
+                if extA != extB { return isAsc ? extA < extB : extA > extB }
+                let r = $0.title.localizedCaseInsensitiveCompare($1.title)
+                return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
+            }
+        case .date:
+            folders.sort {
+                isAsc ? $0.updatedAt < $1.updatedAt : $0.updatedAt > $1.updatedAt
+            }
+            docs.sort {
+                isAsc ? $0.updatedAt < $1.updatedAt : $0.updatedAt > $1.updatedAt
+            }
+        case .size:
+            folders.sort {
+                let r = $0.title.localizedCaseInsensitiveCompare($1.title)
+                return isAsc ? (r == .orderedAscending) : (r == .orderedDescending)
+            }
+            docs.sort {
+                isAsc ? $0.fileSize < $1.fileSize : $0.fileSize > $1.fileSize
+            }
         }
     }
     
@@ -139,7 +192,7 @@ final class DocumentFolderViewModel: ObservableObject {
         do {
             folders = try fetchFolders(modelContext: modelContext)
             docs    = try fetchDocs(modelContext: modelContext)
-            applyNameSort()
+            applySort()
             KBLog.data.debug("DocumentFolderVM reload ok folders=\(self.folders.count) docs=\(self.docs.count)")
         } catch {
             errorText = error.localizedDescription
@@ -149,7 +202,7 @@ final class DocumentFolderViewModel: ObservableObject {
     
     func toggleNameSort() {
         nameSortOrder.toggle()
-        applyNameSort()
+        applySort()
     }
     
     // MARK: - Selection mode
@@ -1068,4 +1121,3 @@ final class DocumentFolderViewModel: ObservableObject {
         }
     }
 }
-

@@ -46,7 +46,12 @@ enum ModelContainerProvider {
             KBSyncOp.self,
             KBChatMessage.self,
             KBGroceryItem.self,
-            KBNote.self
+            KBNote.self,
+            KBTreatment.self,
+            KBMedicalVisit.self,
+            KBPediatricProfile.self,
+            KBVaccine.self,
+            KBDoseLog.self
         ])
         
         let configuration = ModelConfiguration(

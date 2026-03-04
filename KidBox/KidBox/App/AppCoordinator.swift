@@ -254,20 +254,28 @@ final class AppCoordinator: ObservableObject {
             )
         case .todoSmart(familyId: let familyId, childId: let childId, kind: let kind):
             TodoSmartListView(familyId: familyId, childId: childId, kind: kind)
+        
+        // MARK: - Pediatria
+        case .pediatricChildSelector(familyId: let familyId):
+            PediatricChildSelectorView(familyId: familyId)
         case .pediatricHome(familyId: let familyId, childId: let childId):
             PediatricHomeView(familyId: familyId, childId: childId)
         case .pediatricMedicalRecord(familyId: let familyId, childId: let childId):
-            PediatricHomeView(familyId: familyId, childId: childId)
+            PediatricMedicalRecordView(familyId: familyId, childId: childId)
         case .pediatricVisits(familyId: let familyId, childId: let childId):
-            PediatricHomeView(familyId: familyId, childId: childId)
+            PediatricVisitsView(familyId: familyId, childId: childId)
         case .pediatricVaccines(familyId: let familyId, childId: let childId):
-            PediatricHomeView(familyId: familyId, childId: childId)
+            PediatricVaccinesView(familyId: familyId, childId: childId)
         case .pediatricTreatments(familyId: let familyId, childId: let childId):
-            PediatricHomeView(familyId: familyId, childId: childId)
+            PediatricTreatmentsView(familyId: familyId, childId: childId)
+        case .pediatricTreatmentDetail(let fid, let cid, let tid):
+            TreatmentDetailDestinationView(treatmentId: tid, familyId: fid, childId: cid)
+            
         case .notesHome(familyId: let familyId):
             NotesHomeView(familyId: familyId)
         case .noteDetail(familyId: let familyId, noteId: let noteId):
             NoteDetailView(familyId: familyId, noteId: noteId)
+       
         }
     }
     

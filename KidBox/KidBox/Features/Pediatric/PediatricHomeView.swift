@@ -1,5 +1,5 @@
 //
-//  Pediatric.swift
+//  PediatricHomeView.swift
 //  KidBox
 //
 //  Created by vscocca on 02/03/26.
@@ -16,10 +16,9 @@ struct PediatricHomeView: View {
     let familyId: String
     let childId: String
     
-    // Legge il nome del bambino da KBFamilyMember o KBChild se disponibile
-    @Query private var members: [KBFamilyMember]
+    // ✅ Filtra per childId — nome e emoji corretti
+    @Query private var children: [KBChild]
     
-    // Cure attive (badge count)
     @Query private var allTreatments: [KBTreatment]
     @Query private var allVaccines: [KBVaccine]
     @Query private var allVisits: [KBMedicalVisit]
@@ -28,8 +27,10 @@ struct PediatricHomeView: View {
         self.familyId = familyId
         self.childId  = childId
         
-        let fid = familyId
         let cid = childId
+        let fid = familyId
+        
+        _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
         
         _allTreatments = Query(filter: #Predicate<KBTreatment> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true
@@ -42,73 +43,39 @@ struct PediatricHomeView: View {
         })
     }
     
-    // MARK: - Computed
-    
-    private var childName: String {
-        // Cerca prima nel membro della famiglia con userId == childId
-        // (oppure usa un modello KBChild se disponibile nel progetto)
-        members.first(where: { $0.familyId == familyId })?.displayName ?? "Bambino"
-    }
-    
+    private var child: KBChild?    { children.first }
+    private var childName: String  { child?.name ?? "Bambino" }
+    private var childEmoji: String { child?.avatarEmoji ?? "👶" }
     private var activeTreatmentsCount: Int { allTreatments.count }
-    
-    // MARK: - Body
     
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                
-                // ── Header ──
                 headerView
-                
-                // ── Griglia moduli ──
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    moduleCard(
-                        title: "Cure",
-                        subtitle: activeTreatmentsCount > 0
-                        ? "\(activeTreatmentsCount) attiv\(activeTreatmentsCount == 1 ? "a" : "e")"
-                        : "Farmaci attivi",
-                        systemImage: "cross.case.fill",
-                        tint: Color(red: 0.6, green: 0.45, blue: 0.85),
-                        badge: activeTreatmentsCount > 0 ? activeTreatmentsCount : nil
-                    ) {
+                    moduleCard(title: "Cure",
+                               subtitle: activeTreatmentsCount > 0
+                               ? "\(activeTreatmentsCount) attiv\(activeTreatmentsCount == 1 ? "a" : "e")"
+                               : "Farmaci attivi",
+                               systemImage: "cross.case.fill",
+                               tint: Color(red: 0.6, green: 0.45, blue: 0.85),
+                               badge: activeTreatmentsCount > 0 ? activeTreatmentsCount : nil) {
                         coordinator.navigate(to: .pediatricTreatments(familyId: familyId, childId: childId))
                     }
-                    
-                    moduleCard(
-                        title: "Vaccini",
-                        subtitle: "\(allVaccines.count) registrati",
-                        systemImage: "syringe.fill",
-                        tint: Color(red: 0.95, green: 0.55, blue: 0.45)
-                    ) {
+                    moduleCard(title: "Vaccini", subtitle: "\(allVaccines.count) registrati",
+                               systemImage: "syringe.fill", tint: Color(red: 0.95, green: 0.55, blue: 0.45)) {
                         coordinator.navigate(to: .pediatricVaccines(familyId: familyId, childId: childId))
                     }
-                    
-                    moduleCard(
-                        title: "Visite",
-                        subtitle: "\(allVisits.count) registrate",
-                        systemImage: "stethoscope",
-                        tint: Color(red: 0.35, green: 0.6, blue: 0.85)
-                    ) {
+                    moduleCard(title: "Visite", subtitle: "\(allVisits.count) registrate",
+                               systemImage: "stethoscope", tint: Color(red: 0.35, green: 0.6, blue: 0.85)) {
                         coordinator.navigate(to: .pediatricVisits(familyId: familyId, childId: childId))
                     }
-                    
-                    moduleCard(
-                        title: "Farmaci",
-                        subtitle: "Storico",
-                        systemImage: "pills.fill",
-                        tint: Color(red: 0.85, green: 0.5, blue: 0.6)
-                    ) {
-                        // placeholder — punta ai trattamenti per ora
+                    moduleCard(title: "Farmaci", subtitle: "Storico",
+                               systemImage: "pills.fill", tint: Color(red: 0.85, green: 0.5, blue: 0.6)) {
                         coordinator.navigate(to: .pediatricTreatments(familyId: familyId, childId: childId))
                     }
-                    
-                    moduleCard(
-                        title: "Scheda Medica",
-                        subtitle: "Allergie, pediatra",
-                        systemImage: "doc.text.fill",
-                        tint: Color(red: 0.4, green: 0.75, blue: 0.65)
-                    ) {
+                    moduleCard(title: "Scheda Medica", subtitle: "Allergie, pediatra",
+                               systemImage: "doc.text.fill", tint: Color(red: 0.4, green: 0.75, blue: 0.65)) {
                         coordinator.navigate(to: .pediatricMedicalRecord(familyId: familyId, childId: childId))
                     }
                 }
@@ -120,18 +87,15 @@ struct PediatricHomeView: View {
         .navigationBarTitleDisplayMode(.large)
     }
     
-    // MARK: - Subviews
-    
     private var headerView: some View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
                     .fill(Color(red: 0.6, green: 0.45, blue: 0.85).opacity(0.15))
                     .frame(width: 52, height: 52)
-                Text("👶")
+                Text(childEmoji)
                     .font(.title2)
             }
-            
             VStack(alignment: .leading, spacing: 2) {
                 Text(childName)
                     .font(.title3.bold())
@@ -139,62 +103,37 @@ struct PediatricHomeView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            
             Spacer()
         }
         .padding(.horizontal)
     }
     
     @ViewBuilder
-    private func moduleCard(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        tint: Color,
-        badge: Int? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
+    private func moduleCard(title: String, subtitle: String, systemImage: String,
+                            tint: Color, badge: Int? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 14) {
                 ZStack(alignment: .topTrailing) {
                     ZStack {
-                        Circle()
-                            .fill(tint.opacity(0.15))
-                            .frame(width: 60, height: 60)
-                        Image(systemName: systemImage)
-                            .font(.title2)
-                            .foregroundStyle(tint)
+                        Circle().fill(tint.opacity(0.15)).frame(width: 60, height: 60)
+                        Image(systemName: systemImage).font(.title2).foregroundStyle(tint)
                     }
-                    
                     if let badge, badge > 0 {
-                        Text("\(badge)")
-                            .font(.caption2.bold())
-                            .foregroundStyle(.white)
-                            .padding(5)
-                            .background(Circle().fill(tint))
-                            .offset(x: 4, y: -4)
+                        Text("\(badge)").font(.caption2.bold()).foregroundStyle(.white)
+                            .padding(5).background(Circle().fill(tint)).offset(x: 4, y: -4)
                     }
                 }
-                
                 VStack(spacing: 4) {
-                    Text(title)
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
+                    Text(title).font(.subheadline.bold()).foregroundStyle(.primary)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center).lineLimit(2)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .padding(.horizontal, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-            )
+            .padding(.vertical, 20).padding(.horizontal, 12)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2))
         }
         .buttonStyle(.plain)
     }

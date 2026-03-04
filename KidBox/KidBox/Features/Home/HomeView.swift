@@ -389,7 +389,7 @@ enum HomeDestination {
         case .settings:                      return .settings
         case .inviteCode:                    return .inviteCode
         case .shopping(let familyID):        return .shoppingList(familyId: familyID)
-        case .pediatric(let fid, let cid):   return .pediatricHome(familyId: fid, childId: cid)
+        case .pediatric(let fid, _):         return .pediatricChildSelector(familyId: fid)
         }
     }
 }
