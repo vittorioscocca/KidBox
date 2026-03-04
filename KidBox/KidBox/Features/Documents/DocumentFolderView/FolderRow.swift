@@ -43,10 +43,6 @@ struct FolderRow: View {
             .layoutPriority(1)
             
             Spacer(minLength: 8)
-            
-            Image(systemName: "ellipsis")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 6)
     }

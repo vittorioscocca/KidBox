@@ -14,16 +14,21 @@ struct DocumentRow: View {
     
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
-            // Icona tipo file con sfondo colorato
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(iconTint.opacity(0.15))
-                    .frame(width: 44, height: 44)
+            // Icona documento con badge tipo file
+            ZStack(alignment: .bottomTrailing) {
+                Image(systemName: "doc.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(Color(.systemGray4))
                 
-                Image(systemName: iconName)
-                    .font(.title3)
-                    .foregroundStyle(iconTint)
+                Text(fileExtLabel)
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 3)
+                    .padding(.vertical, 2)
+                    .background(iconTint, in: RoundedRectangle(cornerRadius: 3))
+                    .offset(x: 4, y: 4)
             }
+            .frame(width: 44, height: 44)
             
             VStack(alignment: .leading, spacing: 3) {
                 Text(doc.title.isEmpty ? "Senza titolo" : doc.title)
@@ -55,14 +60,36 @@ struct DocumentRow: View {
             if doc.syncState != .synced {
                 SyncPill(state: doc.syncState, error: doc.lastSyncError)
                     .fixedSize()
-            } else {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 6)
     }
+    
+    private var fileExtLabel: String {
+        let m = doc.mimeType.lowercased()
+        if m.contains("pdf")               { return "PDF" }
+        if m.contains("jpeg") || m.contains("jpg") { return "JPG" }
+        if m.contains("png")               { return "PNG" }
+        if m.contains("gif")               { return "GIF" }
+        if m.contains("word") || m.contains("msword") { return "DOC" }
+        if m.contains("sheet") || m.contains("excel") { return "XLS" }
+        if m.contains("presentation") || m.contains("powerpoint") { return "PPT" }
+        if m.contains("text/plain")        { return "TXT" }
+        let ext = (doc.fileName as NSString).pathExtension.uppercased()
+        return ext.isEmpty ? "FILE" : String(ext.prefix(4))
+    }
+    
+    private var iconTint: Color {
+        let m = doc.mimeType.lowercased()
+        if m.contains("pdf")               { return .red }
+        if m.contains("image")             { return .blue }
+        if m.contains("word") || m.contains("msword") { return Color(red: 0.17, green: 0.44, blue: 0.86) }
+        if m.contains("sheet") || m.contains("excel") { return Color(red: 0.13, green: 0.62, blue: 0.30) }
+        if m.contains("presentation") || m.contains("powerpoint") { return .orange }
+        if m.contains("text")              { return .gray }
+        return .indigo
+    }
+    
     
     private var iconName: String {
         let m = doc.mimeType.lowercased()
@@ -72,16 +99,6 @@ struct DocumentRow: View {
         if m.contains("word") || m.contains("document") { return "doc.text.fill" }
         if m.contains("sheet") || m.contains("excel") { return "tablecells.fill" }
         return "doc.fill"
-    }
-    
-    private var iconTint: Color {
-        let m = doc.mimeType.lowercased()
-        if m.contains("pdf")   { return .red }
-        if m.contains("image") { return .blue }
-        if m.contains("text")  { return .green }
-        if m.contains("word") || m.contains("document") { return .blue }
-        if m.contains("sheet") || m.contains("excel") { return .green }
-        return .indigo
     }
     
     private func prettySize(_ bytes: Int64) -> String {

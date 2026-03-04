@@ -285,8 +285,8 @@ struct DocumentFolderView: View {
     private var gridContent: some View {
         ScrollView {
             LazyVGrid(
-                columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-                spacing: 12
+                columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 16
             ) {
                 // Folders
                 ForEach(viewModel.folders) { f in
@@ -333,59 +333,64 @@ struct DocumentFolderView: View {
     // MARK: - LIST ─────────────────────────────────────────────────────────
     
     private var listContent: some View {
-        List {
-            // Folders
-            ForEach(viewModel.folders) { f in
-                let item = DocumentFolderViewModel.SelectionItem.folder(f.id)
-                Button {
-                    if viewModel.isSelecting { viewModel.toggleSelection(item) }
-                    else { navSelection = FolderNav(id: f.id, title: f.title) }
-                } label: {
-                    HStack(spacing: 12) {
-                        if viewModel.isSelecting {
-                            SelectionBadge(isSelected: viewModel.isSelected(item))
-                                .frame(width: 28, height: 28)
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                // Folders
+                ForEach(viewModel.folders) { f in
+                    let item = DocumentFolderViewModel.SelectionItem.folder(f.id)
+                    Button {
+                        if viewModel.isSelecting { viewModel.toggleSelection(item) }
+                        else { navSelection = FolderNav(id: f.id, title: f.title) }
+                    } label: {
+                        HStack(spacing: 14) {
+                            if viewModel.isSelecting {
+                                SelectionBadge(isSelected: viewModel.isSelected(item))
+                                    .frame(width: 24, height: 24)
+                            }
+                            FolderRow(title: f.title, updatedAt: f.updatedAt)
                         }
-                        FolderRow(title: f.title, updatedAt: f.updatedAt)
+                        .contentShape(Rectangle())
+                        .padding(.horizontal)
                     }
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing) {
+                        if !viewModel.isSelecting { folderSwipeActions(f) }
+                    }
+                    .swipeActions(edge: .leading) {
+                        if !viewModel.isSelecting { folderLeadingSwipeActions(f) }
+                    }
+                    
                 }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing) {
-                    if !viewModel.isSelecting { folderSwipeActions(f) }
-                }
-                .swipeActions(edge: .leading) {
-                    if !viewModel.isSelecting { folderLeadingSwipeActions(f) }
+                
+                // Docs
+                ForEach(viewModel.docs) { doc in
+                    let item = DocumentFolderViewModel.SelectionItem.doc(doc.id)
+                    Button {
+                        if viewModel.isSelecting { viewModel.toggleSelection(item) }
+                        else { viewModel.open(doc) }
+                    } label: {
+                        HStack(spacing: 14) {
+                            if viewModel.isSelecting {
+                                SelectionBadge(isSelected: viewModel.isSelected(item))
+                                    .frame(width: 24, height: 24)
+                            }
+                            DocumentRow(doc: doc)
+                        }
+                        .contentShape(Rectangle())
+                        .padding(.horizontal)
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing) {
+                        if !viewModel.isSelecting { docSwipeActions(doc) }
+                    }
+                    .swipeActions(edge: .leading) {
+                        if !viewModel.isSelecting { docLeadingSwipeActions(doc) }
+                    }
+                    
                 }
             }
-            
-            // Docs
-            ForEach(viewModel.docs) { doc in
-                let item = DocumentFolderViewModel.SelectionItem.doc(doc.id)
-                Button {
-                    if viewModel.isSelecting { viewModel.toggleSelection(item) }
-                    else { viewModel.open(doc) }
-                } label: {
-                    HStack(spacing: 12) {
-                        if viewModel.isSelecting {
-                            SelectionBadge(isSelected: viewModel.isSelected(item))
-                                .frame(width: 28, height: 28)
-                        }
-                        DocumentRow(doc: doc)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing) {
-                    if !viewModel.isSelecting { docSwipeActions(doc) }
-                }
-                .swipeActions(edge: .leading) {
-                    if !viewModel.isSelecting { docLeadingSwipeActions(doc) }
-                }
-            }
+            .padding(.vertical, 4)
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
         .background(backgroundColor)
     }
     

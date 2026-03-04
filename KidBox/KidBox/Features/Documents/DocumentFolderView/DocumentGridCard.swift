@@ -22,85 +22,50 @@ struct DocumentGridCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(
-                                isSelected
-                                ? Color.accentColor.opacity(0.9)
-                                : Color.primary.opacity(0.06),
-                                lineWidth: isSelected ? 2 : 1
-                            )
-                    )
-                
-                VStack(alignment: .leading, spacing: 0) {
-                    // Area icona centrata
+            VStack(spacing: 6) {
+                ZStack(alignment: .bottomTrailing) {
+                    // Icona documento grande
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(iconTint.opacity(0.12))
-                            .frame(height: 72)
+                        Image(systemName: "doc.fill")
+                            .font(.system(size: 52))
+                            .foregroundStyle(Color(.systemGray4))
                         
-                        Image(systemName: iconName)
-                            .font(.system(size: 30))
-                            .foregroundStyle(iconTint)
+                        // Badge tipo file in basso a destra sull'icona
+                        Text(fileExtLabel)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(iconTint, in: RoundedRectangle(cornerRadius: 3))
+                            .offset(x: 6, y: 8)
                     }
-                    .padding([.top, .horizontal], 12)
+                    .frame(width: 72, height: 64)
                     
-                    // Testo
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(doc.title.isEmpty ? "Senza titolo" : doc.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                        
-                        Text(doc.fileName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white, Color.accentColor)
+                            .offset(x: 10, y: 4)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 10)
-                    
-                    Spacer(minLength: 8)
-                    
-                    // Bottom: size
-                    HStack {
-                        Text(prettySize(doc.fileSize))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(.tertiarySystemBackground), in: Capsule())
-                        
-                        Spacer()
-                        
-                        if doc.syncState != .synced {
-                            SyncPill(state: doc.syncState, error: doc.lastSyncError)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 12)
                 }
                 
-                // Badge selezione
-                if isSelecting {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            SelectionBadge(isSelected: isSelected)
-                                .padding(10)
-                        }
-                        Spacer()
-                    }
-                }
+                Text(doc.title.isEmpty ? "Senza titolo" : doc.title)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                
+                Text(prettySize(doc.fileSize))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .scaleEffect(isSelected ? 0.94 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
         }
         .buttonStyle(.plain)
-        .scaleEffect(isSelected ? 0.97 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         .contextMenu {
             if !isSelecting {
                 Button { onRename() } label: { Label("Rinomina", systemImage: "pencil") }
@@ -114,23 +79,29 @@ struct DocumentGridCard: View {
         }
     }
     
-    private var iconName: String {
+    /// Etichetta estensione (es. "PDF", "JPG", "DOC")
+    private var fileExtLabel: String {
         let m = doc.mimeType.lowercased()
-        if m.contains("pdf")   { return "doc.richtext.fill" }
-        if m.contains("image") { return "photo.fill" }
-        if m.contains("text")  { return "doc.text.fill" }
-        if m.contains("word") || m.contains("document") { return "doc.text.fill" }
-        if m.contains("sheet") || m.contains("excel") { return "tablecells.fill" }
-        return "doc.fill"
+        if m.contains("pdf")              { return "PDF" }
+        if m.contains("jpeg") || m.contains("jpg") { return "JPG" }
+        if m.contains("png")              { return "PNG" }
+        if m.contains("gif")              { return "GIF" }
+        if m.contains("word") || m.contains("msword") { return "DOC" }
+        if m.contains("sheet") || m.contains("excel") { return "XLS" }
+        if m.contains("presentation") || m.contains("powerpoint") { return "PPT" }
+        if m.contains("text/plain")       { return "TXT" }
+        let ext = (doc.fileName as NSString).pathExtension.uppercased()
+        return ext.isEmpty ? "FILE" : String(ext.prefix(4))
     }
     
     private var iconTint: Color {
         let m = doc.mimeType.lowercased()
-        if m.contains("pdf")   { return .red }
-        if m.contains("image") { return .blue }
-        if m.contains("text")  { return .green }
-        if m.contains("word") || m.contains("document") { return .blue }
-        if m.contains("sheet") || m.contains("excel") { return Color(red: 0.13, green: 0.69, blue: 0.30) }
+        if m.contains("pdf")              { return .red }
+        if m.contains("image")            { return .blue }
+        if m.contains("word") || m.contains("msword") { return Color(red: 0.17, green: 0.44, blue: 0.86) }
+        if m.contains("sheet") || m.contains("excel") { return Color(red: 0.13, green: 0.62, blue: 0.30) }
+        if m.contains("presentation") || m.contains("powerpoint") { return .orange }
+        if m.contains("text")             { return .gray }
         return .indigo
     }
     

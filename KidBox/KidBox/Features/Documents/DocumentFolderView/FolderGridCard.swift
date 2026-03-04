@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Card cartella per la vista a griglia — stile Dropbox.
+/// Icona cartella libera per la griglia — stile iOS Files.
 struct FolderGridCard: View {
     let title: String
     var updatedAt: Date? = nil
@@ -16,66 +16,43 @@ struct FolderGridCard: View {
     let isSelected: Bool
     
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.orange.opacity(0.18))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(
-                            isSelected ? Color.accentColor.opacity(0.9) : Color.clear,
-                            lineWidth: isSelected ? 2 : 0
-                        )
-                )
-            
-            VStack(alignment: .leading, spacing: 0) {
-                // Icona grande centrata in alto
-                HStack {
-                    Spacer()
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 6) {
+                ZStack {
                     Image(systemName: "folder.fill")
-                        .font(.system(size: 52))
+                        .font(.system(size: 56))
                         .foregroundStyle(.orange)
-                        .padding(.top, 18)
-                    Spacer()
-                }
-                
-                Spacer(minLength: 8)
-                
-                // Titolo e subtitle in basso
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title.isEmpty ? "Senza nome" : title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
                     
-                    if let sub = subtitle {
-                        Text(sub)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    } else if let date = updatedAt {
-                        Text(date.formatted(date: .abbreviated, time: .omitted))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white, Color.accentColor)
+                            .offset(x: 20, y: -20)
                     }
                 }
-                .padding([.horizontal, .bottom], 12)
-                .padding(.top, 6)
-            }
-            
-            // Badge selezione
-            if isSelecting {
-                VStack {
-                    HStack {
-                        Spacer()
-                        SelectionBadge(isSelected: isSelected)
-                            .padding(10)
-                    }
-                    Spacer()
+                .frame(width: 72, height: 64)
+                
+                Text(title.isEmpty ? "Senza nome" : title)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                
+                if let sub = subtitle {
+                    Text(sub)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else if let date = updatedAt {
+                    Text(date.formatted(date: .abbreviated, time: .omitted))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
         }
-        .frame(minHeight: 130)
-        .scaleEffect(isSelected ? 0.97 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        .scaleEffect(isSelected ? 0.94 : 1.0)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
     }
 }
