@@ -2,7 +2,7 @@
 //  PediatricTreatmentsView.swift
 //  KidBox
 //
-//  Created by vscocca on 03/03/26.
+//  Restyled: dynamic light/dark theme matching LoginView.
 //
 
 import SwiftUI
@@ -15,6 +15,7 @@ import UserNotifications
 struct PediatricTreatmentsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Query private var treatments: [KBTreatment]
     @Query private var children: [KBChild]
     private var childName: String { children.first?.name ?? "bambino" }
@@ -24,8 +25,8 @@ struct PediatricTreatmentsView: View {
     
     @State private var showAddSheet = false
     @State private var editingTreatmentId: String? = nil
-
-    private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
+    
+    private let tint = KBTheme.tint
     
     init(familyId: String, childId: String) {
         self.familyId = familyId
@@ -36,7 +37,6 @@ struct PediatricTreatmentsView: View {
             filter: #Predicate<KBTreatment> { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false },
             sort: [SortDescriptor(\KBTreatment.startDate, order: .reverse)]
         )
-        
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
     }
     
@@ -45,7 +45,6 @@ struct PediatricTreatmentsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Lista (anche quando vuota mostra la sezione)
             List {
                 if !active.isEmpty {
                     Section {
@@ -72,13 +71,13 @@ struct PediatricTreatmentsView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(KBTheme.background(colorScheme))
             .overlay {
-                if treatments.isEmpty {
-                    emptyState
-                }
+                if treatments.isEmpty { emptyState }
             }
             
-            // ── Bottone "Nuova Cura" sempre visibile in fondo ──
+            // ── Bottone "Nuova Cura" sempre visibile ──
             Button {
                 editingTreatmentId = nil
                 showAddSheet = true
@@ -93,8 +92,9 @@ struct PediatricTreatmentsView: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             .padding(.vertical, 12)
-            .background(Color(.systemGroupedBackground))
+            .background(KBTheme.background(colorScheme))
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Cura")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -120,8 +120,12 @@ struct PediatricTreatmentsView: View {
                 Circle().fill(tint.opacity(0.12)).frame(width: 80, height: 80)
                 Image(systemName: "cross.vial.fill").font(.system(size: 32)).foregroundStyle(tint)
             }
-            Text("Nessuna cura aggiunta").font(.title3.bold())
-            Text("Cura per \(childName)").font(.subheadline).foregroundStyle(.secondary)
+            Text("Nessuna cura aggiunta")
+                .font(.title3.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
+            Text("Cura per \(childName)")
+                .font(.subheadline)
+                .foregroundStyle(KBTheme.secondaryText(colorScheme))
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -143,11 +147,8 @@ struct PediatricTreatmentsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(t.drugName).font(.subheadline.bold())
-                        // ✅ NUOVO: badge promemoria attivo
                         if t.reminderEnabled && t.isActive {
-                            Image(systemName: "bell.fill")
-                                .font(.caption2)
-                                .foregroundStyle(tint)
+                            Image(systemName: "bell.fill").font(.caption2).foregroundStyle(tint)
                         }
                     }
                     Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.dailyFrequency) volt\(t.dailyFrequency == 1 ? "a" : "e") al giorno")
@@ -162,9 +163,7 @@ struct PediatricTreatmentsView: View {
                             TreatmentDoseCounter(treatment: t)
                         }
                     } else {
-                        HStack(spacing: 8) {
-                            TreatmentProgressLabel(treatment: t)
-                        }
+                        TreatmentProgressLabel(treatment: t)
                     }
                 }
                 Spacer()
@@ -178,25 +177,15 @@ struct PediatricTreatmentsView: View {
     private func deleteItems(offsets: IndexSet, from list: [KBTreatment]) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
-        
         for i in offsets {
             let t = list[i]
-            t.isDeleted  = true
-            t.updatedBy  = uid
-            t.updatedAt  = now
-            t.syncState  = .pendingUpsert   // anti-resurrect OK
-            t.lastSyncError = nil
-            
+            t.isDeleted = true; t.updatedBy = uid; t.updatedAt = now
+            t.syncState = .pendingUpsert; t.lastSyncError = nil
             try? modelContext.save()
-            
-            // ✅ FIX #1: enqueue DELETE, non upsert
             SyncCenter.shared.enqueueTreatmentDelete(
-                treatmentId: t.id,
-                familyId: familyId,
-                modelContext: modelContext
+                treatmentId: t.id, familyId: familyId, modelContext: modelContext
             )
         }
-        
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
 }
@@ -206,6 +195,7 @@ struct PediatricTreatmentsView: View {
 struct PediatricMedicalRecordView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     let familyId: String
     let childId: String
     
@@ -241,6 +231,8 @@ struct PediatricMedicalRecordView: View {
                     .disabled(isSaving)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Scheda Medica")
         .onAppear { load() }
     }
@@ -249,26 +241,26 @@ struct PediatricMedicalRecordView: View {
         let cid = childId
         let desc = FetchDescriptor<KBPediatricProfile>(predicate: #Predicate { $0.childId == cid })
         if let p = try? modelContext.fetch(desc).first {
-            profile     = p
-            bloodGroup  = p.bloodGroup ?? ""
-            allergies   = p.allergies ?? ""
+            profile = p
+            bloodGroup   = p.bloodGroup   ?? ""
+            allergies    = p.allergies    ?? ""
             medicalNotes = p.medicalNotes ?? ""
-            doctorName  = p.doctorName ?? ""
-            doctorPhone = p.doctorPhone ?? ""
+            doctorName   = p.doctorName   ?? ""
+            doctorPhone  = p.doctorPhone  ?? ""
         }
     }
     
     private func save() {
         isSaving = true
-        let uid  = Auth.auth().currentUser?.uid ?? "local"
-        let now  = Date()
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
         if let p = profile {
             p.bloodGroup   = bloodGroup.isEmpty   ? nil : bloodGroup
             p.allergies    = allergies.isEmpty     ? nil : allergies
             p.medicalNotes = medicalNotes.isEmpty  ? nil : medicalNotes
             p.doctorName   = doctorName.isEmpty    ? nil : doctorName
             p.doctorPhone  = doctorPhone.isEmpty   ? nil : doctorPhone
-            p.updatedAt    = now; p.updatedBy = uid
+            p.updatedAt = now; p.updatedBy = uid
         } else {
             let p = KBPediatricProfile(
                 childId: childId, familyId: familyId,
@@ -289,25 +281,20 @@ struct PediatricMedicalRecordView: View {
 
 // MARK: - TreatmentDoseCounter
 
-/// Subview con @Query propria per contare le dosi prese in tempo reale
 private struct TreatmentDoseCounter: View {
-    
     let treatment: KBTreatment
     @Query private var logs: [KBDoseLog]
     
     init(treatment: KBTreatment) {
         self.treatment = treatment
         let tid = treatment.id
-        _logs = Query(filter: #Predicate<KBDoseLog> {
-            $0.treatmentId == tid && $0.taken == true
-        })
+        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true })
     }
     
     var body: some View {
         let total = treatment.isLongTerm ? "∞" : "\(treatment.totalDoses)"
         Label("\(logs.count)/\(total) Dosi", systemImage: "calendar")
-            .font(.caption2)
-            .foregroundStyle(.secondary)
+            .font(.caption2).foregroundStyle(.secondary)
     }
 }
 
@@ -318,9 +305,7 @@ private struct TreatmentProgressLabel: View {
     init(treatment: KBTreatment) {
         self.treatment = treatment
         let tid = treatment.id
-        _logs = Query(filter: #Predicate<KBDoseLog> {
-            $0.treatmentId == tid && $0.taken == true
-        })
+        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true })
     }
     
     private var currentDay: Int {
@@ -336,7 +321,6 @@ private struct TreatmentProgressLabel: View {
             "Giorno \(currentDay) di \(treatment.durationDays)  –  \(logs.count)/\(treatment.totalDoses)",
             systemImage: "calendar"
         )
-        .font(.caption2)
-        .foregroundStyle(.secondary)
+        .font(.caption2).foregroundStyle(.secondary)
     }
 }

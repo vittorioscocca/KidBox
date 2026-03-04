@@ -2,12 +2,8 @@
 //  PediatricChildSelectorView.swift
 //  KidBox
 //
-//  Selector per accedere alla sezione Pediatria.
-//  Mostra figli (KBChild) + membri adulti (KBFamilyMember) come piani separati.
-//  Logica:
-//   - 0 persone totali  → empty state
-//   - 1 persona totale  → naviga direttamente
-//   - 2+ persone        → mostra lista con sezioni Figli / Adulti
+//  Restyled: dynamic light/dark theme matching LoginView.
+//
 
 import SwiftUI
 import SwiftData
@@ -15,43 +11,42 @@ import FirebaseAuth
 
 // MARK: - Persona unificata
 
-/// Astrazione che rappresenta sia un KBChild che un KBFamilyMember
 enum PediatricPerson: Identifiable {
     case child(KBChild)
     case member(KBFamilyMember)
     
     var id: String {
         switch self {
-        case .child(let c):   return "child-\(c.id)"
-        case .member(let m):  return "member-\(m.userId)"
+        case .child(let c):  return "child-\(c.id)"
+        case .member(let m): return "member-\(m.userId)"
         }
     }
     
     var personId: String {
         switch self {
-        case .child(let c):   return c.id
-        case .member(let m):  return m.userId
+        case .child(let c):  return c.id
+        case .member(let m): return m.userId
         }
     }
     
     var name: String {
         switch self {
-        case .child(let c):   return c.name
-        case .member(let m):  return m.displayName ?? ""
+        case .child(let c):  return c.name
+        case .member(let m): return m.displayName ?? ""
         }
     }
     
     var emoji: String {
         switch self {
-        case .child(let c):   return c.avatarEmoji
-        case .member:         return "🧑"
+        case .child(let c): return c.avatarEmoji
+        case .member:       return "🧑"
         }
     }
     
     var subtitle: String {
         switch self {
-        case .child(let c):   return c.ageDescription
-        case .member:         return "Membro famiglia"
+        case .child(let c): return c.ageDescription
+        case .member:       return "Membro famiglia"
         }
     }
     
@@ -66,6 +61,7 @@ enum PediatricPerson: Identifiable {
 struct PediatricChildSelectorView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
     
     let familyId: String
@@ -86,27 +82,24 @@ struct PediatricChildSelectorView: View {
         )
     }
     
-    // Tutte le persone: prima i figli, poi i membri adulti
     private var allPersons: [PediatricPerson] {
         children.map { .child($0) } + members.map { .member($0) }
     }
     
-    private var childPersons:  [PediatricPerson] { allPersons.filter {  $0.isChild } }
-    private var adultPersons:  [PediatricPerson] { allPersons.filter { !$0.isChild } }
+    private var childPersons: [PediatricPerson] { allPersons.filter {  $0.isChild } }
+    private var adultPersons: [PediatricPerson] { allPersons.filter { !$0.isChild } }
     
     var body: some View {
         Group {
             if allPersons.isEmpty {
                 emptyState
             } else if allPersons.count == 1, let person = allPersons.first {
-                // Un solo profilo: salta direttamente
-                Color.clear.onAppear {
-                    navigate(to: person)
-                }
+                Color.clear.onAppear { navigate(to: person) }
             } else {
                 personList
             }
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -161,8 +154,6 @@ struct PediatricChildSelectorView: View {
         .padding(.bottom, 8)
     }
     
-    // MARK: - Navigation
-    
     private func navigate(to person: PediatricPerson) {
         coordinator.navigate(to: .pediatricHome(familyId: familyId, childId: person.personId))
     }
@@ -176,9 +167,10 @@ struct PediatricChildSelectorView: View {
                 .foregroundStyle(.secondary)
             Text("Nessun profilo disponibile")
                 .font(.title3.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
             Text("Aggiungi figli o verifica i membri nelle impostazioni famiglia.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(KBTheme.secondaryText(colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             Button {
@@ -192,12 +184,13 @@ struct PediatricChildSelectorView: View {
     }
 }
 
-// MARK: - ChildHealthCard (invariata)
+// MARK: - ChildHealthCard
 
 private struct ChildHealthCard: View {
     
     @Bindable var child: KBChild
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     let familyId: String
     let onTap: () -> Void
@@ -235,8 +228,8 @@ private struct ChildHealthCard: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 2)
+                    .fill(KBTheme.cardBackground(colorScheme))
+                    .shadow(color: KBTheme.shadow(colorScheme), radius: 8, x: 0, y: 2)
             )
         }
         .buttonStyle(.plain)
@@ -282,13 +275,13 @@ private struct MemberHealthCard: View {
     
     let member: KBFamilyMember
     let onTap: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
-    // Colori per ruolo
     private var roleColor: Color {
         switch member.role {
-        case "owner":  return .purple
-        case "admin":  return .blue
-        default:       return .teal
+        case "owner": return .purple
+        case "admin": return .blue
+        default:      return .teal
         }
     }
     
@@ -300,7 +293,6 @@ private struct MemberHealthCard: View {
         }
     }
     
-    // Iniziali per avatar
     private var initials: String {
         let parts = (member.displayName ?? "").split(separator: " ")
         let first = parts.first?.prefix(1) ?? ""
@@ -311,21 +303,14 @@ private struct MemberHealthCard: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 16) {
-                
-                // Avatar con iniziali
                 ZStack {
-                    Circle()
-                        .fill(roleColor.opacity(0.15))
-                        .frame(width: 56, height: 56)
+                    Circle().fill(roleColor.opacity(0.15)).frame(width: 56, height: 56)
                     Text(initials.isEmpty ? "?" : initials)
-                        .font(.title3.bold())
-                        .foregroundStyle(roleColor)
+                        .font(.title3.bold()).foregroundStyle(roleColor)
                 }
                 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(member.displayName ?? "").font(.headline).foregroundStyle(.primary)
-                    
-                    // Ruolo chip
                     HStack(spacing: 4) {
                         Image(systemName: "person.fill").font(.caption2)
                         Text(roleLabel).font(.caption)
@@ -341,15 +326,15 @@ private struct MemberHealthCard: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 2)
+                    .fill(KBTheme.cardBackground(colorScheme))
+                    .shadow(color: KBTheme.shadow(colorScheme), radius: 8, x: 0, y: 2)
             )
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - MeasurementInputSheet (invariata)
+// MARK: - MeasurementInputSheet
 
 private struct MeasurementInputSheet: View {
     
@@ -360,6 +345,7 @@ private struct MeasurementInputSheet: View {
     let onSave: (String) -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var input = ""
     
     var body: some View {
@@ -369,6 +355,8 @@ private struct MeasurementInputSheet: View {
                     TextField(placeholder, text: $input).keyboardType(.decimalPad)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

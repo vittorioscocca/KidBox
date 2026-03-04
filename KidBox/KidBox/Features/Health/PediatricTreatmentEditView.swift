@@ -2,7 +2,7 @@
 //  PediatricTreatmentEditView.swift
 //  KidBox
 //
-//  Created by vscocca on 03/03/26.
+//  Restyled: dynamic light/dark theme matching LoginView.
 //
 
 import SwiftUI
@@ -15,6 +15,7 @@ struct PediatricTreatmentEditView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     let familyId: String
     let childId: String
@@ -36,7 +37,7 @@ struct PediatricTreatmentEditView: View {
     @State private var pendingAttachmentURLs: [URL] = []
     
     // Step 3 - Orari e data inizio
-    @State private var startDate      = Date()
+    @State private var startDate = Date()
     @State private var times: [String] = ["08:00"]
     
     // Step 4 - Conferma e note
@@ -45,14 +46,12 @@ struct PediatricTreatmentEditView: View {
     @State private var currentStep = 0
     private let totalSteps = 4
     
-    // Allegati — gestiti al livello root per evitare problemi
-    // con confirmationDialog annidato in ScrollView
     @State private var showAttachmentDialog   = false
     @State private var showAttachmentImporter = false
     @State private var showAttachmentGallery  = false
     @State private var showAttachmentCamera   = false
     
-    private let tint        = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint        = KBTheme.tint
     private let units       = ["ml", "mg", "gocce", "compresse", "bustine"]
     private let freqOptions = [(1, "1 volta al giorno",   "mattina"),
                                (2, "2 volte al giorno",   "mattina, sera"),
@@ -74,17 +73,14 @@ struct PediatricTreatmentEditView: View {
     }
     
     private var totalDoses: Int { dailyFrequency * durationDays }
-    
     private var isEditing: Bool { treatmentId != nil }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                
-                // ── Progress bar ──
                 progressBar
+                    .background(KBTheme.background(colorScheme))
                 
-                // ── Content ──
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         switch currentStep {
@@ -96,16 +92,16 @@ struct PediatricTreatmentEditView: View {
                     }
                     .padding()
                 }
+                .background(KBTheme.background(colorScheme))
                 
-                // ── Bottom buttons ──
                 bottomBar
+                    .background(KBTheme.background(colorScheme))
             }
+            .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle(isEditing ? "Modifica Cura" : "Nuova Cura")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Annulla") { dismiss() }
-                }
+                ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
             }
             .onAppear {
                 loadIfEditing()
@@ -114,7 +110,6 @@ struct PediatricTreatmentEditView: View {
                     notifGranted = s.authorizationStatus == .authorized
                 }
             }
-            // ── Allegati: dialog e picker al livello NavigationStack ──
             .sheet(isPresented: $showAttachmentDialog) {
                 AttachmentSourcePickerSheet(
                     onCamera:   { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentCamera   = true } },
@@ -124,14 +119,8 @@ struct PediatricTreatmentEditView: View {
                 .presentationDetents([.height(220)])
                 .presentationDragIndicator(.visible)
             }
-            .fileImporter(
-                isPresented: $showAttachmentImporter,
-                allowedContentTypes: [.item],
-                allowsMultipleSelection: true
-            ) { result in
-                if let urls = try? result.get() {
-                    pendingAttachmentURLs.append(contentsOf: urls)
-                }
+            .fileImporter(isPresented: $showAttachmentImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
+                if let urls = try? result.get() { pendingAttachmentURLs.append(contentsOf: urls) }
             }
             .sheet(isPresented: $showAttachmentGallery) {
                 ImagePickerView(sourceType: .photoLibrary) { image in
@@ -152,7 +141,7 @@ struct PediatricTreatmentEditView: View {
         HStack(spacing: 4) {
             ForEach(0..<totalSteps, id: \.self) { i in
                 Capsule()
-                    .fill(i <= currentStep ? tint : Color(.systemGray5))
+                    .fill(i <= currentStep ? tint : KBTheme.inputBackground(colorScheme))
                     .frame(height: 4)
             }
         }
@@ -170,7 +159,9 @@ struct PediatricTreatmentEditView: View {
     
     private var step1_dose: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Configura dose").font(.title3.bold())
+            Text("Configura dose")
+                .font(.title3.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
             
             // Farmaco header
             HStack(spacing: 12) {
@@ -186,10 +177,13 @@ struct PediatricTreatmentEditView: View {
                 }
             }
             .padding()
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.red.opacity(0.05)))
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(colorScheme == .dark ? Color.red.opacity(0.10) : Color.red.opacity(0.05))
+            )
             
             // Dosaggio
-            GroupBox {
+            styledGroupBox {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Dosaggio", systemImage: "drop.fill")
                         .font(.subheadline.bold()).foregroundStyle(.blue)
@@ -198,7 +192,7 @@ struct PediatricTreatmentEditView: View {
                             .keyboardType(.decimalPad)
                             .frame(width: 80)
                             .padding(10)
-                            .background(Color(.systemGray6))
+                            .background(KBTheme.inputBackground(colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         Picker("Unità", selection: $dosageUnit) {
                             ForEach(units, id: \.self) { Text($0).tag($0) }
@@ -209,7 +203,7 @@ struct PediatricTreatmentEditView: View {
             }
             
             // Durata
-            GroupBox {
+            styledGroupBox {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Durata", systemImage: "calendar")
                         .font(.subheadline.bold()).foregroundStyle(.orange)
@@ -231,7 +225,7 @@ struct PediatricTreatmentEditView: View {
             }
             
             // Frequenza
-            GroupBox {
+            styledGroupBox {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Frequenza", systemImage: "clock")
                         .font(.subheadline.bold()).foregroundStyle(tint)
@@ -239,7 +233,7 @@ struct PediatricTreatmentEditView: View {
                         HStack {
                             ZStack {
                                 Circle()
-                                    .fill(dailyFrequency == freq ? tint : Color(.systemGray5))
+                                    .fill(dailyFrequency == freq ? tint : KBTheme.inputBackground(colorScheme))
                                     .frame(width: 30, height: 30)
                                 Text("\(freq)x")
                                     .font(.caption.bold())
@@ -270,18 +264,17 @@ struct PediatricTreatmentEditView: View {
     
     private var step2_schedule: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Configura orari").font(.title3.bold())
+            Text("Configura orari")
+                .font(.title3.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
             
-            GroupBox {
+            styledGroupBox {
                 VStack(alignment: .leading, spacing: 8) {
                     DatePicker("Data inizio", selection: $startDate, displayedComponents: .date)
-                    
                     Divider()
-                    
                     Text("Orari somministrazione").font(.subheadline.bold())
                     Text("Imposta gli orari per \(dailyFrequency) dos\(dailyFrequency == 1 ? "e" : "i") giornalier\(dailyFrequency == 1 ? "a" : "e")")
                         .font(.caption).foregroundStyle(.secondary)
-                    
                     ForEach(times.indices, id: \.self) { i in
                         let label = ["Mattina", "Pranzo", "Sera", "Notte"][safe: i] ?? "Dose \(i+1)"
                         HStack {
@@ -294,36 +287,28 @@ struct PediatricTreatmentEditView: View {
                 }
             }
             
-            // Riepilogo
-            GroupBox("Riepilogo") {
+            styledGroupBox(title: "Riepilogo") {
                 VStack(spacing: 6) {
-                    row(label: "Durata",      value: isLongTerm ? "A lungo termine" : "\(durationDays) giorni")
-                    row(label: "Data inizio", value: startDate.formatted(.dateTime.day().month(.abbreviated).year()))
+                    summaryRow(label: "Durata",      value: isLongTerm ? "A lungo termine" : "\(durationDays) giorni")
+                    summaryRow(label: "Data inizio", value: startDate.formatted(.dateTime.day().month(.abbreviated).year()))
                     if !isLongTerm {
-                        row(label: "Data fine",   value: endDate.formatted(.dateTime.day().month(.abbreviated).year()))
-                        row(label: "Dosi totali", value: "\(totalDoses)")
+                        summaryRow(label: "Data fine",   value: endDate.formatted(.dateTime.day().month(.abbreviated).year()))
+                        summaryRow(label: "Dosi totali", value: "\(totalDoses)")
                     }
                 }
             }
         }
     }
     
-    private func row(label: String, value: String) -> some View {
-        HStack {
-            Text(label).foregroundStyle(.secondary)
-            Spacer()
-            Text(value).bold()
-        }
-        .font(.subheadline)
-    }
-    
     // MARK: - Step 3 — Conferma
     
     private var step3_confirm: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Conferma cura").font(.title3.bold())
+            Text("Conferma cura")
+                .font(.title3.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
             
-            GroupBox {
+            styledGroupBox {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 12) {
                         ZStack {
@@ -338,9 +323,9 @@ struct PediatricTreatmentEditView: View {
                         }
                     }
                     Divider()
-                    row(label: "Dosaggio",  value: "\(dosageValue, default: "%.0f") \(dosageUnit)")
-                    if !isLongTerm { row(label: "Durata", value: "\(durationDays) giorni") }
-                    row(label: "Frequenza", value: "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno")
+                    summaryRow(label: "Dosaggio",  value: "\(dosageValue, default: "%.0f") \(dosageUnit)")
+                    if !isLongTerm { summaryRow(label: "Durata", value: "\(durationDays) giorni") }
+                    summaryRow(label: "Frequenza", value: "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno")
                     Divider()
                     Text("Orari somministrazione:").font(.caption).foregroundStyle(.secondary)
                     ForEach(Array(zip(["Mattina","Pranzo","Sera","Notte"], times)), id: \.0) { label, time in
@@ -353,15 +338,15 @@ struct PediatricTreatmentEditView: View {
                     }
                     if !isLongTerm {
                         Divider()
-                        row(label: "Prima dose", value: "\(startDate.formatted(.dateTime.day().month(.abbreviated).year())), \(times.first ?? "")")
-                        row(label: "Ultima dose", value: "\(endDate.formatted(.dateTime.day().month(.abbreviated).year())), \(times.last ?? "")")
-                        row(label: "Dosi totali", value: "\(totalDoses)")
+                        summaryRow(label: "Prima dose", value: "\(startDate.formatted(.dateTime.day().month(.abbreviated).year())), \(times.first ?? "")")
+                        summaryRow(label: "Ultima dose", value: "\(endDate.formatted(.dateTime.day().month(.abbreviated).year())), \(times.last ?? "")")
+                        summaryRow(label: "Dosi totali", value: "\(totalDoses)")
                     }
                 }
             }
             
-            // ── Promemoria ──
-            GroupBox {
+            // Promemoria
+            styledGroupBox {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Promemoria", systemImage: "bell.fill")
                         .font(.subheadline.bold()).foregroundStyle(tint)
@@ -414,7 +399,6 @@ struct PediatricTreatmentEditView: View {
                     .lineLimit(2...4)
             }
             
-            // ── Allegati: onAddTapped delega al livello root ──
             TreatmentAttachmentPicker(
                 pendingURLs: $pendingAttachmentURLs,
                 onAddTapped: { showAttachmentDialog = true }
@@ -430,7 +414,11 @@ struct PediatricTreatmentEditView: View {
                 Button { currentStep -= 1 } label: {
                     Label("Indietro", systemImage: "chevron.left")
                         .frame(maxWidth: .infinity).padding()
-                        .background(RoundedRectangle(cornerRadius: 14).stroke(Color(.systemGray4)))
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(KBTheme.separator(colorScheme))
+                        )
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
                 }
                 .buttonStyle(.plain)
             }
@@ -439,7 +427,7 @@ struct PediatricTreatmentEditView: View {
                 Button { currentStep += 1 } label: {
                     HStack { Text("Avanti"); Image(systemName: "chevron.right") }
                         .frame(maxWidth: .infinity).padding()
-                        .background(RoundedRectangle(cornerRadius: 14).fill(canAdvance ? tint : Color(.systemGray4)))
+                        .background(RoundedRectangle(cornerRadius: 14).fill(canAdvance ? tint : KBTheme.inputBackground(colorScheme)))
                         .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
@@ -464,12 +452,41 @@ struct PediatricTreatmentEditView: View {
         }
     }
     
+    // MARK: - Reusable styled GroupBox
+    
+    @ViewBuilder
+    private func styledGroupBox<Content: View>(title: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let title {
+                Text(title)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 8)
+            }
+            content()
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 5, x: 0, y: 2)
+        )
+    }
+    
+    private func summaryRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).bold()
+        }
+        .font(.subheadline)
+    }
+    
     // MARK: - Helpers
     
     private func saveImageToTemp(_ image: UIImage) -> URL? {
         guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString + ".jpg")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
         try? data.write(to: url)
         return url
     }
@@ -516,7 +533,7 @@ struct PediatricTreatmentEditView: View {
                 startDate: startDate, endDate: ed,
                 dailyFrequency: dailyFrequency, scheduleTimes: times,
                 isActive: true, notes: notes.isEmpty ? nil : notes,
-                reminderEnabled: false,   // ✅ sempre false su Firebase — è preferenza locale
+                reminderEnabled: false,
                 createdAt: now, updatedAt: now, updatedBy: uid, createdBy: uid
             )
             modelContext.insert(t)
@@ -525,21 +542,10 @@ struct PediatricTreatmentEditView: View {
         
         do {
             try modelContext.save()
-            // ✅ Sync Firestore PRIMA di toccare reminderEnabled
-            // così reminderEnabled non viene mai incluso nel payload remoto
-            SyncCenter.shared.enqueueTreatmentUpsert(
-                treatmentId: treatment.id,
-                familyId: familyId,
-                modelContext: modelContext
-            )
+            SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
-        } catch {
-            return
-        }
+        } catch { return }
         
-        // ✅ Imposta reminderEnabled SOLO in locale, DOPO il sync
-        // Non chiama modelContext.save() di nuovo per evitare di
-        // innescare un secondo sync con il valore aggiornato
         treatment.reminderEnabled = reminderEnabled
         try? modelContext.save()
         
@@ -554,10 +560,10 @@ struct PediatricTreatmentEditView: View {
         
         if !pendingAttachmentURLs.isEmpty {
             KBEventBus.shared.emit(.treatmentAttachmentPending(
-                urls:        pendingAttachmentURLs,
+                urls: pendingAttachmentURLs,
                 treatmentId: treatment.id,
-                familyId:    familyId,
-                childId:     childId
+                familyId: familyId,
+                childId: childId
             ))
         }
         dismiss()
@@ -609,6 +615,7 @@ struct TimePickerField: View {
 }
 
 // MARK: - Safe subscript
+
 extension Collection {
     subscript(safe index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil

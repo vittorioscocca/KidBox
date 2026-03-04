@@ -2,34 +2,35 @@
 //  DrugSelectorView.swift
 //  KidBox
 //
-//  Created by vscocca on 03/03/26.
+//  Restyled: dynamic light/dark theme matching LoginView.
 //
 
 import SwiftUI
 
-/// Risultato della selezione farmaco — passato back allo step 0
 struct SelectedDrug {
     var name: String
     var activeIngredient: String
 }
 
-// MARK: - Step 0 view (da usare in PediatricTreatmentEditView)
+// MARK: - Step 0 view
 
 struct DrugSelectorStep: View {
     
     @Binding var drugName: String
     @Binding var activeIngredient: String
+    @Environment(\.colorScheme) private var colorScheme
     
-    @State private var searchText       = ""
-    @State private var showCustomSheet  = false
+    @State private var searchText      = ""
+    @State private var showCustomSheet = false
     
-    private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
-    
+    private let tint = KBTheme.tint
     private var results: [DrugEntry] { DrugCatalog.search(searchText) }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Seleziona farmaco").font(.title3.bold())
+            Text("Seleziona farmaco")
+                .font(.title3.bold())
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
             
             // Search bar
             HStack {
@@ -43,13 +44,13 @@ struct DrugSelectorStep: View {
                 }
             }
             .padding(10)
-            .background(Color(.systemGray6))
+            .background(KBTheme.inputBackground(colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // Lista farmaci
             if !results.isEmpty {
                 Text("Farmaci Comuni")
                     .font(.headline)
+                    .foregroundStyle(KBTheme.primaryText(colorScheme))
                     .padding(.top, 4)
             }
             
@@ -60,24 +61,16 @@ struct DrugSelectorStep: View {
                 }
                 
                 // Aggiungi personalizzato
-                Button {
-                    showCustomSheet = true
-                } label: {
+                Button { showCustomSheet = true } label: {
                     HStack(spacing: 14) {
                         ZStack {
-                            Circle()
-                                .fill(tint.opacity(0.12))
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "plus")
-                                .foregroundStyle(tint)
+                            Circle().fill(tint.opacity(0.12)).frame(width: 44, height: 44)
+                            Image(systemName: "plus").foregroundStyle(tint)
                         }
                         Text("Aggiungi farmaco personalizzato")
-                            .foregroundStyle(tint)
-                            .font(.subheadline)
+                            .foregroundStyle(tint).font(.subheadline)
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, 12)
                     .padding(.horizontal, 4)
@@ -87,8 +80,8 @@ struct DrugSelectorStep: View {
             .padding(.horizontal, 4)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                    .fill(KBTheme.cardBackground(colorScheme))
+                    .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
             )
         }
         .sheet(isPresented: $showCustomSheet) {
@@ -98,16 +91,13 @@ struct DrugSelectorStep: View {
     
     private func drugRow(_ drug: DrugEntry) -> some View {
         Button {
-            drugName        = drug.name
+            drugName         = drug.name
             activeIngredient = drug.activeIngredient
         } label: {
             HStack(spacing: 14) {
                 ZStack {
-                    Circle()
-                        .fill(drug.iconColor.opacity(0.12))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: drug.systemImage)
-                        .foregroundStyle(drug.iconColor)
+                    Circle().fill(drug.iconColor.opacity(0.12)).frame(width: 44, height: 44)
+                    Image(systemName: drug.systemImage).foregroundStyle(drug.iconColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(drug.name).font(.subheadline.bold())
@@ -134,18 +124,18 @@ struct CustomDrugSheet: View {
     @Binding var drugName: String
     @Binding var activeIngredient: String
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var localName        = ""
     @State private var localIngredient  = ""
     @State private var selectedCategory = ""
     @State private var selectedForm     = "Liquido"
     
-    private let tint       = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint       = KBTheme.tint
     private let categories = ["Antipiretico", "Antidolorifico", "Antibiotico",
                               "Antistaminico", "Mucolitico", "Cortisonico",
                               "Nasale", "Altro"]
     private let forms      = ["Liquido", "Compressa", "Supposta", "Gocce", "Sciroppo", "Polvere"]
-    
     private let formIcons: [String: String] = [
         "Liquido":   "drop.fill",
         "Compressa": "pills.fill",
@@ -169,51 +159,43 @@ struct CustomDrugSheet: View {
                     
                     Text("Aggiungi farmaco personalizzato")
                         .font(.title3.bold())
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
                         .multilineTextAlignment(.center)
                     
                     VStack(alignment: .leading, spacing: 16) {
                         
-                        // Nome
                         fieldSection(label: "Nome") {
                             TextField("", text: $localName)
                                 .padding(12)
-                                .background(Color(.systemGray6))
+                                .background(KBTheme.inputBackground(colorScheme))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         
-                        // Principio attivo
                         fieldSection(label: "Principio attivo") {
                             TextField("", text: $localIngredient)
                                 .padding(12)
-                                .background(Color(.systemGray6))
+                                .background(KBTheme.inputBackground(colorScheme))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         
-                        // Categoria
                         fieldSection(label: "Categoria") {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
-                                    ForEach(categories, id: \.self) { cat in
-                                        categoryChip(cat)
-                                    }
+                                    ForEach(categories, id: \.self) { cat in categoryChip(cat) }
                                 }
                             }
                         }
                         
-                        // Forma farmaceutica
                         fieldSection(label: "Forma (es: Sciroppo, Compresse)") {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
-                                    ForEach(forms, id: \.self) { form in
-                                        formChip(form)
-                                    }
+                                    ForEach(forms, id: \.self) { form in formChip(form) }
                                 }
                             }
                         }
                     }
                     .padding(.horizontal)
                     
-                    // Salva
                     Button {
                         drugName         = localName
                         activeIngredient = localIngredient
@@ -232,12 +214,11 @@ struct CustomDrugSheet: View {
                     .padding(.bottom)
                 }
             }
+            .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Aggiungi farmaco personalizzato")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Annulla") { dismiss() }
-                }
+                ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
             }
         }
     }
@@ -260,7 +241,7 @@ struct CustomDrugSheet: View {
             Text(cat)
                 .font(.caption)
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(Capsule().fill(isSelected ? tint.opacity(0.15) : Color(.systemGray6)))
+                .background(Capsule().fill(isSelected ? tint.opacity(0.15) : KBTheme.inputBackground(colorScheme)))
                 .foregroundStyle(isSelected ? tint : .primary)
                 .overlay(Capsule().stroke(isSelected ? tint : Color.clear, lineWidth: 1))
         }
@@ -276,7 +257,7 @@ struct CustomDrugSheet: View {
                 Text(form).font(.caption)
             }
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .background(Capsule().fill(isSelected ? tint.opacity(0.15) : Color(.systemGray6)))
+            .background(Capsule().fill(isSelected ? tint.opacity(0.15) : KBTheme.inputBackground(colorScheme)))
             .foregroundStyle(isSelected ? tint : .primary)
             .overlay(Capsule().stroke(isSelected ? tint : Color.clear, lineWidth: 1))
         }

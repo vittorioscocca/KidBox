@@ -647,6 +647,7 @@ struct TreatmentAttachmentsSection: View {
     
     let treatment: KBTreatment
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     
     @Query private var attachments: [KBDocument]
     
@@ -659,7 +660,7 @@ struct TreatmentAttachmentsSection: View {
     @State private var showKeyAlert       = false
     @State private var errorText:    String? = nil
     
-    private let tint    = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint    = KBTheme.tint
     private let service = TreatmentAttachmentService.shared
     
     init(treatment: KBTreatment) {
@@ -715,8 +716,8 @@ struct TreatmentAttachmentsSection: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
         )
         .onReceive(KBEventBus.shared.stream) { (event: KBAppEvent) in
             if case .treatmentAttachmentPending(_, let tid, _, _) = event,
@@ -725,7 +726,6 @@ struct TreatmentAttachmentsSection: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) { isUploading = false }
             }
         }
-        // ── Sheet scelta sorgente (dal basso, nativo) ──
         .sheet(isPresented: $showSourcePicker) {
             AttachmentSourcePickerSheet(
                 onCamera: {
@@ -744,19 +744,16 @@ struct TreatmentAttachmentsSection: View {
             .presentationDetents([.height(250)])
             .presentationDragIndicator(.visible)
         }
-        // ── Galleria ──
         .sheet(isPresented: $showGallery) {
             ImagePickerView(sourceType: .photoLibrary) { image in
                 if let url = saveImageToTemp(image) { emitUpload(urls: [url]) }
             }
         }
-        // ── Camera ──
         .sheet(isPresented: $showCamera) {
             ImagePickerView(sourceType: .camera) { image in
                 if let url = saveImageToTemp(image) { emitUpload(urls: [url]) }
             }
         }
-        // ── Documento ──
         .fileImporter(
             isPresented: $showImporter,
             allowedContentTypes: [.item],
@@ -765,7 +762,6 @@ struct TreatmentAttachmentsSection: View {
             guard let urls = try? result.get() else { return }
             emitUpload(urls: urls)
         }
-        // ── Preview ──
         .sheet(isPresented: Binding(
             get: { previewURL != nil },
             set: { if !$0 { previewURL = nil } }
@@ -839,7 +835,10 @@ struct TreatmentAttachmentsSection: View {
             .buttonStyle(.plain)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(KBTheme.inputBackground(colorScheme))
+        )
     }
     
     private func mimeIcon(_ mime: String) -> String {

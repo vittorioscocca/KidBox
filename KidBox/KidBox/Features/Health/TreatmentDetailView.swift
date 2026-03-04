@@ -3,6 +3,8 @@
 //  KidBox
 //
 //  Dettaglio cura: progresso, tracking dosi per giorno, orari, estendi, elimina.
+//  Restyled: dynamic light/dark theme matching LoginView.
+//
 
 import SwiftUI
 import SwiftData
@@ -15,6 +17,7 @@ struct TreatmentDetailView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @Bindable var treatment: KBTreatment
     
@@ -27,9 +30,10 @@ struct TreatmentDetailView: View {
     @State private var showConfirmDose: ConfirmDoseContext? = nil
     @State private var showDeleteConfirm  = false
     @State private var showStopConfirm    = false
-    @State private var notifGranted       = false   // ← permesso notifiche sistema
+    @State private var notifGranted       = false
     
-    private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint  = KBTheme.tint
+    private let green = KBTheme.green
     
     init(treatment: KBTreatment) {
         self.treatment = treatment
@@ -95,46 +99,23 @@ struct TreatmentDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                headerCard
-                    .padding()
-                
-                progressCard
-                    .padding(.horizontal)
+                headerCard.padding()
+                progressCard.padding(.horizontal)
                 
                 if !treatment.isLongTerm {
-                    extendButton
-                        .padding(.horizontal)
-                        .padding(.top, 8)
+                    extendButton.padding(.horizontal).padding(.top, 8)
                 }
                 
                 sectionTitle("Orari somministrazione")
-                
-                timelineRow
-                    .padding(.horizontal)
-                
-                doseSlotsList
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                
-                scheduleInfoCard
-                    .padding()
-                
-                // ── Promemoria ──
-                reminderCard
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                
-                TreatmentAttachmentsSection(treatment: treatment)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                
-                dangerZone
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 40)
+                timelineRow.padding(.horizontal)
+                doseSlotsList.padding(.horizontal).padding(.top, 8)
+                scheduleInfoCard.padding()
+                reminderCard.padding(.horizontal).padding(.bottom, 8)
+                TreatmentAttachmentsSection(treatment: treatment).padding(.horizontal).padding(.bottom, 8)
+                dangerZone.padding(.horizontal).padding(.top, 8).padding(.bottom, 40)
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Cura")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -149,33 +130,21 @@ struct TreatmentDetailView: View {
                 notifGranted = s.authorizationStatus == .authorized
             }
         }
-        .sheet(isPresented: $showExtendSheet) {
-            ExtendTreatmentSheet(treatment: treatment)
-        }
-        .sheet(isPresented: $showTimeEditor) {
-            EditScheduleTimesSheet(treatment: treatment)
-        }
+        .sheet(isPresented: $showExtendSheet) { ExtendTreatmentSheet(treatment: treatment) }
+        .sheet(isPresented: $showTimeEditor)  { EditScheduleTimesSheet(treatment: treatment) }
         .sheet(item: $showConfirmDose) { ctx in
-            ConfirmDoseSheet(
-                treatment: treatment,
-                childName: childName,
-                context: ctx
-            ) { takenAt in
+            ConfirmDoseSheet(treatment: treatment, childName: childName, context: ctx) { takenAt in
                 markDose(context: ctx, takenAt: takenAt)
             }
         }
         .confirmationDialog("Eliminare questa cura?", isPresented: $showDeleteConfirm) {
             Button("Elimina", role: .destructive) { deleteTreatment() }
             Button("Annulla", role: .cancel) { }
-        } message: {
-            Text("La cura verrà rimossa da tutti i dispositivi.")
-        }
-        .confirmationDialog("Interrompere la cura?", isPresented: $showStopConfirm) {
-            Button("Interrompi", role: .destructive) { stopTreatment() }
-            Button("Annulla", role: .cancel) { }
-        } message: {
-            Text("La cura verrà segnata come inattiva. Puoi riattivarla in seguito.")
-        }
+        } message: { Text("La cura verrà rimossa da tutti i dispositivi.") }
+            .confirmationDialog("Interrompere la cura?", isPresented: $showStopConfirm) {
+                Button("Interrompi", role: .destructive) { stopTreatment() }
+                Button("Annulla", role: .cancel) { }
+            } message: { Text("La cura verrà segnata come inattiva. Puoi riattivarla in seguito.") }
     }
     
     // MARK: - Header
@@ -214,8 +183,11 @@ struct TreatmentDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemBackground))
-            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+        )
     }
     
     // MARK: - Progress
@@ -226,9 +198,7 @@ struct TreatmentDetailView: View {
             
             HStack(spacing: 16) {
                 ZStack {
-                    Circle()
-                        .stroke(tint.opacity(0.15), lineWidth: 6)
-                        .frame(width: 56, height: 56)
+                    Circle().stroke(tint.opacity(0.15), lineWidth: 6).frame(width: 56, height: 56)
                     Circle()
                         .trim(from: 0, to: progressFraction)
                         .stroke(tint, style: StrokeStyle(lineWidth: 6, lineCap: .round))
@@ -253,8 +223,11 @@ struct TreatmentDetailView: View {
             }
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemBackground))
-            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+        )
     }
     
     // MARK: - Extend button
@@ -262,12 +235,12 @@ struct TreatmentDetailView: View {
     private var extendButton: some View {
         Button { showExtendSheet = true } label: {
             Label("Estendi cura", systemImage: "calendar.badge.plus")
-                .frame(maxWidth: .infinity)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(red: 0.85, green: 0.95, blue: 0.88)))
-                .foregroundStyle(Color(red: 0.2, green: 0.6, blue: 0.4))
-                .font(.subheadline.bold())
+                .frame(maxWidth: .infinity).padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(green.opacity(colorScheme == .dark ? 0.15 : 0.10))
+                )
+                .foregroundStyle(green).font(.subheadline.bold())
         }
         .buttonStyle(.plain)
     }
@@ -301,7 +274,7 @@ struct TreatmentDetailView: View {
                         .frame(width: 44, height: 52)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(isSelected ? tint : (isToday ? tint.opacity(0.1) : Color(.systemBackground)))
+                                .fill(isSelected ? tint : (isToday ? tint.opacity(0.1) : KBTheme.cardBackground(colorScheme)))
                         )
                         .onTapGesture { withAnimation { selectedDayOffset = offset } }
                         .id(offset)
@@ -321,9 +294,7 @@ struct TreatmentDetailView: View {
     
     private var doseSlotsList: some View {
         VStack(spacing: 10) {
-            ForEach(slotsForSelectedDay, id: \.slotIndex) { slot in
-                doseSlotRow(slot)
-            }
+            ForEach(slotsForSelectedDay, id: \.slotIndex) { slot in doseSlotRow(slot) }
         }
     }
     
@@ -331,7 +302,7 @@ struct TreatmentDetailView: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(slot.taken ? tint.opacity(0.1) : slot.isSkipped ? Color.orange.opacity(0.1) : Color(.systemGray6))
+                    .fill(slot.taken ? tint.opacity(0.1) : slot.isSkipped ? Color.orange.opacity(0.1) : KBTheme.inputBackground(colorScheme))
                     .frame(width: 40, height: 40)
                 Image(systemName: slot.isSkipped ? "xmark" : "clock.fill")
                     .foregroundStyle(slot.taken ? tint : slot.isSkipped ? .orange : .secondary)
@@ -372,7 +343,7 @@ struct TreatmentDetailView: View {
                     Button { skipDose(slot: slot) } label: {
                         Image(systemName: "xmark")
                             .frame(width: 32, height: 32)
-                            .background(Circle().fill(Color(.systemGray5)))
+                            .background(Circle().fill(KBTheme.inputBackground(colorScheme)))
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -398,9 +369,11 @@ struct TreatmentDetailView: View {
             }
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 14)
-            .fill(Color(.systemBackground))
-            .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 4, x: 0, y: 1)
+        )
     }
     
     // MARK: - Schedule info
@@ -429,8 +402,11 @@ struct TreatmentDetailView: View {
             .buttonStyle(.plain)
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemBackground))
-            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+        )
     }
     
     // MARK: - Reminder card
@@ -441,7 +417,6 @@ struct TreatmentDetailView: View {
                 .font(.subheadline.bold()).foregroundStyle(tint)
             
             if !notifGranted {
-                // Notifiche sistema disabilitate
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     VStack(alignment: .leading, spacing: 2) {
@@ -461,7 +436,6 @@ struct TreatmentDetailView: View {
                 .font(.caption).foregroundStyle(tint)
                 
             } else {
-                // Toggle attiva/disattiva promemoria
                 Toggle(isOn: Binding(
                     get: { treatment.reminderEnabled },
                     set: { newValue in toggleReminder(newValue) }
@@ -475,7 +449,6 @@ struct TreatmentDetailView: View {
                 }
                 .tint(tint)
                 
-                // Mostra orari schedulati se attivo
                 if treatment.reminderEnabled {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
@@ -491,8 +464,11 @@ struct TreatmentDetailView: View {
             }
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemBackground))
-            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+        )
     }
     
     // MARK: - Danger zone
@@ -503,7 +479,7 @@ struct TreatmentDetailView: View {
                 Button { showStopConfirm = true } label: {
                     Label("Interrompi cura", systemImage: "stop.circle")
                         .frame(maxWidth: .infinity).padding()
-                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange.opacity(0.08)))
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08)))
                         .foregroundStyle(.orange).font(.subheadline.bold())
                 }
                 .buttonStyle(.plain)
@@ -511,7 +487,7 @@ struct TreatmentDetailView: View {
                 Button { reactivateTreatment() } label: {
                     Label("Riattiva cura", systemImage: "play.circle")
                         .frame(maxWidth: .infinity).padding()
-                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.green.opacity(0.08)))
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.green.opacity(colorScheme == .dark ? 0.15 : 0.08)))
                         .foregroundStyle(.green).font(.subheadline.bold())
                 }
                 .buttonStyle(.plain)
@@ -520,7 +496,7 @@ struct TreatmentDetailView: View {
             Button { showDeleteConfirm = true } label: {
                 Label("Elimina", systemImage: "trash")
                     .frame(maxWidth: .infinity).padding()
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.red.opacity(0.06)))
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.red.opacity(colorScheme == .dark ? 0.15 : 0.06)))
                     .foregroundStyle(.red).font(.subheadline.bold())
             }
             .buttonStyle(.plain)
@@ -537,16 +513,12 @@ struct TreatmentDetailView: View {
     
     private func toggleReminder(_ enabled: Bool) {
         treatment.reminderEnabled = enabled
-        try? modelContext.save()   // solo SwiftData locale, nessun sync
-        
+        try? modelContext.save()
         if enabled {
             Task {
                 let granted = await TreatmentNotificationManager.requestAuthorization()
                 if granted {
-                    TreatmentNotificationManager.schedule(
-                        treatment: treatment,
-                        childName: childName
-                    )
+                    TreatmentNotificationManager.schedule(treatment: treatment, childName: childName)
                 } else {
                     await MainActor.run {
                         treatment.reminderEnabled = false
@@ -563,37 +535,22 @@ struct TreatmentDetailView: View {
     private func markDose(context ctx: ConfirmDoseContext, takenAt: Date) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
-        
         if let existing = doseLogs.first(where: { $0.dayNumber == ctx.dayNumber && $0.slotIndex == ctx.slotIndex }) {
-            existing.taken     = true
-            existing.takenAt   = takenAt
-            existing.updatedAt = now
-            existing.updatedBy = uid
+            existing.taken = true; existing.takenAt = takenAt
+            existing.updatedAt = now; existing.updatedBy = uid
             try? modelContext.save()
-            SyncCenter.shared.enqueueDoseLogUpsert(
-                logId: existing.id,
-                familyId: treatment.familyId,
-                modelContext: modelContext
-            )
+            SyncCenter.shared.enqueueDoseLogUpsert(logId: existing.id, familyId: treatment.familyId, modelContext: modelContext)
         } else {
             let newLog = KBDoseLog(
-                familyId: treatment.familyId,
-                childId:  treatment.childId,
+                familyId: treatment.familyId, childId: treatment.childId,
                 treatmentId: treatment.id,
-                dayNumber: ctx.dayNumber,
-                slotIndex: ctx.slotIndex,
+                dayNumber: ctx.dayNumber, slotIndex: ctx.slotIndex,
                 scheduledTime: ctx.scheduledTime,
-                takenAt: takenAt,
-                taken: true,
-                updatedBy: uid
+                takenAt: takenAt, taken: true, updatedBy: uid
             )
             modelContext.insert(newLog)
             try? modelContext.save()
-            SyncCenter.shared.enqueueDoseLogUpsert(
-                logId: newLog.id,
-                familyId: treatment.familyId,
-                modelContext: modelContext
-            )
+            SyncCenter.shared.enqueueDoseLogUpsert(logId: newLog.id, familyId: treatment.familyId, modelContext: modelContext)
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
@@ -602,10 +559,8 @@ struct TreatmentDetailView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let doseLog: KBDoseLog
         if let existing = doseLogs.first(where: { $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex }) {
-            existing.taken     = false
-            existing.takenAt   = nil
-            existing.updatedAt = Date()
-            existing.updatedBy = uid
+            existing.taken = false; existing.takenAt = nil
+            existing.updatedAt = Date(); existing.updatedBy = uid
             doseLog = existing
         } else {
             let newLog = KBDoseLog(
@@ -619,11 +574,7 @@ struct TreatmentDetailView: View {
             doseLog = newLog
         }
         try? modelContext.save()
-        SyncCenter.shared.enqueueDoseLogUpsert(
-            logId: doseLog.id,
-            familyId: treatment.familyId,
-            modelContext: modelContext
-        )
+        SyncCenter.shared.enqueueDoseLogUpsert(logId: doseLog.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
@@ -631,57 +582,34 @@ struct TreatmentDetailView: View {
         guard let log = doseLogs.first(where: { $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex }) else { return }
         modelContext.delete(log)
         try? modelContext.save()
-        SyncCenter.shared.enqueueDoseLogDelete(
-            logId: log.id,
-            familyId: treatment.familyId,
-            modelContext: modelContext
-        )
+        SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
     private func stopTreatment() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        treatment.isActive  = false
-        treatment.updatedAt = Date()
-        treatment.updatedBy = uid
+        treatment.isActive = false; treatment.updatedAt = Date(); treatment.updatedBy = uid
         try? modelContext.save()
-        SyncCenter.shared.enqueueTreatmentUpsert(
-            treatmentId: treatment.id,
-            familyId: treatment.familyId,
-            modelContext: modelContext
-        )
+        SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()
     }
     
     private func reactivateTreatment() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        treatment.isActive  = true
-        treatment.updatedAt = Date()
-        treatment.updatedBy = uid
+        treatment.isActive = true; treatment.updatedAt = Date(); treatment.updatedBy = uid
         try? modelContext.save()
-        SyncCenter.shared.enqueueTreatmentUpsert(
-            treatmentId: treatment.id,
-            familyId: treatment.familyId,
-            modelContext: modelContext
-        )
+        SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
     private func deleteTreatment() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         TreatmentNotificationManager.cancel(treatmentId: treatment.id)
-        treatment.isDeleted     = true
-        treatment.updatedAt     = Date()
-        treatment.updatedBy     = uid
-        treatment.syncState     = .pendingUpsert
-        treatment.lastSyncError = nil
+        treatment.isDeleted = true; treatment.updatedAt = Date(); treatment.updatedBy = uid
+        treatment.syncState = .pendingUpsert; treatment.lastSyncError = nil
         try? modelContext.save()
-        SyncCenter.shared.enqueueTreatmentDelete(
-            treatmentId: treatment.id,
-            familyId: treatment.familyId,
-            modelContext: modelContext
-        )
+        SyncCenter.shared.enqueueTreatmentDelete(treatmentId: treatment.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()
     }
@@ -720,11 +648,12 @@ struct ConfirmDoseSheet: View {
     let onConfirm: (Date) -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var selectedDate   = Date()
     @State private var selectedOffset: TimeInterval? = nil
     
-    private let tint  = Color(red: 0.6, green: 0.45, blue: 0.85)
-    private let green = Color(red: 0.3, green: 0.7, blue: 0.45)
+    private let tint  = KBTheme.tint
+    private let green = KBTheme.green
     
     private let quickOptions: [(String, TimeInterval)] = [
         ("Adesso",    0),
@@ -760,12 +689,11 @@ struct ConfirmDoseSheet: View {
                                     selectedDate   = Date().addingTimeInterval(offset)
                                 } label: {
                                     Text(label)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
+                                        .frame(maxWidth: .infinity).padding(.vertical, 14)
                                         .background(
                                             RoundedRectangle(cornerRadius: 12)
-                                                .fill(isSelected ? green.opacity(0.12) : Color(.systemBackground))
-                                                .shadow(color: .black.opacity(isSelected ? 0 : 0.06), radius: 4)
+                                                .fill(isSelected ? green.opacity(0.12) : KBTheme.cardBackground(colorScheme))
+                                                .shadow(color: KBTheme.shadow(colorScheme).opacity(isSelected ? 0 : 1), radius: 4)
                                         )
                                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(isSelected ? green : Color.clear, lineWidth: 1.5))
                                         .font(.subheadline.bold())
@@ -784,7 +712,11 @@ struct ConfirmDoseSheet: View {
                             .tint(tint)
                             .onChange(of: selectedDate) { _, _ in selectedOffset = nil }
                             .padding(8)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemBackground)).shadow(color: .black.opacity(0.05), radius: 4))
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(KBTheme.cardBackground(colorScheme))
+                                    .shadow(color: KBTheme.shadow(colorScheme), radius: 4)
+                            )
                     }
                     .padding(.horizontal)
                     
@@ -798,11 +730,10 @@ struct ConfirmDoseSheet: View {
                             .foregroundStyle(.white).font(.headline)
                     }
                     .buttonStyle(.plain)
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal).padding(.bottom, 16)
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Conferma dose")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -820,13 +751,14 @@ struct ExtendTreatmentSheet: View {
     @Bindable var treatment: KBTreatment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var customDays = ""
     @State private var showCustom = false
     
-    private let tint    = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint    = KBTheme.tint
+    private let green   = KBTheme.green
     private let presets = [3, 5, 7, 10]
-    private let green   = Color(red: 0.3, green: 0.65, blue: 0.45)
     
     var body: some View {
         NavigationStack {
@@ -850,7 +782,11 @@ struct ExtendTreatmentSheet: View {
                                 Text("giorni").font(.caption).foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity).padding(.vertical, 18)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemBackground)).shadow(color: .black.opacity(0.06), radius: 4))
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(KBTheme.cardBackground(colorScheme))
+                                    .shadow(color: KBTheme.shadow(colorScheme), radius: 4)
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -860,7 +796,11 @@ struct ExtendTreatmentSheet: View {
                             Text("Altro").font(.caption).foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 18)
-                        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemBackground)).shadow(color: .black.opacity(0.06), radius: 4))
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(KBTheme.cardBackground(colorScheme))
+                                .shadow(color: KBTheme.shadow(colorScheme), radius: 4)
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -869,11 +809,14 @@ struct ExtendTreatmentSheet: View {
                 if showCustom {
                     HStack {
                         TextField("Numero giorni", text: $customDays).keyboardType(.numberPad)
-                            .padding(12).background(Color(.systemGray6)).clipShape(RoundedRectangle(cornerRadius: 10))
+                            .padding(12)
+                            .background(KBTheme.inputBackground(colorScheme))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         Button("Aggiungi") {
                             if let d = Int(customDays), d > 0 { extend(by: d) }
                         }
-                        .padding(12).background(RoundedRectangle(cornerRadius: 10).fill(green))
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(green))
                         .foregroundStyle(.white).buttonStyle(.plain)
                     }
                     .padding(.horizontal)
@@ -881,7 +824,7 @@ struct ExtendTreatmentSheet: View {
                 
                 Spacer()
             }
-            .background(Color(.systemGroupedBackground))
+            .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Estendi Cura")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -897,8 +840,7 @@ struct ExtendTreatmentSheet: View {
         if let end = treatment.endDate {
             treatment.endDate = Calendar.current.date(byAdding: .day, value: days, to: end)
         }
-        treatment.updatedAt = Date()
-        treatment.updatedBy = uid
+        treatment.updatedAt = Date(); treatment.updatedBy = uid
         try? modelContext.save()
         dismiss()
     }
@@ -911,9 +853,10 @@ struct EditScheduleTimesSheet: View {
     @Bindable var treatment: KBTreatment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var editedTimes: [String] = []
-    private let tint   = Color(red: 0.6, green: 0.45, blue: 0.85)
+    private let tint   = KBTheme.tint
     private let labels = ["Mattina", "Pranzo", "Sera", "Notte"]
     
     var body: some View {
@@ -945,7 +888,11 @@ struct EditScheduleTimesSheet: View {
                         if i < editedTimes.count - 1 { Divider().padding(.leading, 56) }
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemBackground)).shadow(color: .black.opacity(0.05), radius: 6))
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(KBTheme.cardBackground(colorScheme))
+                        .shadow(color: KBTheme.shadow(colorScheme), radius: 6)
+                )
                 .padding()
                 
                 Spacer()
@@ -959,7 +906,7 @@ struct EditScheduleTimesSheet: View {
                 .buttonStyle(.plain)
                 .padding(.horizontal).padding(.bottom, 24)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Orari somministrazione")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -980,11 +927,7 @@ struct EditScheduleTimesSheet: View {
         treatment.updatedAt     = Date()
         treatment.updatedBy     = uid
         try? modelContext.save()
-        SyncCenter.shared.enqueueTreatmentUpsert(
-            treatmentId: treatment.id,
-            familyId: treatment.familyId,
-            modelContext: modelContext
-        )
+        SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         if treatment.reminderEnabled {
             TreatmentNotificationManager.cancel(treatmentId: treatment.id)
