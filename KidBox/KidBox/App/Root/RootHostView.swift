@@ -236,5 +236,11 @@ struct RootHostView: View {
             familyId: familyId,
             modelContext: modelContext
         )
+        
+        KBLog.sync.kbDebug("startVisitRealtime familyId=\(familyId)")
+        SyncCenter.shared.startVisitsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
     }
 }
