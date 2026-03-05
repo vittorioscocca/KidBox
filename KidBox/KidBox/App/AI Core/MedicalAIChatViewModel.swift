@@ -79,7 +79,6 @@ final class MedicalAIChatViewModel: ObservableObject {
         self.messages         = existing.sortedMessages
         self.contextSentOnce  = true
         self.isLoadingContext  = false
-        objectWillChange.send()
         log.debug("AI chat: fast-loaded existing conversation id=\(existing.id)")
         return true
     }
@@ -87,7 +86,7 @@ final class MedicalAIChatViewModel: ObservableObject {
     /// Aggiorna system prompt e immagini in background senza mostrare loading.
     /// Usato per tenere il contesto aggiornato nelle riaperture successive.
     private func prepareContextSilently() async {
-        Task.detached { VisitImageLoader.clearStaleCache(olderThanDays: 30) }
+        VisitImageLoader.clearStaleCache(olderThanDays: 30)
         
         let treatments = fetchTreatments()
         let photoURLs  = fetchVisitPhotoURLs()
@@ -96,9 +95,7 @@ final class MedicalAIChatViewModel: ObservableObject {
         await MainActor.run {
             self.cachedImages = images
             self.systemPrompt = MedicalVisitContextBuilder.buildSystemPrompt(
-                visit:      visit,
-                child:      child,
-                treatments: treatments
+                visit: visit, child: child, treatments: treatments
             )
             log.debug("AI chat: silent context refresh done, images=\(images.count)")
         }
@@ -108,30 +105,19 @@ final class MedicalAIChatViewModel: ObservableObject {
         isLoadingContext = true
         defer { isLoadingContext = false }
         
-        Task.detached { VisitImageLoader.clearStaleCache(olderThanDays: 30) }
+        VisitImageLoader.clearStaleCache(olderThanDays: 30)
         
-        // Trattamenti servono sempre per il system prompt
         let treatments = fetchTreatments()
-        log.debug("AI chat: fetched \(treatments.count) treatments")
-        
-        // Controlla se esiste già una conversazione con messaggi
-        // Se sì, le immagini sono già state inviate — non serve ricaricarle
         let hasExistingConversation = checkHasExistingConversation()
         
         if !hasExistingConversation {
             let photoURLs = fetchVisitPhotoURLs()
-            log.debug("AI chat: found \(photoURLs.count) photo URLs from KBDocument")
             let images = await VisitImageLoader.loadImages(from: photoURLs)
             self.cachedImages = images
-            log.debug("AI chat: loaded \(images.count) images")
-        } else {
-            log.debug("AI chat: existing conversation — skipping image load")
         }
         
         self.systemPrompt = MedicalVisitContextBuilder.buildSystemPrompt(
-            visit:      visit,
-            child:      child,
-            treatments: treatments
+            visit: visit, child: child, treatments: treatments
         )
     }
     
