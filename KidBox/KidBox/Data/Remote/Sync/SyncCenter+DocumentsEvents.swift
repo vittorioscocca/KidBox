@@ -217,6 +217,7 @@ extension SyncCenter {
                         
                         // 📎 Auto-download allegati treatment arrivati dal remoto
                         let isTreatmentAttachment = dto.notes?.hasPrefix("treatment:") == true
+                        let isVisitAttachment     = dto.notes?.hasPrefix("visit:") == true
                         let missingLocal = local.localPath == nil || local.localPath?.isEmpty == true
                         if isTreatmentAttachment && missingLocal && !dto.isDeleted,
                            let dlURL = dto.downloadURL, !dlURL.isEmpty {
@@ -226,6 +227,23 @@ extension SyncCenter {
                             let fileName    = local.fileName
                             Task.detached {
                                 await TreatmentAttachmentService.shared.downloadRemoteAttachment(
+                                    docId:        docId,
+                                    familyId:     familyId,
+                                    storagePath:  storagePath,
+                                    fileName:     fileName,
+                                    modelContext: modelContext
+                                )
+                            }
+                        }
+                        
+                        if isVisitAttachment && missingLocal && !dto.isDeleted,
+                           let dlURL = dto.downloadURL, !dlURL.isEmpty {
+                            let docId       = local.id
+                            let familyId    = local.familyId
+                            let storagePath = local.storagePath
+                            let fileName    = local.fileName
+                            Task.detached {
+                                await VisitAttachmentService.shared.downloadRemoteAttachment(
                                     docId:        docId,
                                     familyId:     familyId,
                                     storagePath:  storagePath,

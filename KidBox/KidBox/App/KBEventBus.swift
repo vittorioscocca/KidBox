@@ -19,10 +19,12 @@ enum KBAppEvent {
         familyId:    String,
         childId:     String
     )
-    // Espandibile in futuro:
-    // case treatmentCreated(treatmentId: String, familyId: String)
-    // case treatmentDoseTaken(treatmentId: String, dayNumber: Int, slotIndex: Int)
-    // case treatmentCompleted(treatmentId: String, familyId: String)
+    case visitAttachmentPending(
+        urls:     [URL],
+        visitId:  String,
+        familyId: String,
+        childId:  String
+    )
 }
 
 // MARK: - Bus

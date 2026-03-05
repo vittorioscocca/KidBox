@@ -49,6 +49,8 @@ final class TreatmentAttachmentService {
                             )
                         }
                     }
+                default:
+                    break
                 }
             }
             .store(in: &cancellables)
@@ -456,11 +458,10 @@ final class TreatmentAttachmentService {
 // MARK: - AttachmentSourcePickerSheet
 
 struct AttachmentSourcePickerSheet: View {
+    var tint: Color = Color(red: 0.6, green: 0.45, blue: 0.85)
     let onCamera:   () -> Void
     let onGallery:  () -> Void
     let onDocument: () -> Void
-    
-    private let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
     
     var body: some View {
         VStack(spacing: 0) {

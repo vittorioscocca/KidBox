@@ -85,14 +85,6 @@ struct PediatricHomeView: View {
                         coordinator.navigate(to: .pediatricVisits(familyId: familyId, childId: childId))
                     }
                     moduleCard(
-                        title: "Farmaci",
-                        subtitle: "Storico",
-                        systemImage: "pills.fill",
-                        tint: Color(red: 0.85, green: 0.5, blue: 0.6)
-                    ) {
-                        coordinator.navigate(to: .pediatricTreatments(familyId: familyId, childId: childId))
-                    }
-                    moduleCard(
                         title: "Scheda Medica",
                         subtitle: "Allergie, pediatra",
                         systemImage: "doc.text.fill",

@@ -16,4 +16,5 @@ enum SyncEntityType: String {
     case note
     case treatment
     case doseLog
+    case visit
 }

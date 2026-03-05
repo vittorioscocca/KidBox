@@ -39,6 +39,8 @@ final class SyncCenter: ObservableObject {
     var treatmentListener: ListenerRegistration?
     var doseLogListener:   ListenerRegistration?
     let treatmentRemote = TreatmentRemoteStore()
+    var visitListener: ListenerRegistration?
+    let visitRemote = VisitRemoteStore()
     
     private let membersRemote = FamilyMemberRemoteStore()
     
@@ -110,6 +112,7 @@ final class SyncCenter: ObservableObject {
         stopFamilyBundleRealtime()
         stopDocumentsRealtime()
         stopTreatmentsRealtime()
+        stopVisitsRealtime()
         
         // Notifica UI: "sei stato buttato fuori"
         Self._currentUserRevoked.send(familyId)
@@ -699,6 +702,9 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.doseLog.rawValue:
                 try await processDoseLog(op: op, modelContext: modelContext)
+                
+            case SyncEntityType.visit.rawValue:
+                try await processVisit(op: op, modelContext: modelContext)
                 
             default:
                 throw NSError(domain: "KidBox.Sync", code: -2000,

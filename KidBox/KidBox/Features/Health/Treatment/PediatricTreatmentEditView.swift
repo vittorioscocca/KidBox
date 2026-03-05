@@ -21,6 +21,7 @@ struct PediatricTreatmentEditView: View {
     let childId: String
     let childName: String
     let treatmentId: String?
+    var onSaved: ((String) -> Void)? = nil
     @State private var reminderEnabled = false
     
     // Step 1 - Farmaco
@@ -566,6 +567,7 @@ struct PediatricTreatmentEditView: View {
                 childId: childId
             ))
         }
+        onSaved?(treatment.id)
         dismiss()
     }
     
