@@ -1048,3 +1048,209 @@ exports.notifyNewNote = onDocumentCreated(
           {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Assistant — askAI + getAIUsage
+//
+// Incolla questo blocco in fondo al tuo index.js esistente.
+//
+// Prima del deploy, imposta il secret:
+//   firebase functions:secrets:set ANTHROPIC_API_KEY
+//
+// Firestore path usato:
+//   ai_usage/{uid}/daily/{YYYY-MM-DD}  →  { count, updatedAt, uid }
+// ─────────────────────────────────────────────────────────────────────────────
+
+const {defineSecret} = require("firebase-functions/params");
+const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Returns today's date as YYYY-MM-DD in Europe/Rome timezone.
+ * @return {string}
+ */
+function aiTodayKey() {
+  return new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"});
+}
+
+/**
+ * Reads the user's plan from Firestore and returns the daily message limit.
+ * free=20 / family=50 / pro=100
+ * @param {string} uid
+ * @return {Promise<number>}
+ */
+async function resolveAIDailyLimit(uid) {
+  try {
+    const snap = await admin.firestore().collection("users").doc(uid).get();
+    const plan = snap.exists ? (snap.data().plan || "free") : "free";
+    switch (plan) {
+      case "pro": return 100;
+      case "family": return 50;
+      case "free":
+      default: return 20;
+    }
+  } catch (e) {
+    logger.warn("resolveAIDailyLimit failed, using default", {uid, error: e.message});
+    return 20;
+  }
+}
+
+/**
+ * Checks the daily counter and increments it atomically.
+ * Throws HttpsError("resource-exhausted") if the limit is reached.
+ * @param {string} uid
+ * @param {number} limit
+ * @return {Promise<number>} updated count
+ */
+async function checkAndIncrementAIUsage(uid, limit) {
+  const ref = admin.firestore()
+      .collection("ai_usage").doc(uid)
+      .collection("daily").doc(aiTodayKey());
+
+  return await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = snap.exists ? (snap.data().count || 0) : 0;
+
+    if (current >= limit) {
+      throw new HttpsError(
+          "resource-exhausted",
+          `Hai raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`,
+      );
+    }
+
+    tx.set(ref, {
+      count: admin.firestore.FieldValue.increment(1),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      uid,
+    }, {merge: true});
+
+    return current + 1;
+  });
+}
+
+// ─── askAI ───────────────────────────────────────────────────────────────────
+
+exports.askAI = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [ANTHROPIC_API_KEY],
+      timeoutSeconds: 60,
+    },
+    async (request) => {
+      // 1. Auth
+      const uid = request.auth?.uid;
+      if (!uid) {
+        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      }
+
+      // 2. Validazione input
+      const {messages, systemPrompt} = request.data || {};
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        throw new HttpsError("invalid-argument", "messages è richiesto.");
+      }
+      const validRoles = ["user", "assistant"];
+      const allValid = messages.every(
+          (m) => typeof m.role === "string" &&
+                 typeof m.content === "string" &&
+                 validRoles.includes(m.role),
+      );
+      if (!allValid) {
+        throw new HttpsError("invalid-argument", "messages non valido.");
+      }
+      if (typeof systemPrompt !== "string" || systemPrompt.trim().length === 0) {
+        throw new HttpsError("invalid-argument", "systemPrompt è richiesto.");
+      }
+
+      // Protezione dimensione payload
+      const totalChars = messages.reduce((acc, m) => acc + m.content.length, 0) + systemPrompt.length;
+      if (totalChars > 50000) {
+        throw new HttpsError("invalid-argument", "Payload troppo grande.");
+      }
+
+      // 3. Rate limiting
+      const dailyLimit = await resolveAIDailyLimit(uid);
+      const usageCount = await checkAndIncrementAIUsage(uid, dailyLimit);
+
+      logger.info("askAI request", {uid, usageCount, dailyLimit, msgCount: messages.length});
+
+      // 4. Chiama Anthropic
+      const apiKey = ANTHROPIC_API_KEY.value();
+      if (!apiKey) {
+        logger.error("askAI: ANTHROPIC_API_KEY secret non configurato");
+        throw new HttpsError("internal", "Configurazione AI non disponibile.");
+      }
+
+      let reply;
+      try {
+        const fetch = (await import("node-fetch")).default;
+
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: messages.map((m) => ({role: m.role, content: m.content})),
+          }),
+        });
+
+        if (res.status === 429) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Servizio AI temporaneamente sovraccarico. Riprova tra qualche secondo.",
+          );
+        }
+        if (!res.ok) {
+          const errText = await res.text();
+          logger.error("askAI: Anthropic error", {status: res.status, body: errText});
+          throw new HttpsError("internal", "Errore dal servizio AI.");
+        }
+
+        const json = await res.json();
+        reply = json?.content?.[0]?.text;
+
+        if (!reply) {
+          throw new HttpsError("internal", "Risposta AI non valida.");
+        }
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        logger.error("askAI: fetch failed", {error: e.message});
+        throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
+      }
+
+      logger.info("askAI success", {uid, usageCount});
+
+      return {reply, usageToday: usageCount, dailyLimit};
+    },
+);
+
+// ─── getAIUsage ───────────────────────────────────────────────────────────────
+
+exports.getAIUsage = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+
+      const ref = admin.firestore()
+          .collection("ai_usage").doc(uid)
+          .collection("daily").doc(aiTodayKey());
+
+      const snap = await ref.get();
+      const count = snap.exists ? (snap.data().count || 0) : 0;
+      const dailyLimit = await resolveAIDailyLimit(uid);
+
+      return {usageToday: count, dailyLimit};
+    },
+);
+

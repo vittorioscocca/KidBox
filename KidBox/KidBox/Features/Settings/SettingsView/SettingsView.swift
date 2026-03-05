@@ -24,6 +24,12 @@ struct SettingsView: View {
                 .accessibilityLabel("Apri impostazioni famiglia")
             }
             
+            Section("Assistenza AI") {
+                NavigationLink(destination: AISettingsView()) {
+                    Label("Assistente AI", systemImage: "sparkles")
+                }
+            }
+            
             Section("Notifiche") {
                 Toggle(
                     "Notifica nuovi documenti",

@@ -425,3 +425,45 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
 }
+
+//
+//  NotificationManager+AI.swift
+//  KidBox
+//
+//  Estensione di NotificationManager per la preferenza AI.
+//  Stesso pattern di notifyOnNewDocs / notifyOnNewNote.
+//
+//  Firestore path: users/{uid}
+//  Campo:          notificationPrefs.aiEnabled  (Bool, default false)
+//
+
+extension NotificationManager {
+    
+    // MARK: - Fetch
+    
+    func fetchAIEnabledPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return false }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["aiEnabled"] as? Bool {
+                return v
+            }
+            return false // default OFF — l'utente deve attivare esplicitamente
+        } catch {
+            return false
+        }
+    }
+    
+    // MARK: - Set
+    
+    func setAIEnabled(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["aiEnabled": enabled]
+        ], merge: true)
+        
+        KBLog.settings.kbInfo("AI enabled preference saved to Firestore: \(enabled)")
+    }
+}

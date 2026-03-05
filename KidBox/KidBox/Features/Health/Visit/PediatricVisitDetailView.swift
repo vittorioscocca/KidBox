@@ -19,9 +19,28 @@ struct PediatricVisitDetailView: View {
     
     @Query private var visits:   [KBMedicalVisit]
     @Query private var children: [KBChild]
+    @Query private var members:  [KBFamilyMember]
     
     private var visit:     KBMedicalVisit? { visits.first }
-    private var childName: String          { children.first?.name ?? "bambino" }
+    private var childName: String          { children.first?.name ?? members.first?.displayName ?? "bambino" }
+    
+    /// Restituisce il KBChild se esiste, altrimenti ne crea uno sintetico dal membro.
+    /// Usato per AskAIButton che richiede sempre un KBChild.
+    private var childForAI: KBChild? {
+        if let child = children.first { return child }
+        guard let member = members.first else { return nil }
+        let now = Date()
+        return KBChild(
+            id:        childId,
+            familyId:  familyId,
+            name:      member.displayName ?? "Membro",
+            birthDate: nil,
+            createdBy: member.userId,
+            createdAt: now,
+            updatedBy: nil,
+            updatedAt: now
+        )
+    }
     
     @State private var showEditSheet   = false
     @State private var showDeleteAlert = false
@@ -34,8 +53,9 @@ struct PediatricVisitDetailView: View {
         self.visitId  = visitId
         let vid = visitId
         let cid = childId
-        _visits   = Query(filter: #Predicate<KBMedicalVisit> { $0.id == vid })
-        _children = Query(filter: #Predicate<KBChild>        { $0.id == cid })
+        _visits   = Query(filter: #Predicate<KBMedicalVisit>  { $0.id == vid })
+        _children = Query(filter: #Predicate<KBChild>          { $0.id == cid })
+        _members  = Query(filter: #Predicate<KBFamilyMember>   { $0.userId == cid })
     }
     
     var body: some View {
@@ -316,28 +336,39 @@ struct PediatricVisitDetailView: View {
     // MARK: - Bottom actions
     
     private func bottomActions(_ v: KBMedicalVisit) -> some View {
-        HStack(spacing: 12) {
-            Button {
-                showEditSheet = true
-            } label: {
-                Label("Modifica", systemImage: "pencil")
-                    .frame(maxWidth: .infinity).padding()
-                    .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                    .foregroundStyle(.white).font(.headline)
-            }
-            .buttonStyle(.plain)
+        VStack(spacing: 10) {
             
-            Button {
-                showDeleteAlert = true
-            } label: {
-                Label("Elimina", systemImage: "trash")
-                    .frame(maxWidth: .infinity).padding()
-                    .background(RoundedRectangle(cornerRadius: 14).stroke(Color.red.opacity(0.5), lineWidth: 1.5))
-                    .foregroundStyle(.red).font(.headline)
+            // ── Chiedi all'AI ──
+            if let child = childForAI {
+                AskAIButton(visit: v, child: child)
+                    .padding(.horizontal)
             }
-            .buttonStyle(.plain)
+            
+            // ── Modifica / Elimina ──
+            HStack(spacing: 12) {
+                Button {
+                    showEditSheet = true
+                } label: {
+                    Label("Modifica", systemImage: "pencil")
+                        .frame(maxWidth: .infinity).padding()
+                        .background(RoundedRectangle(cornerRadius: 14).fill(tint))
+                        .foregroundStyle(.white).font(.headline)
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    showDeleteAlert = true
+                } label: {
+                    Label("Elimina", systemImage: "trash")
+                        .frame(maxWidth: .infinity).padding()
+                        .background(RoundedRectangle(cornerRadius: 14).stroke(Color.red.opacity(0.5), lineWidth: 1.5))
+                        .foregroundStyle(.red).font(.headline)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal)
         }
-        .padding(.horizontal).padding(.vertical, 12)
+        .padding(.vertical, 12)
         .background(KBTheme.background(colorScheme))
     }
     

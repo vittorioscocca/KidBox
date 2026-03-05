@@ -73,10 +73,10 @@ struct PediatricVisitEditView: View {
         self.childId   = childId
         self.childName = childName
         self.visitId   = visitId
-        let fid = familyId, cid = childId
+        let fid = familyId
         _recentVisitsQ = Query(
             filter: #Predicate<KBMedicalVisit> {
-                $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
+                $0.familyId == fid
             },
             sort: [SortDescriptor(\KBMedicalVisit.date, order: .reverse)]
         )
@@ -87,6 +87,8 @@ struct PediatricVisitEditView: View {
         var seen = Set<String>()
         var result: [(String, String)] = []
         for v in recentVisitsQ {
+            // filtro childId e isDeleted in memoria — evita crash #Predicate con &&
+            guard v.childId == childId, !v.isDeleted else { continue }
             guard let name = v.doctorName, !name.isEmpty, !seen.contains(name) else { continue }
             seen.insert(name)
             result.append((name, v.doctorSpecializationRaw ?? ""))

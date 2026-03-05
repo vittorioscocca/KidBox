@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7C11ACD42F3629A500EB83F7 /* FirebaseStorage */; };
+		7C1D3C7A2F59BC7C001FB004 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */; };
 		7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7C4C85532F51ABA80054A4C3 /* FacebookLogin */; };
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 7CE572032F47900B008FE22B /* FirebaseFunctions */; };
@@ -86,6 +87,7 @@
 				7CFC51F72F33E9000086D687 /* FirebaseAuth in Frameworks */,
 				7CFC51EC2F33DACC0086D687 /* FirebaseFirestore in Frameworks */,
 				7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */,
+				7C1D3C7A2F59BC7C001FB004 /* FirebaseRemoteConfig in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,6 +165,7 @@
 				7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */,
 				7CE572032F47900B008FE22B /* FirebaseFunctions */,
 				7C4C85532F51ABA80054A4C3 /* FacebookLogin */,
+				7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */,
 			);
 			productName = KidBox;
 			productReference = 7CFC515D2F3378CB0086D687 /* KidBox.app */;
@@ -768,6 +771,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
 		};
 		7C4C85532F51ABA80054A4C3 /* FacebookLogin */ = {
 			isa = XCSwiftPackageProductDependency;
