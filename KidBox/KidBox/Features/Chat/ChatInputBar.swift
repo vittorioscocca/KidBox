@@ -31,7 +31,9 @@ struct ChatInputBar: View {
     @FocusState private var isTextFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     
-    // MARK: - Theme (same as LoginView / HomeView / ProfileView / ChatView)
+    private let actionTint = KBTheme.bubbleTint
+    
+    // MARK: - Theme
     private var backgroundColor: Color {
         colorScheme == .dark
         ? Color(red: 0.18, green: 0.18, blue: 0.18)
@@ -53,8 +55,6 @@ struct ChatInputBar: View {
     var body: some View {
         ZStack(alignment: .top) {
             normalBar
-            // Durante recording “spegniamo” visivamente la barra normale,
-            // ma NON la disabilitiamo tutta (il mic deve ricevere onEnded).
                 .opacity(isRecording ? 0.05 : 1)
             
             if isRecording {
@@ -71,7 +71,6 @@ struct ChatInputBar: View {
     private var normalBar: some View {
         HStack(alignment: .center, spacing: 10) {
             
-            // Tasto + (media)
             Menu {
                 Button { onMediaTap() } label: {
                     Label("Foto e Video", systemImage: "photo.on.rectangle")
@@ -90,12 +89,10 @@ struct ChatInputBar: View {
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(actionTint)
             }
-            // Durante recording blocchiamo il menu (evita gesture/scroll strani)
             .disabled(isSending || isRecording)
             
-            // Campo testo
             ZStack(alignment: .leading) {
                 if text.isEmpty {
                     Text("Messaggio…")
@@ -123,14 +120,13 @@ struct ChatInputBar: View {
                     .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
             )
             
-            // Tasto invio o microfono
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 micButton
             } else {
                 Button(action: onSendText) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(actionTint)
                 }
                 .disabled(isSending || isRecording)
                 .transition(.scale.combined(with: .opacity))
@@ -141,14 +137,13 @@ struct ChatInputBar: View {
         .animation(.spring(response: 0.25), value: text.isEmpty)
     }
     
-    // MARK: - Mic button (hold to record)
+    // MARK: - Mic button
     
     private var micButton: some View {
         Image(systemName: "mic.circle.fill")
             .font(.system(size: 32))
-            .foregroundStyle(Color.accentColor)
-            .contentShape(Rectangle()) // area touch più “umana”
-        // ✅ UNA SOLA gesture: press -> start, release -> stop
+            .foregroundStyle(actionTint)
+            .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
@@ -162,8 +157,6 @@ struct ChatInputBar: View {
                         }
                     }
             )
-        // Non disabilitare MAI il mic durante recording:
-        // serve proprio a ricevere il rilascio e stoppare.
             .allowsHitTesting(true)
     }
     
@@ -171,8 +164,6 @@ struct ChatInputBar: View {
     
     private var recordingBar: some View {
         HStack(spacing: 16) {
-            
-            // Annulla
             Button { onCancelRecord() } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "xmark.circle.fill")
@@ -185,7 +176,6 @@ struct ChatInputBar: View {
             
             Spacer()
             
-            // Indicatore REC
             HStack(spacing: 6) {
                 Circle()
                     .fill(Color.red)
@@ -204,9 +194,8 @@ struct ChatInputBar: View {
             
             Spacer()
             
-            // Icona mic attiva
             Image(systemName: "mic.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(actionTint)
                 .font(.title3)
         }
         .padding(.horizontal, 16)

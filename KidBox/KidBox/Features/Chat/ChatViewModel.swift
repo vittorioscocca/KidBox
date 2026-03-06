@@ -45,7 +45,7 @@ final class ChatViewModel: ObservableObject {
     // Audio recording
     @Published var isRecording: Bool = false
     // FIX 2: recordingDuration non è più @Published.
-    var recordingDuration: TimeInterval = 0
+    @Published var recordingDuration: TimeInterval = 0
     
     // FIX 3: typingUsers aggiornato con throttle
     @Published var typingUsers: [String] = []
@@ -337,6 +337,13 @@ final class ChatViewModel: ObservableObject {
             existing.latitude   = dto.latitude
             existing.longitude  = dto.longitude
             
+            if existing.type == .audio,
+               existing.senderId != myUID,
+               existing.mediaURL != nil,
+               existing.transcriptStatus == .none {
+                startTranscriptIfNeeded(for: existing, modelContext: modelContext)
+            }
+            
         } else {
             guard !dto.isDeleted && !deletedForMe else { return }
             
@@ -364,6 +371,13 @@ final class ChatViewModel: ObservableObject {
             msg.longitude     = dto.longitude
             
             modelContext.insert(msg)
+            
+            if msg.type == .audio,
+               msg.senderId != myUID,
+               msg.mediaURL != nil,
+               msg.transcriptStatus == .none {
+                startTranscriptIfNeeded(for: msg, modelContext: modelContext)
+            }
         }
     }
     
@@ -707,7 +721,7 @@ final class ChatViewModel: ObservableObject {
         isRecording = true
         recordingDuration = 0
         
-        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task { @MainActor in
                 self.recordingDuration = self.audioRecorder?.currentTime ?? 0
@@ -777,6 +791,18 @@ final class ChatViewModel: ObservableObject {
         isUploadingMedia = true
         uploadProgress = 0
         
+        // 1. Salva copia locale audio
+        let localAudioURL: URL
+        do {
+            localAudioURL = try saveAudioLocally(data: data, messageId: messageId)
+        } catch {
+            isUploadingMedia = false
+            uploadProgress = 0
+            errorText = "Salvataggio audio locale fallito: \(error.localizedDescription)"
+            return
+        }
+        
+        // 2. Crea messaggio locale
         let msg = KBChatMessage(
             id: messageId,
             familyId: familyId,
@@ -784,13 +810,22 @@ final class ChatViewModel: ObservableObject {
             senderName: senderName,
             type: .audio,
             mediaDurationSeconds: duration,
+            transcriptText: nil,
+            mediaLocalPath: localAudioURL.path,
+            transcriptStatus: .processing,
+            transcriptSource: .appleSpeechAnalyzer,
+            transcriptLocaleIdentifier: "it-IT",
+            transcriptIsFinal: false,
+            transcriptUpdatedAt: now,
             createdAt: now
         )
+        
         msg.syncState = .pendingUpsert
         modelContext.insert(msg)
         try? modelContext.save()
         reloadLocal()
         
+        // 3. Upload remoto
         do {
             let (storagePath, downloadURL) = try await storageService.upload(
                 data: data,
@@ -799,7 +834,9 @@ final class ChatViewModel: ObservableObject {
                 fileName: "audio.m4a",
                 mimeType: "audio/x-m4a",
                 progressHandler: { [weak self] p in
-                    Task { @MainActor in self?.uploadProgress = p }
+                    Task { @MainActor in
+                        self?.uploadProgress = p
+                    }
                 }
             )
             
@@ -826,6 +863,120 @@ final class ChatViewModel: ObservableObject {
         isUploadingMedia = false
         uploadProgress = 0
     }
+    
+    private func saveAudioLocally(data: Data, messageId: String) throws -> URL {
+        
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let dir = docs.appendingPathComponent("ChatAudio", isDirectory: true)
+        
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try FileManager.default.createDirectory(
+                at: dir,
+                withIntermediateDirectories: true
+            )
+        }
+        
+        let fileURL = dir.appendingPathComponent("\(messageId).m4a")
+        
+        try data.write(to: fileURL, options: .atomic)
+        
+        return fileURL
+    }
+    
+    @MainActor
+    private func startTranscriptIfNeeded(for message: KBChatMessage, modelContext: ModelContext) {
+        guard message.type == .audio else { return }
+        
+        let myUID = Auth.auth().currentUser?.uid ?? ""
+        guard message.senderId != myUID else { return }
+        
+        if message.transcriptStatus == .processing || message.transcriptStatus == .completed {
+            return
+        }
+        
+        message.transcriptStatus = .processing
+        message.transcriptUpdatedAt = Date()
+        try? modelContext.save()
+        reloadLocal()
+        
+        Task {
+            do {
+                let localURL: URL
+                
+                if let localPath = message.mediaLocalPath, !localPath.isEmpty {
+                    localURL = URL(fileURLWithPath: localPath)
+                } else if let mediaURLString = message.mediaURL,
+                          let remoteURL = URL(string: mediaURLString) {
+                    localURL = try await downloadAudioLocally(from: remoteURL, messageId: message.id)
+                    await MainActor.run {
+                        message.mediaLocalPath = localURL.path
+                        try? modelContext.save()
+                    }
+                } else {
+                    throw NSError(domain: "Chat", code: 1, userInfo: [
+                        NSLocalizedDescriptionKey: "Audio non disponibile per la trascrizione"
+                    ])
+                }
+                
+                if #available(iOS 26.0, *) {
+                    let result = try await SpeechTranscriptionService.shared.transcribeFile(
+                        at: localURL,
+                        localeIdentifier: "it-IT"
+                    )
+                    
+                    await MainActor.run {
+                        message.transcriptText = result.text
+                        message.transcriptStatus = .completed
+                        message.transcriptSource = .appleSpeechAnalyzer
+                        message.transcriptLocaleIdentifier = result.localeIdentifier
+                        message.transcriptIsFinal = result.isFinal
+                        message.transcriptUpdatedAt = Date()
+                        message.transcriptErrorMessage = nil
+                        try? modelContext.save()
+                        reloadLocal()
+                    }
+                } else {
+                    await MainActor.run {
+                        message.transcriptStatus = .failed
+                        message.transcriptErrorMessage = "SpeechAnalyzer richiede iOS 26 o successivo"
+                        message.transcriptUpdatedAt = Date()
+                        try? modelContext.save()
+                        reloadLocal()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    message.transcriptStatus = .failed
+                    message.transcriptErrorMessage = error.localizedDescription
+                    message.transcriptUpdatedAt = Date()
+                    try? modelContext.save()
+                    reloadLocal()
+                }
+            }
+        }
+    }
+    
+    private func downloadAudioLocally(from remoteURL: URL, messageId: String) async throws -> URL {
+        let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
+        
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let dir = docs.appendingPathComponent("ChatAudio", isDirectory: true)
+        
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        
+        let fileURL = dir.appendingPathComponent("\(messageId).m4a")
+        
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try FileManager.default.removeItem(at: fileURL)
+        }
+        
+        try FileManager.default.moveItem(at: tempURL, to: fileURL)
+        return fileURL
+    }
+    
+    
     
     // MARK: - ─── SEND DOCUMENT ───────────────────────────────────────────────
     

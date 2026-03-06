@@ -218,18 +218,25 @@ struct ChatBubble: View {
     @ViewBuilder
     private var bubbleBody: some View {
         if message.type == .audio {
-            VStack(alignment: .leading, spacing: 6) {
-                replyContextHeader
-                audioContent
-                audioBottomRow
+            if message.type == .audio {
+                VStack(alignment: .leading, spacing: 8) {
+                    replyContextHeader
+                    audioContent
+                    
+                    if !isOwn && message.shouldShowTranscript {
+                        transcriptSection
+                    }
+                    
+                    audioBottomRow
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(width: maxBubbleWidth, alignment: .leading)
+                .background(bubbleBackground)
+                .overlay(highlightOverlay)
+                .clipShape(bubbleShape)
+                .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(width: AudioBubble.total)
-            .background(bubbleBackground)
-            .overlay(highlightOverlay)
-            .clipShape(bubbleShape)
-            .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
         } else if message.type == .photo || message.type == .video {
             if message.replyToId != nil {
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 0) {
@@ -835,19 +842,23 @@ struct ChatBubble: View {
             .frame(width: AudioBubble.playW, height: AudioBubble.playW)
             .accessibilityLabel(isPlayingAudio ? "Pausa audio" : "Riproduci audio")
             
-            scrubbableWaveform.frame(width: AudioBubble.waveW, height: 24)
+            scrubbableWaveform
+                .frame(height: 24)
             
             Button { cyclePlaybackRate() } label: {
                 Text(playbackRateLabel)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(isOwn ? .white : .accentColor)
                     .frame(width: AudioBubble.rateW, height: 28)
-                    .background(Capsule().fill(isOwn ? Color.white.opacity(0.25) : Color.accentColor.opacity(0.15)))
+                    .background(
+                        Capsule()
+                            .fill(isOwn ? Color.white.opacity(0.25) : Color.accentColor.opacity(0.15))
+                    )
             }
             .buttonStyle(.plain)
             .frame(width: AudioBubble.rateW)
         }
-        .frame(width: AudioBubble.inner, height: AudioBubble.playW)
+        .frame(maxWidth: .infinity, minHeight: AudioBubble.playW, maxHeight: AudioBubble.playW, alignment: .leading)
         .padding(.top, 4)
     }
     
@@ -909,11 +920,89 @@ struct ChatBubble: View {
                     .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
                     .animation(.none, value: isDraggingSlider)
             }
+            
             Spacer(minLength: 0)
-            Text(cachedTimeString).font(.caption2).foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            
+            Text(cachedTimeString)
+                .font(.caption2)
+                .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
+            
             if isOwn { syncIcon }
         }
-        .frame(width: AudioBubble.inner)
+        .frame(maxWidth: .infinity)
+    }
+    
+    @ViewBuilder
+    private var transcriptSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "waveform.and.mic")
+                    .font(.caption)
+                Text("Trascrizione automatica")
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(isOwn ? Color.white.opacity(0.78) : .secondary)
+            
+            switch message.transcriptStatus {
+            case .none:
+                if let text = message.transcriptPreviewText {
+                    Text(text)
+                        .font(.subheadline)
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .multilineTextAlignment(.leading)
+                        .textSelection(.enabled)
+                }
+                
+            case .processing:
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(isOwn ? .white : .accentColor)
+                        
+                        Text("Trascrizione in corso…")
+                            .font(.subheadline)
+                            .foregroundStyle(isOwn ? .white.opacity(0.9) : .primary)
+                    }
+                    
+                    if let partial = message.transcriptPreviewText {
+                        Text(partial)
+                            .font(.subheadline)
+                            .foregroundStyle(isOwn ? .white.opacity(0.95) : .primary)
+                            .multilineTextAlignment(.leading)
+                            .textSelection(.enabled)
+                    }
+                }
+                
+            case .completed:
+                if let text = message.transcriptPreviewText {
+                    Text(text)
+                        .font(.subheadline)
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .multilineTextAlignment(.leading)
+                        .textSelection(.enabled)
+                } else {
+                    Text("Trascrizione non disponibile")
+                        .font(.subheadline)
+                        .foregroundStyle(isOwn ? .white.opacity(0.78) : .secondary)
+                }
+                
+            case .failed:
+                if let text = message.transcriptPreviewText {
+                    Text(text)
+                        .font(.subheadline)
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .multilineTextAlignment(.leading)
+                        .textSelection(.enabled)
+                } else {
+                    Text("Trascrizione non disponibile")
+                        .font(.subheadline)
+                        .foregroundStyle(isOwn ? .white.opacity(0.78) : .secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
     }
     
     private var bottomRow: some View {
@@ -959,6 +1048,18 @@ struct ChatBubble: View {
         if let onDelete {
             Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
         }
+        
+        if message.type == .audio, let transcript = message.transcriptPreviewText, !transcript.isEmpty {
+            Button { copyTranscriptToPasteboard() } label: {
+                Label("Copia trascrizione", systemImage: "text.badge.checkmark")
+            }
+        }
+    }
+    
+    private func copyTranscriptToPasteboard() {
+        guard let t = message.transcriptPreviewText, !t.isEmpty else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIPasteboard.general.string = t
     }
     
     private func copyTextToPasteboard() {
