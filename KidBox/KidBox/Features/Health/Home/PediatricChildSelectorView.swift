@@ -372,3 +372,24 @@ private struct MeasurementInputSheet: View {
         .presentationDetents([.height(220)])
     }
 }
+
+extension PediatricPerson {
+    
+    var displayName: String {
+        switch self {
+        case .child(let child):
+            return child.name
+        case .member(let member):
+            return member.displayName ?? "Membro famiglia"
+        }
+    }
+    
+    var kindLabel: String {
+        switch self {
+        case .child:
+            return "bambino"
+        case .member:
+            return "adulto"
+        }
+    }
+}

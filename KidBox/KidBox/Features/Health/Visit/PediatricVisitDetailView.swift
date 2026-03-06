@@ -69,6 +69,13 @@ struct PediatricVisitDetailView: View {
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .overlay(alignment: .bottomTrailing) {
+            if let visit, let child = childForAI {
+                AskAIButton(visit: visit, child: child)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 96)
+            }
+        }
         .sheet(isPresented: $showEditSheet) {
             if let visit {
                 PediatricVisitEditView(
@@ -121,53 +128,70 @@ struct PediatricVisitDetailView: View {
     private func headerCard(_ v: KBMedicalVisit) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             
-            // Icona + titolo
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(tint.opacity(0.12))
-                        .frame(width: 56, height: 56)
-                    Image(systemName: "stethoscope")
-                        .font(.system(size: 24))
-                        .foregroundStyle(tint)
+            HStack(alignment: .top, spacing: 14) {
+                
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(tint.opacity(0.12))
+                            .frame(width: 56, height: 56)
+                        
+                        Image(systemName: "stethoscope")
+                            .font(.system(size: 24))
+                            .foregroundStyle(tint)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(v.reason.isEmpty ? "Visita" : v.reason)
+                            .font(.title3.bold())
+                            .foregroundStyle(KBTheme.primaryText(colorScheme))
+                            .multilineTextAlignment(.leading)
+                        
+                        Text(v.date.formatted(date: .long, time: .shortened))
+                            .font(.caption)
+                            .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                    }
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(v.reason.isEmpty ? "Visita" : v.reason)
-                        .font(.title3.bold())
-                        .foregroundStyle(KBTheme.primaryText(colorScheme))
-                    Text(v.date.formatted(date: .long, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(KBTheme.secondaryText(colorScheme))
-                }
+                
+                Spacer(minLength: 8)
             }
             
             Divider()
             
-            // Medico
             if let doctor = v.doctorName, !doctor.isEmpty {
                 HStack(spacing: 10) {
                     Image(systemName: "person.fill")
-                        .frame(width: 20).foregroundStyle(tint)
+                        .frame(width: 20)
+                        .foregroundStyle(tint)
+                    
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Medico").font(.caption).foregroundStyle(.secondary)
+                        Text("Medico")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
                         HStack(spacing: 6) {
-                            Text(doctor).font(.subheadline.bold())
+                            Text(doctor)
+                                .font(.subheadline.bold())
+                            
                             if let spec = v.doctorSpecialization {
                                 Text("· \(spec.rawValue)")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
                 }
             }
             
-            // Sync state
             if v.syncState == .pendingUpsert {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.caption).foregroundStyle(.orange)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    
                     Text("In sincronizzazione...")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -337,22 +361,16 @@ struct PediatricVisitDetailView: View {
     
     private func bottomActions(_ v: KBMedicalVisit) -> some View {
         VStack(spacing: 10) {
-            
-            // ── Chiedi all'AI ──
-            if let child = childForAI {
-                AskAIButton(visit: v, child: child)
-                    .padding(.horizontal)
-            }
-            
-            // ── Modifica / Elimina ──
             HStack(spacing: 12) {
                 Button {
                     showEditSheet = true
                 } label: {
                     Label("Modifica", systemImage: "pencil")
-                        .frame(maxWidth: .infinity).padding()
+                        .frame(maxWidth: .infinity)
+                        .padding()
                         .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                        .foregroundStyle(.white).font(.headline)
+                        .foregroundStyle(.white)
+                        .font(.headline)
                 }
                 .buttonStyle(.plain)
                 
@@ -360,9 +378,14 @@ struct PediatricVisitDetailView: View {
                     showDeleteAlert = true
                 } label: {
                     Label("Elimina", systemImage: "trash")
-                        .frame(maxWidth: .infinity).padding()
-                        .background(RoundedRectangle(cornerRadius: 14).stroke(Color.red.opacity(0.5), lineWidth: 1.5))
-                        .foregroundStyle(.red).font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.red.opacity(0.5), lineWidth: 1.5)
+                        )
+                        .foregroundStyle(.red)
+                        .font(.headline)
                 }
                 .buttonStyle(.plain)
             }

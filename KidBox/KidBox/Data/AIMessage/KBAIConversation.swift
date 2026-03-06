@@ -2,8 +2,6 @@
 //  KBAIConversation.swift
 //  KidBox
 //
-//  Created by vscocca on 05/03/26.
-//
 
 import Foundation
 import SwiftData
@@ -29,18 +27,20 @@ enum AIProvider: String, Codable, CaseIterable {
 }
 
 /// A full AI conversation scoped to a specific medical visit.
-///
-/// - One conversation per visit is the expected pattern, but multiple are allowed
-///   (e.g. if the user switches provider or starts a new session).
-/// - Messages are ordered by `createdAt`.
 @Model
 final class KBAIConversation {
     @Attribute(.unique) var id: String
+    
     var familyId: String
     var childId: String
     var visitId: String
     var providerRaw: String
     var createdAt: Date
+    
+    // Summary / compression
+    var summary: String?
+    var summaryUpdatedAt: Date?
+    var summarizedMessageCount: Int
     
     @Relationship(deleteRule: .cascade, inverse: \KBAIMessage.conversation)
     var messages: [KBAIMessage] = []
@@ -55,13 +55,21 @@ final class KBAIConversation {
         messages.sorted { $0.createdAt < $1.createdAt }
     }
     
+    var hasSummary: Bool {
+        guard let summary else { return false }
+        return !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     init(
         id: String = UUID().uuidString,
         familyId: String,
         childId: String,
         visitId: String,
         provider: AIProvider,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        summary: String? = nil,
+        summaryUpdatedAt: Date? = nil,
+        summarizedMessageCount: Int = 0
     ) {
         self.id = id
         self.familyId = familyId
@@ -69,5 +77,8 @@ final class KBAIConversation {
         self.visitId = visitId
         self.providerRaw = provider.rawValue
         self.createdAt = createdAt
+        self.summary = summary
+        self.summaryUpdatedAt = summaryUpdatedAt
+        self.summarizedMessageCount = summarizedMessageCount
     }
 }

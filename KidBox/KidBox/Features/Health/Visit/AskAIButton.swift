@@ -17,16 +17,12 @@ struct AskAIButton: View {
     @State private var showChat     = false
     
     var body: some View {
-        Button {
+        AskAIControl(
+            style: .circle,
+            accessibilityLabel: "Chiedi all'AI"
+        ) {
             handleTap()
-        } label: {
-            Label("Chiedi all'AI", systemImage: "sparkles")
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(.blue)
-        .controlSize(.large)
         .sheet(isPresented: $showSettings) {
             NavigationStack { AISettingsView() }
         }

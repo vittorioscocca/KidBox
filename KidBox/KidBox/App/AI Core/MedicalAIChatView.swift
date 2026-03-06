@@ -262,7 +262,7 @@ struct MedicalAIChatView: View {
 
 // MARK: - MessageBubble
 
-private struct MessageBubble: View {
+struct MessageBubble: View {
     let message: KBAIMessage
     var isUser: Bool { message.role == .user }
     
@@ -294,7 +294,7 @@ private struct MessageBubble: View {
 
 // MARK: - TypingIndicator
 
-private struct TypingIndicator: View {
+struct TypingIndicator: View {
     @State private var animate = false
     
     var body: some View {

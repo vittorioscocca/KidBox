@@ -5,15 +5,19 @@
 
 import Foundation
 
-/// Builds the AI system prompt from a `KBMedicalVisit`, child context and treatments.
+/// Builds the AI system prompt from a `KBMedicalVisit`, child context,
+/// treatments and extracted document text.
 enum MedicalVisitContextBuilder {
     
     static func buildSystemPrompt(
         visit: KBMedicalVisit,
         child: KBChild,
         treatments: [KBTreatment] = [],
+        documents: [KBDocument] = [],
         childAge: String? = nil
     ) -> String {
+        
+        KBLog.ai.kbInfo("Build system prompt start visitId=\(visit.id) childId=\(child.id) treatments=\(treatments.count) documents=\(documents.count)")
         
         let ageStr = childAge ?? computeAge(birthDate: child.birthDate)
         var lines: [String] = []
@@ -26,20 +30,27 @@ enum MedicalVisitContextBuilder {
         - Non fare diagnosi e non sostituirti al medico.
         - Se l'utente chiede una diagnosi o un parere clinico vincolante, ricordagli gentilmente di consultare il proprio medico.
         - Usa un linguaggio semplice, adatto a un genitore non esperto.
-        - Puoi spiegare termini medici, farmaci, terapie ed esami prescritti.
-        - Se sono presenti immagini di referti, analizzale e spiegane il contenuto.
+        - Puoi spiegare termini medici, farmaci, terapie, esami prescritti e contenuto dei referti allegati.
+        - Se nel contesto sono presenti testi estratti da documenti o referti, usali per spiegare meglio il contenuto.
+        - Se un testo estratto sembra incompleto o poco chiaro, dillo esplicitamente.
         - Rispondi sempre in italiano.
         """)
         
         lines.append("\n--- DATI VISITA ---")
         
         lines.append("Bambino: \(child.name)")
-        if !ageStr.isEmpty { lines.append("Età: \(ageStr)") }
+        if !ageStr.isEmpty {
+            lines.append("Età: \(ageStr)")
+            KBLog.ai.kbDebug("Computed child age=\(ageStr)")
+        } else {
+            KBLog.ai.kbDebug("Child age unavailable for childId=\(child.id)")
+        }
         
         lines.append("Data visita: \(formatDate(visit.date))")
         
         if !visit.reason.isEmpty {
             lines.append("Motivo della visita: \(visit.reason)")
+            KBLog.ai.kbDebug("Visit reason included")
         }
         
         if let doctor = visit.doctorName, !doctor.isEmpty {
@@ -48,17 +59,19 @@ enum MedicalVisitContextBuilder {
                 doctorLine += " (\(spec.rawValue))"
             }
             lines.append(doctorLine)
+            KBLog.ai.kbDebug("Doctor info included")
         }
         
         if let diagnosis = visit.diagnosis, !diagnosis.isEmpty {
             lines.append("\nDiagnosi:\n\(diagnosis)")
+            KBLog.ai.kbDebug("Diagnosis included chars=\(diagnosis.count)")
         }
         
         if let recommendations = visit.recommendations, !recommendations.isEmpty {
             lines.append("\nRaccomandazioni:\n\(recommendations)")
+            KBLog.ai.kbDebug("Recommendations included chars=\(recommendations.count)")
         }
         
-        // Farmaci programmati (KBTreatment completi)
         if !treatments.isEmpty {
             lines.append("\nFarmaci programmati (\(treatments.count)):")
             for t in treatments {
@@ -71,9 +84,9 @@ enum MedicalVisitContextBuilder {
                 }
                 lines.append(line)
             }
+            KBLog.ai.kbDebug("Scheduled treatments included count=\(treatments.count)")
         }
         
-        // Farmaci al bisogno
         let drugs = visit.asNeededDrugs
         if !drugs.isEmpty {
             lines.append("\nFarmaci al bisogno:")
@@ -84,15 +97,15 @@ enum MedicalVisitContextBuilder {
                 }
                 lines.append(line)
             }
+            KBLog.ai.kbDebug("As-needed drugs included count=\(drugs.count)")
         }
         
-        // Terapie
         let therapies = visit.therapyTypes
         if !therapies.isEmpty {
             lines.append("\nTerapie prescritte: \(therapies.map { $0.rawValue }.joined(separator: ", "))")
+            KBLog.ai.kbDebug("Therapies included count=\(therapies.count)")
         }
         
-        // Esami prescritti
         let exams = visit.prescribedExams
         if !exams.isEmpty {
             lines.append("\nEsami prescritti:")
@@ -107,10 +120,12 @@ enum MedicalVisitContextBuilder {
                 }
                 lines.append(line)
             }
+            KBLog.ai.kbDebug("Prescribed exams included count=\(exams.count)")
         }
         
         if let notes = visit.notes, !notes.isEmpty {
             lines.append("\nNote cliniche:\n\(notes)")
+            KBLog.ai.kbDebug("Clinical notes included chars=\(notes.count)")
         }
         
         if let nextDate = visit.nextVisitDate {
@@ -119,16 +134,55 @@ enum MedicalVisitContextBuilder {
                 nextLine += " — \(reason)"
             }
             lines.append(nextLine)
+            KBLog.ai.kbDebug("Next visit included")
         }
         
-        if !visit.photoURLs.isEmpty {
-            lines.append("\nReferti allegati: \(visit.photoURLs.count) immagine/i allegate a questa visita.")
+        let completedDocuments = documents.filter {
+            $0.extractionStatus == .completed && $0.hasExtractedText
+        }
+        
+        KBLog.ai.kbDebug("Completed extracted documents count=\(completedDocuments.count)")
+        
+        if !completedDocuments.isEmpty {
+            lines.append("\n--- DOCUMENTI / REFERTI ALLEGATI ---")
+            
+            var includedDocs = 0
+            var skippedDocs = 0
+            
+            for doc in completedDocuments {
+                let cleanText = sanitizeExtractedText(doc.extractedText ?? "")
+                
+                guard !cleanText.isEmpty else {
+                    skippedDocs += 1
+                    KBLog.ai.kbDebug("Skipped empty extracted text for document id=\(doc.id) title=\(doc.title)")
+                    continue
+                }
+                
+                lines.append("\nDocumento: \(doc.title)")
+                lines.append("Tipo: \(doc.mimeType)")
+                lines.append("Testo estratto:")
+                lines.append(cleanText)
+                
+                includedDocs += 1
+                KBLog.ai.kbDebug("Included extracted document id=\(doc.id) title=\(doc.title) chars=\(cleanText.count)")
+            }
+            
+            KBLog.ai.kbInfo("Document extraction section built included=\(includedDocs) skipped=\(skippedDocs)")
+            
+        } else if !visit.photoURLs.isEmpty {
+            lines.append("\nReferti allegati: \(visit.photoURLs.count) immagine/i presenti, ma testo non ancora estratto.")
+            KBLog.ai.kbInfo("Legacy image fallback used photoCount=\(visit.photoURLs.count)")
+        } else {
+            KBLog.ai.kbDebug("No extracted documents and no legacy photos for visitId=\(visit.id)")
         }
         
         lines.append("\n--- FINE DATI VISITA ---")
         lines.append("\nRispondi alle domande del genitore sulla visita usando le informazioni sopra.")
         
-        return lines.joined(separator: "\n")
+        let prompt = lines.joined(separator: "\n")
+        KBLog.ai.kbInfo("Build system prompt completed visitId=\(visit.id) chars=\(prompt.count)")
+        
+        return prompt
     }
     
     // MARK: - Private helpers
@@ -142,18 +196,39 @@ enum MedicalVisitContextBuilder {
     }
     
     private static func computeAge(birthDate: Date?) -> String {
-        guard let birthDate else { return "" }
+        guard let birthDate else {
+            KBLog.ai.kbDebug("computeAge: missing birthDate")
+            return ""
+        }
+        
         let cal = Calendar.current
         let components = cal.dateComponents([.year, .month], from: birthDate, to: Date())
-        let years  = components.year  ?? 0
+        let years = components.year ?? 0
         let months = components.month ?? 0
         
+        let result: String
         if years == 0 {
-            return "\(months) \(months == 1 ? "mese" : "mesi")"
+            result = "\(months) \(months == 1 ? "mese" : "mesi")"
         } else if months == 0 {
-            return "\(years) \(years == 1 ? "anno" : "anni")"
+            result = "\(years) \(years == 1 ? "anno" : "anni")"
         } else {
-            return "\(years) \(years == 1 ? "anno" : "anni") e \(months) \(months == 1 ? "mese" : "mesi")"
+            result = "\(years) \(years == 1 ? "anno" : "anni") e \(months) \(months == 1 ? "mese" : "mesi")"
         }
+        
+        KBLog.ai.kbDebug("computeAge: result=\(result)")
+        return result
+    }
+    
+    private static func sanitizeExtractedText(_ text: String) -> String {
+        let sanitized = text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+        
+        KBLog.ai.kbDebug("sanitizeExtractedText: inputChars=\(text.count) outputChars=\(sanitized.count)")
+        return sanitized
     }
 }

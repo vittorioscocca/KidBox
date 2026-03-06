@@ -14,6 +14,7 @@ import QuickLook
 
 enum VisitAttachmentTag {
     static func make(_ visitId: String) -> String { "visit:\(visitId)" }
+    
     static func matches(_ doc: KBDocument, visitId: String) -> Bool {
         doc.notes == make(visitId) && !doc.isDeleted
     }
@@ -32,14 +33,20 @@ final class VisitAttachmentService {
     // MARK: - Start
     
     func start(modelContext: ModelContext) {
+        KBLog.storage.kbInfo("VisitAttachmentService start")
+        
         KBEventBus.shared.stream
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (event: KBAppEvent) in
                 guard let self else { return }
+                
                 switch event {
                 case .visitAttachmentPending(let urls, let visitId, let familyId, let childId):
+                    KBLog.storage.kbInfo("Received visitAttachmentPending event visitId=\(visitId) familyId=\(familyId) childId=\(childId) urls=\(urls.count)")
+                    
                     Task {
                         for url in urls {
+                            KBLog.storage.kbDebug("Processing pending attachment url=\(url.lastPathComponent)")
                             await _ = self.upload(
                                 url: url,
                                 visitId: visitId,
@@ -49,6 +56,7 @@ final class VisitAttachmentService {
                             )
                         }
                     }
+                    
                 default:
                     break
                 }
@@ -56,13 +64,14 @@ final class VisitAttachmentService {
             .store(in: &cancellables)
     }
     
-    // MARK: - Cartelle Salute / Referti (riusa TreatmentAttachmentService)
+    // MARK: - Cartelle Salute / Referti
     
     func ensureHealthFolders(
         familyId: String,
         modelContext: ModelContext
     ) -> (salute: KBDocumentCategory, referti: KBDocumentCategory) {
-        TreatmentAttachmentService.shared.ensureHealthFolders(
+        KBLog.storage.kbDebug("Ensuring health folders familyId=\(familyId)")
+        return TreatmentAttachmentService.shared.ensureHealthFolders(
             familyId: familyId,
             modelContext: modelContext
         )
@@ -77,25 +86,47 @@ final class VisitAttachmentService {
         childId: String,
         modelContext: ModelContext
     ) async -> KBDocument? {
+        KBLog.storage.kbInfo("Upload start visitId=\(visitId) familyId=\(familyId) childId=\(childId) file=\(url.lastPathComponent)")
+        
         let okScope = url.startAccessingSecurityScopedResource()
-        defer { if okScope { url.stopAccessingSecurityScopedResource() } }
+        defer {
+            if okScope {
+                url.stopAccessingSecurityScopedResource()
+                KBLog.storage.kbDebug("Stopped security scoped access file=\(url.lastPathComponent)")
+            }
+        }
         
-        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return nil }
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else {
+            KBLog.storage.kbError("Upload aborted: unable to read data or empty file file=\(url.lastPathComponent)")
+            return nil
+        }
         
-        let uid         = Auth.auth().currentUser?.uid ?? "local"
-        let now         = Date()
-        let docId       = UUID().uuidString
-        let fileName    = url.lastPathComponent
-        let ext         = url.pathExtension.lowercased()
-        let mime        = mimeType(for: ext)
-        let title       = url.deletingPathExtension().lastPathComponent
+        KBLog.storage.kbDebug("Loaded local file bytes=\(data.count) file=\(url.lastPathComponent)")
+        
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
+        let docId = UUID().uuidString
+        let fileName = url.lastPathComponent
+        let ext = url.pathExtension.lowercased()
+        let mime = mimeType(for: ext)
+        let title = url.deletingPathExtension().lastPathComponent
         let storagePath = "families/\(familyId)/visit-attachments/\(visitId)/\(docId)/\(fileName).kbenc"
+        
+        KBLog.storage.kbDebug("Resolved attachment metadata docId=\(docId) mime=\(mime) storagePath=\(storagePath)")
         
         let (_, referti) = ensureHealthFolders(familyId: familyId, modelContext: modelContext)
         
         guard let localRelPath = try? DocumentLocalCache.write(
-            familyId: familyId, docId: docId, fileName: fileName, data: data
-        ) else { return nil }
+            familyId: familyId,
+            docId: docId,
+            fileName: fileName,
+            data: data
+        ) else {
+            KBLog.storage.kbError("Failed writing local cache docId=\(docId) file=\(fileName)")
+            return nil
+        }
+        
+        KBLog.storage.kbDebug("Local cache write OK docId=\(docId) localRelPath=\(localRelPath)")
         
         let doc = KBDocument(
             id: docId,
@@ -114,73 +145,140 @@ final class VisitAttachmentService {
             updatedAt: now,
             isDeleted: false
         )
+        
         doc.localPath = localRelPath
         doc.syncState = .pendingUpsert
         
         modelContext.insert(doc)
-        try? modelContext.save()
         
+        do {
+            try modelContext.save()
+            KBLog.persistence.kbInfo("Inserted and saved attachment docId=\(doc.id) title=\(doc.title)")
+        } catch {
+            KBLog.persistence.kbError("Failed saving attachment docId=\(doc.id): \(error.localizedDescription)")
+        }
+        
+        KBLog.storage.kbInfo("Enqueue text extraction docId=\(doc.id)")
+        DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+            for: doc,
+            updatedBy: uid,
+            modelContext: modelContext
+        )
+        
+        KBLog.sync.kbInfo("Enqueue document upsert docId=\(doc.id) familyId=\(familyId)")
         SyncCenter.shared.enqueueDocumentUpsert(
-            documentId: doc.id, familyId: familyId, modelContext: modelContext)
+            documentId: doc.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        
+        KBLog.sync.kbDebug("Flush global requested after attachment insert docId=\(doc.id)")
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         Task.detached {
+            await KBLog.storage.kbInfo("Remote encrypted upload start docId=\(docId) file=\(fileName)")
+            
             do {
                 guard let encrypted = try? await DocumentCryptoService.encrypt(
-                    data, familyId: familyId, userId: uid) else { return }
+                    data,
+                    familyId: familyId,
+                    userId: uid
+                ) else {
+                    await KBLog.crypto.kbError("Encryption failed docId=\(docId)")
+                    return
+                }
+                
+                await KBLog.crypto.kbDebug("Encryption completed docId=\(docId) encryptedBytes=\(encrypted.count)")
+                
                 let ref = Storage.storage().reference(withPath: storagePath)
                 let metadata = StorageMetadata()
                 metadata.contentType = "application/octet-stream"
                 metadata.customMetadata = [
                     "kb_encrypted": "1",
-                    "kb_alg":       "AES-GCM",
+                    "kb_alg": "AES-GCM",
                     "kb_orig_mime": mime,
                     "kb_orig_name": fileName
                 ]
+                
                 _ = try await ref.putDataAsync(encrypted, metadata: metadata)
+                await KBLog.storage.kbInfo("Remote upload completed docId=\(docId)")
+                
                 let downloadURL = try await ref.downloadURL().absoluteString
+                await KBLog.storage.kbDebug("Download URL fetched docId=\(docId)")
+                
                 await MainActor.run {
                     doc.downloadURL = downloadURL
-                    doc.syncState   = .synced
-                    doc.updatedAt   = Date()
-                    doc.updatedBy   = uid
-                    try? modelContext.save()
+                    doc.syncState = .synced
+                    doc.updatedAt = Date()
+                    doc.updatedBy = uid
+                    
+                    do {
+                        try modelContext.save()
+                        KBLog.persistence.kbInfo("Attachment marked synced docId=\(doc.id)")
+                    } catch {
+                        KBLog.persistence.kbError("Failed saving synced attachment docId=\(doc.id): \(error.localizedDescription)")
+                    }
                 }
             } catch {
+                await KBLog.storage.kbError("Remote upload failed docId=\(docId): \(error.localizedDescription)")
+                
                 await MainActor.run {
-                    doc.syncState     = .error
+                    doc.syncState = .error
                     doc.lastSyncError = error.localizedDescription
-                    try? modelContext.save()
+                    
+                    do {
+                        try modelContext.save()
+                        KBLog.persistence.kbError("Attachment marked error docId=\(doc.id)")
+                    } catch {
+                        KBLog.persistence.kbError("Failed saving upload error state docId=\(doc.id): \(error.localizedDescription)")
+                    }
                 }
             }
         }
         
+        KBLog.storage.kbInfo("Upload pipeline completed locally docId=\(doc.id)")
         return doc
     }
     
     // MARK: - Delete
     
     func delete(_ doc: KBDocument, modelContext: ModelContext) {
-        let path  = doc.storagePath
+        KBLog.storage.kbInfo("Delete attachment requested docId=\(doc.id) fileName=\(doc.fileName)")
+        
+        let path = doc.storagePath
         let local = doc.localPath
         
         if let lp = local, !lp.isEmpty {
+            KBLog.storage.kbDebug("Deleting local cached file localPath=\(lp)")
             DocumentLocalCache.deleteFile(localPath: lp)
+        } else {
+            KBLog.storage.kbDebug("No local cached file to delete docId=\(doc.id)")
         }
+        
         doc.localPath = nil
         
+        KBLog.sync.kbInfo("Enqueue document delete docId=\(doc.id) familyId=\(doc.familyId)")
         SyncCenter.shared.enqueueDocumentDelete(
-            documentId: doc.id, familyId: doc.familyId, modelContext: modelContext)
+            documentId: doc.id,
+            familyId: doc.familyId,
+            modelContext: modelContext
+        )
+        
+        KBLog.sync.kbDebug("Flush global requested after delete docId=\(doc.id)")
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         if !path.isEmpty {
             Task.detached {
                 do {
+                    await KBLog.storage.kbInfo("Deleting remote storage object path=\(path)")
                     try await Storage.storage().reference(withPath: path).delete()
+                    await KBLog.storage.kbInfo("Remote storage delete OK path=\(path)")
                 } catch {
-                    await KBLog.sync.kbError("VisitAttachmentService: Storage delete failed path=\(path) err=\(error.localizedDescription)")
+                    await KBLog.storage.kbError("Storage delete failed path=\(path) err=\(error.localizedDescription)")
                 }
             }
+        } else {
+            KBLog.storage.kbDebug("No remote storage path to delete docId=\(doc.id)")
         }
     }
     
@@ -191,6 +289,8 @@ final class VisitAttachmentService {
         familyId: String,
         modelContext: ModelContext
     ) -> [KBDocument] {
+        KBLog.storage.kbDebug("Fetch attachments visitId=\(visitId) familyId=\(familyId)")
+        
         let fid = familyId
         let desc = FetchDescriptor<KBDocument>(
             predicate: #Predicate<KBDocument> {
@@ -198,8 +298,12 @@ final class VisitAttachmentService {
             },
             sortBy: [SortDescriptor(\KBDocument.createdAt, order: .reverse)]
         )
+        
         let all = (try? modelContext.fetch(desc)) ?? []
-        return all.filter { VisitAttachmentTag.matches($0, visitId: visitId) }
+        let filtered = all.filter { VisitAttachmentTag.matches($0, visitId: visitId) }
+        
+        KBLog.storage.kbInfo("Fetched visit attachments total=\(all.count) filtered=\(filtered.count) visitId=\(visitId)")
+        return filtered
     }
     
     // MARK: - Open
@@ -207,55 +311,70 @@ final class VisitAttachmentService {
     func open(
         doc: KBDocument,
         modelContext: ModelContext,
-        onURL:        @escaping (URL) -> Void,
-        onError:      @escaping (String) -> Void,
+        onURL: @escaping (URL) -> Void,
+        onError: @escaping (String) -> Void,
         onKeyMissing: @escaping () -> Void
     ) {
-        // Riusa la stessa logica di TreatmentAttachmentService
+        KBLog.storage.kbInfo("Open attachment requested docId=\(doc.id) fileName=\(doc.fileName)")
+        
         TreatmentAttachmentService.shared.open(
             doc: doc,
             modelContext: modelContext,
-            onURL: onURL,
-            onError: onError,
-            onKeyMissing: onKeyMissing
+            onURL: { url in
+                KBLog.storage.kbInfo("Open attachment success docId=\(doc.id) url=\(url.lastPathComponent)")
+                onURL(url)
+            },
+            onError: { error in
+                KBLog.storage.kbError("Open attachment failed docId=\(doc.id): \(error)")
+                onError(error)
+            },
+            onKeyMissing: {
+                KBLog.crypto.kbError("Open attachment failed: key missing docId=\(doc.id)")
+                onKeyMissing()
+            }
+        )
+    }
+    
+    // MARK: - Download remoto (sync da altri dispositivi)
+    
+    func downloadRemoteAttachment(
+        docId: String,
+        familyId: String,
+        storagePath: String,
+        fileName: String,
+        modelContext: ModelContext
+    ) async {
+        KBLog.storage.kbInfo("Download remote attachment docId=\(docId) familyId=\(familyId) fileName=\(fileName)")
+        
+        await TreatmentAttachmentService.shared.downloadRemoteAttachment(
+            docId: docId,
+            familyId: familyId,
+            storagePath: storagePath,
+            fileName: fileName,
+            modelContext: modelContext
         )
     }
     
     // MARK: - Helpers
     
-    // MARK: - Download remoto (sync da altri dispositivi)
-    
-    func downloadRemoteAttachment(
-        docId:        String,
-        familyId:     String,
-        storagePath:  String,
-        fileName:     String,
-        modelContext: ModelContext
-    ) async {
-        await TreatmentAttachmentService.shared.downloadRemoteAttachment(
-            docId:        docId,
-            familyId:     familyId,
-            storagePath:  storagePath,
-            fileName:     fileName,
-            modelContext: modelContext
-        )
-    }
-    
     private func mimeType(for ext: String) -> String {
+        let resolved: String
         switch ext {
-        case "pdf":             return "application/pdf"
-        case "jpg", "jpeg":     return "image/jpeg"
-        case "png":             return "image/png"
-        case "heic":            return "image/heic"
-        case "doc", "docx":     return "application/msword"
-        case "xls", "xlsx":     return "application/vnd.ms-excel"
-        default:                return "application/octet-stream"
+        case "pdf": resolved = "application/pdf"
+        case "jpg", "jpeg": resolved = "image/jpeg"
+        case "png": resolved = "image/png"
+        case "heic": resolved = "image/heic"
+        case "doc", "docx": resolved = "application/msword"
+        case "xls", "xlsx": resolved = "application/vnd.ms-excel"
+        default: resolved = "application/octet-stream"
         }
+        
+        KBLog.storage.kbDebug("Resolved mimeType ext=\(ext) -> \(resolved)")
+        return resolved
     }
 }
 
 // MARK: - VisitAttachmentsSection
-// Da usare nel PediatricVisitDetailView
 
 struct VisitAttachmentsSection: View {
     
@@ -265,16 +384,16 @@ struct VisitAttachmentsSection: View {
     
     @Query private var attachments: [KBDocument]
     
-    @State private var isUploading      = false
+    @State private var isUploading = false
     @State private var showSourcePicker = false
-    @State private var showImporter     = false
-    @State private var showGallery      = false
-    @State private var showCamera       = false
+    @State private var showImporter = false
+    @State private var showGallery = false
+    @State private var showCamera = false
     @State private var previewURL: URL? = nil
-    @State private var showKeyAlert     = false
+    @State private var showKeyAlert = false
     @State private var errorText: String? = nil
     
-    private let tint    = Color(red: 0.35, green: 0.6, blue: 0.85)
+    private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     private let service = VisitAttachmentService.shared
     
     init(visit: KBMedicalVisit) {
@@ -299,26 +418,36 @@ struct VisitAttachmentsSection: View {
             
             HStack {
                 Label("Allegati", systemImage: "paperclip")
-                    .font(.subheadline.bold()).foregroundStyle(tint)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(tint)
+                
                 Spacer()
+                
                 if isUploading {
                     ProgressView().scaleEffect(0.8)
                 } else {
-                    Button { showSourcePicker = true } label: {
+                    Button {
+                        KBLog.ui.kbDebug("Show attachment source picker visitId=\(visit.id)")
+                        showSourcePicker = true
+                    } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(tint).font(.title3)
+                            .foregroundStyle(tint)
+                            .font(.title3)
                     }
                     .buttonStyle(.plain)
                 }
             }
             
             if let err = errorText {
-                Text(err).font(.caption).foregroundStyle(.red)
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.red)
             }
             
             if visitAttachments.isEmpty {
                 Text("Nessun allegato")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 6)
             } else {
@@ -328,7 +457,8 @@ struct VisitAttachmentsSection: View {
             }
             
             Text("Visibili anche in Documenti › Salute › Referti")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
         .padding()
         .background(
@@ -339,14 +469,17 @@ struct VisitAttachmentsSection: View {
         .sheet(isPresented: $showSourcePicker) {
             AttachmentSourcePickerSheet(
                 onCamera: {
+                    KBLog.ui.kbInfo("Attachment source selected: camera visitId=\(visit.id)")
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showCamera = true }
                 },
                 onGallery: {
+                    KBLog.ui.kbInfo("Attachment source selected: gallery visitId=\(visit.id)")
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showGallery = true }
                 },
                 onDocument: {
+                    KBLog.ui.kbInfo("Attachment source selected: document importer visitId=\(visit.id)")
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
                 }
@@ -356,11 +489,13 @@ struct VisitAttachmentsSection: View {
         }
         .sheet(isPresented: $showGallery) {
             ImagePickerView(sourceType: .photoLibrary) { image in
+                KBLog.ui.kbInfo("Gallery image picked visitId=\(visit.id)")
                 if let url = saveImageToTemp(image) { emitUpload(urls: [url]) }
             }
         }
         .sheet(isPresented: $showCamera) {
             ImagePickerView(sourceType: .camera) { image in
+                KBLog.ui.kbInfo("Camera image picked visitId=\(visit.id)")
                 if let url = saveImageToTemp(image) { emitUpload(urls: [url]) }
             }
         }
@@ -369,7 +504,11 @@ struct VisitAttachmentsSection: View {
             allowedContentTypes: [.item],
             allowsMultipleSelection: true
         ) { result in
-            guard let urls = try? result.get() else { return }
+            guard let urls = try? result.get() else {
+                KBLog.ui.kbError("File importer failed visitId=\(visit.id)")
+                return
+            }
+            KBLog.ui.kbInfo("File importer returned urls=\(urls.count) visitId=\(visit.id)")
             emitUpload(urls: urls)
         }
         .sheet(isPresented: Binding(
@@ -387,8 +526,12 @@ struct VisitAttachmentsSection: View {
         }
         .onReceive(KBEventBus.shared.stream) { (event: KBAppEvent) in
             if case .visitAttachmentPending(_, let vid, _, _) = event, vid == visit.id {
+                KBLog.ui.kbDebug("VisitAttachmentsSection received pending upload event visitId=\(visit.id)")
                 isUploading = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { isUploading = false }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    isUploading = false
+                    KBLog.ui.kbDebug("VisitAttachmentsSection upload spinner auto-hide visitId=\(visit.id)")
+                }
             }
         }
     }
@@ -396,6 +539,7 @@ struct VisitAttachmentsSection: View {
     // MARK: - Helpers
     
     private func emitUpload(urls: [URL]) {
+        KBLog.ui.kbInfo("Emit visit attachment upload visitId=\(visit.id) urls=\(urls.count)")
         isUploading = true
         KBEventBus.shared.emit(KBAppEvent.visitAttachmentPending(
             urls: urls,
@@ -406,48 +550,101 @@ struct VisitAttachmentsSection: View {
     }
     
     private func saveImageToTemp(_ image: UIImage) -> URL? {
-        guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        guard let data = image.jpegData(compressionQuality: 0.85) else {
+            KBLog.storage.kbError("saveImageToTemp failed: jpegData nil")
+            return nil
+        }
+        
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + ".jpg")
-        try? data.write(to: url)
-        return url
+        
+        do {
+            try data.write(to: url)
+            KBLog.storage.kbDebug("Temporary image saved path=\(url.lastPathComponent) bytes=\(data.count)")
+            return url
+        } catch {
+            KBLog.storage.kbError("saveImageToTemp write failed: \(error.localizedDescription)")
+            return nil
+        }
     }
     
     private func attachmentRow(_ doc: KBDocument) -> some View {
         HStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+                    .fill(tint.opacity(0.1))
+                    .frame(width: 36, height: 36)
+                
                 Image(systemName: mimeIcon(doc.mimeType))
-                    .foregroundStyle(tint).font(.subheadline)
+                    .foregroundStyle(tint)
+                    .font(.subheadline)
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(doc.title).font(.subheadline).lineLimit(1)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(doc.title)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                
                 HStack(spacing: 6) {
-                    Text(sizeLabel(doc.fileSize)).font(.caption2).foregroundStyle(.secondary)
+                    Text(sizeLabel(doc.fileSize))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    
                     if doc.syncState == .pendingUpsert {
-                        Image(systemName: "arrow.up.circle").font(.caption2).foregroundStyle(.orange)
+                        Image(systemName: "arrow.up.circle")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
                     }
                 }
+                
+                extractionStatusView(for: doc)
             }
-            Spacer()
-            Button {
-                errorText = nil
-                service.open(
-                    doc: doc, modelContext: modelContext,
-                    onURL:        { previewURL = $0 },
-                    onError:      { errorText = $0 },
-                    onKeyMissing: { showKeyAlert = true }
-                )
-            } label: {
-                Image(systemName: "eye.fill").foregroundStyle(tint).font(.subheadline)
-            }
-            .buttonStyle(.plain)
             
-            Button { service.delete(doc, modelContext: modelContext) } label: {
-                Image(systemName: "trash").foregroundStyle(.red).font(.subheadline)
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 10) {
+                Button {
+                    KBLog.ui.kbInfo("Open attachment tapped docId=\(doc.id)")
+                    errorText = nil
+                    service.open(
+                        doc: doc,
+                        modelContext: modelContext,
+                        onURL: { previewURL = $0 },
+                        onError: { errorText = $0 },
+                        onKeyMissing: { showKeyAlert = true }
+                    )
+                } label: {
+                    Image(systemName: "eye.fill")
+                        .foregroundStyle(tint)
+                        .font(.subheadline)
+                }
+                .buttonStyle(.plain)
+                
+                if doc.extractionStatus == .failed {
+                    Button("Riprova") {
+                        KBLog.ui.kbInfo("Retry extraction tapped docId=\(doc.id)")
+                        let uid = Auth.auth().currentUser?.uid ?? "local"
+                        DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                            for: doc,
+                            updatedBy: uid,
+                            modelContext: modelContext
+                        )
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(tint)
+                    .buttonStyle(.plain)
+                }
+                
+                Button {
+                    KBLog.ui.kbInfo("Delete attachment tapped docId=\(doc.id)")
+                    service.delete(doc, modelContext: modelContext)
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundStyle(.red)
+                        .font(.subheadline)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(10)
         .background(
@@ -456,10 +653,47 @@ struct VisitAttachmentsSection: View {
         )
     }
     
+    @ViewBuilder
+    private func extractionStatusView(for doc: KBDocument) -> some View {
+        switch doc.extractionStatus {
+        case .none:
+            EmptyView()
+            
+        case .pending:
+            Label("Analisi testo in attesa", systemImage: "clock")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            
+        case .processing:
+            Label("Analisi testo in corso...", systemImage: "text.viewfinder")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+            
+        case .completed:
+            Label("Testo estratto disponibile", systemImage: "checkmark.circle.fill")
+                .font(.caption2)
+                .foregroundStyle(.green)
+            
+        case .failed:
+            VStack(alignment: .leading, spacing: 2) {
+                Label("Analisi testo non riuscita", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                
+                if let error = doc.extractionError, !error.isEmpty {
+                    Text(error)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+        }
+    }
+    
     private func mimeIcon(_ mime: String) -> String {
-        if mime.contains("pdf")    { return "doc.fill" }
-        if mime.contains("image")  { return "photo.fill" }
-        if mime.contains("word")   { return "doc.text.fill" }
+        if mime.contains("pdf") { return "doc.fill" }
+        if mime.contains("image") { return "photo.fill" }
+        if mime.contains("word") { return "doc.text.fill" }
         if mime.contains("excel") || mime.contains("spreadsheet") { return "tablecells.fill" }
         return "paperclip"
     }
@@ -472,7 +706,6 @@ struct VisitAttachmentsSection: View {
 }
 
 // MARK: - VisitAttachmentPicker
-// Da usare nello step 4 del wizard PediatricVisitEditView
 
 struct VisitAttachmentPicker: View {
     
@@ -486,14 +719,17 @@ struct VisitAttachmentPicker: View {
             
             HStack {
                 Label("Allegati della Visita", systemImage: "paperclip")
-                    .font(.subheadline.bold()).foregroundStyle(tint)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(tint)
                 Spacer()
                 Text("\(pendingURLs.count)/5")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Text("Aggiungi ricette, referti, esami o foto della visita")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             
             if !pendingURLs.isEmpty {
                 VStack(spacing: 6) {
@@ -501,7 +737,8 @@ struct VisitAttachmentPicker: View {
                         HStack(spacing: 8) {
                             if let img = UIImage(contentsOfFile: url.path) {
                                 Image(uiImage: img)
-                                    .resizable().scaledToFill()
+                                    .resizable()
+                                    .scaledToFill()
                                     .frame(width: 32, height: 32)
                                     .clipShape(RoundedRectangle(cornerRadius: 6))
                             } else {
@@ -509,13 +746,19 @@ struct VisitAttachmentPicker: View {
                                     .foregroundStyle(tint)
                                     .frame(width: 32, height: 32)
                             }
+                            
                             Text(url.lastPathComponent)
-                                .font(.caption).lineLimit(1)
+                                .font(.caption)
+                                .lineLimit(1)
+                            
                             Spacer()
+                            
                             Button {
+                                KBLog.ui.kbInfo("Remove pending attachment file=\(url.lastPathComponent)")
                                 pendingURLs.removeAll { $0 == url }
                             } label: {
-                                Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
                         }
@@ -525,11 +768,16 @@ struct VisitAttachmentPicker: View {
                 }
             }
             
-            Button { onAddTapped() } label: {
+            Button {
+                KBLog.ui.kbInfo("VisitAttachmentPicker add tapped currentCount=\(pendingURLs.count)")
+                onAddTapped()
+            } label: {
                 Label("Aggiungi allegato", systemImage: "plus.circle.fill")
-                    .frame(maxWidth: .infinity).padding()
+                    .frame(maxWidth: .infinity)
+                    .padding()
                     .background(RoundedRectangle(cornerRadius: 10).fill(tint.opacity(0.1)))
-                    .foregroundStyle(tint).font(.subheadline)
+                    .foregroundStyle(tint)
+                    .font(.subheadline)
             }
             .buttonStyle(.plain)
             .disabled(pendingURLs.count >= 5)
@@ -540,10 +788,10 @@ struct VisitAttachmentPicker: View {
     
     private func fileIcon(_ ext: String) -> String {
         switch ext {
-        case "pdf":                     return "doc.fill"
-        case "jpg","jpeg","png","heic": return "photo.fill"
-        case "doc","docx":              return "doc.text.fill"
-        default:                        return "paperclip"
+        case "pdf": return "doc.fill"
+        case "jpg", "jpeg", "png", "heic": return "photo.fill"
+        case "doc", "docx": return "doc.text.fill"
+        default: return "paperclip"
         }
     }
 }

@@ -2,8 +2,6 @@
 //  KBAIMessage.swift
 //  KidBox
 //
-//  Created by vscocca on 05/03/26.
-//
 
 import Foundation
 import SwiftData
@@ -15,9 +13,6 @@ enum AIMessageRole: String, Codable {
 }
 
 /// A single message inside a `KBAIConversation`.
-///
-/// - Note: Content is stored as plain text. Images/attachments are referenced
-///   by URL and never stored inline in SwiftData.
 @Model
 final class KBAIMessage {
     @Attribute(.unique) var id: String
@@ -26,7 +21,6 @@ final class KBAIMessage {
     var createdAt: Date
     var conversation: KBAIConversation?
     
-    /// Convenience accessor for the typed role.
     var role: AIMessageRole {
         get { AIMessageRole(rawValue: roleRaw) ?? .user }
         set { roleRaw = newValue.rawValue }

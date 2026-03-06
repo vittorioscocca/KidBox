@@ -32,6 +32,7 @@ enum KBLog {
     static let settings = Logger(subsystem: subsystem, category: "settings")
     static let crypto = Logger(subsystem: subsystem, category: "crypto")
     static let security = Logger(subsystem: subsystem, category: "security")
+    static let ai = Logger(subsystem: subsystem, category: "ai")
     
 }
 
