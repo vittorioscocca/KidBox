@@ -1,26 +1,21 @@
 import SwiftUI
 
-/// Barra di input della chat.
-///
-/// Contiene:
-/// - Tasto + per foto/video/fotocamera
-/// - Campo testo espandibile
-/// - Microfono (hold-to-record) / tasto invio
-///
-/// Fix inclusi:
-/// - ✅ Non disabilita l'intera `normalBar` durante la registrazione (altrimenti non arriva mai il "rilascio").
-/// - ✅ Una sola gesture sul microfono (niente gesture in conflitto).
-/// - ✅ Durante recording: blocca menu + text editor (così non “scrolli” e non rompi la gesture), ma il mic resta attivo.
 struct ChatInputBar: View {
     
     @Binding var text: String
+    
     let isRecording: Bool
+    let isRecordingLocked: Bool
     let recordingDuration: TimeInterval
+    let waveformSamples: [CGFloat]
     let isSending: Bool
     
     let onSendText: () -> Void
     let onStartRecord: () -> Void
     let onStopRecord: () -> Void
+    let onLockRecording: () -> Void
+    let onSendLockedRecording: () -> Void
+    let onCancelLockedRecording: () -> Void
     let onCancelRecord: () -> Void
     let onMediaTap: () -> Void
     let onCameraTap: () -> Void
@@ -28,12 +23,14 @@ struct ChatInputBar: View {
     let onTextChange: () -> Void
     let onLocationTap: () -> Void
     
-    @FocusState private var isTextFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     
-    private let actionTint = KBTheme.bubbleTint
+    @State private var dragOffset: CGSize = .zero
+    @State private var showLockHint = false
+    @State private var inputHeight: CGFloat = 40
     
-    // MARK: - Theme
+    private let tint = KBTheme.bubbleTint
+    
     private var backgroundColor: Color {
         colorScheme == .dark
         ? Color(red: 0.18, green: 0.18, blue: 0.18)
@@ -46,31 +43,32 @@ struct ChatInputBar: View {
         : Color(.secondarySystemBackground)
     }
     
-    private var recordingBarBackground: Color {
-        colorScheme == .dark
-        ? Color(red: 0.22, green: 0.22, blue: 0.22)
-        : Color(.secondarySystemBackground)
-    }
-    
     var body: some View {
         ZStack(alignment: .top) {
             normalBar
                 .opacity(isRecording ? 0.05 : 1)
             
-            if isRecording {
+            if isRecordingLocked {
+                lockedRecordingBar
+                    .frame(maxWidth: .infinity)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            } else if isRecording {
                 recordingBar
+                    .frame(maxWidth: .infinity)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
+        .frame(maxWidth: .infinity)   // <- importante
         .background(backgroundColor)
-        .animation(.easeInOut(duration: 0.15), value: isRecording)
+        .animation(.easeInOut(duration: 0.2), value: isRecording)
+        .animation(.easeInOut(duration: 0.2), value: isRecordingLocked)
     }
+}
+
+private extension ChatInputBar {
     
-    // MARK: - Normal bar
-    
-    private var normalBar: some View {
-        HStack(alignment: .center, spacing: 10) {
-            
+    var normalBar: some View {
+        HStack(spacing: 10) {
             Menu {
                 Button { onMediaTap() } label: {
                     Label("Foto e Video", systemImage: "photo.on.rectangle")
@@ -81,131 +79,220 @@ struct ChatInputBar: View {
                 Button { onDocumentTap() } label: {
                     Label("Documento", systemImage: "doc")
                 }
-                Button {
-                    onLocationTap()
-                } label: {
+                Button { onLocationTap() } label: {
                     Label("Invia posizione", systemImage: "location.fill")
                 }
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(actionTint)
+                    .foregroundStyle(tint)
             }
-            .disabled(isSending || isRecording)
+            .disabled(isRecording)
             
-            ZStack(alignment: .leading) {
-                if text.isEmpty {
-                    Text("Messaggio…")
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                }
-                
-                TextEditor(text: $text)
-                    .focused($isTextFocused)
-                    .frame(minHeight: 40, maxHeight: 120)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .scrollContentBackground(.hidden)
-                    .disabled(isRecording)
-                    .onChange(of: text) { _, _ in
-                        if !isRecording { onTextChange() }
-                    }
-            }
-            .background(fieldBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-            )
+            messageField
             
             if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 micButton
             } else {
-                Button(action: onSendText) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(actionTint)
-                }
-                .disabled(isSending || isRecording)
-                .transition(.scale.combined(with: .opacity))
+                sendButton
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .animation(.spring(response: 0.25), value: text.isEmpty)
     }
     
-    // MARK: - Mic button
+    var messageField: some View {
+        ExpandingChatTextView(
+            text: $text,
+            measuredHeight: $inputHeight,
+            isEnabled: !isRecording,
+            placeholder: "Messaggio…",
+            onTextChange: {
+                if !isRecording {
+                    onTextChange()
+                }
+            },
+            minHeight: 40,
+            maxHeight: 120
+        )
+        .frame(height: inputHeight)
+        .background(fieldBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+    }
     
-    private var micButton: some View {
+    var micButton: some View {
         Image(systemName: "mic.circle.fill")
             .font(.system(size: 32))
-            .foregroundStyle(actionTint)
+            .foregroundStyle(tint)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
+                    .onChanged { value in
+                        dragOffset = value.translation
+                        
                         if !isRecording {
                             onStartRecord()
                         }
+                        
+                        showLockHint = true
+                        
+                        if value.translation.height < -60 && !isRecordingLocked {
+                            onLockRecording()
+                        }
                     }
                     .onEnded { _ in
+                        showLockHint = false
+                        
+                        if isRecordingLocked {
+                            return
+                        }
+                        
                         if isRecording {
                             onStopRecord()
                         }
+                        
+                        dragOffset = .zero
                     }
             )
             .allowsHitTesting(true)
     }
     
-    // MARK: - Recording bar
+    var sendButton: some View {
+        Button(action: onSendText) {
+            Image(systemName: "arrow.up.circle.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(tint)
+        }
+        .disabled(isSending || isRecording)
+        .transition(.scale.combined(with: .opacity))
+    }
     
     private var recordingBar: some View {
-        HStack(spacing: 16) {
-            Button { onCancelRecord() } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                    Text("Annulla")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
+        GeometryReader { geo in
+            let horizontalPadding: CGFloat = 8
+            let rightWidth: CGFloat = 24
+            let spacing: CGFloat = 8
+            let contentWidth = geo.size.width
+            - (horizontalPadding * 2)
+            - rightWidth
+            - spacing
             
-            Spacer()
+            HStack(spacing: spacing) {
+                centralRecordingContent(availableWidth: max(0, contentWidth))
+                
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(.red)
+                    .font(.title3)
+                    .frame(width: rightWidth)
+            }
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, 10)
+            .frame(width: geo.size.width, alignment: .leading)
+        }
+        .frame(height: 78)
+    }
+    
+    private var lockedRecordingBar: some View {
+        GeometryReader { geo in
+            let horizontalPadding: CGFloat = 8
+            let spacing: CGFloat = 8
+            let leftWidth: CGFloat = 32
+            let rightWidth: CGFloat = 44
+            let contentWidth = geo.size.width
+            - (horizontalPadding * 2)
+            - leftWidth
+            - rightWidth
+            - (spacing * 2)
+            
+            HStack(spacing: spacing) {
+                Button {
+                    onCancelLockedRecording()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.red)
+                        .frame(width: leftWidth, height: 32)
+                }
+                .buttonStyle(.plain)
+                
+                centralLockedRecordingContent(availableWidth: max(0, contentWidth))
+                
+                Button {
+                    onSendLockedRecording()
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .frame(width: rightWidth, height: rightWidth)
+                        .background(KBTheme.bubbleTint, in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, 10)
+            .frame(width: geo.size.width, alignment: .leading)
+        }
+        .frame(height: 78)
+    }
+    
+    private func centralRecordingContent(availableWidth: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            AdaptiveRecordingWaveformView(
+                samples: waveformSamples,
+                availableWidth: availableWidth
+            )
+            .frame(height: 30)
             
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color.red)
+                    .fill(.red)
                     .frame(width: 8, height: 8)
-                    .opacity(recordingDuration.truncatingRemainder(dividingBy: 1) < 0.5 ? 1 : 0.3)
-                    .animation(.easeInOut(duration: 0.5).repeatForever(), value: recordingDuration)
                 
                 Text(formatDuration(recordingDuration))
                     .font(.subheadline.monospacedDigit().bold())
                     .foregroundStyle(.primary)
-                
-                Text("Rilascia per inviare")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
             
-            Spacer()
-            
-            Image(systemName: "mic.fill")
-                .foregroundStyle(actionTint)
-                .font(.title3)
+            if showLockHint {
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                    Text("Scorri su per bloccare")
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(recordingBarBackground)
+        .frame(width: availableWidth)
+        .layoutPriority(1)
     }
     
-    // MARK: - Helpers
+    private func centralLockedRecordingContent(availableWidth: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            AdaptiveRecordingWaveformView(
+                samples: waveformSamples,
+                availableWidth: availableWidth
+            )
+            .frame(height: 30)
+            
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+                
+                Text(formatDuration(recordingDuration))
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(.primary)
+            }
+        }
+        .frame(width: availableWidth)
+        .layoutPriority(1)
+    }
     
-    private func formatDuration(_ t: TimeInterval) -> String {
+    func formatDuration(_ t: TimeInterval) -> String {
         let total = Int(t)
         return String(format: "%d:%02d", total / 60, total % 60)
     }

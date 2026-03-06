@@ -44,8 +44,9 @@ final class ChatViewModel: ObservableObject {
     
     // Audio recording
     @Published var isRecording: Bool = false
-    // FIX 2: recordingDuration non è più @Published.
+    @Published var isRecordingLocked: Bool = false
     @Published var recordingDuration: TimeInterval = 0
+    @Published var waveformSamples: [CGFloat] = []
     
     // FIX 3: typingUsers aggiornato con throttle
     @Published var typingUsers: [String] = []
@@ -714,17 +715,34 @@ final class ChatViewModel: ObservableObject {
         ]
         
         guard let recorder = try? AVAudioRecorder(url: url, settings: settings) else { return }
+        
+        recorder.isMeteringEnabled = true
         recorder.record()
         
+        waveformSamples = []
+        isRecordingLocked = false
         audioRecorder = recorder
         recordingURL = url
         isRecording = true
         recordingDuration = 0
         
-        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             guard let self else { return }
+            
+            self.audioRecorder?.updateMeters()
+            
+            let power = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
+            let normalized = max(0.05, CGFloat((power + 160) / 160))
+            
             Task { @MainActor in
+                
                 self.recordingDuration = self.audioRecorder?.currentTime ?? 0
+                
+                self.waveformSamples.append(normalized)
+                
+                if self.waveformSamples.count > 95 {
+                    self.waveformSamples.removeFirst()
+                }
             }
         }
     }
@@ -976,6 +994,22 @@ final class ChatViewModel: ObservableObject {
         return fileURL
     }
     
+    func lockRecording() {
+        guard isRecording else { return }
+        isRecordingLocked = true
+    }
+    
+    func finishLockedRecording() {
+        guard isRecordingLocked else { return }
+        isRecordingLocked = false
+        stopAndSendRecording()
+    }
+    
+    func cancelLockedRecording() {
+        guard isRecordingLocked else { return }
+        isRecordingLocked = false
+        cancelRecording()
+    }
     
     
     // MARK: - ─── SEND DOCUMENT ───────────────────────────────────────────────
