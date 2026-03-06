@@ -25,6 +25,9 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
     private var contextVisits: [KBMedicalVisit] = []
     private var systemPrompt: String = ""
     private var contextPrepared = false
+    let customStartDate: Date?
+    let customEndDate: Date?
+    
     
     private let summaryThreshold = 8
     private let recentMessagesToKeepAfterSummary = 4
@@ -42,14 +45,18 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         subjectName: String,
         visibleVisits: [KBMedicalVisit],
         selectedPeriod: PeriodFilter,
+        customStartDate: Date? = nil,
+        customEndDate: Date? = nil,
         scopeId: String,
         modelContext: ModelContext
-    ) {
+    ){
         self.subjectName = subjectName
         self.visibleVisits = visibleVisits
         self.selectedPeriod = selectedPeriod
         self.scopeId = scopeId
         self.modelContext = modelContext
+        self.customStartDate = customStartDate
+        self.customEndDate = customEndDate
         
         KBLog.ai.kbInfo("AIChatVM init subjectName=\(subjectName)")
         KBLog.ai.kbInfo("AIChatVM init selectedPeriod=\(selectedPeriod.rawValue)")
@@ -104,6 +111,18 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             errorMessage = "Impossibile preparare il contesto delle visite."
             KBLog.ai.kbError("loadOrCreateConversation FAILED error=\(String(describing: error))")
         }
+    }
+    
+    private var periodDescription: String {
+        if selectedPeriod == .custom,
+           let customStartDate,
+           let customEndDate {
+            let start = min(customStartDate, customEndDate)
+            let end = max(customStartDate, customEndDate)
+            return "\(start.formatted(date: .abbreviated, time: .omitted)) - \(end.formatted(date: .abbreviated, time: .omitted))"
+        }
+        
+        return selectedPeriod.rawValue
     }
     
     func clearConversation() {
@@ -269,14 +288,14 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         Non aggiungere nulla di nuovo.
         """
         
-        let summaryInput = [
+        let summaryMessages = [
             KBAIMessage(role: .user, content: transcript)
         ]
         
-        KBLog.ai.kbInfo("summarizeIfNeeded calling AIService messages=\(summaryInput.count)")
+        KBLog.ai.kbInfo("summarizeIfNeeded calling AIService messages=\(summaryMessages.count)")
         
         let response = try await AIService.shared.sendMessage(
-            messages: summaryInput,
+            messages: summaryMessages,
             systemPrompt: summarySystemPrompt
         )
         
@@ -293,17 +312,17 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
     // MARK: - Payload building
     
     private func buildFinalSystemPrompt(conversation: KBAIConversation) -> String {
-        if let summary = conversation.summary,
-           !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return """
-            \(systemPrompt)
-            
-            RIASSUNTO CONVERSAZIONE PRECEDENTE
-            \(summary)
-            """
+        guard let summary = conversation.summary,
+              !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return systemPrompt
         }
         
-        return systemPrompt
+        return """
+        \(systemPrompt)
+        
+        RIASSUNTO CONVERSAZIONE PRECEDENTE
+        \(summary)
+        """
     }
     
     private func buildPayloadMessages(conversation: KBAIConversation) -> [KBAIMessage] {
@@ -371,11 +390,14 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         
         lines.append("CONTESTO VISITE KIDBOX")
         lines.append("Persona: \(subjectName)")
-        lines.append("Periodo selezionato: \(selectedPeriod.rawValue)")
+        lines.append("Periodo selezionato: \(periodDescription)")
         lines.append("Numero visite visibili: \(visits.count)")
         lines.append("")
+        lines.append("Sei l'assistente AI di KidBox.")
+        lines.append("Rispondi in italiano.")
         lines.append("Usa solo le informazioni presenti sotto.")
         lines.append("Non inventare dati mancanti.")
+        lines.append("Se un dato non è disponibile, dillo chiaramente.")
         lines.append("Non sostituisci il medico.")
         
         for (index, visit) in visits.enumerated() {
@@ -413,6 +435,11 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             
             if let nextVisitDate = visit.nextVisitDate {
                 lines.append("Prossima visita: \(nextVisitDate.formatted(date: .abbreviated, time: .omitted))")
+            }
+            
+            if let nextVisitReason = visit.nextVisitReason,
+               !nextVisitReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                lines.append("Motivo prossima visita: \(nextVisitReason)")
             }
             
             if !visit.therapyTypes.isEmpty {
@@ -470,7 +497,9 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
                 lines.append("Allegati / Referti:")
                 for doc in docs {
                     lines.append("- Titolo allegato: \(doc.title)")
+                    lines.append("  Nome file: \(doc.fileName)")
                     lines.append("  MIME: \(doc.mimeType)")
+                    lines.append("  Stato estrazione: \(doc.extractionStatus.rawValue)")
                     
                     if let extracted = doc.extractedText?.trimmingCharacters(in: .whitespacesAndNewlines),
                        !extracted.isEmpty {

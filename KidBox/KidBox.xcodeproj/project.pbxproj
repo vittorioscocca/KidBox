@@ -12,6 +12,7 @@
 		7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7C4C85532F51ABA80054A4C3 /* FacebookLogin */; };
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 7CE572032F47900B008FE22B /* FirebaseFunctions */; };
+		7CED80602F5B0F2E00CB9923 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 7CED805F2F5B0F2E00CB9923 /* ZIPFoundation */; };
 		7CFC51EA2F33DACC0086D687 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51E92F33DACC0086D687 /* FirebaseCore */; };
 		7CFC51EC2F33DACC0086D687 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51EB2F33DACC0086D687 /* FirebaseFirestore */; };
 		7CFC51F72F33E9000086D687 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 7CFC51F62F33E9000086D687 /* FirebaseAuth */; };
@@ -79,6 +80,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7CFC52142F33F93E0086D687 /* GoogleSignInSwift in Frameworks */,
+				7CED80602F5B0F2E00CB9923 /* ZIPFoundation in Frameworks */,
 				7CFC51EA2F33DACC0086D687 /* FirebaseCore in Frameworks */,
 				7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */,
 				7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */,
@@ -166,6 +168,7 @@
 				7CE572032F47900B008FE22B /* FirebaseFunctions */,
 				7C4C85532F51ABA80054A4C3 /* FacebookLogin */,
 				7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */,
+				7CED805F2F5B0F2E00CB9923 /* ZIPFoundation */,
 			);
 			productName = KidBox;
 			productReference = 7CFC515D2F3378CB0086D687 /* KidBox.app */;
@@ -253,6 +256,7 @@
 				7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				7CFC52102F33F93E0086D687 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				7C4C85522F51ABA80054A4C3 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
+				7CED805E2F5B0F2E00CB9923 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7CFC515E2F3378CB0086D687 /* Products */;
@@ -748,6 +752,14 @@
 				minimumVersion = 14.1.0;
 			};
 		};
+		7CED805E2F5B0F2E00CB9923 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.20;
+			};
+		};
 		7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
@@ -791,6 +803,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFunctions;
+		};
+		7CED805F2F5B0F2E00CB9923 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7CED805E2F5B0F2E00CB9923 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 		7CFC51E92F33DACC0086D687 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;

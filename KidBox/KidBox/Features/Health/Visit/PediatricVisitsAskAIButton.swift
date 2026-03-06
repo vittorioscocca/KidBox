@@ -12,6 +12,7 @@ enum PeriodFilter: String, CaseIterable, Identifiable {
     case sixMonths = "6 mesi"
     case oneYear = "1 anno"
     case all = "Tutto"
+    case custom = "Personalizzato"
     
     var id: String { rawValue }
     var label: String { rawValue }
@@ -31,7 +32,7 @@ enum PeriodFilter: String, CaseIterable, Identifiable {
             return cal.date(byAdding: .month, value: -6, to: now)
         case .oneYear:
             return cal.date(byAdding: .year, value: -1, to: now)
-        case .all:
+        case .all, .custom:
             return nil
         }
     }

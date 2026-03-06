@@ -25,9 +25,13 @@ struct PediatricVisitsView: View {
     @State private var showAIConsent = false
     @State private var showAIChat = false
     @State private var aiSelectedVisits: [KBMedicalVisit] = []
-    @State private var aiSelectedPeriod: PeriodFilter = .thirtyDays
+    @State private var aiSelectedPeriod: PeriodFilter = .all
     @State private var aiSubjectName: String = ""
     @State private var aiScopeId: String = ""
+    @State private var customStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var customEndDate: Date = Date()
+    @State private var showCustomPeriodSheet = false
+    @State private var previousPeriodBeforeCustom: PeriodFilter = .all
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
@@ -40,6 +44,16 @@ struct PediatricVisitsView: View {
         case nil:
             return "bambino"
         }
+    }
+    
+    private var selectedPeriodLabel: String {
+        if selectedPeriod == .custom {
+            let start = min(customStartDate, customEndDate)
+            let end = max(customStartDate, customEndDate)
+            return "\(italianShortDate(start)) - \(italianShortDate(end))"
+        }
+        
+        return selectedPeriod.label
     }
     
     init(familyId: String, childId: String) {
@@ -70,10 +84,30 @@ struct PediatricVisitsView: View {
     private var filteredVisits: [KBMedicalVisit] {
         let periodFiltered: [KBMedicalVisit]
         
-        if let cutoff = selectedPeriod.cutoffDate {
-            periodFiltered = visits.filter { $0.date >= cutoff }
-        } else {
+        switch selectedPeriod {
+        case .all:
             periodFiltered = visits
+            
+        case .custom:
+            let start = min(customStartDate, customEndDate)
+            let end = max(customStartDate, customEndDate)
+            let endOfDay = Calendar.current.date(
+                bySettingHour: 23,
+                minute: 59,
+                second: 59,
+                of: end
+            ) ?? end
+            
+            periodFiltered = visits.filter {
+                $0.date >= start && $0.date <= endOfDay
+            }
+            
+        default:
+            if let cutoff = selectedPeriod.cutoffDate {
+                periodFiltered = visits.filter { $0.date >= cutoff }
+            } else {
+                periodFiltered = visits
+            }
         }
         
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -83,10 +117,14 @@ struct PediatricVisitsView: View {
             let reason = visit.reason
             let doctor = visit.doctorName ?? ""
             let diagnosis = visit.diagnosis ?? ""
+            let recommendations = visit.recommendations ?? ""
+            let notes = visit.notes ?? ""
             
             return reason.localizedCaseInsensitiveContains(query)
             || doctor.localizedCaseInsensitiveContains(query)
             || diagnosis.localizedCaseInsensitiveContains(query)
+            || recommendations.localizedCaseInsensitiveContains(query)
+            || notes.localizedCaseInsensitiveContains(query)
         }
     }
     
@@ -122,7 +160,12 @@ struct PediatricVisitsView: View {
                         Menu {
                             ForEach(PeriodFilter.allCases) { p in
                                 Button {
-                                    selectedPeriod = p
+                                    if p == .custom {
+                                        previousPeriodBeforeCustom = selectedPeriod
+                                        showCustomPeriodSheet = true
+                                    } else {
+                                        selectedPeriod = p
+                                    }
                                 } label: {
                                     HStack {
                                         Text(p.label)
@@ -135,7 +178,7 @@ struct PediatricVisitsView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "calendar")
-                                Text(selectedPeriod.label)
+                                Text(selectedPeriodLabel)
                                 Image(systemName: "chevron.down")
                             }
                             .font(.subheadline)
@@ -221,6 +264,8 @@ struct PediatricVisitsView: View {
                 subjectName: aiSubjectName,
                 visibleVisits: aiSelectedVisits,
                 selectedPeriod: aiSelectedPeriod,
+                customStartDate: aiSelectedPeriod == .custom ? customStartDate : nil,
+                customEndDate: aiSelectedPeriod == .custom ? customEndDate : nil,
                 scopeId: aiScopeId
             )
         }
@@ -267,6 +312,67 @@ struct PediatricVisitsView: View {
                 childName: childName
             )
         }
+        .sheet(isPresented: $showCustomPeriodSheet) {
+            NavigationStack {
+                Form {
+                    DatePicker("Data inizio", selection: $customStartDate, displayedComponents: .date)
+                    DatePicker("Data fine", selection: $customEndDate, displayedComponents: .date)
+                }
+                .navigationTitle("Intervallo personalizzato")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Annulla") {
+                            selectedPeriod = previousPeriodBeforeCustom
+                            showCustomPeriodSheet = false
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Conferma") {
+                            selectedPeriod = .custom
+                            showCustomPeriodSheet = false
+                        }
+                    }
+                }
+            }
+        }
+        .environment(\.locale, Locale(identifier: "it_IT"))
+    }
+    
+    private func aiScopeId(for person: PediatricPerson, period: PeriodFilter) -> String {
+        let base: String
+        
+        switch person {
+        case .child(let child):
+            base = "visits-child-\(child.id)"
+        case .member(let member):
+            base = "visits-member-\(member.id)"
+        }
+        
+        if period == .custom {
+            let start = min(customStartDate, customEndDate)
+            let end = max(customStartDate, customEndDate)
+            
+            let formatter = DateFormatter()
+            formatter.calendar = Calendar.current
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyyMMdd"
+            
+            let startKey = formatter.string(from: start)
+            let endKey = formatter.string(from: end)
+            
+            return "\(base)-custom-\(startKey)-\(endKey)"
+        }
+        
+        return "\(base)-\(period.rawValue)"
+    }
+    
+    private func italianShortDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "it_IT")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "d MMM yyyy"
+        return formatter.string(from: date)
     }
     
     private func visitRow(_ v: KBMedicalVisit) -> some View {
@@ -391,15 +497,14 @@ struct PediatricVisitsView: View {
         switch person {
         case .child(let child):
             aiSubjectName = child.name
-            aiScopeId = "visits-child-\(child.id)-\(period.rawValue)"
             KBLog.ai.kbInfo("handleAskAI subject resolved as child")
             
         case .member(let member):
             aiSubjectName = member.displayName ?? "Membro della famiglia"
-            aiScopeId = "visits-member-\(member.id)-\(period.rawValue)"
             KBLog.ai.kbInfo("handleAskAI subject resolved as family member")
         }
         
+        aiScopeId = aiScopeId(for: person, period: period)
         aiSelectedVisits = currentVisits
         aiSelectedPeriod = period
         

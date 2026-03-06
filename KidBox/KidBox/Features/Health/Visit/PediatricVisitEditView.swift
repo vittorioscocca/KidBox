@@ -129,6 +129,7 @@ struct PediatricVisitEditView: View {
             }
             .onAppear { loadIfEditing() }
         }
+        .environment(\.locale, Locale(identifier: "it_IT"))
     }
     
     // MARK: - Progress bar
@@ -751,7 +752,7 @@ struct PediatricVisitEditView: View {
                 }
                 
                 summaryRow(icon: "calendar", title: "Data e Ora Visita") {
-                    Text(visitDate.formatted(date: .long, time: .shortened))
+                    Text(italianDateTime(visitDate))
                         .font(.subheadline.bold())
                 }
                 
@@ -849,6 +850,10 @@ struct PediatricVisitEditView: View {
                     if hasNextVisit {
                         DatePicker("", selection: $nextVisitDate, displayedComponents: [.date])
                             .datePickerStyle(.compact).labelsHidden()
+                        
+                        Text(italianDateOnly(nextVisitDate))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding(14)
@@ -1006,6 +1011,24 @@ struct PediatricVisitEditView: View {
             Text(text).font(.subheadline).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 24)
+    }
+    
+    private func italianDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "it_IT")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateStyle = .long
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func italianDateOnly(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "it_IT")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 }
 

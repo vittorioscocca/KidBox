@@ -54,6 +54,7 @@ enum ModelContainerProvider {
             KBDoseLog.self,
             KBAIConversation.self,
             KBAIMessage.self,
+            KBCustomDrug.self
         ])
         
         let configuration = ModelConfiguration(

@@ -101,10 +101,15 @@ struct MedicalAIChatView: View {
                                     introBubble
                                 }
                                 ForEach(vm.messages) { message in
-                                    MessageBubble(message: message).id(message.id)
+                                    AIChatBubbleView(
+                                        text: message.content,
+                                        isUser: message.role == .user,
+                                        date: message.createdAt
+                                    )
                                 }
                                 if vm.isLoading {
-                                    TypingIndicator().id("typing")
+                                    AIChatTypingIndicator()
+                                        .id("typing")
                                 }
                             }
                             .padding()
@@ -257,62 +262,5 @@ struct MedicalAIChatView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(.orange.opacity(0.1))
-    }
-}
-
-// MARK: - MessageBubble
-
-struct MessageBubble: View {
-    let message: KBAIMessage
-    var isUser: Bool { message.role == .user }
-    
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            if isUser { Spacer(minLength: 40) }
-            if !isUser {
-                Image(systemName: "sparkles")
-                    .font(.caption).foregroundStyle(.blue)
-                    .padding(6).background(.blue.opacity(0.1), in: Circle())
-            }
-            Text(message.content)
-                .font(.subheadline)
-                .padding(.horizontal, 14).padding(.vertical, 10)
-                .background(
-                    isUser ? AnyShapeStyle(.blue) : AnyShapeStyle(.quaternary),
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                )
-                .foregroundStyle(isUser ? .white : .primary)
-                .textSelection(.enabled)
-            if isUser {
-                Image(systemName: "person.circle.fill")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            if !isUser { Spacer(minLength: 40) }
-        }
-    }
-}
-
-// MARK: - TypingIndicator
-
-struct TypingIndicator: View {
-    @State private var animate = false
-    
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            Image(systemName: "sparkles")
-                .font(.caption).foregroundStyle(.blue)
-                .padding(6).background(.blue.opacity(0.1), in: Circle())
-            HStack(spacing: 4) {
-                ForEach(0..<3) { i in
-                    Circle().fill(.secondary).frame(width: 7, height: 7)
-                        .scaleEffect(animate ? 1.0 : 0.5)
-                        .animation(.easeInOut(duration: 0.5).repeatForever().delay(Double(i) * 0.15), value: animate)
-                }
-            }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 18))
-            Spacer(minLength: 40)
-        }
-        .onAppear { animate = true }
     }
 }

@@ -12,6 +12,8 @@ struct PediatricVisitsAIChatView: View {
     let subjectName: String
     let visibleVisits: [KBMedicalVisit]
     let selectedPeriod: PeriodFilter
+    let customStartDate: Date?
+    let customEndDate: Date?
     let scopeId: String
     
     @Environment(\.modelContext) private var modelContext
@@ -66,6 +68,8 @@ struct PediatricVisitsAIChatView: View {
                     subjectName: subjectName,
                     visibleVisits: visibleVisits,
                     selectedPeriod: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate,
                     scopeId: scopeId,
                     modelContext: modelContext
                 )
@@ -114,12 +118,16 @@ private struct PediatricVisitsAIChatBody: View {
                             }
                             
                             ForEach(vm.messages) { message in
-                                MessageBubble(message: message)
-                                    .id(message.id)
+                                AIChatBubbleView(
+                                    text: message.content,
+                                    isUser: message.role == .user,
+                                    date: message.createdAt
+                                )
+                                .id(message.id)
                             }
                             
                             if vm.isLoading {
-                                TypingIndicator()
+                                AIChatTypingIndicator()
                                     .id("typing")
                             }
                         }

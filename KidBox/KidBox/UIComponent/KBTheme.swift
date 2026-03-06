@@ -10,6 +10,7 @@ import SwiftUI
 struct KBTheme {
     
     // MARK: - Tint principale (viola KidBox)
+    static let bubbleTint = Color(red: 0.95, green: 0.55, blue: 0.20)
     static let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
     static let green = Color(red: 0.3, green: 0.65, blue: 0.45)
     

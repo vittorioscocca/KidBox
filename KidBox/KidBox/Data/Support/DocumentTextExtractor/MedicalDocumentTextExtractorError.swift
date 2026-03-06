@@ -9,6 +9,7 @@ import Foundation
 import PDFKit
 import Vision
 import UIKit
+import ZIPFoundation
 
 enum MedicalDocumentTextExtractorError: LocalizedError {
     case fileNotFound
@@ -39,12 +40,34 @@ struct MedicalDocumentExtractionInput: Sendable {
     let mimeType: String
     let localFileURL: URL
     
+    var fileExtension: String {
+        localFileURL.pathExtension.lowercased()
+    }
+    
     var isPDFDocument: Bool {
         mimeType == "application/pdf"
     }
     
     var isImageDocument: Bool {
         mimeType.hasPrefix("image/")
+    }
+    
+    var isPlainTextDocument: Bool {
+        mimeType == "text/plain" || mimeType.hasPrefix("text/")
+    }
+    
+    var isDOCXDocument: Bool {
+        mimeType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        || fileExtension == "docx"
+    }
+    
+    var isDOCDocument: Bool {
+        mimeType == "application/msword"
+        || fileExtension == "doc"
+    }
+    
+    var isRTFDocument: Bool {
+        mimeType == "application/rtf" || fileExtension == "rtf"
     }
 }
 
@@ -63,6 +86,30 @@ final class MedicalDocumentTextExtractor: MedicalDocumentTextExtracting {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             KBLog.storage.kbError("Extraction failed: file not found at path=\(fileURL.path)")
             throw MedicalDocumentTextExtractorError.fileNotFound
+        }
+        
+        // TEXT FILE
+        if input.isPlainTextDocument {
+            KBLog.storage.kbInfo("Processing text document fileName=\(input.fileName)")
+            return try extractPlainText(from: fileURL)
+        }
+        
+        // RTF
+        if input.isRTFDocument {
+            KBLog.storage.kbInfo("Processing RTF document fileName=\(input.fileName)")
+            return try extractRTFText(from: fileURL)
+        }
+        
+        // DOCX
+        if input.isDOCXDocument {
+            KBLog.storage.kbInfo("Processing DOCX document fileName=\(input.fileName)")
+            return try extractDOCXText(from: fileURL)
+        }
+        
+        // DOC
+        if input.isDOCDocument {
+            KBLog.storage.kbError("DOC legacy format not supported fileName=\(input.fileName)")
+            throw MedicalDocumentTextExtractorError.unsupportedFileType(input.mimeType)
         }
         
         if input.isPDFDocument {
@@ -194,11 +241,6 @@ private extension MedicalDocumentTextExtractor {
             ctx.cgContext.restoreGState()
         }
     }
-}
-
-// MARK: - Image
-
-private extension MedicalDocumentTextExtractor {
     
     func extractTextFromImage(at url: URL) async throws -> String {
         KBLog.storage.kbDebug("Loading image data path=\(url.path)")
@@ -226,11 +268,6 @@ private extension MedicalDocumentTextExtractor {
         KBLog.storage.kbDebug("Image OCR chars=\(trimmed.count) fileName=\(url.lastPathComponent)")
         return trimmed
     }
-}
-
-// MARK: - Vision OCR
-
-private extension MedicalDocumentTextExtractor {
     
     func recognizeText(in image: UIImage, sourceLabel: String) async throws -> String {
         guard let cgImage = image.cgImage else {
@@ -271,5 +308,114 @@ private extension MedicalDocumentTextExtractor {
                 continuation.resume(throwing: error)
             }
         }
+    }
+    
+    func extractPlainText(from url: URL) throws -> String {
+        
+        KBLog.storage.kbDebug("Reading text file path=\(url.path)")
+        
+        let data = try Data(contentsOf: url)
+        
+        let text =
+        String(data: data, encoding: .utf8) ??
+        String(data: data, encoding: .isoLatin1) ??
+        ""
+        
+        let cleaned = text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        
+        guard !cleaned.isEmpty else {
+            throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
+        }
+        
+        return cleaned
+    }
+    
+    func extractRTFText(from url: URL) throws -> String {
+        
+        KBLog.storage.kbDebug("Reading RTF file path=\(url.path)")
+        
+        let data = try Data(contentsOf: url)
+        
+        let attributed = try NSAttributedString(
+            data: data,
+            options: [.documentType: NSAttributedString.DocumentType.rtf],
+            documentAttributes: nil
+        )
+        
+        let text = attributed.string.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !text.isEmpty else {
+            throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
+        }
+        
+        return text
+    }
+    
+    func extractDOCXText(from url: URL) throws -> String {
+        
+        KBLog.storage.kbDebug("Reading DOCX file path=\(url.path)")
+        
+        let archive: Archive
+        do {
+            archive = try Archive(url: url, accessMode: .read)
+        } catch {
+            KBLog.storage.kbError("DOCX archive open failed path=\(url.path) error=\(error.localizedDescription)")
+            throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
+        }
+        
+        guard let entry = archive["word/document.xml"] else {
+            KBLog.storage.kbError("DOCX missing word/document.xml path=\(url.path)")
+            throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
+        }
+        
+        var xmlData = Data()
+        _ = try archive.extract(entry) { chunk in
+            xmlData.append(chunk)
+        }
+        
+        guard let xml = String(data: xmlData, encoding: .utf8), !xml.isEmpty else {
+            KBLog.storage.kbError("DOCX XML decode failed path=\(url.path)")
+            throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
+        }
+        
+        let text = extractTextFromWordXML(xml)
+            .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        
+        guard !text.isEmpty else {
+            KBLog.storage.kbError("DOCX extraction produced empty text path=\(url.path)")
+            throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
+        }
+        
+        KBLog.storage.kbDebug("DOCX extraction chars=\(text.count)")
+        return text
+    }
+    
+    func extractTextFromWordXML(_ xml: String) -> String {
+        var output = xml
+        
+        // line breaks
+        output = output.replacingOccurrences(of: "<w:tab/>", with: "\t", options: .regularExpression)
+        output = output.replacingOccurrences(of: "<w:br\\s*/>", with: "\n", options: .regularExpression)
+        output = output.replacingOccurrences(of: "</w:p>", with: "\n", options: .regularExpression)
+        
+        // keep only text nodes
+        let pattern = "<w:t[^>]*>(.*?)</w:t>"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators])
+        let range = NSRange(output.startIndex..<output.endIndex, in: output)
+        
+        let matches = regex?.matches(in: output, options: [], range: range) ?? []
+        let parts = matches.compactMap { match -> String? in
+            guard match.numberOfRanges > 1,
+                  let range = Range(match.range(at: 1), in: output) else { return nil }
+            return String(output[range])
+        }
+        
+        return parts
+            .joined(separator: " ")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
     }
 }

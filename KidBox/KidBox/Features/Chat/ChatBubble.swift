@@ -1012,7 +1012,7 @@ struct ChatBubble: View {
     // MARK: - Style
     
     private var bubbleBackground: Color {
-        isOwn ? .accentColor : Color(.secondarySystemBackground)
+        isOwn ? KBTheme.bubbleTint : Color(.secondarySystemBackground)
     }
     
     private var bubbleShape: some Shape {
