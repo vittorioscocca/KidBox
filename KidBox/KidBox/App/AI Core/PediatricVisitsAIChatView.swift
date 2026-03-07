@@ -23,6 +23,7 @@ struct PediatricVisitsAIChatView: View {
     @State private var showSettings = false
     @State private var showClearAlert = false
     @State private var inputText = ""
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         NavigationStack {
@@ -95,6 +96,7 @@ struct PediatricVisitsAIChatView: View {
 private struct PediatricVisitsAIChatBody: View {
     @ObservedObject var vm: PediatricVisitsAIChatViewModel
     @Binding var inputText: String
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         VStack(spacing: 0) {
@@ -132,6 +134,9 @@ private struct PediatricVisitsAIChatBody: View {
                             }
                         }
                         .padding()
+                    }
+                    .onTapGesture {
+                        self.isInputFocused = false
                     }
                     .onChange(of: vm.messages.count) { _, _ in
                         withAnimation {
@@ -198,6 +203,7 @@ private struct PediatricVisitsAIChatBody: View {
     private var inputBar: some View {
         HStack(spacing: 10) {
             TextField("Fai una domanda…", text: $inputText, axis: .vertical)
+                .focused($isInputFocused)
                 .lineLimit(1...4)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)

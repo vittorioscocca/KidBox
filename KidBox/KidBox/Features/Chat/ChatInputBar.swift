@@ -43,6 +43,10 @@ struct ChatInputBar: View {
         : Color(.secondarySystemBackground)
     }
     
+    private var isTextEmpty: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     var body: some View {
         ZStack(alignment: .top) {
             normalBar
@@ -58,7 +62,7 @@ struct ChatInputBar: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .frame(maxWidth: .infinity)   // <- importante
+        .frame(maxWidth: .infinity)
         .background(backgroundColor)
         .animation(.easeInOut(duration: 0.2), value: isRecording)
         .animation(.easeInOut(duration: 0.2), value: isRecordingLocked)
@@ -91,7 +95,7 @@ private extension ChatInputBar {
             
             messageField
             
-            if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if isTextEmpty {
                 micButton
             } else {
                 sendButton
@@ -102,20 +106,33 @@ private extension ChatInputBar {
     }
     
     var messageField: some View {
-        ExpandingChatTextView(
-            text: $text,
-            measuredHeight: $inputHeight,
-            isEnabled: !isRecording,
-            placeholder: "Messaggio…",
-            onTextChange: {
-                if !isRecording {
-                    onTextChange()
-                }
-            },
-            minHeight: 40,
-            maxHeight: 120
-        )
-        .frame(height: inputHeight)
+        ZStack(alignment: .topLeading) {
+            ExpandingChatTextView(
+                text: $text,
+                measuredHeight: $inputHeight,
+                isEnabled: !isRecording,
+                placeholder: "",
+                onTextChange: {
+                    if !isRecording {
+                        onTextChange()
+                    }
+                },
+                minHeight: 40,
+                maxHeight: 120
+            )
+            .padding(.leading, 4)   // ← spazio extra per il cursore
+            .frame(height: inputHeight)
+            
+            if isTextEmpty {
+                Text("Messaggio…")
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 18)
+                    .padding(.trailing, 14)
+                    .padding(.vertical, 10)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         .background(fieldBackground)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(

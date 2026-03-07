@@ -365,6 +365,7 @@ private struct ChatConversationView: View {
     @Environment(\.colorScheme) private var colorScheme
     @StateObject private var viewModel: ChatViewModel
     @State private var dayGroups: [ChatDayGroup] = []
+    @FocusState private var isInputFocused: Bool
     
     // MARK: - Theme
     private var backgroundColor: Color {
@@ -456,6 +457,11 @@ private struct ChatConversationView: View {
                     makeBubbleRow(msg: msg, proxy: proxy)
                 }
             )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isInputFocused = false
+            }
+            .scrollDismissesKeyboard(.interactively)
             
             errorBanner
             uploadProgress
@@ -860,6 +866,7 @@ private struct ChatConversationView: View {
             onTextChange: { viewModel.userIsTyping() },
             onLocationTap: { showLocationSheet = true }
         )
+        .focused($isInputFocused)
         .sheet(isPresented: $showLocationSheet) {
             LocationPickerSheet { lat, lon in
                 viewModel.sendLocation(latitude: lat, longitude: lon)

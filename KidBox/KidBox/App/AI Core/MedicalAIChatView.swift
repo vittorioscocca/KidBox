@@ -18,6 +18,7 @@ struct MedicalAIChatView: View {
     @State private var showSettings   = false
     @State private var showClearAlert = false
     @State private var inputText      = ""
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         NavigationStack {
@@ -79,6 +80,7 @@ struct MedicalAIChatView: View {
     private struct MedicalAIChatBody: View {
         @ObservedObject var vm: MedicalAIChatViewModel
         @Binding var inputText: String
+        @FocusState private var isInputFocused: Bool
         
         var body: some View {
             VStack(spacing: 0) {
@@ -114,6 +116,11 @@ struct MedicalAIChatView: View {
                             }
                             .padding()
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            self.isInputFocused = false
+                        }
+                        .scrollDismissesKeyboard(.interactively)
                         .onChange(of: vm.messages.count) { _, _ in
                             withAnimation {
                                 proxy.scrollTo(vm.messages.last?.id ?? "typing", anchor: .bottom)
@@ -227,6 +234,7 @@ struct MedicalAIChatView: View {
     private func inputBar(vm: MedicalAIChatViewModel) -> some View {
         HStack(spacing: 10) {
             TextField("Fai una domanda…", text: $inputText, axis: .vertical)
+                .focused($isInputFocused)
                 .lineLimit(1...4)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)

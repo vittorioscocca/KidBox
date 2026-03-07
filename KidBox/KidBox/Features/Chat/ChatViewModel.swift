@@ -701,11 +701,26 @@ final class ChatViewModel: ObservableObject {
     
     func startRecording() {
         let session = AVAudioSession.sharedInstance()
-        guard (try? session.setCategory(.playAndRecord, mode: .default)) != nil,
-              (try? session.setActive(true)) != nil else { return }
+        
+        logAudio("startRecording BEGIN familyId=\(familyId)")
+        describeAudioSession("beforeConfig")
+        
+        do {
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, AVAudioSession.CategoryOptions.allowBluetoothHFP])
+            try session.setActive(true)
+            logAudio("startRecording session configured OK")
+        } catch {
+            logAudio("startRecording session configure ERROR=\(error.localizedDescription)")
+            errorText = "Impossibile configurare l'audio: \(error.localizedDescription)"
+            return
+        }
+        
+        describeAudioSession("afterConfig")
         
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("chat_audio_\(UUID().uuidString).m4a")
+        
+        logAudio("startRecording tempURL=\(url.path)")
         
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -714,47 +729,157 @@ final class ChatViewModel: ObservableObject {
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
         
-        guard let recorder = try? AVAudioRecorder(url: url, settings: settings) else { return }
+        logAudio("startRecording recorderSettings=\(settings)")
         
-        recorder.isMeteringEnabled = true
-        recorder.record()
-        
-        waveformSamples = []
-        isRecordingLocked = false
-        audioRecorder = recorder
-        recordingURL = url
-        isRecording = true
-        recordingDuration = 0
-        
-        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            guard let self else { return }
+        do {
+            let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.isMeteringEnabled = true
             
-            self.audioRecorder?.updateMeters()
+            let didPrepare = recorder.prepareToRecord()
+            let didRecord = recorder.record()
             
-            let power = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
-            let normalized = max(0.05, CGFloat((power + 160) / 160))
+            logAudio("startRecording prepareToRecord=\(didPrepare)")
+            logAudio("startRecording record()=\(didRecord)")
+            logRecorderState(recorder, prefix: "startRecording")
             
-            Task { @MainActor in
+            waveformSamples = []
+            isRecordingLocked = false
+            audioRecorder = recorder
+            recordingURL = url
+            isRecording = true
+            recordingDuration = 0
+            
+            recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+                guard let self else { return }
                 
-                self.recordingDuration = self.audioRecorder?.currentTime ?? 0
+                self.audioRecorder?.updateMeters()
                 
-                self.waveformSamples.append(normalized)
+                let power = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
+                let normalized = max(0.05, CGFloat((power + 160) / 160))
                 
-                if self.waveformSamples.count > 95 {
-                    self.waveformSamples.removeFirst()
+                Task { @MainActor in
+                    self.recordingDuration = self.audioRecorder?.currentTime ?? 0
+                    self.waveformSamples.append(normalized)
+                    
+                    if self.waveformSamples.count > 95 {
+                        self.waveformSamples.removeFirst()
+                    }
                 }
             }
+            
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                await MainActor.run {
+                    if let recorder = self.audioRecorder {
+                        self.logRecorderState(recorder, prefix: "startRecording+300ms")
+                        self.logFileInfo(url, prefix: "startRecording+300ms")
+                    }
+                }
+            }
+        } catch {
+            logAudio("startRecording recorder init ERROR=\(error.localizedDescription)")
+            errorText = "Impossibile avviare la registrazione: \(error.localizedDescription)"
         }
+    }
+    
+    private func logAudio(_ message: String) {
+        KBLog.data.kbInfo("[AUDIO] \(message)")
+    }
+    
+    private func describeAudioSession(_ prefix: String) {
+        let session = AVAudioSession.sharedInstance()
+        
+        logAudio("\(prefix) session.category=\(session.category.rawValue)")
+        logAudio("\(prefix) session.mode=\(session.mode.rawValue)")
+        logAudio("\(prefix) session.sampleRate=\(session.sampleRate)")
+        logAudio("\(prefix) session.ioBufferDuration=\(session.ioBufferDuration)")
+        logAudio("\(prefix) session.inputAvailable=\(session.isInputAvailable)")
+        logAudio("\(prefix) session.recordPermission=\(session.recordPermission.rawValue)")
+        
+        let inputs = session.availableInputs?.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ", ") ?? "none"
+        logAudio("\(prefix) session.availableInputs=\(inputs)")
+        
+        let currentRouteInputs = session.currentRoute.inputs.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ", ")
+        let currentRouteOutputs = session.currentRoute.outputs.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ", ")
+        
+        logAudio("\(prefix) session.currentRoute.inputs=\(currentRouteInputs)")
+        logAudio("\(prefix) session.currentRoute.outputs=\(currentRouteOutputs)")
+    }
+    
+    private func logFileInfo(_ url: URL, prefix: String) {
+        let exists = FileManager.default.fileExists(atPath: url.path)
+        logAudio("\(prefix) url=\(url.path)")
+        logAudio("\(prefix) exists=\(exists)")
+        logAudio("\(prefix) ext=\(url.pathExtension)")
+        
+        do {
+            let values = try url.resourceValues(forKeys: [
+                .fileSizeKey,
+                .creationDateKey,
+                .contentModificationDateKey,
+                .isRegularFileKey
+            ])
+            logAudio("\(prefix) fileSize=\(values.fileSize ?? -1)")
+            logAudio("\(prefix) creationDate=\(values.creationDate?.description ?? "nil")")
+            logAudio("\(prefix) modificationDate=\(values.contentModificationDate?.description ?? "nil")")
+            logAudio("\(prefix) isRegularFile=\(values.isRegularFile?.description ?? "nil")")
+        } catch {
+            logAudio("\(prefix) resourceValues ERROR=\(error.localizedDescription)")
+        }
+    }
+    
+    private func logAudioAssetInfo(_ url: URL, prefix: String) async {
+        let asset = AVURLAsset(url: url)
+        
+        do {
+            let duration = try await asset.load(.duration)
+            let seconds = CMTimeGetSeconds(duration)
+            logAudio("\(prefix) asset.durationSeconds=\(seconds)")
+        } catch {
+            logAudio("\(prefix) asset.duration ERROR=\(error.localizedDescription)")
+        }
+        
+        do {
+            let tracks = try await asset.loadTracks(withMediaType: .audio)
+            logAudio("\(prefix) asset.audioTracks=\(tracks.count)")
+        } catch {
+            logAudio("\(prefix) asset.audioTracks ERROR=\(error.localizedDescription)")
+        }
+    }
+    
+    private func testLocalPlayback(_ url: URL, prefix: String) {
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            let ok = player.prepareToPlay()
+            logAudio("\(prefix) AVAudioPlayer.init=OK prepareToPlay=\(ok) duration=\(player.duration)")
+        } catch {
+            logAudio("\(prefix) AVAudioPlayer ERROR=\(error.localizedDescription)")
+        }
+    }
+    
+    private func logRecorderState(_ recorder: AVAudioRecorder, prefix: String) {
+        logAudio("\(prefix) recorder.isRecording=\(recorder.isRecording)")
+        logAudio("\(prefix) recorder.currentTime=\(recorder.currentTime)")
+        logAudio("\(prefix) recorder.url=\(recorder.url.path)")
+        logAudio("\(prefix) recorder.settings=\(recorder.settings)")
     }
     
     func stopAndSendRecording() {
         guard isRecording,
               let recorder = audioRecorder,
-              let url = recordingURL else { return }
+              let url = recordingURL else {
+            logAudio("stopAndSendRecording guard FAILED isRecording=\(isRecording) recorderNil=\(audioRecorder == nil) recordingURLNil=\(recordingURL == nil)")
+            return
+        }
         
         let seconds = recorder.currentTime
+        logAudio("stopAndSendRecording BEGIN seconds=\(seconds)")
+        logRecorderState(recorder, prefix: "beforeStop")
+        logFileInfo(url, prefix: "beforeStop")
         
         recorder.stop()
+        logAudio("stopAndSendRecording recorder.stop() called")
+        
         recordingTimer?.invalidate()
         recordingTimer = nil
         
@@ -764,22 +889,37 @@ final class ChatViewModel: ObservableObject {
         recordingURL = nil
         
         guard seconds >= 0.4 else {
+            logAudio("stopAndSendRecording discardedTooShort seconds=\(seconds)")
             try? FileManager.default.removeItem(at: url)
             return
         }
         
         let durationSeconds = max(1, Int(seconds.rounded()))
+        logAudio("stopAndSendRecording durationSecondsRounded=\(durationSeconds)")
         
         Task {
+            self.logFileInfo(url, prefix: "afterStop-immediate")
+            await self.logAudioAssetInfo(url, prefix: "afterStop-immediate")
+            self.testLocalPlayback(url, prefix: "afterStop-immediate")
+            
             do {
                 let data = try Data(contentsOf: url)
-                await uploadAndSendAudio(data: data, duration: durationSeconds)
+                self.logAudio("afterStop-immediate data.count=\(data.count)")
+                
+                await self.uploadAndSendAudio(data: data, duration: durationSeconds)
             } catch {
                 await MainActor.run {
+                    self.logAudio("stopAndSendRecording Data(contentsOf:) ERROR=\(error.localizedDescription)")
                     self.errorText = "Audio non leggibile: \(error.localizedDescription)"
                 }
             }
-            try? FileManager.default.removeItem(at: url)
+            
+            do {
+                try FileManager.default.removeItem(at: url)
+                self.logAudio("stopAndSendRecording temp file removed OK")
+            } catch {
+                self.logAudio("stopAndSendRecording temp file remove ERROR=\(error.localizedDescription)")
+            }
         }
     }
     
@@ -806,21 +946,24 @@ final class ChatViewModel: ObservableObject {
         let messageId = UUID().uuidString
         let now = Date()
         
+        logAudio("uploadAndSendAudio BEGIN messageId=\(messageId) duration=\(duration) data.count=\(data.count)")
+        
         isUploadingMedia = true
         uploadProgress = 0
         
-        // 1. Salva copia locale audio
         let localAudioURL: URL
         do {
             localAudioURL = try saveAudioLocally(data: data, messageId: messageId)
+            await logAudioAssetInfo(localAudioURL, prefix: "uploadAndSendAudio.localCopy")
+            testLocalPlayback(localAudioURL, prefix: "uploadAndSendAudio.localCopy")
         } catch {
             isUploadingMedia = false
             uploadProgress = 0
+            logAudio("uploadAndSendAudio local save ERROR=\(error.localizedDescription)")
             errorText = "Salvataggio audio locale fallito: \(error.localizedDescription)"
             return
         }
         
-        // 2. Crea messaggio locale
         let msg = KBChatMessage(
             id: messageId,
             familyId: familyId,
@@ -843,20 +986,25 @@ final class ChatViewModel: ObservableObject {
         try? modelContext.save()
         reloadLocal()
         
-        // 3. Upload remoto
         do {
+            let mimeType = "audio/m4a"
+            logAudio("uploadAndSendAudio upload START mimeType=\(mimeType)")
+            
             let (storagePath, downloadURL) = try await storageService.upload(
                 data: data,
                 familyId: familyId,
                 messageId: messageId,
                 fileName: "audio.m4a",
-                mimeType: "audio/x-m4a",
+                mimeType: mimeType,
                 progressHandler: { [weak self] p in
                     Task { @MainActor in
                         self?.uploadProgress = p
                     }
                 }
             )
+            
+            logAudio("uploadAndSendAudio upload OK storagePath=\(storagePath)")
+            logAudio("uploadAndSendAudio upload OK downloadURL=\(downloadURL)")
             
             msg.mediaStoragePath = storagePath
             msg.mediaURL = downloadURL
@@ -867,11 +1015,14 @@ final class ChatViewModel: ObservableObject {
             let dto = makeDTO(from: msg)
             try await remoteStore.upsert(dto: dto)
             
+            logAudio("uploadAndSendAudio remote upsert OK messageId=\(messageId)")
+            
             msg.syncState = .synced
             msg.lastSyncError = nil
             try? modelContext.save()
             
         } catch {
+            logAudio("uploadAndSendAudio ERROR=\(error.localizedDescription)")
             msg.syncState = .error
             msg.lastSyncError = error.localizedDescription
             try? modelContext.save()
@@ -892,11 +1043,15 @@ final class ChatViewModel: ObservableObject {
                 at: dir,
                 withIntermediateDirectories: true
             )
+            logAudio("saveAudioLocally created directory=\(dir.path)")
         }
         
         let fileURL = dir.appendingPathComponent("\(messageId).m4a")
         
         try data.write(to: fileURL, options: .atomic)
+        
+        logAudio("saveAudioLocally wrote file messageId=\(messageId)")
+        logFileInfo(fileURL, prefix: "saveAudioLocally")
         
         return fileURL
     }
@@ -935,6 +1090,10 @@ final class ChatViewModel: ObservableObject {
                         NSLocalizedDescriptionKey: "Audio non disponibile per la trascrizione"
                     ])
                 }
+                
+                self.logFileInfo(localURL, prefix: "transcript.input")
+                await self.logAudioAssetInfo(localURL, prefix: "transcript.input")
+                self.testLocalPlayback(localURL, prefix: "transcript.input")
                 
                 if #available(iOS 26.0, *) {
                     let result = try await SpeechTranscriptionService.shared.transcribeFile(
