@@ -57,9 +57,9 @@ struct PediatricExamsView: View {
     @State private var customFilterStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var customFilterEnd   = Date()
     
-    // Add/Edit sheet
+    // Add sheet (nuovo esame) — l'edit avviene dal detail
     @State private var showAddSheet   = false
-    @State private var editingExamId: String? = nil
+    @State private var editingExamId: String? = nil  // nil = nuovo
     
     // Colore coerente con la card "Analisi & Esami" in PediatricHomeView
     private let tint = Color(red: 0.25, green: 0.65, blue: 0.75)
@@ -142,15 +142,14 @@ struct PediatricExamsView: View {
         .onDisappear {
             SyncCenter.shared.stopMedicalExamsRealtime()
         }
-        // FIX: sheet agganciato al root della view — editingExamId viene
-        // assegnato PRIMA di presentare, quindi PediatricExamEditView
-        // riceve l'examId corretto e loadIfEditing() popola tutti i campi.
+        // FIX: sheet(item:) — usato solo per NUOVO esame (examId nil).
+        // L'edit avviene da PediatricExamDetailView.
         .sheet(isPresented: $showAddSheet, onDismiss: { editingExamId = nil }) {
             PediatricExamEditView(
                 familyId:  familyId,
                 childId:   childId,
                 childName: childName,
-                examId:    editingExamId
+                examId:    nil   // sempre nuovo da qui
             )
         }
         .sheet(isPresented: $showFilterSheet) { filterSheet }
@@ -173,9 +172,7 @@ struct PediatricExamsView: View {
             if isSelecting {
                 toggleSelection(e.id)
             } else {
-                // Assegna l'id PRIMA di aprire lo sheet
-                editingExamId = e.id
-                showAddSheet  = true
+                coordinator.navigate(to: .examDetail(familyId: familyId, childId: childId, examId: e.id))
             }
         } label: {
             HStack(spacing: 12) {

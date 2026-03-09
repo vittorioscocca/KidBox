@@ -122,6 +122,7 @@ final class KBMedicalVisit {
         self.diagnosis               = diagnosis
         self.recommendations         = recommendations
         self.linkedTreatmentIds      = linkedTreatmentIds
+        self.linkedExamIds           = linkedExamIds
         self.therapyTypesRaw         = therapyTypes.map { $0.rawValue }
         self.photoURLs               = photoURLs
         self.notes                   = notes

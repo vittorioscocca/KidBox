@@ -116,15 +116,20 @@ struct PediatricVisitEditView: View {
                 ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
             }
             .onAppear { loadIfEditing() }
-            // Sheet esami agganciato al NavigationStack root: garantisce che
-            // onSaved aggiorni linkedExamIds anche quando lo sheet è presentato
-            // da una computed var interna (prescriptionsTabExams).
+            // FIX BUG 1: sheet agganciato al NavigationStack root (non alla computed var
+            // prescriptionsTabExams che viene smontata quando si avanza allo step 5).
+            // In questo modo onSaved aggiorna linkedExamIds anche dopo aver cambiato step.
+            //
+            // FIX BUG 2: usiamo PediatricExamEditView invece di AddExamSheet.
+            // PediatricExamEditView chiama onSaved DOPO aver fatto modelContext.save(),
+            // quindi quando linkedExamIds riceve il nuovo id il record esiste già nella
+            // @Query di LinkedExamCard e SummaryLinkedExamRow — nessun race condition.
             .sheet(isPresented: $showAddExamSheet) {
                 PediatricExamEditView(
-                    familyId:           familyId,
-                    childId:            childId,
-                    childName:          childName,
-                    examId:             nil,
+                    familyId: familyId,
+                    childId: childId,
+                    childName: childName,
+                    examId: nil,
                     prescribingVisitId: visitId,
                     onSaved: { newExamId in
                         if !linkedExamIds.contains(newExamId) {
@@ -560,14 +565,22 @@ struct PediatricVisitEditView: View {
                             childId:     childId,
                             childName:   childName,
                             tint:        tint,
-                            colorScheme: colorScheme
-                        ) {
-                            linkedExamIds.removeAll { $0 == eid }
-                            let desc = FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.id == eid })
-                            if let e = try? modelContext.fetch(desc).first {
-                                e.isDeleted = true; try? modelContext.save()
+                            colorScheme: colorScheme,
+                            onRemove: {
+                                linkedExamIds.removeAll { $0 == eid }
+                                let desc = FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.id == eid })
+                                if let e = try? modelContext.fetch(desc).first {
+                                    e.isDeleted = true; try? modelContext.save()
+                                }
+                            },
+                            onSaved: { savedId in          // ← AGGIUNTO
+                                // Se per qualsiasi motivo l'id cambia (es. retry con nuovo record),
+                                // assicura che linkedExamIds sia aggiornato
+                                if !linkedExamIds.contains(savedId) {
+                                    linkedExamIds.append(savedId)
+                                }
                             }
-                        }
+                        )
                     }
                 }
                 .padding(.horizontal)
@@ -576,26 +589,12 @@ struct PediatricVisitEditView: View {
                 Label(linkedExamIds.isEmpty ? "Aggiungi un esame" : "Aggiungi un altro esame",
                       systemImage: "plus.circle.fill")
                 .frame(maxWidth: .infinity).padding()
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color(red: 0.25, green: 0.65, blue: 0.75).opacity(0.15)))
-                .foregroundStyle(Color(red: 0.25, green: 0.65, blue: 0.75)).font(.subheadline.bold())
+                .background(RoundedRectangle(cornerRadius: 12).fill(tint.opacity(0.12)))
+                .foregroundStyle(tint).font(.subheadline.bold())
             }
             .buttonStyle(.plain).padding(.horizontal)
         }
         .padding(.vertical)
-        .sheet(isPresented: $showAddExamSheet) {
-            PediatricExamEditView(
-                familyId:           familyId,
-                childId:            childId,
-                childName:          childName,
-                examId:             nil,
-                prescribingVisitId: visitId,
-                onSaved: { newExamId in
-                    if !linkedExamIds.contains(newExamId) {
-                        linkedExamIds.append(newExamId)
-                    }
-                }
-            )
-        }
     }
     
     // MARK: ── Step 4 ──
@@ -781,7 +780,15 @@ struct PediatricVisitEditView: View {
         linkedTreatmentIds = v.linkedTreatmentIds
         asNeededDrugs      = v.asNeededDrugs
         therapyTypes       = v.therapyTypes
-        linkedExamIds      = v.linkedExamIds   // ← legge linkedExamIds da KBMedicalVisit
+        linkedExamIds      = v.linkedExamIds
+        if linkedExamIds.isEmpty, let vid = visitId {
+            let desc = FetchDescriptor<KBMedicalExam>(
+                predicate: #Predicate { $0.prescribingVisitId == vid && $0.isDeleted == false }
+            )
+            if let orphans = try? modelContext.fetch(desc) {
+                linkedExamIds = orphans.map { $0.id }
+            }
+        }
         notes              = v.notes ?? ""
         hasNextVisit       = v.nextVisitDate != nil
         nextVisitDate      = v.nextVisitDate ?? Date()
@@ -957,34 +964,39 @@ private struct LinkedExamCard: View {
     let tint:      Color
     let colorScheme: ColorScheme
     let onRemove:  () -> Void
-    
-    private let examTint = Color(red: 0.25, green: 0.65, blue: 0.75)
+    let onSaved:   ((String) -> Void)?   // ← AGGIUNTO
     
     @Query private var exams: [KBMedicalExam]
     private var exam: KBMedicalExam? { exams.first }
-    @State private var showEdit = false
+    @State private var editItem: ExamSheetItem? = nil
     
     init(examId: String, familyId: String, childId: String, childName: String,
-         tint: Color, colorScheme: ColorScheme, onRemove: @escaping () -> Void) {
-        self.examId    = examId
-        self.familyId  = familyId
-        self.childId   = childId
-        self.childName = childName
-        self.tint      = tint
+         tint: Color, colorScheme: ColorScheme,
+         onRemove: @escaping () -> Void,
+         onSaved: ((String) -> Void)? = nil) {   // ← AGGIUNTO
+        self.examId      = examId
+        self.familyId    = familyId
+        self.childId     = childId
+        self.childName   = childName
+        self.tint        = tint
         self.colorScheme = colorScheme
-        self.onRemove  = onRemove
+        self.onRemove    = onRemove
+        self.onSaved     = onSaved             // ← AGGIUNTO
         let eid = examId
         _exams = Query(filter: #Predicate<KBMedicalExam> { $0.id == eid })
     }
+
     
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
-                Circle().fill(examTint.opacity(0.12)).frame(width: 40, height: 40)
-                Image(systemName: "testtube.2").foregroundStyle(examTint).font(.subheadline)
+                Circle().fill(tint.opacity(0.12)).frame(width: 40, height: 40)
+                Image(systemName: "testtube.2").foregroundStyle(tint).font(.subheadline)
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(exam?.name ?? "Esame").font(.subheadline.bold())
+                // Mostra il nome dell'esame: se @Query non ha ancora il record usa examId
+                // come fallback leggibile, non "Esame" generico
+                Text(exam?.name ?? "Caricamento...").font(.subheadline.bold())
                 if let e = exam {
                     if let dl = e.deadline {
                         Text("Entro \(dl.formatted(date: .abbreviated, time: .omitted))")
@@ -997,12 +1009,12 @@ private struct LinkedExamCard: View {
                 }
             }
             Spacer()
-            Button { showEdit = true } label: {
+            // Bottone modifica — apre l'esame in edit con sheet(item:)
+            Button { editItem = ExamSheetItem(examId: examId) } label: {
                 Image(systemName: "pencil.circle.fill")
-                    .foregroundStyle(examTint).font(.subheadline)
+                    .foregroundStyle(tint).font(.title3)
             }
             .buttonStyle(.plain)
-            
             Button(action: onRemove) {
                 Image(systemName: "trash.fill").foregroundStyle(.red).font(.subheadline)
             }
@@ -1011,16 +1023,22 @@ private struct LinkedExamCard: View {
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 12)
             .fill(colorScheme == .dark ? Color.white.opacity(0.07) : Color.black.opacity(0.04)))
-        .sheet(isPresented: $showEdit) {
+        .sheet(item: $editItem) { item in
             PediatricExamEditView(
-                familyId:           familyId,
-                childId:            childId,
-                childName:          childName,
-                examId:             examId,
-                prescribingVisitId: exam?.prescribingVisitId
+                familyId:  familyId,
+                childId:   childId,
+                childName: childName,
+                examId:    item.examId,
+                onSaved:   onSaved        // ← AGGIUNTO: propaga la callback
             )
         }
     }
+}
+
+// ExamSheetItem: wrapper Identifiable per sheet(item:)
+private struct ExamSheetItem: Identifiable {
+    let examId: String?
+    var id: String { examId ?? "__new__" }
 }
 
 // MARK: - AddAsNeededDrugSheet

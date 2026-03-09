@@ -283,33 +283,11 @@ struct PediatricVisitDetailView: View {
             }
             
             // Esami prescritti
-            if !v.prescribedExams.isEmpty {
+            if !v.linkedExamIds.isEmpty {
                 if !v.asNeededDrugs.isEmpty || !v.therapyTypes.isEmpty { Divider() }
-                prescriptionSection(title: "Esami Prescritti (\(v.prescribedExams.count))", icon: "testtube.2") {
-                    ForEach(v.prescribedExams) { exam in
-                        HStack(spacing: 8) {
-                            Circle().fill(exam.isUrgent ? Color.red.opacity(0.8) : tint.opacity(0.15))
-                                .frame(width: 8, height: 8)
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(exam.name).font(.subheadline.bold())
-                                    if exam.isUrgent {
-                                        Text("Urgente")
-                                            .font(.caption2.bold()).foregroundStyle(.white)
-                                            .padding(.horizontal, 6).padding(.vertical, 2)
-                                            .background(Capsule().fill(.red))
-                                    }
-                                }
-                                if let d = exam.deadline {
-                                    Text("Entro: \(d.formatted(date: .abbreviated, time: .omitted))")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-                                if let p = exam.preparation, !p.isEmpty {
-                                    Text(p).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                                }
-                            }
-                        }
-                        .padding(.vertical, 2)
+                prescriptionSection(title: "Esami Prescritti (\(v.linkedExamIds.count))", icon: "testtube.2") {
+                    ForEach(v.linkedExamIds, id: \.self) { eid in
+                        LinkedExamDetailRow(examId: eid, tint: tint, colorScheme: colorScheme)
                     }
                 }
             }
@@ -317,6 +295,67 @@ struct PediatricVisitDetailView: View {
         .padding(16)
         .background(detailCard)
         .padding(.horizontal)
+    }
+    
+    // MARK: - LinkedExamDetailRow
+    
+    private struct LinkedExamDetailRow: View {
+        let examId: String
+        let tint: Color
+        let colorScheme: ColorScheme
+        
+        @Query private var exams: [KBMedicalExam]
+        private var exam: KBMedicalExam? { exams.first }
+        
+        init(examId: String, tint: Color, colorScheme: ColorScheme) {
+            self.examId      = examId
+            self.tint        = tint
+            self.colorScheme = colorScheme
+            let eid = examId
+            _exams = Query(filter: #Predicate<KBMedicalExam> { $0.id == eid })
+        }
+        
+        var body: some View {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(exam?.isUrgent == true ? Color.red.opacity(0.12) : tint.opacity(0.1))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "testtube.2")
+                        .foregroundStyle(exam?.isUrgent == true ? .red : tint)
+                        .font(.subheadline)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(exam?.name ?? "Caricamento...")
+                            .font(.subheadline.bold())
+                        if exam?.isUrgent == true {
+                            Text("Urgente")
+                                .font(.caption2.bold()).foregroundStyle(.white)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Capsule().fill(.red))
+                        }
+                    }
+                    if let d = exam?.deadline {
+                        Text("Entro: \(d.formatted(date: .abbreviated, time: .omitted))")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if let p = exam?.preparation, !p.isEmpty {
+                        Text(p).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    }
+                    if let s = exam?.status {
+                        Label(s.rawValue, systemImage: s.icon)
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.03))
+            )
+        }
     }
     
     // MARK: - Prossimo Appuntamento
@@ -412,7 +451,7 @@ struct PediatricVisitDetailView: View {
     }
     
     private func hasPrescriptions(_ v: KBMedicalVisit) -> Bool {
-        !v.asNeededDrugs.isEmpty || !v.therapyTypes.isEmpty || !v.prescribedExams.isEmpty
+        !v.asNeededDrugs.isEmpty || !v.therapyTypes.isEmpty || !v.linkedExamIds.isEmpty
     }
     
     private func deleteVisit(_ v: KBMedicalVisit) {
@@ -506,3 +545,4 @@ private struct FlowLayout: Layout {
         }
     }
 }
+
