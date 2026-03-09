@@ -2,8 +2,6 @@
 //  PediatricVaccinesView.swift
 //  KidBox
 //
-//  Created by vscocca on 03/03/26.
-//
 
 import SwiftUI
 import SwiftData
@@ -14,22 +12,40 @@ import FirebaseAuth
 struct PediatricVaccinesView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
     @Query private var vaccines: [KBVaccine]
     
     let familyId: String
-    let childId: String
+    let childId:  String
     
-    @State private var showEditSheet = false
+    @State private var showEditSheet    = false
     @State private var editingVaccineId: String? = nil
     
     private let tint = Color(red: 0.95, green: 0.55, blue: 0.45)
+    
+    // LoginView-style dynamic theme
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color.white.opacity(0.07)
+        : Color.black.opacity(0.04)
+    }
+    private var shadowColor: Color {
+        colorScheme == .dark ? Color.clear : Color.black.opacity(0.06)
+    }
     
     init(familyId: String, childId: String) {
         self.familyId = familyId
         self.childId  = childId
         let fid = familyId, cid = childId
         _vaccines = Query(
-            filter: #Predicate<KBVaccine> { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false },
+            filter: #Predicate<KBVaccine> {
+                $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
+            },
             sort: [SortDescriptor(\KBVaccine.administeredDate, order: .reverse)]
         )
     }
@@ -39,106 +55,228 @@ struct PediatricVaccinesView: View {
     private var planned:      [KBVaccine] { vaccines.filter { $0.status == .planned } }
     
     var body: some View {
-        Group {
-            if vaccines.isEmpty {
-                emptyState
-            } else {
-                List {
-                    if !scheduled.isEmpty {
-                        Section("Appuntamento fissato") {
-                            ForEach(scheduled) { row($0) }
+        ZStack {
+            backgroundColor.ignoresSafeArea()
+            
+            Group {
+                if vaccines.isEmpty {
+                    emptyState
+                } else {
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            if !scheduled.isEmpty {
+                                sectionBlock(
+                                    title: "Appuntamento fissato",
+                                    icon: "calendar.badge.clock",
+                                    iconColor: .blue,
+                                    items: scheduled
+                                )
+                            }
+                            if !administered.isEmpty {
+                                sectionBlock(
+                                    title: "Somministrati",
+                                    icon: "checkmark.circle.fill",
+                                    iconColor: .green,
+                                    items: administered
+                                )
+                            }
+                            if !planned.isEmpty {
+                                sectionBlock(
+                                    title: "Da programmare",
+                                    icon: "clock.badge.questionmark",
+                                    iconColor: .orange,
+                                    items: planned
+                                )
+                            }
                         }
-                    }
-                    if !administered.isEmpty {
-                        Section("Somministrati") {
-                            ForEach(administered) { row($0) }
-                                .onDelete { deleteVaccines(offsets: $0, from: administered) }
-                        }
-                    }
-                    if !planned.isEmpty {
-                        Section("Da programmare") {
-                            ForEach(planned) { row($0) }
-                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .padding(.bottom, 40)
                     }
                 }
             }
         }
         .navigationTitle("Vaccini")
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { editingVaccineId = nil; showEditSheet = true } label: {
-                    Image(systemName: "plus")
+                Button {
+                    editingVaccineId = nil
+                    showEditSheet = true
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(tint.opacity(0.15))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(tint)
+                    }
                 }
             }
         }
         .sheet(isPresented: $showEditSheet) {
-            PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: editingVaccineId) { savedId in
-                SyncCenter.shared.enqueueVaccineUpsert(vaccineId: savedId, familyId: familyId, modelContext: modelContext)
+            PediatricVaccineEditView(
+                familyId:  familyId,
+                childId:   childId,
+                vaccineId: editingVaccineId
+            ) { savedId in
+                SyncCenter.shared.enqueueVaccineUpsert(
+                    vaccineId: savedId, familyId: familyId, modelContext: modelContext
+                )
                 SyncCenter.shared.flushGlobal(modelContext: modelContext)
             }
         }
         .onAppear {
             SyncCenter.shared.startVaccinesRealtime(
-                familyId: familyId,
-                childId: childId,
-                modelContext: modelContext
+                familyId: familyId, childId: childId, modelContext: modelContext
             )
         }
-        .onDisappear {
-            SyncCenter.shared.stopVaccinesRealtime()
+        .onDisappear { SyncCenter.shared.stopVaccinesRealtime() }
+    }
+    
+    // MARK: - Section block
+    
+    private func sectionBlock(title: String, icon: String, iconColor: Color, items: [KBVaccine]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Section header
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.caption.bold())
+                    .foregroundStyle(iconColor)
+                Text(title.uppercased())
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                    .kerning(0.5)
+                Spacer()
+                Text("\(items.count)")
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 20, height: 20)
+                    .background(Circle().fill(iconColor.opacity(0.8)))
+            }
+            
+            // Cards
+            VStack(spacing: 10) {
+                ForEach(items) { vaccineCard($0) }
+            }
         }
     }
     
-    private func row(_ v: KBVaccine) -> some View {
+    // MARK: - Vaccine card
+    
+    private func vaccineCard(_ v: KBVaccine) -> some View {
         Button {
             editingVaccineId = v.id
             showEditSheet = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
+                // Icon
                 ZStack {
-                    Circle().fill(tint.opacity(0.12)).frame(width: 40, height: 40)
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(tint.opacity(colorScheme == .dark ? 0.2 : 0.12))
+                        .frame(width: 46, height: 46)
                     Image(systemName: v.vaccineType.systemImage)
+                        .font(.system(size: 18))
                         .foregroundStyle(tint)
                 }
-                VStack(alignment: .leading, spacing: 3) {
+                
+                // Info
+                VStack(alignment: .leading, spacing: 4) {
                     Text(v.vaccineType.displayName)
                         .font(.subheadline.bold())
+                        .foregroundStyle(.primary)
+                    
                     if let cn = v.commercialName, !cn.isEmpty {
-                        Text(cn).font(.caption).foregroundStyle(.secondary)
+                        Text(cn)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    Text("Dose \(v.doseNumber) di \(v.totalDoses)")
-                        .font(.caption).foregroundStyle(.secondary)
+                    
+                    HStack(spacing: 6) {
+                        Text("Dose \(v.doseNumber)/\(v.totalDoses)")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(Capsule().fill(tint.opacity(0.85)))
+                        
+                        if let d = v.administeredDate ?? v.scheduledDate {
+                            Text(d.formatted(.dateTime.day().month(.abbreviated).year()))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
+                
                 Spacer()
-                if let d = v.administeredDate ?? v.scheduledDate {
-                    Text(d.formatted(.dateTime.day().month(.abbreviated).year()))
-                        .font(.caption).foregroundStyle(.secondary)
+                
+                // Status dot + chevron
+                VStack(alignment: .trailing, spacing: 6) {
+                    statusDot(v.status)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
             }
-            .padding(.vertical, 2)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(cardBackground)
+                    .shadow(color: shadowColor, radius: 6, x: 0, y: 2)
+            )
         }
         .buttonStyle(.plain)
     }
     
+    @ViewBuilder
+    private func statusDot(_ status: VaccineStatus) -> some View {
+        let color: Color = switch status {
+        case .administered: .green
+        case .scheduled:    .blue
+        case .planned:      .orange
+        }
+        Circle()
+            .fill(color)
+            .frame(width: 8, height: 8)
+    }
+    
+    // MARK: - Empty state
+    
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            Spacer()
             ZStack {
-                Circle().fill(tint.opacity(0.12)).frame(width: 80, height: 80)
-                Image(systemName: "syringe.fill").font(.system(size: 32)).foregroundStyle(tint)
+                Circle()
+                    .fill(tint.opacity(colorScheme == .dark ? 0.15 : 0.10))
+                    .frame(width: 88, height: 88)
+                Image(systemName: "syringe.fill")
+                    .font(.system(size: 34))
+                    .foregroundStyle(tint)
             }
-            Text("Libretto Vaccinale Vuoto").font(.title3.bold())
-            Text("Inizia a registrare i vaccini per tenere traccia del calendario vaccinale del tuo bambino")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal)
-            Button { editingVaccineId = nil; showEditSheet = true } label: {
+            VStack(spacing: 8) {
+                Text("Libretto Vaccinale Vuoto")
+                    .font(.system(size: 20, weight: .semibold, design: .serif))
+                    .foregroundStyle(.primary)
+                Text("Inizia a registrare i vaccini per tenere\ntraccia del calendario vaccinale")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            Button {
+                editingVaccineId = nil
+                showEditSheet = true
+            } label: {
                 Label("Aggiungi il primo vaccino", systemImage: "plus.circle.fill")
-                    .padding(.horizontal, 20).padding(.vertical, 10)
-                    .background(Capsule().fill(tint))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(Capsule().fill(tint))
             }
             .buttonStyle(.plain)
+            Spacer()
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 32)
         .sheet(isPresented: $showEditSheet) {
             PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: nil) { savedId in
                 SyncCenter.shared.enqueueVaccineUpsert(vaccineId: savedId, familyId: familyId, modelContext: modelContext)
@@ -151,10 +289,7 @@ struct PediatricVaccinesView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         for i in offsets {
             let v = list[i]
-            v.isDeleted  = true
-            v.updatedBy  = uid
-            v.updatedAt  = Date()
-            v.syncState  = .pendingUpsert
+            v.isDeleted = true; v.updatedBy = uid; v.updatedAt = Date(); v.syncState = .pendingUpsert
             SyncCenter.shared.enqueueVaccineDelete(vaccineId: v.id, familyId: familyId, modelContext: modelContext)
         }
         try? modelContext.save()
@@ -167,94 +302,258 @@ struct PediatricVaccinesView: View {
 struct PediatricVaccineEditView: View {
     
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)      private var dismiss
+    @Environment(\.colorScheme)  private var colorScheme
     
-    let familyId: String
-    let childId: String
+    let familyId:  String
+    let childId:   String
     let vaccineId: String?
-    /// Callback con l'id del vaccino salvato, per far scattare l'enqueue dal parent.
-    let onSaved: (String) -> Void
+    let onSaved:   (String) -> Void
     
-    @State private var vaccineType: VaccineType = .esavalente
-    @State private var status: VaccineStatus   = .administered
-    @State private var commercialName = ""
-    @State private var doseNumber = 1
-    @State private var totalDoses = 1
-    @State private var administeredDate = Date()
-    @State private var scheduledDate    = Date()
-    @State private var lotNumber        = ""
-    @State private var administeredBy   = ""
-    @State private var adminSite        = ""
-    @State private var notes            = ""
+    @State private var vaccineType:      VaccineType    = .esavalente
+    @State private var status:           VaccineStatus  = .administered
+    @State private var commercialName    = ""
+    @State private var doseNumber        = 1
+    @State private var totalDoses        = 1
+    @State private var administeredDate  = Date()
+    @State private var scheduledDate     = Date()
+    @State private var lotNumber         = ""
+    @State private var administeredBy    = ""
+    @State private var adminSite         = ""
+    @State private var notes             = ""
     
     private let sites = ["Braccio sinistro", "Braccio destro", "Coscia sinistra", "Coscia destra", "Orale", "Nasale", "Altro"]
     private let tint  = Color(red: 0.95, green: 0.55, blue: 0.45)
-    
     private var isEditing: Bool { vaccineId != nil }
+    
+    // LoginView-style
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    private var cardBg: Color {
+        colorScheme == .dark ? Color.white.opacity(0.07) : Color.black.opacity(0.04)
+    }
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Stato vaccino") {
-                    ForEach([VaccineStatus.administered, .scheduled, .planned], id: \.self) { s in
-                        HStack {
-                            statusIcon(s)
-                            Text(s.displayName)
-                            Spacer()
-                            if status == s { Image(systemName: "checkmark").foregroundStyle(tint) }
+            ZStack {
+                backgroundColor.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Status selector
+                        formCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                sectionLabel("Stato vaccino", icon: "checkmark.seal.fill")
+                                HStack(spacing: 10) {
+                                    ForEach([VaccineStatus.administered, .scheduled, .planned], id: \.self) { s in
+                                        statusChip(s)
+                                    }
+                                }
+                            }
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture { status = s }
-                    }
-                }
-                
-                Section("Tipo di Vaccino") {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(VaccineType.allCases, id: \.self) { t in
-                            vaccineTypeCell(t)
+                        
+                        // Vaccine type grid
+                        formCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                sectionLabel("Tipo di Vaccino", icon: "syringe.fill")
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                                    ForEach(VaccineType.allCases, id: \.self) { vaccineTypeCell($0) }
+                                }
+                                TextField("Nome commerciale (opzionale)", text: $commercialName)
+                                    .padding(10)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05)))
+                                    .font(.subheadline)
+                            }
                         }
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                    TextField("Nome commerciale (opzionale)", text: $commercialName)
-                }
-                
-                Section("Informazioni Dose") {
-                    Stepper("Dose N° \(doseNumber)", value: $doseNumber, in: 1...10)
-                    Stepper("Dosi Totali \(totalDoses)", value: $totalDoses, in: 1...10)
-                }
-                
-                Section(status == .administered ? "Data Somministrazione" : "Data Appuntamento") {
-                    if status == .administered {
-                        DatePicker("Data", selection: $administeredDate, displayedComponents: .date)
-                            .datePickerStyle(.graphical)
-                    } else if status == .scheduled {
-                        DatePicker("Data appuntamento", selection: $scheduledDate, displayedComponents: .date)
-                    }
-                }
-                
-                if status == .administered {
-                    Section("Dettagli (opzionali)") {
-                        TextField("Numero lotto", text: $lotNumber)
-                        TextField("Somministrato da", text: $administeredBy)
-                        Picker("Sito di somministrazione", selection: $adminSite) {
-                            Text("Non specificato").tag("")
-                            ForEach(sites, id: \.self) { Text($0).tag($0) }
+                        
+                        // Dose info
+                        formCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                sectionLabel("Informazioni Dose", icon: "number.circle.fill")
+                                HStack(spacing: 16) {
+                                    stepperField(label: "Dose N°", value: $doseNumber, range: 1...10)
+                                    Divider().frame(height: 40)
+                                    stepperField(label: "Dosi totali", value: $totalDoses, range: 1...10)
+                                }
+                            }
                         }
+                        
+                        // Date
+                        formCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                sectionLabel(
+                                    status == .administered ? "Data Somministrazione" : "Data Appuntamento",
+                                    icon: "calendar"
+                                )
+                                if status == .administered {
+                                    DatePicker("", selection: $administeredDate, displayedComponents: .date)
+                                        .datePickerStyle(.graphical)
+                                        .tint(tint)
+                                } else if status == .scheduled {
+                                    DatePicker("", selection: $scheduledDate, displayedComponents: .date)
+                                        .datePickerStyle(.compact)
+                                        .labelsHidden()
+                                        .tint(tint)
+                                } else {
+                                    Text("Nessuna data da impostare per vaccini da programmare")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        
+                        // Details (only if administered)
+                        if status == .administered {
+                            formCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    sectionLabel("Dettagli (opzionali)", icon: "info.circle.fill")
+                                    editField(placeholder: "Numero lotto", text: $lotNumber)
+                                    editField(placeholder: "Somministrato da", text: $administeredBy)
+                                    // Site picker inline
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Sito somministrazione").font(.caption).foregroundStyle(.secondary)
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            HStack(spacing: 8) {
+                                                ForEach(sites, id: \.self) { site in
+                                                    Button { adminSite = (adminSite == site) ? "" : site } label: {
+                                                        Text(site).font(.caption)
+                                                            .padding(.horizontal, 10).padding(.vertical, 6)
+                                                            .background(Capsule().fill(adminSite == site ? tint : (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.07))))
+                                                            .foregroundStyle(adminSite == site ? .white : .primary)
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Notes
+                        formCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                sectionLabel("Note", icon: "square.and.pencil")
+                                TextField("Note aggiuntive", text: $notes, axis: .vertical)
+                                    .lineLimit(3...5)
+                                    .font(.subheadline)
+                                    .padding(10)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05)))
+                            }
+                        }
+                        
+                        // Save button
+                        Button { save() } label: {
+                            Text(isEditing ? "Salva modifiche" : "Aggiungi vaccino")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Capsule().fill(tint))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 16)
                     }
-                }
-                
-                Section("Note") {
-                    TextField("Note aggiuntive", text: $notes, axis: .vertical).lineLimit(2...4)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                 }
             }
-            .navigationTitle(isEditing ? "Modifica vaccino" : "Nuovo Vaccino")
+            .navigationTitle(isEditing ? "Modifica Vaccino" : "Nuovo Vaccino")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading)  { Button("Annulla") { dismiss() } }
-                ToolbarItem(placement: .topBarTrailing) { Button("Salva") { save() }.bold() }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Annulla") { dismiss() }
+                        .foregroundStyle(.secondary)
+                }
             }
             .onAppear { loadIfEditing() }
         }
+    }
+    
+    // MARK: - UI helpers
+    
+    private func formCard<C: View>(@ViewBuilder content: () -> C) -> some View {
+        content()
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(cardBg)
+            )
+    }
+    
+    private func sectionLabel(_ text: String, icon: String) -> some View {
+        Label(text, systemImage: icon)
+            .font(.subheadline.bold())
+            .foregroundStyle(.primary)
+    }
+    
+    private func editField(placeholder: String, text: Binding<String>) -> some View {
+        TextField(placeholder, text: text)
+            .font(.subheadline)
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8).fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05)))
+    }
+    
+    private func stepperField(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        VStack(spacing: 6) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Button { if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 } } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title3).foregroundStyle(value.wrappedValue > range.lowerBound ? tint : .secondary)
+                }
+                .buttonStyle(.plain)
+                Text("\(value.wrappedValue)").font(.title3.bold()).frame(minWidth: 24)
+                Button { if value.wrappedValue < range.upperBound { value.wrappedValue += 1 } } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3).foregroundStyle(value.wrappedValue < range.upperBound ? tint : .secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private func statusChip(_ s: VaccineStatus) -> some View {
+        let isSelected = status == s
+        let color: Color = switch s {
+        case .administered: .green
+        case .scheduled:    .blue
+        case .planned:      .orange
+        }
+        return Button { status = s } label: {
+            VStack(spacing: 4) {
+                statusIconView(s, color: color, isSelected: isSelected)
+                Text(s.displayName)
+                    .font(.caption2.bold())
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? color.opacity(colorScheme == .dark ? 0.25 : 0.12) : (colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05)))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? color : Color.clear, lineWidth: 1.5)
+            )
+            .foregroundStyle(isSelected ? color : .secondary)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private func statusIconView(_ s: VaccineStatus, color: Color, isSelected: Bool) -> some View {
+        let icon: String = switch s {
+        case .administered: "checkmark.circle.fill"
+        case .scheduled:    "calendar.badge.clock"
+        case .planned:      "clock.badge.questionmark"
+        }
+        Image(systemName: icon).font(.title3).foregroundStyle(isSelected ? color : .secondary)
     }
     
     @ViewBuilder
@@ -272,19 +571,12 @@ struct PediatricVaccineEditView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(RoundedRectangle(cornerRadius: 12).fill(isSelected ? tint : Color(.systemGray6)))
+            .background(RoundedRectangle(cornerRadius: 12).fill(isSelected ? tint : (colorScheme == .dark ? Color.white.opacity(0.07) : Color(.systemGray6))))
         }
         .buttonStyle(.plain)
     }
     
-    @ViewBuilder
-    private func statusIcon(_ s: VaccineStatus) -> some View {
-        switch s {
-        case .administered: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-        case .scheduled:    Image(systemName: "calendar.badge.clock").foregroundStyle(.blue)
-        case .planned:      Image(systemName: "clock.badge.questionmark").foregroundStyle(.orange)
-        }
-    }
+    // MARK: - Load & Save
     
     private func loadIfEditing() {
         guard let vid = vaccineId else { return }
@@ -325,7 +617,6 @@ struct PediatricVaccineEditView: View {
             v.syncState = .pendingUpsert
             savedId = v.id
         }
-        
         try? modelContext.save()
         onSaved(savedId)
         dismiss()
@@ -352,7 +643,7 @@ extension VaccineStatus {
     var displayName: String {
         switch self {
         case .administered: return "Somministrato"
-        case .scheduled:    return "Appuntamento fissato"
+        case .scheduled:    return "Appuntamento"
         case .planned:      return "Da programmare"
         }
     }

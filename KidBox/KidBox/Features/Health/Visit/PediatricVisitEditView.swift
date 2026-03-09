@@ -7,6 +7,7 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 import UniformTypeIdentifiers
+import UserNotifications
 
 // MARK: - Wizard root
 
@@ -60,8 +61,9 @@ struct PediatricVisitEditView: View {
     @State private var showAttachmentImporter = false
     
     // ── Step 5: Riepilogo ──
-    @State private var hasNextVisit  = false
-    @State private var nextVisitDate = Date()
+    @State private var hasNextVisit      = false
+    @State private var nextVisitDate     = Date()
+    @State private var nextVisitReminder = true   // promemoria giorno prima, default on
     
     @State private var isSaving = false
     
@@ -560,27 +562,19 @@ struct PediatricVisitEditView: View {
                 VStack(spacing: 8) {
                     ForEach(linkedExamIds, id: \.self) { eid in
                         LinkedExamCard(
-                            examId:      eid,
-                            familyId:    familyId,
-                            childId:     childId,
-                            childName:   childName,
-                            tint:        tint,
-                            colorScheme: colorScheme,
-                            onRemove: {
-                                linkedExamIds.removeAll { $0 == eid }
-                                let desc = FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.id == eid })
-                                if let e = try? modelContext.fetch(desc).first {
-                                    e.isDeleted = true; try? modelContext.save()
-                                }
-                            },
-                            onSaved: { savedId in          // ← AGGIUNTO
-                                // Se per qualsiasi motivo l'id cambia (es. retry con nuovo record),
-                                // assicura che linkedExamIds sia aggiornato
-                                if !linkedExamIds.contains(savedId) {
-                                    linkedExamIds.append(savedId)
-                                }
+                            examId: eid,
+                            familyId: familyId,
+                            childId: childId,
+                            childName: childName,
+                            tint: tint,
+                            colorScheme: colorScheme
+                        ) {
+                            linkedExamIds.removeAll { $0 == eid }
+                            let desc = FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.id == eid })
+                            if let e = try? modelContext.fetch(desc).first {
+                                e.isDeleted = true; try? modelContext.save()
                             }
-                        )
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -752,9 +746,25 @@ struct PediatricVisitEditView: View {
                         Toggle("", isOn: $hasNextVisit).labelsHidden()
                     }
                     if hasNextVisit {
-                        DatePicker("", selection: $nextVisitDate, displayedComponents: [.date])
+                        DatePicker("", selection: $nextVisitDate, in: Date()..., displayedComponents: [.date])
                             .datePickerStyle(.compact).labelsHidden()
                         Text(italianDateOnly(nextVisitDate)).font(.caption).foregroundStyle(.secondary)
+                        Divider()
+                        HStack {
+                            HStack(spacing: 8) {
+                                Image(systemName: nextVisitReminder ? "bell.fill" : "bell.slash.fill")
+                                    .foregroundStyle(nextVisitReminder ? tint : .secondary)
+                                    .font(.subheadline)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Promemoria il giorno prima")
+                                        .font(.subheadline)
+                                    Text("Notifica alle 09:00")
+                                        .font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            Toggle("", isOn: $nextVisitReminder).labelsHidden().tint(tint)
+                        }
                     }
                 }
                 .padding(14)
@@ -780,18 +790,11 @@ struct PediatricVisitEditView: View {
         linkedTreatmentIds = v.linkedTreatmentIds
         asNeededDrugs      = v.asNeededDrugs
         therapyTypes       = v.therapyTypes
-        linkedExamIds      = v.linkedExamIds
-        if linkedExamIds.isEmpty, let vid = visitId {
-            let desc = FetchDescriptor<KBMedicalExam>(
-                predicate: #Predicate { $0.prescribingVisitId == vid && $0.isDeleted == false }
-            )
-            if let orphans = try? modelContext.fetch(desc) {
-                linkedExamIds = orphans.map { $0.id }
-            }
-        }
+        linkedExamIds      = v.linkedExamIds   // ← legge linkedExamIds da KBMedicalVisit
         notes              = v.notes ?? ""
         hasNextVisit       = v.nextVisitDate != nil
         nextVisitDate      = v.nextVisitDate ?? Date()
+        nextVisitReminder  = v.nextVisitDate != nil  // se aveva già una data, reminder era attivo
     }
     
     private func save() {
@@ -832,6 +835,11 @@ struct PediatricVisitEditView: View {
             try? modelContext.save()
             SyncCenter.shared.enqueueVisitUpsert(visitId: v.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            if hasNextVisit && nextVisitReminder {
+                scheduleNextVisitReminder(visitId: v.id, date: nextVisitDate, reason: v.reason, childName: childName)
+            } else {
+                cancelNextVisitReminder(visitId: v.id)
+            }
             if !pendingAttachmentURLs.isEmpty {
                 KBEventBus.shared.emit(KBAppEvent.visitAttachmentPending(
                     urls: pendingAttachmentURLs, visitId: v.id, familyId: familyId, childId: childId
@@ -862,6 +870,9 @@ struct PediatricVisitEditView: View {
         try? modelContext.save()
         SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        if hasNextVisit && nextVisitReminder {
+            scheduleNextVisitReminder(visitId: visit.id, date: nextVisitDate, reason: reason, childName: childName)
+        }
         if !pendingAttachmentURLs.isEmpty {
             KBEventBus.shared.emit(KBAppEvent.visitAttachmentPending(
                 urls: pendingAttachmentURLs, visitId: visit.id, familyId: familyId, childId: childId
@@ -870,7 +881,55 @@ struct PediatricVisitEditView: View {
         isSaving = false; dismiss()
     }
     
-    // MARK: - Helpers
+    // MARK: - Next visit notification
+    
+    private func scheduleNextVisitReminder(visitId: String, date: Date, reason: String, childName: String) {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let settings = await center.notificationSettings()
+            guard settings.authorizationStatus == .authorized else {
+                // Prova a richiedere il permesso
+                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+                return
+            }
+            
+            // Calcola il giorno prima alle 09:00
+            let cal = Calendar.current
+            guard let dayBefore = cal.date(byAdding: .day, value: -1, to: date) else { return }
+            var components = cal.dateComponents([.year, .month, .day], from: dayBefore)
+            components.hour   = 9
+            components.minute = 0
+            
+            // Cancella eventuale reminder precedente per questa visita
+            center.removePendingNotificationRequests(withIdentifiers: ["next-visit-\(visitId)"])
+            
+            let content = UNMutableNotificationContent()
+            content.title = "Visita domani 🏥"
+            let name = childName.isEmpty ? "il bambino" : childName
+            if reason.isEmpty {
+                content.body = "Ricorda: domani c'è una visita medica per \(name)."
+            } else {
+                content.body = "Ricorda: domani c'è \"\(reason)\" per \(name)."
+            }
+            content.sound = .default
+            content.categoryIdentifier = "NEXT_VISIT"
+            
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "next-visit-\(visitId)",
+                content:    content,
+                trigger:    trigger
+            )
+            try? await center.add(request)
+        }
+    }
+    
+    private func cancelNextVisitReminder(visitId: String) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["next-visit-\(visitId)"])
+    }
+    
+    // MARK: - View helpers
     
     @ViewBuilder
     private func sectionCard<Content: View>(icon: String, title: String, badge: String? = nil, @ViewBuilder content: () -> Content) -> some View {
@@ -964,28 +1023,27 @@ private struct LinkedExamCard: View {
     let tint:      Color
     let colorScheme: ColorScheme
     let onRemove:  () -> Void
-    let onSaved:   ((String) -> Void)?   // ← AGGIUNTO
     
     @Query private var exams: [KBMedicalExam]
     private var exam: KBMedicalExam? { exams.first }
+    
+    // FIX: sheet(item:) con ExamSheetItem elimina il race condition —
+    // il contenuto dello sheet viene costruito DOPO che l'item è impostato,
+    // quindi loadIfEditing() riceve sempre l'examId corretto.
     @State private var editItem: ExamSheetItem? = nil
     
     init(examId: String, familyId: String, childId: String, childName: String,
-         tint: Color, colorScheme: ColorScheme,
-         onRemove: @escaping () -> Void,
-         onSaved: ((String) -> Void)? = nil) {   // ← AGGIUNTO
-        self.examId      = examId
-        self.familyId    = familyId
-        self.childId     = childId
-        self.childName   = childName
-        self.tint        = tint
+         tint: Color, colorScheme: ColorScheme, onRemove: @escaping () -> Void) {
+        self.examId    = examId
+        self.familyId  = familyId
+        self.childId   = childId
+        self.childName = childName
+        self.tint      = tint
         self.colorScheme = colorScheme
-        self.onRemove    = onRemove
-        self.onSaved     = onSaved             // ← AGGIUNTO
+        self.onRemove  = onRemove
         let eid = examId
         _exams = Query(filter: #Predicate<KBMedicalExam> { $0.id == eid })
     }
-
     
     var body: some View {
         HStack(spacing: 12) {
@@ -1028,8 +1086,7 @@ private struct LinkedExamCard: View {
                 familyId:  familyId,
                 childId:   childId,
                 childName: childName,
-                examId:    item.examId,
-                onSaved:   onSaved        // ← AGGIUNTO: propaga la callback
+                examId:    item.examId
             )
         }
     }

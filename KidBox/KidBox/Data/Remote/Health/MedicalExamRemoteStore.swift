@@ -68,8 +68,7 @@ final class MedicalExamRemoteStore {
         onError:  @escaping (Error) -> Void
     ) -> ListenerRegistration {
         col(familyId: familyId)
-            .whereField("childId",   isEqualTo: childId)
-            .whereField("isDeleted", isEqualTo: false)
+            .whereField("childId", isEqualTo: childId)
             .addSnapshotListener { snapshot, error in
                 if let error { onError(error); return }
                 let dtos = snapshot?.documents.compactMap {
