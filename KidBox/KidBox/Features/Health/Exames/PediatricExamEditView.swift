@@ -268,27 +268,75 @@ struct PediatricExamEditView: View {
     // MARK: - Existing doc row
     
     private func existingDocRow(_ doc: KBDocument) -> some View {
-        HStack(spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.1)).frame(width: 36, height: 36)
-                Image(systemName: mimeIcon(doc.mimeType)).foregroundStyle(tint).font(.subheadline)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+                    Image(systemName: mimeIcon(doc.mimeType)).foregroundStyle(tint).font(.subheadline)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(doc.title).font(.subheadline).lineLimit(1)
+                    extractionStatusLabel(doc)
+                }
+                Spacer()
+                // Riprova — solo se estrazione fallita
+                if doc.extractionStatus == .failed {
+                    Button {
+                        let uid = Auth.auth().currentUser?.uid ?? "local"
+                        DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                            for: doc, updatedBy: uid, modelContext: modelContext
+                        )
+                    } label: {
+                        Label("Riprova", systemImage: "arrow.clockwise")
+                            .font(.caption.bold()).foregroundStyle(.orange)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Button {
+                    ExamAttachmentService.shared.open(
+                        doc: doc, modelContext: modelContext,
+                        onURL: { previewURL = $0 },
+                        onError: { _ in },
+                        onKeyMissing: { showKeyAlert = true }
+                    )
+                } label: { Image(systemName: "eye.fill").foregroundStyle(tint) }
+                    .buttonStyle(.plain)
+                Button {
+                    ExamAttachmentService.shared.delete(doc, modelContext: modelContext)
+                } label: { Image(systemName: "trash").foregroundStyle(.red) }
+                    .buttonStyle(.plain)
             }
-            Text(doc.title).font(.subheadline).lineLimit(1)
-            Spacer()
-            Button {
-                ExamAttachmentService.shared.open(
-                    doc: doc, modelContext: modelContext,
-                    onURL: { previewURL = $0 },
-                    onError: { _ in },
-                    onKeyMissing: { showKeyAlert = true }
-                )
-            } label: { Image(systemName: "eye.fill").foregroundStyle(tint) }
-                .buttonStyle(.plain)
-            
-            Button {
-                ExamAttachmentService.shared.delete(doc, modelContext: modelContext)
-            } label: { Image(systemName: "trash").foregroundStyle(.red) }
-                .buttonStyle(.plain)
+        }
+    }
+    
+    @ViewBuilder
+    private func extractionStatusLabel(_ doc: KBDocument) -> some View {
+        let status = doc.extractionStatus
+        if status == .completed {
+            if doc.hasExtractedText {
+                Label("Leggibile dall'AI ✓", systemImage: "checkmark.circle.fill")
+                    .font(.caption2).foregroundStyle(.green)
+            } else {
+                Label("Nessun testo rilevato", systemImage: "minus.circle")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        } else if status == .processing {
+            extractionProgressLabel("Lettura in corso…")
+        } else if status == .pending {
+            extractionProgressLabel("In attesa di lettura…")
+        } else if status == .failed {
+            Label("Lettura fallita — tocca Riprova", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption2).foregroundStyle(.orange)
+        } else {
+            Label("Stato sconosciuto", systemImage: "questionmark.circle")
+                .font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+    
+    private func extractionProgressLabel(_ text: String) -> some View {
+        HStack(spacing: 4) {
+            ProgressView().scaleEffect(0.6).frame(width: 12, height: 12)
+            Text(text).font(.caption2).foregroundStyle(.secondary)
         }
     }
     

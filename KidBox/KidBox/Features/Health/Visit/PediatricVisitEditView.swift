@@ -1154,6 +1154,9 @@ private struct ExistingVisitAttachmentsInEdit: View {
     let visitId: String; let familyId: String; let tint: Color
     @Environment(\.modelContext) private var modelContext
     @Query private var allDocs: [KBDocument]
+    @State private var previewURL:  URL?  = nil
+    @State private var showKeyAlert: Bool = false
+    
     private var docs: [KBDocument] {
         let tag = VisitAttachmentTag.make(visitId)
         return allDocs.filter { $0.notes == tag }
@@ -1172,26 +1175,114 @@ private struct ExistingVisitAttachmentsInEdit: View {
                 Label("Allegati salvati (\(docs.count))", systemImage: "paperclip")
                     .font(.subheadline.bold()).foregroundStyle(tint)
                 ForEach(docs) { doc in
-                    HStack(spacing: 10) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.1)).frame(width: 36, height: 36)
-                            Image(systemName: mimeIcon(doc.mimeType)).foregroundStyle(tint).font(.subheadline)
-                        }
-                        Text(doc.title).font(.subheadline).lineLimit(1)
-                        Spacer()
-                        Button { VisitAttachmentService.shared.delete(doc, modelContext: modelContext) } label: {
-                            Image(systemName: "trash").foregroundStyle(.red).font(.subheadline)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.secondary.opacity(0.07)))
+                    docRow(doc)
                 }
             }
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 12).fill(Color.secondary.opacity(0.05)))
+            .sheet(isPresented: Binding(
+                get: { previewURL != nil },
+                set: { if !$0 { previewURL = nil } }
+            )) {
+                if let url = previewURL { QuickLookPreview(urls: [url], initialIndex: 0) }
+            }
+            .alert("Chiave mancante", isPresented: $showKeyAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Chiave di crittografia non disponibile.")
+            }
         }
     }
+    
+    private func docRow(_ doc: KBDocument) -> some View {
+        HStack(spacing: 10) {
+            docIcon(doc)
+            docInfo(doc)
+            Spacer()
+            docActions(doc)
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.secondary.opacity(0.07)))
+    }
+    
+    private func docIcon(_ doc: KBDocument) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+            Image(systemName: mimeIcon(doc.mimeType)).foregroundStyle(tint).font(.subheadline)
+        }
+    }
+    
+    private func docInfo(_ doc: KBDocument) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(doc.title).font(.subheadline).lineLimit(1)
+            extractionStatusLabel(doc)
+        }
+    }
+    
+    @ViewBuilder
+    private func docActions(_ doc: KBDocument) -> some View {
+        if doc.extractionStatus == .failed {
+            Button {
+                let uid = Auth.auth().currentUser?.uid ?? "local"
+                DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                    for: doc, updatedBy: uid, modelContext: modelContext
+                )
+            } label: {
+                Label("Riprova", systemImage: "arrow.clockwise")
+                    .font(.caption.bold()).foregroundStyle(.orange)
+            }
+            .buttonStyle(.plain)
+        }
+        Button {
+            VisitAttachmentService.shared.open(
+                doc: doc, modelContext: modelContext,
+                onURL: { previewURL = $0 },
+                onError: { _ in },
+                onKeyMissing: { showKeyAlert = true }
+            )
+        } label: {
+            Image(systemName: "eye.fill").foregroundStyle(tint).font(.subheadline)
+        }
+        .buttonStyle(.plain)
+        Button {
+            VisitAttachmentService.shared.delete(doc, modelContext: modelContext)
+        } label: {
+            Image(systemName: "trash").foregroundStyle(.red).font(.subheadline)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private func extractionStatusLabel(_ doc: KBDocument) -> some View {
+        let status = doc.extractionStatus
+        if status == .completed {
+            if doc.hasExtractedText {
+                Label("Leggibile dall'AI ✓", systemImage: "checkmark.circle.fill")
+                    .font(.caption2).foregroundStyle(.green)
+            } else {
+                Label("Nessun testo rilevato", systemImage: "minus.circle")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        } else if status == .processing {
+            extractionProgressLabel("Lettura in corso…")
+        } else if status == .pending {
+            extractionProgressLabel("In attesa di lettura…")
+        } else if status == .failed {
+            Label("Lettura fallita — tocca Riprova", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption2).foregroundStyle(.orange)
+        } else {
+            Label("Stato sconosciuto", systemImage: "questionmark.circle")
+                .font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+    
+    private func extractionProgressLabel(_ text: String) -> some View {
+        HStack(spacing: 4) {
+            ProgressView().scaleEffect(0.6).frame(width: 12, height: 12)
+            Text(text).font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+    
     private func mimeIcon(_ mime: String) -> String {
         if mime.contains("pdf") { return "doc.fill" }
         if mime.contains("image") { return "photo.fill" }

@@ -2,8 +2,6 @@
 //  PediatricExamDetailView.swift
 //  KidBox
 //
-//  Created by vscocca on 09/03/26.
-//
 
 import SwiftUI
 import SwiftData
@@ -30,7 +28,6 @@ struct PediatricExamDetailView: View {
     @State private var showEditSheet   = false
     @State private var showDeleteAlert = false
     
-    // Stesso tint di PediatricExamsView
     private let tint = Color(red: 0.25, green: 0.65, blue: 0.75)
     
     init(familyId: String, childId: String, examId: String) {
@@ -57,6 +54,13 @@ struct PediatricExamDetailView: View {
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .overlay(alignment: .bottomTrailing) {
+            if let exam {
+                ExamsAskAIButton(subjectName: childName, scope: .single(exam))
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 96)
+            }
+        }
         .sheet(isPresented: $showEditSheet) {
             if let exam {
                 PediatricExamEditView(
@@ -99,7 +103,6 @@ struct PediatricExamDetailView: View {
     }
     
     // MARK: - Header card
-    // Campi: nome, badge urgente, stato, scadenza, sync badge
     
     private func headerCard(_ e: KBMedicalExam) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -136,7 +139,6 @@ struct PediatricExamDetailView: View {
                 Spacer(minLength: 8)
             }
             
-            // Scadenza — mostrata solo se presente
             if let dl = e.deadline {
                 Divider()
                 let isOverdue = dl < Date() && (e.status == .pending || e.status == .booked)
@@ -158,7 +160,6 @@ struct PediatricExamDetailView: View {
                 }
             }
             
-            // Sync badge
             if e.syncState == .pendingUpsert {
                 Divider()
                 HStack(spacing: 6) {
@@ -175,7 +176,6 @@ struct PediatricExamDetailView: View {
     }
     
     // MARK: - Risultato
-    // Campi: resultDate, resultText
     
     private func resultCard(_ e: KBMedicalExam) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -203,7 +203,6 @@ struct PediatricExamDetailView: View {
     }
     
     // MARK: - Dettagli
-    // Campi: preparation, location
     
     private func detailsCard(_ e: KBMedicalExam) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -291,6 +290,7 @@ struct PediatricExamDetailView: View {
                         .font(.headline)
                 }
                 .buttonStyle(.plain)
+                
             }
             .padding(.horizontal)
         }
@@ -332,13 +332,12 @@ struct PediatricExamDetailView: View {
 }
 
 // MARK: - PrescribingVisitRow
-// Carica la visita prescrittrice via @Query e mostra un link navigabile verso il detail.
 
 private struct PrescribingVisitRow: View {
-    let visitId:    String
-    let familyId:   String
-    let childId:    String
-    let tint:       Color
+    let visitId:     String
+    let familyId:    String
+    let childId:     String
+    let tint:        Color
     let colorScheme: ColorScheme
     
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -392,8 +391,6 @@ private struct PrescribingVisitRow: View {
 }
 
 // MARK: - ExamAttachmentsSection
-// Mostra i KBDocument allegati all'esame (read-only, con anteprima).
-// Segue lo stesso pattern di VisitAttachmentsSection.
 
 struct ExamAttachmentsSection: View {
     let examId:   String
@@ -427,37 +424,8 @@ struct ExamAttachmentsSection: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Allegati (\(docs.count))", systemImage: "paperclip")
                     .font(.subheadline.bold()).foregroundStyle(tint)
-                
                 ForEach(docs) { doc in
-                    HStack(spacing: 10) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(tint.opacity(0.1)).frame(width: 36, height: 36)
-                            Image(systemName: mimeIcon(doc.mimeType))
-                                .foregroundStyle(tint).font(.subheadline)
-                        }
-                        Text(doc.title).font(.subheadline).lineLimit(1)
-                        Spacer()
-                        Button {
-                            ExamAttachmentService.shared.open(
-                                doc:          doc,
-                                modelContext: modelContext,
-                                onURL:        { previewURL = $0 },
-                                onError:      { _ in },
-                                onKeyMissing: { showKeyAlert = true }
-                            )
-                        } label: {
-                            Image(systemName: "eye.fill").foregroundStyle(tint)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(colorScheme == .dark
-                                  ? Color.white.opacity(0.06)
-                                  : Color.black.opacity(0.03))
-                    )
+                    docRow(doc)
                 }
             }
             .padding(16)
@@ -479,6 +447,100 @@ struct ExamAttachmentsSection: View {
             } message: {
                 Text("Chiave di crittografia non disponibile.")
             }
+        }
+    }
+    
+    // MARK: - Row helpers
+    
+    private func docRow(_ doc: KBDocument) -> some View {
+        HStack(spacing: 10) {
+            docIcon(doc)
+            docInfo(doc)
+            Spacer()
+            docActions(doc)
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(colorScheme == .dark
+                      ? Color.white.opacity(0.06)
+                      : Color.black.opacity(0.03))
+        )
+    }
+    
+    private func docIcon(_ doc: KBDocument) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(tint.opacity(0.1)).frame(width: 36, height: 36)
+            Image(systemName: mimeIcon(doc.mimeType))
+                .foregroundStyle(tint).font(.subheadline)
+        }
+    }
+    
+    private func docInfo(_ doc: KBDocument) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(doc.title).font(.subheadline).lineLimit(1)
+            extractionStatusLabel(doc)
+        }
+    }
+    
+    @ViewBuilder
+    private func docActions(_ doc: KBDocument) -> some View {
+        if doc.extractionStatus == .failed {
+            Button {
+                let uid = Auth.auth().currentUser?.uid ?? "local"
+                DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                    for: doc, updatedBy: uid, modelContext: modelContext
+                )
+            } label: {
+                Label("Riprova", systemImage: "arrow.clockwise")
+                    .font(.caption.bold()).foregroundStyle(.orange)
+            }
+            .buttonStyle(.plain)
+        }
+        Button {
+            ExamAttachmentService.shared.open(
+                doc:          doc,
+                modelContext: modelContext,
+                onURL:        { previewURL = $0 },
+                onError:      { _ in },
+                onKeyMissing: { showKeyAlert = true }
+            )
+        } label: {
+            Image(systemName: "eye.fill").foregroundStyle(tint)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Extraction status
+    
+    @ViewBuilder
+    private func extractionStatusLabel(_ doc: KBDocument) -> some View {
+        let status = doc.extractionStatus
+        if status == .completed {
+            if doc.hasExtractedText {
+                Label("Leggibile dall'AI ✓", systemImage: "checkmark.circle.fill")
+                    .font(.caption2).foregroundStyle(.green)
+            } else {
+                Label("Nessun testo rilevato", systemImage: "minus.circle")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        } else if status == .processing {
+            extractionProgressLabel("Lettura in corso…")
+        } else if status == .pending {
+            extractionProgressLabel("In attesa di lettura…")
+        } else if status == .failed {
+            Label("Lettura fallita — tocca Riprova", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption2).foregroundStyle(.orange)
+        } else {
+            EmptyView()
+        }
+    }
+    
+    private func extractionProgressLabel(_ text: String) -> some View {
+        HStack(spacing: 4) {
+            ProgressView().scaleEffect(0.6).frame(width: 12, height: 12)
+            Text(text).font(.caption2).foregroundStyle(.secondary)
         }
     }
     

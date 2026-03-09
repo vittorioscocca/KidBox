@@ -134,6 +134,13 @@ struct PediatricExamsView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Analisi & Esami")
         .toolbar { toolbarItems }
+        .overlay(alignment: .bottomTrailing) {
+            if !isSelecting {
+                ExamsAskAIButton(subjectName: childName, scope: .all(filtered))
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 96)
+            }
+        }
         .onAppear {
             SyncCenter.shared.startMedicalExamsRealtime(
                 familyId: familyId, childId: childId, modelContext: modelContext

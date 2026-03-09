@@ -2,8 +2,6 @@
 //  ExamAttachmentService.swift
 //  KidBox
 //
-//  Created by vscocca on 09/03/26.
-//
 
 import Combine
 import SwiftUI
@@ -31,28 +29,39 @@ final class ExamAttachmentService {
     // MARK: - Upload
     
     func upload(
-        url:         URL,
-        examId:      String,
-        familyId:    String,
-        childId:     String,
+        url:          URL,
+        examId:       String,
+        familyId:     String,
+        childId:      String,
         modelContext: ModelContext
     ) async -> KBDocument? {
         
         let okScope = url.startAccessingSecurityScopedResource()
         defer { if okScope { url.stopAccessingSecurityScopedResource() } }
         
-        guard let data = try? Data(contentsOf: url), !data.isEmpty else {
+        guard let rawData = try? Data(contentsOf: url), !rawData.isEmpty else {
             KBLog.storage.kbError("ExamAttachment: unable to read data file=\(url.lastPathComponent)")
             return nil
         }
         
-        let uid        = Auth.auth().currentUser?.uid ?? "local"
-        let now        = Date()
-        let docId      = UUID().uuidString
-        let fileName   = url.lastPathComponent
-        let ext        = url.pathExtension.lowercased()
-        let mime       = mimeType(for: ext)
-        let title      = url.deletingPathExtension().lastPathComponent
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
+        let docId = UUID().uuidString
+        let ext   = url.pathExtension.lowercased()
+        
+        // HEIC → JPEG: Vision OCR e preview funzionano meglio con JPEG.
+        let (data, mime, fileName): (Data, String, String) = {
+            if ext == "heic",
+               let image = UIImage(data: rawData),
+               let jpegData = image.jpegData(compressionQuality: 0.92) {
+                let jpegName = url.deletingPathExtension().lastPathComponent + ".jpg"
+                KBLog.storage.kbInfo("ExamAttachment: HEIC→JPEG file=\(jpegName)")
+                return (jpegData, "image/jpeg", jpegName)
+            }
+            return (rawData, mimeType(for: ext), url.lastPathComponent)
+        }()
+        
+        let title       = URL(fileURLWithPath: fileName).deletingPathExtension().lastPathComponent
         let storagePath = "families/\(familyId)/exam-attachments/\(examId)/\(docId)/\(fileName).kbenc"
         
         let (_, referti) = TreatmentAttachmentService.shared.ensureHealthFolders(
@@ -83,14 +92,16 @@ final class ExamAttachmentService {
             updatedAt:   now,
             isDeleted:   false
         )
-        doc.localPath  = localRelPath
-        doc.syncState  = .pendingUpsert
+        doc.localPath = localRelPath
+        doc.syncState = .pendingUpsert
         modelContext.insert(doc)
         try? modelContext.save()
         
+        // Estrazione testo per AI (PDF nativo/OCR, immagini, DOCX, RTF, TXT)
         DocumentTextExtractionCoordinator.shared.enqueueExtraction(
             for: doc, updatedBy: uid, modelContext: modelContext
         )
+        
         SyncCenter.shared.enqueueDocumentUpsert(
             documentId: doc.id, familyId: familyId, modelContext: modelContext
         )
@@ -102,7 +113,7 @@ final class ExamAttachmentService {
                 data, familyId: familyId, userId: uid
             ) else { return }
             
-            let ref = Storage.storage().reference(withPath: storagePath)
+            let ref  = Storage.storage().reference(withPath: storagePath)
             let meta = StorageMetadata()
             meta.contentType = "application/octet-stream"
             meta.customMetadata = [
@@ -121,6 +132,31 @@ final class ExamAttachmentService {
         }
         
         return doc
+    }
+    
+    // MARK: - Re-extract (chiamato quando il documento arriva via sync senza testo estratto)
+    
+    /// Rienqueue l'estrazione testo per un documento già esistente che non ha ancora
+    /// `extractedText` — tipicamente un allegato sincronizzato da un altro account.
+    func enqueueReExtractionIfNeeded(
+        doc: KBDocument,
+        modelContext: ModelContext
+    ) {
+        guard ExamAttachmentTag.matches(doc, examId: doc.notes?.replacingOccurrences(of: "exam:", with: "") ?? "") else { return }
+        guard doc.extractionStatus != .completed || !doc.hasExtractedText else {
+            KBLog.storage.kbDebug("ExamAttachment: re-extraction skipped, already done docId=\(doc.id)")
+            return
+        }
+        guard doc.localPath != nil else {
+            KBLog.storage.kbDebug("ExamAttachment: re-extraction skipped, no local file yet docId=\(doc.id)")
+            return
+        }
+        
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        KBLog.storage.kbInfo("ExamAttachment: enqueue re-extraction docId=\(doc.id) status=\(doc.extractionStatus.rawValue)")
+        DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+            for: doc, updatedBy: uid, modelContext: modelContext
+        )
     }
     
     // MARK: - Delete
@@ -152,6 +188,10 @@ final class ExamAttachmentService {
         onError:      @escaping (String) -> Void,
         onKeyMissing: @escaping () -> Void
     ) {
+        // Se il file è stato aperto/decriptato e il testo non è ancora estratto, ri-enqueue.
+        if doc.localPath != nil {
+            enqueueReExtractionIfNeeded(doc: doc, modelContext: modelContext)
+        }
         TreatmentAttachmentService.shared.open(
             doc: doc, modelContext: modelContext,
             onURL: onURL, onError: onError, onKeyMissing: onKeyMissing
@@ -162,11 +202,14 @@ final class ExamAttachmentService {
     
     private func mimeType(for ext: String) -> String {
         switch ext {
-        case "pdf":         return "application/pdf"
-        case "jpg", "jpeg": return "image/jpeg"
-        case "png":         return "image/png"
-        case "heic":        return "image/heic"
-        default:            return "application/octet-stream"
+        case "pdf":              return "application/pdf"
+        case "jpg", "jpeg":      return "image/jpeg"
+        case "png":              return "image/png"
+        case "heic":             return "image/heic"
+        case "txt":              return "text/plain"
+        case "rtf":              return "application/rtf"
+        case "docx":             return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        default:                 return "application/octet-stream"
         }
     }
 }
