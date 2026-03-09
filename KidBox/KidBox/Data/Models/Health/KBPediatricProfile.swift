@@ -18,6 +18,8 @@ final class KBPediatricProfile {
     var familyId: String
     var childId: String
     
+    var emergencyContactsData: Data? = nil
+    
     // MARK: - Scheda medica
     var bloodGroup: String?              // "A+", "B-", "0+", …
     var allergies: String?               // testo libero
@@ -60,5 +62,32 @@ final class KBPediatricProfile {
         self.updatedAt   = updatedAt
         self.updatedBy   = updatedBy
         self.syncStateRaw = KBSyncState.synced.rawValue
+    }
+}
+
+/// Contatto di emergenza associato a un bambino.
+/// Salvato come array JSON embedded in KBPediatricProfile.emergencyContactsData.
+struct KBEmergencyContact: Codable, Identifiable, Equatable {
+    var id: UUID = UUID()
+    var name: String
+    var relation: String   // es. "Nonna", "Papà", "Babysitter"
+    var phone: String
+}
+
+// MARK: - KBPediatricProfile + emergencyContacts
+
+extension KBPediatricProfile {
+    
+    /// Array decodificato dei contatti emergenza.
+    /// Getter: decodifica da emergencyContactsData (nil → [])
+    /// Setter: ri-codifica e salva in emergencyContactsData
+    var emergencyContacts: [KBEmergencyContact] {
+        get {
+            guard let data = emergencyContactsData else { return [] }
+            return (try? JSONDecoder().decode([KBEmergencyContact].self, from: data)) ?? []
+        }
+        set {
+            emergencyContactsData = try? JSONEncoder().encode(newValue)
+        }
     }
 }
