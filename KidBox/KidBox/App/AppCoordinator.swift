@@ -278,6 +278,8 @@ final class AppCoordinator: ObservableObject {
        
         case .pediatricVisitDetail(familyId: let familyId, childId: let childId, visitId: let visitId):
             PediatricVisitDetailView(familyId: familyId, childId: childId, visitId: visitId)
+        case .pediatricExams(familyId: let familyId, childId: let childId):
+            PediatricExamsView(familyId: familyId, childId: childId)
         }
     }
     

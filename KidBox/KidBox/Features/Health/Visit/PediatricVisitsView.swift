@@ -10,98 +10,83 @@ import FirebaseAuth
 struct PediatricVisitsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme)  private var colorScheme
     
-    @Query private var visits: [KBMedicalVisit]
+    @Query private var visits:   [KBMedicalVisit]
     @Query private var children: [KBChild]
-    @Query private var members: [KBFamilyMember]
+    @Query private var members:  [KBFamilyMember]
     
     let familyId: String
-    let childId: String
+    let childId:  String
     
+    // ── Add ──
     @State private var showAddSheet = false
-    @State private var selectedPeriod: PeriodFilter = .thirtyDays
+    
+    // ── Selezione multipla ──
+    @State private var isSelecting       = false
+    @State private var selectedIds       = Set<String>()
+    @State private var showDeleteConfirm = false
+    
+    // ── Filtro ──
+    @State private var selectedPeriod:             PeriodFilter = .thirtyDays
+    @State private var customStartDate:            Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var customEndDate:              Date = Date()
+    @State private var showCustomPeriodSheet       = false
+    @State private var previousPeriodBeforeCustom: PeriodFilter = .all
+    
+    // ── Ricerca ──
     @State private var searchText = ""
-    @State private var showAIConsent = false
-    @State private var showAIChat = false
+    
+    // ── AI ──
+    @State private var showAIConsent     = false
+    @State private var showAIChat        = false
     @State private var aiSelectedVisits: [KBMedicalVisit] = []
     @State private var aiSelectedPeriod: PeriodFilter = .all
-    @State private var aiSubjectName: String = ""
-    @State private var aiScopeId: String = ""
-    @State private var customStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-    @State private var customEndDate: Date = Date()
-    @State private var showCustomPeriodSheet = false
-    @State private var previousPeriodBeforeCustom: PeriodFilter = .all
+    @State private var aiSubjectName     = ""
+    @State private var aiScopeId_        = ""
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
-    private var childName: String {
-        switch selectedPerson {
-        case .child(let child):
-            return child.name
-        case .member(let member):
-            return member.displayName ?? "membro famiglia"
-        case nil:
-            return "bambino"
-        }
-    }
-    
-    private var selectedPeriodLabel: String {
-        if selectedPeriod == .custom {
-            let start = min(customStartDate, customEndDate)
-            let end = max(customStartDate, customEndDate)
-            return "\(italianShortDate(start)) - \(italianShortDate(end))"
-        }
-        
-        return selectedPeriod.label
-    }
+    // MARK: - Init
     
     init(familyId: String, childId: String) {
         self.familyId = familyId
         self.childId  = childId
-        
-        let fid = familyId
-        let cid = childId
-        
-        _visits = Query(
-            filter: #Predicate<KBMedicalVisit> {
-                $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
-            },
+        let fid = familyId, cid = childId
+        _visits   = Query(
+            filter: #Predicate<KBMedicalVisit> { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false },
             sort: [SortDescriptor(\KBMedicalVisit.date, order: .reverse)]
         )
-        
-        _children = Query(
-            filter: #Predicate<KBChild> { $0.id == cid }
-        )
-        
-        _members = Query(
-            filter: #Predicate<KBFamilyMember> {
-                $0.familyId == fid && $0.userId == cid
-            }
-        )
+        _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
+        _members  = Query(filter: #Predicate<KBFamilyMember> { $0.familyId == fid && $0.userId == cid })
+    }
+    
+    // MARK: - Computed
+    
+    private var selectedPerson: PediatricPerson? {
+        if let c = children.first { return .child(c) }
+        if let m = members.first  { return .member(m) }
+        return nil
+    }
+    
+    private var childName: String {
+        switch selectedPerson {
+        case .child(let c):  return c.name
+        case .member(let m): return m.displayName ?? "membro famiglia"
+        case nil:            return "bambino"
+        }
     }
     
     private var filteredVisits: [KBMedicalVisit] {
         let periodFiltered: [KBMedicalVisit]
-        
         switch selectedPeriod {
         case .all:
             periodFiltered = visits
-            
         case .custom:
-            let start = min(customStartDate, customEndDate)
-            let end = max(customStartDate, customEndDate)
-            let endOfDay = Calendar.current.date(
-                bySettingHour: 23,
-                minute: 59,
-                second: 59,
-                of: end
-            ) ?? end
-            
-            periodFiltered = visits.filter {
-                $0.date >= start && $0.date <= endOfDay
-            }
-            
+            let start  = min(customStartDate, customEndDate)
+            let endDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59,
+                                               of: max(customStartDate, customEndDate)) ?? customEndDate
+            periodFiltered = visits.filter { $0.date >= start && $0.date <= endDay }
         default:
             if let cutoff = selectedPeriod.cutoffDate {
                 periodFiltered = visits.filter { $0.date >= cutoff }
@@ -109,54 +94,39 @@ struct PediatricVisitsView: View {
                 periodFiltered = visits
             }
         }
-        
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return periodFiltered }
-        
-        return periodFiltered.filter { visit in
-            let reason = visit.reason
-            let doctor = visit.doctorName ?? ""
-            let diagnosis = visit.diagnosis ?? ""
-            let recommendations = visit.recommendations ?? ""
-            let notes = visit.notes ?? ""
-            
-            return reason.localizedCaseInsensitiveContains(query)
-            || doctor.localizedCaseInsensitiveContains(query)
-            || diagnosis.localizedCaseInsensitiveContains(query)
-            || recommendations.localizedCaseInsensitiveContains(query)
-            || notes.localizedCaseInsensitiveContains(query)
+        return periodFiltered.filter { v in
+            v.reason.localizedCaseInsensitiveContains(query)
+            || (v.doctorName      ?? "").localizedCaseInsensitiveContains(query)
+            || (v.diagnosis       ?? "").localizedCaseInsensitiveContains(query)
+            || (v.recommendations ?? "").localizedCaseInsensitiveContains(query)
+            || (v.notes           ?? "").localizedCaseInsensitiveContains(query)
         }
     }
     
-    private var selectedPerson: PediatricPerson? {
-        if let child = children.first {
-            return .child(child)
+    private var selectedPeriodLabel: String {
+        if selectedPeriod == .custom {
+            return "\(italianShortDate(min(customStartDate, customEndDate))) – \(italianShortDate(max(customStartDate, customEndDate)))"
         }
-        
-        if let member = members.first {
-            return .member(member)
-        }
-        
-        return nil
+        return selectedPeriod.label
     }
+    
+    // MARK: - Body
     
     var body: some View {
         VStack(spacing: 0) {
             List {
+                // ── Filtro periodo ──
                 Section {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Filtra per periodo")
-                                .font(.caption)
-                                .foregroundStyle(KBTheme.secondaryText(colorScheme))
-                            
+                                .font(.caption).foregroundStyle(KBTheme.secondaryText(colorScheme))
                             Text("\(filteredVisits.count) visit\(filteredVisits.count == 1 ? "a" : "e")")
-                                .font(.subheadline.bold())
-                                .foregroundStyle(KBTheme.primaryText(colorScheme))
+                                .font(.subheadline.bold()).foregroundStyle(KBTheme.primaryText(colorScheme))
                         }
-                        
                         Spacer()
-                        
                         Menu {
                             ForEach(PeriodFilter.allCases) { p in
                                 Button {
@@ -169,9 +139,7 @@ struct PediatricVisitsView: View {
                                 } label: {
                                     HStack {
                                         Text(p.label)
-                                        if selectedPeriod == p {
-                                            Image(systemName: "checkmark")
-                                        }
+                                        if selectedPeriod == p { Image(systemName: "checkmark") }
                                     }
                                 }
                             }
@@ -181,20 +149,16 @@ struct PediatricVisitsView: View {
                                 Text(selectedPeriodLabel)
                                 Image(systemName: "chevron.down")
                             }
-                            .font(.subheadline)
-                            .foregroundStyle(tint)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(tint.opacity(0.1))
-                            )
+                            .font(.subheadline).foregroundStyle(tint)
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.1)))
                         }
                     }
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
                 
+                // ── Lista ──
                 if filteredVisits.isEmpty {
                     Section {
                         emptyState
@@ -204,19 +168,15 @@ struct PediatricVisitsView: View {
                 } else {
                     Section {
                         ForEach(filteredVisits) { visitRow($0) }
-                            .onDelete { deleteItems(offsets: $0) }
+                            .onDelete(perform: isSelecting ? nil : { deleteItems(offsets: $0) })
                     } header: {
                         HStack {
                             Label("Visite recenti", systemImage: "clock.arrow.circlepath")
                                 .foregroundStyle(tint)
-                            
                             Spacer()
-                            
                             Text("\(filteredVisits.count)")
-                                .font(.caption.bold())
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
+                                .font(.caption.bold()).foregroundStyle(.white)
+                                .padding(.horizontal, 8).padding(.vertical, 3)
                                 .background(Capsule().fill(tint))
                         }
                     }
@@ -226,20 +186,8 @@ struct PediatricVisitsView: View {
             .scrollContentBackground(.hidden)
             .background(KBTheme.background(colorScheme))
             
-            Button {
-                showAddSheet = true
-            } label: {
-                Label("Aggiungi nuova visita", systemImage: "plus.circle.fill")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 14).fill(tint))
-                    .foregroundStyle(.white)
-                    .font(.headline)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-            .background(KBTheme.background(colorScheme))
+            // ── Bottom bar ──
+            if isSelecting { selectionBottomBar } else { addButton }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Visita Medica")
@@ -248,277 +196,285 @@ struct PediatricVisitsView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Cerca visita"
         )
-        .sheet(isPresented: $showAIConsent) {
-            AIConsentSheet {
-                KBLog.ai.kbInfo("AI consent accepted -> opening AI chat")
-                showAIChat = true
+        .toolbar { toolbarItems }
+        .sheet(isPresented: $showAddSheet) {
+            PediatricVisitEditView(familyId: familyId, childId: childId, childName: childName)
+        }
+        .sheet(isPresented: $showCustomPeriodSheet) {
+            NavigationStack {
+                Form {
+                    DatePicker("Data inizio", selection: $customStartDate, displayedComponents: .date)
+                    DatePicker("Data fine",   selection: $customEndDate,   displayedComponents: .date)
+                }
+                .navigationTitle("Intervallo personalizzato")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Annulla") { selectedPeriod = previousPeriodBeforeCustom; showCustomPeriodSheet = false }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Conferma") { selectedPeriod = .custom; showCustomPeriodSheet = false }
+                    }
+                }
             }
         }
+        .sheet(isPresented: $showAIConsent) {
+            AIConsentSheet { showAIChat = true }
+        }
         .sheet(isPresented: $showAIChat) {
-            KBLog.ai.kbInfo("Presenting PediatricVisitsAIChatView subject=\(aiSubjectName)")
-            KBLog.ai.kbInfo("Presenting PediatricVisitsAIChatView visits.count=\(aiSelectedVisits.count)")
-            KBLog.ai.kbDebug("Presenting PediatricVisitsAIChatView visitIds=\(aiSelectedVisits.map(\.id).joined(separator: ","))")
-            KBLog.ai.kbInfo("Presenting PediatricVisitsAIChatView scopeId=\(aiScopeId)")
-            
-            return PediatricVisitsAIChatView(
-                subjectName: aiSubjectName,
-                visibleVisits: aiSelectedVisits,
-                selectedPeriod: aiSelectedPeriod,
+            PediatricVisitsAIChatView(
+                subjectName:     aiSubjectName,
+                visibleVisits:   aiSelectedVisits,
+                selectedPeriod:  aiSelectedPeriod,
                 customStartDate: aiSelectedPeriod == .custom ? customStartDate : nil,
-                customEndDate: aiSelectedPeriod == .custom ? customEndDate : nil,
-                scopeId: aiScopeId
+                customEndDate:   aiSelectedPeriod == .custom ? customEndDate   : nil,
+                scopeId:         aiScopeId_
             )
         }
-        .onChange(of: showAIChat) { _, newValue in
-            KBLog.ai.kbInfo("showAIChat changed -> \(newValue)")
-        }
-        .onChange(of: filteredVisits.count) { _, newValue in
-            KBLog.ai.kbInfo("filteredVisits.count changed -> \(newValue)")
+        .confirmationDialog(
+            "Eliminare \(selectedIds.count) visit\(selectedIds.count == 1 ? "a" : "e")?",
+            isPresented: $showDeleteConfirm, titleVisibility: .visible
+        ) {
+            Button("Elimina", role: .destructive) { deleteSelected() }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("Le visite verranno rimosse da tutti i dispositivi.")
         }
         .overlay(alignment: .bottomTrailing) {
-            if let selectedPerson, !filteredVisits.isEmpty {
+            if let selectedPerson, !filteredVisits.isEmpty, !isSelecting {
                 PediatricVisitsAskAIButton(
                     person: selectedPerson,
                     visits: filteredVisits,
                     selectedPeriod: selectedPeriod
                 ) { person, visits, period in
-                    KBLog.ai.kbInfo("AskAI button tapped period=\(period.rawValue) passedVisits.count=\(visits.count)")
-                    KBLog.ai.kbDebug("AskAI button tapped passedVisitIds=\(visits.map(\.id).joined(separator: ","))")
                     handleAskAI(person: person, visits: visits, period: period)
                 }
                 .padding(.trailing, 20)
                 .padding(.bottom, 96)
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 16) {
-                    Button { } label: {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                    
-                    Button {
-                        showAddSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showAddSheet) {
-            PediatricVisitEditView(
-                familyId: familyId,
-                childId: childId,
-                childName: childName
-            )
-        }
-        .sheet(isPresented: $showCustomPeriodSheet) {
-            NavigationStack {
-                Form {
-                    DatePicker("Data inizio", selection: $customStartDate, displayedComponents: .date)
-                    DatePicker("Data fine", selection: $customEndDate, displayedComponents: .date)
-                }
-                .navigationTitle("Intervallo personalizzato")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Annulla") {
-                            selectedPeriod = previousPeriodBeforeCustom
-                            showCustomPeriodSheet = false
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Conferma") {
-                            selectedPeriod = .custom
-                            showCustomPeriodSheet = false
-                        }
-                    }
-                }
-            }
-        }
         .environment(\.locale, Locale(identifier: "it_IT"))
     }
     
-    private func aiScopeId(for person: PediatricPerson, period: PeriodFilter) -> String {
-        let base: String
-        
-        switch person {
-        case .child(let child):
-            base = "visits-child-\(child.id)"
-        case .member(let member):
-            base = "visits-member-\(member.id)"
+    // MARK: - Toolbar
+    
+    @ToolbarContentBuilder
+    private var toolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            HStack(spacing: 16) {
+                // Seleziona / Fine
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isSelecting.toggle()
+                        if !isSelecting { selectedIds.removeAll() }
+                    }
+                } label: {
+                    Text(isSelecting ? "Fine" : "Seleziona").font(.subheadline)
+                }
+                if !isSelecting {
+                    Button { } label: { Image(systemName: "square.and.arrow.up") }
+                    Button { showAddSheet = true } label: { Image(systemName: "plus") }
+                }
+            }
         }
-        
-        if period == .custom {
-            let start = min(customStartDate, customEndDate)
-            let end = max(customStartDate, customEndDate)
-            
-            let formatter = DateFormatter()
-            formatter.calendar = Calendar.current
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "yyyyMMdd"
-            
-            let startKey = formatter.string(from: start)
-            let endKey = formatter.string(from: end)
-            
-            return "\(base)-custom-\(startKey)-\(endKey)"
-        }
-        
-        return "\(base)-\(period.rawValue)"
     }
     
-    private func italianShortDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "it_IT")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "d MMM yyyy"
-        return formatter.string(from: date)
-    }
+    // MARK: - Row
     
     private func visitRow(_ v: KBMedicalVisit) -> some View {
         Button {
-            coordinator.navigate(to: .pediatricVisitDetail(
-                familyId: familyId,
-                childId: childId,
-                visitId: v.id
-            ))
+            if isSelecting {
+                toggleSelection(v.id)
+            } else {
+                coordinator.navigate(to: .pediatricVisitDetail(
+                    familyId: familyId, childId: childId, visitId: v.id
+                ))
+            }
         } label: {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(tint.opacity(0.12))
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: "stethoscope")
-                        .foregroundStyle(tint)
+                if isSelecting {
+                    Image(systemName: selectedIds.contains(v.id) ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selectedIds.contains(v.id) ? tint : .secondary)
+                        .font(.title3)
+                        .animation(.easeInOut(duration: 0.15), value: selectedIds.contains(v.id))
                 }
-                
+                ZStack {
+                    Circle().fill(tint.opacity(0.12)).frame(width: 44, height: 44)
+                    Image(systemName: "stethoscope").foregroundStyle(tint)
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(v.reason.isEmpty ? "Visita" : v.reason)
                         .font(.subheadline.bold())
                         .foregroundStyle(KBTheme.primaryText(colorScheme))
                         .lineLimit(1)
-                    
                     if let doctor = v.doctorName, !doctor.isEmpty {
-                        Text(doctor)
-                            .font(.caption)
-                            .foregroundStyle(tint)
-                            .lineLimit(1)
+                        Text(doctor).font(.caption).foregroundStyle(tint).lineLimit(1)
                     }
-                    
                     Text(v.date.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                        .font(.caption).foregroundStyle(KBTheme.secondaryText(colorScheme))
                 }
-                
                 Spacer()
-                
-                if v.diagnosis != nil {
-                    Image(systemName: "doc.text.fill")
-                        .font(.caption)
-                        .foregroundStyle(tint.opacity(0.6))
+                if !isSelecting {
+                    if v.diagnosis != nil {
+                        Image(systemName: "doc.text.fill").font(.caption).foregroundStyle(tint.opacity(0.6))
+                    }
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                 }
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if !isSelecting {
+                Button(role: .destructive) { deleteSingle(v) } label: {
+                    Label("Elimina", systemImage: "trash")
+                }
+            }
+        }
     }
+    
+    // MARK: - Selection bottom bar
+    
+    private var selectionBottomBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 0) {
+                Button {
+                    let all = filteredVisits.map { $0.id }
+                    if selectedIds.count == all.count { selectedIds.removeAll() }
+                    else { selectedIds = Set(all) }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: selectedIds.count == filteredVisits.count
+                              ? "checkmark.circle.fill" : "circle.grid.3x3").font(.title3)
+                        Text(selectedIds.count == filteredVisits.count ? "Deseleziona" : "Tutte")
+                            .font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                }
+                .foregroundStyle(tint).buttonStyle(.plain)
+                
+                Divider().frame(height: 40)
+                
+                Button { showDeleteConfirm = true } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "trash").font(.title3)
+                        Text("Elimina").font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                }
+                .foregroundStyle(selectedIds.isEmpty ? .secondary : Color.red)
+                .disabled(selectedIds.isEmpty).buttonStyle(.plain)
+            }
+            .background(KBTheme.background(colorScheme))
+        }
+    }
+    
+    // MARK: - Add button
+    
+    private var addButton: some View {
+        Button { showAddSheet = true } label: {
+            Label("Aggiungi nuova visita", systemImage: "plus.circle.fill")
+                .frame(maxWidth: .infinity).padding()
+                .background(RoundedRectangle(cornerRadius: 14).fill(tint))
+                .foregroundStyle(.white).font(.headline)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal).padding(.vertical, 12)
+        .background(KBTheme.background(colorScheme))
+    }
+    
+    // MARK: - Empty state
     
     private var emptyState: some View {
         VStack(spacing: 16) {
             ZStack {
-                Circle()
-                    .fill(tint.opacity(0.12))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: "stethoscope")
-                    .font(.system(size: 32))
-                    .foregroundStyle(tint)
+                Circle().fill(tint.opacity(0.12)).frame(width: 80, height: 80)
+                Image(systemName: "stethoscope").font(.system(size: 32)).foregroundStyle(tint)
             }
-            
-            Text("Nessuna visita registrata")
-                .font(.title3.bold())
+            Text("Nessuna visita registrata").font(.title3.bold())
                 .foregroundStyle(KBTheme.primaryText(colorScheme))
-            
             Text("Aggiungi la prima visita per \(childName)")
-                .font(.subheadline)
-                .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                .font(.subheadline).foregroundStyle(KBTheme.secondaryText(colorScheme))
                 .multilineTextAlignment(.center)
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding().frame(maxWidth: .infinity).padding(.vertical, 40)
+    }
+    
+    // MARK: - Delete
+    
+    private func toggleSelection(_ id: String) {
+        if selectedIds.contains(id) { selectedIds.remove(id) } else { selectedIds.insert(id) }
+    }
+    
+    private func deleteSingle(_ v: KBMedicalVisit) {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        v.isDeleted = true; v.updatedBy = uid; v.updatedAt = Date()
+        v.syncState = .pendingUpsert; v.lastSyncError = nil
+        try? modelContext.save()
+        SyncCenter.shared.enqueueVisitDelete(visitId: v.id, familyId: familyId, modelContext: modelContext)
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+    }
+    
+    private func deleteSelected() {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
+        for v in filteredVisits where selectedIds.contains(v.id) {
+            v.isDeleted = true; v.updatedBy = uid; v.updatedAt = now
+            v.syncState = .pendingUpsert; v.lastSyncError = nil
+            SyncCenter.shared.enqueueVisitDelete(visitId: v.id, familyId: familyId, modelContext: modelContext)
+        }
+        try? modelContext.save()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        withAnimation { selectedIds.removeAll(); isSelecting = false }
     }
     
     private func deleteItems(offsets: IndexSet) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
-        
         for i in offsets {
             let v = filteredVisits[i]
-            v.isDeleted = true
-            v.updatedBy = uid
-            v.updatedAt = now
-            v.syncState = .pendingUpsert
-            v.lastSyncError = nil
-            
-            try? modelContext.save()
-            
-            SyncCenter.shared.enqueueVisitDelete(
-                visitId: v.id,
-                familyId: familyId,
-                modelContext: modelContext
-            )
+            v.isDeleted = true; v.updatedBy = uid; v.updatedAt = now
+            v.syncState = .pendingUpsert; v.lastSyncError = nil
+            SyncCenter.shared.enqueueVisitDelete(visitId: v.id, familyId: familyId, modelContext: modelContext)
         }
-        
+        try? modelContext.save()
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
-    private func handleAskAI(
-        person: PediatricPerson,
-        visits _: [KBMedicalVisit],
-        period: PeriodFilter
-    ) {
-        KBLog.ai.kbInfo("handleAskAI START period=\(period.rawValue)")
-        KBLog.ai.kbInfo("handleAskAI current filteredVisits.count=\(filteredVisits.count)")
-        KBLog.ai.kbDebug("handleAskAI current filteredVisitIds=\(filteredVisits.map(\.id).joined(separator: ","))")
-        
-        let currentVisits = filteredVisits
-        
-        guard !currentVisits.isEmpty else {
-            KBLog.ai.kbError("handleAskAI aborted: filteredVisits is empty")
-            return
-        }
-        
+    // MARK: - AI
+    
+    private func buildAiScopeId(for person: PediatricPerson, period: PeriodFilter) -> String {
+        let base: String
         switch person {
-        case .child(let child):
-            aiSubjectName = child.name
-            KBLog.ai.kbInfo("handleAskAI subject resolved as child")
-            
-        case .member(let member):
-            aiSubjectName = member.displayName ?? "Membro della famiglia"
-            KBLog.ai.kbInfo("handleAskAI subject resolved as family member")
+        case .child(let c):  base = "visits-child-\(c.id)"
+        case .member(let m): base = "visits-member-\(m.id)"
         }
-        
-        aiScopeId = aiScopeId(for: person, period: period)
-        aiSelectedVisits = currentVisits
+        if period == .custom {
+            let fmt = DateFormatter()
+            fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.dateFormat = "yyyyMMdd"
+            return "\(base)-custom-\(fmt.string(from: min(customStartDate, customEndDate)))-\(fmt.string(from: max(customStartDate, customEndDate)))"
+        }
+        return "\(base)-\(period.rawValue)"
+    }
+    
+    private func handleAskAI(person: PediatricPerson, visits _: [KBMedicalVisit], period: PeriodFilter) {
+        KBLog.ai.kbInfo("handleAskAI START period=\(period.rawValue) filteredVisits=\(filteredVisits.count)")
+        guard !filteredVisits.isEmpty else { return }
+        switch person {
+        case .child(let c):  aiSubjectName = c.name
+        case .member(let m): aiSubjectName = m.displayName ?? "Membro della famiglia"
+        }
+        aiScopeId_       = buildAiScopeId(for: person, period: period)
+        aiSelectedVisits = filteredVisits
         aiSelectedPeriod = period
-        
-        KBLog.ai.kbInfo("handleAskAI aiSelectedVisits.count=\(aiSelectedVisits.count)")
-        KBLog.ai.kbDebug("handleAskAI aiSelectedVisitIds=\(aiSelectedVisits.map(\.id).joined(separator: ","))")
-        KBLog.ai.kbInfo("handleAskAI aiScopeId=\(aiScopeId)")
-        
-        if !AISettings.shared.consentGiven {
-            KBLog.ai.kbInfo("handleAskAI consent missing -> opening consent sheet")
-            showAIConsent = true
-            return
-        }
-        
-        KBLog.ai.kbInfo("handleAskAI opening AI chat sheet")
+        if !AISettings.shared.consentGiven { showAIConsent = true; return }
         showAIChat = true
+    }
+    
+    private func italianShortDate(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "it_IT"); f.dateFormat = "d MMM yyyy"
+        return f.string(from: date)
     }
 }

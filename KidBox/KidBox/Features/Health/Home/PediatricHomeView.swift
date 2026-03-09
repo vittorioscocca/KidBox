@@ -24,6 +24,7 @@ struct PediatricHomeView: View {
     @Query private var allLogs:       [KBDoseLog]
     @Query private var allVaccines:   [KBVaccine]
     @Query private var allVisits:     [KBMedicalVisit]
+    @Query private var allExams:      [KBMedicalExam]
     
     init(familyId: String, childId: String) {
         self.familyId = familyId
@@ -51,6 +52,10 @@ struct PediatricHomeView: View {
         _allVisits = Query(filter: #Predicate<KBMedicalVisit> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
         })
+        // Esami non cancellati — badge mostra solo quelli in attesa o prenotati
+        _allExams = Query(filter: #Predicate<KBMedicalExam> {
+            $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
+        })
     }
     
     private var child: KBChild?         { children.first }
@@ -58,8 +63,7 @@ struct PediatricHomeView: View {
     private var childName: String       { child?.name ?? member?.displayName ?? "Profilo" }
     private var childEmoji: String      { child?.avatarEmoji ?? "🧑" }
     
-    /// Conta solo le cure davvero in corso, escludendo quelle
-    /// terminate per dosi completate o data fine passata.
+    /// Cure davvero in corso (esclude terminate per dosi/data)
     private var activeTreatmentsCount: Int {
         let today = Calendar.current.startOfDay(for: Date())
         return allTreatments.filter { t in
@@ -75,6 +79,11 @@ struct PediatricHomeView: View {
             }
             return true
         }.count
+    }
+    
+    /// Esami in attesa o prenotati (non ancora eseguiti)
+    private var pendingExamsCount: Int {
+        allExams.filter { $0.status == .pending || $0.status == .booked }.count
     }
     
     var body: some View {
@@ -109,6 +118,17 @@ struct PediatricHomeView: View {
                         tint: Color(red: 0.35, green: 0.6, blue: 0.85)
                     ) {
                         coordinator.navigate(to: .pediatricVisits(familyId: familyId, childId: childId))
+                    }
+                    moduleCard(
+                        title: "Analisi & Esami",
+                        subtitle: pendingExamsCount > 0
+                        ? "\(pendingExamsCount) in attesa"
+                        : "\(allExams.count) registrati",
+                        systemImage: "testtube.2",
+                        tint: Color(red: 0.25, green: 0.65, blue: 0.75),
+                        badge: pendingExamsCount > 0 ? pendingExamsCount : nil
+                    ) {
+                        coordinator.navigate(to: .pediatricExams(familyId: familyId, childId: childId))
                     }
                     moduleCard(
                         title: "Scheda Medica",

@@ -51,6 +51,10 @@ final class SyncCenter: ObservableObject {
     let pediatricProfileRemote = PediatricProfileRemoteStore()
     var vaccineListener: ListenerRegistration?
     let vaccineRemote = VaccineRemoteStore()
+    var medicalExamListener: ListenerRegistration?
+    let medicalExamRemote = MedicalExamRemoteStore()
+    // In stop*: stopMedicalExamsRealtime()
+    // In process(op:) switch: case "medicalExam": try await processMedicalExam(op:modelContext:)
     
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
@@ -119,6 +123,7 @@ final class SyncCenter: ObservableObject {
         stopVisitsRealtime()
         stopPediatricProfileRealtime()
         stopVaccinesRealtime()
+        stopMedicalExamsRealtime()
         
         // Notifica UI: "sei stato buttato fuori"
         Self._currentUserRevoked.send(familyId)
@@ -717,6 +722,9 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.vaccine.rawValue:
                 try await processVaccine(op: op, modelContext: modelContext)
+                
+            case SyncEntityType.medicalExam.rawValue:
+                try await processMedicalExam(op: op, modelContext: modelContext)
                 
             default:
                 throw NSError(domain: "KidBox.Sync", code: -2000,

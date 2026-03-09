@@ -26,6 +26,7 @@ final class KBMedicalVisit {
     
     // MARK: Step 3 · Prescrizioni
     var linkedTreatmentIds: [String]
+    var linkedExamIds: [String] = []
     var asNeededDrugsData: Data?
     var therapyTypesRaw: [String]
     var prescribedExamsData: Data?
@@ -97,6 +98,7 @@ final class KBMedicalVisit {
         diagnosis: String? = nil,
         recommendations: String? = nil,
         linkedTreatmentIds: [String] = [],
+        linkedExamIds: [String] = [],
         asNeededDrugs: [KBAsNeededDrug] = [],
         therapyTypes: [KBTherapyType] = [],
         prescribedExams: [KBPrescribedExam] = [],

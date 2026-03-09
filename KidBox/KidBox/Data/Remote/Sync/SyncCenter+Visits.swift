@@ -186,6 +186,7 @@ extension SyncCenter {
                 diagnosis:               v.diagnosis,
                 recommendations:         v.recommendations,
                 linkedTreatmentIds:      v.linkedTreatmentIds,
+                linkedExamIds:           v.linkedExamIds ,
                 asNeededDrugsData:       v.asNeededDrugsData,
                 therapyTypesRaw:         v.therapyTypesRaw,
                 prescribedExamsData:     v.prescribedExamsData,

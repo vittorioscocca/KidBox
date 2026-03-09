@@ -2,9 +2,6 @@
 //  VisitRemoteStore.swift
 //  KidBox
 //
-//  Created by vscocca on 05/03/26.
-//
-
 
 import Foundation
 import FirebaseFirestore
@@ -24,6 +21,7 @@ struct RemoteVisitDTO {
     let diagnosis:              String?
     let recommendations:        String?
     let linkedTreatmentIds:     [String]
+    let linkedExamIds:          [String]       // ← aggiunto
     let asNeededDrugsData:      Data?
     let therapyTypesRaw:        [String]
     let prescribedExamsData:    Data?
@@ -77,16 +75,17 @@ final class VisitRemoteStore {
     
     func upsertVisit(_ dto: RemoteVisitDTO) async throws {
         var data: [String: Any] = [
-            "familyId":          dto.familyId,
-            "childId":           dto.childId,
-            "date":              Timestamp(date: dto.date),
-            "reason":            dto.reason,
+            "familyId":           dto.familyId,
+            "childId":            dto.childId,
+            "date":               Timestamp(date: dto.date),
+            "reason":             dto.reason,
             "linkedTreatmentIds": dto.linkedTreatmentIds,
-            "therapyTypesRaw":   dto.therapyTypesRaw,
-            "photoURLs":         dto.photoURLs,
-            "isDeleted":         dto.isDeleted,
-            "updatedBy":         dto.updatedBy,
-            "updatedAt":         Timestamp(date: dto.updatedAt ?? Date()),
+            "linkedExamIds":      dto.linkedExamIds,       // ← aggiunto
+            "therapyTypesRaw":    dto.therapyTypesRaw,
+            "photoURLs":          dto.photoURLs,
+            "isDeleted":          dto.isDeleted,
+            "updatedBy":          dto.updatedBy,
+            "updatedAt":          Timestamp(date: dto.updatedAt ?? Date()),
         ]
         if let v = dto.doctorName              { data["doctorName"]              = v }
         if let v = dto.doctorSpecializationRaw { data["doctorSpecializationRaw"] = v }
@@ -98,7 +97,6 @@ final class VisitRemoteStore {
         if let v = dto.createdBy               { data["createdBy"]               = v }
         if let v = dto.createdAt               { data["createdAt"]               = Timestamp(date: v) }
         
-        // Blob fields: Base64 encode for Firestore (Data non è un tipo nativo Firestore)
         if let v = dto.travelDetailsData    { data["travelDetailsData"]    = v.base64EncodedString() }
         if let v = dto.asNeededDrugsData    { data["asNeededDrugsData"]    = v.base64EncodedString() }
         if let v = dto.prescribedExamsData  { data["prescribedExamsData"]  = v.base64EncodedString() }
@@ -151,6 +149,7 @@ final class VisitRemoteStore {
             diagnosis:               d["diagnosis"]               as? String,
             recommendations:         d["recommendations"]         as? String,
             linkedTreatmentIds:      d["linkedTreatmentIds"]      as? [String] ?? [],
+            linkedExamIds:           d["linkedExamIds"]           as? [String] ?? [],   // ← aggiunto
             asNeededDrugsData:       data64("asNeededDrugsData"),
             therapyTypesRaw:         d["therapyTypesRaw"]         as? [String] ?? [],
             prescribedExamsData:     data64("prescribedExamsData"),

@@ -758,7 +758,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             let channelInt   = Int(channelCount)
             
             // Alloca buffer per ogni canale
-            var channelBuffers = (0..<channelInt).map { _ in
+            let channelBuffers = (0..<channelInt).map { _ in
                 UnsafeMutablePointer<Float>.allocate(capacity: Int(blockFrames))
             }
             defer { channelBuffers.forEach { $0.deallocate() } }
