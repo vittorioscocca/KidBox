@@ -1160,7 +1160,7 @@ struct ChatBubble: View {
         if let player = audioPlayer {
             do {
                 try configureAudioSession()
-                try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
+                
                 proximityRouter.start()
             } catch {}
             if player.currentTime >= player.duration - 0.05 {
@@ -1177,7 +1177,7 @@ struct ChatBubble: View {
             do {
                 let (data, _) = try await URLSession.shared.data(from: url)
                 try configureAudioSession()
-                try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
+                
                 proximityRouter.start()
                 let player = try AVAudioPlayer(data: data)
                 player.enableRate = true
@@ -1252,7 +1252,7 @@ struct ChatBubble: View {
     
     private func configureAudioSession() throws {
         let s = AVAudioSession.sharedInstance()
-        try s.setCategory(.playAndRecord, mode: .spokenAudio, options: [.allowBluetoothHFP, .allowBluetoothA2DP])
+        try s.setCategory(.playback, mode: .spokenAudio, options: [])
         try s.setActive(true, options: .notifyOthersOnDeactivation)
     }
     

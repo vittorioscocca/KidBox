@@ -410,6 +410,12 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         defaults.set(familyId, forKey: KBLocationDefaults.familyId)
         defaults.set(displayName, forKey: KBLocationDefaults.displayName)
         defaults.set(true, forKey: KBLocationDefaults.isSharing)
+        // Salva expiresAt se temporaneo, altrimenti rimuovi
+        if let expires = myExpiresAt {
+            defaults.set(expires.timeIntervalSince1970, forKey: KBLocationDefaults.expiresAt)
+        } else {
+            defaults.removeObject(forKey: KBLocationDefaults.expiresAt)
+        }
         NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
     }
     
@@ -418,6 +424,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         defaults.removeObject(forKey: KBLocationDefaults.uid)
         defaults.removeObject(forKey: KBLocationDefaults.familyId)
         defaults.removeObject(forKey: KBLocationDefaults.displayName)
+        defaults.removeObject(forKey: KBLocationDefaults.expiresAt)   // ← NUOVO
         defaults.set(false, forKey: KBLocationDefaults.isSharing)
         NotificationCenter.default.post(name: .kbLocationSharingStateChanged, object: nil)
     }

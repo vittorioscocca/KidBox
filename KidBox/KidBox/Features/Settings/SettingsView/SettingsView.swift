@@ -31,6 +31,19 @@ struct SettingsView: View {
             .accessibilityLabel("Apri impostazioni famiglia")
             
             NavigationLink {
+                MessageSettingsView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "message.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    
+                    Text("Messaggi")
+                        .foregroundStyle(.primary)
+                }
+            }
+            
+            NavigationLink {
                 AISettingsView()
             } label: {
                 HStack(spacing: 12) {

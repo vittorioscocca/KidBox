@@ -56,6 +56,28 @@ struct ExpandingChatTextView: UIViewRepresentable {
         textView.isEditable = isEnabled
         textView.isSelectable = isEnabled
         
+        // Non toccare testo/colore se la textView è attivamente in editing:
+        // il Coordinator gestisce già quel caso tramite i delegate.
+        guard !textView.isFirstResponder else {
+            // Aggiorna solo se il binding è cambiato dall'esterno
+            // (es. reset dopo invio messaggio)
+            if text.isEmpty && textView.textColor != .tertiaryLabel {
+                // L'utente non sta scrivendo nulla, ma è ancora focused:
+                // lascia stare, textViewDidEndEditing penserà a tutto
+            } else if !text.isEmpty && textView.text != text {
+                textView.text = text
+                textView.textColor = .label
+            }
+            Self.recalculateHeightStatic(
+                view: textView,
+                measuredHeight: $measuredHeight,
+                minHeight: minHeight,
+                maxHeight: maxHeight
+            )
+            return
+        }
+        
+        // Campo non focused: gestione normale placeholder/testo
         let isShowingPlaceholder = textView.textColor == .tertiaryLabel
         
         if text.isEmpty {
@@ -117,6 +139,8 @@ struct ExpandingChatTextView: UIViewRepresentable {
             if textView.textColor == .tertiaryLabel {
                 textView.text = nil
                 textView.textColor = .label
+                // Assicura che il binding sia già vuoto (di solito lo è, ma meglio essere espliciti)
+                parent.text = ""
             }
         }
         

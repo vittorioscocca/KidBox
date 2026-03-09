@@ -17,4 +17,5 @@ enum KBLocationDefaults {
     static let familyId    = "kb_location_familyId"
     static let displayName = "kb_location_displayName"
     static let isSharing   = "kb_location_isSharing"
+    static let expiresAt   = "kb_location_expiresAt"
 }

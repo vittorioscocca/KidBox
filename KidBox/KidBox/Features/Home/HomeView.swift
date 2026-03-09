@@ -28,6 +28,7 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
     
     // MARK: - Dynamic theme (same as LoginView)
     private var backgroundColor: Color {
@@ -407,19 +408,43 @@ final class LocationSharingObserver: ObservableObject {
     init() {
         refresh()
         
-        // Aggiorna quando l'app torna in foreground
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in self?.refresh() }
             .store(in: &cancellables)
         
-        // Aggiorna quando il ViewModel cambia lo stato di sharing
         NotificationCenter.default.publisher(for: .kbLocationSharingStateChanged)
+            .receive(on: DispatchQueue.main)   // ← garantisce main thread
+            .sink { [weak self] _ in self?.refresh() }
+            .store(in: &cancellables)
+        
+        // ← NUOVO: polling leggero ogni 30s come safety net per le scadenze
+        Timer.publish(every: 30, on: .main, in: .common)
+            .autoconnect()
             .sink { [weak self] _ in self?.refresh() }
             .store(in: &cancellables)
     }
     
     func refresh() {
-        isSharing = UserDefaults.standard.bool(forKey: KBLocationDefaults.isSharing)
+        let defaults = UserDefaults.standard
+        var sharing = defaults.bool(forKey: KBLocationDefaults.isSharing)
+        
+        // Se c'è una scadenza e è già passata, considera la condivisione terminata
+        if sharing {
+            let expiresTimestamp = defaults.double(forKey: KBLocationDefaults.expiresAt)
+            if expiresTimestamp > 0 {
+                let expiresAt = Date(timeIntervalSince1970: expiresTimestamp)
+                if expiresAt <= Date() {
+                    // Scaduta: pulizia UserDefaults qui, il ViewModel non è attivo
+                    defaults.set(false, forKey: KBLocationDefaults.isSharing)
+                    defaults.removeObject(forKey: KBLocationDefaults.expiresAt)
+                    sharing = false
+                }
+            }
+        }
+        
+        if sharing != isSharing {
+            isSharing = sharing
+        }
     }
 }
 

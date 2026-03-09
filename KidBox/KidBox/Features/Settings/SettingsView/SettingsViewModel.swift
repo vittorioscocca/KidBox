@@ -26,8 +26,9 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnNewMessages: Bool = true
     @Published var notifyOnLocationSharing: Bool = false
     @Published var notifyOnTodos: Bool = true
-    @Published var notifyOnNewGroceryItem: Bool = true   // ← NEW
-    @Published var notifyOnNewNote: Bool = true          // ← NEW
+    @Published var notifyOnNewGroceryItem: Bool = true
+    @Published var notifyOnNewNote: Bool = true
+    @Published var audioTranscriptionEnabled: Bool = true  // ← NEW
     
     // MARK: - Dependencies
     private let notifications = NotificationManager.shared
@@ -38,8 +39,9 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnNewMessages      = "kb_notifyOnNewMessages"
         static let notifyOnLocationSharing  = "kb_notifyOnLocationSharing"
         static let notifyOnTodos            = "kb_notifyOnTodos"
-        static let notifyOnNewGroceryItem   = "kb_notifyOnNewGroceryItem"   // ← NEW
-        static let notifyOnNewNote          = "kb_notifyOnNewNote"          // ← NEW
+        static let notifyOnNewGroceryItem   = "kb_notifyOnNewGroceryItem"
+        static let notifyOnNewNote          = "kb_notifyOnNewNote"
+        static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"  // ← NEW
     }
     
     // MARK: - Init
@@ -60,7 +62,6 @@ final class SettingsViewModel: ObservableObject {
         self.notifyOnTodos = cachedTodos
         KBLog.settings.debug("SettingsVM init cached notifyOnTodos=\(cachedTodos, privacy: .public)")
         
-        // ← NEW
         let cachedGrocery = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewGroceryItem) as? Bool ?? true
         self.notifyOnNewGroceryItem = cachedGrocery
         KBLog.settings.debug("SettingsVM init cached notifyOnNewGroceryItem=\(cachedGrocery, privacy: .public)")
@@ -68,6 +69,11 @@ final class SettingsViewModel: ObservableObject {
         let cachedNote = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewNote) as? Bool ?? true
         self.notifyOnNewNote = cachedNote
         KBLog.settings.debug("SettingsVM init cached notifyOnNewNote=\(cachedNote, privacy: .public)")
+        
+        // ← NEW: default true, solo UserDefaults (nessun backend necessario)
+        let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
+        self.audioTranscriptionEnabled = cachedTranscription
+        KBLog.settings.debug("SettingsVM init cached audioTranscriptionEnabled=\(cachedTranscription, privacy: .public)")
     }
     
     // MARK: - Load
@@ -77,6 +83,12 @@ final class SettingsViewModel: ObservableObject {
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
         if notifyOnNewDocs != cached {
             notifyOnNewDocs = cached
+        }
+        
+        // audioTranscriptionEnabled è solo locale, già caricato nell'init
+        let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
+        if audioTranscriptionEnabled != cachedTranscription {
+            audioTranscriptionEnabled = cachedTranscription
         }
         
         Task { @MainActor in
@@ -102,13 +114,13 @@ final class SettingsViewModel: ObservableObject {
             if notifyOnTodos != remoteTodo { notifyOnTodos = remoteTodo }
             UserDefaults.standard.set(remoteTodo, forKey: LocalKeys.notifyOnTodos)
             
-            // Shopping  ← NEW
+            // Shopping
             let remoteGrocery = await notifications.fetchNotifyOnNewGroceryItemPreference()
             KBLog.settings.info("SettingsVM fetch remote grocery pref=\(remoteGrocery, privacy: .public)")
             if notifyOnNewGroceryItem != remoteGrocery { notifyOnNewGroceryItem = remoteGrocery }
             UserDefaults.standard.set(remoteGrocery, forKey: LocalKeys.notifyOnNewGroceryItem)
             
-            // Notes  ← NEW
+            // Notes
             let remoteNote = await notifications.fetchNotifyOnNewNotePreference()
             KBLog.settings.info("SettingsVM fetch remote note pref=\(remoteNote, privacy: .public)")
             if notifyOnNewNote != remoteNote { notifyOnNewNote = remoteNote }
@@ -186,7 +198,7 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Shopping toggle  ← NEW
+    // MARK: - Shopping toggle
     
     func toggleNotifyOnNewGroceryItem(_ enabled: Bool) {
         KBLog.settings.info("SettingsVM toggleNotifyOnNewGroceryItem enabled=\(enabled, privacy: .public)")
@@ -206,7 +218,7 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Notes toggle  ← NEW
+    // MARK: - Notes toggle
     
     func toggleNotifyOnNewNote(_ enabled: Bool) {
         KBLog.settings.info("SettingsVM toggleNotifyOnNewNote enabled=\(enabled, privacy: .public)")
@@ -224,5 +236,17 @@ final class SettingsViewModel: ObservableObject {
                 KBLog.settings.error("SettingsVM setNotifyOnNewNote failed: \(error.localizedDescription, privacy: .public)")
             }
         }
+    }
+    
+    // MARK: - Audio transcription toggle  ← NEW
+    
+    /// Salva la preferenza solo in locale (UserDefaults).
+    /// Non richiede chiamate di rete — la preferenza è letta direttamente
+    /// da `ChatViewModel` prima di avviare la trascrizione.
+    func toggleAudioTranscription(_ enabled: Bool) {
+        KBLog.settings.info("SettingsVM toggleAudioTranscription enabled=\(enabled, privacy: .public)")
+        audioTranscriptionEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.audioTranscriptionEnabled)
+        infoText = enabled ? "Trascrizione vocale attiva." : "Trascrizione vocale disattivata."
     }
 }
