@@ -101,6 +101,9 @@ struct PediatricMedicalRecordView: View {
                 familyId: familyId, childId: childId, modelContext: modelContext
             )
         }
+        .onDisappear {
+            SyncCenter.shared.stopPediatricProfileRealtime()
+        }
         .sheet(isPresented: $showAddContact) {
             EmergencyContactFormView(contact: nil) { newContact in
                 contacts.append(newContact)

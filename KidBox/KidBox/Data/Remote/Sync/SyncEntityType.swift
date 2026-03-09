@@ -18,4 +18,5 @@ enum SyncEntityType: String {
     case doseLog
     case visit
     case pediatricProfile
+    case vaccine
 }

@@ -34,7 +34,6 @@ struct PediatricVaccinesView: View {
         )
     }
     
-    // Raggruppati per stato
     private var administered: [KBVaccine] { vaccines.filter { $0.status == .administered } }
     private var scheduled:    [KBVaccine] { vaccines.filter { $0.status == .scheduled } }
     private var planned:      [KBVaccine] { vaccines.filter { $0.status == .planned } }
@@ -73,7 +72,20 @@ struct PediatricVaccinesView: View {
             }
         }
         .sheet(isPresented: $showEditSheet) {
-            PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: editingVaccineId)
+            PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: editingVaccineId) { savedId in
+                SyncCenter.shared.enqueueVaccineUpsert(vaccineId: savedId, familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            }
+        }
+        .onAppear {
+            SyncCenter.shared.startVaccinesRealtime(
+                familyId: familyId,
+                childId: childId,
+                modelContext: modelContext
+            )
+        }
+        .onDisappear {
+            SyncCenter.shared.stopVaccinesRealtime()
         }
     }
     
@@ -128,14 +140,25 @@ struct PediatricVaccinesView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showEditSheet) {
-            PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: nil)
+            PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: nil) { savedId in
+                SyncCenter.shared.enqueueVaccineUpsert(vaccineId: savedId, familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            }
         }
     }
     
     private func deleteVaccines(offsets: IndexSet, from list: [KBVaccine]) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        for i in offsets { list[i].isDeleted = true; list[i].updatedBy = uid; list[i].updatedAt = Date() }
+        for i in offsets {
+            let v = list[i]
+            v.isDeleted  = true
+            v.updatedBy  = uid
+            v.updatedAt  = Date()
+            v.syncState  = .pendingUpsert
+            SyncCenter.shared.enqueueVaccineDelete(vaccineId: v.id, familyId: familyId, modelContext: modelContext)
+        }
         try? modelContext.save()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
 }
 
@@ -149,6 +172,8 @@ struct PediatricVaccineEditView: View {
     let familyId: String
     let childId: String
     let vaccineId: String?
+    /// Callback con l'id del vaccino salvato, per far scattare l'enqueue dal parent.
+    let onSaved: (String) -> Void
     
     @State private var vaccineType: VaccineType = .esavalente
     @State private var status: VaccineStatus   = .administered
@@ -170,7 +195,6 @@ struct PediatricVaccineEditView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // ── Stato ──
                 Section("Stato vaccino") {
                     ForEach([VaccineStatus.administered, .scheduled, .planned], id: \.self) { s in
                         HStack {
@@ -184,7 +208,6 @@ struct PediatricVaccineEditView: View {
                     }
                 }
                 
-                // ── Tipo ──
                 Section("Tipo di Vaccino") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(VaccineType.allCases, id: \.self) { t in
@@ -192,17 +215,14 @@ struct PediatricVaccineEditView: View {
                         }
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                    
                     TextField("Nome commerciale (opzionale)", text: $commercialName)
                 }
                 
-                // ── Dose ──
                 Section("Informazioni Dose") {
                     Stepper("Dose N° \(doseNumber)", value: $doseNumber, in: 1...10)
                     Stepper("Dosi Totali \(totalDoses)", value: $totalDoses, in: 1...10)
                 }
                 
-                // ── Data ──
                 Section(status == .administered ? "Data Somministrazione" : "Data Appuntamento") {
                     if status == .administered {
                         DatePicker("Data", selection: $administeredDate, displayedComponents: .date)
@@ -212,7 +232,6 @@ struct PediatricVaccineEditView: View {
                     }
                 }
                 
-                // ── Dettagli ──
                 if status == .administered {
                     Section("Dettagli (opzionali)") {
                         TextField("Numero lotto", text: $lotNumber)
@@ -271,34 +290,44 @@ struct PediatricVaccineEditView: View {
         guard let vid = vaccineId else { return }
         let desc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == vid })
         guard let v = try? modelContext.fetch(desc).first else { return }
-        vaccineType      = v.vaccineType
-        status           = v.status
-        commercialName   = v.commercialName ?? ""
-        doseNumber       = v.doseNumber
-        totalDoses       = v.totalDoses
+        vaccineType    = v.vaccineType
+        status         = v.status
+        commercialName = v.commercialName ?? ""
+        doseNumber     = v.doseNumber
+        totalDoses     = v.totalDoses
         if let d = v.administeredDate { administeredDate = d }
         if let d = v.scheduledDate    { scheduledDate    = d }
-        lotNumber        = v.lotNumber ?? ""
-        administeredBy   = v.administeredBy ?? ""
-        adminSite        = v.administrationSiteRaw ?? ""
-        notes            = v.notes ?? ""
+        lotNumber      = v.lotNumber ?? ""
+        administeredBy = v.administeredBy ?? ""
+        adminSite      = v.administrationSiteRaw ?? ""
+        notes          = v.notes ?? ""
     }
     
     private func save() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
+        let savedId: String
+        
         if let vid = vaccineId {
             let desc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == vid })
             guard let v = try? modelContext.fetch(desc).first else { return }
             applyFields(to: v, uid: uid, now: now)
+            v.syncState = .pendingUpsert
+            savedId = v.id
         } else {
-            let v = KBVaccine(familyId: familyId, childId: childId,
-                              vaccineType: vaccineType, status: status,
-                              createdAt: now, updatedAt: now, updatedBy: uid, createdBy: uid)
+            let v = KBVaccine(
+                familyId: familyId, childId: childId,
+                vaccineType: vaccineType, status: status,
+                createdAt: now, updatedAt: now, updatedBy: uid, createdBy: uid
+            )
             modelContext.insert(v)
             applyFields(to: v, uid: uid, now: now)
+            v.syncState = .pendingUpsert
+            savedId = v.id
         }
+        
         try? modelContext.save()
+        onSaved(savedId)
         dismiss()
     }
     

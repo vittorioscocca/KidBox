@@ -21,6 +21,7 @@ struct PediatricHomeView: View {
     @Query private var members:  [KBFamilyMember]
     
     @Query private var allTreatments: [KBTreatment]
+    @Query private var allLogs:       [KBDoseLog]
     @Query private var allVaccines:   [KBVaccine]
     @Query private var allVisits:     [KBMedicalVisit]
     
@@ -34,8 +35,15 @@ struct PediatricHomeView: View {
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
         _members  = Query(filter: #Predicate<KBFamilyMember> { $0.userId == cid })
         
+        // Carichiamo tutte le cure attive non cancellate —
+        // il filtro "terminata" viene fatto in-memory con la stessa
+        // logica di TreatmentLifecycle (dosi prese + data fine)
         _allTreatments = Query(filter: #Predicate<KBTreatment> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true
+        })
+        // Log per calcolare le dosi prese per ogni cura
+        _allLogs = Query(filter: #Predicate<KBDoseLog> {
+            $0.familyId == fid && $0.childId == cid && $0.taken == true
         })
         _allVaccines = Query(filter: #Predicate<KBVaccine> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
@@ -45,11 +53,29 @@ struct PediatricHomeView: View {
         })
     }
     
-    private var child: KBChild?             { children.first }
-    private var member: KBFamilyMember?     { members.first }
-    private var childName: String           { child?.name ?? member?.displayName ?? "Profilo" }
-    private var childEmoji: String          { child?.avatarEmoji ?? "🧑" }
-    private var activeTreatmentsCount: Int  { allTreatments.count }
+    private var child: KBChild?         { children.first }
+    private var member: KBFamilyMember? { members.first }
+    private var childName: String       { child?.name ?? member?.displayName ?? "Profilo" }
+    private var childEmoji: String      { child?.avatarEmoji ?? "🧑" }
+    
+    /// Conta solo le cure davvero in corso, escludendo quelle
+    /// terminate per dosi completate o data fine passata.
+    private var activeTreatmentsCount: Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        return allTreatments.filter { t in
+            // Le cure a lungo termine non hanno fine → sempre attive
+            if t.isLongTerm { return true }
+            // Se la data fine è passata → terminata
+            if let end = t.endDate, end < today { return false }
+            // Se tutte le dosi sono state prese → terminata
+            let total = t.totalDoses
+            if total > 0 {
+                let taken = allLogs.filter { $0.treatmentId == t.id }.count
+                if taken >= total { return false }
+            }
+            return true
+        }.count
+    }
     
     var body: some View {
         ScrollView {
