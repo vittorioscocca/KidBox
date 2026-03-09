@@ -59,11 +59,10 @@ struct ExpandingChatTextView: UIViewRepresentable {
         // Non toccare testo/colore se la textView è attivamente in editing:
         // il Coordinator gestisce già quel caso tramite i delegate.
         guard !textView.isFirstResponder else {
-            // Aggiorna solo se il binding è cambiato dall'esterno
-            // (es. reset dopo invio messaggio)
-            if text.isEmpty && textView.textColor != .tertiaryLabel {
-                // L'utente non sta scrivendo nulla, ma è ancora focused:
-                // lascia stare, textViewDidEndEditing penserà a tutto
+            // Reset esterno (es. dopo invio messaggio): svuota la textView
+            if text.isEmpty && textView.text != "" && textView.textColor != .tertiaryLabel {
+                textView.text = ""
+                textView.textColor = .label
             } else if !text.isEmpty && textView.text != text {
                 textView.text = text
                 textView.textColor = .label
