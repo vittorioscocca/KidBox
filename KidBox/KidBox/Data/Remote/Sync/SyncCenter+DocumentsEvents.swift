@@ -252,6 +252,25 @@ extension SyncCenter {
                                 )
                             }
                         }
+                        
+                        // 📎 Auto-download allegati esami arrivati dal remoto
+                        let isExamAttachment = dto.notes?.hasPrefix("exam:") == true
+                        if isExamAttachment && missingLocal && !dto.isDeleted,
+                           let dlURL = dto.downloadURL, !dlURL.isEmpty {
+                            let docId       = local.id
+                            let familyId    = local.familyId
+                            let storagePath = local.storagePath
+                            let fileName    = local.fileName
+                            Task.detached {
+                                await TreatmentAttachmentService.shared.downloadRemoteAttachment(
+                                    docId:        docId,
+                                    familyId:     familyId,
+                                    storagePath:  storagePath,
+                                    fileName:     fileName,
+                                    modelContext: modelContext
+                                )
+                            }
+                        }
                     }
                     
                 case .remove(let id):
