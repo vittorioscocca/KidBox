@@ -190,7 +190,7 @@ final class ExamAttachmentService {
             let encryptedData = try await ref.data(maxSize: 50 * 1024 * 1024) // 50 MB max
             
             // 2. Decifra
-            guard let clearData = try? await DocumentCryptoService.decrypt(
+            guard let clearData = try? DocumentCryptoService.decrypt(
                 encryptedData, familyId: doc.familyId, userId: uid
             ) else {
                 await MainActor.run { onKeyMissing() }

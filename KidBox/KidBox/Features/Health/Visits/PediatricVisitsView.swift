@@ -28,11 +28,10 @@ struct PediatricVisitsView: View {
     @State private var showDeleteConfirm = false
     
     // ── Filtro ──
-    @State private var selectedPeriod:             PeriodFilter = .thirtyDays
-    @State private var customStartDate:            Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-    @State private var customEndDate:              Date = Date()
-    @State private var showCustomPeriodSheet       = false
-    @State private var previousPeriodBeforeCustom: PeriodFilter = .all
+    @State private var selectedPeriod: PeriodFilter = .all
+    @State private var customStartDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var customEndDate:   Date = Date()
+    @State private var showFilterSheet  = false
     
     // ── Ricerca ──
     @State private var searchText = ""
@@ -105,59 +104,13 @@ struct PediatricVisitsView: View {
         }
     }
     
-    private var selectedPeriodLabel: String {
-        if selectedPeriod == .custom {
-            return "\(italianShortDate(min(customStartDate, customEndDate))) – \(italianShortDate(max(customStartDate, customEndDate)))"
-        }
-        return selectedPeriod.label
-    }
-    
     // MARK: - Body
     
     var body: some View {
         VStack(spacing: 0) {
+            if selectedPeriod != .all { filterPill.padding(.horizontal).padding(.top, 8) }
+            
             List {
-                // ── Filtro periodo ──
-                Section {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Filtra per periodo")
-                                .font(.caption).foregroundStyle(KBTheme.secondaryText(colorScheme))
-                            Text("\(filteredVisits.count) visit\(filteredVisits.count == 1 ? "a" : "e")")
-                                .font(.subheadline.bold()).foregroundStyle(KBTheme.primaryText(colorScheme))
-                        }
-                        Spacer()
-                        Menu {
-                            ForEach(PeriodFilter.allCases) { p in
-                                Button {
-                                    if p == .custom {
-                                        previousPeriodBeforeCustom = selectedPeriod
-                                        showCustomPeriodSheet = true
-                                    } else {
-                                        selectedPeriod = p
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(p.label)
-                                        if selectedPeriod == p { Image(systemName: "checkmark") }
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar")
-                                Text(selectedPeriodLabel)
-                                Image(systemName: "chevron.down")
-                            }
-                            .font(.subheadline).foregroundStyle(tint)
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.1)))
-                        }
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-                
                 // ── Lista ──
                 if filteredVisits.isEmpty {
                     Section {
@@ -200,24 +153,7 @@ struct PediatricVisitsView: View {
         .sheet(isPresented: $showAddSheet) {
             PediatricVisitEditView(familyId: familyId, childId: childId, childName: childName)
         }
-        .sheet(isPresented: $showCustomPeriodSheet) {
-            NavigationStack {
-                Form {
-                    DatePicker("Data inizio", selection: $customStartDate, displayedComponents: .date)
-                    DatePicker("Data fine",   selection: $customEndDate,   displayedComponents: .date)
-                }
-                .navigationTitle("Intervallo personalizzato")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Annulla") { selectedPeriod = previousPeriodBeforeCustom; showCustomPeriodSheet = false }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Conferma") { selectedPeriod = .custom; showCustomPeriodSheet = false }
-                    }
-                }
-            }
-        }
+        .sheet(isPresented: $showFilterSheet) { filterSheet }
         .sheet(isPresented: $showAIConsent) {
             AIConsentSheet { showAIChat = true }
         }
@@ -261,8 +197,13 @@ struct PediatricVisitsView: View {
     @ToolbarContentBuilder
     private var toolbarItems: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: 16) {
-                // Seleziona / Fine
+            HStack(spacing: 4) {
+                Button { showFilterSheet = true } label: {
+                    Image(systemName: selectedPeriod == .all
+                          ? "line.3.horizontal.decrease.circle"
+                          : "line.3.horizontal.decrease.circle.fill")
+                    .foregroundStyle(selectedPeriod == .all ? .primary : tint)
+                }
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isSelecting.toggle()
@@ -272,7 +213,6 @@ struct PediatricVisitsView: View {
                     Text(isSelecting ? "Fine" : "Seleziona").font(.subheadline)
                 }
                 if !isSelecting {
-                    Button { } label: { Image(systemName: "square.and.arrow.up") }
                     Button { showAddSheet = true } label: { Image(systemName: "plus") }
                 }
             }
@@ -331,6 +271,67 @@ struct PediatricVisitsView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Filter pill
+    
+    private var filterPill: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "calendar").font(.caption)
+            Text(filterLabel).font(.caption.bold())
+            Spacer()
+            Button { selectedPeriod = .all } label: {
+                Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(Capsule().fill(tint.opacity(0.12)))
+        .foregroundStyle(tint)
+    }
+    
+    private var filterLabel: String {
+        let fmt = DateFormatter(); fmt.dateStyle = .short
+        switch selectedPeriod {
+        case .all:        return "Tutti"
+        case .thirtyDays: return "Ultimi 30 giorni"
+        case .custom:     return "\(fmt.string(from: customStartDate)) – \(fmt.string(from: customEndDate))"
+        default:          return selectedPeriod.label
+        }
+    }
+    
+    // MARK: - Filter sheet
+    
+    private var filterSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Periodo rapido") {
+                    ForEach([PeriodFilter.all, .threeMonths, .sixMonths, .oneYear], id: \.self) { f in
+                        HStack {
+                            Text(f.label)
+                            Spacer()
+                            if selectedPeriod == f { Image(systemName: "checkmark").foregroundStyle(tint) }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { selectedPeriod = f; showFilterSheet = false }
+                    }
+                }
+                Section("Personalizzato") {
+                    DatePicker("Da", selection: $customStartDate, displayedComponents: .date)
+                    DatePicker("A",  selection: $customEndDate,   displayedComponents: .date)
+                    Button("Applica") {
+                        if customStartDate > customEndDate { swap(&customStartDate, &customEndDate) }
+                        selectedPeriod = .custom; showFilterSheet = false
+                    }
+                    .foregroundStyle(tint)
+                }
+            }
+            .navigationTitle("Filtra per periodo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("Chiudi") { showFilterSheet = false } }
+            }
+        }
+        .presentationDetents([.medium])
     }
     
     // MARK: - Selection bottom bar

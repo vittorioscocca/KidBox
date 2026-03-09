@@ -9,6 +9,27 @@ import FirebaseAuth
 
 // MARK: - List
 
+enum VaccineTimeFilter: String, CaseIterable, Identifiable {
+    case all     = "Tutti"
+    case months3 = "3 mesi"
+    case months6 = "6 mesi"
+    case year1   = "Ultimo anno"
+    case custom  = "Personalizzato"
+    
+    var id: String { rawValue }
+    
+    func cutoff(from customStart: Date?) -> Date? {
+        let cal = Calendar.current
+        switch self {
+        case .all:     return nil
+        case .months3: return cal.date(byAdding: .month, value: -3, to: Date())
+        case .months6: return cal.date(byAdding: .month, value: -6, to: Date())
+        case .year1:   return cal.date(byAdding: .year,  value: -1, to: Date())
+        case .custom:  return customStart
+        }
+    }
+}
+
 struct PediatricVaccinesView: View {
     
     @Environment(\.modelContext) private var modelContext
@@ -20,6 +41,17 @@ struct PediatricVaccinesView: View {
     
     @State private var showEditSheet    = false
     @State private var editingVaccineId: String? = nil
+    
+    // ── Selezione multipla ──
+    @State private var isSelecting       = false
+    @State private var selectedIds       = Set<String>()
+    @State private var showDeleteConfirm = false
+    
+    // ── Filtro periodo ──
+    @State private var timeFilter        = VaccineTimeFilter.all
+    @State private var showFilterSheet   = false
+    @State private var customFilterStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+    @State private var customFilterEnd   = Date()
     
     private let tint = Color(red: 0.95, green: 0.55, blue: 0.45)
     
@@ -50,71 +82,76 @@ struct PediatricVaccinesView: View {
         )
     }
     
-    private var administered: [KBVaccine] { vaccines.filter { $0.status == .administered } }
-    private var scheduled:    [KBVaccine] { vaccines.filter { $0.status == .scheduled } }
-    private var planned:      [KBVaccine] { vaccines.filter { $0.status == .planned } }
+    private func passesFilter(_ v: KBVaccine) -> Bool {
+        guard let cutoff = timeFilter.cutoff(from: customFilterStart) else { return true }
+        let ref = v.administeredDate ?? v.scheduledDate ?? v.updatedAt
+        if timeFilter == .custom {
+            let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: customFilterEnd) ?? customFilterEnd
+            return ref >= cutoff && ref < endOfDay
+        }
+        return ref >= cutoff
+    }
+    
+    private var filtered:    [KBVaccine] { vaccines.filter { passesFilter($0) } }
+    private var administered: [KBVaccine] { filtered.filter { $0.status == .administered } }
+    private var scheduled:    [KBVaccine] { filtered.filter { $0.status == .scheduled } }
+    private var planned:      [KBVaccine] { filtered.filter { $0.status == .planned } }
     
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
             
-            Group {
-                if vaccines.isEmpty {
-                    emptyState
-                } else {
-                    ScrollView {
-                        VStack(spacing: 24) {
-                            if !scheduled.isEmpty {
-                                sectionBlock(
-                                    title: "Appuntamento fissato",
-                                    icon: "calendar.badge.clock",
-                                    iconColor: .blue,
-                                    items: scheduled
-                                )
+            VStack(spacing: 0) {
+                if timeFilter != .all {
+                    filterPill.padding(.horizontal).padding(.top, 8)
+                }
+                Group {
+                    if vaccines.isEmpty {
+                        emptyState
+                    } else if filtered.isEmpty {
+                        emptyFilterState
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 24) {
+                                if !scheduled.isEmpty {
+                                    sectionBlock(
+                                        title: "Appuntamento fissato",
+                                        icon: "calendar.badge.clock",
+                                        iconColor: .blue,
+                                        items: scheduled
+                                    )
+                                }
+                                if !administered.isEmpty {
+                                    sectionBlock(
+                                        title: "Somministrati",
+                                        icon: "checkmark.circle.fill",
+                                        iconColor: .green,
+                                        items: administered
+                                    )
+                                }
+                                if !planned.isEmpty {
+                                    sectionBlock(
+                                        title: "Da programmare",
+                                        icon: "clock.badge.questionmark",
+                                        iconColor: .orange,
+                                        items: planned
+                                    )
+                                }
                             }
-                            if !administered.isEmpty {
-                                sectionBlock(
-                                    title: "Somministrati",
-                                    icon: "checkmark.circle.fill",
-                                    iconColor: .green,
-                                    items: administered
-                                )
-                            }
-                            if !planned.isEmpty {
-                                sectionBlock(
-                                    title: "Da programmare",
-                                    icon: "clock.badge.questionmark",
-                                    iconColor: .orange,
-                                    items: planned
-                                )
-                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+                            .padding(.bottom, 40)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                        .padding(.bottom, 40)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                if isSelecting { selectionBottomBar } else { addButton }
             }
         }
         .navigationTitle("Vaccini")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    editingVaccineId = nil
-                    showEditSheet = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(tint.opacity(0.15))
-                            .frame(width: 32, height: 32)
-                        Image(systemName: "plus")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(tint)
-                    }
-                }
-            }
-        }
+        .toolbar { toolbarItems }
         .sheet(isPresented: $showEditSheet) {
             PediatricVaccineEditView(
                 familyId:  familyId,
@@ -127,12 +164,22 @@ struct PediatricVaccinesView: View {
                 SyncCenter.shared.flushGlobal(modelContext: modelContext)
             }
         }
+        .sheet(isPresented: $showFilterSheet) { filterSheet }
         .onAppear {
             SyncCenter.shared.startVaccinesRealtime(
                 familyId: familyId, childId: childId, modelContext: modelContext
             )
         }
         .onDisappear { SyncCenter.shared.stopVaccinesRealtime() }
+        .confirmationDialog(
+            "Eliminare \(selectedIds.count) vaccin\(selectedIds.count == 1 ? "o" : "i")?",
+            isPresented: $showDeleteConfirm, titleVisibility: .visible
+        ) {
+            Button("Elimina", role: .destructive) { deleteSelected() }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("I vaccini verranno rimossi da tutti i dispositivi.")
+        }
     }
     
     // MARK: - Section block
@@ -167,10 +214,22 @@ struct PediatricVaccinesView: View {
     
     private func vaccineCard(_ v: KBVaccine) -> some View {
         Button {
-            editingVaccineId = v.id
-            showEditSheet = true
+            if isSelecting {
+                toggleSelection(v.id)
+            } else {
+                editingVaccineId = v.id
+                showEditSheet = true
+            }
         } label: {
             HStack(spacing: 14) {
+                // Selection circle
+                if isSelecting {
+                    Image(systemName: selectedIds.contains(v.id) ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selectedIds.contains(v.id) ? tint : .secondary)
+                        .font(.title3)
+                        .animation(.easeInOut(duration: 0.15), value: selectedIds.contains(v.id))
+                }
+                
                 // Icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
@@ -211,11 +270,13 @@ struct PediatricVaccinesView: View {
                 Spacer()
                 
                 // Status dot + chevron
-                VStack(alignment: .trailing, spacing: 6) {
-                    statusDot(v.status)
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                if !isSelecting {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        statusDot(v.status)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
             .padding(14)
@@ -226,6 +287,192 @@ struct PediatricVaccinesView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            HStack(spacing: 4) {
+                Button { showFilterSheet = true } label: {
+                    Image(systemName: timeFilter == .all
+                          ? "line.3.horizontal.decrease.circle"
+                          : "line.3.horizontal.decrease.circle.fill")
+                    .foregroundStyle(timeFilter == .all ? .primary : tint)
+                }
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isSelecting.toggle()
+                        if !isSelecting { selectedIds.removeAll() }
+                    }
+                } label: {
+                    Text(isSelecting ? "Fine" : "Seleziona").font(.subheadline)
+                }
+                if !isSelecting {
+                    Button {
+                        editingVaccineId = nil
+                        showEditSheet = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(tint.opacity(0.15))
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(tint)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Selection bottom bar
+    
+    private var selectionBottomBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 0) {
+                Button {
+                    let all = filtered.map { $0.id }
+                    if selectedIds.count == all.count { selectedIds.removeAll() }
+                    else { selectedIds = Set(all) }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: selectedIds.count == filtered.count
+                              ? "checkmark.circle.fill" : "circle.grid.3x3").font(.title3)
+                        Text(selectedIds.count == filtered.count ? "Deseleziona" : "Tutti")
+                            .font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                }
+                .foregroundStyle(tint).buttonStyle(.plain)
+                
+                Divider().frame(height: 40)
+                
+                Button { showDeleteConfirm = true } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "trash").font(.title3)
+                        Text("Elimina").font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                }
+                .foregroundStyle(selectedIds.isEmpty ? .secondary : Color.red)
+                .disabled(selectedIds.isEmpty).buttonStyle(.plain)
+            }
+            .background(backgroundColor)
+        }
+    }
+    
+    // MARK: - Add button
+    
+    private var addButton: some View {
+        Button {
+            editingVaccineId = nil
+            showEditSheet = true
+        } label: {
+            Label("Aggiungi vaccino", systemImage: "plus.circle.fill")
+                .frame(maxWidth: .infinity).padding()
+                .background(RoundedRectangle(cornerRadius: 14).fill(tint))
+                .foregroundStyle(.white).font(.headline)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal).padding(.vertical, 12)
+        .background(backgroundColor)
+    }
+    
+    // MARK: - Delete
+    
+    private func toggleSelection(_ id: String) {
+        if selectedIds.contains(id) { selectedIds.remove(id) } else { selectedIds.insert(id) }
+    }
+    
+    private func deleteSelected() {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let now = Date()
+        for v in filtered where selectedIds.contains(v.id) {
+            v.isDeleted = true; v.updatedBy = uid; v.updatedAt = now
+            v.syncState = .pendingUpsert; v.lastSyncError = nil
+            SyncCenter.shared.enqueueVaccineDelete(vaccineId: v.id, familyId: familyId, modelContext: modelContext)
+        }
+        try? modelContext.save()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        withAnimation { selectedIds.removeAll(); isSelecting = false }
+    }
+    
+    // MARK: - Filter pill
+    
+    private var filterPill: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "calendar").font(.caption)
+            Text(filterLabel).font(.caption.bold())
+            Spacer()
+            Button { timeFilter = .all } label: {
+                Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(Capsule().fill(tint.opacity(0.12)))
+        .foregroundStyle(tint)
+    }
+    
+    private var filterLabel: String {
+        let fmt = DateFormatter(); fmt.dateStyle = .short
+        switch timeFilter {
+        case .all:     return "Tutti"
+        case .months3: return "Ultimi 3 mesi"
+        case .months6: return "Ultimi 6 mesi"
+        case .year1:   return "Ultimo anno"
+        case .custom:  return "\(fmt.string(from: customFilterStart)) – \(fmt.string(from: customFilterEnd))"
+        }
+    }
+    
+    // MARK: - Filter sheet
+    
+    private var filterSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Periodo rapido") {
+                    ForEach([VaccineTimeFilter.all, .months3, .months6, .year1], id: \.self) { f in
+                        HStack {
+                            Text(f.rawValue)
+                            Spacer()
+                            if timeFilter == f { Image(systemName: "checkmark").foregroundStyle(tint) }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { timeFilter = f; showFilterSheet = false }
+                    }
+                }
+                Section("Personalizzato") {
+                    DatePicker("Da", selection: $customFilterStart, displayedComponents: .date)
+                    DatePicker("A",  selection: $customFilterEnd,   displayedComponents: .date)
+                    Button("Applica") {
+                        if customFilterStart > customFilterEnd { swap(&customFilterStart, &customFilterEnd) }
+                        timeFilter = .custom; showFilterSheet = false
+                    }
+                    .foregroundStyle(tint)
+                }
+            }
+            .navigationTitle("Filtra per periodo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("Chiudi") { showFilterSheet = false } }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+    
+    // MARK: - Empty filter state
+    
+    private var emptyFilterState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.system(size: 40)).foregroundStyle(.secondary)
+            Text("Nessun vaccino nel periodo selezionato")
+                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Button("Rimuovi filtro") { timeFilter = .all }
+                .font(.subheadline).foregroundStyle(tint)
+        }
+        .padding().frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     @ViewBuilder
@@ -277,12 +524,6 @@ struct PediatricVaccinesView: View {
             Spacer()
         }
         .padding(.horizontal, 32)
-        .sheet(isPresented: $showEditSheet) {
-            PediatricVaccineEditView(familyId: familyId, childId: childId, vaccineId: nil) { savedId in
-                SyncCenter.shared.enqueueVaccineUpsert(vaccineId: savedId, familyId: familyId, modelContext: modelContext)
-                SyncCenter.shared.flushGlobal(modelContext: modelContext)
-            }
-        }
     }
     
     private func deleteVaccines(offsets: IndexSet, from list: [KBVaccine]) {
