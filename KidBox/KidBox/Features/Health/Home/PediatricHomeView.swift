@@ -3,6 +3,7 @@
 //  KidBox
 //
 //  Restyled: dynamic light/dark theme matching LoginView.
+//  Added: floating HealthAskAIButton (full-health AI overview).
 //
 
 import SwiftUI
@@ -36,13 +37,9 @@ struct PediatricHomeView: View {
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
         _members  = Query(filter: #Predicate<KBFamilyMember> { $0.userId == cid })
         
-        // Carichiamo tutte le cure attive non cancellate —
-        // il filtro "terminata" viene fatto in-memory con la stessa
-        // logica di TreatmentLifecycle (dosi prese + data fine)
         _allTreatments = Query(filter: #Predicate<KBTreatment> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true
         })
-        // Log per calcolare le dosi prese per ogni cura
         _allLogs = Query(filter: #Predicate<KBDoseLog> {
             $0.familyId == fid && $0.childId == cid && $0.taken == true
         })
@@ -52,34 +49,33 @@ struct PediatricHomeView: View {
         _allVisits = Query(filter: #Predicate<KBMedicalVisit> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
         })
-        // Esami non cancellati — badge mostra solo quelli in attesa o prenotati
         _allExams = Query(filter: #Predicate<KBMedicalExam> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
         })
     }
     
+    // childId is used as the universal subjectId — valid for both KBChild and KBFamilyMember
     private var child: KBChild?         { children.first }
     private var member: KBFamilyMember? { members.first }
-    private var childName: String       { child?.name ?? member?.displayName ?? "Profilo" }
+    private var subjectName: String     { child?.name ?? member?.displayName ?? "Profilo" }
     private var childEmoji: String      { child?.avatarEmoji ?? "🧑" }
     
     /// Cure davvero in corso (esclude terminate per dosi/data)
-    private var activeTreatmentsCount: Int {
+    private var activeTreatments: [KBTreatment] {
         let today = Calendar.current.startOfDay(for: Date())
         return allTreatments.filter { t in
-            // Le cure a lungo termine non hanno fine → sempre attive
             if t.isLongTerm { return true }
-            // Se la data fine è passata → terminata
             if let end = t.endDate, end < today { return false }
-            // Se tutte le dosi sono state prese → terminata
             let total = t.totalDoses
             if total > 0 {
                 let taken = allLogs.filter { $0.treatmentId == t.id }.count
                 if taken >= total { return false }
             }
             return true
-        }.count
+        }
     }
+    
+    private var activeTreatmentsCount: Int { activeTreatments.count }
     
     /// Esami in attesa o prenotati (non ancora eseguiti)
     private var pendingExamsCount: Int {
@@ -140,12 +136,28 @@ struct PediatricHomeView: View {
                     }
                 }
                 .padding(.horizontal)
+                
+                // Spacer so the last card is never hidden behind the floating button
+                Spacer(minLength: 80)
             }
             .padding(.vertical)
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
+        // ── Floating AI button — works for both KBChild and KBFamilyMember ──
+        .overlay(alignment: .bottomTrailing) {
+            HealthAskAIButton(
+                subjectName: subjectName,
+                subjectId:   childId,
+                exams:       allExams,
+                visits:      allVisits,
+                treatments:  activeTreatments,
+                vaccines:    allVaccines
+            )
+            .padding(.trailing, 20)
+            .padding(.bottom, 32)
+        }
     }
     
     // MARK: - Header
@@ -159,7 +171,7 @@ struct PediatricHomeView: View {
                 Text(childEmoji).font(.title2)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(childName)
+                Text(subjectName)
                     .font(.title3.bold())
                     .foregroundStyle(KBTheme.primaryText(colorScheme))
                 Text("Diario di salute")

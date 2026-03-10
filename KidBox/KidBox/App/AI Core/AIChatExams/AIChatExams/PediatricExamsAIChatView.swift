@@ -106,43 +106,67 @@ private struct ExamsAIChatBody: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            if vm.messages.isEmpty && !vm.isLoading {
-                                introBubble
-                            }
-                            ForEach(vm.messages) { message in
-                                AIChatBubbleView(
-                                    text: message.content,
-                                    isUser: message.role == .user,
-                                    date: message.createdAt
-                                )
-                                .id(message.id)
-                            }
-                            if vm.isLoading {
-                                AIChatTypingIndicator()
-                                    .id("typing")
-                            }
-                        }
-                        .padding()
-                    }
-                    .onTapGesture { isInputFocused = false }
-                    .onChange(of: vm.messages.count) { _, _ in
-                        withAnimation {
-                            proxy.scrollTo(vm.messages.last?.id ?? "typing", anchor: .bottom)
-                        }
-                    }
-                    .onChange(of: vm.isLoading) { _, loading in
-                        if loading { withAnimation { proxy.scrollTo("typing", anchor: .bottom) } }
-                    }
-                }
+                messageList
             }
             
             if let error = vm.errorMessage { errorBanner(error) }
             
             Divider()
             inputBar
+        }
+    }
+    
+    // MARK: - Message list
+    
+    /// Extracted into its own computed property so SwiftUI treats it as a
+    /// stable subtree. This prevents the ScrollViewReader + onChange closures
+    /// from being re-registered on every body evaluation, which caused the
+    /// typing-indicator animation to compound/accelerate after re-entering.
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    if vm.messages.isEmpty && !vm.isLoading {
+                        introBubble
+                    }
+                    ForEach(vm.messages) { message in
+                        AIChatBubbleView(
+                            text: message.content,
+                            isUser: message.role == .user,
+                            date: message.createdAt
+                        )
+                        .id(message.id)
+                    }
+                    
+                    // Stable id prevents SwiftUI from recycling the view and
+                    // restarting its internal repeating animation on remount.
+                    if vm.isLoading {
+                        AIChatTypingIndicator()
+                            .id("typing-indicator")
+                            .transition(.opacity)
+                    }
+                }
+                .padding()
+                
+                // Persistent bottom anchor — scrollTo always has a valid target.
+                Color.clear
+                    .frame(height: 1)
+                    .id("scroll-bottom")
+            }
+            .onTapGesture { isInputFocused = false }
+            .onChange(of: vm.messages.count) { _, _ in
+                proxy.scrollTo("scroll-bottom", anchor: .bottom)
+            }
+            .onChange(of: vm.isLoading) { _, loading in
+                if loading {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                    }
+                }
+            }
+            .onAppear {
+                proxy.scrollTo("scroll-bottom", anchor: .bottom)
+            }
         }
     }
     

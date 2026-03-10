@@ -1,26 +1,29 @@
 //
-//  PediatricVisitsAIChatView.swift
+//  HealthAIChatView.swift
 //  KidBox
 //
-//  Created by vscocca on 06/03/26.
+//  Full-health AI chat, opened from PediatricHomeView.
+//  Works for both KBChild and KBFamilyMember — callers pass subjectName + subjectId.
 //
 
 import SwiftUI
 import SwiftData
 
-struct PediatricVisitsAIChatView: View {
+// MARK: - Chat View
+
+struct HealthAIChatView: View {
     
     let subjectName: String
-    let visibleVisits: [KBMedicalVisit]
-    let selectedPeriod: PeriodFilter
-    let customStartDate: Date?
-    let customEndDate: Date?
-    let scopeId: String
+    let subjectId: String
+    let exams: [KBMedicalExam]
+    let visits: [KBMedicalVisit]
+    let treatments: [KBTreatment]
+    let vaccines: [KBVaccine]
     
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)      private var dismiss
     
-    @State private var viewModel:     PediatricVisitsAIChatViewModel? = nil
+    @State private var viewModel:     HealthAIChatViewModel? = nil
     @State private var showSettings   = false
     @State private var showClearAlert = false
     @State private var inputText      = ""
@@ -29,13 +32,13 @@ struct PediatricVisitsAIChatView: View {
         NavigationStack {
             Group {
                 if let vm = viewModel {
-                    PediatricVisitsAIChatBody(vm: vm, inputText: $inputText)
+                    HealthAIChatBody(vm: vm, inputText: $inputText)
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle("Chiedi all'AI")
+            .navigationTitle("Salute di \(subjectName)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -60,13 +63,13 @@ struct PediatricVisitsAIChatView: View {
             }
             .task {
                 guard viewModel == nil else { return }
-                let vm = PediatricVisitsAIChatViewModel(
-                    subjectName: subjectName,
-                    visibleVisits: visibleVisits,
-                    selectedPeriod: selectedPeriod,
-                    customStartDate: customStartDate,
-                    customEndDate: customEndDate,
-                    scopeId: scopeId,
+                let vm = HealthAIChatViewModel(
+                    subjectName:  subjectName,
+                    subjectId:    subjectId,
+                    exams:        exams,
+                    visits:       visits,
+                    treatments:   treatments,
+                    vaccines:     vaccines,
                     modelContext: modelContext
                 )
                 viewModel = vm
@@ -76,9 +79,7 @@ struct PediatricVisitsAIChatView: View {
                 NavigationStack { AISettingsView() }
             }
             .alert("Nuova conversazione", isPresented: $showClearAlert) {
-                Button("Cancella", role: .destructive) {
-                    viewModel?.clearConversation()
-                }
+                Button("Cancella", role: .destructive) { viewModel?.clearConversation() }
                 Button("Annulla", role: .cancel) {}
             } message: {
                 Text("La cronologia di questa conversazione verrà eliminata.")
@@ -89,11 +90,13 @@ struct PediatricVisitsAIChatView: View {
 
 // MARK: - Chat Body
 
-private struct PediatricVisitsAIChatBody: View {
+private struct HealthAIChatBody: View {
     
-    @ObservedObject var vm: PediatricVisitsAIChatViewModel
+    @ObservedObject var vm: HealthAIChatViewModel
     @Binding var inputText: String
     @FocusState private var isInputFocused: Bool
+    
+    private let accent = Color(red: 0.35, green: 0.6, blue: 0.85)
     
     var body: some View {
         VStack(spacing: 0) {
@@ -103,7 +106,7 @@ private struct PediatricVisitsAIChatBody: View {
             if vm.isLoadingContext {
                 VStack(spacing: 12) {
                     ProgressView()
-                    Text("Preparazione contesto visite…")
+                    Text("Preparazione contesto sanitario…")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -112,9 +115,7 @@ private struct PediatricVisitsAIChatBody: View {
                 messageList
             }
             
-            if let error = vm.errorMessage {
-                errorBanner(error)
-            }
+            if let error = vm.errorMessage { errorBanner(error) }
             
             Divider()
             inputBar
@@ -123,10 +124,10 @@ private struct PediatricVisitsAIChatBody: View {
     
     // MARK: - Message list
     
-    /// Extracted as a stable computed property so SwiftUI does not
-    /// re-register the ScrollViewReader + onChange listeners on every
-    /// body evaluation — which was causing the typing-indicator animation
-    /// to compound and accelerate after re-entering the chat.
+    /// Extracted into its own computed property so SwiftUI treats it as a
+    /// stable subtree. This prevents the ScrollViewReader + onChange closures
+    /// from being re-registered every time the parent body is re-evaluated,
+    /// which was the root cause of the accelerating typing-indicator animation.
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -136,14 +137,17 @@ private struct PediatricVisitsAIChatBody: View {
                     }
                     ForEach(vm.messages) { message in
                         AIChatBubbleView(
-                            text: message.content,
+                            text:   message.content,
                             isUser: message.role == .user,
-                            date: message.createdAt
+                            date:   message.createdAt
                         )
                         .id(message.id)
                     }
-                    // Stable id prevents SwiftUI from recycling the view and
-                    // restarting its internal repeating animation on remount.
+                    
+                    // Typing indicator — given a stable, unique id so SwiftUI
+                    // never recycles or re-creates it while it is visible.
+                    // This prevents its internal repeating animation from
+                    // restarting (and compounding) when the view is remounted.
                     if vm.isLoading {
                         AIChatTypingIndicator()
                             .id("typing-indicator")
@@ -152,15 +156,19 @@ private struct PediatricVisitsAIChatBody: View {
                 }
                 .padding()
                 
-                // Persistent bottom anchor — scrollTo always has a valid target.
+                // Invisible anchor always present at the very bottom.
+                // scrollTo targets this instead of "typing" so there is
+                // never a missing-id failure when isLoading flips quickly.
                 Color.clear
                     .frame(height: 1)
                     .id("scroll-bottom")
             }
             .onTapGesture { isInputFocused = false }
+            // Scroll to bottom whenever a new message arrives.
             .onChange(of: vm.messages.count) { _, _ in
                 proxy.scrollTo("scroll-bottom", anchor: .bottom)
             }
+            // Scroll to bottom when generation starts so the indicator is visible.
             .onChange(of: vm.isLoading) { _, loading in
                 if loading {
                     withAnimation(.easeOut(duration: 0.2)) {
@@ -168,6 +176,7 @@ private struct PediatricVisitsAIChatBody: View {
                     }
                 }
             }
+            // Restore scroll position when re-entering an existing conversation.
             .onAppear {
                 proxy.scrollTo("scroll-bottom", anchor: .bottom)
             }
@@ -180,8 +189,8 @@ private struct PediatricVisitsAIChatBody: View {
         HStack(spacing: 6) {
             Image(systemName: "sparkles")
                 .font(.caption)
-                .foregroundStyle(.blue)
-            Text("Assistente AI KidBox")
+                .foregroundStyle(accent)
+            Text("Assistente AI KidBox — Salute")
                 .font(.caption.bold())
             Text("· Solo informativo, non sostituisce il medico")
                 .font(.caption2)
@@ -190,29 +199,70 @@ private struct PediatricVisitsAIChatBody: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.blue.opacity(0.06))
+        .background(accent.opacity(0.06))
     }
     
     // MARK: - Intro bubble
     
     private var introBubble: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(.blue)
+            Image(systemName: "heart.text.clipboard")
+                .foregroundStyle(accent)
                 .padding(8)
-                .background(.blue.opacity(0.1), in: Circle())
+                .background(accent.opacity(0.1), in: Circle())
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Ciao! Posso aiutarti a capire meglio l'insieme delle visite mediche presenti in questa schermata.")
-                    .font(.subheadline)
-                Text("Puoi chiedermi un riassunto, l'andamento clinico, differenze tra visite, esami, farmaci o referti allegati.")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Ciao! Sono il tuo assistente sanitario per \(vm.subjectName).")
+                    .font(.subheadline.bold())
+                
+                if !vm.treatments.isEmpty || !vm.vaccines.isEmpty ||
+                    !vm.visits.isEmpty    || !vm.exams.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Ho accesso a:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if !vm.treatments.isEmpty {
+                            infoRow(icon: "cross.case.fill",
+                                    text: "\(vm.treatments.count) cur\(vm.treatments.count == 1 ? "a" : "e") attiv\(vm.treatments.count == 1 ? "a" : "e")",
+                                    color: Color(red: 0.6, green: 0.45, blue: 0.85))
+                        }
+                        if !vm.vaccines.isEmpty {
+                            infoRow(icon: "syringe.fill",
+                                    text: "\(vm.vaccines.count) vaccin\(vm.vaccines.count == 1 ? "o" : "i")",
+                                    color: Color(red: 0.95, green: 0.55, blue: 0.45))
+                        }
+                        if !vm.visits.isEmpty {
+                            infoRow(icon: "stethoscope",
+                                    text: "\(vm.visits.count) visit\(vm.visits.count == 1 ? "a" : "e")",
+                                    color: accent)
+                        }
+                        if !vm.exams.isEmpty {
+                            infoRow(icon: "testtube.2",
+                                    text: "\(vm.exams.count) esam\(vm.exams.count == 1 ? "e" : "i")",
+                                    color: Color(red: 0.25, green: 0.65, blue: 0.75))
+                        }
+                    }
+                } else {
+                    Text("Non ci sono ancora dati sanitari registrati, ma puoi farmi domande generali.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Text("Puoi chiedermi un riepilogo, farmaci in corso, vaccini, visite recenti o esami in attesa.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
         }
         .padding()
-        .background(.blue.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .background(accent.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+    }
+    
+    private func infoRow(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(.caption2).foregroundStyle(color)
+            Text(text).font(.caption).foregroundStyle(.primary)
+        }
     }
     
     // MARK: - Input bar
@@ -236,7 +286,7 @@ private struct PediatricVisitsAIChatBody: View {
                     .font(.system(size: 32))
                     .foregroundStyle(
                         inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        ? .secondary : Color.blue
+                        ? .secondary : accent
                     )
             }
             .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
