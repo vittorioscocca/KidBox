@@ -53,6 +53,8 @@ final class SyncCenter: ObservableObject {
     let vaccineRemote = VaccineRemoteStore()
     var medicalExamListener: ListenerRegistration?
     let medicalExamRemote = MedicalExamRemoteStore()
+    var calendarListener: ListenerRegistration?
+    let calendarRemote = CalendarRemoteStore()
     // In stop*: stopMedicalExamsRealtime()
     // In process(op:) switch: case "medicalExam": try await processMedicalExam(op:modelContext:)
     
@@ -124,6 +126,7 @@ final class SyncCenter: ObservableObject {
         stopPediatricProfileRealtime()
         stopVaccinesRealtime()
         stopMedicalExamsRealtime()
+        stopCalendarRealtime()
         
         // Notifica UI: "sei stato buttato fuori"
         Self._currentUserRevoked.send(familyId)
@@ -725,6 +728,9 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.medicalExam.rawValue:
                 try await processMedicalExam(op: op, modelContext: modelContext)
+                
+            case SyncEntityType.calendarEvent.rawValue:
+                try await processCalendarEvent(op: op, modelContext: modelContext)
                 
             default:
                 throw NSError(domain: "KidBox.Sync", code: -2000,

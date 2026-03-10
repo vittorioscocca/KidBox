@@ -276,6 +276,15 @@ struct HomeView: View {
         case .inviteCode:
             KBLog.navigation.debug("Home: navigate -> inviteCode")
             coordinator.navigate(to: .inviteCode)
+        case .calendar(let familyId):
+            guard hasFamily else {
+                KBLog.navigation.debug("Home: navigation blocked (no family) -> FamilySettings")
+                coordinator.navigate(to: .familySettings)
+                return
+            }
+            KBLog.navigation.debug("Home: navigate -> calendar(familyId: \(familyId))")
+            coordinator.resetToRoot()
+            coordinator.navigate(to: .calendar(familyId: familyId))
         default:
             if hasFamily {
                 KBLog.navigation.debug("Home: navigate -> \(String(describing: destination), privacy: .public)")
@@ -366,7 +375,7 @@ struct HomeView: View {
 // MARK: - HomeDestination
 
 enum HomeDestination {
-    case notes(familyId: String), todo, calendar, care
+    case notes(familyId: String), todo, calendar(familyId: String), care
     case chat, document, expenses
     case familyLocation(familyId: String), familyPhotos, familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
@@ -377,15 +386,15 @@ enum HomeDestination {
         switch self {
         case .notes(let familyId):           return .notesHome(familyId: familyId)
         case .todo:                          return .todo
-        case .calendar:                      return .calendar
-        case .care:                          return .calendar  // legacy, non usato
+        case .calendar(let familyId):        return .calendar(familyId: familyId)
+        case .care:                          return .familySettings  // legacy, non usato
         case .chat:                          return .chat
         case .document:                      return .document
-        case .expenses:                      return .calendar
+        case .expenses:                      return .familySettings
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
-        case .familyPhotos:                  return .calendar
+        case .familyPhotos:                  return .familySettings
         case .familySettings:                return .familySettings
-        case .askExpert:                     return .calendar
+        case .askExpert:                     return .familySettings
         case .profile:                       return .profile
         case .settings:                      return .settings
         case .inviteCode:                    return .inviteCode
@@ -569,9 +578,16 @@ private struct HomeCardGrid: View {
             }
             
         case .calendar:
-            HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
-                KBLog.navigation.debug("Home: tap Calendar")
-                onNavigate(.calendar)
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
+                    KBLog.navigation.debug("Home: tap Calendar")
+                    onNavigate(.calendar(familyId: familyId))
+                }
+                if badge.calendar > 0 {
+                    BadgeView(count: badge.calendar)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
             }
             
         case .care:

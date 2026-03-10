@@ -20,4 +20,5 @@ enum SyncEntityType: String {
     case pediatricProfile
     case vaccine
     case medicalExam
+    case calendarEvent
 }

@@ -165,6 +165,11 @@ struct KidBoxApp: App {
                                 modelContext: modelContainer.mainContext
                             )
                             NotificationManager.shared.consumeDeepLink()
+                        case .calendarEvent(let familyId, let eventId):
+                            KBLog.navigation.kbInfo("Deep link -> open calendar eventId=\(eventId)")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: eventId))
+                            NotificationManager.shared.consumeDeepLink()
                         }
                         
                         notifications.consumeDeepLink()

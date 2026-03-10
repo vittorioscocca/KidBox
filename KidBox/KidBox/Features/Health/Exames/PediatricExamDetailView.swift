@@ -55,7 +55,7 @@ struct PediatricExamDetailView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
-            if let exam {
+            if let exam, AISettings.shared.isEnabled {
                 ExamsAskAIButton(subjectName: childName, scope: .single(exam))
                     .padding(.trailing, 20)
                     .padding(.bottom, 96)

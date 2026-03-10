@@ -68,7 +68,7 @@ struct PediatricVisitDetailView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
-            if let visit, let child = childForAI {
+            if let visit, let child = childForAI, AISettings.shared.isEnabled {
                 AskAIButton(visit: visit, child: child)
                     .padding(.trailing, 20)
                     .padding(.bottom, 96)

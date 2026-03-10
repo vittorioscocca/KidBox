@@ -214,8 +214,8 @@ final class AppCoordinator: ObservableObject {
             HomeView()
         case .today:
             Text("Today")
-        case .calendar:
-            Text("Calendar")
+        case .calendar(let familyId, let highlightEventId):
+            CalendarView(familyId: familyId, highlightEventId: highlightEventId)
         case .todo:
             TodoHomeView()
         case .settings:
@@ -254,8 +254,8 @@ final class AppCoordinator: ObservableObject {
             )
         case .todoSmart(familyId: let familyId, childId: let childId, kind: let kind):
             TodoSmartListView(familyId: familyId, childId: childId, kind: kind)
-        
-        // MARK: - Pediatria
+            
+            // MARK: - Pediatria
         case .pediatricChildSelector(familyId: let familyId):
             PediatricChildSelectorView(familyId: familyId)
         case .pediatricHome(familyId: let familyId, childId: let childId):
@@ -275,7 +275,7 @@ final class AppCoordinator: ObservableObject {
             NotesHomeView(familyId: familyId)
         case .noteDetail(familyId: let familyId, noteId: let noteId):
             NoteDetailView(familyId: familyId, noteId: noteId)
-       
+            
         case .pediatricVisitDetail(familyId: let familyId, childId: let childId, visitId: let visitId):
             PediatricVisitDetailView(familyId: familyId, childId: childId, visitId: visitId)
         case .pediatricExams(familyId: let familyId, childId: let childId):

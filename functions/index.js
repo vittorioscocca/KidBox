@@ -20,9 +20,10 @@ function sumCounters(data) {
   const todos = data?.todos || 0;
   const shopping = data?.shopping || 0;
   const notes = data?.notes || 0;
+  const calendar = data?.calendar || 0; // ← NUOVO
 
-  const total = chat + documents + location + todos + shopping + notes;
-  return {chat, documents, location, todos, shopping, notes, total};
+  const total = chat + documents + location + todos + shopping + notes + calendar;
+  return {chat, documents, location, todos, shopping, notes, calendar, total};
 }
 
 /**
@@ -52,10 +53,11 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
       todos: counters.todos + (field === "todos" ? 1 : 0),
       shopping: counters.shopping + (field === "shopping" ? 1 : 0),
       notes: counters.notes + (field === "notes" ? 1 : 0),
+      calendar: counters.calendar + (field === "calendar" ? 1 : 0),
     };
 
     let badge = Math.floor(
-        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes,
+        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes + next.calendar,
     );
 
     // safety net: APNS vuole un intero valido
@@ -1251,6 +1253,136 @@ exports.getAIUsage = onCall(
       const dailyLimit = await resolveAIDailyLimit(uid);
 
       return {usageToday: count, dailyLimit};
+    },
+);
+// ── NUOVA FUNCTION: notifyNewCalendarEvent ────────────────────────────────────
+// Trigger: creazione di un evento in families/{familyId}/calendarEvents/{eventId}
+// Counter: calendar
+// Pref:    notifyOnNewCalendarEvent (default ON)
+// Badge:   somma di tutti i contatori (incluso calendar)
+
+exports.notifyNewCalendarEvent = onDocumentCreated(
+    {
+      document: "families/{familyId}/calendarEvents/{eventId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const eventId = event.params.eventId;
+
+      const eventData = event.data ? event.data.data() : null;
+      if (!eventData) {
+        logger.warn("notifyNewCalendarEvent: missing event data");
+        return;
+      }
+
+      // Ignora eventi soft-deleted alla creazione (edge case)
+      if (eventData.isDeleted === true) return;
+
+      const creatorUid = eventData.createdBy || eventData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewCalendarEvent: missing creatorUid");
+        return;
+      }
+
+      logger.info("notifyNewCalendarEvent triggered", {familyId, eventId, creatorUid});
+
+      // Risolvi il nome del creatore
+      const creatorName = await resolveMemberName(familyId, creatorUid);
+
+      // Leggi tutti i membri della famiglia
+      const membersSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("members").get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewCalendarEvent: members subcollection is empty");
+        return;
+      }
+
+      // Notifica a tutti tranne chi ha creato l'evento
+      const memberUids = membersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid && uid !== creatorUid);
+
+      if (memberUids.length === 0) {
+        logger.info("notifyNewCalendarEvent: no targets (only creator)");
+        return;
+      }
+
+      // Componi titolo e body
+      const eventTitle = eventData.title || "Nuovo evento";
+      const startDate = eventData.startDate?.toDate?.();
+      let dateStr = "";
+      if (startDate) {
+        dateStr = startDate.toLocaleDateString("it-IT", {
+          timeZone: "Europe/Rome",
+          day: "numeric",
+          month: "long",
+        });
+      }
+
+      const title = "📅 Calendario";
+      const body = dateStr ?
+        `${creatorName} ha aggiunto: ${eventTitle} — ${dateStr}` :
+        `${creatorName} ha aggiunto: ${eventTitle}`;
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewCalendarEvent");
+        if (tokens.length === 0) continue;
+
+        const badge = await incrementCounterAndGetBadge({
+          familyId,
+          uid,
+          field: "calendar",
+        });
+
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {
+            type: "new_calendar_event",
+            familyId: familyId,
+            eventId: eventId,
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: "default",
+                badge,
+              },
+            },
+          },
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewCalendarEvent: no per-user notifications to send");
+        return;
+      }
+
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+      );
+
+      let totalSuccess = 0;
+      let totalFailure = 0;
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+
+      logger.info("notifyNewCalendarEvent: send result", {
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        userTargets: messagesToSend.length,
+      });
     },
 );
 

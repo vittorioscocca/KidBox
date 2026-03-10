@@ -30,7 +30,7 @@ import Foundation
 enum Route: Hashable {
     case home
     case today
-    case calendar
+    case calendar(familyId: String, highlightEventId: String? = nil)
     case todo
     case settings
     

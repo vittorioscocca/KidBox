@@ -58,6 +58,7 @@ final class NotificationManager: NSObject, ObservableObject {
         case todo(familyId: String, childId: String, listId: String, todoId: String)
         case groceryItem(familyId: String, itemId: String)   // ← NEW
         case note(familyId: String, noteId: String)          // ← NEW
+        case calendarEvent(familyId: String, eventId: String)
     }
     
     // MARK: - Deep Link Handling
@@ -125,6 +126,17 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .note(familyId: familyId, noteId: noteId)
             KBLog.auth.kbInfo("DeepLink set for note familyId=\(familyId) noteId=\(noteId)")
+            
+        } else if type == "new_calendar_event" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let eventId  = userInfo["eventId"]  as? String
+            else {
+                KBLog.auth.kbError("Invalid new_calendar_event payload")
+                return
+            }
+            pendingDeepLink = .calendarEvent(familyId: familyId, eventId: eventId)
+            KBLog.auth.kbInfo("DeepLink set for calendarEvent familyId=\(familyId) eventId=\(eventId)")
         }
     }
     
@@ -203,6 +215,35 @@ final class NotificationManager: NSObject, ObservableObject {
         
         try await db.collection("users").document(uid).setData([
             "notificationPrefs": ["notifyOnNewNote": enabled]
+        ], merge: true)
+        
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+    
+    
+    // MARK: - Calendar notification preference
+    
+    func fetchNotifyOnNewCalendarEventPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnNewCalendarEvent"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+    
+    func setNotifyOnNewCalendarEvent(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewCalendarEvent": enabled]
         ], merge: true)
         
         if enabled {
