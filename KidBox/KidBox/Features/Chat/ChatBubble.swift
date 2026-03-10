@@ -178,16 +178,18 @@ struct ChatBubble: View {
                 }
                 
                 bubbleBody
-                    .contextMenu { contextMenuItems }
+                    .contextMenu { if !message.isDeletedForEveryone { contextMenuItems } }
                     .offset(x: swipeX)
                     .gesture(
                         DragGesture(minimumDistance: 20)
                             .onChanged { v in
+                                guard !message.isDeletedForEveryone else { return }
                                 guard abs(v.translation.width) > abs(v.translation.height) else { return }
                                 guard v.translation.width > 0 else { return }
                                 swipeX = min(28, v.translation.width / 3)
                             }
                             .onEnded { v in
+                                guard !message.isDeletedForEveryone else { return }
                                 let shouldTrigger = v.translation.width > 70
                                 && abs(v.translation.width) > abs(v.translation.height)
                                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { swipeX = 0 }
@@ -213,30 +215,53 @@ struct ChatBubble: View {
         }
     }
     
+    // MARK: - Deleted tombstone
+    
+    /// Shown in place of any content when the message was deleted for everyone.
+    private var deletedBubble: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "minus.circle")
+                .font(.caption)
+                .foregroundStyle(isOwn ? Color.white.opacity(0.55) : Color.secondary)
+            Text("Messaggio eliminato")
+                .font(.body.italic())
+                .foregroundStyle(isOwn ? Color.white.opacity(0.7) : Color.secondary)
+            Spacer(minLength: 0)
+            timeAndChecks
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: maxBubbleWidth)
+        .background(bubbleBackground.opacity(0.65))
+        .clipShape(bubbleShape)
+        .shadow(color: .black.opacity(0.04), radius: 2, x: 0, y: 1)
+    }
+    
     // MARK: - Bubble body
     
     @ViewBuilder
     private var bubbleBody: some View {
-        if message.type == .audio {
-            if message.type == .audio {
-                VStack(alignment: .leading, spacing: 8) {
-                    replyContextHeader
-                    audioContent
-                    
-                    if !isOwn && message.shouldShowTranscript {
-                        transcriptSection
-                    }
-                    
-                    audioBottomRow
+        // Show tombstone for messages deleted for everyone — no content, no context menu.
+        if message.isDeletedForEveryone {
+            deletedBubble
+        } else if message.type == .audio {
+            VStack(alignment: .leading, spacing: 8) {
+                replyContextHeader
+                audioContent
+                
+                if !isOwn && message.shouldShowTranscript {
+                    transcriptSection
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .frame(width: maxBubbleWidth, alignment: .leading)
-                .background(bubbleBackground)
-                .overlay(highlightOverlay)
-                .clipShape(bubbleShape)
-                .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
+                
+                audioBottomRow
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(width: maxBubbleWidth, alignment: .leading)
+            .background(bubbleBackground)
+            .overlay(highlightOverlay)
+            .clipShape(bubbleShape)
+            .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
         } else if message.type == .photo || message.type == .video {
             if message.replyToId != nil {
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 0) {
@@ -445,49 +470,57 @@ struct ChatBubble: View {
     @ViewBuilder
     private var replySubtitle: some View {
         if let repliedTo {
-            switch repliedTo.type {
-            case .text:
-                let t = (repliedTo.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                if let url = cachedReplyLinkURL {
-                    HStack(spacing: 8) {
-                        LinkPreviewThumb(
-                            url: url,
-                            size: ChatThumbStyle.composerReplySize,
-                            corner: ChatThumbStyle.replyCorner
-                        )
-                        Text(url.host ?? "Link")
+            // If the quoted message was deleted for everyone, show tombstone label.
+            if repliedTo.isDeletedForEveryone {
+                HStack(spacing: 6) {
+                    Image(systemName: "minus.circle").font(.caption2)
+                    Text("Messaggio eliminato").italic()
+                }
+            } else {
+                switch repliedTo.type {
+                case .text:
+                    let t = (repliedTo.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let url = cachedReplyLinkURL {
+                        HStack(spacing: 8) {
+                            LinkPreviewThumb(
+                                url: url,
+                                size: ChatThumbStyle.composerReplySize,
+                                corner: ChatThumbStyle.replyCorner
+                            )
+                            Text(url.host ?? "Link")
+                        }
+                    } else {
+                        Text(t.isEmpty ? "Messaggio" : t)
                     }
-                } else {
-                    Text(t.isEmpty ? "Messaggio" : t)
+                case .photo:
+                    HStack(spacing: 8) {
+                        replyThumb(for: repliedTo)
+                        Text("Foto")
+                    }
+                case .video:
+                    HStack(spacing: 8) {
+                        replyThumb(for: repliedTo)
+                        Text("Video")
+                    }
+                case .audio:
+                    let d = repliedTo.mediaDurationSeconds ?? 0
+                    let label = d > 0 ? "Messaggio vocale • \(formatDuration(d))" : "Messaggio vocale"
+                    HStack(spacing: 6) {
+                        Image(systemName: "waveform").font(.caption2)
+                        Text(label)
+                    }
+                case .document:
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.fill").font(.caption2)
+                        Text(repliedTo.text ?? "Documento")
+                    }
+                case .location:
+                    HStack(spacing: 8) {
+                        replyThumb(for: repliedTo)
+                        Text("Posizione condivisa")
+                    }
                 }
-            case .photo:
-                HStack(spacing: 8) {
-                    replyThumb(for: repliedTo)
-                    Text("Foto")
-                }
-            case .video:
-                HStack(spacing: 8) {
-                    replyThumb(for: repliedTo)
-                    Text("Video")
-                }
-            case .audio:
-                let d = repliedTo.mediaDurationSeconds ?? 0
-                let label = d > 0 ? "Messaggio vocale • \(formatDuration(d))" : "Messaggio vocale"
-                HStack(spacing: 6) {
-                    Image(systemName: "waveform").font(.caption2)
-                    Text(label)
-                }
-            case .document:
-                HStack(spacing: 6) {
-                    Image(systemName: "doc.fill").font(.caption2)
-                    Text(repliedTo.text ?? "Documento")
-                }
-            case .location:
-                HStack(spacing: 8) {
-                    replyThumb(for: repliedTo)
-                    Text("Posizione condivisa")
-                }
-            }
+            } // end else (not deleted for everyone)
         } else {
             Text("Messaggio")
         }

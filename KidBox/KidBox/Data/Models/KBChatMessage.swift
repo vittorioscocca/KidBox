@@ -78,6 +78,11 @@ final class KBChatMessage {
     var editedAt: Date?
     var isDeleted: Bool
     
+    /// true quando il messaggio è stato eliminato per tutti i partecipanti.
+    /// A differenza di `isDeleted` (elimina solo per me), questo campo
+    /// mantiene il messaggio visibile come tombstone ("Messaggio eliminato").
+    var isDeletedForEveryone: Bool = false
+    
     var syncStateRaw: Int
     var lastSyncError: String?
     
@@ -194,7 +199,8 @@ final class KBChatMessage {
         transcriptErrorMessage: String? = nil,
         createdAt: Date = Date(),
         editedAt: Date? = nil,
-        isDeleted: Bool = false
+        isDeleted: Bool = false,
+        isDeletedForEveryone: Bool = false
     ) {
         self.id = id
         self.familyId = familyId
@@ -227,6 +233,7 @@ final class KBChatMessage {
         self.createdAt = createdAt
         self.editedAt = editedAt
         self.isDeleted = isDeleted
+        self.isDeletedForEveryone = isDeletedForEveryone
         
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil

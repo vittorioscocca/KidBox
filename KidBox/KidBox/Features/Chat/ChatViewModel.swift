@@ -238,8 +238,10 @@ final class ChatViewModel: NSObject, ObservableObject {
     func reloadLocal() {
         guard let modelContext else { return }
         let fam  = familyId
+        // Include messages deleted for everyone (tombstones) but exclude
+        // messages deleted only for me (isDeleted = true, isDeletedForEveryone = false).
         let desc = FetchDescriptor<KBChatMessage>(
-            predicate: #Predicate { $0.familyId == fam && $0.isDeleted == false },
+            predicate: #Predicate { $0.familyId == fam && ($0.isDeleted == false || $0.isDeletedForEveryone == true) },
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
         do {
@@ -291,7 +293,14 @@ final class ChatViewModel: NSObject, ObservableObject {
             existing.mediaURL      = dto.mediaURL
             existing.reactionsJSON = dto.reactionsJSON
             existing.readBy        = Array(Set(existing.readBy + dto.readBy))
-            existing.isDeleted     = localBefore || dto.isDeleted || deletedForMe
+            // isDeletedForEveryone is signalled by dto.isDeleted (softDelete sets this on Firestore).
+            // Once a message is a tombstone it stays a tombstone.
+            if dto.isDeleted && !existing.isDeletedForEveryone {
+                existing.isDeletedForEveryone = true
+                existing.isDeleted = false   // keep in local store for tombstone display
+            } else {
+                existing.isDeleted = localBefore || deletedForMe
+            }
             existing.syncState     = .synced; existing.lastSyncError = nil
             existing.replyToId     = dto.replyToId
             existing.latitude      = dto.latitude; existing.longitude = dto.longitude
@@ -1041,7 +1050,11 @@ final class ChatViewModel: NSObject, ObservableObject {
                     try await group.waitForAll()
                 }
                 await MainActor.run {
-                    for msg in selected { msg.isDeleted = true; msg.syncState = .synced; msg.lastSyncError = nil }
+                    for msg in selected {
+                        msg.isDeletedForEveryone = true
+                        msg.isDeleted = false      // keep visible as tombstone
+                        msg.syncState = .synced; msg.lastSyncError = nil
+                    }
                     try? modelContext.save(); self.reloadLocal()
                 }
             } catch {
