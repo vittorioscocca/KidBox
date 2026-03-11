@@ -862,7 +862,8 @@ final class DocumentFolderViewModel: ObservableObject {
         errorText = nil
         Task { @MainActor in
             let userId = Auth.auth().currentUser?.uid ?? "local"
-            if FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) == nil {
+            if doc.notes != "chat_plain",
+               FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) == nil {
                 showKeyMissingAlert = true; return
             }
             if let localPath = doc.localPath, !localPath.isEmpty,
@@ -937,10 +938,15 @@ final class DocumentFolderViewModel: ObservableObject {
                                                                 userInfo: [NSLocalizedDescriptionKey: "Download fallito"]))
                 }
             }
-            let encrypted = try Data(contentsOf: tmpURL)
-            let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId, userId: Auth.auth().currentUser?.uid ?? "local")
+            let fileData = try Data(contentsOf: tmpURL)
+            let finalData: Data
+            if doc.notes == "chat_plain" {
+                finalData = fileData   // documento chat: già in chiaro, nessuna decifratura
+            } else {
+                finalData = try DocumentCryptoService.decrypt(fileData, familyId: doc.familyId, userId: Auth.auth().currentUser?.uid ?? "local")
+            }
             let rel = try DocumentLocalCache.write(familyId: doc.familyId, docId: doc.id,
-                                                   fileName: doc.fileName.isEmpty ? doc.id : doc.fileName, data: decrypted)
+                                                   fileName: doc.fileName.isEmpty ? doc.id : doc.fileName, data: finalData)
             doc.localPath = rel; try modelContext.save()
             try? FileManager.default.removeItem(at: tmpURL)
             await endDownloadingWithMinimumDelay(start: start)

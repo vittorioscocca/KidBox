@@ -308,6 +308,7 @@ struct BubbleRowView: View, Equatable {
     let onReactionTap: (String) -> Void
     let onEdit: (() -> Void)?
     let onDelete: () -> Void
+    let onSaveToApp: () -> Void
     let onReply: () -> Void
     
     var body: some View {
@@ -332,6 +333,7 @@ struct BubbleRowView: View, Equatable {
                 onLongPress: { messageForReaction = msg },
                 onEdit: canAct ? onEdit : nil,
                 onDelete: onDelete,
+                onSaveToApp: onSaveToApp,
                 onReply: onReply,
                 repliedTo: repliedTo,
                 onReplyContextTap: {
@@ -367,6 +369,7 @@ private struct ChatConversationView: View {
     @StateObject private var viewModel: ChatViewModel
     @State private var dayGroups: [ChatDayGroup] = []
     @FocusState private var isInputFocused: Bool
+    @State private var messageForSave: KBChatMessage? = nil
     
     // MARK: - Theme
     private var backgroundColor: Color {
@@ -597,6 +600,14 @@ private struct ChatConversationView: View {
             DocumentPicker { url in viewModel.sendDocument(url: url) }
                 .ignoresSafeArea()
         }
+        .sheet(item: $messageForSave) { msg in
+            ChatSaveSheet(
+                message: msg,
+                onSelect: { action in handleSaveAction(action) },
+                onDismiss: { messageForSave = nil }
+            )
+            .presentationDetents([.medium, .large])
+        }
     }
     
     // MARK: - buildGroups
@@ -672,6 +683,7 @@ private struct ChatConversationView: View {
                 isSelecting = true
                 selectedMessageIds.insert(msg.id)
             },
+            onSaveToApp: { messageForSave = msg },
             onReply: { viewModel.startReply(to: msg) }
         )
     }
@@ -717,6 +729,144 @@ private struct ChatConversationView: View {
         .padding(.vertical, 6)
         .background(barBackground)
         .fixedSize(horizontal: false, vertical: true)
+    }
+    
+    private func mimeTypeFromFileName(_ name: String) -> String {
+        let ext = (name as NSString).pathExtension.lowercased()
+        switch ext {
+        case "pdf":  return "application/pdf"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "png":  return "image/png"
+        case "doc":  return "application/msword"
+        case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "xls":  return "application/vnd.ms-excel"
+        case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "mp4":  return "video/mp4"
+        case "mov":  return "video/quicktime"
+        default:     return "application/octet-stream"
+        }
+    }
+    
+    private func handleSaveAction(_ action: ChatSaveAction) {
+        guard !familyId.isEmpty else { return }
+        
+        switch action {
+            
+        case .todo(let title):
+            coordinator.pendingShareTodoDraft = AppCoordinator.PendingShareTodoDraft(title: title)
+            coordinator.navigate(to: .todo)
+            
+        case .event(let title, let date):
+            coordinator.pendingShareEventDraft = AppCoordinator.PendingShareEventDraft(
+                title: title,
+                notes: "",
+                startDate: date,
+                targetFamilyId: familyId
+            )
+            coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: nil))
+            
+        case .grocery(let lines):
+            // Crea tutti gli articoli direttamente, stessa logica di GroceryListView
+            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let now = Date()
+            for line in lines {
+                let item = KBGroceryItem(
+                    familyId: familyId, name: line,
+                    category: nil, notes: nil,
+                    createdAt: now, updatedAt: now,
+                    updatedBy: uid, createdBy: uid
+                )
+                item.syncState = KBSyncState.pendingUpsert
+                modelContext.insert(item)
+                SyncCenter.shared.enqueueGroceryUpsert(
+                    itemId: item.id, familyId: familyId, modelContext: modelContext)
+            }
+            try? modelContext.save()
+            Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+            
+        case .note(let title, let body):
+            coordinator.navigate(to: .notesHome(familyId: familyId))
+            Task { @MainActor in
+                let uid = Auth.auth().currentUser?.uid ?? ""
+                let displayName = Auth.auth().currentUser?.displayName ?? ""
+                let note = KBNote(
+                    familyId: familyId,
+                    title: title,
+                    body: body,
+                    createdBy: uid,
+                    createdByName: displayName,
+                    updatedBy: uid,
+                    updatedByName: displayName
+                )
+                note.syncState = .pendingUpsert
+                modelContext.insert(note)
+                try? modelContext.save()
+                let store = NotesRemoteStore()
+                try? await store.upsert(note: note)
+            }
+            
+        case .document(let mediaURL, let fileName):
+            coordinator.navigate(to: .documentsHome)
+            Task { @MainActor in
+                let uid = Auth.auth().currentUser?.uid ?? ""
+                let docId = UUID().uuidString
+                let mimeType = mimeTypeFromFileName(fileName)
+                
+                // Estrai lo storagePath dal downloadURL
+                // Il path è nel parametro "o/" dell'URL Firebase
+                let storagePath = Self.extractStoragePath(from: mediaURL)
+                ?? "families/\(familyId)/chat/\(fileName)"
+                
+                let doc = KBDocument(
+                    id: docId,
+                    familyId: familyId,
+                    childId: nil,
+                    categoryId: nil,
+                    title: fileName,
+                    fileName: fileName,
+                    mimeType: mimeType,
+                    fileSize: 0,
+                    localPath: nil,
+                    storagePath: storagePath,
+                    downloadURL: mediaURL,
+                    notes: "chat_plain",
+                    updatedBy: uid
+                )
+                doc.syncState = .pendingUpsert
+                modelContext.insert(doc)
+                try? modelContext.save()
+                
+                let dto = RemoteDocumentDTO(
+                    id: docId,
+                    familyId: familyId,
+                    childId: nil,
+                    categoryId: nil,
+                    title: fileName,
+                    fileName: fileName,
+                    mimeType: mimeType,
+                    fileSize: 0,
+                    storagePath: storagePath,
+                    downloadURL: mediaURL,
+                    isDeleted: false,
+                    notes: "chat_plain",
+                    updatedAt: Date(),
+                    updatedBy: uid
+                )
+                try? await DocumentRemoteStore().upsert(dto: dto)
+            }
+        }
+    }
+    
+    private static func extractStoragePath(from downloadURL: String) -> String? {
+        // Firebase download URL format:
+        // https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encoded_path}?alt=media&token=...
+        guard let url = URL(string: downloadURL),
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let pathComponent = url.pathComponents.firstIndex(of: "o").map({ url.pathComponents[$0 + 1] })
+        else { return nil }
+        
+        // Il path è URL-encoded, lo decodichiamo
+        return pathComponent.removingPercentEncoding
     }
     
     // MARK: - Reply bar

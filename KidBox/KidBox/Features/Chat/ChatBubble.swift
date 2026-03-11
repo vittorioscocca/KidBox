@@ -30,6 +30,7 @@ struct ChatBubble: View {
     let onLongPress: () -> Void
     let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
+    let onSaveToApp: (() -> Void)?
     let onReply: () -> Void
     let repliedTo: KBChatMessage?
     let onReplyContextTap: () -> Void
@@ -89,6 +90,7 @@ struct ChatBubble: View {
         onLongPress: @escaping () -> Void,
         onEdit: (() -> Void)?,
         onDelete: (() -> Void)?,
+        onSaveToApp: (() -> Void)?,
         onReply: @escaping () -> Void,
         repliedTo: KBChatMessage?,
         onReplyContextTap: @escaping () -> Void,
@@ -102,6 +104,7 @@ struct ChatBubble: View {
         self.onLongPress = onLongPress
         self.onEdit = onEdit
         self.onDelete = onDelete
+        self.onSaveToApp = onSaveToApp
         self.onReply = onReply
         self.repliedTo = repliedTo
         self.onReplyContextTap = onReplyContextTap
@@ -1075,9 +1078,17 @@ struct ChatBubble: View {
         if message.type == .text {
             Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
         }
+        
+        if !message.saveDestinations.isEmpty {
+            Button { onSaveToApp?() } label: {
+                Label("Salva in…", systemImage: "square.and.arrow.down")
+            }
+        }
+        
         if isOwn, message.type == .text, let onEdit {
             Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
         }
+        
         if let onDelete {
             Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
         }

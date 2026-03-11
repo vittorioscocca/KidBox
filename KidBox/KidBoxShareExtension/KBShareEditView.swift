@@ -95,6 +95,7 @@ struct KBShareEditView: View {
         .navigationTitle(destination.label)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { prefillFields() }
+        .onChange(of: destination) { _, _ in prefillFields() }
     }
     
     // MARK: - Success views
@@ -456,7 +457,9 @@ struct KBShareEditView: View {
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { !$0.isEmpty }
                 editedTitle = lines.joined(separator: "\n")
-            }  else {
+            }  else if destination == .chat {
+                editedText = t
+            }else {
                 let lines = t.components(separatedBy: "\n")
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { !$0.isEmpty }
@@ -803,6 +806,16 @@ struct KBShareEditView: View {
                 .filter { !$0.isEmpty }
             title = editedTitle.isEmpty ? (lines.first ?? raw) : editedTitle
             body = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : raw
+            Text(t)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.secondary.opacity(0.08))
+                )
             
         case .url(let u):
             body = u
