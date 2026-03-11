@@ -449,14 +449,20 @@ struct KBShareEditView: View {
                 let parsed = parseEventText(t)
                 editedTitle = parsed.title
                 editedText = parsed.notes
-            } else {
+            } else if destination == .grocery {
+                // Per grocery mantieni tutte le righe in editedTitle —
+                // ogni riga diventerà un articolo separato nell'app.
+                let lines = t.components(separatedBy: "\n")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                editedTitle = lines.joined(separator: "\n")
+            }  else {
                 let lines = t.components(separatedBy: "\n")
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { !$0.isEmpty }
                 editedTitle = lines.first ?? t
                 editedText = lines.dropFirst().joined(separator: "\n")
             }
-            
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
                 editedTitle = fileURL.deletingPathExtension().lastPathComponent

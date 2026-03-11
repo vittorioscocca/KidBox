@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import Combine
 
 struct GroceryListView: View {
     
@@ -134,17 +135,17 @@ struct GroceryListView: View {
         }
         .onAppear {
             BadgeManager.shared.activeSections.insert("shopping")
+            // Realtime: avvia una sola volta
             guard !didStartRealtime else { return }
             didStartRealtime = true
             SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
-            if let text = coordinator.pendingShareText {
-                sharePrefillName = text
-                coordinator.pendingShareText = nil
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    showAddSheet = true
-                }
-            }
+            // Fallback: se onReceive non ha ancora scattato (cold start)
+            consumePendingShare()
+        }
+        // onReceive: scatta anche se GroceryListView era già montata
+        .onReceive(coordinator.$pendingShareText.compactMap { $0 }) { text in
+            consumePendingShare()
         }
         .onDisappear {
             SyncCenter.shared.stopGroceryRealtime()
@@ -227,6 +228,47 @@ struct GroceryListView: View {
             
             try? modelContext.save()
             await SyncCenter.shared.flushGrocery(modelContext: modelContext)
+        }
+    }
+    
+    private func consumePendingShare() {
+        guard let text = coordinator.pendingShareText else { return }
+        coordinator.pendingShareText = nil
+        let lines = text.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        if lines.count > 1 {
+            // Lista multi-riga → crea tutti gli articoli direttamente,
+            // senza aprire lo sheet (stessa UX del todo multi-item)
+            let uid = Auth.auth().currentUser?.uid ?? "local"
+            let now = Date()
+            for line in lines {
+                let item = KBGroceryItem(
+                    familyId: familyId,
+                    name: line,
+                    category: nil,
+                    notes: nil,
+                    createdAt: now,
+                    updatedAt: now,
+                    updatedBy: uid,
+                    createdBy: uid
+                )
+                item.syncState = .pendingUpsert
+                modelContext.insert(item)
+                SyncCenter.shared.enqueueGroceryUpsert(
+                    itemId: item.id,
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+            }
+            try? modelContext.save()
+            Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+        } else {
+            // Singolo elemento → apri lo sheet con prefill
+            sharePrefillName = lines.first ?? text
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showAddSheet = true
+            }
         }
     }
     
