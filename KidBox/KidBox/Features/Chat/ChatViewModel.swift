@@ -436,6 +436,15 @@ final class ChatViewModel: NSObject, ObservableObject {
     
     // MARK: - Send photo / video
     
+    /// Resetta lo stato di upload bloccato (es. dopo un errore o da share extension).
+    func resetUploadStateIfStuck() {
+        guard isUploadingMedia else { return }
+        isUploadingMedia = false
+        isCompressingMedia = false
+        uploadProgress = 0
+        KBLog.data.kbInfo("ChatVM resetUploadStateIfStuck called")
+    }
+    
     func sendMedia(data: Data, type: KBChatMessageType) {
         guard !isUploadingMedia else { return }
         Task { await uploadAndSend(data: data, type: type) }
@@ -1250,6 +1259,69 @@ final class ChatViewModel: NSObject, ObservableObject {
             isDeleted: msg.isDeleted, deletedFor: [],
             latitude: msg.latitude, longitude: msg.longitude
         )
+    }
+    
+    func retryFailedMessages() {
+        guard let modelContext else { return }
+        
+        let fid = familyId
+        
+        // syncStateRaw è Int: error = 3, pendingUpsert = 1
+        let errorRaw   = KBSyncState.error.rawValue         // 3
+        let pendingRaw = KBSyncState.pendingUpsert.rawValue  // 1
+        
+        let descError = FetchDescriptor<KBChatMessage>(
+            predicate: #Predicate<KBChatMessage> {
+                $0.familyId == fid &&
+                $0.syncStateRaw == errorRaw &&
+                $0.isDeleted == false
+            },
+            sortBy: [SortDescriptor(\KBChatMessage.createdAt, order: .forward)]
+        )
+        
+        let descPending = FetchDescriptor<KBChatMessage>(
+            predicate: #Predicate<KBChatMessage> {
+                $0.familyId == fid &&
+                $0.syncStateRaw == pendingRaw &&
+                $0.isDeleted == false
+            },
+            sortBy: [SortDescriptor(\KBChatMessage.createdAt, order: .forward)]
+        )
+        
+        let errorMsgs   = (try? modelContext.fetch(descError))   ?? []
+        let pendingMsgs = (try? modelContext.fetch(descPending)) ?? []
+        let failed      = (errorMsgs + pendingMsgs)
+            .sorted { $0.createdAt < $1.createdAt }
+        
+        guard !failed.isEmpty else { return }
+        
+        KBLog.sync.kbInfo("ChatVM retryFailedMessages count=\(failed.count)")
+        
+        Task {
+            for msg in failed {
+                // I messaggi media (foto/video/audio) con mediaURL nil
+                // hanno fallito anche l'upload su Storage — non possiamo
+                // ritentare solo Firestore, saltiamo per ora.
+                if msg.type != .text && msg.type != .location && msg.mediaURL == nil {
+                    KBLog.sync.kbDebug("ChatVM retry skip — mediaURL nil msgId=\(msg.id)")
+                    continue
+                }
+                do {
+                    let dto = makeDTO(from: msg)
+                    try await remoteStore.upsert(dto: dto)
+                    msg.syncState = .synced
+                    msg.lastSyncError = nil
+                    try? modelContext.save()
+                    KBLog.sync.kbInfo("ChatVM retry OK msgId=\(msg.id)")
+                } catch {
+                    msg.syncState = .error
+                    msg.lastSyncError = error.localizedDescription
+                    try? modelContext.save()
+                    KBLog.sync.kbError("ChatVM retry failed msgId=\(msg.id): \(error.localizedDescription)")
+                }
+            }
+            await MainActor.run { reloadLocal() }
+        }
     }
 }
 

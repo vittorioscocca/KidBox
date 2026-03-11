@@ -200,6 +200,14 @@ struct RootHostView: View {
             return
         }
         
+        // Se stiamo usando il fallback families.first (activeFamilyId == nil),
+        // salva il familyId nell'App Group per la Share Extension.
+        if coordinator.activeFamilyId == nil {
+            let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+            sharedDefaults?.set(familyId, forKey: "activeFamilyId")
+            KBLog.sync.kbInfo("AppGroup: fallback activeFamilyId saved fid=\(familyId)")
+        }
+        
         // Switching to a different family → stop previous listeners first.
         if startedFamilyId != nil {
             KBLog.sync.kbInfo("Switching realtime listeners from=\(startedFamilyId ?? "nil") to=\(familyId)")
@@ -239,12 +247,6 @@ struct RootHostView: View {
         
         KBLog.sync.kbDebug("startVisitRealtime familyId=\(familyId)")
         SyncCenter.shared.startVisitsRealtime(
-            familyId: familyId,
-            modelContext: modelContext
-        )
-        
-        KBLog.sync.kbDebug("startCalendarRealtime familyId=\(familyId)")
-        SyncCenter.shared.startCalendarRealtime(
             familyId: familyId,
             modelContext: modelContext
         )

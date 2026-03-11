@@ -363,6 +363,7 @@ private struct ChatConversationView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var coordinator: AppCoordinator
     @StateObject private var viewModel: ChatViewModel
     @State private var dayGroups: [ChatDayGroup] = []
     @FocusState private var isInputFocused: Bool
@@ -498,11 +499,52 @@ private struct ChatConversationView: View {
                 await CountersService.shared.reset(familyId: familyId, field: .chat)
                 await MainActor.run { BadgeManager.shared.clearChat() }
             }
+            // ── Share Extension: testo ──
+            if let text = coordinator.pendingShareText {
+                coordinator.pendingShareText = nil
+                viewModel.inputText = text
+            }
+        }
+        .task(id: coordinator.pendingShareImagePath) {
+            // ── Share Extension: immagine o file ──
+            // Usiamo .task così siamo certi che onAppear (e bind/startListening)
+            // siano già stati eseguiti. id: cambia solo quando arriva un nuovo file.
+            guard let filePath = coordinator.pendingShareImagePath else { return }
+            coordinator.pendingShareImagePath = nil
+            
+            // Aspetta che il viewModel sia completamente pronto
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            
+            // Se un upload precedente è rimasto bloccato, resetta
+            viewModel.resetUploadStateIfStuck()
+            
+            let fileURL = URL(fileURLWithPath: filePath)
+            let ext = fileURL.pathExtension.lowercased()
+            
+            guard let data = try? Data(contentsOf: fileURL) else {
+                KBLog.data.kbError("ShareChat: impossibile leggere il file path=\(filePath)")
+                return
+            }
+            
+            let imageExts = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"]
+            let videoExts = ["mp4", "mov", "m4v"]
+            
+            if imageExts.contains(ext) {
+                viewModel.sendMedia(data: data, type: .photo)
+            } else if videoExts.contains(ext) {
+                viewModel.sendMedia(data: data, type: .video)
+            } else {
+                viewModel.sendDocument(url: fileURL)
+            }
+            
+            // Pulisci il file dall'App Group dopo averlo letto
+            try? FileManager.default.removeItem(at: fileURL)
         }
         .onDisappear {
             viewModel.stopListening()
             BadgeManager.shared.activeSections.remove("chat")
-
+            
         }
         .toolbar {
             if isSelecting {
@@ -1176,3 +1218,4 @@ private struct DocumentPicker: UIViewControllerRepresentable {
         }
     }
 }
+

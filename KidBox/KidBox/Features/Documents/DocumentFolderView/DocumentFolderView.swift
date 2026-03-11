@@ -676,6 +676,50 @@ private extension DocumentFolderView {
                             BadgeManager.shared.clearDocuments()
                         }
                     }
+                    
+                    let defaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+                    if let data = defaults?.dictionary(forKey: "pendingShare") as? [String: String],
+                       data["destination"] == "document",
+                       let pathString = data["sharedFilePath"],
+                       !pathString.isEmpty {
+                        
+                        // Pulisci subito per non ripetere l'upload al prossimo onAppear
+                        defaults?.removeObject(forKey: "pendingShare")
+                        
+                        let fileURL = URL(fileURLWithPath: pathString)
+                        let title = data["title"] ?? ""
+                        
+                        // Piccolo delay per assicurarsi che la view sia pronta
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            Task {
+                                view.viewModel.isUploading = true
+                                view.viewModel.uploadCurrentName = title.isEmpty
+                                ? fileURL.lastPathComponent
+                                : title
+                                
+                                let ok = await view.viewModel.uploadSingleFileFromURL(
+                                    fileURL,
+                                    forcedMime: pathString.hasSuffix(".jpg") || pathString.hasSuffix(".jpeg")
+                                    ? "image/jpeg"
+                                    : nil,
+                                    forcedTitle: title.isEmpty ? nil : title
+                                )
+                                
+                                view.viewModel.uploadDone = 1
+                                view.viewModel.uploadFailures = ok ? 0 : 1
+                                view.viewModel.isUploading = false
+                                view.viewModel.uploadCurrentName = ""
+                                
+                                // Pulisci il file temporaneo dall'App Group
+                                try? FileManager.default.removeItem(at: fileURL)
+                                
+                                view.viewModel.reload()
+                                if ok {
+                                    SyncCenter.shared.flushGlobal(modelContext: view.modelContext)
+                                }
+                            }
+                        }
+                    }
                 }
                 .onChange(of: coordinator.pendingOpenDocumentId) { _, newDocId in
                     guard let docId = newDocId else { return }

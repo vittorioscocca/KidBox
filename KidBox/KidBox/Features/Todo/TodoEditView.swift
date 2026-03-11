@@ -44,10 +44,17 @@ struct TodoEditView: View {
     @State private var showReminderAlert = false
     @State private var wantsReminder = false   // decisione utente per questo edit
     @State private var reminderPreviewDate: Date = Date()
+    private let prefillTitle: String
     
     private let remote = TodoRemoteStore()
     
-    init(familyId: String, childId: String, listId: String, listName: String = "Lista", todoIdToEdit: String?) {
+    init(familyId: String,
+         childId: String,
+         listId: String,
+         listName: String = "Lista",
+         todoIdToEdit: String?,
+         prefillTitle: String = "")
+    {
         self.familyId = familyId
         self.childId = childId
         self.todoIdToEdit = todoIdToEdit
@@ -66,6 +73,7 @@ struct TodoEditView: View {
         } else {
             _editTodos = Query(filter: #Predicate<KBTodoItem> { _ in false })
         }
+        self.prefillTitle = prefillTitle
     }
     
     private var editingTodo: KBTodoItem? { editTodos.first }
@@ -205,6 +213,9 @@ struct TodoEditView: View {
             .onAppear {
                 KBLog.app.kbInfo("TodoEditView familyMembers: \(familyMembers.map { m in "\(m.userId) → \(m.displayName ?? "NIL")" }.joined(separator: ", "))")
                 hydrateIfEditing()
+                if todoIdToEdit == nil && !prefillTitle.isEmpty {
+                    title = prefillTitle
+                }
             }
             .onChange(of: hasDate) { _, isOn in
                 if isOn {

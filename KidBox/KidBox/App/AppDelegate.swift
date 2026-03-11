@@ -15,6 +15,7 @@ import OSLog
 import FirebaseStorage
 import Firebase
 import FBSDKCoreKit
+import FirebaseAuth
 
 /// UIApplication delegate for KidBox.
 ///
@@ -33,7 +34,7 @@ final class AppDelegate: NSObject,
                          UIApplicationDelegate,
                          UNUserNotificationCenterDelegate,
                          MessagingDelegate,
-                         CLLocationManagerDelegate {
+ CLLocationManagerDelegate {
     
     // MARK: - Background location manager
     
@@ -53,6 +54,17 @@ final class AppDelegate: NSObject,
         
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
+        
+        // Condividi la sessione Auth con la Share Extension tramite Keychain sharing.
+        // Richiede "Keychain Sharing" capability con gruppo "it.vittorioscocca.kidbox"
+        // attivato su ENTRAMBI i target in Xcode → Signing & Capabilities.
+        do {
+            let accessGroup = Bundle.main.object(forInfoDictionaryKey: "KEYCHAIN_ACCESS_GROUP") as? String ?? ""
+            try Auth.auth().useUserAccessGroup(accessGroup)
+            KBLog.auth.kbInfo("Auth Keychain access group set")
+        } catch {
+            KBLog.auth.kbError("Auth useUserAccessGroup failed: \(error.localizedDescription)")
+        }
         
         ApplicationDelegate.shared.application(
             application,
@@ -106,7 +118,7 @@ final class AppDelegate: NSObject,
         
         KBLog.app.kbDebug("Facebook openURL handled via UIScene")
     }
-
+    
     private func setupBackgroundLocationManager() {
         let manager = CLLocationManager()
         manager.delegate = self

@@ -96,6 +96,31 @@ struct NotesHomeView: View {
                     BadgeManager.shared.clearNotes()
                     await CountersService.shared.reset(familyId: familyId, field: .notes)
                 }
+                if let text = coordinator.pendingShareText {
+                    coordinator.pendingShareText = nil
+                    // Crea una nuova nota con il testo e naviga al detail
+                    let uid = Auth.auth().currentUser?.uid ?? "local"
+                    let noteId = UUID().uuidString
+                    let note = KBNote(
+                        id: noteId, familyId: familyId,
+                        title: text.components(separatedBy: "\n").first ?? text,
+                        body: text,
+                        createdBy: uid, createdByName: "",
+                        updatedBy: uid, updatedByName: "",
+                        createdAt: .now, updatedAt: .now,
+                        isDeleted: false
+                    )
+                    note.syncState = .pendingUpsert
+                    modelContext.insert(note)
+                    try? modelContext.save()
+                    SyncCenter.shared.enqueueNoteUpsert(
+                        noteId: noteId, familyId: familyId, modelContext: modelContext
+                    )
+                    // Naviga al detail così l'utente può rifinire
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        coordinator.navigate(to: .noteDetail(familyId: familyId, noteId: noteId))
+                    }
+                }
             }
             .onDisappear {
                 SyncCenter.shared.stopNotesRealtime()

@@ -1,16 +1,6 @@
 import Foundation
 import SwiftData
 
-/// Tipo di messaggio supportato dalla chat familiare.
-enum KBChatMessageType: String, Codable {
-    case text
-    case audio
-    case photo
-    case video
-    case document
-    case location
-}
-
 enum KBTranscriptStatus: String, Codable {
     case none
     case processing

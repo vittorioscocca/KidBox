@@ -16,6 +16,7 @@ struct CalendarView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
+    @State private var sharePrefillTitle: String = ""
     
     // MARK: Theming (identico a LoginView)
     private var backgroundColor: Color {
@@ -115,7 +116,10 @@ struct CalendarView: View {
             }
         }
         .sheet(isPresented: $showAddSheet) {
-            CalendarEventFormView(familyId: familyId, initialDate: selectedDate, event: nil)
+            CalendarEventFormView(familyId: familyId,
+                                  initialDate: selectedDate,
+                                  event: nil,
+                                  prefillTitle: sharePrefillTitle)
                 .environment(\.modelContext, modelContext)
         }
         .sheet(item: $editingEvent) { event in
@@ -133,6 +137,13 @@ struct CalendarView: View {
             if let eid = highlightEventId,
                let match = events.first(where: { $0.id == eid }) {
                 selectedDate = match.startDate
+            }
+            
+            if coordinator.pendingShareText != nil {
+                coordinator.pendingShareText = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showAddSheet = true
+                }
             }
         }
     }
@@ -517,6 +528,7 @@ struct CalendarEventFormView: View {
     let familyId:    String
     let initialDate: Date
     var event:       KBCalendarEvent?
+    var prefillTitle: String = ""
     
     @State private var title         = ""
     @State private var notes         = ""
@@ -767,6 +779,10 @@ struct CalendarEventFormView: View {
         } else {
             startDate = Calendar.current.startOfDay(for: initialDate)
             endDate   = startDate.addingTimeInterval(3600)
+        }
+        
+        if event == nil && !prefillTitle.isEmpty {
+            title = prefillTitle
         }
     }
     

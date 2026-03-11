@@ -31,6 +31,9 @@ struct TodoHomeView: View {
     @State private var listNameDraft = ""
     @State private var editingListId: String? = nil
     
+    @State private var showShareTodoSheet = false
+    @State private var sharePrefillTitle = ""
+    
     // ✅ Sync
     @State private var didStartRealtime = false
     private let remote = TodoRemoteStore()
@@ -122,6 +125,15 @@ struct TodoHomeView: View {
             
             // 2️⃣ azzera subito badge locale (UX immediata)
             BadgeManager.shared.clearTodos()
+            
+            if let text = coordinator.pendingShareText {
+                sharePrefillTitle = text
+                coordinator.pendingShareText = nil
+                // Piccolo delay per aspettare che la view sia pronta
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showShareTodoSheet = true
+                }
+            }
         }
         .onDisappear {
             BadgeManager.shared.activeSections.remove("todos")
@@ -135,6 +147,19 @@ struct TodoHomeView: View {
                 .onDisappear {
                     KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] listEditorSheet disappeared")
                 }
+        }
+        .sheet(isPresented: $showShareTodoSheet) {
+            if !familyId.isEmpty, !childId.isEmpty,
+               let list = visibleLists.first {
+                TodoEditView(
+                    familyId: familyId,
+                    childId: childId,
+                    listId: list.id,
+                    listName: list.name,
+                    todoIdToEdit: nil,
+                    prefillTitle: sharePrefillTitle
+                )
+            }
         }
         // Log “se cambia qualcosa” (utile per vedere flicker o refresh)
         .onChange(of: allTodos.count) { _, newValue in

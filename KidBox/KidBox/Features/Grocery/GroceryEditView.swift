@@ -23,6 +23,7 @@ struct GroceryEditView: View {
     @State private var isSaving = false
     @State private var errorMessage: String? = nil
     
+    private let prefillName: String
     private var isEditing: Bool { itemIdToEdit != nil }
     
     // Categorie suggerite
@@ -31,9 +32,10 @@ struct GroceryEditView: View {
         "Surgelati", "Bevande", "Dolci e Snack", "Pulizia", "Cura Personale", "Altro"
     ]
     
-    init(familyId: String, itemIdToEdit: String? = nil) {
+    init(familyId: String, itemIdToEdit: String? = nil, prefillName: String = "") {
         self.familyId = familyId
         self.itemIdToEdit = itemIdToEdit
+        self.prefillName = prefillName
     }
     
     var body: some View {
@@ -100,7 +102,12 @@ struct GroceryEditView: View {
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
-            .onAppear { loadIfEditing() }
+            .onAppear {
+                loadIfEditing()
+                if itemIdToEdit == nil && !prefillName.isEmpty {
+                    name = prefillName
+                }
+            }
         }
     }
     

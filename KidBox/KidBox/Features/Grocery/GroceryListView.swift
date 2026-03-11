@@ -23,6 +23,7 @@ struct GroceryListView: View {
     @State private var showAddSheet = false
     @State private var editingItemId: String? = nil
     @State private var showDeletePurchasedAlert = false
+    @State private var sharePrefillName = ""
     
     init(familyId: String) {
         self.familyId = familyId
@@ -121,7 +122,8 @@ struct GroceryListView: View {
         .sheet(isPresented: $showAddSheet) {
             GroceryEditView(
                 familyId: familyId,
-                itemIdToEdit: editingItemId
+                itemIdToEdit: editingItemId,
+                prefillName: sharePrefillName
             )
         }
         .alert("Elimina acquistati", isPresented: $showDeletePurchasedAlert) {
@@ -136,6 +138,13 @@ struct GroceryListView: View {
             didStartRealtime = true
             SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+            if let text = coordinator.pendingShareText {
+                sharePrefillName = text
+                coordinator.pendingShareText = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showAddSheet = true
+                }
+            }
         }
         .onDisappear {
             SyncCenter.shared.stopGroceryRealtime()

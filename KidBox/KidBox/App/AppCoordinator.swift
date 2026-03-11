@@ -47,6 +47,11 @@ final class AppCoordinator: ObservableObject {
     /// Document id pending to be opened once the UI is ready (e.g. after a push notification).
     @Published var pendingOpenDocumentId: String? = nil
     
+    @Published var pendingShareText: String? = nil
+    
+    /// Path locale di un'immagine/file copiata nell'App Group, da inviare in chat.
+    @Published var pendingShareImagePath: String? = nil
+    
     // MARK: - Active family
     
     /// The explicitly selected active family ID.
@@ -83,6 +88,9 @@ final class AppCoordinator: ObservableObject {
         activeFamilyId = UserDefaults.standard.string(forKey: Self.activeFamilyIdKey)
         if let id = activeFamilyId {
             KBLog.sync.kbInfo("activeFamilyId restored from UserDefaults familyId=\(id)")
+            // Sincronizza subito nell'App Group per la Share Extension
+            let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+            sharedDefaults?.set(id, forKey: "activeFamilyId")
         }
     }
     
@@ -98,6 +106,13 @@ final class AppCoordinator: ObservableObject {
         }
         KBLog.sync.kbInfo("setActiveFamily familyId=\(familyId ?? "nil")")
         activeFamilyId = familyId
+        // Salva nell'App Group per la Share Extension
+        let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+        if let id = familyId {
+            sharedDefaults?.set(id, forKey: "activeFamilyId")
+        } else {
+            sharedDefaults?.removeObject(forKey: "activeFamilyId")
+        }
     }
     
     // MARK: - Session listener
@@ -136,10 +151,32 @@ final class AppCoordinator: ObservableObject {
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
                     
-                    // If no active family is pinned yet, pick the first available one
-                    // after bootstrap (first-run or after sign-out).
-                    if self.activeFamilyId == nil {
-                        KBLog.sync.kbInfo("No activeFamilyId after bootstrap — will fall back to families.first in RootHostView")
+                    // Salva UID e nome nell'App Group per la Share Extension
+                    let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+                    sharedDefaults?.set(user.uid, forKey: "currentUserUID")
+                    sharedDefaults?.set(
+                        user.displayName ?? user.email ?? "Utente",
+                        forKey: "currentUserDisplayName"
+                    )
+                    
+                    // Se activeFamilyId è già noto, sincronizzalo subito.
+                    // Altrimenti leggi il primo familyId disponibile da SwiftData
+                    // (stesso fallback che usa RootHostView) e salvalo.
+                    if let fid = self.activeFamilyId {
+                        sharedDefaults?.set(fid, forKey: "activeFamilyId")
+                        KBLog.sync.kbInfo("AppGroup: activeFamilyId synced fid=\(fid)")
+                    } else {
+                        // Fallback: prendi il primo familyId da SwiftData
+                        let uid = user.uid
+                        let descriptor = FetchDescriptor<KBFamily>(
+                            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+                        )
+                        if let firstFamily = try? modelContext.fetch(descriptor).first {
+                            sharedDefaults?.set(firstFamily.id, forKey: "activeFamilyId")
+                            KBLog.sync.kbInfo("AppGroup: fallback activeFamilyId saved fid=\(firstFamily.id)")
+                        } else {
+                            KBLog.sync.kbInfo("No activeFamilyId after bootstrap — will fall back to families.first in RootHostView")
+                        }
                     }
                     
                 } else {
@@ -191,6 +228,16 @@ final class AppCoordinator: ObservableObject {
             
             try modelContext.save()
             KBLog.persistence.kbDebug("SwiftData save OK (user profile)")
+            
+            // Salva UID e nome nell'App Group per la Share Extension
+            // (serve per costruire il DTO del messaggio senza aprire l'app)
+            let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+            sharedDefaults?.set(uid, forKey: "currentUserUID")
+            sharedDefaults?.set(
+                user.displayName ?? user.email ?? "Utente",
+                forKey: "currentUserDisplayName"
+            )
+            KBLog.data.kbDebug("App Group: currentUserUID + displayName saved")
             
         } catch {
             KBLog.data.kbError("UserProfile upsert failed: \(error.localizedDescription)")
@@ -282,6 +329,67 @@ final class AppCoordinator: ObservableObject {
             PediatricExamsView(familyId: familyId, childId: childId)
         case .examDetail(familyId: let familyId, childId: let childId, examId: let examId):
             PediatricExamDetailView(familyId: familyId, childId: childId, examId: examId)
+        }
+    }
+    
+    func handleIncomingShare(modelContext: ModelContext) {
+        // ⚠️ Deve essere identico all'App Group configurato in Xcode
+        let defaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+        guard let data = defaults?.dictionary(forKey: "pendingShare") as? [String: String],
+              let destString = data["destination"] else { return }
+        
+        let title     = data["title"] ?? ""
+        let text      = data["text"]  ?? ""
+        let filePath  = data["sharedFilePath"] ?? ""
+        _  = data["sharedFileType"] ?? ""  // "image" | "file" | ""
+        
+        KBLog.sync.kbInfo("handleIncomingShare destination=\(destString) hasFile=\((!filePath.isEmpty))")
+        
+        switch destString {
+            
+        case "chat":
+            // Per chat rimuoviamo subito — le proprietà pending* passano i dati alla ChatView
+            defaults?.removeObject(forKey: "pendingShare")
+            navigate(to: .chat)
+            if !filePath.isEmpty {
+                // Foto o documento da inviare come media
+                pendingShareImagePath = filePath   // nome fuorviante ma riusa la stessa property
+                // La ChatView distinguerà image vs file guardando l'estensione
+            } else {
+                pendingShareText = text.isEmpty ? title : text
+            }
+            
+        case "todo":
+            defaults?.removeObject(forKey: "pendingShare")
+            navigate(to: .todo)
+            pendingShareText = title.isEmpty ? text : title
+            
+        case "grocery":
+            guard let familyId = activeFamilyId else { return }
+            defaults?.removeObject(forKey: "pendingShare")
+            navigate(to: .shoppingList(familyId: familyId))
+            pendingShareText = text.isEmpty ? title : text
+            
+        case "note":
+            guard let familyId = activeFamilyId else { return }
+            defaults?.removeObject(forKey: "pendingShare")
+            navigate(to: .notesHome(familyId: familyId))
+            pendingShareText = title.isEmpty ? text : title
+            
+        case "event":
+            guard let familyId = activeFamilyId else { return }
+            defaults?.removeObject(forKey: "pendingShare")
+            navigate(to: .calendar(familyId: familyId, highlightEventId: nil))
+            pendingShareText = title.isEmpty ? text : title
+            
+        case "document":
+            // ⚠️ NON rimuovere "pendingShare" qui!
+            // DocumentFolderView lo leggerà in onAppear e lo cancellerà
+            // solo dopo aver letto sharedFilePath — evita race condition.
+            navigate(to: .documentsHome)
+            
+        default:
+            defaults?.removeObject(forKey: "pendingShare")
         }
     }
     

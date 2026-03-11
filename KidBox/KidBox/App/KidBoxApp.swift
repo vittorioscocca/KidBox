@@ -12,56 +12,20 @@ import GoogleSignIn
 import FirebaseAuth
 import FBSDKCoreKit
 
-/// Main application entry point for KidBox.
-///
-/// Responsibilities:
-/// - Build and provide the SwiftData `ModelContainer` to the view hierarchy.
-/// - Own global singletons/state: `AppCoordinator`, `NotificationManager`, `AppDelegate`.
-/// - Run migrations/backfills at startup (best effort).
-/// - Handle URL callbacks (Google Sign-In).
-/// - React to scene lifecycle changes (foreground/background) to drive sync behaviors.
-///
-/// Logging:
-/// - Uses `KBLog` with `kb*` helpers to include file/function/line.
-/// - Avoids explicit OSLog privacy annotations; keep logs non-sensitive.
 @main
 struct KidBoxApp: App {
     
-    // MARK: - State & dependencies
-    
-    /// SwiftData container used by the whole app.
-    /// Stored as a plain property because `ModelContainer` is not a SwiftUI state type.
     private var modelContainer: ModelContainer
-    
-    /// Global navigation coordinator (single source of truth for routing).
     @StateObject private var coordinator = AppCoordinator()
-    
-    /// Scene lifecycle phase (active/inactive/background).
     @Environment(\.scenePhase) private var scenePhase
-    
-    /// UIKit application delegate adapter (push / Firebase messaging integration).
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
-    /// Shared notifications manager (push deep link bridge).
     @StateObject private var notifications = NotificationManager.shared
-    
-    /// ← AGGIUNTO: visibilità launch screen animato
     @State private var showLaunch = true
     
-    // MARK: - Init
-    
-    /// Initializes the app and prepares the persistence layer.
-    ///
-    /// - Important:
-    ///   Migration/backfill is started asynchronously and must not capture `self`.
-    ///   It uses the local `container` value.
     init() {
         KBLog.app.kbInfo("KidBoxApp init")
-        
         let container = ModelContainerProvider.makeContainer(inMemory: false)
         self.modelContainer = container
-        
-        // Best-effort migrations/backfills.
         KBLog.persistence.kbInfo("Starting migrations (best effort)")
         Task {
             do {
@@ -72,35 +36,38 @@ struct KidBoxApp: App {
                 KBLog.persistence.kbError("Migrations FAILED: \(error.localizedDescription)")
             }
         }
-        
         KBLog.app.kbInfo("KidBoxApp ready")
     }
     
-    // MARK: - Scene
-    
     var body: some Scene {
         WindowGroup {
-            // ← AGGIUNTO: ZStack per sovrapporre il launch screen
             ZStack {
                 RootHostView()
                     .environmentObject(coordinator)
                 
-                // MARK: URL handling (Google Sign-In)
+                // MARK: URL handling
                     .onOpenURL { url in
+                        // ── Share Extension handoff ──────────────────
+                        if url.scheme == "kidbox", url.host == "share" {
+                            KBLog.sync.kbInfo("onOpenURL share scheme -> handleIncomingShare")
+                            coordinator.handleIncomingShare(
+                                modelContext: modelContainer.mainContext
+                            )
+                            return
+                        }
+                        
                         KBLog.auth.kbInfo("onOpenURL received url=\(url.absoluteString)")
                         
-                        // 1) Facebook (se è un callback FB, lo gestisce e STOP)
+                        // 1) Facebook
                         let handledByFacebook = ApplicationDelegate.shared.application(
                             UIApplication.shared,
                             open: url,
                             sourceApplication: nil,
                             annotation: nil
                         )
-                        
                         if handledByFacebook {
                             KBLog.auth.kbInfo("onOpenURL handled by Facebook SDK")
                             let context = modelContainer.mainContext
-                            KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Facebook)")
                             Task { SyncCenter.shared.flushGlobal(modelContext: context) }
                             return
                         }
@@ -108,10 +75,7 @@ struct KidBoxApp: App {
                         // 2) Google
                         KBLog.auth.kbInfo("onOpenURL forwarded to GoogleSignIn handler")
                         GIDSignIn.sharedInstance.handle(url)
-                        
-                        // Trigger post-login / post-deeplink sync flush.
                         let context = modelContainer.mainContext
-                        KBLog.sync.kbInfo("Triggering post-URL flushGlobal (Google/other)")
                         SyncCenter.shared.flushGlobal(modelContext: context)
                     }
                 
@@ -119,7 +83,6 @@ struct KidBoxApp: App {
                     .task {
                         TreatmentAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         VisitAttachmentService.shared.start(modelContext: modelContainer.mainContext)
-                        
 #if DEBUG
                         KBLog.sync.kbDebug("DEBUG FirestorePingService ping()")
                         FirestorePingService().ping { _ in }
@@ -129,9 +92,7 @@ struct KidBoxApp: App {
                 // MARK: Push deep link consumption
                     .onReceive(notifications.$pendingDeepLink) { link in
                         guard let link else { return }
-                        
                         KBLog.auth.kbInfo("Pending deep link received")
-                        
                         switch link {
                         case .document(let familyId, let docId):
                             KBLog.navigation.kbInfo("Deep link -> open document")
@@ -171,12 +132,11 @@ struct KidBoxApp: App {
                             coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: eventId))
                             NotificationManager.shared.consumeDeepLink()
                         }
-                        
                         notifications.consumeDeepLink()
                         KBLog.auth.kbDebug("Deep link consumed")
                     }
                 
-                // ← AGGIUNTO: launch screen animato sopra tutto
+                // Launch screen
                 if showLaunch {
                     LaunchScreenView()
                         .ignoresSafeArea()
@@ -191,30 +151,28 @@ struct KidBoxApp: App {
                         }
                 }
                 
-            } // ← chiude ZStack
+            } // ZStack
         }
         .modelContainer(modelContainer)
         
-        // MARK: Scene lifecycle -> sync behavior
+        // MARK: Scene lifecycle
         .onChange(of: scenePhase) { _, newPhase in
             let context = modelContainer.mainContext
-            
             switch newPhase {
             case .active:
                 KBLog.sync.kbInfo("ScenePhase active -> startAutoFlush + flushGlobal")
                 SyncCenter.shared.startAutoFlush(modelContext: context)
                 SyncCenter.shared.flushGlobal(modelContext: context)
                 BadgeManager.shared.refreshAppBadge()
+                // Controlla share pendente dalla Share Extension
+                KBLog.sync.kbInfo("ScenePhase active -> handleIncomingShare")
+                coordinator.handleIncomingShare(modelContext: context)
             case .inactive:
                 KBLog.sync.kbDebug("ScenePhase inactive")
-                
             case .background:
                 KBLog.sync.kbInfo("ScenePhase background -> stopAutoFlush + stopFamilyBundleRealtime")
                 SyncCenter.shared.stopAutoFlush()
-                
-                // Optional but recommended: stop listeners when going to background.
                 SyncCenter.shared.stopFamilyBundleRealtime()
-                
             @unknown default:
                 KBLog.sync.kbDebug("ScenePhase unknown default")
             }
