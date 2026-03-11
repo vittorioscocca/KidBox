@@ -533,7 +533,7 @@ private struct HomeCardGrid: View {
                 HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
                     KBLog.navigation.debug("Home: tap Notes")
                     // reset badge note prima di navigare
-                    Task {
+                    Task { @MainActor in
                         BadgeManager.shared.clearNotes()
                         await CountersService.shared.reset(familyId: familyId, field: .notes)
                     }
@@ -564,7 +564,7 @@ private struct HomeCardGrid: View {
                 HomeCardView(title: "Lista della Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
                     KBLog.navigation.debug("Home: tap Shopping")
                     // reset badge spesa prima di navigare
-                    Task {
+                    Task { @MainActor in
                         BadgeManager.shared.clearShopping()
                         await CountersService.shared.reset(familyId: familyId, field: .shopping)
                     }

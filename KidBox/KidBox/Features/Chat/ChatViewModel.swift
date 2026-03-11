@@ -273,7 +273,7 @@ final class ChatViewModel: NSObject, ObservableObject {
                 return outputURL
             } catch {
                 // Fallback: usa il file originale non compresso
-                KBLog.data.kbError("compressVideoURL fallback to original: \(error.localizedDescription)")
+                await KBLog.data.kbError("compressVideoURL fallback to original: \(error.localizedDescription)")
                 return sourceURL
             }
         }.value

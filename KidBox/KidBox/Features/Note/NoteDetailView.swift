@@ -44,16 +44,18 @@ struct NoteDetailView: View {
             NoteTitleTextField(text: $titleText, placeholder: "Titolo") {
                 bodyFocusTrigger = UUID()
             }
-            .padding(.horizontal, 16)
             .padding(.top, 12)
+            .padding(.leading, 8)
             .fixedSize(horizontal: false, vertical: true)
             .onChange(of: titleText) { isDirty = true }
             
             // ── Corpo ─────────────────────────────────────────────────────
             RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
                          focusTrigger: bodyFocusTrigger)
+            .padding(.top, 12)
             .onChange(of: bodyHTML) { isDirty = true }
         }
+        .padding(.horizontal, 16)
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear  {

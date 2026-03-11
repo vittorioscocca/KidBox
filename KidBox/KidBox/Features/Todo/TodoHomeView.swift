@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 import OSLog
+import Combine
 
 struct TodoHomeView: View {
     
@@ -129,7 +130,6 @@ struct TodoHomeView: View {
             if let text = coordinator.pendingShareText {
                 sharePrefillTitle = text
                 coordinator.pendingShareText = nil
-                // Piccolo delay per aspettare che la view sia pronta
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     showShareTodoSheet = true
                 }
@@ -167,6 +167,25 @@ struct TodoHomeView: View {
         }
         .onChange(of: allLists.count) { _, newValue in
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] allLists.count changed -> \(newValue) visible=\(visibleLists.count)")
+        }
+        // Stessa logica di pendingShareVideoPath in ChatView:
+        // onReceive scatta appena handleIncomingShare setta il draft,
+        // anche se TodoHomeView era già montata (nessuna dipendenza da onAppear).
+        // Se c'è almeno una lista, apre direttamente lo sheet di creazione todo.
+        // Se non ci sono liste ancora, il draft rimane sul coordinator e
+        // TodoListView lo consumerà via onReceive quando l'utente apre una lista.
+        .onReceive(coordinator.$pendingShareTodoDraft.compactMap { $0 }) { draft in
+            guard !familyId.isEmpty, !childId.isEmpty else { return }
+            guard visibleLists.first != nil else {
+                // Nessuna lista disponibile — TodoListView lo consumerà dopo
+                KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] pendingShareTodoDraft received but no lists yet — keeping for TodoListView")
+                return
+            }
+            coordinator.pendingShareTodoDraft = nil
+            sharePrefillTitle = draft.title
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                showShareTodoSheet = true
+            }
         }
     }
     

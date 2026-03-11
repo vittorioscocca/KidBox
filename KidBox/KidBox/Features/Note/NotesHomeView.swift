@@ -92,7 +92,7 @@ struct NotesHomeView: View {
                 SyncCenter.shared.startNotesRealtime(familyId: familyId, modelContext: modelContext)
                 loadPinned()
                 BadgeManager.shared.activeSections.insert("notes")  // ← attivo
-                Task {
+                Task { @MainActor in
                     BadgeManager.shared.clearNotes()
                     await CountersService.shared.reset(familyId: familyId, field: .notes)
                 }

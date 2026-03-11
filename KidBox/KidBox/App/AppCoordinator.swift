@@ -53,6 +53,8 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareImagePath: String? = nil
     
     @Published var pendingShareVideoPath: String? = nil
+    @Published var pendingShareEventDraft: PendingShareEventDraft? = nil
+    @Published var pendingShareTodoDraft: PendingShareTodoDraft? = nil
     
     // MARK: - Active family
     
@@ -82,6 +84,19 @@ final class AppCoordinator: ObservableObject {
     
     /// Firebase Auth listener handle. Non-nil when the session listener is active.
     private var authHandle: AuthStateDidChangeListenerHandle?
+    
+    struct PendingShareEventDraft: Identifiable {
+        let id = UUID()
+        let title: String
+        let notes: String
+        let startDate: Date?
+        let targetFamilyId: String
+    }
+    
+    struct PendingShareTodoDraft: Identifiable {
+        let id = UUID()
+        let title: String
+    }
     
     // MARK: - Init
     
@@ -335,28 +350,30 @@ final class AppCoordinator: ObservableObject {
     }
     
     func handleIncomingShare(modelContext: ModelContext) {
-        // ⚠️ Deve essere identico all'App Group configurato in Xcode
         let defaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
         guard let data = defaults?.dictionary(forKey: "pendingShare") as? [String: String],
               let destString = data["destination"] else { return }
         
-        let title     = data["title"] ?? ""
-        let text      = data["text"]  ?? ""
-        let filePath  = data["sharedFilePath"] ?? ""
-        _  = data["sharedFileType"] ?? ""  // "image" | "file" | ""
+        // Rimuovi SUBITO e sincronizza — prima di qualsiasi altra cosa.
+        // Così il secondo invoco (willEnterForeground in arrivo 50ms dopo onOpenURL)
+        // non trova più nulla e ritorna al guard qui sopra.
+        defaults?.removeObject(forKey: "pendingShare")
+        defaults?.synchronize()
         
-        KBLog.sync.kbInfo("handleIncomingShare destination=\(destString) hasFile=\((!filePath.isEmpty))")
+        let title    = data["title"] ?? ""
+        let text     = data["text"]  ?? ""
+        let filePath = data["sharedFilePath"] ?? ""
+        
+        KBLog.sync.kbInfo("handleIncomingShare destination=\(destString) hasFile=\(!filePath.isEmpty)")
         
         switch destString {
             
         case "chat":
-            // Per chat rimuoviamo subito — le proprietà pending* passano i dati alla ChatView
-            defaults?.removeObject(forKey: "pendingShare")
             navigate(to: .chat)
             if !filePath.isEmpty {
                 let fileType = data["sharedFileType"] ?? ""
                 if fileType == "video" {
-                    pendingShareVideoPath = filePath   // ← nuova property
+                    pendingShareVideoPath = filePath
                 } else {
                     pendingShareImagePath = filePath
                 }
@@ -365,36 +382,39 @@ final class AppCoordinator: ObservableObject {
             }
             
         case "todo":
-            defaults?.removeObject(forKey: "pendingShare")
+            // Il todo richiede familyId solo per la navigazione finale a TodoListView,
+            // ma navigate(.todo) porta a TodoHome che non ne ha bisogno.
+            // Il draft viene consumato da TodoListView via onReceive quando l'utente
+            // seleziona la lista — oppure se c'è già una lista aperta nello stack.
+            let todoTitle = title.isEmpty ? text : title
+            pendingShareTodoDraft = PendingShareTodoDraft(title: todoTitle)
             navigate(to: .todo)
-            pendingShareText = title.isEmpty ? text : title
             
         case "grocery":
             guard let familyId = activeFamilyId else { return }
-            defaults?.removeObject(forKey: "pendingShare")
             navigate(to: .shoppingList(familyId: familyId))
             pendingShareText = text.isEmpty ? title : text
             
-        case "note":
-            guard let familyId = activeFamilyId else { return }
-            defaults?.removeObject(forKey: "pendingShare")
-            navigate(to: .notesHome(familyId: familyId))
-            pendingShareText = title.isEmpty ? text : title
-            
         case "event":
             guard let familyId = activeFamilyId else { return }
-            defaults?.removeObject(forKey: "pendingShare")
-            navigate(to: .calendar(familyId: familyId, highlightEventId: nil))
-            pendingShareText = title.isEmpty ? text : title
+            let startDate = data["eventStartDate"].flatMap { ISO8601DateFormatter().date(from: $0) }
+            pendingShareEventDraft = PendingShareEventDraft(
+                title: title.isEmpty ? text : title,
+                notes: "",
+                startDate: startDate,
+                targetFamilyId: familyId
+            )
+            // NON chiamiamo navigate() qui — lo fa RootHostView via onReceive
+            // quando la NavigationStack è già stabile e la scena è attiva.
             
         case "document":
-            // ⚠️ NON rimuovere "pendingShare" qui!
-            // DocumentFolderView lo leggerà in onAppear e lo cancellerà
-            // solo dopo aver letto sharedFilePath — evita race condition.
+            // pendingShare già rimosso sopra — DocumentFolderView legge i dati
+            // dalla copia locale già fatta (sharedFilePath nell'App Group filesystem,
+            // non in UserDefaults). Nessun problema di race condition.
             navigate(to: .documentsHome)
             
         default:
-            defaults?.removeObject(forKey: "pendingShare")
+            break
         }
     }
     

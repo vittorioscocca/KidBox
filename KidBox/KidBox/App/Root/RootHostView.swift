@@ -93,6 +93,20 @@ struct RootHostView: View {
             }
             
             startFamilyRealtimeIfPossible()
+            
+            // Cold-start: se l'app è stata aperta proprio dal banner "Apri KidBox"
+            // della Share Extension, scenePhase parte già .active e
+            // willEnterForeground non scatta. Controlliamo qui.
+            coordinator.handleIncomingShare(modelContext: modelContext)
+        }
+        // Share Extension: event draft → naviga al calendario.
+        // RootHostView è sempre montato e stabile → è il posto giusto per navigate().
+        // CalendarView consumerà il draft via onReceive quando sarà montata.
+        .onReceive(coordinator.$pendingShareEventDraft.compactMap { $0 }) { draft in
+            // Aspetta che la scena sia attiva prima di toccare il path.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                coordinator.navigate(to: .calendar(familyId: draft.targetFamilyId, highlightEventId: nil))
+            }
         }
         // React to explicit family selection changes (join, switch).
         .onChange(of: coordinator.activeFamilyId) { oldValue, newValue in

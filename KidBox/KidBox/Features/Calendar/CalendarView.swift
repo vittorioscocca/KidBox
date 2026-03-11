@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import Combine
 
 // MARK: - CalendarView
 
@@ -17,6 +18,8 @@ struct CalendarView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
     @State private var sharePrefillTitle: String = ""
+    @State private var sharePrefillNotes: String = ""
+    @State private var sharePrefillDate: Date? = nil
     
     // MARK: Theming (identico a LoginView)
     private var backgroundColor: Color {
@@ -116,15 +119,27 @@ struct CalendarView: View {
             }
         }
         .sheet(isPresented: $showAddSheet) {
-            CalendarEventFormView(familyId: familyId,
-                                  initialDate: selectedDate,
-                                  event: nil,
-                                  prefillTitle: sharePrefillTitle)
-                .environment(\.modelContext, modelContext)
+            CalendarEventFormView(
+                familyId: familyId,
+                initialDate: sharePrefillDate ?? selectedDate,
+                event: nil,
+                prefillTitle: sharePrefillTitle,
+            )
+            .environment(\.modelContext, modelContext)
         }
         .sheet(item: $editingEvent) { event in
             CalendarEventFormView(familyId: familyId, initialDate: event.startDate, event: event)
                 .environment(\.modelContext, modelContext)
+        }
+        .onReceive(coordinator.$pendingShareEventDraft.compactMap { $0 }) { draft in
+            coordinator.pendingShareEventDraft = nil
+            sharePrefillTitle = draft.title
+            sharePrefillNotes = draft.notes
+            sharePrefillDate  = draft.startDate
+            if let d = draft.startDate { selectedDate = d }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                showAddSheet = true
+            }
         }
         .onAppear {
             SyncCenter.shared.startCalendarRealtime(familyId: familyId, modelContext: modelContext)
@@ -139,14 +154,32 @@ struct CalendarView: View {
                 selectedDate = match.startDate
             }
             
-            if coordinator.pendingShareText != nil {
+            if let pending = coordinator.pendingShareText {
+                sharePrefillTitle = pending
                 coordinator.pendingShareText = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     showAddSheet = true
                 }
             }
+            
+            // Fallback: se onReceive ha già emesso prima che CalendarView
+            // fosse montata (navigate avviene dopo il draft), leggiamo qui.
+            if let draft = coordinator.pendingShareEventDraft {
+                coordinator.pendingShareEventDraft = nil
+                sharePrefillTitle = draft.title
+                sharePrefillNotes = draft.notes
+                sharePrefillDate  = draft.startDate
+                if let d = draft.startDate { selectedDate = d }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showAddSheet = true
+                }
+            }
+            
         }
+        
     }
+    
+    
     
     private func deleteEvent(_ event: KBCalendarEvent) {
         guard let uid = Auth.auth().currentUser?.uid else { return }

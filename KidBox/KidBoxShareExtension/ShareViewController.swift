@@ -183,11 +183,26 @@ class ShareViewController: UIViewController {
                     return
                 }
                 
-                print("[ShareVC] ctx.open calling url=\(urlString)")
-                ctx?.open(url) { success in
-                    print("[ShareVC] ctx.open result success=\(success)")
-                    ctx?.completeRequest(returningItems: [], completionHandler: nil)
+                // extensionContext?.open non funziona nelle Share Extension (restituisce sempre false).
+                // La soluzione supportata è risalire il responder chain fino a UIApplication
+                // e chiamare open(_:) da lì — funziona su iOS 12+.
+                print("[ShareVC] opening host app via responder chain url=\(urlString)")
+                
+                var responder: UIResponder? = self
+                while let r = responder {
+                    if let app = r as? UIApplication {
+                        app.open(url, options: [:]) { success in
+                            print("[ShareVC] responder open result success=\(success)")
+                            ctx?.completeRequest(returningItems: [], completionHandler: nil)
+                        }
+                        return
+                    }
+                    responder = r.next
                 }
+                
+                // Fallback: se il responder chain non trovasse UIApplication (non dovrebbe succedere)
+                print("[ShareVC] responder chain exhausted — completing without opening")
+                ctx?.completeRequest(returningItems: [], completionHandler: nil)
             }
         )
         

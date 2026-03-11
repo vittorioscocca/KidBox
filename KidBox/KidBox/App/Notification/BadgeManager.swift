@@ -41,7 +41,7 @@ final class BadgeManager: ObservableObject {
             .document(familyId)
             .collection("counters")
             .document(uid)
-            .addSnapshotListener { [weak self] snap, error in
+            .addSnapshotListener(includeMetadataChanges: false) { [weak self] snap, error in
                 guard let self else { return }
                 
                 if let error {
@@ -55,22 +55,20 @@ final class BadgeManager: ObservableObject {
                 let docCount      = data["documents"] as? Int ?? 0
                 let locCount      = data["location"]  as? Int ?? 0
                 let todoCount     = data["todos"]     as? Int ?? 0
-                let shoppingCount = data["shopping"]  as? Int ?? 0   // ← NEW
-                let notesCount    = data["notes"]     as? Int ?? 0   // ← NEW
-                let calendarCount = data["calendar"] as? Int ?? 0
+                let shoppingCount = data["shopping"]  as? Int ?? 0
+                let notesCount    = data["notes"]     as? Int ?? 0
+                let calendarCount = data["calendar"]  as? Int ?? 0
                 
-                DispatchQueue.main.async {
-                    if !self.activeSections.contains("chat")      { self.chat      = chatCount }
-                    if !self.activeSections.contains("documents") { self.documents = docCount }
-                    if !self.activeSections.contains("location")  { self.location  = locCount }
-                    if !self.activeSections.contains("todos")     { self.todos     = todoCount }
-                    if !self.activeSections.contains("shopping")  { self.shopping  = shoppingCount }
-                    if !self.activeSections.contains("notes")     { self.notes     = notesCount }
-                    if !self.activeSections.contains("calendar")  { self.calendar  = calendarCount }
-                    
-                    let total = self.chat + self.documents + self.location + self.todos + self.shopping + self.notes + self.calendar
-                    UNUserNotificationCenter.current().setBadgeCount(total) { error in
-                        if let error { print("Failed to set badge count:", error) }
+                Task {
+                    await MainActor.run {
+                        if !self.activeSections.contains("chat")      { self.chat      = chatCount }
+                        if !self.activeSections.contains("documents") { self.documents = docCount }
+                        if !self.activeSections.contains("location")  { self.location  = locCount }
+                        if !self.activeSections.contains("todos")     { self.todos     = todoCount }
+                        if !self.activeSections.contains("shopping")  { self.shopping  = shoppingCount }
+                        if !self.activeSections.contains("notes")     { self.notes     = notesCount }
+                        if !self.activeSections.contains("calendar")  { self.calendar  = calendarCount }
+                        self.refreshAppBadge()
                     }
                 }
             }
@@ -94,7 +92,7 @@ final class BadgeManager: ObservableObject {
     @MainActor func clearDocuments() { self.documents = 0 }
     @MainActor func clearLocation()  { self.location  = 0 }
     @MainActor func clearTodos()     { self.todos     = 0 }
-    @MainActor func clearShopping()  { self.shopping  = 0 }   // ← NEW
-    @MainActor func clearNotes()     { self.notes     = 0 }   // ← NEW
+    @MainActor func clearShopping()  { self.shopping  = 0 }
+    @MainActor func clearNotes()     { self.notes     = 0 }
     @MainActor func clearCalendar()  { self.calendar  = 0 }
 }

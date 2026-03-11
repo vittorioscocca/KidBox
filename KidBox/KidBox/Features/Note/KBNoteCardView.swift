@@ -34,15 +34,21 @@ struct KBNoteCardView: View {
                     .lineLimit(1)
             }
             
-            // Autore
+            // Autore con icona cartella — stile Apple Notes
             let editorName = resolvedName(uid: note.updatedBy)
             if !editorName.isEmpty {
-                Text("Autore: \(editorName)")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                HStack(spacing: 4) {
+                    Image(systemName: "folder")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Text(editorName)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.top, 1)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
         .task(id: note.body) {
             await rebuildPreview(from: note.body)
         }

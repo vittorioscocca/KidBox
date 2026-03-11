@@ -83,7 +83,10 @@
 			membershipExceptions = (
 				Data/Remote/ChatStore/ChatRemoteStore.swift,
 				Data/Remote/ChatStore/ChatStorageService.swift,
+				Data/Remote/DocumentStore/DocumentCryptoService.swift,
+				Data/Remote/Note/NoteCryptoService.swift,
 				Features/Chat/KBChatMessageType.swift,
+				Support/FamilyKeychainStore.swift,
 				"Support/Firebase/GoogleService-Info.plist",
 				Support/KBLog.swift,
 			);
