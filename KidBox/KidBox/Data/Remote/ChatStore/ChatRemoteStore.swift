@@ -95,11 +95,30 @@ final class ChatRemoteStore {
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
         
-        let snap = try await ref.getDocument()
-        if snap.exists { data.removeValue(forKey: "createdAt") }
+        // Nella Share Extension saltiamo getDocument() per evitare timeout Firestore:
+        // dalla extension è sempre un nuovo messaggio quindi createdAt è sempre valido.
+        let isExtension = Bundle.main.bundleIdentifier?.contains("ShareExtension") == true
+        if !isExtension {
+            let snap = try await ref.getDocument()
+            if snap.exists { data.removeValue(forKey: "createdAt") }
+        }
         
-        try await ref.setData(data, merge: true)
-        KBLog.sync.kbInfo("ChatRemote upsert OK msgId=\(dto.id)")
+        // Retry fino a 3 volte per gestire la connessione lenta nella extension
+        var lastError: Error?
+        for attempt in 1...3 {
+            do {
+                try await ref.setData(data, merge: true)
+                KBLog.sync.kbInfo("ChatRemote upsert OK msgId=\(dto.id)")
+                return
+            } catch {
+                lastError = error
+                KBLog.sync.kbError("ChatRemote upsert attempt \(attempt) failed: \(error.localizedDescription)")
+                if attempt < 3 {
+                    try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 secondi
+                }
+            }
+        }
+        throw lastError!
     }
     
     func updateReactions(familyId: String, messageId: String, reactionsJSON: String?) async throws {

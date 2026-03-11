@@ -39,11 +39,9 @@ extension KBSharePayload {
         case .image:
             return [.chat, .document]
         case .text(let t):
-            // Euristica: se somiglia a una data → evento
-            // Se somiglia a una lista → spesa o todo
             return destinations(forText: t)
         case .url:
-            return [.chat, .note]
+            return [.chat, .document]
         case .file:
             return [.chat, .document]
         case .unknown:

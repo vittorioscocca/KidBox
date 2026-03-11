@@ -10,14 +10,23 @@ import SwiftUI
 import UniformTypeIdentifiers
 import FirebaseCore
 import FirebaseAuth
+import FirebaseFirestore
 
 class ShareViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Firebase deve essere inizializzato nella extension separatamente
+        // dall'app principale — hanno processi diversi.
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
+            // Subito dopo configure(), prima di qualsiasi accesso a Firestore
+            let firestoreSettings = FirestoreSettings()
+            firestoreSettings.cacheSettings = MemoryCacheSettings()
+            Firestore.firestore().settings = firestoreSettings
         }
+        // Condividi la sessione Auth con l'app principale tramite Keychain sharing.
+        // Stesso gruppo configurato in AppDelegate.
         let accessGroup = Bundle.main.object(forInfoDictionaryKey: "KEYCHAIN_ACCESS_GROUP") as? String ?? ""
         do {
             try Auth.auth().useUserAccessGroup(accessGroup)
@@ -63,6 +72,13 @@ class ShareViewController: UIViewController {
                     }
                 }
                 
+                // Video
+                if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+                    if let url = await loadURL(from: provider, type: UTType.movie.identifier) {
+                        return KBSharePayload(type: .file(url)) 
+                    }
+                }
+                
                 // File generico
                 if provider.hasItemConformingToTypeIdentifier(UTType.data.identifier) {
                     if let url = await loadURL(from: provider, type: UTType.data.identifier) {
@@ -104,9 +120,19 @@ class ShareViewController: UIViewController {
     
     private func presentSheet(payload: KBSharePayload) {
         let ctx = self.extensionContext
-        let sheet = KBShareSheet(payload: payload) {
+        let sheet = KBShareSheet(payload: payload, onDismiss: {
             ctx?.completeRequest(returningItems: [], completionHandler: nil)
-        }
+        }, onOpenApp: { urlString in
+            guard let url = URL(string: urlString) else {
+                ctx?.completeRequest(returningItems: [], completionHandler: nil)
+                return
+            }
+            print("[ShareVC] ctx.open calling url=\(urlString)")
+            ctx?.open(url) { success in
+                print("[ShareVC] ctx.open result success=\(success)")
+                ctx?.completeRequest(returningItems: [], completionHandler: nil)
+            }
+        })
         let host = UIHostingController(rootView: sheet)
         host.modalPresentationStyle = .pageSheet
         if let sheet = host.sheetPresentationController {

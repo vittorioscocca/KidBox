@@ -170,6 +170,115 @@ final class ChatViewModel: NSObject, ObservableObject {
         reloadLocal()
     }
     
+    // MARK: - Send video from Share Extension (App Group path)
+    
+    /// Invia un video salvato nell'App Group dalla Share Extension.
+    /// Usa il path locale invece di Data per evitare di caricare in RAM
+    /// file che possono essere molto grandi (>500MB).
+    func sendVideo(from url: URL) async {
+        guard let modelContext else { return }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            KBLog.data.kbError("ChatVM sendVideo: file not found path=\(url.path)")
+            errorText = "File video non trovato."
+            return
+        }
+        
+        let uid        = Auth.auth().currentUser?.uid ?? "local"
+        let senderName = senderDisplayName()
+        let messageId  = UUID().uuidString
+        let now        = Date()
+        
+        isUploadingMedia  = true
+        isCompressingMedia = true
+        uploadProgress    = 0
+        errorText         = nil
+        
+        // Inserisci subito il messaggio placeholder in SwiftData
+        let msg = KBChatMessage(
+            id: messageId, familyId: familyId,
+            senderId: uid, senderName: senderName,
+            type: .video, createdAt: now
+        )
+        msg.syncState = .pendingUpsert
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        do {
+            // Comprimi il video prima dell'upload
+            let compressedURL = try await compressVideoURL(url)
+            isCompressingMedia = false
+            
+            let compressedData = try Data(contentsOf: compressedURL)
+            defer { try? FileManager.default.removeItem(at: compressedURL) }
+            
+            KBLog.data.kbInfo("ChatVM sendVideo upload START bytes=\(compressedData.count)")
+            
+            let (storagePath, downloadURL) = try await storageService.upload(
+                data: compressedData,
+                familyId: familyId,
+                messageId: messageId,
+                fileName: "video.mp4",
+                mimeType: "video/mp4",
+                progressHandler: { [weak self] p in
+                    Task { @MainActor in self?.uploadProgress = p }
+                }
+            )
+            
+            msg.mediaStoragePath = storagePath
+            msg.mediaURL         = downloadURL
+            msg.syncState        = .pendingUpsert
+            try? modelContext.save()
+            
+            let dto = makeDTO(from: msg)
+            try await remoteStore.upsert(dto: dto)
+            
+            msg.syncState     = .synced
+            msg.lastSyncError = nil
+            try? modelContext.save()
+            
+            KBLog.data.kbInfo("ChatVM sendVideo OK messageId=\(messageId)")
+            
+            // Rimuovi il file originale dall'App Group
+            try? FileManager.default.removeItem(at: url)
+            
+        } catch {
+            isCompressingMedia = false
+            msg.syncState        = .error
+            msg.lastSyncError    = error.localizedDescription
+            try? modelContext.save()
+            errorText = "Invio video fallito: \(error.localizedDescription)"
+            KBLog.data.kbError("ChatVM sendVideo ERROR=\(error.localizedDescription)")
+        }
+        
+        isUploadingMedia = false
+        uploadProgress   = 0
+    }
+    
+    /// Comprime un video da un URL locale senza caricarlo interamente in RAM.
+    private func compressVideoURL(_ sourceURL: URL) async throws -> URL {
+        return  await Task.detached(priority: .userInitiated) {
+            let asset = AVURLAsset(url: sourceURL)
+            guard let session = AVAssetExportSession(
+                asset: asset,
+                presetName: AVAssetExportPresetMediumQuality
+            ) else {
+                // Se non riusciamo a comprimere, usiamo l'originale
+                return sourceURL
+            }
+            let outputURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString + ".mp4")
+            do {
+                try await session.export(to: outputURL, as: .mp4, isolation: .none)
+                return outputURL
+            } catch {
+                // Fallback: usa il file originale non compresso
+                KBLog.data.kbError("compressVideoURL fallback to original: \(error.localizedDescription)")
+                return sourceURL
+            }
+        }.value
+    }
+    
     private func scheduleTypingUpdate(_ names: [String]) {
         pendingTypingUsers = names
         guard typingThrottleTask == nil else { return }

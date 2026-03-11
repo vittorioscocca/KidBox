@@ -73,6 +73,7 @@
 		7CF617812F609689007587D9 /* Exceptions for "KidBoxShareExtension" folder in "KidBoxShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"/Localized: MainInterface.storyboard",
 				Info.plist,
 			);
 			target = 7CF617722F609689007587D9 /* KidBoxShareExtension */;

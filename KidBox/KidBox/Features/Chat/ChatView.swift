@@ -505,6 +505,11 @@ private struct ChatConversationView: View {
                 viewModel.inputText = text
             }
         }
+        .onReceive(coordinator.$pendingShareVideoPath.compactMap { $0 }) { path in
+            coordinator.pendingShareVideoPath = nil
+            let url = URL(fileURLWithPath: path)
+            Task { await viewModel.sendVideo(from: url) }
+        }
         .task(id: coordinator.pendingShareImagePath) {
             // ── Share Extension: immagine o file ──
             // Usiamo .task così siamo certi che onAppear (e bind/startListening)

@@ -52,6 +52,8 @@ final class AppCoordinator: ObservableObject {
     /// Path locale di un'immagine/file copiata nell'App Group, da inviare in chat.
     @Published var pendingShareImagePath: String? = nil
     
+    @Published var pendingShareVideoPath: String? = nil
+    
     // MARK: - Active family
     
     /// The explicitly selected active family ID.
@@ -167,7 +169,7 @@ final class AppCoordinator: ObservableObject {
                         KBLog.sync.kbInfo("AppGroup: activeFamilyId synced fid=\(fid)")
                     } else {
                         // Fallback: prendi il primo familyId da SwiftData
-                        let uid = user.uid
+                        _ = user.uid
                         let descriptor = FetchDescriptor<KBFamily>(
                             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
                         )
@@ -352,9 +354,12 @@ final class AppCoordinator: ObservableObject {
             defaults?.removeObject(forKey: "pendingShare")
             navigate(to: .chat)
             if !filePath.isEmpty {
-                // Foto o documento da inviare come media
-                pendingShareImagePath = filePath   // nome fuorviante ma riusa la stessa property
-                // La ChatView distinguerà image vs file guardando l'estensione
+                let fileType = data["sharedFileType"] ?? ""
+                if fileType == "video" {
+                    pendingShareVideoPath = filePath   // ← nuova property
+                } else {
+                    pendingShareImagePath = filePath
+                }
             } else {
                 pendingShareText = text.isEmpty ? title : text
             }
