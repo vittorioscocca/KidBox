@@ -137,19 +137,6 @@ struct KidBoxApp: App {
                         KBLog.auth.kbDebug("Deep link consumed")
                     }
                 
-                // MARK: Share Extension handoff
-                // willEnterForegroundNotification scatta SEMPRE quando l'app torna
-                // in foreground, anche se era già attiva (scenePhase.active non ri-scatta).
-                // È il punto affidabile per consumare pendingShare scritto dall'extension.
-                    .onReceive(
-                        NotificationCenter.default.publisher(
-                            for: UIApplication.willEnterForegroundNotification
-                        )
-                    ) { _ in
-                        KBLog.sync.kbInfo("willEnterForeground -> handleIncomingShare")
-                        coordinator.handleIncomingShare(modelContext: modelContainer.mainContext)
-                    }
-                
                 // Launch screen
                 if showLaunch {
                     LaunchScreenView()

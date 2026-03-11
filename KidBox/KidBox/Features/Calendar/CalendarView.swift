@@ -132,17 +132,19 @@ struct CalendarView: View {
                 .environment(\.modelContext, modelContext)
         }
         .onReceive(coordinator.$pendingShareEventDraft.compactMap { $0 }) { draft in
+            KBLog.sync.kbInfo("CalendarView.onReceive: draft received title=\(draft.title) — consuming and opening sheet")
             coordinator.pendingShareEventDraft = nil
             sharePrefillTitle = draft.title
             sharePrefillNotes = draft.notes
             sharePrefillDate  = draft.startDate
             if let d = draft.startDate { selectedDate = d }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                KBLog.sync.kbInfo("CalendarView.onReceive: showAddSheet = true")
                 showAddSheet = true
             }
         }
         .onAppear {
-            SyncCenter.shared.startCalendarRealtime(familyId: familyId, modelContext: modelContext)
+            KBLog.sync.kbInfo("CalendarView.onAppear familyId=\(familyId) pendingDraft=\(coordinator.pendingShareEventDraft?.title ?? "nil")")
             // Azzera badge calendario
             Task {
                 BadgeManager.shared.clearCalendar()
@@ -165,14 +167,18 @@ struct CalendarView: View {
             // Fallback: se onReceive ha già emesso prima che CalendarView
             // fosse montata (navigate avviene dopo il draft), leggiamo qui.
             if let draft = coordinator.pendingShareEventDraft {
+                KBLog.sync.kbInfo("CalendarView.onAppear: consumed draft via fallback title=\(draft.title)")
                 coordinator.pendingShareEventDraft = nil
                 sharePrefillTitle = draft.title
                 sharePrefillNotes = draft.notes
                 sharePrefillDate  = draft.startDate
                 if let d = draft.startDate { selectedDate = d }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    KBLog.sync.kbInfo("CalendarView.onAppear: showAddSheet = true (fallback)")
                     showAddSheet = true
                 }
+            } else {
+                KBLog.sync.kbInfo("CalendarView.onAppear: no pending draft (onReceive handles if draft arrives late)")
             }
             
         }

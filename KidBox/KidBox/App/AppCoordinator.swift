@@ -391,21 +391,44 @@ final class AppCoordinator: ObservableObject {
             navigate(to: .todo)
             
         case "grocery":
-            guard let familyId = activeFamilyId else { return }
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId"), !fid.isEmpty {
+                KBLog.sync.kbInfo("handleIncomingShare grocery: activeFamilyId nil, fallback to AppGroup fid=\(fid)")
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare grocery: activeFamilyId nil — abort")
+                return
+            }
             navigate(to: .shoppingList(familyId: familyId))
             pendingShareText = text.isEmpty ? title : text
             
         case "event":
-            guard let familyId = activeFamilyId else { return }
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId"), !fid.isEmpty {
+                KBLog.sync.kbInfo("handleIncomingShare event: activeFamilyId nil, fallback to AppGroup fid=\(fid)")
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare event: activeFamilyId nil even in AppGroup — abort")
+                return
+            }
             let startDate = data["eventStartDate"].flatMap { ISO8601DateFormatter().date(from: $0) }
+            KBLog.sync.kbInfo("handleIncomingShare event: navigating to calendar familyId=\(familyId)")
+            // Navigate PRIMA — così CalendarView si monta e si iscrive all'onReceive
+            // prima che il draft venga emesso. Identico al pattern todo/chat.
+            navigate(to: .calendar(familyId: familyId, highlightEventId: nil))
+            // Draft settato DOPO la navigate — CalendarView lo riceve via onReceive
+            // o lo trova in onAppear come fallback (stesso pattern di pendingShareVideoPath).
             pendingShareEventDraft = PendingShareEventDraft(
                 title: title.isEmpty ? text : title,
                 notes: "",
                 startDate: startDate,
                 targetFamilyId: familyId
             )
-            // NON chiamiamo navigate() qui — lo fa RootHostView via onReceive
-            // quando la NavigationStack è già stabile e la scena è attiva.
+            KBLog.sync.kbInfo("handleIncomingShare event: draft set title=\(title.isEmpty ? text : title)")
             
         case "document":
             // pendingShare già rimosso sopra — DocumentFolderView legge i dati
