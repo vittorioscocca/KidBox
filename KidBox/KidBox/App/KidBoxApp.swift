@@ -47,6 +47,7 @@ struct KidBoxApp: App {
                 
                 // MARK: URL handling
                     .onOpenURL { url in
+                        KBLog.auth.kbInfo("[KidBoxApp] onOpenURL -> \(url.absoluteString)")
                         // ── Share Extension handoff ──────────────────
                         if url.scheme == "kidbox", url.host == "share" {
                             KBLog.sync.kbInfo("onOpenURL share scheme -> handleIncomingShare")

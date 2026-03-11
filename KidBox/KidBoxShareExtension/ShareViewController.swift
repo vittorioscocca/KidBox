@@ -16,17 +16,14 @@ class ShareViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Firebase deve essere inizializzato nella extension separatamente
-        // dall'app principale — hanno processi diversi.
+        
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
-            // Subito dopo configure(), prima di qualsiasi accesso a Firestore
             let firestoreSettings = FirestoreSettings()
             firestoreSettings.cacheSettings = MemoryCacheSettings()
             Firestore.firestore().settings = firestoreSettings
         }
-        // Condividi la sessione Auth con l'app principale tramite Keychain sharing.
-        // Stesso gruppo configurato in AppDelegate.
+        
         let accessGroup = Bundle.main.object(forInfoDictionaryKey: "KEYCHAIN_ACCESS_GROUP") as? String ?? ""
         do {
             try Auth.auth().useUserAccessGroup(accessGroup)
@@ -35,6 +32,7 @@ class ShareViewController: UIViewController {
         } catch {
             print("[ShareVC] useUserAccessGroup FAILED: \(error)")
         }
+        
         Task { @MainActor in
             let payload = await buildPayload()
             presentSheet(payload: payload)
@@ -50,17 +48,22 @@ class ShareViewController: UIViewController {
         
         for item in items {
             guard let attachments = item.attachments else { continue }
+            
             for provider in attachments {
+                print("[ShareVC] provider registeredTypeIdentifiers=\(provider.registeredTypeIdentifiers)")
                 
                 // Immagine
                 if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                    let url = await loadURL(from: provider, type: UTType.image.identifier)
-                    return KBSharePayload(type: .image(url))
+                    if let url = await loadURL(from: provider, type: UTType.image.identifier) {
+                        print("[ShareVC] detected image url=\(url)")
+                        return KBSharePayload(type: .image(url))
+                    }
                 }
                 
                 // URL
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     if let url = await loadURL(from: provider, type: UTType.url.identifier) {
+                        print("[ShareVC] detected url=\(url.absoluteString)")
                         return KBSharePayload(type: .url(url.absoluteString))
                     }
                 }
@@ -68,40 +71,84 @@ class ShareViewController: UIViewController {
                 // Testo
                 if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
                     if let text = await loadString(from: provider, type: UTType.plainText.identifier) {
+                        print("[ShareVC] detected text")
                         return KBSharePayload(type: .text(text))
                     }
                 }
                 
-                // Video
+                // Video / movie
                 if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
-                    if let url = await loadURL(from: provider, type: UTType.movie.identifier) {
-                        return KBSharePayload(type: .file(url)) 
+                    if let url = await loadFileURL(from: provider, type: UTType.movie.identifier) {
+                        print("[ShareVC] detected movie file url=\(url)")
+                        return KBSharePayload(type: .file(url))
                     }
                 }
                 
                 // File generico
                 if provider.hasItemConformingToTypeIdentifier(UTType.data.identifier) {
-                    if let url = await loadURL(from: provider, type: UTType.data.identifier) {
+                    if let url = await loadFileURL(from: provider, type: UTType.data.identifier) {
+                        print("[ShareVC] detected generic file url=\(url)")
                         return KBSharePayload(type: .file(url))
                     }
                 }
             }
         }
+        
+        print("[ShareVC] payload unknown")
         return KBSharePayload(type: .unknown)
     }
     
     private func loadURL(from provider: NSItemProvider, type: String) async -> URL? {
         await withCheckedContinuation { cont in
-            provider.loadItem(forTypeIdentifier: type, options: nil) { item, _ in
+            provider.loadItem(forTypeIdentifier: type, options: nil) { item, error in
+                if let error {
+                    print("[ShareVC] loadURL error type=\(type) error=\(error.localizedDescription)")
+                }
+                
                 if let url = item as? URL {
                     cont.resume(returning: url)
                 } else if let img = item as? UIImage,
                           let data = img.jpegData(compressionQuality: 0.9) {
                     let tmp = FileManager.default.temporaryDirectory
                         .appendingPathComponent(UUID().uuidString + ".jpg")
-                    try? data.write(to: tmp)
-                    cont.resume(returning: tmp)
+                    do {
+                        try data.write(to: tmp)
+                        cont.resume(returning: tmp)
+                    } catch {
+                        print("[ShareVC] loadURL write temp image failed: \(error.localizedDescription)")
+                        cont.resume(returning: nil)
+                    }
                 } else {
+                    cont.resume(returning: nil)
+                }
+            }
+        }
+    }
+    
+    private func loadFileURL(from provider: NSItemProvider, type: String) async -> URL? {
+        await withCheckedContinuation { cont in
+            provider.loadFileRepresentation(forTypeIdentifier: type) { url, error in
+                if let error {
+                    print("[ShareVC] loadFileURL error type=\(type) error=\(error.localizedDescription)")
+                }
+                
+                guard let url else {
+                    cont.resume(returning: nil)
+                    return
+                }
+                
+                let ext = url.pathExtension.isEmpty ? "" : ".\(url.pathExtension)"
+                let tmp = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString + ext)
+                
+                do {
+                    if FileManager.default.fileExists(atPath: tmp.path) {
+                        try FileManager.default.removeItem(at: tmp)
+                    }
+                    try FileManager.default.copyItem(at: url, to: tmp)
+                    cont.resume(returning: tmp)
+                } catch {
+                    print("[ShareVC] loadFileURL copy failed: \(error.localizedDescription)")
                     cont.resume(returning: nil)
                 }
             }
@@ -110,7 +157,10 @@ class ShareViewController: UIViewController {
     
     private func loadString(from provider: NSItemProvider, type: String) async -> String? {
         await withCheckedContinuation { cont in
-            provider.loadItem(forTypeIdentifier: type, options: nil) { item, _ in
+            provider.loadItem(forTypeIdentifier: type, options: nil) { item, error in
+                if let error {
+                    print("[ShareVC] loadString error type=\(type) error=\(error.localizedDescription)")
+                }
                 cont.resume(returning: item as? String)
             }
         }
@@ -120,34 +170,46 @@ class ShareViewController: UIViewController {
     
     private func presentSheet(payload: KBSharePayload) {
         let ctx = self.extensionContext
-        let sheet = KBShareSheet(payload: payload, onDismiss: {
-            ctx?.completeRequest(returningItems: [], completionHandler: nil)
-        }, onOpenApp: { urlString in
-            guard let url = URL(string: urlString) else {
+        
+        let sheet = KBShareSheet(
+            payload: payload,
+            onDismiss: {
                 ctx?.completeRequest(returningItems: [], completionHandler: nil)
-                return
+            },
+            onOpenApp: { urlString in
+                guard let url = URL(string: urlString) else {
+                    print("[ShareVC] invalid URL string: \(urlString)")
+                    ctx?.completeRequest(returningItems: [], completionHandler: nil)
+                    return
+                }
+                
+                print("[ShareVC] ctx.open calling url=\(urlString)")
+                ctx?.open(url) { success in
+                    print("[ShareVC] ctx.open result success=\(success)")
+                    ctx?.completeRequest(returningItems: [], completionHandler: nil)
+                }
             }
-            print("[ShareVC] ctx.open calling url=\(urlString)")
-            ctx?.open(url) { success in
-                print("[ShareVC] ctx.open result success=\(success)")
-                ctx?.completeRequest(returningItems: [], completionHandler: nil)
-            }
-        })
+        )
+        
         let host = UIHostingController(rootView: sheet)
         host.modalPresentationStyle = .pageSheet
+        
         if let sheet = host.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
         }
+        
         addChild(host)
         view.addSubview(host.view)
         host.view.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
             host.view.topAnchor.constraint(equalTo: view.topAnchor),
             host.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             host.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+        
         host.didMove(toParent: self)
     }
 }

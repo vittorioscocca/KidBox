@@ -7,6 +7,12 @@ import SwiftUI
 import UIKit
 import os.log
 
+private enum ShareSendResult {
+    case completedInExtension
+    case deferredToMainApp(urlString: String)
+    case videoDeferredToMainApp // mostra banner invece di aprire l'app
+}
+
 struct KBShareEditView: View {
     let destination: KBShareDestination
     let payload: KBSharePayload
@@ -19,6 +25,7 @@ struct KBShareEditView: View {
     @State private var isSending = false
     @State private var errorMessage: String? = nil
     @State private var remoteImage: UIImage? = nil
+    @State private var videoSavedToAppGroup = false
     
     private let appGroupId = "group.it.vittorioscocca.kidbox"
     private let logger = Logger(subsystem: "it.vittorioscocca.KidBox.ShareExtension", category: "KBShareEditView")
@@ -28,45 +35,93 @@ struct KBShareEditView: View {
         print("[KBShareEditView] \(message)")
     }
     
+    // MARK: - Body
+    
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                payloadPreview.padding(.top, 8)
-                editFields
-                if let error = errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 4)
-                }
-                Spacer(minLength: 40)
-                Button {
-                    Task { await sendToDestination() }
-                } label: {
-                    HStack {
-                        if isSending {
-                            ProgressView().tint(.white)
-                            Text("Invio in corso…")
-                                .font(.subheadline.bold())
-                                .foregroundStyle(.white)
-                        } else {
-                            Image(systemName: destination.icon)
-                            Text(confirmLabel)
-                        }
+            if videoSavedToAppGroup {
+                videoSuccessView
+            } else {
+                VStack(alignment: .leading, spacing: 20) {
+                    payloadPreview.padding(.top, 8)
+                    editFields
+                    if let error = errorMessage {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 4)
                     }
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
+                    Spacer(minLength: 40)
+                    Button {
+                        Task { await sendToDestination() }
+                    } label: {
+                        HStack {
+                            if isSending {
+                                ProgressView().tint(.white)
+                                Text("Invio in corso…")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(.white)
+                            } else {
+                                Image(systemName: destination.icon)
+                                Text(confirmLabel)
+                            }
+                        }
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .disabled(isSending)
                 }
-                .disabled(isSending)
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(destination.label)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { prefillFields() }
+    }
+    
+    // MARK: - Video success banner
+    
+    private var videoSuccessView: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 40)
+            
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.green)
+            
+            VStack(spacing: 8) {
+                Text("Video pronto")
+                    .font(.title2.bold())
+                Text("Apri KidBox per completare l'invio in chat.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button {
+                onOpenApp("kidbox://share?destination=chat")
+            } label: {
+                Label("Apri KidBox", systemImage: "arrow.up.right.app.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue, in: RoundedRectangle(cornerRadius: 14))
+            }
+            
+            Button("Annulla") {
+                UserDefaults(suiteName: appGroupId)?.removeObject(forKey: "pendingShare")
+                onDone()
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            
+            Spacer(minLength: 40)
+        }
+        .padding(32)
     }
     
     // MARK: - Preview
@@ -268,14 +323,34 @@ struct KBShareEditView: View {
         errorMessage = nil
         
         do {
+            let result: ShareSendResult
+            
             if destination == .chat {
-                try await sendDirectToChat()
+                result = try await sendDirectToChat()
             } else {
                 saveToAppGroup()
-                openApp()
+                result = .deferredToMainApp(
+                    urlString: "kidbox://share?destination=\(destination.rawStringValue)"
+                )
             }
-            log("sendToDestination OK")
-            closeExtension()
+            
+            log("sendToDestination result=\(result)")
+            
+            switch result {
+            case .completedInExtension:
+                log("sendToDestination completed in extension → closing")
+                onDone()
+                
+            case .deferredToMainApp(let urlString):
+                log("sendToDestination opening main app url=\(urlString)")
+                onOpenApp(urlString)
+                
+            case .videoDeferredToMainApp:
+                log("sendToDestination video deferred → showing banner")
+                isSending = false
+                videoSavedToAppGroup = true
+            }
+            
         } catch {
             log("sendToDestination ERROR: \(error.localizedDescription)")
             isSending = false
@@ -285,7 +360,7 @@ struct KBShareEditView: View {
     
     // MARK: - Chat: invio diretto da extension
     
-    private func sendDirectToChat() async throws {
+    private func sendDirectToChat() async throws -> ShareSendResult {
         log("sendDirectToChat START")
         
         guard let defaults = UserDefaults(suiteName: appGroupId),
@@ -294,6 +369,7 @@ struct KBShareEditView: View {
             log("sendDirectToChat ERROR: familyId not found in App Group")
             throw ShareError.missingFamilyId
         }
+        
         log("sendDirectToChat familyId=\(familyId)")
         
         let messageId = UUID().uuidString
@@ -309,21 +385,14 @@ struct KBShareEditView: View {
             }
             log("sendDirectToChat uploading image bytes=\(data.count)")
             let (storagePath, downloadURL) = try await storage.upload(
-                data: data,
-                familyId: familyId,
-                messageId: messageId,
-                fileName: "photo.jpg",
-                mimeType: "image/jpeg"
+                data: data, familyId: familyId, messageId: messageId,
+                fileName: "photo.jpg", mimeType: "image/jpeg"
             )
             log("sendDirectToChat upload OK storagePath=\(storagePath)")
-            let dto = makeDTO(
-                messageId: messageId,
-                familyId: familyId,
-                typeRaw: "photo",
-                mediaStoragePath: storagePath,
-                mediaURL: downloadURL
-            )
+            let dto = makeDTO(messageId: messageId, familyId: familyId,
+                              typeRaw: "photo", mediaStoragePath: storagePath, mediaURL: downloadURL)
             try await remote.upsert(dto: dto)
+            return .completedInExtension
             
         case .file(let url):
             let ext = url.pathExtension.lowercased()
@@ -331,32 +400,33 @@ struct KBShareEditView: View {
             let isImage = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
             
             if isVideo {
+                // Controlla dimensione
                 let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-                let maxBytes = 200 * 1024 * 1024  // 200 MB
+                let maxBytes = 200 * 1024 * 1024
                 guard fileSize <= maxBytes else {
                     let sizeMB = fileSize / (1024 * 1024)
                     throw ShareError.videoTooLarge(sizeMB: sizeMB)
                 }
+                // Copia nell'App Group e mostra il banner
                 let name = "share_\(UUID().uuidString)_\(url.lastPathComponent)"
                 guard let groupURL = copyFileToAppGroup(url, name: name) else {
                     throw ShareError.missingFile
                 }
-                let defaults = UserDefaults(suiteName: appGroupId)
-                let data: [String: String] = [
+                let pendingData: [String: String] = [
                     "destination":    "chat",
                     "sharedFilePath": groupURL.path,
                     "sharedFileType": "video",
                     "sharedFileName": url.lastPathComponent,
                     "timestamp":      ISO8601DateFormatter().string(from: Date())
                 ]
-                defaults?.set(data, forKey: "pendingShare")
-                log("sendDirectToChat video → saved to AppGroup, deferring to main app")
-                return
+                UserDefaults(suiteName: appGroupId)?.set(pendingData, forKey: "pendingShare")
+                log("sendDirectToChat video saved to AppGroup path=\(groupURL.path)")
+                return .videoDeferredToMainApp
             }
             
+            // Immagine o documento
             let (fileName, mimeType, typeRaw): (String, String, String) = {
                 if isImage { return ("photo.jpg", "image/jpeg", "photo") }
-                if isVideo { return ("video.mp4", "video/mp4", "video") }
                 return (url.lastPathComponent, "application/octet-stream", "document")
             }()
             guard let data = try? Data(contentsOf: url) else {
@@ -364,25 +434,20 @@ struct KBShareEditView: View {
             }
             log("sendDirectToChat uploading file typeRaw=\(typeRaw) bytes=\(data.count)")
             let (storagePath, downloadURL) = try await storage.upload(
-                data: data,
-                familyId: familyId,
-                messageId: messageId,
-                fileName: fileName,
-                mimeType: mimeType
+                data: data, familyId: familyId, messageId: messageId,
+                fileName: fileName, mimeType: mimeType
             )
             let dto = makeDTO(
-                messageId: messageId,
-                familyId: familyId,
-                typeRaw: typeRaw,
+                messageId: messageId, familyId: familyId, typeRaw: typeRaw,
                 text: typeRaw == "document" ? url.lastPathComponent : nil,
-                mediaStoragePath: storagePath,
-                mediaURL: downloadURL
+                mediaStoragePath: storagePath, mediaURL: downloadURL
             )
             try await remote.upsert(dto: dto)
+            return .completedInExtension
             
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
-                // File locale (es. PDF da iCloud Drive) — uploadalo come documento
+                // File locale (es. PDF da iCloud Drive)
                 let accessed = fileURL.startAccessingSecurityScopedResource()
                 defer { if accessed { fileURL.stopAccessingSecurityScopedResource() } }
                 guard let data = try? Data(contentsOf: fileURL) else {
@@ -391,23 +456,17 @@ struct KBShareEditView: View {
                 let fileName = fileURL.lastPathComponent
                 log("sendDirectToChat uploading file-url bytes=\(data.count) name=\(fileName)")
                 let (storagePath, downloadURL) = try await storage.upload(
-                    data: data,
-                    familyId: familyId,
-                    messageId: messageId,
-                    fileName: fileName,
-                    mimeType: "application/octet-stream"
+                    data: data, familyId: familyId, messageId: messageId,
+                    fileName: fileName, mimeType: "application/octet-stream"
                 )
                 let dto = makeDTO(
-                    messageId: messageId,
-                    familyId: familyId,
-                    typeRaw: "document",
-                    text: fileName,          // ← aggiungi questa riga
-                    mediaStoragePath: storagePath,
-                    mediaURL: downloadURL
+                    messageId: messageId, familyId: familyId, typeRaw: "document",
+                    text: fileName, mediaStoragePath: storagePath, mediaURL: downloadURL
                 )
                 try await remote.upsert(dto: dto)
+                return .completedInExtension
+                
             } else if isImageURL(u) {
-                // Immagine web — scarica e uploada come foto
                 guard let imgURL = URL(string: u),
                       let (data, _) = try? await URLSession.shared.data(from: imgURL),
                       !data.isEmpty else {
@@ -415,52 +474,33 @@ struct KBShareEditView: View {
                 }
                 log("sendDirectToChat uploading remote image bytes=\(data.count)")
                 let (storagePath, downloadURL) = try await storage.upload(
-                    data: data,
-                    familyId: familyId,
-                    messageId: messageId,
-                    fileName: "photo.jpg",
-                    mimeType: "image/jpeg"
+                    data: data, familyId: familyId, messageId: messageId,
+                    fileName: "photo.jpg", mimeType: "image/jpeg"
                 )
-                let dto = makeDTO(
-                    messageId: messageId,
-                    familyId: familyId,
-                    typeRaw: "photo",
-                    mediaStoragePath: storagePath,
-                    mediaURL: downloadURL
-                )
+                let dto = makeDTO(messageId: messageId, familyId: familyId,
+                                  typeRaw: "photo", mediaStoragePath: storagePath, mediaURL: downloadURL)
                 try await remote.upsert(dto: dto)
+                return .completedInExtension
+                
             } else {
-                // URL web generico — invia come testo
                 let text = editedText.isEmpty ? u : editedText
                 log("sendDirectToChat sending url=\(u)")
-                let dto = makeDTO(
-                    messageId: messageId,
-                    familyId: familyId,
-                    typeRaw: "text",
-                    text: text
-                )
+                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "text", text: text)
                 try await remote.upsert(dto: dto)
+                return .completedInExtension
             }
             
         case .text(let t):
             let text = editedText.isEmpty ? t : editedText
             log("sendDirectToChat sending text=\(text.prefix(50))")
-            let dto = makeDTO(
-                messageId: messageId,
-                familyId: familyId,
-                typeRaw: "text",
-                text: text
-            )
+            let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "text", text: text)
             try await remote.upsert(dto: dto)
+            return .completedInExtension
             
         case .unknown:
             log("sendDirectToChat unknown payload — nothing to send")
+            return .completedInExtension
         }
-        
-        let allKeys = UserDefaults(suiteName: appGroupId)?.dictionaryRepresentation().keys.sorted() ?? []
-        log("AppGroup keys: \(allKeys)")
-        log("activeFamilyId: \(UserDefaults(suiteName: appGroupId)?.string(forKey: "activeFamilyId") ?? "NIL")")
-        log("currentUserUID: \(UserDefaults(suiteName: appGroupId)?.string(forKey: "currentUserUID") ?? "NIL")")
     }
     
     // MARK: - DTO builder
@@ -473,9 +513,9 @@ struct KBShareEditView: View {
         mediaStoragePath: String? = nil,
         mediaURL: String? = nil
     ) -> RemoteChatMessageDTO {
-        let defaults    = UserDefaults(suiteName: appGroupId)
-        let senderName  = defaults?.string(forKey: "currentUserDisplayName") ?? "Utente"
-        let senderId    = defaults?.string(forKey: "currentUserUID") ?? "unknown"
+        let defaults   = UserDefaults(suiteName: appGroupId)
+        let senderName = defaults?.string(forKey: "currentUserDisplayName") ?? "Utente"
+        let senderId   = defaults?.string(forKey: "currentUserUID") ?? "unknown"
         log("makeDTO senderId=\(senderId) senderName=\(senderName)")
         return RemoteChatMessageDTO(
             id:                   messageId,
@@ -544,29 +584,6 @@ struct KBShareEditView: View {
         guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
         defaults.set(data, forKey: "pendingShare")
         log("saveToAppGroup saved keys=\(data.keys.sorted())")
-    }
-    
-    private func openApp() {
-        let urlString = "kidbox://share?destination=\(destination.rawStringValue)"
-        if let appURL = URL(string: urlString) {
-            log("openApp url=\(urlString)")
-            extensionContext?.open(appURL, completionHandler: nil)
-        }
-    }
-    
-    private func closeExtension() {
-        log("closeExtension")
-        let defaults = UserDefaults(suiteName: appGroupId)
-        let isVideo = (defaults?.dictionary(forKey: "pendingShare") as? [String: String])?["sharedFileType"] == "video"
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if isVideo {
-                self.log("closeExtension: opening app for video")
-                self.onOpenApp("kidbox://share?destination=chat")
-            } else {
-                self.onDone()
-            }
-        }
     }
     
     // MARK: - Helpers

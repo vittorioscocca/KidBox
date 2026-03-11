@@ -32,27 +32,80 @@ extension KBShareDestination {
     }
 }
 
-// Destinazioni disponibili in base al tipo
+// MARK: - Destinazioni disponibili per tipo di contenuto
+//
+// Matrice contenuto → destinazioni:
+//
+// Testo          → Chat, Note, Todo, (Evento se contiene data), (Spesa se è una lista)
+// URL web        → Chat, Note, Todo
+// Immagine       → Chat, Documenti
+// File generico  → Chat, Documenti
+// Video          → Chat (solo — upload pesante, via App Group)
+// Sconosciuto    → Chat
+
 extension KBSharePayload {
+    
     var availableDestinations: [KBShareDestination] {
         switch type {
+            
         case .image:
+            // Immagine → chat o archivio documenti famiglia
             return [.chat, .document]
+            
         case .text(let t):
             return destinations(forText: t)
-        case .url:
-            return [.chat, .document]
-        case .file:
-            return [.chat, .document]
+            
+        case .url(let u):
+            if let fileURL = URL(string: u), fileURL.isFileURL {
+                // File locale (es. PDF da iCloud Drive)
+                return destinations(forFileURL: fileURL)
+            } else {
+                // URL web → chat, note, todo (un link può diventare
+                // un appunto o un'attività da fare)
+                return [.chat, .note, .todo]
+            }
+            
+        case .file(let url):
+            return destinations(forFileURL: url)
+            
         case .unknown:
             return [.chat]
         }
     }
     
+    // MARK: - Helpers
+    
+    /// Destinazioni per un file locale in base all'estensione.
+    private func destinations(forFileURL url: URL) -> [KBShareDestination] {
+        let ext = url.pathExtension.lowercased()
+        let isVideo = ["mp4", "mov", "m4v", "m4v"].contains(ext)
+        
+        if isVideo {
+            // Video: solo chat (upload via App Group, nessun senso archiviarli in Documenti)
+            return [.chat]
+        } else {
+            // PDF, doc, immagine, zip, ecc. → chat o documenti famiglia
+            return [.chat, .document]
+        }
+    }
+    
+    /// Destinazioni per testo puro, con euristica sul contenuto.
     private func destinations(forText text: String) -> [KBShareDestination] {
-        var result: [KBShareDestination] = [.chat, .todo, .note]
-        if looksLikeDate(text)    { result.insert(.event, at: 1) }
-        if looksLikeList(text)    { result.insert(.grocery, at: 2) }
+        // Base: chat, note, todo
+        var result: [KBShareDestination] = [.chat, .note, .todo]
+        
+        // Se il testo contiene una data → suggerisci Evento (posizione 1)
+        if looksLikeDate(text) {
+            result.insert(.event, at: 1)
+        }
+        
+        // Se il testo è una lista di righe → suggerisci Lista spesa
+        // (inserita dopo .event se presente, altrimenti dopo .chat)
+        if looksLikeList(text) {
+            let groceryIndex = result.firstIndex(of: .todo) ?? result.endIndex
+            result.insert(.grocery, at: groceryIndex)
+        }
+        
         return result
     }
     
@@ -62,10 +115,13 @@ extension KBSharePayload {
     }
     
     private func looksLikeList(_ t: String) -> Bool {
-        let lines = t.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        let lines = t.components(separatedBy: "\n")
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         return lines.count >= 2
     }
 }
+
+// MARK: - KBShareDestination
 
 enum KBShareDestination: CaseIterable, Identifiable {
     case chat, document, todo, grocery, event, note
