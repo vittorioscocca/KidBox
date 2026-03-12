@@ -62,6 +62,13 @@ final class AppCoordinator: ObservableObject {
     /// "image" | "file" (video). Letto da FamilyPhotosView insieme a pendingShareEncryptedMediaPath.
     @Published var pendingShareEncryptedMediaType: String? = nil
     
+    // Dopo pendingShareEncryptedMediaType (riga 63), aggiungi:
+    
+    /// Path locale (App Group) di un documento condiviso verso la sezione Documenti.
+    @Published var pendingShareDocumentPath: String? = nil
+    /// Nome originale del file documento condiviso.
+    @Published var pendingShareDocumentTitle: String? = nil
+    
     // MARK: - Active family
     
     /// The explicitly selected active family ID.
@@ -452,10 +459,26 @@ final class AppCoordinator: ObservableObject {
             KBLog.sync.kbInfo("handleIncomingShare event: draft set title=\(title.isEmpty ? text : title)")
             
         case "document":
-            // pendingShare già rimosso sopra — DocumentFolderView legge i dati
-            // dalla copia locale già fatta (sharedFilePath nell'App Group filesystem,
-            // non in UserDefaults). Nessun problema di race condition.
-            navigate(to: .documentsHome)
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "activeFamilyId"), !fid.isEmpty {
+                KBLog.sync.kbInfo("handleIncomingShare document: activeFamilyId nil, fallback AppGroup fid=\(fid)")
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare document: activeFamilyId nil — abort")
+                return
+            }
+            guard !filePath.isEmpty else {
+                KBLog.sync.kbError("handleIncomingShare document: filePath empty — abort")
+                return
+            }
+            pendingShareDocumentPath  = filePath
+            pendingShareDocumentTitle = title.isEmpty ? data["sharedFileName"] : title
+            let alreadyInStack = path.contains { if case .documentsHome = $0 { return true }; return false }
+            if !alreadyInStack { navigate(to: .documentsHome) }
+            KBLog.sync.kbInfo("handleIncomingShare document: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
             
         case "encryptedMedia":
             let familyId: String

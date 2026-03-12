@@ -60,10 +60,27 @@ class ShareViewController: UIViewController {
                     }
                 }
                 
-                // URL
+                // ✅ NUOVO: file-url (documenti da Files/iCloud) — usa loadFileURL come per i video
+                // Deve stare PRIMA del branch UTType.url per intercettare i PDF/doc prima
+                // che vengano trattati come URL web
+                if provider.hasItemConformingToTypeIdentifier("public.file-url") {
+                    if let url = await loadFileURL(from: provider, type: "public.file-url") {
+                        print("[ShareVC] detected file-url (document) url=\(url)")
+                        return KBSharePayload(type: .file(url))
+                    }
+                }
+                
+                // URL web (solo se non è un file locale)
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     if let url = await loadURL(from: provider, type: UTType.url.identifier) {
-                        print("[ShareVC] detected url=\(url.absoluteString)")
+                        // Se è un file URL, trattalo come file (fallback di sicurezza)
+                        if url.isFileURL {
+                            print("[ShareVC] detected file url via url-type url=\(url)")
+                            if let fileURL = await loadFileURL(from: provider, type: UTType.url.identifier) {
+                                return KBSharePayload(type: .file(fileURL))
+                            }
+                        }
+                        print("[ShareVC] detected web url=\(url.absoluteString)")
                         return KBSharePayload(type: .url(url.absoluteString))
                     }
                 }

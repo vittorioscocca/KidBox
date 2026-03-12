@@ -330,6 +330,40 @@ struct DocumentFolderView: View {
         .background(backgroundColor)
     }
     
+    // MARK: - Upload da App Group (share extension → document)
+    
+    private func uploadFromAppGroup(path: String, title: String?) async {
+        guard folderId == nil else { return }   // solo la root gestisce il pending
+        
+        let fileURL = URL(fileURLWithPath: path)
+        
+        print("[DocumentFolderView] uploadFromAppGroup START path=\(path) exists=\(FileManager.default.fileExists(atPath: path))")
+        
+        guard FileManager.default.fileExists(atPath: path) else {
+            print("[DocumentFolderView] uploadFromAppGroup ERROR — file not found")
+            return
+        }
+        
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        
+        viewModel.isUploading = true
+        viewModel.uploadCurrentName = title ?? fileURL.lastPathComponent
+        
+        let ok = await viewModel.uploadSingleFileFromURL(
+            fileURL,
+            forcedMime: path.hasSuffix(".jpg") || path.hasSuffix(".jpeg") ? "image/jpeg" : nil,
+            forcedTitle: title
+        )
+        
+        viewModel.uploadDone     = 1
+        viewModel.uploadFailures = ok ? 0 : 1
+        viewModel.isUploading    = false
+        viewModel.uploadCurrentName = ""
+        
+        viewModel.reload()
+        if ok { SyncCenter.shared.flushGlobal(modelContext: modelContext) }
+    }
+    
     // MARK: - LIST ─────────────────────────────────────────────────────────
     
     private var listContent: some View {
@@ -394,7 +428,7 @@ struct DocumentFolderView: View {
         .background(backgroundColor)
     }
     
-    // MARK: - Context menus ────────────────────────────────────────────────
+    // MARK: - Context menu
     
     @ViewBuilder
     private func folderContextMenu(_ f: KBDocumentCategory) -> some View {
@@ -416,8 +450,6 @@ struct DocumentFolderView: View {
             Label("Elimina cartella", systemImage: "trash")
         }
     }
-    
-    // MARK: - Swipe actions ────────────────────────────────────────────────
     
     @ViewBuilder
     private func folderSwipeActions(_ f: KBDocumentCategory) -> some View {
@@ -676,50 +708,20 @@ private extension DocumentFolderView {
                             BadgeManager.shared.clearDocuments()
                         }
                     }
-                    
-                    let defaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
-                    if let data = defaults?.dictionary(forKey: "pendingShare") as? [String: String],
-                       data["destination"] == "document",
-                       let pathString = data["sharedFilePath"],
-                       !pathString.isEmpty {
-                        
-                        // Pulisci subito per non ripetere l'upload al prossimo onAppear
-                        defaults?.removeObject(forKey: "pendingShare")
-                        
-                        let fileURL = URL(fileURLWithPath: pathString)
-                        let title = data["title"] ?? ""
-                        
-                        // Piccolo delay per assicurarsi che la view sia pronta
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            Task {
-                                view.viewModel.isUploading = true
-                                view.viewModel.uploadCurrentName = title.isEmpty
-                                ? fileURL.lastPathComponent
-                                : title
-                                
-                                let ok = await view.viewModel.uploadSingleFileFromURL(
-                                    fileURL,
-                                    forcedMime: pathString.hasSuffix(".jpg") || pathString.hasSuffix(".jpeg")
-                                    ? "image/jpeg"
-                                    : nil,
-                                    forcedTitle: title.isEmpty ? nil : title
-                                )
-                                
-                                view.viewModel.uploadDone = 1
-                                view.viewModel.uploadFailures = ok ? 0 : 1
-                                view.viewModel.isUploading = false
-                                view.viewModel.uploadCurrentName = ""
-                                
-                                // Pulisci il file temporaneo dall'App Group
-                                try? FileManager.default.removeItem(at: fileURL)
-                                
-                                view.viewModel.reload()
-                                if ok {
-                                    SyncCenter.shared.flushGlobal(modelContext: view.modelContext)
-                                }
-                            }
-                        }
+                    if let path = coordinator.pendingShareDocumentPath {
+                        coordinator.pendingShareDocumentPath = nil
+                        let title = coordinator.pendingShareDocumentTitle
+                        coordinator.pendingShareDocumentTitle = nil
+                        Task { await view.uploadFromAppGroup(path: path, title: title) }
                     }
+                }
+                // Gestisce il caso in cui la view fosse già visibile quando
+                // l'app torna in foreground dopo lo share (onAppear non si ri-triggera)
+                .onReceive(coordinator.$pendingShareDocumentPath.compactMap { $0 }) { path in
+                    coordinator.pendingShareDocumentPath = nil
+                    let title = coordinator.pendingShareDocumentTitle
+                    coordinator.pendingShareDocumentTitle = nil
+                    Task { await view.uploadFromAppGroup(path: path, title: title) }
                 }
                 .onChange(of: coordinator.pendingOpenDocumentId) { _, newDocId in
                     guard let docId = newDocId else { return }
