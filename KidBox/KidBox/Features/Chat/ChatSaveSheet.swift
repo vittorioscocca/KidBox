@@ -142,11 +142,15 @@ extension KBChatMessage {
             
         case .photo:
             guard let url = mediaURL else { return .empty }
-            return KBSaveClassifier.shared.classify(mediaURL: url, mimeHint: .image)
+            return KBClassificationResult(
+                actions: [.encryptedMedia(sourceURL: url, fileName: "foto.jpg", isVideo: false)],
+                detectedDate: nil, isAIClassified: false)
             
         case .video:
             guard let url = mediaURL else { return .empty }
-            return KBSaveClassifier.shared.classify(mediaURL: url, mimeHint: .video)
+            return KBClassificationResult(
+                actions: [.encryptedMedia(sourceURL: url, fileName: "video.mp4", isVideo: true)],
+                detectedDate: nil, isAIClassified: false)
             
         case .document:
             guard let url = mediaURL else { return .empty }
@@ -191,11 +195,11 @@ extension KBChatMessage {
             
         case .photo:
             guard let url = mediaURL else { return [] }
-            return [.document(mediaURL: url, fileName: "foto.jpg")]
+            return [.encryptedMedia(sourceURL: url, fileName: "foto.jpg", isVideo: false)]
             
         case .video:
             guard let url = mediaURL else { return [] }
-            return [.document(mediaURL: url, fileName: "video.mp4")]
+            return [.encryptedMedia(sourceURL: url, fileName: "video.mp4", isVideo: true)]
             
         case .document:
             guard let url = mediaURL else { return [] }
@@ -220,29 +224,32 @@ extension KBClassificationResult {
 extension KBSaveAction {
     var label: String {
         switch self {
-        case .todo:     return "To-Do"
-        case .event:    return "Evento"
-        case .grocery:  return "Lista spesa"
-        case .note:     return "Nota"
-        case .document: return "Documenti"
+        case .todo:             return "To-Do"
+        case .event:            return "Evento"
+        case .grocery:          return "Lista spesa"
+        case .note:             return "Nota"
+        case .document:         return "Documenti"
+        case .encryptedMedia:   return "Foto e video"
         }
     }
     var icon: String {
         switch self {
-        case .todo:     return "checkmark.circle.fill"
-        case .event:    return "calendar"
-        case .grocery:  return "cart.fill"
-        case .note:     return "note.text"
-        case .document: return "folder.fill"
+        case .todo:             return "checkmark.circle.fill"
+        case .event:            return "calendar"
+        case .grocery:          return "cart.fill"
+        case .note:             return "note.text"
+        case .document:         return "folder.fill"
+        case .encryptedMedia:   return "photo.stack.fill"
         }
     }
     var color: Color {
         switch self {
-        case .todo:     return .orange
-        case .event:    return .red
-        case .grocery:  return .green
-        case .note:     return .yellow
-        case .document: return Color(red: 0.6, green: 0.45, blue: 0.85)
+        case .todo:             return .orange
+        case .event:            return .red
+        case .grocery:          return .green
+        case .note:             return .yellow
+        case .document:         return Color(red: 0.6, green: 0.45, blue: 0.85)
+        case .encryptedMedia:   return .cyan
         }
     }
 }

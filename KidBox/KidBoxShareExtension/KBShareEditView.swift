@@ -30,7 +30,7 @@ struct KBShareEditView: View {
     @State private var editedText: String = ""
     @State private var editedTitle: String = ""
     @State private var isSending = false
-    @State private var hasSent = false  // evita doppio invio
+    @State private var hasSent = false
     @State private var errorMessage: String? = nil
     @State private var remoteImage: UIImage? = nil
     @State private var videoSavedToAppGroup = false
@@ -64,7 +64,6 @@ struct KBShareEditView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             prefillFields()
-            // Apri subito la tastiera se è un testo in chat
             if destination == .chat, case .text = payload.type {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     inputFocused = true
@@ -84,7 +83,6 @@ struct KBShareEditView: View {
     private var chatLayout: some View {
         VStack(spacing: 0) {
             if isTextOnlyPayload {
-                // ── TESTO: solo chat bar, tastiera aperta automaticamente ──
                 Spacer()
                 HStack(alignment: .bottom, spacing: 10) {
                     TextField("Modifica il messaggio…", text: $editedText, axis: .vertical)
@@ -96,7 +94,6 @@ struct KBShareEditView: View {
                         .overlay(RoundedRectangle(cornerRadius: 20)
                             .stroke(Color.secondary.opacity(0.3), lineWidth: 1))
                         .focused($inputFocused)
-                    
                     sendCircleButton
                         .disabled(isSending || editedText.isEmpty)
                 }
@@ -105,19 +102,16 @@ struct KBShareEditView: View {
                 .background(Color(.secondarySystemBackground))
                 
             } else {
-                // ── MEDIA / FILE / LINK: preview + pulsante invia ──
                 ScrollView {
                     VStack(spacing: 24) {
                         mediaPreview
                             .padding(.top, 20)
                             .padding(.horizontal, 16)
-                        
                         if let error = errorMessage {
                             Text(error)
                                 .font(.caption).foregroundStyle(.red)
                                 .padding(.horizontal, 20)
                         }
-                        
                         sendBigButton
                             .padding(.horizontal, 20)
                             .padding(.bottom, 24)
@@ -167,7 +161,6 @@ struct KBShareEditView: View {
                         .font(.subheadline.bold())
                         .foregroundStyle(.white)
                 } else {
-                    // Icona "paper plane" per chat — diversa dal solito destination.icon
                     Image(systemName: "paperplane.fill")
                         .font(.system(size: 18, weight: .bold))
                     Text("Invia in chat")
@@ -204,7 +197,6 @@ struct KBShareEditView: View {
             let ext = url.pathExtension.lowercased()
             let isVideo = ["mp4", "mov", "m4v"].contains(ext)
             let isImg   = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
-            
             if isVideo {
                 videoPreviewCard(for: url)
             } else if isImg, let img = UIImage(contentsOfFile: url.path) {
@@ -259,19 +251,15 @@ struct KBShareEditView: View {
         }
     }
     
-    // MARK: - Video preview card (thumbnail + play badge + nome file)
+    // MARK: - Video preview card
     
     private func videoPreviewCard(for url: URL) -> some View {
         ZStack(alignment: .center) {
-            // Thumbnail o placeholder scuro
             Group {
                 if let thumb = videoThumbnail {
-                    Image(uiImage: thumb)
-                        .resizable()
-                        .scaledToFill()
+                    Image(uiImage: thumb).resizable().scaledToFill()
                 } else {
-                    Rectangle()
-                        .fill(Color.black.opacity(0.75))
+                    Rectangle().fill(Color.black.opacity(0.75))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -279,7 +267,6 @@ struct KBShareEditView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: .black.opacity(0.20), radius: 12, y: 4)
             
-            // Play badge
             Circle()
                 .fill(.ultraThinMaterial)
                 .frame(width: 64, height: 64)
@@ -291,7 +278,6 @@ struct KBShareEditView: View {
                 )
                 .shadow(color: .black.opacity(0.25), radius: 8, y: 2)
             
-            // Nome file in basso
             VStack {
                 Spacer()
                 HStack(spacing: 8) {
@@ -322,7 +308,6 @@ struct KBShareEditView: View {
                 .frame(width: 60, height: 60)
                 .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(color: destination.color.opacity(0.4), radius: 6, y: 2)
-            
             VStack(alignment: .leading, spacing: 4) {
                 Text(url.lastPathComponent)
                     .font(.subheadline.weight(.semibold))
@@ -346,7 +331,6 @@ struct KBShareEditView: View {
             Image(systemName: "link.circle.fill")
                 .font(.system(size: 28))
                 .foregroundStyle(destination.color)
-            
             VStack(alignment: .leading, spacing: 4) {
                 Text("Link")
                     .font(.caption.weight(.semibold))
@@ -376,15 +360,11 @@ struct KBShareEditView: View {
             if let fu = URL(string: u), fu.isFileURL {
                 let ext = fu.pathExtension.lowercased()
                 videoURL = ["mp4", "mov", "m4v"].contains(ext) ? fu : nil
-            } else {
-                videoURL = nil
-            }
+            } else { videoURL = nil }
         default:
             videoURL = nil
         }
-        
         guard let url = videoURL else { return }
-        
         let thumb = await Task.detached(priority: .userInitiated) {
             let asset = AVURLAsset(url: url)
             let gen = AVAssetImageGenerator(asset: asset)
@@ -394,7 +374,6 @@ struct KBShareEditView: View {
             guard let cgImg = try? gen.copyCGImage(at: time, actualTime: nil) else { return nil as UIImage? }
             return UIImage(cgImage: cgImg)
         }.value
-        
         await MainActor.run { videoThumbnail = thumb }
     }
     
@@ -403,20 +382,15 @@ struct KBShareEditView: View {
     private var standardLayout: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                payloadPreview
-                    .padding(.top, 8)
-                
+                payloadPreview.padding(.top, 8)
                 editFields
-                
                 if let error = errorMessage {
                     Text(error)
                         .font(.caption)
                         .foregroundStyle(.red)
                         .padding(.horizontal, 4)
                 }
-                
                 Spacer(minLength: 40)
-                
                 Button {
                     Task { await sendToDestination() }
                 } label: {
@@ -448,21 +422,17 @@ struct KBShareEditView: View {
     private var videoSuccessView: some View {
         VStack(spacing: 24) {
             Spacer(minLength: 40)
-            
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-            
             VStack(spacing: 8) {
                 Text("Video pronto")
                     .font(.title2.bold())
-                
                 Text("Apri KidBox per completare l'invio in chat.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            
             Button {
                 onOpenApp("kidbox://share?destination=chat")
             } label: {
@@ -473,14 +443,12 @@ struct KBShareEditView: View {
                     .padding()
                     .background(Color.blue, in: RoundedRectangle(cornerRadius: 14))
             }
-            
             Button("Annulla") {
                 UserDefaults(suiteName: appGroupId)?.removeObject(forKey: "pendingShare")
                 onDone()
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            
             Spacer(minLength: 40)
         }
         .padding(32)
@@ -490,21 +458,17 @@ struct KBShareEditView: View {
     private func deferredSuccessView(for destination: KBShareDestination) -> some View {
         VStack(spacing: 24) {
             Spacer(minLength: 40)
-            
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-            
             VStack(spacing: 8) {
                 Text("Quasi fatto")
                     .font(.title2.bold())
-                
                 Text(messageForDeferredBanner(destination))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            
             Button {
                 onOpenApp("kidbox://share?destination=\(destination.rawStringValue)")
             } label: {
@@ -515,14 +479,12 @@ struct KBShareEditView: View {
                     .padding()
                     .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
             }
-            
             Button("Annulla") {
                 UserDefaults(suiteName: appGroupId)?.removeObject(forKey: "pendingShare")
                 onDone()
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            
             Spacer(minLength: 40)
         }
         .padding(32)
@@ -530,22 +492,17 @@ struct KBShareEditView: View {
     
     private func messageForDeferredBanner(_ destination: KBShareDestination) -> String {
         switch destination {
-        case .chat:
-            return "Apri KidBox per completare l’invio in chat."
-        case .todo:
-            return "Apri KidBox per completare la creazione del to-do."
-        case .event:
-            return "Apri KidBox per completare la creazione dell’evento."
-        case .grocery:
-            return "Apri KidBox per completare l’aggiunta alla lista spesa."
-        case .document:
-            return "Apri KidBox per completare il salvataggio del documento."
-        case .note:
-            return "Apri KidBox per completare la nota."
+        case .chat:           return "Apri KidBox per completare l'invio in chat."
+        case .todo:           return "Apri KidBox per completare la creazione del to-do."
+        case .event:          return "Apri KidBox per completare la creazione dell'evento."
+        case .grocery:        return "Apri KidBox per completare l'aggiunta alla lista spesa."
+        case .document:       return "Apri KidBox per completare il salvataggio del documento."
+        case .note:           return "Apri KidBox per completare la nota."
+        case .encryptedMedia: return "Apri KidBox per completare il salvataggio in Foto e video."
         }
     }
     
-    // MARK: - Preview
+    // MARK: - Payload preview
     
     @ViewBuilder
     private var payloadPreview: some View {
@@ -553,10 +510,8 @@ struct KBShareEditView: View {
         case .image(let url):
             if let url, let img = UIImage(contentsOfFile: url.path) {
                 Image(uiImage: img)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 220)
-                    .frame(maxWidth: .infinity)
+                    .resizable().scaledToFit()
+                    .frame(maxHeight: 220).frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
             }
@@ -566,19 +521,13 @@ struct KBShareEditView: View {
                 Label("Contenuto condiviso", systemImage: "text.quote")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                
                 Text(t)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.subheadline).foregroundStyle(.primary)
+                    .lineLimit(6).frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(14)
             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-            )
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(0.12), lineWidth: 1))
             
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
@@ -587,17 +536,14 @@ struct KBShareEditView: View {
                 Group {
                     if let img = remoteImage {
                         Image(uiImage: img)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: 220)
-                            .frame(maxWidth: .infinity)
+                            .resizable().scaledToFit()
+                            .frame(maxHeight: 220).frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
                     } else {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Color.secondary.opacity(0.1))
-                            .frame(height: 160)
-                            .overlay(ProgressView())
+                            .frame(height: 160).overlay(ProgressView())
                     }
                 }
                 .task {
@@ -608,26 +554,16 @@ struct KBShareEditView: View {
                 }
             } else {
                 HStack(spacing: 12) {
-                    Image(systemName: "link.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(destination.color)
+                    Image(systemName: "link.circle.fill").font(.title2).foregroundStyle(destination.color)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Link")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(u)
-                            .font(.subheadline)
-                            .foregroundStyle(.blue)
-                            .lineLimit(2)
+                        Text("Link").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(u).font(.subheadline).foregroundStyle(.blue).lineLimit(2)
                     }
                     Spacer()
                 }
                 .padding(14)
                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-                )
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(0.12), lineWidth: 1))
             }
             
         case .file(let url):
@@ -646,46 +582,29 @@ struct KBShareEditView: View {
     private func filePreviewCard(for url: URL) -> some View {
         HStack(spacing: 14) {
             Image(systemName: fileIcon(for: url))
-                .font(.title2)
-                .foregroundStyle(.white)
+                .font(.title2).foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(destination.color, in: RoundedRectangle(cornerRadius: 12))
-            
             VStack(alignment: .leading, spacing: 3) {
-                Text(url.lastPathComponent)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(2)
-                Text(url.pathExtension.uppercased())
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Text(url.lastPathComponent).font(.subheadline.weight(.semibold)).lineLimit(2)
+                Text(url.pathExtension.uppercased()).font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
         }
         .padding(14)
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
-        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(0.12), lineWidth: 1))
     }
     
     private func fileIcon(for url: URL) -> String {
-        let ext = url.pathExtension.lowercased()
-        switch ext {
-        case "pdf":
-            return "doc.richtext.fill"
-        case "jpg", "jpeg", "png", "heic":
-            return "photo.fill"
-        case "mp4", "mov", "m4v":
-            return "video.fill"
-        case "doc", "docx":
-            return "doc.fill"
-        case "xls", "xlsx":
-            return "tablecells.fill"
-        case "zip", "rar":
-            return "archivebox.fill"
-        default:
-            return "doc.fill"
+        switch url.pathExtension.lowercased() {
+        case "pdf":                         return "doc.richtext.fill"
+        case "jpg", "jpeg", "png", "heic":  return "photo.fill"
+        case "mp4", "mov", "m4v":           return "video.fill"
+        case "doc", "docx":                 return "doc.fill"
+        case "xls", "xlsx":                 return "tablecells.fill"
+        case "zip", "rar":                  return "archivebox.fill"
+        default:                            return "doc.fill"
         }
     }
     
@@ -697,9 +616,7 @@ struct KBShareEditView: View {
         case .todo:
             VStack(alignment: .leading, spacing: 8) {
                 Label("Titolo del to-do", systemImage: "checkmark.circle")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                
+                    .font(.footnote).foregroundStyle(.secondary)
                 TextField("Es. Comprare latte", text: $editedTitle)
                     .textFieldStyle(.roundedBorder)
             }
@@ -707,81 +624,61 @@ struct KBShareEditView: View {
         case .grocery:
             VStack(alignment: .leading, spacing: 8) {
                 Label("Aggiungi alla lista spesa", systemImage: "cart")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                
+                    .font(.footnote).foregroundStyle(.secondary)
                 TextField("Es. Latte, pane, uova", text: $editedTitle)
                     .textFieldStyle(.roundedBorder)
-                
                 Text("Ogni riga diventerà un articolo separato")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(.caption).foregroundStyle(.tertiary)
             }
             
         case .event:
             VStack(alignment: .leading, spacing: 8) {
                 Label("Titolo evento", systemImage: "calendar")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                
+                    .font(.footnote).foregroundStyle(.secondary)
                 TextField("Es. Visita pediatra", text: $editedTitle)
                     .textFieldStyle(.roundedBorder)
-                
                 Label("Note aggiuntive", systemImage: "text.alignleft")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-                
+                    .font(.footnote).foregroundStyle(.secondary).padding(.top, 4)
                 TextEditor(text: $editedText)
                     .frame(height: 80)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.secondary.opacity(0.3))
-                    )
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)))
             }
             
         case .note:
             VStack(alignment: .leading, spacing: 8) {
                 Label("Titolo nota", systemImage: "note.text")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                
-                TextField("Titolo", text: $editedTitle)
-                    .textFieldStyle(.roundedBorder)
-                
+                    .font(.footnote).foregroundStyle(.secondary)
+                TextField("Titolo", text: $editedTitle).textFieldStyle(.roundedBorder)
                 if !editedText.isEmpty {
                     Label("Testo", systemImage: "text.alignleft")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
-                    
+                        .font(.footnote).foregroundStyle(.secondary).padding(.top, 4)
                     TextEditor(text: $editedText)
                         .frame(minHeight: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.secondary.opacity(0.3))
-                        )
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)))
                 }
             }
             
         case .chat:
-            // Chat uses its own dedicated layout; this branch is not shown.
             EmptyView()
             
         case .document:
             VStack(alignment: .leading, spacing: 8) {
                 Text("Il file verrà salvato nella sezione Documenti.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
+                    .font(.subheadline).foregroundStyle(.secondary)
                 Label("Titolo documento", systemImage: "folder")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-                
+                    .font(.footnote).foregroundStyle(.secondary).padding(.top, 4)
                 TextField("Es. Referti agosto 2025", text: $editedTitle)
                     .textFieldStyle(.roundedBorder)
             }
+            
+        case .encryptedMedia:
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill").foregroundStyle(.cyan)
+                Text("Il file verrà cifrato e salvato in Foto e video della famiglia.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color.cyan.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         }
     }
     
@@ -789,12 +686,13 @@ struct KBShareEditView: View {
     
     private var confirmLabel: String {
         switch destination {
-        case .chat:     return "Invia in chat"
-        case .document: return "Salva nei documenti"
-        case .todo:     return "Crea to-do"
-        case .grocery:  return "Aggiungi alla spesa"
-        case .event:    return "Crea evento"
-        case .note:     return "Crea nota"
+        case .chat:             return "Invia in chat"
+        case .document:         return "Salva nei documenti"
+        case .todo:             return "Crea to-do"
+        case .grocery:          return "Aggiungi alla spesa"
+        case .event:            return "Crea evento"
+        case .note:             return "Crea nota"
+        case .encryptedMedia:   return "Salva in Foto e video"
         }
     }
     
@@ -806,40 +704,28 @@ struct KBShareEditView: View {
             if destination == .event {
                 let parsed = parseEventText(t)
                 editedTitle = parsed.title
-                editedText = parsed.notes
+                editedText  = parsed.notes
             } else if destination == .grocery {
-                // Per grocery mantieni tutte le righe in editedTitle —
-                // ogni riga diventerà un articolo separato nell'app.
                 let lines = t.components(separatedBy: "\n")
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty }
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
                 editedTitle = lines.joined(separator: "\n")
-            }  else if destination == .chat {
+            } else if destination == .chat {
                 editedText = t
             } else {
                 let lines = t.components(separatedBy: "\n")
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty }
-                
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
                 if lines.count >= 2 {
-                    // Testo multiriga: prima riga = titolo, resto = corpo
                     editedTitle = lines.first ?? t
-                    editedText = lines.dropFirst().joined(separator: "\n")
+                    editedText  = lines.dropFirst().joined(separator: "\n")
                 } else {
-                    // Testo su riga singola: prima frase (fino a . ! ?) = titolo, resto = corpo
                     let raw = lines.first ?? t
                     if let range = raw.rangeOfCharacter(from: CharacterSet(charactersIn: ".!?")) {
                         let titleEnd = raw.index(after: range.lowerBound)
-                        let title = String(raw[raw.startIndex..<titleEnd])
-                            .trimmingCharacters(in: .whitespaces)
-                        let body = String(raw[titleEnd...])
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        editedTitle = title
-                        editedText = body
+                        editedTitle  = String(raw[raw.startIndex..<titleEnd]).trimmingCharacters(in: .whitespaces)
+                        editedText   = String(raw[titleEnd...]).trimmingCharacters(in: .whitespacesAndNewlines)
                     } else {
-                        // Nessun separatore: tutto in titolo, corpo vuoto
                         editedTitle = raw
-                        editedText = ""
+                        editedText  = ""
                     }
                 }
             }
@@ -848,12 +734,10 @@ struct KBShareEditView: View {
                 editedTitle = fileURL.deletingPathExtension().lastPathComponent
             } else {
                 editedTitle = u
-                editedText = u
+                editedText  = u
             }
-            
         case .file(let url):
             editedTitle = url.deletingPathExtension().lastPathComponent
-            
         default:
             break
         }
@@ -863,33 +747,21 @@ struct KBShareEditView: View {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
         let range = NSRange(trimmed.startIndex..., in: trimmed)
-        
         var detectedDate: Date?
         var cleanedTitle = trimmed
-        
         if let match = detector?.firstMatch(in: trimmed, range: range),
            let date = match.date,
            let swiftRange = Range(match.range, in: trimmed) {
             detectedDate = date
-            
             var tmp = trimmed
             tmp.removeSubrange(swiftRange)
-            
             cleanedTitle = tmp
                 .replacingOccurrences(of: "  ", with: " ")
                 .replacingOccurrences(of: " ,", with: ",")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        
-        if cleanedTitle.isEmpty {
-            cleanedTitle = "Nuovo evento"
-        }
-        
-        return ParsedEventShare(
-            title: cleanedTitle,
-            notes: trimmed,
-            detectedDate: detectedDate
-        )
+        if cleanedTitle.isEmpty { cleanedTitle = "Nuovo evento" }
+        return ParsedEventShare(title: cleanedTitle, notes: trimmed, detectedDate: detectedDate)
     }
     
     // MARK: - Send
@@ -924,12 +796,19 @@ struct KBShareEditView: View {
             case .document:
                 saveToAppGroup()
                 result = .deferredToMainApp(
-                    urlString: "kidbox://share?destination=\(destination.rawStringValue)",
+                    urlString: "kidbox://share?destination=document",
+                    showBanner: false
+                )
+                
+            case .encryptedMedia:
+                // Identico a .document: copia il file nell'App Group,
+                // l'app principale lo carica con SyncCenter.photoRemote.upload()
+                saveToAppGroup()
+                result = .deferredToMainApp(
+                    urlString: "kidbox://share?destination=encryptedMedia",
                     showBanner: false
                 )
             }
-            
-            log("sendToDestination result computed")
             
             switch result {
             case .completedInExtension:
@@ -980,28 +859,17 @@ struct KBShareEditView: View {
         switch payload.type {
             
         case .image(let url):
-            guard let sourceURL = url,
-                  let data = imageData(from: sourceURL) else {
+            guard let sourceURL = url, let data = imageData(from: sourceURL) else {
                 throw ShareError.missingFile
             }
-            
             log("sendDirectToChat uploading image bytes=\(data.count)")
             let (storagePath, downloadURL) = try await storage.upload(
-                data: data,
-                familyId: familyId,
-                messageId: messageId,
-                fileName: "photo.jpg",
-                mimeType: "image/jpeg"
+                data: data, familyId: familyId, messageId: messageId,
+                fileName: "photo.jpg", mimeType: "image/jpeg"
             )
-            
             log("sendDirectToChat upload OK storagePath=\(storagePath)")
-            let dto = makeDTO(
-                messageId: messageId,
-                familyId: familyId,
-                typeRaw: "photo",
-                mediaStoragePath: storagePath,
-                mediaURL: downloadURL
-            )
+            let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "photo",
+                              mediaStoragePath: storagePath, mediaURL: downloadURL)
             try await remote.upsert(dto: dto)
             return .completedInExtension
             
@@ -1012,27 +880,20 @@ struct KBShareEditView: View {
             
             if isVideo {
                 let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-                let maxBytes = 200 * 1024 * 1024
-                
-                guard fileSize <= maxBytes else {
-                    let sizeMB = fileSize / (1024 * 1024)
-                    throw ShareError.videoTooLarge(sizeMB: sizeMB)
+                guard fileSize <= 200 * 1024 * 1024 else {
+                    throw ShareError.videoTooLarge(sizeMB: fileSize / (1024 * 1024))
                 }
-                
                 let name = "share_\(UUID().uuidString)_\(url.lastPathComponent)"
                 guard let groupURL = copyFileToAppGroup(url, name: name) else {
                     throw ShareError.missingFile
                 }
-                
-                let pendingData: [String: String] = [
-                    "destination": "chat",
+                UserDefaults(suiteName: appGroupId)?.set([
+                    "destination":    "chat",
                     "sharedFilePath": groupURL.path,
                     "sharedFileType": "video",
                     "sharedFileName": url.lastPathComponent,
-                    "timestamp": ISO8601DateFormatter().string(from: Date())
-                ]
-                
-                UserDefaults(suiteName: appGroupId)?.set(pendingData, forKey: "pendingShare")
+                    "timestamp":      ISO8601DateFormatter().string(from: Date())
+                ], forKey: "pendingShare")
                 log("sendDirectToChat video saved to AppGroup path=\(groupURL.path)")
                 return .videoDeferredToMainApp
             }
@@ -1041,28 +902,15 @@ struct KBShareEditView: View {
                 if isImage { return ("photo.jpg", "image/jpeg", "photo") }
                 return (url.lastPathComponent, "application/octet-stream", "document")
             }()
-            
-            guard let data = try? Data(contentsOf: url) else {
-                throw ShareError.missingFile
-            }
-            
+            guard let data = try? Data(contentsOf: url) else { throw ShareError.missingFile }
             log("sendDirectToChat uploading file typeRaw=\(typeRaw) bytes=\(data.count)")
             let (storagePath, downloadURL) = try await storage.upload(
-                data: data,
-                familyId: familyId,
-                messageId: messageId,
-                fileName: fileName,
-                mimeType: mimeType
+                data: data, familyId: familyId, messageId: messageId,
+                fileName: fileName, mimeType: mimeType
             )
-            
-            let dto = makeDTO(
-                messageId: messageId,
-                familyId: familyId,
-                typeRaw: typeRaw,
-                text: typeRaw == "document" ? url.lastPathComponent : nil,
-                mediaStoragePath: storagePath,
-                mediaURL: downloadURL
-            )
+            let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: typeRaw,
+                              text: typeRaw == "document" ? url.lastPathComponent : nil,
+                              mediaStoragePath: storagePath, mediaURL: downloadURL)
             try await remote.upsert(dto: dto)
             return .completedInExtension
             
@@ -1070,67 +918,36 @@ struct KBShareEditView: View {
             if let fileURL = URL(string: u), fileURL.isFileURL {
                 let accessed = fileURL.startAccessingSecurityScopedResource()
                 defer { if accessed { fileURL.stopAccessingSecurityScopedResource() } }
-                
-                guard let data = try? Data(contentsOf: fileURL) else {
-                    throw ShareError.missingFile
-                }
-                
+                guard let data = try? Data(contentsOf: fileURL) else { throw ShareError.missingFile }
                 let fileName = fileURL.lastPathComponent
                 log("sendDirectToChat uploading file-url bytes=\(data.count) name=\(fileName)")
                 let (storagePath, downloadURL) = try await storage.upload(
-                    data: data,
-                    familyId: familyId,
-                    messageId: messageId,
-                    fileName: fileName,
-                    mimeType: "application/octet-stream"
+                    data: data, familyId: familyId, messageId: messageId,
+                    fileName: fileName, mimeType: "application/octet-stream"
                 )
-                
-                let dto = makeDTO(
-                    messageId: messageId,
-                    familyId: familyId,
-                    typeRaw: "document",
-                    text: fileName,
-                    mediaStoragePath: storagePath,
-                    mediaURL: downloadURL
-                )
+                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "document",
+                                  text: fileName, mediaStoragePath: storagePath, mediaURL: downloadURL)
                 try await remote.upsert(dto: dto)
                 return .completedInExtension
                 
             } else if isImageURL(u) {
                 guard let imgURL = URL(string: u),
                       let (data, _) = try? await URLSession.shared.data(from: imgURL),
-                      !data.isEmpty else {
-                    throw ShareError.missingFile
-                }
-                
+                      !data.isEmpty else { throw ShareError.missingFile }
                 log("sendDirectToChat uploading remote image bytes=\(data.count)")
                 let (storagePath, downloadURL) = try await storage.upload(
-                    data: data,
-                    familyId: familyId,
-                    messageId: messageId,
-                    fileName: "photo.jpg",
-                    mimeType: "image/jpeg"
+                    data: data, familyId: familyId, messageId: messageId,
+                    fileName: "photo.jpg", mimeType: "image/jpeg"
                 )
-                
-                let dto = makeDTO(
-                    messageId: messageId,
-                    familyId: familyId,
-                    typeRaw: "photo",
-                    mediaStoragePath: storagePath,
-                    mediaURL: downloadURL
-                )
+                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "photo",
+                                  mediaStoragePath: storagePath, mediaURL: downloadURL)
                 try await remote.upsert(dto: dto)
                 return .completedInExtension
                 
             } else {
                 let text = editedText.isEmpty ? u : editedText
                 log("sendDirectToChat sending url=\(u)")
-                let dto = makeDTO(
-                    messageId: messageId,
-                    familyId: familyId,
-                    typeRaw: "text",
-                    text: text
-                )
+                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "text", text: text)
                 try await remote.upsert(dto: dto)
                 return .completedInExtension
             }
@@ -1138,12 +955,7 @@ struct KBShareEditView: View {
         case .text(let t):
             let text = editedText.isEmpty ? t : editedText
             log("sendDirectToChat sending text=\(text.prefix(50))")
-            let dto = makeDTO(
-                messageId: messageId,
-                familyId: familyId,
-                typeRaw: "text",
-                text: text
-            )
+            let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "text", text: text)
             try await remote.upsert(dto: dto)
             return .completedInExtension
             
@@ -1160,13 +972,10 @@ struct KBShareEditView: View {
         
         guard let defaults = UserDefaults(suiteName: appGroupId),
               let familyId = defaults.string(forKey: "activeFamilyId"),
-              !familyId.isEmpty else {
-            throw ShareError.missingFamilyId
-        }
+              !familyId.isEmpty else { throw ShareError.missingFamilyId }
         
         let uid = defaults.string(forKey: "currentUserUID") ?? ""
         let displayName = defaults.string(forKey: "currentUserDisplayName") ?? ""
-        
         guard !uid.isEmpty else {
             log("sendDirectToNote ERROR: uid not found in App Group")
             throw ShareError.missingFamilyId
@@ -1174,37 +983,25 @@ struct KBShareEditView: View {
         
         let title: String
         let body: String
-        
         switch payload.type {
         case .text(let t):
             let raw = editedText.isEmpty ? t : editedText
             let lines = raw.components(separatedBy: "\n")
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
+                .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             title = editedTitle.isEmpty ? (lines.first ?? raw) : editedTitle
-            body = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : ""
-            
+            body  = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : ""
         case .url(let u):
-            body = u
+            body  = u
             title = editedTitle.isEmpty ? u : editedTitle
-            
         default:
-            body = editedText
+            body  = editedText
             title = editedTitle
         }
         
         let noteId = UUID().uuidString
         let store = NotesRemoteStore()
-        
-        try await store.upsertRaw(
-            noteId: noteId,
-            familyId: familyId,
-            title: title,
-            body: body,
-            uid: uid,
-            displayName: displayName
-        )
-        
+        try await store.upsertRaw(noteId: noteId, familyId: familyId, title: title,
+                                  body: body, uid: uid, displayName: displayName)
         log("sendDirectToNote OK noteId=\(noteId)")
         return .completedInExtension
     }
@@ -1212,38 +1009,23 @@ struct KBShareEditView: View {
     // MARK: - DTO builder
     
     private func makeDTO(
-        messageId: String,
-        familyId: String,
-        typeRaw: String,
-        text: String? = nil,
-        mediaStoragePath: String? = nil,
-        mediaURL: String? = nil
+        messageId: String, familyId: String, typeRaw: String,
+        text: String? = nil, mediaStoragePath: String? = nil, mediaURL: String? = nil
     ) -> RemoteChatMessageDTO {
-        let defaults = UserDefaults(suiteName: appGroupId)
+        let defaults   = UserDefaults(suiteName: appGroupId)
         let senderName = defaults?.string(forKey: "currentUserDisplayName") ?? "Utente"
-        let senderId = defaults?.string(forKey: "currentUserUID") ?? "unknown"
+        let senderId   = defaults?.string(forKey: "currentUserUID") ?? "unknown"
         log("makeDTO senderId=\(senderId) senderName=\(senderName)")
-        
         return RemoteChatMessageDTO(
-            id: messageId,
-            familyId: familyId,
-            senderId: senderId,
-            senderName: senderName,
-            typeRaw: typeRaw,
-            text: text,
-            mediaStoragePath: mediaStoragePath,
-            mediaURL: mediaURL,
-            mediaDurationSeconds: nil,
-            mediaThumbnailURL: nil,
-            replyToId: nil,
-            reactionsJSON: nil,
-            readByJSON: nil,
-            createdAt: Date(),
-            editedAt: nil,
-            isDeleted: false,
-            deletedFor: [],
-            latitude: nil,
-            longitude: nil
+            id: messageId, familyId: familyId,
+            senderId: senderId, senderName: senderName,
+            typeRaw: typeRaw, text: text,
+            mediaStoragePath: mediaStoragePath, mediaURL: mediaURL,
+            mediaDurationSeconds: nil, mediaThumbnailURL: nil,
+            replyToId: nil, reactionsJSON: nil, readByJSON: nil,
+            createdAt: Date(), editedAt: nil,
+            isDeleted: false, deletedFor: [],
+            latitude: nil, longitude: nil
         )
     }
     
@@ -1252,24 +1034,20 @@ struct KBShareEditView: View {
     private func saveToAppGroup() {
         var data: [String: String] = [
             "destination": destination.rawStringValue,
-            "timestamp": ISO8601DateFormatter().string(from: Date())
+            "timestamp":   ISO8601DateFormatter().string(from: Date())
         ]
-        
         switch payload.type {
         case .text(let t):
             let finalText = editedText.isEmpty ? t : editedText
-            data["text"] = finalText
+            data["text"]  = finalText
             data["title"] = editedTitle
-            
             if destination == .event {
                 let parsed = parseEventText(finalText)
                 data["title"] = editedTitle.isEmpty ? parsed.title : editedTitle
-                
                 if let date = parsed.detectedDate {
                     data["eventStartDate"] = ISO8601DateFormatter().string(from: date)
                 }
             }
-            
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
                 let name = "share_\(UUID().uuidString)_\(fileURL.lastPathComponent)"
@@ -1281,11 +1059,9 @@ struct KBShareEditView: View {
                 data["title"] = editedTitle
             } else {
                 data["text"] = u
-                
                 if destination == .event {
                     let parsed = parseEventText(u)
                     data["title"] = editedTitle.isEmpty ? parsed.title : editedTitle
-                    
                     if let date = parsed.detectedDate {
                         data["eventStartDate"] = ISO8601DateFormatter().string(from: date)
                     }
@@ -1293,7 +1069,6 @@ struct KBShareEditView: View {
                     data["title"] = editedTitle
                 }
             }
-            
         case .image(let url):
             let name = "share_\(UUID().uuidString).jpg"
             if let sourceURL = url, let groupURL = copyFileToAppGroup(sourceURL, name: name) {
@@ -1301,7 +1076,6 @@ struct KBShareEditView: View {
                 data["sharedFileType"] = "image"
             }
             data["title"] = editedTitle
-            
         case .file(let url):
             let name = "share_\(UUID().uuidString)_\(url.lastPathComponent)"
             if let groupURL = copyFileToAppGroup(url, name: name) {
@@ -1310,11 +1084,9 @@ struct KBShareEditView: View {
                 data["sharedFileName"] = url.lastPathComponent
             }
             data["title"] = editedTitle
-            
         case .unknown:
             break
         }
-        
         guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
         defaults.set(data, forKey: "pendingShare")
         log("saveToAppGroup saved keys=\(data.keys.sorted())")
@@ -1333,22 +1105,13 @@ struct KBShareEditView: View {
         guard let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: appGroupId
         ) else { return nil }
-        
         let dest = container.appendingPathComponent(name)
         try? FileManager.default.removeItem(at: dest)
-        
-        if (try? FileManager.default.copyItem(at: source, to: dest)) != nil {
-            return dest
-        }
-        
+        if (try? FileManager.default.copyItem(at: source, to: dest)) != nil { return dest }
         let accessed = source.startAccessingSecurityScopedResource()
         defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-        
         guard let data = try? Data(contentsOf: source),
-              (try? data.write(to: dest, options: .atomic)) != nil else {
-            return nil
-        }
-        
+              (try? data.write(to: dest, options: .atomic)) != nil else { return nil }
         return dest
     }
 }

@@ -19,7 +19,7 @@ import FoundationModels
 // MARK: - Destinazioni
 
 public enum KBShareDestination: String, CaseIterable, Identifiable, Sendable {
-    case chat, document, todo, grocery, event, note
+    case chat, document, todo, grocery, event, note, encryptedMedia
     public var id: Self { self }
 }
 
@@ -31,14 +31,18 @@ public enum KBSaveAction: Identifiable, Sendable {
     case grocery(lines: [String])
     case note(title: String, body: String)
     case document(mediaURL: String, fileName: String)
+    /// Invia foto o video nella sezione "Foto e video" crittografati (FamilyPhotosView).
+    /// `sourceURL` è l'URL locale o remoto del media; `isVideo` distingue foto da video.
+    case encryptedMedia(sourceURL: String, fileName: String, isVideo: Bool)
     
     public var id: String {
         switch self {
-        case .todo:     return "todo"
-        case .event:    return "event"
-        case .grocery:  return "grocery"
-        case .note:     return "note"
-        case .document: return "document"
+        case .todo:             return "todo"
+        case .event:            return "event"
+        case .grocery:          return "grocery"
+        case .note:             return "note"
+        case .document:         return "document"
+        case .encryptedMedia:   return "encryptedMedia"
         }
     }
 }
@@ -70,13 +74,32 @@ public actor KBSaveClassifier {
     }
     
     public nonisolated func classify(mediaURL: String, mimeHint: KBMediaHint) -> KBClassificationResult {
-        let action: KBSaveAction
         switch mimeHint {
-        case .image:             action = .document(mediaURL: mediaURL, fileName: "foto.jpg")
-        case .video:             action = .document(mediaURL: mediaURL, fileName: "video.mp4")
-        case .generic(let name): action = .document(mediaURL: mediaURL, fileName: name)
+        case .image:
+            // Foto → va sia in chat che in Foto e video crittografati
+            let fileName = URL(string: mediaURL)?.lastPathComponent ?? "foto.jpg"
+            return KBClassificationResult(
+                actions: [
+                    .encryptedMedia(sourceURL: mediaURL, fileName: fileName, isVideo: false),
+                    .document(mediaURL: mediaURL, fileName: fileName)
+                ],
+                detectedDate: nil, isAIClassified: false)
+            
+        case .video:
+            // Video → va sia in chat che in Foto e video crittografati
+            let fileName = URL(string: mediaURL)?.lastPathComponent ?? "video.mp4"
+            return KBClassificationResult(
+                actions: [
+                    .encryptedMedia(sourceURL: mediaURL, fileName: fileName, isVideo: true),
+                    .document(mediaURL: mediaURL, fileName: fileName)
+                ],
+                detectedDate: nil, isAIClassified: false)
+            
+        case .generic(let name):
+            return KBClassificationResult(
+                actions: [.document(mediaURL: mediaURL, fileName: name)],
+                detectedDate: nil, isAIClassified: false)
         }
-        return KBClassificationResult(actions: [action], detectedDate: nil, isAIClassified: false)
     }
     
     // MARK: - 1. Foundation Models (iOS 18.1+)

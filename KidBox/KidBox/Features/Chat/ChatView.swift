@@ -751,6 +751,119 @@ private struct ChatConversationView: View {
                 )
                 try? await DocumentRemoteStore().upsert(dto: dto)
             }
+        case .encryptedMedia(let sourceURL, let fileName, let isVideo):
+            let uid = Auth.auth().currentUser?.uid ?? ""
+            guard !uid.isEmpty, !familyId.isEmpty else { return }
+            
+            // Naviga subito a FamilyPhotosView — l'upload avviene in background.
+            // Se la view è già nello stack non la pushuiamo di nuovo.
+            let alreadyInStack = coordinator.path.contains {
+                if case .familyPhotos(let fid) = $0 { return fid == familyId }
+                return false
+            }
+            if !alreadyInStack {
+                coordinator.navigate(to: .familyPhotos(familyId: familyId))
+            }
+            
+            Task { @MainActor in
+                let photoId  = UUID().uuidString
+                let now      = Date()
+                let mimeType = isVideo ? "video/mp4" : "image/jpeg"
+                let safeFileName = fileName.isEmpty
+                ? "\(isVideo ? "video" : "photo")_\(photoId).\(isVideo ? "mp4" : "jpg")"
+                : fileName
+                
+                // 1. Scarica i bytes dal download URL della chat (non cifrato lato chat)
+                guard let remoteURL = URL(string: sourceURL),
+                      let (mediaData, _) = try? await URLSession.shared.data(from: remoteURL),
+                      !mediaData.isEmpty else {
+                    KBLog.sync.kbError("handleSaveAction encryptedMedia: download failed url=\(sourceURL)")
+                    return
+                }
+                
+                // 2. Thumbnail + durata video
+                let thumbB64: String?
+                var videoDurationSecs: Double? = nil
+                
+                if isVideo {
+                    let tmpURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("\(photoId)_thumb.mp4")
+                    try? mediaData.write(to: tmpURL)
+                    
+                    async let thumbTask = PhotoRemoteStore.makeVideoThumbnail(url: tmpURL)
+                    async let durationTask = VideoCompressor.videoDuration(url: tmpURL)
+                    
+                    let (primaryThumb, duration) = await (thumbTask, durationTask)
+                    
+                    if let thumb = primaryThumb {
+                        thumbB64 = thumb.base64EncodedString()
+                    } else {
+                        let fallback = await PhotoRemoteStore.makeVideoThumbnail(from: mediaData)
+                        thumbB64 = fallback?.base64EncodedString()
+                    }
+                    
+                    videoDurationSecs = duration
+                    try? FileManager.default.removeItem(at: tmpURL)
+                } else {
+                    thumbB64 = PhotoRemoteStore.makeThumbnail(from: mediaData)?.base64EncodedString()
+                }
+                
+                // 3. Inserisci KBFamilyPhoto in SwiftData
+                let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
+                let photo = KBFamilyPhoto(
+                    id: photoId, familyId: familyId,
+                    fileName: safeFileName, mimeType: mimeType,
+                    fileSize: Int64(mediaData.count),
+                    storagePath: storagePath,
+                    thumbnailBase64: thumbB64,
+                    takenAt: now, createdAt: now, updatedAt: now,
+                    createdBy: uid, updatedBy: uid
+                )
+                photo.syncState = .synced
+                photo.videoDurationSeconds = isVideo ? videoDurationSecs : nil
+                if !isVideo {
+                    // Cache locale immagine
+                    let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                        .appendingPathComponent("KBPhotos", isDirectory: true)
+                    try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+                    let cachedURL = cacheDir.appendingPathComponent("\(photoId).jpg")
+                    try? mediaData.write(to: cachedURL, options: .atomic)
+                    photo.localPath = cachedURL.path
+                }
+                modelContext.insert(photo)
+                try? modelContext.save()
+                
+                do {
+                    // 4. Upload cifrato su Firebase Storage
+                    let dto = try await SyncCenter.photoRemote.upload(
+                        photoId: photoId, familyId: familyId, userId: uid,
+                        imageData: mediaData, fileName: safeFileName,
+                        mimeType: mimeType, takenAt: now,
+                        caption: nil, albumIds: [],
+                        precomputedThumbnailB64: thumbB64,
+                        precomputedVideoDurationSeconds: isVideo ? videoDurationSecs : nil,
+                        onProgress: { _ in }
+                    )
+                    photo.downloadURL = dto.downloadURL
+                    photo.syncState = .synced
+                    // Cache locale video dopo upload
+                    if isVideo {
+                        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                            .appendingPathComponent("KBPhotos", isDirectory: true)
+                        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+                        let cachedURL = cacheDir.appendingPathComponent("\(photoId).mp4")
+                        try? mediaData.write(to: cachedURL, options: .atomic)
+                        photo.localPath = cachedURL.path
+                    }
+                    try? modelContext.save()
+                    KBLog.sync.kbInfo("handleSaveAction encryptedMedia: OK photoId=\(photoId) isVideo=\(isVideo)")
+                } catch {
+                    photo.syncState = .pendingUpsert
+                    photo.lastSyncError = error.localizedDescription
+                    try? modelContext.save()
+                    KBLog.sync.kbError("handleSaveAction encryptedMedia: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
+                }
+            }
         }
     }
     

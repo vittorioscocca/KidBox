@@ -43,7 +43,8 @@ extension KBSharePayload {
         switch type {
             
         case .image:
-            return [.chat, .document]
+            // Foto → chat + Foto e video crittografati
+            return [.chat, .encryptedMedia]
             
         case .text(let t):
             let lines = t.components(separatedBy: "\n")
@@ -59,9 +60,15 @@ extension KBSharePayload {
             return [.chat, .note, .todo]
             
         case .file(let url):
-            let isVideo = ["mp4", "mov", "m4v"].contains(url.pathExtension.lowercased())
-            // Video → solo chat (upload pesante via App Group)
-            return isVideo ? [.chat] : [.chat, .document]
+            let ext = url.pathExtension.lowercased()
+            let isVideo = ["mp4", "mov", "m4v"].contains(ext)
+            let isPhoto = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
+            if isVideo || isPhoto {
+                // Media → chat + Foto e video crittografati
+                return [.chat, .encryptedMedia]
+            }
+            // File generico → chat + documenti
+            return [.chat, .document]
             
         case .unknown:
             return [.chat]
@@ -96,9 +103,11 @@ extension KBSharePayload {
             }
             
         case .image(let url):
-            // Immagine → chat e documenti
-            return KBSaveClassifier.shared.classify(
-                mediaURL: url?.absoluteString ?? "", mimeHint: .image)
+            // Foto → Foto e video crittografati
+            let fileName = url?.lastPathComponent ?? "foto.jpg"
+            return KBClassificationResult(
+                actions: [.encryptedMedia(sourceURL: url?.absoluteString ?? "", fileName: fileName, isVideo: false)],
+                detectedDate: nil, isAIClassified: false)
             
         case .file(let url):
             return classifyFile(url: url)
@@ -111,7 +120,13 @@ extension KBSharePayload {
     private func classifyFile(url: URL) -> KBClassificationResult {
         let ext = url.pathExtension.lowercased()
         let isVideo = ["mp4", "mov", "m4v"].contains(ext)
-        let hint: KBMediaHint = isVideo ? .video : .generic(fileName: url.lastPathComponent)
+        let isPhoto = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
+        if isVideo || isPhoto {
+            return KBClassificationResult(
+                actions: [.encryptedMedia(sourceURL: url.absoluteString, fileName: url.lastPathComponent, isVideo: isVideo)],
+                detectedDate: nil, isAIClassified: false)
+        }
+        let hint: KBMediaHint = .generic(fileName: url.lastPathComponent)
         return KBSaveClassifier.shared.classify(mediaURL: url.absoluteString, mimeHint: hint)
     }
 }
@@ -125,34 +140,37 @@ extension KBShareDestination {
     
     var label: String {
         switch self {
-        case .chat:     return "Chat famiglia"
-        case .document: return "Documenti"
-        case .todo:     return "To-Do"
-        case .grocery:  return "Lista spesa"
-        case .event:    return "Evento"
-        case .note:     return "Note"
+        case .chat:             return "Chat famiglia"
+        case .document:         return "Documenti"
+        case .todo:             return "To-Do"
+        case .grocery:          return "Lista spesa"
+        case .event:            return "Evento"
+        case .note:             return "Note"
+        case .encryptedMedia:   return "Foto e video"
         }
     }
     
     var icon: String {
         switch self {
-        case .chat:     return "bubble.left.and.bubble.right.fill"
-        case .document: return "folder.fill"
-        case .todo:     return "checkmark.circle.fill"
-        case .grocery:  return "cart.fill"
-        case .event:    return "calendar"
-        case .note:     return "note.text"
+        case .chat:             return "bubble.left.and.bubble.right.fill"
+        case .document:         return "folder.fill"
+        case .todo:             return "checkmark.circle.fill"
+        case .grocery:          return "cart.fill"
+        case .event:            return "calendar"
+        case .note:             return "note.text"
+        case .encryptedMedia:   return "photo.stack.fill"
         }
     }
     
     var color: Color {
         switch self {
-        case .chat:     return .blue
-        case .document: return Color(red: 0.6, green: 0.45, blue: 0.85)
-        case .todo:     return .orange
-        case .grocery:  return .green
-        case .event:    return .red
-        case .note:     return .yellow
+        case .chat:             return .blue
+        case .document:         return Color(red: 0.6, green: 0.45, blue: 0.85)
+        case .todo:             return .orange
+        case .grocery:          return .green
+        case .event:            return .red
+        case .note:             return .yellow
+        case .encryptedMedia:   return .cyan
         }
     }
     

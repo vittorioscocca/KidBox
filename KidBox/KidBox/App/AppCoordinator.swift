@@ -57,6 +57,11 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareTodoDraft: PendingShareTodoDraft? = nil
     @Published var pendingShareMediaCaption: String? = nil
     
+    /// Path locale (App Group) di una foto/video condivisi verso Foto e video crittografati.
+    @Published var pendingShareEncryptedMediaPath: String? = nil
+    /// "image" | "file" (video). Letto da FamilyPhotosView insieme a pendingShareEncryptedMediaPath.
+    @Published var pendingShareEncryptedMediaType: String? = nil
+    
     // MARK: - Active family
     
     /// The explicitly selected active family ID.
@@ -451,6 +456,37 @@ final class AppCoordinator: ObservableObject {
             // dalla copia locale già fatta (sharedFilePath nell'App Group filesystem,
             // non in UserDefaults). Nessun problema di race condition.
             navigate(to: .documentsHome)
+            
+        case "encryptedMedia":
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "activeFamilyId"), !fid.isEmpty {
+                KBLog.sync.kbInfo("handleIncomingShare encryptedMedia: activeFamilyId nil, fallback AppGroup fid=\(fid)")
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare encryptedMedia: activeFamilyId nil — abort")
+                return
+            }
+            guard !filePath.isEmpty else {
+                KBLog.sync.kbError("handleIncomingShare encryptedMedia: filePath empty — abort")
+                return
+            }
+            // Setta il pending PRIMA di navigate (o anche senza navigate se già in stack).
+            // FamilyPhotosView lo consuma via onReceive o onAppear.
+            pendingShareEncryptedMediaPath = filePath
+            pendingShareEncryptedMediaType = data["sharedFileType"] ?? "image"
+            // Naviga solo se FamilyPhotosView non è già nello stack —
+            // altrimenti pusheremmo una seconda istanza identica sopra quella esistente.
+            let alreadyInStack = path.contains {
+                if case .familyPhotos(let fid) = $0 { return fid == familyId }
+                return false
+            }
+            if !alreadyInStack {
+                navigate(to: .familyPhotos(familyId: familyId))
+            }
+            KBLog.sync.kbInfo("handleIncomingShare encryptedMedia: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
             
         default:
             break

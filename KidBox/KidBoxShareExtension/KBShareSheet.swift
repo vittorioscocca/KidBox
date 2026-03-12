@@ -71,18 +71,20 @@ struct KBShareSheet: View {
                 }
             }
             .task {
-                // Placeholder sincrono immediato
+                // Placeholder sincrono immediato — include già .encryptedMedia
+                // per foto/video grazie a KBSharePayload.defaultDestinations
                 destinations = payload.defaultDestinations
                 
-                // Raffina con AI (solo per testo/URL)
+                // Raffina con AI (solo per testo/URL non-media)
                 let result = await payload.classify()
                 let aiDests: [KBShareDestination] = result.actions.compactMap { action in
                     switch action {
-                    case .todo:     return .todo
-                    case .event:    return .event
-                    case .grocery:  return .grocery
-                    case .note:     return .note
-                    case .document: return .document
+                    case .todo:             return .todo
+                    case .event:            return .event
+                    case .grocery:          return .grocery
+                    case .note:             return .note
+                    case .document:         return .document
+                    case .encryptedMedia:   return .encryptedMedia   // ← NUOVO
                     }
                 }
                 guard !aiDests.isEmpty else { return }

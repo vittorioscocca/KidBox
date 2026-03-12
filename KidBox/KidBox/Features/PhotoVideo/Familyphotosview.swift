@@ -14,6 +14,7 @@ import FirebaseAuth
 import AVFoundation
 import AVKit
 import UniformTypeIdentifiers
+import Combine
 
 // MARK: - VideoTransferable
 // Wrapper per caricare video dal PhotosPicker come URL temporaneo.
@@ -238,6 +239,24 @@ struct FamilyPhotosView: View {
             .onDisappear {
                 SyncCenter.shared.stopPhotosRealtime()
                 vm.cleanup()
+            }
+        // ── Receive share-extension upload (encryptedMedia) ──────────────────
+        // onReceive: la view era già montata quando il coordinator ha settato il pending.
+        // onAppear: fallback per quando il pending era già settato prima che la view
+        //           apparisse (es. navigate avviene dopo il set, o view già in stack).
+            .onReceive(coordinator.$pendingShareEncryptedMediaPath.compactMap { $0 }) { path in
+                coordinator.pendingShareEncryptedMediaPath = nil
+                let type = coordinator.pendingShareEncryptedMediaType ?? "image"
+                coordinator.pendingShareEncryptedMediaType = nil
+                Task { await uploadFromAppGroup(path: path, fileType: type) }
+            }
+            .onAppear {
+                if let path = coordinator.pendingShareEncryptedMediaPath, !path.isEmpty {
+                    coordinator.pendingShareEncryptedMediaPath = nil
+                    let type = coordinator.pendingShareEncryptedMediaType ?? "image"
+                    coordinator.pendingShareEncryptedMediaType = nil
+                    Task { await uploadFromAppGroup(path: path, fileType: type) }
+                }
             }
     }
     
@@ -967,6 +986,122 @@ struct FamilyPhotosView: View {
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
     }
     
+    // MARK: - Upload da App Group (share extension → encryptedMedia)
+    
+    /// Legge il file copiato nell'App Group dalla Share Extension, lo carica
+    /// nell'album famiglia crittografato usando lo stesso path di uploadItems().
+    /// Cancella il file dall'App Group dopo l'upload.
+    private func uploadFromAppGroup(path: String, fileType: String) async {
+        guard !uid.isEmpty else {
+            KBLog.sync.kbError("uploadFromAppGroup: uid empty — abort")
+            return
+        }
+        
+        let fileURL  = URL(fileURLWithPath: path)
+        let ext      = fileURL.pathExtension.lowercased()
+        let isVideo  = ["mp4", "mov", "m4v"].contains(ext) || fileType == "video"
+        let mimeType = isVideo ? "video/mp4" : "image/jpeg"
+        let photoId  = UUID().uuidString
+        let now      = Date()
+        let fileName = "\(isVideo ? "video" : "photo")_\(photoId).\(isVideo ? "mp4" : "jpg")"
+        
+        KBLog.sync.kbInfo("uploadFromAppGroup: START isVideo=\(isVideo) photoId=\(photoId) path=\(fileURL.lastPathComponent)")
+        
+        await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
+        
+        // Cleanup App Group sempre — sia in caso di successo che di errore
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        
+        do {
+            // ── 1. Leggi i dati ──────────────────────────────────────────────────
+            guard let mediaData = try? Data(contentsOf: fileURL), !mediaData.isEmpty else {
+                KBLog.sync.kbError("uploadFromAppGroup: cannot read data path=\(path)")
+                await MainActor.run { withAnimation { isUploading = false }; uploadError = "Impossibile leggere il file." }
+                return
+            }
+            
+            // ── 2. Thumbnail + durata (video) ───────────────────────────────────
+            let thumbB64: String?
+            var videoDurationSecs: Double? = nil
+            if isVideo {
+                let thumbFromURL  = await PhotoRemoteStore.makeVideoThumbnail(url: fileURL)
+                let thumbFromData = thumbFromURL == nil
+                ? await PhotoRemoteStore.makeVideoThumbnail(from: mediaData)
+                : nil
+                let thumbData = thumbFromURL ?? thumbFromData
+                thumbB64 = thumbData?.base64EncodedString()
+                videoDurationSecs = await VideoCompressor.videoDuration(url: fileURL)
+            } else {
+                thumbB64 = PhotoRemoteStore.makeThumbnail(from: mediaData)?.base64EncodedString()
+            }
+            
+            // ── 3. Crea KBFamilyPhoto locale ────────────────────────────────────
+            let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
+            let photo = KBFamilyPhoto(
+                id: photoId, familyId: familyId,
+                fileName: fileName, mimeType: mimeType,
+                fileSize: Int64(mediaData.count),
+                storagePath: storagePath,
+                thumbnailBase64: thumbB64,
+                takenAt: now, createdAt: now, updatedAt: now,
+                createdBy: uid, updatedBy: uid
+            )
+            photo.syncState = .synced
+            photo.videoDurationSeconds = isVideo ? videoDurationSecs : nil
+            if !isVideo { cacheLocally(data: mediaData, photoId: photoId, photo: photo) }
+            
+            await MainActor.run {
+                modelContext.insert(photo)
+                try? modelContext.save()
+            }
+            
+            // ── 4. Upload su Firebase Storage (cifrato) ─────────────────────────
+            let dto = try await SyncCenter.photoRemote.upload(
+                photoId: photoId, familyId: familyId, userId: uid,
+                imageData: mediaData, fileName: fileName,
+                mimeType: mimeType, takenAt: now,
+                caption: nil, albumIds: [],
+                precomputedThumbnailB64: thumbB64,
+                precomputedVideoDurationSeconds: isVideo ? videoDurationSecs : nil,
+                onProgress: { p in Task { @MainActor in uploadProgress = p } }
+            )
+            
+            await MainActor.run {
+                photo.downloadURL = dto.downloadURL
+                photo.syncState = .synced
+                try? modelContext.save()
+            }
+            
+            // ── 5. Cache locale video — prima che defer cancelli il file App Group ──
+            // PhotoFullscreenView cerca il video in Caches/KBPhotos/{id}.mp4.
+            // Senza questo, dovrebbe riscaricarlo da Firebase Storage ogni volta.
+            if isVideo {
+                let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("KBPhotos", isDirectory: true)
+                try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+                let cachedVideoURL = cacheDir.appendingPathComponent("\(photoId).mp4")
+                if (try? FileManager.default.copyItem(at: fileURL, to: cachedVideoURL)) != nil {
+                    await MainActor.run {
+                        photo.localPath = cachedVideoURL.path
+                        try? modelContext.save()
+                    }
+                    KBLog.sync.kbDebug("uploadFromAppGroup: video cached locally photoId=\(photoId)")
+                }
+            }
+            
+            // ── 6. Cleanup App Group — gestito dal defer sopra ─────────────────
+            KBLog.sync.kbInfo("uploadFromAppGroup: OK photoId=\(photoId) isVideo=\(isVideo)")
+            
+        } catch {
+            await MainActor.run {
+                uploadError = error.localizedDescription
+                KBLog.sync.kbError("uploadFromAppGroup: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
+            }
+        }
+        
+        await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
+    }
+    
     private func cacheLocally(data: Data, photoId: String, photo: KBFamilyPhoto) {
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("KBPhotos", isDirectory: true)
@@ -979,6 +1114,7 @@ struct FamilyPhotosView: View {
     private func softDeletePhoto(_ photo: KBFamilyPhoto) {
         photo.isDeleted = true; photo.updatedAt = Date()
         try? modelContext.save()
+        vm.reloadLocal()   // aggiorna subito la griglia senza aspettare il listener Firestore
         let photoId = photo.id
         let fid = familyId
         Task {
