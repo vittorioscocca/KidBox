@@ -341,6 +341,12 @@ final class AppCoordinator: ObservableObject {
         case .noteDetail(familyId: let familyId, noteId: let noteId):
             NoteDetailView(familyId: familyId, noteId: noteId)
             
+            // MARK: - Foto e video
+        case .familyPhotos(familyId: let familyId):
+            FamilyPhotosView(familyId: familyId)
+        case .photoAlbumDetail(familyId: let familyId, albumId: let albumId, albumTitle: let title):
+            PhotoAlbumDetailView(familyId: familyId, albumId: albumId, albumTitle: title)
+            
         case .pediatricVisitDetail(familyId: let familyId, childId: let childId, visitId: let visitId):
             PediatricVisitDetailView(familyId: familyId, childId: childId, visitId: visitId)
         case .pediatricExams(familyId: let familyId, childId: let childId):

@@ -127,6 +127,7 @@ final class SyncCenter: ObservableObject {
         stopVaccinesRealtime()
         stopMedicalExamsRealtime()
         stopCalendarRealtime()
+        stopPhotosRealtime()    // ← Photos
         
         // Notifica UI: "sei stato buttato fuori"
         Self._currentUserRevoked.send(familyId)
@@ -704,13 +705,13 @@ final class SyncCenter: ObservableObject {
             case SyncEntityType.event.rawValue:
                 throw NSError(domain: "KidBox.Sync", code: -2002,
                               userInfo: [NSLocalizedDescriptionKey: "Event sync not implemented yet"])
-            
+                
             case SyncEntityType.note.rawValue:
                 try await processNote(op: op, modelContext: modelContext)
                 
             case SyncEntityType.familyBundle.rawValue:
                 try await self.processFamilyBundle(op: op, modelContext: modelContext)
-            
+                
             case SyncEntityType.treatment.rawValue:
                 try await processTreatment(op: op, modelContext: modelContext)
                 
@@ -731,6 +732,10 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.calendarEvent.rawValue:
                 try await processCalendarEvent(op: op, modelContext: modelContext)
+                
+                // MARK: - Photos (SyncCenter+Photos.swift)
+            case "photo", "photoAlbum":
+                try await processPhotoOp(op: op, modelContext: modelContext)
                 
             default:
                 throw NSError(domain: "KidBox.Sync", code: -2000,
@@ -1319,4 +1324,3 @@ extension SyncCenter {
         Self._currentUserRevoked.eraseToAnyPublisher()
     }
 }
-

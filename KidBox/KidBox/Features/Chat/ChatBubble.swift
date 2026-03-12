@@ -1580,7 +1580,7 @@ struct SenderAvatarView: View {
 }
 
 extension Comparable {
-    fileprivate func clamped(to r: ClosedRange<Self>) -> Self {
+    func clamped(to r: ClosedRange<Self>) -> Self {
         min(max(self, r.lowerBound), r.upperBound)
     }
 }
