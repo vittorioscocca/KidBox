@@ -1,102 +1,33 @@
 //
 //  ChatSaveSheet.swift
-//  KidBox
+//  KidBox  ← solo main app target
 //
-//  Created by vscocca on 11/03/26.
+//  Sheet "Salva in…" che appare tenendo premuto un messaggio in chat.
+//  Usa KBSaveClassifier (file condiviso) per la classificazione AI on-device.
 //
 
 import SwiftUI
 
-// MARK: - Azione risultante
-
-enum ChatSaveAction: Identifiable {
-    case todo(title: String)
-    case event(title: String, date: Date?)
-    case grocery(lines: [String])
-    case note(title: String, body: String)
-    case document(mediaURL: String, fileName: String)
-    
-    var id: String {
-        switch self {
-        case .todo:     return "todo"
-        case .event:    return "event"
-        case .grocery:  return "grocery"
-        case .note:     return "note"
-        case .document: return "document"
-        }
-    }
-}
-
-// MARK: - Detection
-
-extension KBChatMessage {
-    
-    /// Destinazioni "salva in…" disponibili per questo messaggio.
-    var saveDestinations: [ChatSaveAction] {
-        switch type {
-            
-        case .text:
-            guard let text = self.text,
-                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            else { return [] }
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            var result: [ChatSaveAction] = []
-            
-            // Lista ≥ 2 righe → grocery (prima)
-            let lines = trimmed.components(separatedBy: "\n")
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
-            if lines.count >= 2 {
-                result.append(.grocery(lines: lines))
-            }
-            
-            // Contiene data → evento
-            let detector = try? NSDataDetector(
-                types: NSTextCheckingResult.CheckingType.date.rawValue
-            )
-            let range = NSRange(trimmed.startIndex..., in: trimmed)
-            if let match = detector?.firstMatch(in: trimmed, range: range),
-               let date = match.date {
-                result.append(.event(title: trimmed, date: date))
-            }
-            
-            // Sempre: todo e nota
-            result.append(.todo(title: lines.first ?? trimmed))
-            result.append(.note(
-                title: lines.first ?? trimmed,
-                body: lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : trimmed
-            ))
-            return result
-            
-        case .photo:
-            guard let url = mediaURL else { return [] }
-            return [.document(mediaURL: url, fileName: "foto.jpg")]
-            
-        case .document:
-            guard let url = mediaURL else { return [] }
-            return [.document(mediaURL: url, fileName: self.text ?? "documento")]
-            
-        case .video:
-            guard let url = mediaURL else { return [] }
-            return [.document(mediaURL: url, fileName: "video.mp4")]
-            
-        case .audio, .location:
-            return []
-        }
-    }
-}
-
-// MARK: - Sheet view
+// MARK: - Sheet
 
 struct ChatSaveSheet: View {
     let message: KBChatMessage
-    let onSelect: (ChatSaveAction) -> Void
+    let onSelect: (KBSaveAction) -> Void
     let onDismiss: () -> Void
+    
+    @State private var actions: [KBSaveAction]? = nil   // nil = in caricamento
+    @State private var isAIClassified = false
+    
+    /// Mostra subito l'euristica sincrona, poi aggiorna con AI.
+    private var displayedActions: [KBSaveAction] {
+        actions ?? message.quickSaveActions
+    }
     
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
-                // Preview del contenuto
+                
+                // Preview testo
                 if let text = message.text, !text.isEmpty {
                     Text(text)
                         .font(.subheadline)
@@ -110,26 +41,43 @@ struct ChatSaveSheet: View {
                         .padding(.top, 8)
                 }
                 
-                Text("Salva in…")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                    .padding(.top, 16)
+                // Header
+                HStack {
+                    Text("Salva in…")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if actions != nil {
+                        if isAIClassified {
+                            Label("Apple Intelligence", systemImage: "sparkles")
+                                .font(.caption2)
+                                .foregroundStyle(.purple)
+                                .transition(.opacity)
+                        }
+                    } else {
+                        ProgressView().scaleEffect(0.7)
+                    }
+                }
+                .animation(.easeInOut, value: actions != nil)
+                .padding(.horizontal)
+                .padding(.top, 16)
                 
+                // Griglia azioni
                 LazyVGrid(
                     columns: [GridItem(.flexible()), GridItem(.flexible())],
                     spacing: 12
                 ) {
-                    ForEach(message.saveDestinations) { action in
+                    ForEach(displayedActions) { action in
                         Button {
                             onSelect(action)
                             onDismiss()
                         } label: {
-                            actionCard(action)
+                            ActionCard(action: action)
                         }
                         .buttonStyle(.plain)
                     }
                 }
+                .animation(.spring(duration: 0.35), value: displayedActions.map(\.id))
                 .padding()
                 
                 Spacer()
@@ -141,10 +89,23 @@ struct ChatSaveSheet: View {
                     Button("Annulla") { onDismiss() }
                 }
             }
+            .task {
+                let result = await message.classifyForSave()
+                withAnimation {
+                    actions = result.actions
+                    isAIClassified = result.isAIClassified
+                }
+            }
         }
     }
+}
+
+// MARK: - Card
+
+private struct ActionCard: View {
+    let action: KBSaveAction
     
-    private func actionCard(_ action: ChatSaveAction) -> some View {
+    var body: some View {
         HStack(spacing: 12) {
             Image(systemName: action.icon)
                 .font(.title3)
@@ -167,9 +128,93 @@ struct ChatSaveSheet: View {
     }
 }
 
-// MARK: - Label / icon / color
+// MARK: - KBChatMessage + classify
 
-private extension ChatSaveAction {
+extension KBChatMessage {
+    
+    /// Classificazione async con AI — chiamata da .task {}
+    func classifyForSave() async -> KBClassificationResult {
+        switch type {
+        case .text:
+            guard let text = self.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !text.isEmpty else { return .empty }
+            return await KBSaveClassifier.shared.classify(text: text)
+            
+        case .photo:
+            guard let url = mediaURL else { return .empty }
+            return KBSaveClassifier.shared.classify(mediaURL: url, mimeHint: .image)
+            
+        case .video:
+            guard let url = mediaURL else { return .empty }
+            return KBSaveClassifier.shared.classify(mediaURL: url, mimeHint: .video)
+            
+        case .document:
+            guard let url = mediaURL else { return .empty }
+            return KBSaveClassifier.shared.classify(
+                mediaURL: url, mimeHint: .generic(fileName: self.text ?? "documento"))
+            
+        case .audio, .location:
+            return .empty
+        }
+    }
+    
+    /// Euristica sincrona — preview immediato mentre l'AI elabora.
+    var quickSaveActions: [KBSaveAction] {
+        switch type {
+            
+        case .text:
+            guard let text = self.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !text.isEmpty else { return [] }
+            
+            let lines = text
+                .components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            
+            var result: [KBSaveAction] = []
+            if lines.count >= 2 { result.append(.grocery(lines: lines)) }
+            
+            let detector = try? NSDataDetector(
+                types: NSTextCheckingResult.CheckingType.date.rawValue)
+            let range = NSRange(text.startIndex..., in: text)
+            if let date = detector?.firstMatch(in: text, range: range)?.date {
+                result.append(.event(title: text, date: date))
+            }
+            result.append(.todo(title: lines.first ?? text))
+            result.append(.note(
+                title: lines.first ?? text,
+                body: lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : text))
+            return result
+            
+        case .photo:
+            guard let url = mediaURL else { return [] }
+            return [.document(mediaURL: url, fileName: "foto.jpg")]
+            
+        case .video:
+            guard let url = mediaURL else { return [] }
+            return [.document(mediaURL: url, fileName: "video.mp4")]
+            
+        case .document:
+            guard let url = mediaURL else { return [] }
+            return [.document(mediaURL: url, fileName: self.text ?? "documento")]
+            
+        case .audio, .location:
+            return []
+        }
+    }
+}
+
+// MARK: - KBClassificationResult convenience
+
+extension KBClassificationResult {
+    static var empty: KBClassificationResult {
+        .init(actions: [], detectedDate: nil, isAIClassified: false)
+    }
+}
+
+// MARK: - KBSaveAction display (SwiftUI — solo main app)
+
+extension KBSaveAction {
     var label: String {
         switch self {
         case .todo:     return "To-Do"
@@ -179,7 +224,6 @@ private extension ChatSaveAction {
         case .document: return "Documenti"
         }
     }
-    
     var icon: String {
         switch self {
         case .todo:     return "checkmark.circle.fill"
@@ -189,7 +233,6 @@ private extension ChatSaveAction {
         case .document: return "folder.fill"
         }
     }
-    
     var color: Color {
         switch self {
         case .todo:     return .orange

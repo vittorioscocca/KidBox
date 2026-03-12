@@ -79,7 +79,6 @@ struct ChatView: View {
 }
 
 // MARK: - DayGroup
-// Definita a livello file così ChatMessageList può usarla senza essere nested
 
 struct ChatDayGroup: Identifiable {
     let day: String
@@ -89,16 +88,9 @@ struct ChatDayGroup: Identifiable {
 }
 
 // MARK: - ChatMessageList
-//
-// Struct SEPARATA da ChatConversationView.
-// Contiene ScrollView, LazyVStack, pill flottante e bottone scroll-to-bottom.
-// I suoi @State interni (pill, showScrollToBottom) NON propagano re-render
-// al parent — quindi typing/upload/read-receipts nel viewModel non toccano
-// mai la lista messaggi.
 
 private struct ChatMessageList: View {
     
-    // Dati stabili — cambiano solo quando arriva un nuovo messaggio
     let dayGroups: [ChatDayGroup]
     let isLoadingOlder: Bool
     let hasMoreMessages: Bool
@@ -107,7 +99,6 @@ private struct ChatMessageList: View {
     let isPaginating: Bool
     let searchScrollTarget: String?
     
-    // Binding verso il parent (per reaction picker, highlight, selezione)
     @Binding var messageForReaction: KBChatMessage?
     @Binding var highlightedMessageId: String?
     @Binding var isSelecting: Bool
@@ -115,12 +106,10 @@ private struct ChatMessageList: View {
     
     let searchText: String
     
-    // Callbacks verso il parent — non causano re-render della lista
     let onNearTop: () -> Void
     let onMarkRead: () -> Void
     let onBubbleRow: (KBChatMessage, ScrollViewProxy) -> BubbleRowView
     
-    // MARK: - State interni (scoped a questa struct, non propagano su)
     @State private var showScrollToBottom = false
     @State private var floatingDateLabel: String = ""
     @State private var showFloatingDate: Bool = false
@@ -136,12 +125,9 @@ private struct ChatMessageList: View {
         }
     }
     
-    // MARK: - Scroll body
-    
     private func scrollBody(proxy: ScrollViewProxy) -> some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                // Header: loading / inizio conversazione
                 if isLoadingOlder {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
@@ -160,7 +146,6 @@ private struct ChatMessageList: View {
                         .padding(.vertical, 12)
                 }
                 
-                // Messaggi raggruppati per giorno
                 ForEach(dayGroups) { group in
                     daySeparator(group: group)
                     ForEach(group.messages) { msg in
@@ -171,7 +156,6 @@ private struct ChatMessageList: View {
                 Color.clear.frame(height: 1).id("bottom")
             }
             .padding(.vertical, 10)
-            // Scroll to search result
             .onChange(of: searchScrollTarget) { _, target in
                 guard let target else { return }
                 withAnimation(.easeInOut(duration: 0.25)) {
@@ -179,7 +163,6 @@ private struct ChatMessageList: View {
                 }
             }
         }
-        // Mostra/nascondi bottone scroll-to-bottom
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height > 200
         } action: { _, shouldShow in
@@ -187,13 +170,11 @@ private struct ChatMessageList: View {
                 showScrollToBottom = shouldShow
             }
         }
-        // Carica messaggi più vecchi quando si arriva in cima
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.contentOffset.y < 80
         } action: { wasNearTop, isNearTop in
             if isNearTop && !wasNearTop { onNearTop() }
         }
-        // Scroll automatico in fondo all'arrivo di un nuovo messaggio
         .onChange(of: lastMessageId) { _, id in
             guard id != nil, !isPaginating else { return }
             withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
@@ -205,13 +186,9 @@ private struct ChatMessageList: View {
         }
     }
     
-    // MARK: - Day separator con pill flottante
-    
     private func daySeparator(group: ChatDayGroup) -> some View {
         ChatDaySeparator(label: group.label)
             .id("day-\(group.day)")
-        // onScrollVisibilityChange è lo swap pulito del vecchio GeometryReader:
-        // non fa layout pass extra, scatta solo quando la view entra/esce dal viewport.
             .onScrollVisibilityChange(threshold: 0.01) { isVisible in
                 if isVisible { showFloatingPill(label: group.label) }
             }
@@ -231,8 +208,6 @@ private struct ChatMessageList: View {
         }
     }
     
-    // MARK: - Floating pill
-    
     @ViewBuilder
     private var floatingDatePill: some View {
         if showFloatingDate {
@@ -250,8 +225,6 @@ private struct ChatMessageList: View {
                 .zIndex(10)
         }
     }
-    
-    // MARK: - Scroll to bottom button
     
     @ViewBuilder
     private func scrollToBottomButton(proxy: ScrollViewProxy) -> some View {
@@ -279,9 +252,6 @@ private struct ChatMessageList: View {
 }
 
 // MARK: - BubbleRowView
-//
-// Struct SEPARATA (non nested). Riceve tutto come parametri value-type o callback.
-// NON osserva il viewModel → si re-renderizza solo quando cambia msg o i binding.
 
 struct BubbleRowView: View, Equatable {
     static func == (lhs: BubbleRowView, rhs: BubbleRowView) -> Bool {
@@ -432,12 +402,6 @@ private struct ChatConversationView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // ChatMessageList è una struct separata: i suoi @State interni
-            // (pill, showScrollToBottom) non propagano re-render qui.
-            // Quando viewModel pubblica typing/upload/read, questo VStack
-            // si ri-renderizza, ma SwiftUI confronta i parametri di ChatMessageList
-            // — se dayGroups e lastMessageId non sono cambiati, la lista NON viene
-            // ricreata.
             ChatMessageList(
                 dayGroups: dayGroups,
                 isLoadingOlder: viewModel.isLoadingOlder,
@@ -462,21 +426,15 @@ private struct ChatConversationView: View {
                 }
             )
             .contentShape(Rectangle())
-            .onTapGesture {
-                isInputFocused = false
-            }
+            .onTapGesture { isInputFocused = false }
             .scrollDismissesKeyboard(.interactively)
             
             errorBanner
             uploadProgress
             typingBanner
             
-            if viewModel.isEditing {
-                editingBar
-            }
-            if viewModel.isReplying {
-                replyBar
-            }
+            if viewModel.isEditing { editingBar }
+            if viewModel.isReplying { replyBar }
             if isSelecting {
                 ZStack(alignment: .bottom) {
                     selectionBar
@@ -502,7 +460,6 @@ private struct ChatConversationView: View {
                 await CountersService.shared.reset(familyId: familyId, field: .chat)
                 await MainActor.run { BadgeManager.shared.clearChat() }
             }
-            // ── Share Extension: testo ──
             if let text = coordinator.pendingShareText {
                 coordinator.pendingShareText = nil
                 viewModel.inputText = text
@@ -514,30 +471,19 @@ private struct ChatConversationView: View {
             Task { await viewModel.sendVideo(from: url) }
         }
         .task(id: coordinator.pendingShareImagePath) {
-            // ── Share Extension: immagine o file ──
-            // Usiamo .task così siamo certi che onAppear (e bind/startListening)
-            // siano già stati eseguiti. id: cambia solo quando arriva un nuovo file.
             guard let filePath = coordinator.pendingShareImagePath else { return }
             coordinator.pendingShareImagePath = nil
-            
-            // Aspetta che il viewModel sia completamente pronto
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-            
-            // Se un upload precedente è rimasto bloccato, resetta
             viewModel.resetUploadStateIfStuck()
-            
             let fileURL = URL(fileURLWithPath: filePath)
             let ext = fileURL.pathExtension.lowercased()
-            
             guard let data = try? Data(contentsOf: fileURL) else {
                 KBLog.data.kbError("ShareChat: impossibile leggere il file path=\(filePath)")
                 return
             }
-            
             let imageExts = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"]
             let videoExts = ["mp4", "mov", "m4v"]
-            
             if imageExts.contains(ext) {
                 viewModel.sendMedia(data: data, type: .photo)
             } else if videoExts.contains(ext) {
@@ -545,14 +491,11 @@ private struct ChatConversationView: View {
             } else {
                 viewModel.sendDocument(url: fileURL)
             }
-            
-            // Pulisci il file dall'App Group dopo averlo letto
             try? FileManager.default.removeItem(at: fileURL)
         }
         .onDisappear {
             viewModel.stopListening()
             BadgeManager.shared.activeSections.remove("chat")
-            
         }
         .toolbar {
             if isSelecting {
@@ -584,9 +527,7 @@ private struct ChatConversationView: View {
             Task { await handlePickedMedia(item) }
             mediaPickerItems = []
         }
-        .onChange(of: searchText) { _, _ in
-            dayGroups = buildGroups()
-        }
+        .onChange(of: searchText) { _, _ in dayGroups = buildGroups() }
         .onChange(of: viewModel.messages.last?.id) { _, _ in
             guard !viewModel.isPaginating else { return }
             dayGroups = buildGroups()
@@ -657,8 +598,6 @@ private struct ChatConversationView: View {
     }
     
     // MARK: - makeBubbleRow
-    // Funzione helper che calcola i dati dal viewModel PRIMA di passarli a BubbleRowView.
-    // BubbleRowView riceve solo valori semplici → non osserva il viewModel → niente re-render.
     
     private func makeBubbleRow(msg: KBChatMessage, proxy: ScrollViewProxy) -> BubbleRowView {
         let uid = Auth.auth().currentUser?.uid ?? ""
@@ -700,54 +639,9 @@ private struct ChatConversationView: View {
         }
     }
     
-    // MARK: - Editing bar
+    // MARK: - handleSaveAction
     
-    private var editingBar: some View {
-        HStack(spacing: 10) {
-            Rectangle()
-                .fill(Color.accentColor)
-                .frame(width: 3)
-                .clipShape(Capsule())
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Modifica messaggio")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                Text(viewModel.editingOriginalText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-            Button { viewModel.cancelEditing() } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(barBackground)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    
-    private func mimeTypeFromFileName(_ name: String) -> String {
-        let ext = (name as NSString).pathExtension.lowercased()
-        switch ext {
-        case "pdf":  return "application/pdf"
-        case "jpg", "jpeg": return "image/jpeg"
-        case "png":  return "image/png"
-        case "doc":  return "application/msword"
-        case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        case "xls":  return "application/vnd.ms-excel"
-        case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        case "mp4":  return "video/mp4"
-        case "mov":  return "video/quicktime"
-        default:     return "application/octet-stream"
-        }
-    }
-    
-    private func handleSaveAction(_ action: ChatSaveAction) {
+    private func handleSaveAction(_ action: KBSaveAction) {
         guard !familyId.isEmpty else { return }
         
         switch action {
@@ -766,7 +660,6 @@ private struct ChatConversationView: View {
             coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: nil))
             
         case .grocery(let lines):
-            // Crea tutti gli articoli direttamente, stessa logica di GroceryListView
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
             for line in lines {
@@ -811,9 +704,6 @@ private struct ChatConversationView: View {
                 let uid = Auth.auth().currentUser?.uid ?? ""
                 let docId = UUID().uuidString
                 let mimeType = mimeTypeFromFileName(fileName)
-                
-                // Estrai lo storagePath dal downloadURL
-                // Il path è nel parametro "o/" dell'URL Firebase
                 let storagePath = Self.extractStoragePath(from: mediaURL)
                 ?? "families/\(familyId)/chat/\(fileName)"
                 
@@ -857,16 +747,60 @@ private struct ChatConversationView: View {
         }
     }
     
+    // MARK: - Helpers
+    
+    private func mimeTypeFromFileName(_ name: String) -> String {
+        let ext = (name as NSString).pathExtension.lowercased()
+        switch ext {
+        case "pdf":  return "application/pdf"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "png":  return "image/png"
+        case "doc":  return "application/msword"
+        case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "xls":  return "application/vnd.ms-excel"
+        case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "mp4":  return "video/mp4"
+        case "mov":  return "video/quicktime"
+        default:     return "application/octet-stream"
+        }
+    }
+    
     private static func extractStoragePath(from downloadURL: String) -> String? {
-        // Firebase download URL format:
-        // https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encoded_path}?alt=media&token=...
         guard let url = URL(string: downloadURL),
-              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let pathComponent = url.pathComponents.firstIndex(of: "o").map({ url.pathComponents[$0 + 1] })
         else { return nil }
-        
-        // Il path è URL-encoded, lo decodichiamo
         return pathComponent.removingPercentEncoding
+    }
+    
+    // MARK: - Editing bar
+    
+    private var editingBar: some View {
+        HStack(spacing: 10) {
+            Rectangle()
+                .fill(Color.accentColor)
+                .frame(width: 3)
+                .clipShape(Capsule())
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Modifica messaggio")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(viewModel.editingOriginalText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            Button { viewModel.cancelEditing() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(barBackground)
+        .fixedSize(horizontal: false, vertical: true)
     }
     
     // MARK: - Reply bar
@@ -1015,7 +949,6 @@ private struct ChatConversationView: View {
     private var typingBanner: some View {
         if !viewModel.typingUsers.isEmpty {
             HStack(spacing: 6) {
-                // Avatar circolari piccoli degli utenti che scrivono
                 HStack(spacing: -6) {
                     ForEach(viewModel.typingUsers.prefix(3), id: \.self) { name in
                         TypingAvatarView(name: name)
@@ -1163,11 +1096,9 @@ private struct ChatConversationView: View {
         .overlay(Divider(), alignment: .top)
     }
     
-    // MARK: - Helpers
+    // MARK: - Selection helpers
     
-    private var currentUID: String {
-        Auth.auth().currentUser?.uid ?? ""
-    }
+    private var currentUID: String { Auth.auth().currentUser?.uid ?? "" }
     
     private var canDeleteForEveryone: Bool {
         guard !selectedMessageIds.isEmpty else { return false }
@@ -1191,16 +1122,6 @@ private struct ChatConversationView: View {
         selectedMessageIds.removeAll()
         isSelecting = false
         showDeleteBar = false
-    }
-    
-    private func sendLocation() {
-        ChatLocationService.shared.requestLocation { location in
-            guard let location else { return }
-            viewModel.sendLocation(
-                latitude: location.coordinate.latitude,
-                longitude: location.coordinate.longitude
-            )
-        }
     }
     
     private func handlePickedMedia(_ item: PhotosPickerItem) async {
@@ -1272,7 +1193,6 @@ private struct TypingAvatarView: View {
         return String(name.prefix(2))
     }
     
-    // Colore deterministico basato sul nome
     private var color: Color {
         let colors: [Color] = [
             .orange, .purple, .pink, .teal, .indigo, .green, .blue, .red
@@ -1373,4 +1293,3 @@ private struct DocumentPicker: UIViewControllerRepresentable {
         }
     }
 }
-

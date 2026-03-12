@@ -1,8 +1,6 @@
 //
 //  KBShareSheet.swift
-//  KidBoxShareExtension
-//
-//  Created by vscocca on 10/03/26.
+//  KBShare  ← solo Share Extension target
 //
 
 import SwiftUI
@@ -14,6 +12,8 @@ struct KBShareSheet: View {
     weak var extensionContext: NSExtensionContext?
     
     @State private var remoteImage: UIImage? = nil
+    @State private var destinations: [KBShareDestination] = []
+    @State private var isAIClassified = false
     
     var body: some View {
         NavigationStack {
@@ -23,20 +23,33 @@ struct KBShareSheet: View {
                 
                 Divider()
                 
-                Text("Invia a…")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-                    .padding(.top, 16)
+                HStack {
+                    Text("Invia a…")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if isAIClassified {
+                        Label("Apple Intelligence", systemImage: "sparkles")
+                            .font(.caption2)
+                            .foregroundStyle(.purple)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut, value: isAIClassified)
+                .padding(.horizontal)
+                .padding(.top, 16)
                 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(payload.availableDestinations) { dest in
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: 12
+                ) {
+                    ForEach(destinations) { dest in
                         NavigationLink {
                             KBShareEditView(
                                 destination: dest,
                                 payload: payload,
                                 onDone: onDismiss,
-                                onOpenApp: onOpenApp, 
+                                onOpenApp: onOpenApp,
                                 extensionContext: extensionContext
                             )
                         } label: {
@@ -45,6 +58,7 @@ struct KBShareSheet: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .animation(.spring(duration: 0.35), value: destinations.map(\.id))
                 .padding()
                 
                 Spacer()
@@ -56,8 +70,38 @@ struct KBShareSheet: View {
                     Button("Annulla") { onDismiss() }
                 }
             }
+            .task {
+                // Placeholder sincrono immediato
+                destinations = payload.defaultDestinations
+                
+                // Raffina con AI (solo per testo/URL)
+                let result = await payload.classify()
+                let aiDests: [KBShareDestination] = result.actions.compactMap { action in
+                    switch action {
+                    case .todo:     return .todo
+                    case .event:    return .event
+                    case .grocery:  return .grocery
+                    case .note:     return .note
+                    case .document: return .document
+                    }
+                }
+                guard !aiDests.isEmpty else { return }
+                
+                // .chat va sempre in prima posizione
+                var finalDests = aiDests
+                if !finalDests.contains(.chat) {
+                    finalDests.insert(.chat, at: 0)
+                }
+                
+                withAnimation {
+                    destinations = finalDests
+                    isAIClassified = result.isAIClassified
+                }
+            }
         }
     }
+    
+    // MARK: - Content Preview
     
     @ViewBuilder
     private var contentPreview: some View {
@@ -69,12 +113,15 @@ struct KBShareSheet: View {
                     .frame(height: 120).clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            
         case .text(let t):
             Text(t)
                 .font(.subheadline)
                 .lineLimit(3)
                 .padding(12)
-                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.secondary.opacity(0.08),
+                            in: RoundedRectangle(cornerRadius: 10))
+            
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
                 filePreviewCard(for: fileURL)
@@ -104,12 +151,16 @@ struct KBShareSheet: View {
                     .foregroundStyle(.blue)
                     .lineLimit(2)
             }
+            
         case .file(let url):
             filePreviewCard(for: url)
+            
         case .unknown:
             EmptyView()
         }
     }
+    
+    // MARK: - Helpers
     
     private func isImageURL(_ u: String) -> Bool {
         let ext = URL(string: u)?.pathExtension.lowercased() ?? ""
@@ -132,13 +183,13 @@ struct KBShareSheet: View {
             Spacer()
         }
         .padding(12)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.secondary.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: 10))
     }
     
     private func fileIcon(for url: URL) -> String {
-        let ext = url.pathExtension.lowercased()
-        switch ext {
-        case "pdf":                          return "doc.richtext.fill"
+        switch url.pathExtension.lowercased() {
+        case "pdf":                         return "doc.richtext.fill"
         case "jpg", "jpeg", "png", "heic":  return "photo.fill"
         case "mp4", "mov", "m4v":           return "video.fill"
         case "doc", "docx":                 return "doc.fill"
@@ -166,6 +217,7 @@ struct KBShareSheet: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(14)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color(.secondarySystemBackground),
+                    in: RoundedRectangle(cornerRadius: 14))
     }
 }

@@ -1,11 +1,19 @@
 //
 //  KBShareModels.swift
-//  KidBox
+//  KBShare  ← solo Share Extension target
 //
-//  Created by vscocca on 10/03/26.
+//  Adatta KBSaveClassifier (file condiviso) al contesto della Share Extension.
+//  Qui non esiste KBChatMessage — lavoriamo direttamente con KBSharePayload.
 //
+
 import Foundation
 import SwiftUI
+
+// MARK: - Payload in ingresso dalla Share Extension
+
+struct KBSharePayload {
+    let type: KBShareContentType
+}
 
 enum KBShareContentType {
     case image(URL?)
@@ -15,118 +23,101 @@ enum KBShareContentType {
     case unknown
 }
 
-struct KBSharePayload {
-    let type: KBShareContentType
-}
-
-extension KBShareDestination {
-    var rawStringValue: String {
-        switch self {
-        case .chat:     return "chat"
-        case .document: return "document"
-        case .todo:     return "todo"
-        case .grocery:  return "grocery"
-        case .event:    return "event"
-        case .note:     return "note"
-        }
-    }
-}
-
-// MARK: - Destinazioni disponibili per tipo di contenuto
+// MARK: - Classificazione payload → destinazioni
 //
 // Matrice contenuto → destinazioni:
 //
-// Testo          → Chat, Note, Todo, (Evento se contiene data), (Spesa se è una lista)
+// Testo          → Chat, Note, Todo, (Evento se contiene data), (Spesa se lista)
 // URL web        → Chat, Note, Todo
 // Immagine       → Chat, Documenti
 // File generico  → Chat, Documenti
-// Video          → Chat (solo — upload pesante, via App Group)
+// Video          → Chat  (upload pesante, via App Group)
 // Sconosciuto    → Chat
+//
+// .chat è SEMPRE presente — è la chat interna di KidBox.
 
 extension KBSharePayload {
     
-    var availableDestinations: [KBShareDestination] {
+    /// Destinazioni sincrone di default — placeholder immediato prima che l'AI risponda.
+    var defaultDestinations: [KBShareDestination] {
         switch type {
             
         case .image:
-            // Immagine → chat o archivio documenti famiglia
             return [.chat, .document]
             
-        case .text(let t):
-            return destinations(forText: t)
+        case .text:
+            return [.chat, .note, .todo]
             
         case .url(let u):
-            if let fileURL = URL(string: u), fileURL.isFileURL {
-                // File locale (es. PDF da iCloud Drive)
-                return destinations(forFileURL: fileURL)
-            } else {
-                // URL web → chat, note, todo (un link può diventare
-                // un appunto o un'attività da fare)
-                return [.chat, .note, .todo]
+            if let f = URL(string: u), f.isFileURL {
+                return [.chat, .document]
             }
+            return [.chat, .note, .todo]
             
         case .file(let url):
-            return destinations(forFileURL: url)
+            let isVideo = ["mp4", "mov", "m4v"].contains(url.pathExtension.lowercased())
+            // Video → solo chat (upload pesante via App Group)
+            return isVideo ? [.chat] : [.chat, .document]
             
         case .unknown:
             return [.chat]
         }
     }
     
-    // MARK: - Helpers
+    /// Classificazione async AI — da chiamare in .task {} o in un Task dal ViewController.
+    /// Per contenuti non-testuali restituisce direttamente le destinazioni corrette
+    /// senza passare per il classifier (che lavora solo su testo).
+    func classify() async -> KBClassificationResult {
+        switch type {
+            
+        case .text(let t):
+            return await KBSaveClassifier.shared.classify(text: t)
+            
+        case .url(let u):
+            if let fileURL = URL(string: u), fileURL.isFileURL {
+                return classifyFile(url: fileURL)
+            } else {
+                // URL web: l'AI classifica il testo dell'URL
+                // ma escludiamo .document che non ha senso per un link
+                let result = await KBSaveClassifier.shared.classify(text: u)
+                let filtered = result.actions.filter {
+                    if case .document = $0 { return false }
+                    return true
+                }
+                return KBClassificationResult(
+                    actions: filtered,
+                    detectedDate: result.detectedDate,
+                    isAIClassified: result.isAIClassified
+                )
+            }
+            
+        case .image(let url):
+            // Immagine → chat e documenti
+            return KBSaveClassifier.shared.classify(
+                mediaURL: url?.absoluteString ?? "", mimeHint: .image)
+            
+        case .file(let url):
+            return classifyFile(url: url)
+            
+        case .unknown:
+            return KBClassificationResult(actions: [], detectedDate: nil, isAIClassified: false)
+        }
+    }
     
-    /// Destinazioni per un file locale in base all'estensione.
-    private func destinations(forFileURL url: URL) -> [KBShareDestination] {
+    private func classifyFile(url: URL) -> KBClassificationResult {
         let ext = url.pathExtension.lowercased()
-        let isVideo = ["mp4", "mov", "m4v", "m4v"].contains(ext)
-        
-        if isVideo {
-            // Video: solo chat (upload via App Group, nessun senso archiviarli in Documenti)
-            return [.chat]
-        } else {
-            // PDF, doc, immagine, zip, ecc. → chat o documenti famiglia
-            return [.chat, .document]
-        }
-    }
-    
-    /// Destinazioni per testo puro, con euristica sul contenuto.
-    private func destinations(forText text: String) -> [KBShareDestination] {
-        // Base: chat, note, todo
-        var result: [KBShareDestination] = [.chat, .note, .todo]
-        
-        // Se il testo contiene una data → suggerisci Evento (posizione 1)
-        if looksLikeDate(text) {
-            result.insert(.event, at: 1)
-        }
-        
-        // Se il testo è una lista di righe → suggerisci Lista spesa
-        // (inserita dopo .event se presente, altrimenti dopo .chat)
-        if looksLikeList(text) {
-            let groceryIndex = result.firstIndex(of: .todo) ?? result.endIndex
-            result.insert(.grocery, at: groceryIndex)
-        }
-        
-        return result
-    }
-    
-    private func looksLikeDate(_ t: String) -> Bool {
-        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue)
-        return detector?.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)) != nil
-    }
-    
-    private func looksLikeList(_ t: String) -> Bool {
-        let lines = t.components(separatedBy: "\n")
-            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-        return lines.count >= 2
+        let isVideo = ["mp4", "mov", "m4v"].contains(ext)
+        let hint: KBMediaHint = isVideo ? .video : .generic(fileName: url.lastPathComponent)
+        return KBSaveClassifier.shared.classify(mediaURL: url.absoluteString, mimeHint: hint)
     }
 }
 
-// MARK: - KBShareDestination
+// MARK: - KBShareDestination display (SwiftUI — share extension)
+//
+// KBShareDestination è definito in KBSaveClassifier.swift (file condiviso).
+// Qui aggiungiamo solo la parte visuale.
 
-enum KBShareDestination: CaseIterable, Identifiable {
-    case chat, document, todo, grocery, event, note
-    
-    var id: Self { self }
+extension KBShareDestination {
     
     var label: String {
         switch self {
@@ -160,4 +151,6 @@ enum KBShareDestination: CaseIterable, Identifiable {
         case .note:     return .yellow
         }
     }
+    
+    var rawStringValue: String { rawValue }
 }

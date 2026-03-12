@@ -1079,7 +1079,7 @@ struct ChatBubble: View {
             Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
         }
         
-        if !message.saveDestinations.isEmpty {
+        if !message.quickSaveActions.isEmpty {
             Button { onSaveToApp?() } label: {
                 Label("Salva in…", systemImage: "square.and.arrow.down")
             }

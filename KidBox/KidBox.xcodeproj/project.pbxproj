@@ -81,6 +81,7 @@
 		7CF617902F60B2BE007587D9 /* Exceptions for "KidBox" folder in "KidBoxShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"App/AI Core/Kbsaveclassifier.swift",
 				Data/Remote/ChatStore/ChatRemoteStore.swift,
 				Data/Remote/ChatStore/ChatStorageService.swift,
 				Data/Remote/DocumentStore/DocumentCryptoService.swift,
