@@ -355,19 +355,30 @@ final class PhotoRemoteStore {
     
     func upsertAlbum(dto: RemoteAlbumDTO) async throws {
         guard let uid = Auth.auth().currentUser?.uid else { throw PhotoStoreError.notAuthenticated }
+        let ref = db.collection("families").document(dto.familyId)
+            .collection("photoAlbums").document(dto.id)
+        // familyId salvato esplicitamente — necessario per ricostruire il documento
+        // correttamente su device che non hanno ancora l'album in locale.
+        // createdAt usa SetOptions merge: non sovrascrivere se già presente.
         var data: [String: Any] = [
+            "familyId":  dto.familyId,
             "title":     dto.title,
             "sortOrder": dto.sortOrder,
             "isDeleted": dto.isDeleted,
             "createdBy": dto.createdBy,
             "updatedBy": uid,
-            "updatedAt": FieldValue.serverTimestamp(),
-            "createdAt": FieldValue.serverTimestamp()
+            "updatedAt": FieldValue.serverTimestamp()
         ]
         if let v = dto.coverPhotoId { data["coverPhotoId"] = v }
-        try await db.collection("families").document(dto.familyId)
-            .collection("photoAlbums").document(dto.id)
-            .setData(data, merge: true)
+        // Prima scrittura: imposta anche createdAt
+        // Con merge: true, se il documento esiste già createdAt non viene toccato
+        // perché usiamo setData con merge solo sui campi presenti — ma serverTimestamp
+        // lo sovrascrive comunque. Usiamo una transazione per preservarlo.
+        let snap = try await ref.getDocument()
+        if !snap.exists {
+            data["createdAt"] = FieldValue.serverTimestamp()
+        }
+        try await ref.setData(data, merge: true)
     }
     
     func softDeleteAlbum(familyId: String, albumId: String) async throws {
@@ -383,6 +394,7 @@ final class PhotoRemoteStore {
         onChange: @escaping ([AlbumRemoteChange]) -> Void,
         onError: @escaping (Error) -> Void
     ) -> ListenerRegistration {
+        KBLog.sync.kbInfo("Albums listener attach familyId=\(familyId)")
         return db.collection("families").document(familyId)
             .collection("photoAlbums")
             .addSnapshotListener { snap, err in
@@ -394,7 +406,10 @@ final class PhotoRemoteStore {
                     case .removed: return .remove(doc.documentID)
                     case .added, .modified:
                         return .upsert(RemoteAlbumDTO(
-                            id: doc.documentID, familyId: familyId,
+                            id: doc.documentID,
+                            // Legge familyId dal documento (scritto dal fix upsertAlbum).
+                            // Fallback al parametro per documenti scritti prima del fix.
+                            familyId: d["familyId"] as? String ?? familyId,
                             title: d["title"] as? String ?? "",
                             coverPhotoId: d["coverPhotoId"] as? String,
                             sortOrder: d["sortOrder"] as? Int ?? 0,
@@ -406,6 +421,7 @@ final class PhotoRemoteStore {
                         ))
                     }
                 }
+                KBLog.sync.kbDebug("Albums listener snapshot changes=\(snap.documentChanges.count) emitting=\(changes.count) familyId=\(familyId)")
                 if !changes.isEmpty { onChange(changes) }
             }
     }

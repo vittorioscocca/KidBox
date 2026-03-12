@@ -215,6 +215,42 @@ extension SyncCenter {
         return p
     }
     
+    // MARK: - Direct album upload (non cancellabile)
+    
+    /// Carica l'album direttamente su Firestore senza passare dall'outbox cancellabile.
+    /// Usato da createAlbum/createAlbumAndAddSelected per garantire che la scrittura
+    /// non venga annullata da un secondo flushGlobal concorrente.
+    func uploadAlbumDirectly(albumId: String, familyId: String, modelContext: ModelContext) {
+        Task {
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+            let aid = albumId
+            guard let album = try? modelContext.fetch(
+                FetchDescriptor<KBPhotoAlbum>(predicate: #Predicate { $0.id == aid })
+            ).first else {
+                KBLog.sync.kbError("uploadAlbumDirectly: album not found id=\(albumId)")
+                return
+            }
+            do {
+                try await Self.photoRemote.upsertAlbum(dto: RemoteAlbumDTO(
+                    id: album.id, familyId: album.familyId, title: album.title,
+                    coverPhotoId: album.coverPhotoId, sortOrder: album.sortOrder,
+                    createdBy: album.createdBy, updatedBy: uid,
+                    createdAt: album.createdAt, updatedAt: album.updatedAt,
+                    isDeleted: album.isDeleted
+                ))
+                await MainActor.run {
+                    album.syncState = .synced
+                    try? modelContext.save()
+                }
+                KBLog.sync.kbInfo("uploadAlbumDirectly: OK albumId=\(albumId)")
+            } catch {
+                KBLog.sync.kbError("uploadAlbumDirectly: FAILED albumId=\(albumId) err=\(error.localizedDescription)")
+                // Fallback: metti in outbox per retry automatico
+                enqueueAlbumUpsert(albumId: albumId, familyId: familyId, modelContext: modelContext)
+            }
+        }
+    }
+    
     // MARK: - Outbox enqueue
     
     func enqueuePhotoUpsert(photoId: String, familyId: String, modelContext: ModelContext) {
@@ -227,6 +263,20 @@ extension SyncCenter {
     
     func enqueueAlbumUpsert(albumId: String, familyId: String, modelContext: ModelContext) {
         upsertOp(familyId: familyId, entityType: "photoAlbum", entityId: albumId, opType: "upsert", modelContext: modelContext)
+    }
+    
+    /// Elimina l'album direttamente su Firestore senza passare dall'outbox cancellabile.
+    func deleteAlbumDirectly(albumId: String, familyId: String, modelContext: ModelContext) {
+        Task {
+            do {
+                try await Self.photoRemote.softDeleteAlbum(familyId: familyId, albumId: albumId)
+                KBLog.sync.kbInfo("deleteAlbumDirectly: OK albumId=\(albumId)")
+            } catch {
+                KBLog.sync.kbError("deleteAlbumDirectly: FAILED albumId=\(albumId) err=\(error.localizedDescription)")
+                // Fallback: outbox per retry automatico
+                enqueueAlbumDelete(albumId: albumId, familyId: familyId, modelContext: modelContext)
+            }
+        }
     }
     
     func enqueueAlbumDelete(albumId: String, familyId: String, modelContext: ModelContext) {

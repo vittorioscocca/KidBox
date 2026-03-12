@@ -471,10 +471,17 @@ private struct ChatConversationView: View {
             Task { await viewModel.sendVideo(from: url) }
         }
         .task(id: coordinator.pendingShareImagePath) {
+            // Cattura subito il path — azzerare pendingShareImagePath causa
+            // un re-render che ri-esegue questo task con id=nil, cancellando
+            // il task in corso prima che l'invio avvenga.
+            // Soluzione: capture → sleep → nil → send, tutto nella stessa esecuzione.
             guard let filePath = coordinator.pendingShareImagePath else { return }
-            coordinator.pendingShareImagePath = nil
+            // Aspetta che il ChatViewModel sia pronto prima di azzerare il path
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
+            // Solo ora azzeriamo — il task non verrà ri-eseguito perché siamo
+            // già dentro la sua esecuzione e SwiftUI non può interromperla.
+            coordinator.pendingShareImagePath = nil
             viewModel.resetUploadStateIfStuck()
             let fileURL = URL(fileURLWithPath: filePath)
             let ext = fileURL.pathExtension.lowercased()

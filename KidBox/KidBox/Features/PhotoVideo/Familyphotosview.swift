@@ -52,35 +52,20 @@ enum VideoCompressor {
             return nil
         }
         
-        guard let session = AVAssetExportSession(asset: asset, presetName: preset) else {
-            KBLog.sync.kbError("VideoCompressor: AVAssetExportSession init failed")
-            return nil
-        }
-        
         let output = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("mp4")
         
-        session.outputURL = output
-        session.outputFileType = .mp4
-        session.shouldOptimizeForNetworkUse = true
-        
         KBLog.sync.kbDebug("VideoCompressor: export start preset=\(preset) output=\(output.lastPathComponent)")
-        await session.export()
-        
-        switch session.status {
-        case .completed:
+        do {
+            let session = AVAssetExportSession(asset: asset, presetName: preset)
+            try await session?.export(to: output, as: .mp4)
             let size = (try? output.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             KBLog.sync.kbInfo("VideoCompressor: export OK bytes=\(size) preset=\(preset)")
             return output
-        case .failed:
-            KBLog.sync.kbError("VideoCompressor: export FAILED err=\(session.error?.localizedDescription ?? "unknown")")
-            return nil
-        case .cancelled:
-            KBLog.sync.kbError("VideoCompressor: export CANCELLED")
-            return nil
-        default:
-            KBLog.sync.kbError("VideoCompressor: export unexpected status=\(session.status.rawValue)")
+        } catch {
+            KBLog.sync.kbError("VideoCompressor: export FAILED err=\(error.localizedDescription)")
+            try? FileManager.default.removeItem(at: output)
             return nil
         }
     }
@@ -92,22 +77,14 @@ enum VideoCompressor {
         try? FileManager.default.removeItem(at: destination)
         
         let asset = AVURLAsset(url: source)
-        guard let session = AVAssetExportSession(asset: asset,
-                                                 presetName: AVAssetExportPresetPassthrough) else {
-            KBLog.sync.kbError("VideoCompressor.remux: AVAssetExportSession init failed")
-            return nil
-        }
-        session.outputURL = destination
-        session.outputFileType = .mp4
-        session.shouldOptimizeForNetworkUse = true  // sposta moov in testa
-        
-        await session.export()
-        
-        if session.status == .completed {
+        do {
+            let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough)
+            try await session?.export(to: destination, as: .mp4)
             KBLog.sync.kbDebug("VideoCompressor.remux: OK \(source.lastPathComponent) → \(destination.lastPathComponent)")
             return destination
-        } else {
-            KBLog.sync.kbError("VideoCompressor.remux: FAILED status=\(session.status.rawValue) err=\(session.error?.localizedDescription ?? "?")")
+        } catch {
+            KBLog.sync.kbError("VideoCompressor.remux: FAILED err=\(error.localizedDescription)")
+            try? FileManager.default.removeItem(at: destination)
             return nil
         }
     }
@@ -153,10 +130,22 @@ struct FamilyPhotosView: View {
     @State private var isSelectMode = false
     @State private var selectedIds: Set<String> = []
     @State private var dragSelectIsAdding = true   // true = stiamo aggiungendo, false = rimuovendo
+    // Condivisione
+    @State private var isPreparingShare = false
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet = false
+    // Invia in chat
+    @State private var isSendingToChat = false
+    @State private var sendToChatError: String?
     // Album
     @State private var showAddToAlbum = false
     @State private var showCreateAlbumFromSelection = false
     @State private var uploadTargetAlbumId: String? = nil   // album scelto prima dell'upload
+    // Selezione multipla album
+    @State private var isAlbumSelectMode = false
+    @State private var selectedAlbumIds: Set<String> = []
+    // Larghezza reale della griglia foto
+    @State private var gridWidth: CGFloat = UIScreen.main.bounds.width
     
     private var photos: [KBFamilyPhoto] { vm.photos }
     private var albums: [KBPhotoAlbum]  { vm.albums }
@@ -189,10 +178,17 @@ struct FamilyPhotosView: View {
             
             if isUploading { uploadBanner }
             if isSelectMode { selectionToolbar }
+            if isAlbumSelectMode { albumSelectionToolbar }
         }
-        .navigationTitle(isSelectMode
-                         ? (selectedIds.isEmpty ? "Seleziona" : "\(selectedIds.count) selezionat\(selectedIds.count == 1 ? "o" : "i")")
-                         : "Foto e video")
+        .navigationTitle({
+            if isSelectMode {
+                return selectedIds.isEmpty ? "Seleziona" : "\(selectedIds.count) selezionat\(selectedIds.count == 1 ? "o" : "i")"
+            } else if isAlbumSelectMode {
+                return selectedAlbumIds.isEmpty ? "Seleziona" : "\(selectedAlbumIds.count) album selezionat\(selectedAlbumIds.count == 1 ? "o" : "i")"
+            } else {
+                return "Foto e video"
+            }
+        }())
         .navigationBarTitleDisplayMode(.large)
         .toolbar { toolbarItems }
         .animation(.snappy(duration: 0.22), value: isSelectMode)
@@ -202,6 +198,12 @@ struct FamilyPhotosView: View {
             maxSelectionCount: 30,
             matching: .any(of: [.images, .videos])
         )
+        .onChange(of: tab) { _, _ in
+            withAnimation(.snappy) {
+                isSelectMode = false; selectedIds = []
+                isAlbumSelectMode = false; selectedAlbumIds = []
+            }
+        }
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty else { return }
             let captured = items; pickerItems = []
@@ -216,10 +218,17 @@ struct FamilyPhotosView: View {
         .sheet(isPresented: $showCreateAlbum) { createAlbumSheet }
         .sheet(isPresented: $showAddToAlbum) { addToAlbumSheet }
         .sheet(isPresented: $showCreateAlbumFromSelection) { createAlbumFromSelectionSheet }
+        .sheet(isPresented: $showShareSheet) {
+            ActivityViewController(activityItems: shareItems)
+        }
         .alert("Errore caricamento", isPresented: Binding(
             get: { uploadError != nil },
             set: { if !$0 { uploadError = nil } }
         )) { Button("OK") { uploadError = nil } } message: { Text(uploadError ?? "") }
+            .alert("Errore invio in chat", isPresented: Binding(
+                get: { sendToChatError != nil },
+                set: { if !$0 { sendToChatError = nil } }
+            )) { Button("OK") { sendToChatError = nil } } message: { Text(sendToChatError ?? "") }
             .task {
                 // Aggancia il ViewModel al ModelContext e avvia il listener Firestore.
                 // bind() è idempotente: il secondo .task su re-render non fa nulla.
@@ -238,35 +247,38 @@ struct FamilyPhotosView: View {
     private var toolbarItems: some ToolbarContent {
         // Tasto Annulla (solo in select mode)
         ToolbarItem(placement: .navigationBarLeading) {
-            if isSelectMode {
+            if isSelectMode || isAlbumSelectMode {
                 Button("Annulla") {
                     withAnimation(.snappy) {
                         isSelectMode = false
                         selectedIds = []
+                        isAlbumSelectMode = false
+                        selectedAlbumIds = []
                     }
                 }
             }
         }
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             if isSelectMode {
-                // Seleziona tutto / deseleziona tutto
                 Button(selectedIds.count == photos.count ? "Deseleziona tutto" : "Seleziona tutto") {
                     withAnimation(.snappy) {
-                        if selectedIds.count == photos.count {
-                            selectedIds = []
-                        } else {
-                            selectedIds = Set(photos.map(\.id))
-                        }
+                        if selectedIds.count == photos.count { selectedIds = [] }
+                        else { selectedIds = Set(photos.map(\.id)) }
+                    }
+                }
+                .font(.subheadline)
+            } else if isAlbumSelectMode {
+                Button(selectedAlbumIds.count == albums.count ? "Deseleziona tutto" : "Seleziona tutto") {
+                    withAnimation(.snappy) {
+                        if selectedAlbumIds.count == albums.count { selectedAlbumIds = [] }
+                        else { selectedAlbumIds = Set(albums.map(\.id)) }
                     }
                 }
                 .font(.subheadline)
             } else {
                 if tab == .library {
                     Button {
-                        withAnimation(.snappy) {
-                            isSelectMode = true
-                            selectedIds = []
-                        }
+                        withAnimation(.snappy) { isSelectMode = true; selectedIds = [] }
                     } label: {
                         Text("Seleziona").font(.subheadline)
                     }
@@ -279,30 +291,25 @@ struct FamilyPhotosView: View {
                             }
                         }
                     } label: { Image(systemName: "slider.horizontal.3") }
+                } else {
+                    // tab == .albums
+                    if !albums.isEmpty {
+                        Button {
+                            withAnimation(.snappy) { isAlbumSelectMode = true; selectedAlbumIds = [] }
+                        } label: {
+                            Text("Seleziona").font(.subheadline)
+                        }
+                    }
                 }
-                Menu {
-                    // Carica senza album
+                if tab == .library {
                     PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .any(of: [.images, .videos])) {
-                        Label("Senza album", systemImage: "photo.on.rectangle")
+                        Image(systemName: "plus")
                     }
                     .simultaneousGesture(TapGesture().onEnded { uploadTargetAlbumId = nil })
-                    Divider()
-                    // Carica in un album esistente
-                    ForEach(vm.albums) { album in
-                        PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .any(of: [.images, .videos])) {
-                            Label(album.title, systemImage: "rectangle.stack")
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { uploadTargetAlbumId = album.id })
+                } else {
+                    Button { showCreateAlbum = true } label: {
+                        Image(systemName: "plus")
                     }
-                    if !vm.albums.isEmpty { Divider() }
-                    // Crea nuovo album e carica
-                    Button {
-                        showCreateAlbum = true
-                    } label: {
-                        Label("Nuovo album…", systemImage: "plus.rectangle.on.folder")
-                    }
-                } label: {
-                    Image(systemName: "plus")
                 }
             }
         }
@@ -330,6 +337,14 @@ struct FamilyPhotosView: View {
                     }
                 }
                 .padding(.bottom, 24)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: GridWidthKey.self, value: geo.size.width)
+                    }
+                )
+                .onPreferenceChange(GridWidthKey.self) { w in
+                    if w > 0 && w != gridWidth { gridWidth = w }
+                }
             }
             // .id forza SwiftUI a ricreare lo ScrollView dopo la dismiss del fullscreen,
             // evitando il freeze dell'offset che si verifica con fullScreenCover.
@@ -339,9 +354,8 @@ struct FamilyPhotosView: View {
     
     private func photoGrid(_ items: [KBFamilyPhoto]) -> some View {
         let spacing: CGFloat = 2
-        let cols = Array(repeating: GridItem(.flexible(), spacing: spacing), count: 3)
-        let screenWidth = UIScreen.main.bounds.width
-        let cellSize = floor((screenWidth - spacing * 2) / 3)
+        let cellSize = floor((gridWidth - spacing * 2) / 3)
+        let cols = Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: 3)
         let rows = Int(ceil(Double(items.count) / 3.0))
         let gridHeight = CGFloat(rows) * cellSize + CGFloat(max(rows - 1, 0)) * spacing
         
@@ -403,6 +417,12 @@ struct FamilyPhotosView: View {
                     }
                     .contextMenu {
                         if !isSelectMode {
+                            Button {
+                                Task { await sendToChat(photo) }
+                            } label: {
+                                Label("Invia in chat", systemImage: "bubble.left.and.bubble.right")
+                            }
+                            Divider()
                             Button(role: .destructive) { softDeletePhoto(photo) } label: {
                                 Label("Elimina", systemImage: "trash")
                             }
@@ -468,28 +488,66 @@ struct FamilyPhotosView: View {
                           GridItem(.fixed(cellW), spacing: spacing)],
                 spacing: spacing
             ) {
+                // Bottone "Nuovo album" — nascosto in select mode ma sempre nel layout
+                // per evitare il re-layout animato che causa la sovrapposizione delle card.
                 Button { showCreateAlbum = true } label: {
                     AlbumCreateCard(cellWidth: cellW)
                 }
                 .buttonStyle(.plain)
+                .opacity(isAlbumSelectMode ? 0 : 1)
+                .allowsHitTesting(!isAlbumSelectMode)
                 
                 ForEach(albums) { album in
                     let albumPhotos = photos.filter { $0.albumIds.contains(album.id) }
-                    Button {
-                        coordinator.navigate(to: .photoAlbumDetail(
-                            familyId: familyId,
-                            albumId: album.id,
-                            albumTitle: album.title
-                        ))
-                    } label: {
-                        AlbumCard(album: album,
-                                  previewPhotos: Array(albumPhotos.prefix(1)),
-                                  cellWidth: cellW)
+                    let isSelected = selectedAlbumIds.contains(album.id)
+                    
+                    AlbumCard(album: album,
+                              previewPhotos: Array(albumPhotos.prefix(1)),
+                              cellWidth: cellW)
+                    // Overlay scuro + checkbox in select mode
+                    .overlay {
+                        if isAlbumSelectMode {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.black.opacity(isSelected ? 0 : 0.28))
+                                .animation(.easeInOut(duration: 0.12), value: isSelected)
+                        }
                     }
-                    .buttonStyle(.plain)
+                    .overlay(alignment: .topLeading) {
+                        if isAlbumSelectMode {
+                            ZStack {
+                                Circle()
+                                    .strokeBorder(Color.white, lineWidth: 1.5)
+                                    .background(Circle().fill(isSelected ? Color.blue : Color.black.opacity(0.25)))
+                                if isSelected {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .frame(width: 24, height: 24)
+                            .padding(8)
+                            .animation(.spring(duration: 0.2), value: isSelected)
+                        }
+                    }
+                    .onTapGesture {
+                        if isAlbumSelectMode {
+                            withAnimation(.snappy) {
+                                if isSelected { selectedAlbumIds.remove(album.id) }
+                                else { selectedAlbumIds.insert(album.id) }
+                            }
+                        } else {
+                            coordinator.navigate(to: .photoAlbumDetail(
+                                familyId: familyId,
+                                albumId: album.id,
+                                albumTitle: album.title
+                            ))
+                        }
+                    }
                     .contextMenu {
-                        Button(role: .destructive) { softDeleteAlbum(album) } label: {
-                            Label("Elimina album", systemImage: "trash")
+                        if !isAlbumSelectMode {
+                            Button(role: .destructive) { softDeleteAlbum(album) } label: {
+                                Label("Elimina album", systemImage: "trash")
+                            }
                         }
                     }
                 }
@@ -548,16 +606,21 @@ struct FamilyPhotosView: View {
         HStack(spacing: 0) {
             // Condividi
             Button {
-                // TODO: share selectedIds
+                Task { await shareSelected() }
             } label: {
                 VStack(spacing: 4) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 22))
+                    if isPreparingShare {
+                        ProgressView()
+                            .frame(width: 22, height: 22)
+                    } else {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 22))
+                    }
                     Text("Condividi").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
             }
-            .disabled(selectedIds.isEmpty)
+            .disabled(selectedIds.isEmpty || isPreparingShare)
             
             // Aggiungi ad album
             Button {
@@ -590,6 +653,35 @@ struct FamilyPhotosView: View {
                 .foregroundStyle(selectedIds.isEmpty ? .secondary : Color.red)
             }
             .disabled(selectedIds.isEmpty)
+        }
+        .padding(.top, 10)
+        .padding(.bottom, 28)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) { Divider() }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+    
+    // MARK: - Album selection toolbar
+    
+    private var albumSelectionToolbar: some View {
+        HStack(spacing: 0) {
+            Button(role: .destructive) {
+                let toDelete = albums.filter { selectedAlbumIds.contains($0.id) }
+                withAnimation(.snappy) {
+                    toDelete.forEach { softDeleteAlbum($0) }
+                    isAlbumSelectMode = false
+                    selectedAlbumIds = []
+                }
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 22))
+                    Text("Elimina").font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(selectedAlbumIds.isEmpty ? .secondary : Color.red)
+            }
+            .disabled(selectedAlbumIds.isEmpty)
         }
         .padding(.top, 10)
         .padding(.bottom, 28)
@@ -908,9 +1000,9 @@ struct FamilyPhotosView: View {
         )
         modelContext.insert(album)
         try? modelContext.save()
-        vm.reloadLocal()   // forza aggiornamento immediato della lista album
-        SyncCenter.shared.enqueueAlbumUpsert(albumId: album.id, familyId: familyId, modelContext: modelContext)
-        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        vm.reloadLocal()
+        // Upload diretto (non outbox cancellabile) per garantire la sync
+        SyncCenter.shared.uploadAlbumDirectly(albumId: album.id, familyId: familyId, modelContext: modelContext)
         newAlbumTitle = ""
     }
     
@@ -924,7 +1016,6 @@ struct FamilyPhotosView: View {
             photo.updatedAt = Date()
         }
         try? modelContext.save()
-        // Sincronizza ogni foto modificata su Firestore
         for photo in toUpdate {
             SyncCenter.shared.enqueuePhotoUpsert(photoId: photo.id, familyId: familyId, modelContext: modelContext)
         }
@@ -942,19 +1033,124 @@ struct FamilyPhotosView: View {
         modelContext.insert(album)
         try? modelContext.save()
         vm.reloadLocal()
-        SyncCenter.shared.enqueueAlbumUpsert(albumId: album.id, familyId: familyId, modelContext: modelContext)
-        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        SyncCenter.shared.uploadAlbumDirectly(albumId: album.id, familyId: familyId, modelContext: modelContext)
         addSelectedPhotos(toAlbum: album.id)
     }
     
     private func softDeleteAlbum(_ album: KBPhotoAlbum) {
         album.isDeleted = true; album.updatedAt = Date()
         try? modelContext.save()
-        SyncCenter.shared.enqueueAlbumDelete(albumId: album.id, familyId: familyId, modelContext: modelContext)
-        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        vm.reloadLocal()
+        SyncCenter.shared.deleteAlbumDirectly(albumId: album.id, familyId: familyId, modelContext: modelContext)
+    }
+    
+    // MARK: - Share selected
+    
+    private func shareSelected() async {
+        guard !selectedIds.isEmpty else { return }
+        await MainActor.run { isPreparingShare = true }
+        
+        var items: [Any] = []
+        let selected = photos.filter { selectedIds.contains($0.id) }
+        
+        for photo in selected {
+            // 1. Prova dalla cache locale
+            if let path = photo.localPath, FileManager.default.fileExists(atPath: path) {
+                if photo.isVideo {
+                    items.append(URL(fileURLWithPath: path))
+                } else if let img = UIImage(contentsOfFile: path) {
+                    items.append(img)
+                }
+                continue
+            }
+            // 2. Scarica e decrittografa
+            guard !photo.storagePath.isEmpty else { continue }
+            do {
+                let data = try await SyncCenter.photoRemote.download(
+                    storagePath: photo.storagePath, familyId: familyId, userId: uid
+                )
+                if photo.isVideo {
+                    let tmpURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("\(photo.id).mp4")
+                    try? data.write(to: tmpURL)
+                    items.append(tmpURL)
+                } else if let img = UIImage(data: data) {
+                    items.append(img)
+                }
+            } catch {
+                KBLog.sync.kbError("shareSelected: download failed photoId=\(photo.id) err=\(error.localizedDescription)")
+            }
+        }
+        
+        await MainActor.run {
+            isPreparingShare = false
+            if !items.isEmpty {
+                shareItems = items
+                showShareSheet = true
+            }
+        }
+    }
+    
+    // MARK: - Send to chat
+    
+    private func sendToChat(_ photo: KBFamilyPhoto) async {
+        await MainActor.run { isSendingToChat = true }
+        
+        let ext = photo.isVideo ? "mp4" : "jpg"
+        // File temporaneo dedicato per la chat: ChatView lo elimina dopo l'invio,
+        // quindi non usiamo la cache KBPhotos per non invalidarla.
+        let tmpURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(photo.id)_chat.\(ext)")
+        
+        do {
+            // 1. Se già in cache su disco, copiamo lì (senza toccare la cache)
+            let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("KBPhotos", isDirectory: true)
+            let cachedURL = cacheDir.appendingPathComponent("\(photo.id).\(ext)")
+            
+            if FileManager.default.fileExists(atPath: cachedURL.path) {
+                try? FileManager.default.removeItem(at: tmpURL)
+                try FileManager.default.copyItem(at: cachedURL, to: tmpURL)
+            } else {
+                // 2. Scarica e decrittografa
+                guard !photo.storagePath.isEmpty else {
+                    await MainActor.run { isSendingToChat = false }
+                    return
+                }
+                let data = try await SyncCenter.photoRemote.download(
+                    storagePath: photo.storagePath, familyId: familyId, userId: uid
+                )
+                try data.write(to: tmpURL, options: .atomic)
+            }
+            
+            // 3. Naviga alla chat — usa sempre pendingShareImagePath (gestisce anche i video
+            //    via estensione file e attende 800ms che il ChatViewModel sia pronto)
+            await MainActor.run {
+                isSendingToChat = false
+                coordinator.pendingShareImagePath = tmpURL.path
+                coordinator.navigate(to: .chat)
+            }
+        } catch {
+            await MainActor.run {
+                isSendingToChat = false
+                sendToChatError = error.localizedDescription
+            }
+        }
     }
 }
 
+
+// MARK: - ActivityViewController
+
+private struct ActivityViewController: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
 
 // MARK: - KBFamilyPhoto grid identity
 
@@ -1314,6 +1510,15 @@ private struct VideoPlayerCell: UIViewControllerRepresentable {
     }
 }
 
+
+// MARK: - GridWidthKey
+
+private struct GridWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
 
 // MARK: - Supporting types
 
