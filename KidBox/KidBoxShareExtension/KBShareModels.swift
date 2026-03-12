@@ -45,8 +45,12 @@ extension KBSharePayload {
         case .image:
             return [.chat, .document]
             
-        case .text:
-            return [.chat, .note, .todo]
+        case .text(let t):
+            let lines = t.components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            let isShort = lines.count == 1 && t.count < 120
+            return isShort ? [.chat, .note, .todo] : [.chat, .note]
             
         case .url(let u):
             if let f = URL(string: u), f.isFileURL {

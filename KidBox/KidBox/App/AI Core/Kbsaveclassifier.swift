@@ -4,16 +4,17 @@
 //
 //  Classificazione intelligente del contenuto condiviso:
 //
-//  1. iOS 18.1+ con Apple Intelligence → FoundationModels on-device LLM
-//  2. iOS 18.1+ senza Apple Intelligence → euristica italiana potenziata
+//  1. iOS 18.1+ con Apple Intelligence → FoundationModels on-device LLM (attivo)
+//  2. iOS 18.1+ senza Apple Intelligence → euristica italiana potenziata (fallback)
 //  3. iOS < 18.1 → euristica italiana potenziata
 //
-//  Per attivare Foundation Models:
-//  - Aggiungi il framework "FoundationModels" al target in Xcode
-//  - Decommentare `import FoundationModels` e il body di `classifyWithAI`
+//  Requisiti Xcode:
+//  - Aggiungi "FoundationModels" framework al target (KidBox + KidBoxShareExtension)
+//  - Il device deve avere Apple Intelligence abilitata (iPhone 15 Pro+ / iPad M1+, iOS 18.1+)
 //
 
 import Foundation
+import FoundationModels
 
 // MARK: - Destinazioni
 
@@ -82,18 +83,9 @@ public actor KBSaveClassifier {
     
     @available(iOS 18.1, *)
     private func classifyWithFoundationModels(text: String) async throws -> KBClassificationResult {
-        
-        // ── ATTIVAZIONE ────────────────────────────────────────────────────
-        // 1. Aggiungi "FoundationModels" framework al target in Xcode
-        // 2. Aggiungi `import FoundationModels` in cima al file
-        // 3. Sostituisci il corpo di questa funzione con:
-        //
-        // let session = try LanguageModelSession()
-        // let response = try await session.respond(to: Prompt(buildPrompt(text)))
-        // return try parseAIResponse(response.content, originalText: text)
-        // ───────────────────────────────────────────────────────────────────
-        
-        throw ClassifierError.modelUnavailable
+        let session = LanguageModelSession()
+        let response = try await session.respond(to: buildPrompt(text))
+        return try parseAIResponse(response.content, originalText: text)
     }
     
     // MARK: - Prompt
@@ -229,6 +221,8 @@ public actor KBSaveClassifier {
         }
         
         // ── TODO ──────────────────────────────────────────────────────────
+        // Un todo è quasi sempre breve e su riga singola.
+        // Testo multiriga o lungo è quasi sempre una nota → penalizza fortemente.
         let todoKeywords = [
             "devo", "dobbiamo", "dovrei", "dovremmo", "bisogna",
             "ricordati", "ricordatevi", "ricorda", "non dimenticare",
@@ -242,7 +236,10 @@ public actor KBSaveClassifier {
             "urgente", "importante", "priorità"
         ]
         var todoScore = todoKeywords.filter { lower.contains($0) }.count
-        if trimmed.count < 80 && lines.count == 1 { todoScore += 1 }          // testo breve e diretto
+        if trimmed.count < 80 && lines.count == 1 { todoScore += 2 }  // breve e diretto → boost
+        if lines.count >= 3 { todoScore -= 3 }                        // 3+ righe → quasi mai un todo
+        if lines.count >= 5 { todoScore -= 5 }                        // 5+ righe → mai un todo
+        if trimmed.count > 200 { todoScore -= 3 }                     // testo lungo → penalizza
         if todoScore >= 1 {
             scored.append((.todo(title: lines.first ?? trimmed), todoScore + 1))
         }

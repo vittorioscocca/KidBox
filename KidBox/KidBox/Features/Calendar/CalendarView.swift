@@ -282,7 +282,7 @@ private struct MiniMonthView: View {
     
     var body: some View {
         VStack(spacing: 4) {
-            Text(monthDate, format: .dateTime.month(.abbreviated))
+            Text(monthDate, format: .dateTime.month(.abbreviated).locale(Locale(identifier: "it_IT")))
                 .font(.caption.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
@@ -393,7 +393,7 @@ private struct MonthDetailView: View {
                     Image(systemName: "chevron.left").foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(displayedMonth, format: .dateTime.month(.wide).year())
+                Text(displayedMonth, format: .dateTime.month(.wide).year().locale(Locale(identifier: "it_IT")))
                     .font(.headline)
                 Spacer()
                 Button {
@@ -768,6 +768,7 @@ struct CalendarEventFormView: View {
             Spacer()
             DatePicker("", selection: selection, displayedComponents: components)
                 .labelsHidden()
+                .environment(\.locale, Locale(identifier: "it_IT"))
         }
     }
     

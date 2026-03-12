@@ -55,6 +55,7 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareVideoPath: String? = nil
     @Published var pendingShareEventDraft: PendingShareEventDraft? = nil
     @Published var pendingShareTodoDraft: PendingShareTodoDraft? = nil
+    @Published var pendingShareMediaCaption: String? = nil
     
     // MARK: - Active family
     
@@ -370,15 +371,24 @@ final class AppCoordinator: ObservableObject {
             
         case "chat":
             navigate(to: .chat)
+            
+            let caption = data["caption"].flatMap { $0.isEmpty ? nil : $0 }
+            
             if !filePath.isEmpty {
                 let fileType = data["sharedFileType"] ?? ""
-                if fileType == "video" {
+                pendingShareMediaCaption = caption   // nil se non c'era caption
+                
+                switch fileType {
+                case "video":
                     pendingShareVideoPath = filePath
-                } else {
+                case "document":
+                    pendingShareImagePath = filePath  // oppure pendingShareDocumentPath se ce l'hai
+                default:  // "image"
                     pendingShareImagePath = filePath
                 }
             } else {
                 pendingShareText = text.isEmpty ? title : text
+                // Testo puro → caption non usato (il testo È già il messaggio)
             }
             
         case "todo":

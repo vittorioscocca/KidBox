@@ -180,7 +180,10 @@ extension KBChatMessage {
             if let date = detector?.firstMatch(in: text, range: range)?.date {
                 result.append(.event(title: text, date: date))
             }
-            result.append(.todo(title: lines.first ?? text))
+            // Todo solo per testo breve su riga singola
+            if lines.count == 1 && text.count < 120 {
+                result.append(.todo(title: lines.first ?? text))
+            }
             result.append(.note(
                 title: lines.first ?? text,
                 body: lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : text))

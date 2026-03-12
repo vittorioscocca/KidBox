@@ -5,6 +5,7 @@
 
 import SwiftUI
 import UIKit
+import AVFoundation
 import os.log
 
 private enum ShareSendResult {
@@ -34,6 +35,8 @@ struct KBShareEditView: View {
     @State private var remoteImage: UIImage? = nil
     @State private var videoSavedToAppGroup = false
     @State private var deferredBannerDestination: KBShareDestination? = nil
+    @FocusState private var inputFocused: Bool
+    @State private var videoThumbnail: UIImage? = nil
     
     private let appGroupId = "group.it.vittorioscocca.kidbox"
     private let logger = Logger(subsystem: "it.vittorioscocca.KidBox.ShareExtension", category: "KBShareEditView")
@@ -46,56 +49,398 @@ struct KBShareEditView: View {
     // MARK: - Body
     
     var body: some View {
-        ScrollView {
+        Group {
             if videoSavedToAppGroup {
-                videoSuccessView
+                ScrollView { videoSuccessView }
             } else if let deferredDestination = deferredBannerDestination {
-                deferredSuccessView(for: deferredDestination)
+                ScrollView { deferredSuccessView(for: deferredDestination) }
+            } else if destination == .chat {
+                chatLayout
             } else {
-                VStack(alignment: .leading, spacing: 20) {
-                    payloadPreview
-                        .padding(.top, 8)
-                    
-                    editFields
-                    
-                    if let error = errorMessage {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, 4)
-                    }
-                    
-                    Spacer(minLength: 40)
-                    
-                    Button {
-                        Task { await sendToDestination() }
-                    } label: {
-                        HStack {
-                            if isSending {
-                                ProgressView().tint(.white)
-                                Text("Invio in corso…")
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(.white)
-                            } else {
-                                Image(systemName: destination.icon)
-                                Text(confirmLabel)
-                            }
-                        }
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
-                    }
-                    .disabled(isSending)
-                }
-                .padding()
+                standardLayout
             }
         }
         .navigationTitle(destination.label)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { prefillFields() }
+        .onAppear {
+            prefillFields()
+            // Apri subito la tastiera se è un testo in chat
+            if destination == .chat, case .text = payload.type {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    inputFocused = true
+                }
+            }
+        }
         .onChange(of: destination) { _, _ in prefillFields() }
+    }
+    
+    // MARK: - Chat layout
+    
+    private var isTextOnlyPayload: Bool {
+        if case .text = payload.type { return true }
+        return false
+    }
+    
+    private var chatLayout: some View {
+        VStack(spacing: 0) {
+            if isTextOnlyPayload {
+                // ── TESTO: solo chat bar, tastiera aperta automaticamente ──
+                Spacer()
+                HStack(alignment: .bottom, spacing: 10) {
+                    TextField("Modifica il messaggio…", text: $editedText, axis: .vertical)
+                        .lineLimit(1...10)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 1))
+                        .focused($inputFocused)
+                    
+                    sendCircleButton
+                        .disabled(isSending || editedText.isEmpty)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color(.secondarySystemBackground))
+                
+            } else {
+                // ── MEDIA / FILE / LINK: preview + pulsante invia ──
+                ScrollView {
+                    VStack(spacing: 24) {
+                        mediaPreview
+                            .padding(.top, 20)
+                            .padding(.horizontal, 16)
+                        
+                        if let error = errorMessage {
+                            Text(error)
+                                .font(.caption).foregroundStyle(.red)
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        sendBigButton
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 24)
+                    }
+                }
+            }
+            
+            if isTextOnlyPayload, let error = errorMessage {
+                Text(error)
+                    .font(.caption).foregroundStyle(.red)
+                    .padding(.horizontal, 16).padding(.bottom, 8)
+            }
+        }
+        .task { await generateVideoThumbnailIfNeeded() }
+    }
+    
+    // MARK: - Send circle (tasto freccia ↑, per testo)
+    
+    private var sendCircleButton: some View {
+        Button { Task { await sendToDestination() } } label: {
+            Group {
+                if isSending {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 16, weight: .bold))
+                }
+            }
+            .frame(width: 36, height: 36)
+            .background(
+                editedText.isEmpty ? Color.secondary.opacity(0.4) : destination.color,
+                in: Circle()
+            )
+            .foregroundStyle(.white)
+        }
+        .disabled(isSending || editedText.isEmpty)
+    }
+    
+    // MARK: - Send big button (media/file)
+    
+    private var sendBigButton: some View {
+        Button { Task { await sendToDestination() } } label: {
+            HStack(spacing: 12) {
+                if isSending {
+                    ProgressView().tint(.white)
+                    Text("Invio in corso…")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                } else {
+                    // Icona "paper plane" per chat — diversa dal solito destination.icon
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 18, weight: .bold))
+                    Text("Invia in chat")
+                        .font(.subheadline.bold())
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(destination.color, in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: destination.color.opacity(0.35), radius: 8, y: 4)
+        }
+        .disabled(isSending)
+    }
+    
+    // MARK: - Media preview (chat, non-testo)
+    
+    @ViewBuilder
+    private var mediaPreview: some View {
+        switch payload.type {
+            
+        case .image(let url):
+            if let url, let img = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 340)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+            }
+            
+        case .file(let url):
+            let ext = url.pathExtension.lowercased()
+            let isVideo = ["mp4", "mov", "m4v"].contains(ext)
+            let isImg   = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
+            
+            if isVideo {
+                videoPreviewCard(for: url)
+            } else if isImg, let img = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 340)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+            } else {
+                documentPreviewCard(for: url)
+            }
+            
+        case .url(let u):
+            if let fileURL = URL(string: u), fileURL.isFileURL {
+                let ext = fileURL.pathExtension.lowercased()
+                if ["mp4", "mov", "m4v"].contains(ext) {
+                    videoPreviewCard(for: fileURL)
+                } else {
+                    documentPreviewCard(for: fileURL)
+                }
+            } else if isImageURL(u) {
+                Group {
+                    if let img = remoteImage {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 340)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+                    } else {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.secondary.opacity(0.1))
+                            .frame(height: 200)
+                            .overlay(ProgressView())
+                    }
+                }
+                .task {
+                    guard let url = URL(string: u),
+                          let (data, _) = try? await URLSession.shared.data(from: url),
+                          let img = UIImage(data: data) else { return }
+                    remoteImage = img
+                }
+            } else {
+                linkPreviewCard(urlString: u)
+            }
+            
+        default:
+            EmptyView()
+        }
+    }
+    
+    // MARK: - Video preview card (thumbnail + play badge + nome file)
+    
+    private func videoPreviewCard(for url: URL) -> some View {
+        ZStack(alignment: .center) {
+            // Thumbnail o placeholder scuro
+            Group {
+                if let thumb = videoThumbnail {
+                    Image(uiImage: thumb)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Rectangle()
+                        .fill(Color.black.opacity(0.75))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 260)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.20), radius: 12, y: 4)
+            
+            // Play badge
+            Circle()
+                .fill(.ultraThinMaterial)
+                .frame(width: 64, height: 64)
+                .overlay(
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(.white)
+                        .offset(x: 2)
+                )
+                .shadow(color: .black.opacity(0.25), radius: 8, y: 2)
+            
+            // Nome file in basso
+            VStack {
+                Spacer()
+                HStack(spacing: 8) {
+                    Image(systemName: "video.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(url.lastPathComponent)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .padding(12)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    // MARK: - Document preview card
+    
+    private func documentPreviewCard(for url: URL) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: fileIcon(for: url))
+                .font(.system(size: 28))
+                .foregroundStyle(.white)
+                .frame(width: 60, height: 60)
+                .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
+                .shadow(color: destination.color.opacity(0.4), radius: 6, y: 2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(url.lastPathComponent)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+                Text(url.pathExtension.uppercased())
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(18)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.secondary.opacity(0.12), lineWidth: 1))
+        .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+    }
+    
+    // MARK: - Link preview card
+    
+    private func linkPreviewCard(urlString: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "link.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(destination.color)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Link")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(urlString)
+                    .font(.subheadline)
+                    .foregroundStyle(.blue)
+                    .lineLimit(3)
+            }
+            Spacer()
+        }
+        .padding(18)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.secondary.opacity(0.12), lineWidth: 1))
+        .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+    }
+    
+    // MARK: - Video thumbnail generation
+    
+    private func generateVideoThumbnailIfNeeded() async {
+        let videoURL: URL?
+        switch payload.type {
+        case .file(let url):
+            let ext = url.pathExtension.lowercased()
+            videoURL = ["mp4", "mov", "m4v"].contains(ext) ? url : nil
+        case .url(let u):
+            if let fu = URL(string: u), fu.isFileURL {
+                let ext = fu.pathExtension.lowercased()
+                videoURL = ["mp4", "mov", "m4v"].contains(ext) ? fu : nil
+            } else {
+                videoURL = nil
+            }
+        default:
+            videoURL = nil
+        }
+        
+        guard let url = videoURL else { return }
+        
+        let thumb = await Task.detached(priority: .userInitiated) {
+            let asset = AVURLAsset(url: url)
+            let gen = AVAssetImageGenerator(asset: asset)
+            gen.appliesPreferredTrackTransform = true
+            gen.maximumSize = CGSize(width: 800, height: 800)
+            let time = CMTime(seconds: 0.5, preferredTimescale: 600)
+            guard let cgImg = try? gen.copyCGImage(at: time, actualTime: nil) else { return nil as UIImage? }
+            return UIImage(cgImage: cgImg)
+        }.value
+        
+        await MainActor.run { videoThumbnail = thumb }
+    }
+    
+    // MARK: - Standard layout (non-chat)
+    
+    private var standardLayout: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                payloadPreview
+                    .padding(.top, 8)
+                
+                editFields
+                
+                if let error = errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 4)
+                }
+                
+                Spacer(minLength: 40)
+                
+                Button {
+                    Task { await sendToDestination() }
+                } label: {
+                    HStack {
+                        if isSending {
+                            ProgressView().tint(.white)
+                            Text("Invio in corso…")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                        } else {
+                            Image(systemName: destination.icon)
+                            Text(confirmLabel)
+                        }
+                    }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(destination.color, in: RoundedRectangle(cornerRadius: 14))
+                }
+                .disabled(isSending)
+            }
+            .padding()
+        }
     }
     
     // MARK: - Success views
@@ -209,22 +554,31 @@ struct KBShareEditView: View {
             if let url, let img = UIImage(contentsOfFile: url.path) {
                 Image(uiImage: img)
                     .resizable()
-                    .scaledToFill()
-                    .frame(height: 160)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .scaledToFit()
+                    .frame(maxHeight: 220)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
             }
             
         case .text(let t):
-            Text(t)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    Color.secondary.opacity(0.08),
-                    in: RoundedRectangle(cornerRadius: 10)
-                )
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Contenuto condiviso", systemImage: "text.quote")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                
+                Text(t)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(14)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+            )
             
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
@@ -234,12 +588,13 @@ struct KBShareEditView: View {
                     if let img = remoteImage {
                         Image(uiImage: img)
                             .resizable()
-                            .scaledToFill()
-                            .frame(height: 160)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .scaledToFit()
+                            .frame(maxHeight: 220)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
                     } else {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(Color.secondary.opacity(0.1))
                             .frame(height: 160)
                             .overlay(ProgressView())
@@ -252,10 +607,27 @@ struct KBShareEditView: View {
                     remoteImage = img
                 }
             } else {
-                Text(u)
-                    .font(.caption)
-                    .foregroundStyle(.blue)
-                    .lineLimit(2)
+                HStack(spacing: 12) {
+                    Image(systemName: "link.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(destination.color)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Link")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(u)
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                            .lineLimit(2)
+                    }
+                    Spacer()
+                }
+                .padding(14)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+                )
             }
             
         case .file(let url):
@@ -272,25 +644,29 @@ struct KBShareEditView: View {
     }
     
     private func filePreviewCard(for url: URL) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             Image(systemName: fileIcon(for: url))
                 .font(.title2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(destination.color, in: RoundedRectangle(cornerRadius: 12))
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(url.lastPathComponent)
-                    .font(.subheadline.weight(.medium))
+                    .font(.subheadline.weight(.semibold))
                     .lineLimit(2)
-                
                 Text(url.pathExtension.uppercased())
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            
             Spacer()
         }
-        .padding(12)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        .padding(14)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+        )
     }
     
     private func fileIcon(for url: URL) -> String {
@@ -389,27 +765,8 @@ struct KBShareEditView: View {
             }
             
         case .chat:
-            switch payload.type {
-            case .image, .file:
-                Text("Il file verrà inviato direttamente nella chat di famiglia.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-            case .url(let u) where URL(string: u)?.isFileURL == true:
-                Text("Il file verrà inviato direttamente nella chat di famiglia.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-            case .url(let u) where isImageURL(u):
-                Text("L'immagine verrà inviata direttamente nella chat di famiglia.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-            default:
-                TextField("Messaggio", text: $editedText, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(4)
-            }
+            // Chat uses its own dedicated layout; this branch is not shown.
+            EmptyView()
             
         case .document:
             VStack(alignment: .leading, spacing: 8) {
@@ -459,12 +816,32 @@ struct KBShareEditView: View {
                 editedTitle = lines.joined(separator: "\n")
             }  else if destination == .chat {
                 editedText = t
-            }else {
+            } else {
                 let lines = t.components(separatedBy: "\n")
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { !$0.isEmpty }
-                editedTitle = lines.first ?? t
-                editedText = lines.dropFirst().joined(separator: "\n")
+                
+                if lines.count >= 2 {
+                    // Testo multiriga: prima riga = titolo, resto = corpo
+                    editedTitle = lines.first ?? t
+                    editedText = lines.dropFirst().joined(separator: "\n")
+                } else {
+                    // Testo su riga singola: prima frase (fino a . ! ?) = titolo, resto = corpo
+                    let raw = lines.first ?? t
+                    if let range = raw.rangeOfCharacter(from: CharacterSet(charactersIn: ".!?")) {
+                        let titleEnd = raw.index(after: range.lowerBound)
+                        let title = String(raw[raw.startIndex..<titleEnd])
+                            .trimmingCharacters(in: .whitespaces)
+                        let body = String(raw[titleEnd...])
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        editedTitle = title
+                        editedText = body
+                    } else {
+                        // Nessun separatore: tutto in titolo, corpo vuoto
+                        editedTitle = raw
+                        editedText = ""
+                    }
+                }
             }
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
@@ -805,17 +1182,7 @@ struct KBShareEditView: View {
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
             title = editedTitle.isEmpty ? (lines.first ?? raw) : editedTitle
-            body = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : raw
-            Text(t)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.secondary.opacity(0.08))
-                )
+            body = lines.count > 1 ? lines.dropFirst().joined(separator: "\n") : ""
             
         case .url(let u):
             body = u
