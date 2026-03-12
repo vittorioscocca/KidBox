@@ -1481,7 +1481,7 @@ struct PhotoFullscreenView: View {
                     .task(id: p.id) { await load(p) }
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: allPhotos.count > 1 ? .always : .never))
+            .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             
             Button { onDismiss() } label: {
@@ -1584,6 +1584,7 @@ struct PhotoFullscreenView: View {
     }
 }
 
+
 // MARK: - FullscreenMediaCell
 
 private struct FullscreenMediaCell: View {
@@ -1591,36 +1592,72 @@ private struct FullscreenMediaCell: View {
     let image: UIImage?
     let videoURL: URL?
     
+    @State private var isPlaying = false
+    @State private var playerReady = false  // true quando AVPlayer ha il primo frame
+    
     private var isVideo: Bool { photo.isVideo }
     
     var body: some View {
         ZStack {
             Color.black
+            
             if isVideo {
-                if let url = videoURL {
-                    VideoPlayerCell(url: url)
-                } else {
-                    // Placeholder con thumbnail sfocata mentre carica
-                    placeholderView.overlay(
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 56))
-                            .foregroundStyle(.white.opacity(0.8))
-                    )
+                // Thumbnail sempre presente sotto finché playerReady è false
+                if !playerReady {
+                    thumbnailView
                 }
+                
+                if isPlaying, let url = videoURL {
+                    // Player montato sopra la thumbnail — la thumbnail sparisce
+                    // solo quando playerReady diventa true (primo frame renderizzato)
+                    VideoPlayerCell(url: url, onReady: {
+                        withAnimation(.easeIn(duration: 0.2)) { playerReady = true }
+                    })
+                    .opacity(playerReady ? 1 : 0)  // invisibile finché non è pronto
+                }
+                
+                // Overlay: play button o spinner, scompaiono quando playerReady
+                if !playerReady {
+                    if isPlaying {
+                        // Tap già premuto, video in download/buffering
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(1.4)
+                    } else {
+                        // Stato iniziale: play button
+                        Button {
+                            isPlaying = true
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(.black.opacity(0.45))
+                                    .frame(width: 72, height: 72)
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .offset(x: 3)
+                            }
+                        }
+                    }
+                }
+                
             } else {
                 if let img = image {
                     Image(uiImage: img).resizable().scaledToFit()
                 } else {
-                    placeholderView.overlay(ProgressView().tint(.white))
+                    thumbnailView
+                        .overlay(ProgressView().tint(.white))
                 }
             }
         }
     }
     
     @ViewBuilder
-    private var placeholderView: some View {
+    private var thumbnailView: some View {
         if let td = photo.thumbnailData, let img = UIImage(data: td) {
-            Image(uiImage: img).resizable().scaledToFit().blur(radius: 8)
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFit()
         } else {
             Color.black
         }
@@ -1631,21 +1668,40 @@ private struct FullscreenMediaCell: View {
 
 private struct VideoPlayerCell: UIViewControllerRepresentable {
     let url: URL
+    let onReady: () -> Void  // chiamato quando il primo frame è renderizzato
     
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let player = AVPlayer(url: url)
         let vc = AVPlayerViewController()
         vc.player = player
         vc.showsPlaybackControls = true
+        
+        // Osserva timeControlStatus: quando passa a .playing il primo frame è pronto
+        context.coordinator.observe(player: player, onReady: onReady)
+        
         player.play()
         return vc
     }
     
-    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {
-        // URL stabile, nessun aggiornamento necessario
+    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    
+    class Coordinator {
+        private var observation: NSKeyValueObservation?
+        private var didFire = false
+        
+        func observe(player: AVPlayer, onReady: @escaping () -> Void) {
+            observation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+                guard let self, !self.didFire else { return }
+                if player.timeControlStatus == .playing {
+                    self.didFire = true
+                    DispatchQueue.main.async { onReady() }
+                }
+            }
+        }
     }
 }
-
 
 // MARK: - GridWidthKey
 
