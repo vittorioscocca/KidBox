@@ -1,5 +1,5 @@
 //
-//  PhotoAlbumDetailView.swift
+//  PhotoAlbumDetailView.swift  ← VERSIONE AGGIORNATA CON FOTOCAMERA
 //  KidBox
 //
 //  Mostra le foto di un singolo album.
@@ -18,7 +18,6 @@ struct PhotoAlbumDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
     
-    // Stesse foto del ViewModel globale — filtrate per album
     @Query private var allPhotos: [KBFamilyPhoto]
     
     @State private var fullscreenPhoto: KBFamilyPhoto?
@@ -26,6 +25,13 @@ struct PhotoAlbumDetailView: View {
     @State private var selectedIds: Set<String> = []
     @State private var dragSelectIsAdding = true
     @State private var showRemoveConfirm = false
+    
+    // ── Camera ──────────────────────────────────────────────────────────────
+    @State private var showCamera = false
+    @State private var isUploading = false
+    @State private var uploadProgress: Double = 0
+    @State private var uploadError: String?
+    // ────────────────────────────────────────────────────────────────────────
     
     private var uid: String { Auth.auth().currentUser?.uid ?? "" }
     
@@ -64,6 +70,11 @@ struct PhotoAlbumDetailView: View {
                 }
             }
             
+            // Banner upload (stesso stile di FamilyPhotosView)
+            if isUploading {
+                uploadBanner
+            }
+            
             if isSelectMode { selectionToolbar }
         }
         .navigationTitle(isSelectMode
@@ -80,14 +91,57 @@ struct PhotoAlbumDetailView: View {
                 onDismiss: { fullscreenPhoto = nil }
             )
         }
-        .confirmationDialog(
-            "Rimuovi \(selectedIds.count) foto dall'album?",
-            isPresented: $showRemoveConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Rimuovi dall'album", role: .destructive) { removeSelectedFromAlbum() }
-            Button("Annulla", role: .cancel) {}
+        // ── Fotocamera ───────────────────────────────────────────────────────
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraCaptureView { result in
+                showCamera = false
+                switch result {
+                case .photo(let data):
+                    Task { await uploadCapturedPhoto(data: data) }
+                case .video(let url):
+                    Task { await uploadCapturedVideo(url: url) }
+                case .cancelled:
+                    break
+                }
+            }
+            .ignoresSafeArea()
         }
+        // ── Alert errore upload ──────────────────────────────────────────────
+        .alert("Errore caricamento", isPresented: Binding(
+            get: { uploadError != nil },
+            set: { if !$0 { uploadError = nil } }
+        )) { Button("OK") { uploadError = nil } } message: { Text(uploadError ?? "") }
+        // ────────────────────────────────────────────────────────────────────
+            .confirmationDialog(
+                "Rimuovi \(selectedIds.count) foto dall'album?",
+                isPresented: $showRemoveConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Rimuovi dall'album", role: .destructive) { removeSelectedFromAlbum() }
+                Button("Annulla", role: .cancel) {}
+            }
+    }
+    
+    // MARK: - Upload banner (clone di FamilyPhotosView)
+    
+    private var uploadBanner: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                ProgressView().tint(.white)
+                Text("Caricamento…").font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                Spacer()
+                Text("\(Int(uploadProgress * 100))%")
+                    .font(.caption.monospacedDigit()).foregroundStyle(.white.opacity(0.85))
+            }
+            ProgressView(value: uploadProgress).tint(.white)
+        }
+        .padding(.horizontal, 20).padding(.vertical, 14)
+        .background(.ultraThinMaterial)
+        .background(Color.pink.opacity(0.75))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 20).padding(.bottom, isSelectMode ? 90 : 24)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .animation(.spring, value: isUploading)
     }
     
     // MARK: - Toolbar
@@ -101,7 +155,7 @@ struct PhotoAlbumDetailView: View {
                 }
             }
         }
-        ToolbarItem(placement: .navigationBarTrailing) {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
             if isSelectMode {
                 Button(selectedIds.count == photos.count ? "Deseleziona tutto" : "Seleziona tutto") {
                     withAnimation(.snappy) {
@@ -110,6 +164,15 @@ struct PhotoAlbumDetailView: View {
                 }
                 .font(.subheadline)
             } else {
+                // ── Fotocamera ──────────────────────────────────────────────
+                if CameraCaptureView.isAvailable {
+                    Button {
+                        showCamera = true
+                    } label: {
+                        Image(systemName: "camera")
+                    }
+                }
+                // ───────────────────────────────────────────────────────────
                 Button {
                     withAnimation(.snappy) { isSelectMode = true; selectedIds = [] }
                 } label: {
@@ -183,7 +246,6 @@ struct PhotoAlbumDetailView: View {
             }
             .frame(height: gridHeight)
             
-            // Drag-select overlay
             if isSelectMode {
                 Color.clear
                     .frame(height: gridHeight)
@@ -222,7 +284,6 @@ struct PhotoAlbumDetailView: View {
     
     private var selectionToolbar: some View {
         HStack(spacing: 0) {
-            // Rimuovi dall'album
             Button {
                 if !selectedIds.isEmpty { showRemoveConfirm = true }
             } label: {
@@ -236,7 +297,6 @@ struct PhotoAlbumDetailView: View {
             }
             .disabled(selectedIds.isEmpty)
             
-            // Elimina definitivamente dalla libreria
             Button(role: .destructive) {
                 let toDelete = photos.filter { selectedIds.contains($0.id) }
                 withAnimation(.snappy) {
@@ -268,8 +328,21 @@ struct PhotoAlbumDetailView: View {
             Image(systemName: "rectangle.stack.fill")
                 .font(.system(size: 64)).foregroundStyle(.quaternary)
             Text("Album vuoto").font(.title3.weight(.semibold))
-            Text("Aggiungi foto a questo album dalla libreria.")
+            Text("Aggiungi foto a questo album dalla libreria o scatta direttamente con la fotocamera.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            
+            // ── Bottone fotocamera nello stato vuoto ─────────────────────────
+            if CameraCaptureView.isAvailable {
+                Button {
+                    showCamera = true
+                } label: {
+                    Label("Scatta una foto", systemImage: "camera.fill")
+                        .font(.subheadline.bold()).foregroundStyle(.white)
+                        .padding(.horizontal, 24).padding(.vertical, 12)
+                        .background(Color.pink, in: Capsule())
+                }
+            }
+            // ─────────────────────────────────────────────────────────────────
             Spacer()
         }
         .padding(32)
@@ -281,7 +354,6 @@ struct PhotoAlbumDetailView: View {
         if selectedIds.contains(id) { selectedIds.remove(id) } else { selectedIds.insert(id) }
     }
     
-    /// Rimuove le foto selezionate dall'album (non le cancella dalla libreria)
     private func removeSelectedFromAlbum() {
         let toUpdate = photos.filter { selectedIds.contains($0.id) }
         for photo in toUpdate {
@@ -296,7 +368,6 @@ struct PhotoAlbumDetailView: View {
         withAnimation(.snappy) { isSelectMode = false; selectedIds = [] }
     }
     
-    /// Cancella definitivamente dalla libreria (soft delete)
     private func softDeletePhoto(_ photo: KBFamilyPhoto) {
         photo.isDeleted = true; photo.updatedAt = Date()
         try? modelContext.save()
@@ -309,8 +380,139 @@ struct PhotoAlbumDetailView: View {
             }
         }
     }
+    
+    // MARK: - Camera upload
+    
+    /// Foto scattata dalla fotocamera → inserisce nell'album corrente + libreria.
+    private func uploadCapturedPhoto(data: Data) async {
+        guard !uid.isEmpty else { return }
+        let photoId     = UUID().uuidString
+        let now         = Date()
+        let fileName    = "photo_\(photoId).jpg"
+        let thumbB64    = PhotoRemoteStore.makeThumbnail(from: data)?.base64EncodedString()
+        let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
+        
+        await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
+        
+        let photo = KBFamilyPhoto(
+            id: photoId, familyId: familyId,
+            fileName: fileName,
+            mimeType: "image/jpeg", fileSize: Int64(data.count),
+            storagePath: storagePath,
+            thumbnailBase64: thumbB64,
+            takenAt: now, createdAt: now, updatedAt: now,
+            createdBy: uid, updatedBy: uid
+        )
+        photo.syncState  = .synced
+        photo.albumIdsRaw = albumId   // ← assegnato all'album corrente
+        
+        // Cache locale immagine (stessa logica di FamilyPhotosView)
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("KBPhotos", isDirectory: true)
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+        let localURL = cacheDir.appendingPathComponent("\(photoId).jpg")
+        try? data.write(to: localURL, options: .atomic)
+        
+        await MainActor.run {
+            modelContext.insert(photo)
+            try? modelContext.save()
+        }
+        
+        do {
+            let dto = try await SyncCenter.photoRemote.upload(
+                photoId: photoId, familyId: familyId, userId: uid,
+                imageData: data, fileName: fileName,
+                mimeType: "image/jpeg", takenAt: now,
+                caption: nil, albumIds: [albumId],
+                precomputedThumbnailB64: thumbB64,
+                precomputedVideoDurationSeconds: nil,
+                onProgress: { p in Task { @MainActor in uploadProgress = p } }
+            )
+            await MainActor.run {
+                photo.downloadURL = dto.downloadURL
+                photo.syncState = .synced
+                try? modelContext.save()
+            }
+            KBLog.sync.kbInfo("AlbumDetail uploadCapturedPhoto: OK photoId=\(photoId) albumId=\(albumId)")
+        } catch {
+            await MainActor.run {
+                photo.syncState = .pendingUpsert
+                photo.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                uploadError = error.localizedDescription
+            }
+            KBLog.sync.kbError("AlbumDetail uploadCapturedPhoto: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
+        }
+        
+        await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
+    }
+    
+    /// Video registrato dalla fotocamera → comprimi + inserisce nell'album corrente + libreria.
+    private func uploadCapturedVideo(url: URL) async {
+        guard !uid.isEmpty else { return }
+        await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
+        defer { try? FileManager.default.removeItem(at: url) }
+        
+        let videoURL = await VideoCompressor.compress(url: url) ?? url
+        guard let data = try? Data(contentsOf: videoURL) else {
+            await MainActor.run { withAnimation { isUploading = false }; uploadError = "Impossibile leggere il video." }
+            return
+        }
+        
+        let photoId     = UUID().uuidString
+        let now         = Date()
+        let fileName    = "video_\(photoId).mp4"
+        let thumbData   = await PhotoRemoteStore.makeVideoThumbnail(url: videoURL)
+        let thumbB64    = thumbData?.base64EncodedString()
+        let durSecs     = await VideoCompressor.videoDuration(url: videoURL)
+        let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
+        
+        if videoURL != url { try? FileManager.default.removeItem(at: videoURL) }
+        
+        let photo = KBFamilyPhoto(
+            id: photoId, familyId: familyId,
+            fileName: fileName,
+            mimeType: "video/mp4", fileSize: Int64(data.count),
+            storagePath: storagePath,
+            thumbnailBase64: thumbB64,
+            takenAt: now, createdAt: now, updatedAt: now,
+            createdBy: uid, updatedBy: uid
+        )
+        photo.syncState           = .synced
+        photo.videoDurationSeconds = durSecs
+        photo.albumIdsRaw          = albumId   // ← assegnato all'album corrente
+        
+        await MainActor.run {
+            modelContext.insert(photo)
+            try? modelContext.save()
+        }
+        
+        do {
+            let dto = try await SyncCenter.photoRemote.upload(
+                photoId: photoId, familyId: familyId, userId: uid,
+                imageData: data, fileName: fileName,
+                mimeType: "video/mp4", takenAt: now,
+                caption: nil, albumIds: [albumId],
+                precomputedThumbnailB64: thumbB64,
+                precomputedVideoDurationSeconds: durSecs,
+                onProgress: { p in Task { @MainActor in uploadProgress = p } }
+            )
+            await MainActor.run {
+                photo.downloadURL = dto.downloadURL
+                photo.syncState = .synced
+                try? modelContext.save()
+            }
+            KBLog.sync.kbInfo("AlbumDetail uploadCapturedVideo: OK photoId=\(photoId) albumId=\(albumId)")
+        } catch {
+            await MainActor.run {
+                photo.syncState = .pendingUpsert
+                photo.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                uploadError = error.localizedDescription
+            }
+            KBLog.sync.kbError("AlbumDetail uploadCapturedVideo: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
+        }
+        
+        await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
+    }
 }
-
-// MARK: - stableGridId (shared extension — già definito in FamilyPhotosView.swift)
-// Non ridichiarare qui: è private extension in FamilyPhotosView.swift.
-// Se necessario renderlo internal togliendo `private` in FamilyPhotosView.swift.

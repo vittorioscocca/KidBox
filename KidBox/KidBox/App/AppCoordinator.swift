@@ -365,6 +365,8 @@ final class AppCoordinator: ObservableObject {
             PediatricExamsView(familyId: familyId, childId: childId)
         case .examDetail(familyId: let familyId, childId: let childId, examId: let examId):
             PediatricExamDetailView(familyId: familyId, childId: childId, examId: examId)
+        case .pediatricTimeline(familyId: let familyId, childId: let childId):
+            PediatricTimelineDestinationView(familyId: familyId, childId: childId)
         }
     }
     

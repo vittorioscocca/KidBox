@@ -147,6 +147,8 @@ struct FamilyPhotosView: View {
     @State private var selectedAlbumIds: Set<String> = []
     // Larghezza reale della griglia foto
     @State private var gridWidth: CGFloat = UIScreen.main.bounds.width
+    // Fotocamera
+    @State private var showCamera = false
     
     private var photos: [KBFamilyPhoto] { vm.photos }
     private var albums: [KBPhotoAlbum]  { vm.albums }
@@ -216,6 +218,22 @@ struct FamilyPhotosView: View {
                 onDismiss: { fullscreenPhoto = nil }
             )
         }
+        // ── Fotocamera ───────────────────────────────────────────────────────
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraCaptureView { result in
+                showCamera = false
+                switch result {
+                case .photo(let data):
+                    Task { await uploadCapturedPhoto(data: data, targetAlbumId: uploadTargetAlbumId) }
+                case .video(let url):
+                    Task { await uploadCapturedVideo(url: url, targetAlbumId: uploadTargetAlbumId) }
+                case .cancelled:
+                    break
+                }
+            }
+            .ignoresSafeArea()
+        }
+        // ────────────────────────────────────────────────────────────────────
         .sheet(isPresented: $showCreateAlbum) { createAlbumSheet }
         .sheet(isPresented: $showAddToAlbum) { addToAlbumSheet }
         .sheet(isPresented: $showCreateAlbumFromSelection) { createAlbumFromSelectionSheet }
@@ -321,6 +339,16 @@ struct FamilyPhotosView: View {
                     }
                 }
                 if tab == .library {
+                    // ── Fotocamera (solo se disponibile sul device) ──────────
+                    if CameraCaptureView.isAvailable {
+                        Button {
+                            uploadTargetAlbumId = nil
+                            showCamera = true
+                        } label: {
+                            Image(systemName: "camera")
+                        }
+                    }
+                    // ── PhotosPicker (rullino) ───────────────────────────────
                     PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .any(of: [.images, .videos])) {
                         Image(systemName: "plus")
                     }
@@ -592,6 +620,19 @@ struct FamilyPhotosView: View {
                     .padding(.horizontal, 24).padding(.vertical, 12)
                     .background(Color.pink, in: Capsule())
             }
+            // ── Fotocamera nello stato vuoto ─────────────────────────────────
+            if CameraCaptureView.isAvailable {
+                Button {
+                    uploadTargetAlbumId = nil
+                    showCamera = true
+                } label: {
+                    Label("Scatta una foto", systemImage: "camera.fill")
+                        .font(.subheadline.bold()).foregroundStyle(.pink)
+                        .padding(.horizontal, 24).padding(.vertical, 12)
+                        .background(Color.pink.opacity(0.12), in: Capsule())
+                }
+            }
+            // ─────────────────────────────────────────────────────────────────
             Spacer()
         }
         .padding(32)
@@ -1097,6 +1138,137 @@ struct FamilyPhotosView: View {
                 uploadError = error.localizedDescription
                 KBLog.sync.kbError("uploadFromAppGroup: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
             }
+        }
+        
+        await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
+    }
+    
+    // MARK: - Upload da fotocamera
+    
+    /// Foto scattata dalla fotocamera → upload diretto in libreria (+ album se targetAlbumId != nil).
+    private func uploadCapturedPhoto(data: Data, targetAlbumId: String?) async {
+        guard !uid.isEmpty else { return }
+        let photoId     = UUID().uuidString
+        let now         = Date()
+        let fileName    = "photo_\(photoId).jpg"
+        let thumbB64    = PhotoRemoteStore.makeThumbnail(from: data)?.base64EncodedString()
+        let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
+        
+        await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
+        
+        let photo = KBFamilyPhoto(
+            id: photoId, familyId: familyId,
+            fileName: fileName,
+            mimeType: "image/jpeg", fileSize: Int64(data.count),
+            storagePath: storagePath,
+            thumbnailBase64: thumbB64,
+            takenAt: now, createdAt: now, updatedAt: now,
+            createdBy: uid, updatedBy: uid
+        )
+        photo.syncState = .synced
+        if let albumId = targetAlbumId { photo.albumIdsRaw = albumId }
+        cacheLocally(data: data, photoId: photoId, photo: photo)
+        
+        await MainActor.run {
+            modelContext.insert(photo)
+            try? modelContext.save()
+        }
+        
+        do {
+            let albumIds = targetAlbumId.map { [$0] } ?? []
+            let dto = try await SyncCenter.photoRemote.upload(
+                photoId: photoId, familyId: familyId, userId: uid,
+                imageData: data, fileName: fileName,
+                mimeType: "image/jpeg", takenAt: now,
+                caption: nil, albumIds: albumIds,
+                precomputedThumbnailB64: thumbB64,
+                precomputedVideoDurationSeconds: nil,
+                onProgress: { p in Task { @MainActor in uploadProgress = p } }
+            )
+            await MainActor.run {
+                photo.downloadURL = dto.downloadURL
+                photo.syncState = .synced
+                try? modelContext.save()
+            }
+            KBLog.sync.kbInfo("uploadCapturedPhoto: OK photoId=\(photoId)")
+        } catch {
+            await MainActor.run {
+                photo.syncState = .pendingUpsert
+                photo.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                uploadError = error.localizedDescription
+            }
+            KBLog.sync.kbError("uploadCapturedPhoto: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
+        }
+        
+        await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
+    }
+    
+    /// Video registrato dalla fotocamera → comprimi + upload in libreria (+ album se targetAlbumId != nil).
+    private func uploadCapturedVideo(url: URL, targetAlbumId: String?) async {
+        guard !uid.isEmpty else { return }
+        await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
+        defer { try? FileManager.default.removeItem(at: url) }
+        
+        let videoURL = await VideoCompressor.compress(url: url) ?? url
+        guard let data = try? Data(contentsOf: videoURL) else {
+            await MainActor.run { withAnimation { isUploading = false }; uploadError = "Impossibile leggere il video." }
+            return
+        }
+        
+        let photoId     = UUID().uuidString
+        let now         = Date()
+        let fileName    = "video_\(photoId).mp4"
+        let thumbData   = await PhotoRemoteStore.makeVideoThumbnail(url: videoURL)
+        let thumbB64    = thumbData?.base64EncodedString()
+        let durSecs     = await VideoCompressor.videoDuration(url: videoURL)
+        let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
+        
+        if videoURL != url { try? FileManager.default.removeItem(at: videoURL) }
+        
+        let photo = KBFamilyPhoto(
+            id: photoId, familyId: familyId,
+            fileName: fileName,
+            mimeType: "video/mp4", fileSize: Int64(data.count),
+            storagePath: storagePath,
+            thumbnailBase64: thumbB64,
+            takenAt: now, createdAt: now, updatedAt: now,
+            createdBy: uid, updatedBy: uid
+        )
+        photo.syncState            = .synced
+        photo.videoDurationSeconds = durSecs
+        if let albumId = targetAlbumId { photo.albumIdsRaw = albumId }
+        
+        await MainActor.run {
+            modelContext.insert(photo)
+            try? modelContext.save()
+        }
+        
+        do {
+            let albumIds = targetAlbumId.map { [$0] } ?? []
+            let dto = try await SyncCenter.photoRemote.upload(
+                photoId: photoId, familyId: familyId, userId: uid,
+                imageData: data, fileName: fileName,
+                mimeType: "video/mp4", takenAt: now,
+                caption: nil, albumIds: albumIds,
+                precomputedThumbnailB64: thumbB64,
+                precomputedVideoDurationSeconds: durSecs,
+                onProgress: { p in Task { @MainActor in uploadProgress = p } }
+            )
+            await MainActor.run {
+                photo.downloadURL = dto.downloadURL
+                photo.syncState = .synced
+                try? modelContext.save()
+            }
+            KBLog.sync.kbInfo("uploadCapturedVideo: OK photoId=\(photoId)")
+        } catch {
+            await MainActor.run {
+                photo.syncState = .pendingUpsert
+                photo.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                uploadError = error.localizedDescription
+            }
+            KBLog.sync.kbError("uploadCapturedVideo: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
         }
         
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }

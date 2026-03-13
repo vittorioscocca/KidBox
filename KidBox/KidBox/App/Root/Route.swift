@@ -62,6 +62,7 @@ enum Route: Hashable {
     case pediatricTreatmentDetail(familyId: String, childId: String, treatmentId: String)
     case pediatricExams(familyId: String, childId: String)
     case examDetail(familyId: String, childId: String, examId: String)
+    case pediatricTimeline(familyId: String, childId: String)
     
     // MARK: - Note
     case notesHome(familyId: String)

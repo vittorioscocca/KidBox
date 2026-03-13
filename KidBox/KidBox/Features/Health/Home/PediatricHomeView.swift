@@ -119,8 +119,6 @@ struct PediatricHomeView: View {
     
     // MARK: - Timeline
     
-    @State private var showTimeline = false
-    
     private var timelineEvents: [HealthTimelineEvent] {
         var events: [HealthTimelineEvent] = []
         
@@ -252,7 +250,7 @@ struct PediatricHomeView: View {
                         systemImage: "timeline.selection",
                         tint: Color(red: 0.85, green: 0.55, blue: 0.35)
                     ) {
-                        showTimeline = true
+                        coordinator.navigate(to: .pediatricTimeline(familyId: familyId, childId: childId))
                     }
                 }
                 .padding(.horizontal)
@@ -265,20 +263,6 @@ struct PediatricHomeView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
-        // ── Timeline fullscreen (push navigation) ──
-        .background(
-            NavigationLink(
-                destination: HealthTimelineView(
-                    subjectName: subjectName,
-                    familyId:    familyId,
-                    childId:     childId,
-                    byYear:      timelineByYear,
-                    monthName:   monthName
-                ),
-                isActive: $showTimeline
-            ) { EmptyView() }
-                .hidden()
-        )
         .overlay(alignment: .bottomTrailing) {
             HealthAskAIButton(
                 subjectName: subjectName,
@@ -377,7 +361,7 @@ struct HealthTimelineView: View {
     let subjectName: String
     let familyId:    String
     let childId:     String
-    let byYear:      [(year: Int, months: [(month: Int, events: [HealthTimelineEvent])])]
+    let events:      [HealthTimelineEvent]   // tutti gli eventi grezzi, non pre-raggruppati
     let monthName:   (Int) -> String
     
     @State private var activeFilters: Set<String> = []
@@ -385,17 +369,41 @@ struct HealthTimelineView: View {
     
     private let allKinds: [HealthEventKind] = [.visit, .exam, .treatment, .vaccine]
     
-    private var availableYears: [Int] { byYear.map { $0.year } }
+    // Anni disponibili calcolati dagli eventi grezzi
+    private var availableYears: [Int] {
+        let cal = Calendar.current
+        let years = Set(events.map { cal.component(.year, from: $0.date) })
+        return years.sorted(by: >)
+    }
     
+    // Raggruppa per anno → mese applicando i filtri attivi
     private var filteredByYear: [(year: Int, months: [(month: Int, events: [HealthTimelineEvent])])] {
-        let yearFiltered = selectedYear.map { y in byYear.filter { $0.year == y } } ?? byYear
-        guard !activeFilters.isEmpty else { return yearFiltered }
-        return yearFiltered.compactMap { yearGroup in
-            let filteredMonths = yearGroup.months.compactMap { monthGroup in
-                let filtered = monthGroup.events.filter { activeFilters.contains($0.kind.rawValue) }
-                return filtered.isEmpty ? nil : (month: monthGroup.month, events: filtered)
+        let cal = Calendar.current
+        
+        // 1. Filtra per tipo (se ci sono filtri attivi)
+        let kindFiltered: [HealthTimelineEvent]
+        if activeFilters.isEmpty {
+            kindFiltered = events
+        } else {
+            kindFiltered = events.filter { activeFilters.contains($0.kind.rawValue) }
+        }
+        
+        // 2. Filtra per anno selezionato
+        let yearFiltered: [HealthTimelineEvent]
+        if let y = selectedYear {
+            yearFiltered = kindFiltered.filter { cal.component(.year, from: $0.date) == y }
+        } else {
+            yearFiltered = kindFiltered
+        }
+        
+        // 3. Raggruppa per anno → mese
+        let byYear = Dictionary(grouping: yearFiltered) { cal.component(.year, from: $0.date) }
+        return byYear.keys.sorted(by: >).map { year in
+            let byMonth = Dictionary(grouping: byYear[year]!) { cal.component(.month, from: $0.date) }
+            let months = byMonth.keys.sorted(by: >).map { month in
+                (month: month, events: byMonth[month]!.sorted { $0.date > $1.date })
             }
-            return filteredMonths.isEmpty ? nil : (year: yearGroup.year, months: filteredMonths)
+            return (year: year, months: months)
         }
     }
     
@@ -459,8 +467,7 @@ struct HealthTimelineView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
-                        // ── Sottotitolo ──
+                    VStack(alignment: .leading, spacing: 0) {
                         Text(subjectName)
                             .font(.title3)
                             .foregroundStyle(.secondary)
@@ -469,46 +476,44 @@ struct HealthTimelineView: View {
                             .padding(.bottom, 12)
                         
                         ForEach(filteredByYear, id: \.year) { yearGroup in
-                            Section {
-                                ForEach(yearGroup.months, id: \.month) { monthGroup in
-                                    // Intestazione mese
-                                    HStack(spacing: 6) {
-                                        Text(monthName(monthGroup.month).uppercased())
-                                            .font(.caption.bold())
-                                            .foregroundStyle(.secondary)
-                                        Rectangle()
-                                            .fill(Color.secondary.opacity(0.2))
-                                            .frame(height: 1)
-                                    }
-                                    .padding(.horizontal, 20)
-                                    .padding(.top, 16)
-                                    .padding(.bottom, 6)
-                                    
-                                    VStack(alignment: .leading, spacing: 0) {
-                                        ForEach(monthGroup.events) { event in
-                                            timelineRow(event, isLast: event.id == monthGroup.events.last?.id)
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
-                            } header: {
-                                HStack {
-                                    Text(String(yearGroup.year))
-                                        .font(.title2.bold())
-                                        .foregroundStyle(.primary)
-                                    let count = yearGroup.months.flatMap { $0.events }.count
-                                    Text("\(count) eventi")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                    Spacer()
+                            HStack {
+                                Text(String(yearGroup.year))
+                                    .font(.title2.bold())
+                                    .foregroundStyle(.primary)
+                                let count = yearGroup.months.flatMap { $0.events }.count
+                                Text("\(count) eventi")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(KBTheme.background(colorScheme).opacity(0.97))
+                            
+                            ForEach(yearGroup.months, id: \.month) { monthGroup in
+                                HStack(spacing: 6) {
+                                    Text(monthName(monthGroup.month).uppercased())
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.secondary)
+                                    Rectangle()
+                                        .fill(Color.secondary.opacity(0.2))
+                                        .frame(height: 1)
                                 }
                                 .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(KBTheme.background(colorScheme).opacity(0.97))
+                                .padding(.top, 16)
+                                .padding(.bottom, 6)
+                                
+                                VStack(alignment: .leading, spacing: 0) {
+                                    ForEach(monthGroup.events) { event in
+                                        timelineRow(event, isLast: event.id == monthGroup.events.last?.id)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
                             }
                         }
                         Color.clear.frame(height: 32)
                     }
                 }
+                .id(selectedYear.map(String.init) ?? "all")
             }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
@@ -603,3 +608,81 @@ struct HealthTimelineView: View {
     }
 }
 
+// MARK: - PediatricTimelineDestinationView
+//
+// Wrapper necessario perché HealthTimelineView non fa @Query direttamente
+// (riceve gli eventi già pronti). Questa view è la destinazione reale nel
+// NavigationStack del coordinator, quindi back da visitDetail/examDetail
+// ritorna qui — non alla PediatricHomeView.
+
+struct PediatricTimelineDestinationView: View {
+    
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
+    
+    let familyId: String
+    let childId:  String
+    
+    @Query private var children:      [KBChild]
+    @Query private var members:       [KBFamilyMember]
+    @Query private var allVisits:     [KBMedicalVisit]
+    @Query private var allExams:      [KBMedicalExam]
+    @Query private var allTreatments: [KBTreatment]
+    @Query private var allVaccines:   [KBVaccine]
+    
+    init(familyId: String, childId: String) {
+        self.familyId = familyId
+        self.childId  = childId
+        let fid = familyId
+        let cid = childId
+        _children      = Query(filter: #Predicate<KBChild>         { $0.id == cid })
+        _members       = Query(filter: #Predicate<KBFamilyMember>  { $0.userId == cid })
+        _allVisits     = Query(filter: #Predicate<KBMedicalVisit>  { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
+        _allExams      = Query(filter: #Predicate<KBMedicalExam>   { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
+        _allTreatments = Query(filter: #Predicate<KBTreatment>     { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true })
+        _allVaccines   = Query(filter: #Predicate<KBVaccine>       { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
+    }
+    
+    private var subjectName: String {
+        children.first?.name ?? members.first?.displayName ?? "Profilo"
+    }
+    
+    private var timelineEvents: [HealthTimelineEvent] {
+        var events: [HealthTimelineEvent] = []
+        for v in allVisits {
+            events.append(HealthTimelineEvent(id: "visit-\(v.id)", sourceId: v.id, date: v.date, kind: .visit,
+                                              title: v.reason.isEmpty ? "Visita medica" : v.reason, subtitle: v.doctorName))
+        }
+        for e in allExams {
+            events.append(HealthTimelineEvent(id: "exam-\(e.id)", sourceId: e.id,
+                                              date: e.deadline ?? e.createdAt, kind: .exam, title: e.name, subtitle: e.status.rawValue))
+        }
+        for t in allTreatments {
+            events.append(HealthTimelineEvent(id: "treatment-\(t.id)", sourceId: t.id, date: t.startDate, kind: .treatment,
+                                              title: t.drugName, subtitle: t.isLongTerm ? "Lungo termine" : (t.durationDays > 0 ? "\(t.durationDays) giorni" : nil)))
+        }
+        for v in allVaccines {
+            events.append(HealthTimelineEvent(id: "vaccine-\(v.id)", sourceId: v.id,
+                                              date: v.administeredDate ?? v.scheduledDate ?? v.createdAt,
+                                              kind: .vaccine, title: v.commercialName ?? v.vaccineType.displayName,
+                                              subtitle: v.lotNumber.map { "Lotto: \($0)" }))
+        }
+        return events.sorted { $0.date > $1.date }
+    }
+    
+    private func monthName(_ month: Int) -> String {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "it_IT")
+        return fmt.monthSymbols[month - 1].capitalized
+    }
+    
+    var body: some View {
+        HealthTimelineView(
+            subjectName: subjectName,
+            familyId:    familyId,
+            childId:     childId,
+            events:      timelineEvents,
+            monthName:   monthName
+        )
+    }
+}
