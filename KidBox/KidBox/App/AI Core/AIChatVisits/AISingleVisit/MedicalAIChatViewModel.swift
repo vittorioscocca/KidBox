@@ -32,10 +32,8 @@ final class MedicalAIChatViewModel: ObservableObject {
     
     // MARK: - Summary config
     
-    private let summaryTriggerCount = 8
-    private let recentMessagesLimit = 6
-    private let summarySourceWindow = 12
-    private let summaryMaxLength = 1800
+    private let summaryThreshold               = 8
+    private let recentMessagesToKeepAfterSummary = 4
     
     // MARK: - Init
     
@@ -214,13 +212,16 @@ final class MedicalAIChatViewModel: ObservableObject {
         }
         
         do {
-            let compactedMessages = compactMessagesForAI()
+            try await summarizeIfNeeded(conversation: conversation)
             
-            KBLog.ai.kbDebug("Calling AIService compactedMessagesCount=\(compactedMessages.count) systemPromptLength=\(systemPrompt.count)")
+            let payloadMessages = buildPayloadMessages(conversation: conversation)
+            let finalSystemPrompt = buildFinalSystemPrompt(conversation: conversation)
+            
+            KBLog.ai.kbDebug("Calling AIService payloadMessagesCount=\(payloadMessages.count) systemPromptLength=\(finalSystemPrompt.count)")
             
             let response = try await AIService.shared.sendMessage(
-                messages: compactedMessages,
-                systemPrompt: systemPrompt
+                messages: payloadMessages,
+                systemPrompt: finalSystemPrompt
             )
             
             let replyText = response.reply
@@ -231,8 +232,6 @@ final class MedicalAIChatViewModel: ObservableObject {
             conversation.messages.append(assistantMsg)
             messages.append(assistantMsg)
             saveContext()
-            
-            refreshSummaryIfNeeded()
             
             KBLog.ai.kbInfo("send completed totalMessagesCount=\(messages.count)")
             
@@ -267,105 +266,72 @@ final class MedicalAIChatViewModel: ObservableObject {
     
     // MARK: - Summary / compaction
     
-    private func compactMessagesForAI() -> [KBAIMessage] {
-        guard let conversation else {
-            KBLog.ai.kbDebug("compactMessagesForAI fallback: no conversation, using in-memory messages count=\(messages.count)")
-            return messages
-        }
-        
+    private func summarizeIfNeeded(conversation: KBAIConversation) async throws {
         let sorted = conversation.sortedMessages
+        let unsummarizedCount = sorted.count - conversation.summarizedMessageCount
         
-        guard sorted.count > summaryTriggerCount else {
-            KBLog.ai.kbDebug("compactMessagesForAI using full history sortedCount=\(sorted.count)")
-            return sorted
-        }
+        KBLog.ai.kbInfo("summarizeIfNeeded unsummarizedCount=\(unsummarizedCount)")
         
-        let recent = Array(sorted.suffix(recentMessagesLimit))
+        guard unsummarizedCount > summaryThreshold else { return }
+        guard sorted.count > recentMessagesToKeepAfterSummary else { return }
         
-        guard let summary = conversation.summary,
-              !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else {
-            KBLog.ai.kbDebug("compactMessagesForAI no summary available, using recent only recentCount=\(recent.count) originalCount=\(sorted.count)")
-            return recent
-        }
+        let messagesToSummarize = Array(sorted.prefix(sorted.count - recentMessagesToKeepAfterSummary))
+        guard !messagesToSummarize.isEmpty else { return }
         
-        let summaryMessage = KBAIMessage(
-            role: .assistant,
-            content: """
-            Riassunto della conversazione fino a questo punto:
-            \(summary)
-            """
+        let transcript = messagesToSummarize.map {
+            "[\($0.role.rawValue)] \($0.content)"
+        }.joined(separator: "\n")
+        
+        let summarySystemPrompt = """
+        Riassumi in modo fedele e compatto la conversazione seguente.
+        Mantieni:
+        - richieste principali del genitore
+        - diagnosi, raccomandazioni, terapie, cure, esami menzionati
+        - farmaci prescritti e relative istruzioni
+        - eventuali dubbi ancora aperti
+        Non aggiungere nulla di nuovo.
+        """
+        
+        let summaryMessages = [
+            KBAIMessage(role: .user, content: transcript)
+        ]
+        
+        KBLog.ai.kbInfo("summarizeIfNeeded calling AIService messages=\(summaryMessages.count)")
+        
+        let response = try await AIService.shared.sendMessage(
+            messages: summaryMessages,
+            systemPrompt: summarySystemPrompt
         )
         
-        KBLog.ai.kbInfo("compactMessagesForAI using summary + recent summaryLength=\(summary.count) recentCount=\(recent.count) originalCount=\(sorted.count)")
+        conversation.summary                  = response.reply
+        conversation.summaryUpdatedAt         = Date()
+        conversation.summarizedMessageCount   = messagesToSummarize.count
         
-        return [summaryMessage] + recent
+        try modelContext.save()
+        
+        KBLog.ai.kbInfo("summarizeIfNeeded updated summary chars=\(response.reply.count)")
+        KBLog.ai.kbInfo("summarizeIfNeeded summarizedMessageCount=\(conversation.summarizedMessageCount)")
     }
     
-    private func refreshSummaryIfNeeded() {
-        guard let conversation else {
-            KBLog.ai.kbDebug("refreshSummaryIfNeeded skipped: no conversation")
-            return
+    private func buildFinalSystemPrompt(conversation: KBAIConversation) -> String {
+        guard let summary = conversation.summary,
+              !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return systemPrompt
         }
+        return """
+        \(systemPrompt)
         
-        let sorted = conversation.sortedMessages
-        let totalCount = sorted.count
-        
-        guard totalCount >= summaryTriggerCount else {
-            KBLog.ai.kbDebug("refreshSummaryIfNeeded skipped: totalCount=\(totalCount) below trigger=\(summaryTriggerCount)")
-            return
-        }
-        
-        guard totalCount - conversation.summarizedMessageCount >= summaryTriggerCount else {
-            KBLog.ai.kbDebug("refreshSummaryIfNeeded skipped: delta=\(totalCount - conversation.summarizedMessageCount) below trigger=\(summaryTriggerCount)")
-            return
-        }
-        
-        let summary = buildLocalSummary(from: sorted)
-        
-        conversation.summary = summary
-        conversation.summaryUpdatedAt = Date()
-        conversation.summarizedMessageCount = totalCount
-        
-        saveContext()
-        
-        KBLog.ai.kbInfo("Summary refreshed totalCount=\(totalCount) summaryLength=\(summary.count)")
+        RIASSUNTO CONVERSAZIONE PRECEDENTE
+        \(summary)
+        """
     }
     
-    private func buildLocalSummary(from messages: [KBAIMessage]) -> String {
-        let relevant = messages.suffix(summarySourceWindow)
-        
-        KBLog.ai.kbDebug("buildLocalSummary started sourceWindowCount=\(relevant.count)")
-        
-        var lines: [String] = []
-        
-        for message in relevant {
-            switch message.role {
-            case .user:
-                lines.append("Genitore: \(message.content)")
-            case .assistant:
-                lines.append("Assistente: \(message.content)")
-            }
+    private func buildPayloadMessages(conversation: KBAIConversation) -> [KBAIMessage] {
+        let recentMessages = Array(conversation.sortedMessages.dropFirst(conversation.summarizedMessageCount))
+        KBLog.ai.kbInfo("buildPayloadMessages recentMessages.count=\(recentMessages.count)")
+        return recentMessages.map {
+            KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt)
         }
-        
-        let raw = lines.joined(separator: "\n")
-        let truncated = truncateSummary(raw, maxLength: summaryMaxLength)
-        
-        KBLog.ai.kbDebug("buildLocalSummary completed rawLength=\(raw.count) finalLength=\(truncated.count)")
-        return truncated
-    }
-    
-    private func truncateSummary(_ text: String, maxLength: Int) -> String {
-        guard text.count > maxLength else {
-            KBLog.ai.kbDebug("truncateSummary not needed textLength=\(text.count) maxLength=\(maxLength)")
-            return text
-        }
-        
-        let end = text.index(text.startIndex, offsetBy: maxLength)
-        let truncated = String(text[..<end]) + "…"
-        
-        KBLog.ai.kbInfo("truncateSummary applied originalLength=\(text.count) truncatedLength=\(truncated.count)")
-        return truncated
     }
     
     // MARK: - Private helpers
