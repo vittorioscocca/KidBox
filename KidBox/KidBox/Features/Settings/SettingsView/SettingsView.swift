@@ -10,9 +10,28 @@ internal import os
 /// App settings screen.
 struct SettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
+    @StateObject private var vm = SettingsViewModel()
     
     var body: some View {
         List {
+            Picker(selection: Binding(
+                get: { vm.appearanceMode },
+                set: { vm.setAppearanceMode($0, coordinator: coordinator) }
+            )) {
+                ForEach(AppearanceMode.allCases) { mode in
+                    Label(mode.label, systemImage: mode.icon).tag(mode)
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: coordinator.appearanceMode.icon)
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    Text("Tema")
+                        .foregroundStyle(.primary)
+                }
+            }
+            .pickerStyle(.navigationLink)
+            
             Button {
                 KBLog.navigation.debug("Settings -> Family settings tap")
                 coordinator.navigate(to: .familySettings)
@@ -21,10 +40,8 @@ struct SettingsView: View {
                     Image(systemName: "person.2.fill")
                         .foregroundStyle(KBTheme.bubbleTint)
                         .frame(width: 22)
-                    
                     Text("Family settings")
                         .foregroundStyle(.primary)
-                    
                     Spacer()
                 }
             }
@@ -37,7 +54,6 @@ struct SettingsView: View {
                     Image(systemName: "message.fill")
                         .foregroundStyle(KBTheme.bubbleTint)
                         .frame(width: 22)
-                    
                     Text("Messaggi")
                         .foregroundStyle(.primary)
                 }
@@ -50,7 +66,6 @@ struct SettingsView: View {
                     Image(systemName: "sparkles")
                         .foregroundStyle(KBTheme.bubbleTint)
                         .frame(width: 22)
-                    
                     Text("Assistente AI")
                         .foregroundStyle(.primary)
                 }
@@ -63,7 +78,6 @@ struct SettingsView: View {
                     Image(systemName: "bell.badge")
                         .foregroundStyle(KBTheme.bubbleTint)
                         .frame(width: 22)
-                    
                     Text("Notifiche")
                         .foregroundStyle(.primary)
                 }

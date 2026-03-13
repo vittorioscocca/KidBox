@@ -2,8 +2,6 @@
 //  AppCoordinator.swift
 //  KidBox
 //
-//  Created by vscocca on 04/02/26.
-//
 
 import SwiftUI
 import Combine
@@ -62,12 +60,19 @@ final class AppCoordinator: ObservableObject {
     /// "image" | "file" (video). Letto da FamilyPhotosView insieme a pendingShareEncryptedMediaPath.
     @Published var pendingShareEncryptedMediaType: String? = nil
     
-    // Dopo pendingShareEncryptedMediaType (riga 63), aggiungi:
-    
     /// Path locale (App Group) di un documento condiviso verso la sezione Documenti.
     @Published var pendingShareDocumentPath: String? = nil
     /// Nome originale del file documento condiviso.
     @Published var pendingShareDocumentTitle: String? = nil
+    
+    // MARK: - Appearance
+    
+    /// Preferenza tema dell'app (Chiaro / Scuro / Sistema).
+    /// Letta dalla root dell'app per applicare `.preferredColorScheme`.
+    /// Persistita in `UserDefaults` con chiave `kb_appearanceMode`.
+    @Published private(set) var appearanceMode: AppearanceMode = .system
+    
+    private static let appearanceModeKey = "kb_appearanceMode"
     
     // MARK: - Active family
     
@@ -118,10 +123,25 @@ final class AppCoordinator: ObservableObject {
         activeFamilyId = UserDefaults.standard.string(forKey: Self.activeFamilyIdKey)
         if let id = activeFamilyId {
             KBLog.sync.kbInfo("activeFamilyId restored from UserDefaults familyId=\(id)")
-            // Sincronizza subito nell'App Group per la Share Extension
             let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
             sharedDefaults?.set(id, forKey: "activeFamilyId")
         }
+        
+        // Restore persisted appearance mode.
+        let rawAppearance = UserDefaults.standard.string(forKey: Self.appearanceModeKey) ?? AppearanceMode.system.rawValue
+        appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
+        KBLog.settings.debug("AppCoordinator init appearanceMode=\(rawAppearance, privacy: .public)")
+    }
+    
+    // MARK: - Appearance management
+    
+    /// Aggiorna il tema e lo persiste in UserDefaults.
+    /// Chiamato da `SettingsViewModel.setAppearanceMode(_:coordinator:)`.
+    func setAppearanceMode(_ mode: AppearanceMode) {
+        guard appearanceMode != mode else { return }
+        KBLog.settings.info("AppCoordinator setAppearanceMode mode=\(mode.rawValue, privacy: .public)")
+        appearanceMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: Self.appearanceModeKey)
     }
     
     // MARK: - Active family management
@@ -136,7 +156,6 @@ final class AppCoordinator: ObservableObject {
         }
         KBLog.sync.kbInfo("setActiveFamily familyId=\(familyId ?? "nil")")
         activeFamilyId = familyId
-        // Salva nell'App Group per la Share Extension
         let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
         if let id = familyId {
             sharedDefaults?.set(id, forKey: "activeFamilyId")
@@ -164,9 +183,8 @@ final class AppCoordinator: ObservableObject {
         KBLog.auth.kbInfo("Starting FirebaseAuth state listener")
         
         authHandle = Auth.auth().addStateDidChangeListener { _, user in
-            // The listener may call back on a non-main thread; we re-enter MainActor explicitly.
             Task { @MainActor in
-                self.isCheckingAuth = false  // ← Firebase ha risposto: nascondi lo splash
+                self.isCheckingAuth = false
                 if let user {
                     self.isAuthenticated = true
                     self.uid = user.uid
@@ -175,13 +193,9 @@ final class AppCoordinator: ObservableObject {
                     
                     self.upsertUserProfile(from: user, modelContext: modelContext)
                     
-                    // Bootstrap syncs all known families locally.
-                    // It does NOT change activeFamilyId — that is set explicitly
-                    // by join/switch actions or restored from UserDefaults.
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
                     
-                    // Salva UID e nome nell'App Group per la Share Extension
                     let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
                     sharedDefaults?.set(user.uid, forKey: "currentUserUID")
                     sharedDefaults?.set(
@@ -189,14 +203,10 @@ final class AppCoordinator: ObservableObject {
                         forKey: "currentUserDisplayName"
                     )
                     
-                    // Se activeFamilyId è già noto, sincronizzalo subito.
-                    // Altrimenti leggi il primo familyId disponibile da SwiftData
-                    // (stesso fallback che usa RootHostView) e salvalo.
                     if let fid = self.activeFamilyId {
                         sharedDefaults?.set(fid, forKey: "activeFamilyId")
                         KBLog.sync.kbInfo("AppGroup: activeFamilyId synced fid=\(fid)")
                     } else {
-                        // Fallback: prendi il primo familyId da SwiftData
                         _ = user.uid
                         let descriptor = FetchDescriptor<KBFamily>(
                             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
@@ -223,19 +233,11 @@ final class AppCoordinator: ObservableObject {
     
     // MARK: - User profile persistence
     
-    /// Creates or updates the local `KBUserProfile` based on Firebase user info.
-    ///
-    /// This keeps local metadata aligned with the remote auth identity.
-    /// Logic is LWW-style:
-    /// - If profile exists → update fields and `updatedAt`.
-    /// - Else → create and insert.
-    ///
-    /// - Important: This function never throws; it logs errors and continues.
     private func upsertUserProfile(from user: User, modelContext: ModelContext) {
         KBLog.data.kbDebug("Upserting local user profile")
         
         do {
-            let uid = user.uid // capture stable value for predicate
+            let uid = user.uid
             
             let descriptor = FetchDescriptor<KBUserProfile>(
                 predicate: #Predicate { $0.uid == uid }
@@ -247,20 +249,16 @@ final class AppCoordinator: ObservableObject {
                 existing.email = user.email
                 existing.displayName = user.displayName
                 existing.updatedAt = Date()
-                
                 KBLog.data.kbInfo("UserProfile updated uid=\(uid)")
             } else {
                 let profile = KBUserProfile(uid: uid, email: user.email, displayName: user.displayName)
                 modelContext.insert(profile)
-                
                 KBLog.data.kbInfo("UserProfile created uid=\(uid)")
             }
             
             try modelContext.save()
             KBLog.persistence.kbDebug("SwiftData save OK (user profile)")
             
-            // Salva UID e nome nell'App Group per la Share Extension
-            // (serve per costruire il DTO del messaggio senza aprire l'app)
             let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
             sharedDefaults?.set(uid, forKey: "currentUserUID")
             sharedDefaults?.set(
@@ -276,14 +274,10 @@ final class AppCoordinator: ObservableObject {
     
     // MARK: - Root + Destinations
     
-    /// The app root view (authentication gate).
     func makeRootView() -> some View {
         RootGateView()
     }
     
-    /// Builds a destination view for a given route.
-    ///
-    /// - Note: This is the single routing map for the entire app.
     @ViewBuilder
     func makeDestination(for route: Route) -> some View {
         switch route {
@@ -320,19 +314,14 @@ final class AppCoordinator: ObservableObject {
         case .chat:
             ChatView()
         case let .familyLocation(familyId):
-            FamilyLocationView(familyId:  familyId)
+            FamilyLocationView(familyId: familyId)
         case .shoppingList(familyId: let familyId):
             GroceryListView(familyId: familyId)
         case .todoList(familyId: let familyId, childId: let childId, listId: let listId):
-            TodoListView(
-                familyId: familyId,
-                childId: childId,
-                listId: listId
-            )
+            TodoListView(familyId: familyId, childId: childId, listId: listId)
         case .todoSmart(familyId: let familyId, childId: let childId, kind: let kind):
             TodoSmartListView(familyId: familyId, childId: childId, kind: kind)
             
-            // MARK: - Pediatria
         case .pediatricChildSelector(familyId: let familyId):
             PediatricChildSelectorView(familyId: familyId)
         case .pediatricHome(familyId: let familyId, childId: let childId):
@@ -353,7 +342,6 @@ final class AppCoordinator: ObservableObject {
         case .noteDetail(familyId: let familyId, noteId: let noteId):
             NoteDetailView(familyId: familyId, noteId: noteId)
             
-            // MARK: - Foto e video
         case .familyPhotos(familyId: let familyId):
             FamilyPhotosView(familyId: familyId)
         case .photoAlbumDetail(familyId: let familyId, albumId: let albumId, albumTitle: let title):
@@ -375,9 +363,6 @@ final class AppCoordinator: ObservableObject {
         guard let data = defaults?.dictionary(forKey: "pendingShare") as? [String: String],
               let destString = data["destination"] else { return }
         
-        // Rimuovi SUBITO e sincronizza — prima di qualsiasi altra cosa.
-        // Così il secondo invoco (willEnterForeground in arrivo 50ms dopo onOpenURL)
-        // non trova più nulla e ritorna al guard qui sopra.
         defaults?.removeObject(forKey: "pendingShare")
         defaults?.synchronize()
         
@@ -391,31 +376,20 @@ final class AppCoordinator: ObservableObject {
             
         case "chat":
             navigate(to: .chat)
-            
             let caption = data["caption"].flatMap { $0.isEmpty ? nil : $0 }
-            
             if !filePath.isEmpty {
                 let fileType = data["sharedFileType"] ?? ""
-                pendingShareMediaCaption = caption   // nil se non c'era caption
-                
+                pendingShareMediaCaption = caption
                 switch fileType {
-                case "video":
-                    pendingShareVideoPath = filePath
-                case "document":
-                    pendingShareImagePath = filePath  // oppure pendingShareDocumentPath se ce l'hai
-                default:  // "image"
-                    pendingShareImagePath = filePath
+                case "video":    pendingShareVideoPath = filePath
+                case "document": pendingShareImagePath = filePath
+                default:         pendingShareImagePath = filePath
                 }
             } else {
                 pendingShareText = text.isEmpty ? title : text
-                // Testo puro → caption non usato (il testo È già il messaggio)
             }
             
         case "todo":
-            // Il todo richiede familyId solo per la navigazione finale a TodoListView,
-            // ma navigate(.todo) porta a TodoHome che non ne ha bisogno.
-            // Il draft viene consumato da TodoListView via onReceive quando l'utente
-            // seleziona la lista — oppure se c'è già una lista aperta nello stack.
             let todoTitle = title.isEmpty ? text : title
             pendingShareTodoDraft = PendingShareTodoDraft(title: todoTitle)
             navigate(to: .todo)
@@ -447,11 +421,7 @@ final class AppCoordinator: ObservableObject {
             }
             let startDate = data["eventStartDate"].flatMap { ISO8601DateFormatter().date(from: $0) }
             KBLog.sync.kbInfo("handleIncomingShare event: navigating to calendar familyId=\(familyId)")
-            // Navigate PRIMA — così CalendarView si monta e si iscrive all'onReceive
-            // prima che il draft venga emesso. Identico al pattern todo/chat.
             navigate(to: .calendar(familyId: familyId, highlightEventId: nil))
-            // Draft settato DOPO la navigate — CalendarView lo riceve via onReceive
-            // o lo trova in onAppear come fallback (stesso pattern di pendingShareVideoPath).
             pendingShareEventDraft = PendingShareEventDraft(
                 title: title.isEmpty ? text : title,
                 notes: "",
@@ -504,19 +474,13 @@ final class AppCoordinator: ObservableObject {
                 KBLog.sync.kbError("handleIncomingShare encryptedMedia: filePath empty — abort")
                 return
             }
-            // Setta il pending PRIMA di navigate (o anche senza navigate se già in stack).
-            // FamilyPhotosView lo consuma via onReceive o onAppear.
             pendingShareEncryptedMediaPath = filePath
             pendingShareEncryptedMediaType = data["sharedFileType"] ?? "image"
-            // Naviga solo se FamilyPhotosView non è già nello stack —
-            // altrimenti pusheremmo una seconda istanza identica sopra quella esistente.
             let alreadyInStack = path.contains {
                 if case .familyPhotos(let fid) = $0 { return fid == familyId }
                 return false
             }
-            if !alreadyInStack {
-                navigate(to: .familyPhotos(familyId: familyId))
-            }
+            if !alreadyInStack { navigate(to: .familyPhotos(familyId: familyId)) }
             KBLog.sync.kbInfo("handleIncomingShare encryptedMedia: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
             
         default:
@@ -526,32 +490,19 @@ final class AppCoordinator: ObservableObject {
     
     // MARK: - Navigation actions
     
-    /// Pushes a new route onto the navigation stack.
-    ///
-    /// - Parameter route: The route to navigate to.
     func navigate(to route: Route) {
         KBLog.navigation.kbInfo("Navigate to route=\(String(describing: route))")
-        
         path.append(route)
-        
         KBLog.navigation.kbDebug("Path updated count=\(self.path.count)")
     }
     
-    /// Handles a "open document" action coming from a push notification.
-    ///
-    /// Ricostruisce l'intero path di navigazione (root → cartelle intermedie → documento)
-    /// leggendo `categoryId` e la catena di `parentId` da SwiftData.
-    ///
-    /// Se il documento non è ancora sincronizzato localmente (race condition),
-    /// attende fino a `maxWait` secondi con polling, poi fa fallback a `.documentsHome`.
     @MainActor
     func openDocumentFromPush(familyId: String, docId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openDocumentFromPush familyId=\(familyId) docId=\(docId)")
         
         Task { @MainActor in
-            // ── 1. Prova a trovare il documento, con retry per la race condition sync ──
             let maxAttempts = 8
-            let delayNs: UInt64 = 500_000_000  // 0.5s tra un tentativo e l'altro
+            let delayNs: UInt64 = 500_000_000
             var doc: KBDocument? = nil
             
             for attempt in 1...maxAttempts {
@@ -561,19 +512,14 @@ final class AppCoordinator: ObservableObject {
                     predicate: #Predicate { $0.familyId == fid && $0.id == did }
                 )
                 doc = try? modelContext.fetch(descriptor).first
-                
                 if doc != nil {
                     KBLog.navigation.kbDebug("openDocumentFromPush: document found attempt=\(attempt)")
                     break
                 }
-                
                 KBLog.navigation.kbDebug("openDocumentFromPush: document not found yet attempt=\(attempt)/\(maxAttempts)")
-                if attempt < maxAttempts {
-                    try? await Task.sleep(nanoseconds: delayNs)
-                }
+                if attempt < maxAttempts { try? await Task.sleep(nanoseconds: delayNs) }
             }
             
-            // ── 2. Se il documento non è ancora disponibile → fallback alla root ──
             guard let doc else {
                 KBLog.navigation.kbError("openDocumentFromPush: document not found after retries, fallback to documentsHome")
                 path.removeAll()
@@ -582,7 +528,6 @@ final class AppCoordinator: ObservableObject {
                 return
             }
             
-            // ── 3. Risali la catena di cartelle: categoryId → parentId → ... → nil (root) ──
             var categoryChain: [KBDocumentCategory] = []
             var currentCategoryId = doc.categoryId
             
@@ -596,25 +541,17 @@ final class AppCoordinator: ObservableObject {
                     KBLog.navigation.kbError("openDocumentFromPush: missing category catId=\(catId)")
                     break
                 }
-                categoryChain.insert(cat, at: 0)  // prepend → ordine root-first
+                categoryChain.insert(cat, at: 0)
                 currentCategoryId = cat.parentId
             }
             
             KBLog.navigation.kbDebug("openDocumentFromPush: categoryChain depth=\(categoryChain.count)")
             
-            // ── 4. Ricostruisci il NavigationStack path ──
             path.removeAll()
             path.append(.documentsHome)
-            
             for cat in categoryChain {
-                path.append(.documentsCategory(
-                    familyId: familyId,
-                    categoryId: cat.id,
-                    title: cat.title
-                ))
+                path.append(.documentsCategory(familyId: familyId, categoryId: cat.id, title: cat.title))
             }
-            
-            // ── 5. Setta il pending doc: la DocumentFolderView foglia lo aprirà in onAppear ──
             pendingOpenDocumentId = docId
             KBLog.navigation.kbDebug("openDocumentFromPush: path rebuilt count=\(path.count), pendingOpenDocumentId set")
         }
@@ -625,10 +562,8 @@ final class AppCoordinator: ObservableObject {
         KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")
         
         Task { @MainActor in
-            // 1. Forza sync immediato delle note prima di cercare localmente
             await SyncCenter.shared.fetchNotesOnce(familyId: familyId, modelContext: modelContext)
             
-            // 2. Ora cerca localmente
             let nid = noteId
             let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
             let found = (try? modelContext.fetch(desc).first) != nil
@@ -645,7 +580,6 @@ final class AppCoordinator: ObservableObject {
         }
     }
     
-    /// Resets navigation to the root (clears the NavigationStack path).
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
         path.removeAll()
@@ -654,7 +588,6 @@ final class AppCoordinator: ObservableObject {
     
     // MARK: - Sign out
     
-    /// Signs out the current user.
     @MainActor
     func signOut(modelContext: ModelContext) {
         KBLog.auth.kbInfo("Sign out requested")

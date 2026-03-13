@@ -2,8 +2,6 @@
 //  SettingsViewModel.swift
 //  KidBox
 //
-//  Created by vscocca on 10/02/26.
-//
 
 import Foundation
 import Combine
@@ -28,7 +26,8 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnTodos: Bool = true
     @Published var notifyOnNewGroceryItem: Bool = true
     @Published var notifyOnNewNote: Bool = true
-    @Published var audioTranscriptionEnabled: Bool = true  // ← NEW
+    @Published var audioTranscriptionEnabled: Bool = true
+    @Published var appearanceMode: AppearanceMode = .system
     
     // MARK: - Dependencies
     private let notifications = NotificationManager.shared
@@ -41,7 +40,8 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnTodos            = "kb_notifyOnTodos"
         static let notifyOnNewGroceryItem   = "kb_notifyOnNewGroceryItem"
         static let notifyOnNewNote          = "kb_notifyOnNewNote"
-        static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"  // ← NEW
+        static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"
+        static let appearanceMode           = "kb_appearanceMode"
     }
     
     // MARK: - Init
@@ -70,10 +70,13 @@ final class SettingsViewModel: ObservableObject {
         self.notifyOnNewNote = cachedNote
         KBLog.settings.debug("SettingsVM init cached notifyOnNewNote=\(cachedNote, privacy: .public)")
         
-        // ← NEW: default true, solo UserDefaults (nessun backend necessario)
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
         self.audioTranscriptionEnabled = cachedTranscription
         KBLog.settings.debug("SettingsVM init cached audioTranscriptionEnabled=\(cachedTranscription, privacy: .public)")
+        
+        let rawAppearance = UserDefaults.standard.string(forKey: LocalKeys.appearanceMode) ?? AppearanceMode.system.rawValue
+        self.appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
+        KBLog.settings.debug("SettingsVM init cached appearanceMode=\(rawAppearance, privacy: .public)")
     }
     
     // MARK: - Load
@@ -81,15 +84,14 @@ final class SettingsViewModel: ObservableObject {
         KBLog.settings.debug("SettingsVM load requested")
         
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
-        if notifyOnNewDocs != cached {
-            notifyOnNewDocs = cached
-        }
+        if notifyOnNewDocs != cached { notifyOnNewDocs = cached }
         
-        // audioTranscriptionEnabled è solo locale, già caricato nell'init
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
-        if audioTranscriptionEnabled != cachedTranscription {
-            audioTranscriptionEnabled = cachedTranscription
-        }
+        if audioTranscriptionEnabled != cachedTranscription { audioTranscriptionEnabled = cachedTranscription }
+        
+        let rawAppearance = UserDefaults.standard.string(forKey: LocalKeys.appearanceMode) ?? AppearanceMode.system.rawValue
+        let cachedAppearance = AppearanceMode(rawValue: rawAppearance) ?? .system
+        if appearanceMode != cachedAppearance { appearanceMode = cachedAppearance }
         
         Task { @MainActor in
             isLoading = true
@@ -99,28 +101,23 @@ final class SettingsViewModel: ObservableObject {
             
             await notifications.refreshAuthorizationStatus()
             
-            // Docs
             let remoteValue = await notifications.fetchNotifyOnNewDocsPreference()
             if notifyOnNewDocs != remoteValue { notifyOnNewDocs = remoteValue }
             UserDefaults.standard.set(remoteValue, forKey: LocalKeys.notifyOnNewDocs)
             
-            // Chat
             let remoteChat = await notifications.fetchNotifyOnNewMessagesPreference()
             if notifyOnNewMessages != remoteChat { notifyOnNewMessages = remoteChat }
             UserDefaults.standard.set(remoteChat, forKey: LocalKeys.notifyOnNewMessages)
             
-            // Todos
             let remoteTodo = await notifications.fetchNotifyOnTodoAssignedPreference()
             if notifyOnTodos != remoteTodo { notifyOnTodos = remoteTodo }
             UserDefaults.standard.set(remoteTodo, forKey: LocalKeys.notifyOnTodos)
             
-            // Shopping
             let remoteGrocery = await notifications.fetchNotifyOnNewGroceryItemPreference()
             KBLog.settings.info("SettingsVM fetch remote grocery pref=\(remoteGrocery, privacy: .public)")
             if notifyOnNewGroceryItem != remoteGrocery { notifyOnNewGroceryItem = remoteGrocery }
             UserDefaults.standard.set(remoteGrocery, forKey: LocalKeys.notifyOnNewGroceryItem)
             
-            // Notes
             let remoteNote = await notifications.fetchNotifyOnNewNotePreference()
             KBLog.settings.info("SettingsVM fetch remote note pref=\(remoteNote, privacy: .public)")
             if notifyOnNewNote != remoteNote { notifyOnNewNote = remoteNote }
@@ -128,7 +125,7 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
-    // MARK: - User actions (existing)
+    // MARK: - User actions
     
     func toggleNotifyOnNewDocs(_ enabled: Bool) {
         KBLog.settings.info("SettingsVM toggleNotifyOnNewDocs enabled=\(enabled, privacy: .public)")
@@ -238,7 +235,7 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Audio transcription toggle  ← NEW
+    // MARK: - Audio transcription toggle
     
     /// Salva la preferenza solo in locale (UserDefaults).
     /// Non richiede chiamate di rete — la preferenza è letta direttamente
@@ -248,5 +245,17 @@ final class SettingsViewModel: ObservableObject {
         audioTranscriptionEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.audioTranscriptionEnabled)
         infoText = enabled ? "Trascrizione vocale attiva." : "Trascrizione vocale disattivata."
+    }
+    
+    // MARK: - Appearance toggle
+    
+    /// Salva il tema scelto in UserDefaults e lo propaga al coordinator
+    /// che applica `.preferredColorScheme` alla root dell'app.
+    func setAppearanceMode(_ mode: AppearanceMode, coordinator: AppCoordinator) {
+        KBLog.settings.info("SettingsVM setAppearanceMode mode=\(mode.rawValue, privacy: .public)")
+        appearanceMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: LocalKeys.appearanceMode)
+        coordinator.setAppearanceMode(mode)
+        infoText = "Tema impostato su \(mode.label)."
     }
 }

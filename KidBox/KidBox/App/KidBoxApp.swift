@@ -44,11 +44,13 @@ struct KidBoxApp: App {
             ZStack {
                 RootHostView()
                     .environmentObject(coordinator)
+                // ── Tema chiaro / scuro / sistema ──────────────────────────
+                    .preferredColorScheme(coordinator.appearanceMode.colorScheme)
+                // ──────────────────────────────────────────────────────────
                 
                 // MARK: URL handling
                     .onOpenURL { url in
                         KBLog.auth.kbInfo("[KidBoxApp] onOpenURL -> \(url.absoluteString)")
-                        // ── Share Extension handoff ──────────────────
                         if url.scheme == "kidbox", url.host == "share" {
                             KBLog.sync.kbInfo("onOpenURL share scheme -> handleIncomingShare")
                             coordinator.handleIncomingShare(

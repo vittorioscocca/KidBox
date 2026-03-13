@@ -550,6 +550,7 @@ struct FamilyPhotosView: View {
                     
                     AlbumCard(album: album,
                               previewPhotos: Array(albumPhotos.prefix(1)),
+                              photoCount: albumPhotos.count,
                               cellWidth: cellW)
                     // Overlay scuro + checkbox in select mode
                     .overlay {
@@ -1572,6 +1573,7 @@ struct PhotoThumbnailCell: View {
 private struct AlbumCard: View {
     let album: KBPhotoAlbum
     let previewPhotos: [KBFamilyPhoto]
+    let photoCount: Int
     let cellWidth: CGFloat
     
     var body: some View {
@@ -1589,7 +1591,7 @@ private struct AlbumCard: View {
             .frame(width: cellWidth, height: cellWidth)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             Text(album.title).font(.subheadline.weight(.semibold)).lineLimit(1)
-            Text("\(previewPhotos.count) foto").font(.caption).foregroundStyle(.secondary)
+            Text("\(photoCount) foto").font(.caption).foregroundStyle(.secondary)
         }
         .frame(width: cellWidth)
     }
