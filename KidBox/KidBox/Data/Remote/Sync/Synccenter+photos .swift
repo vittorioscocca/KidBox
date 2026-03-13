@@ -80,7 +80,7 @@ extension SyncCenter {
     // MARK: - Apply inbound — Photos (LWW)
     // NOTE: No key handling needed — decryption uses DocumentCryptoService at read time.
     
-    private func applyPhotosInbound(
+    func applyPhotosInbound(
         changes: [PhotoRemoteChange],
         familyId: String,
         modelContext: ModelContext
@@ -361,4 +361,14 @@ extension SyncCenter {
         default: break
         }
     }
+    
+#if DEBUG
+    func applyPhotosInbound_testable(
+        changes: [PhotoRemoteChange],
+        familyId: String,
+        modelContext: ModelContext
+    ) {
+        applyPhotosInbound(changes: changes, familyId: familyId, modelContext: modelContext)
+    }
+#endif
 }
