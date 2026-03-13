@@ -654,6 +654,69 @@ final class DocumentFolderViewModel: ObservableObject {
         }
     }
     
+    func uploadSingleFileFromData(_ data: Data, fileURL: URL, forcedMime: String? = nil, forcedTitle: String? = nil) async -> Bool {
+        guard let modelContext else { return false }
+        guard !data.isEmpty, data.count > 512 else { return false }
+        
+        do {
+            let rawFileName = fileURL.lastPathComponent
+            let fileName: String
+            if fileURL.pathExtension.isEmpty,
+               let t = forcedTitle, !(t as NSString).pathExtension.isEmpty {
+                fileName = t
+            } else {
+                fileName = rawFileName
+            }
+            let ext  = (fileName as NSString).pathExtension.lowercased()
+            let mime = forcedMime ?? (mimeType(forExtension: ext) ?? "application/octet-stream")
+            let size = Int64(data.count)
+            
+            let rawTitle = forcedTitle ?? fileURL.deletingPathExtension().lastPathComponent
+            let title    = rawTitle.hasPrefix("share_") ? String(rawTitle.dropFirst("share_".count)) : rawTitle
+            
+            let uid        = Auth.auth().currentUser?.uid ?? "local"
+            let now        = Date()
+            let documentId = UUID().uuidString
+            let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
+            
+            let localRelPath = try DocumentLocalCache.write(
+                familyId: familyId, docId: documentId, fileName: fileName, data: data)
+            
+            let local = KBDocument(
+                id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
+                title: title, fileName: fileName, mimeType: mime, fileSize: size,
+                storagePath: storagePath, downloadURL: nil, updatedBy: uid,
+                createdAt: now, updatedAt: now, isDeleted: false
+            )
+            local.localPath     = localRelPath
+            local.syncState     = .pendingUpsert
+            local.lastSyncError = nil
+            modelContext.insert(local)
+            try modelContext.save()
+            SyncCenter.shared.enqueueDocumentUpsert(
+                documentId: local.id, familyId: familyId, modelContext: modelContext)
+            
+            do {
+                let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
+                let (_, downloadURL) = try await storageService.upload(
+                    familyId: familyId, docId: documentId, fileName: fileName,
+                    originalMimeType: mime, encryptedData: encryptedData)
+                local.downloadURL   = downloadURL
+                local.syncState     = .synced
+                local.lastSyncError = nil
+                local.updatedAt     = Date()
+                local.updatedBy     = uid
+                try modelContext.save()
+                return true
+            } catch {
+                local.syncState     = .error
+                local.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                return false
+            }
+        } catch { return false }
+    }
+    
     // MARK: - Upload (single file helper)
     
     func uploadSingleFileFromURL(_ url: URL, forcedMime: String? = nil, forcedTitle: String? = nil) async -> Bool {
@@ -665,18 +728,58 @@ final class DocumentFolderViewModel: ObservableObject {
             let data = try Data(contentsOf: url)
             if data.isEmpty { return false }
             
-            let fileName = url.lastPathComponent
-            let ext = url.pathExtension.lowercased()
+            // ✅ Verifica magic number: un placeholder iCloud non scaricato
+            // non inizia mai con i byte reali del formato. Questo evita di
+            // cifrare e caricare su Firestore dati corrotti (es. 198 byte di placeholder).
+            let isPDF  = data.prefix(4) == Data([0x25, 0x50, 0x44, 0x46])          // %PDF
+            let isZIP  = data.prefix(4) == Data([0x50, 0x4B, 0x03, 0x04])          // ZIP → docx/xlsx/pptx
+            let isOLE  = data.prefix(8) == Data([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]) // doc/xls/ppt legacy
+            let isJPEG = data.prefix(3) == Data([0xFF, 0xD8, 0xFF])
+            let isPNG  = data.prefix(8) == Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+            
+            let detectedExt = url.pathExtension.lowercased()
+            let knownExts = ["pdf", "docx", "xlsx", "pptx", "doc", "xls", "ppt", "jpg", "jpeg", "png"]
+            if knownExts.contains(detectedExt) {
+                let isValid: Bool
+                switch detectedExt {
+                case "pdf":                isValid = isPDF
+                case "docx","xlsx","pptx": isValid = isZIP
+                case "doc","xls","ppt":    isValid = isOLE || isZIP
+                case "jpg","jpeg":         isValid = isJPEG
+                case "png":                isValid = isPNG
+                default:                   isValid = true
+                }
+                if !isValid {
+                    print("[DocumentFolderVM] uploadSingleFileFromURL ABORT — iCloud placeholder detected bytes=\(data.count) ext=\(detectedExt)")
+                    return false
+                }
+            }
+            
+            // Se il file non ha estensione (es. share_UUID dall'App Group) ma
+            // forcedTitle la ha (es. "Referto.pdf"), usiamo il title come fileName
+            // così doc.fileName, storagePath e tempURL avranno l'estensione corretta.
+            let rawFileName = url.lastPathComponent
+            let fileName: String
+            if url.pathExtension.isEmpty,
+               let t = forcedTitle, !(t as NSString).pathExtension.isEmpty {
+                fileName = t
+            } else {
+                fileName = rawFileName
+            }
+            let ext  = (fileName as NSString).pathExtension.lowercased()
             let mime = forcedMime ?? (mimeType(forExtension: ext) ?? "application/octet-stream")
             let size = Int64(data.count)
-            let title = forcedTitle ?? url.deletingPathExtension().lastPathComponent
             
-            let uid = Auth.auth().currentUser?.uid ?? "local"
-            let now = Date()
+            let rawTitle = forcedTitle ?? url.deletingPathExtension().lastPathComponent
+            let title    = rawTitle.hasPrefix("share_") ? String(rawTitle.dropFirst("share_".count)) : rawTitle
+            
+            let uid        = Auth.auth().currentUser?.uid ?? "local"
+            let now        = Date()
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
             
-            let localRelPath = try DocumentLocalCache.write(familyId: familyId, docId: documentId, fileName: fileName, data: data)
+            let localRelPath = try DocumentLocalCache.write(
+                familyId: familyId, docId: documentId, fileName: fileName, data: data)
             
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
@@ -684,21 +787,31 @@ final class DocumentFolderViewModel: ObservableObject {
                 storagePath: storagePath, downloadURL: nil, updatedBy: uid,
                 createdAt: now, updatedAt: now, isDeleted: false
             )
-            local.localPath = localRelPath; local.syncState = .pendingUpsert; local.lastSyncError = nil
-            modelContext.insert(local); try modelContext.save()
-            SyncCenter.shared.enqueueDocumentUpsert(documentId: local.id, familyId: familyId, modelContext: modelContext)
+            local.localPath   = localRelPath
+            local.syncState   = .pendingUpsert
+            local.lastSyncError = nil
+            modelContext.insert(local)
+            try modelContext.save()
+            SyncCenter.shared.enqueueDocumentUpsert(
+                documentId: local.id, familyId: familyId, modelContext: modelContext)
             
             do {
                 let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
                 let (_, downloadURL) = try await storageService.upload(
                     familyId: familyId, docId: documentId, fileName: fileName,
                     originalMimeType: mime, encryptedData: encryptedData)
-                local.downloadURL = downloadURL; local.syncState = .synced; local.lastSyncError = nil
-                local.updatedAt = Date(); local.updatedBy = uid; try modelContext.save()
+                local.downloadURL   = downloadURL
+                local.syncState     = .synced
+                local.lastSyncError = nil
+                local.updatedAt     = Date()
+                local.updatedBy     = uid
+                try modelContext.save()
                 return true
             } catch {
-                local.syncState = .error; local.lastSyncError = error.localizedDescription
-                try? modelContext.save(); return false
+                local.syncState     = .error
+                local.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                return false
             }
         } catch { return false }
     }

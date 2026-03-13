@@ -332,10 +332,49 @@ struct DocumentFolderView: View {
     
     // MARK: - Upload da App Group (share extension → document)
     
-    private func uploadFromAppGroup(path: String, title: String?) async {
-        guard folderId == nil else { return }   // solo la root gestisce il pending
+    // MARK: - Pulizia nome file proveniente dall'App Group
+    //
+    // I file salvati dalla Share Extension hanno nomi del tipo:
+    //   share_<UUID>.pdf                     (quando suggestedName era nil)
+    //   share_<UUID>_nomeReale.pdf           (quando suggestedName era disponibile)
+    //   share_<UUID>_file URL.pdf            (nome di sistema iOS, da scartare)
+    //
+    // Questa funzione restituisce il titolo pulito (senza estensione) da usare
+    // come doc.title, oppure nil se non riesce a estrarre un nome significativo.
+    private func cleanTitle(from raw: String) -> String? {
+        var name = raw
         
-        let fileURL = URL(fileURLWithPath: path)
+        // 1. Rimuovi l'estensione se presente
+        let ext = (name as NSString).pathExtension
+        if !ext.isEmpty {
+            name = (name as NSString).deletingPathExtension
+        }
+        
+        // 2. Rimuovi il prefisso "share_" se presente
+        if name.hasPrefix("share_") {
+            name = String(name.dropFirst("share_".count))
+        }
+        
+        // 3. Rimuovi il pattern UUID iniziale (8-4-4-4-12 esadecimale, con eventuale "_" finale)
+        let uuidPattern = "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}_?"
+        if let range = name.range(of: uuidPattern, options: .regularExpression) {
+            let afterUUID = String(name[range.upperBound...])
+            if !afterUUID.isEmpty {
+                name = afterUUID
+            } else {
+                return nil
+            }
+        }
+        
+        // 4. Scarta nomi di sistema iOS noti che non sono nomi reali
+        let systemNames: Set<String> = ["file URL", "file url", "document", "untitled", ""]
+        guard !systemNames.contains(name.lowercased()) else { return nil }
+        
+        return name.isEmpty ? nil : name
+    }
+    
+    private func uploadFromAppGroup(path: String, title: String?) async {
+        guard folderId == nil else { return }
         
         print("[DocumentFolderView] uploadFromAppGroup START path=\(path) exists=\(FileManager.default.fileExists(atPath: path))")
         
@@ -344,20 +383,71 @@ struct DocumentFolderView: View {
             return
         }
         
+        let fileURL = URL(fileURLWithPath: path)
+        
+        // ✅ Leggi i dati con NSFileCoordinator: sulla main app questo forza
+        // il download da iCloud se il file è un placeholder non ancora scaricato.
+        var coordError: NSError?
+        var fileData: Data? = nil
+        let coordinator = NSFileCoordinator()
+        coordinator.coordinate(readingItemAt: fileURL, options: .withoutChanges, error: &coordError) { coordURL in
+            fileData = try? Data(contentsOf: coordURL)
+        }
+        if let coordError {
+            print("[DocumentFolderView] uploadFromAppGroup coordinator error: \(coordError.localizedDescription)")
+        }
+        
+        guard let data = fileData, data.count > 512 else {
+            print("[DocumentFolderView] uploadFromAppGroup ABORT — data too small or nil bytes=\(fileData?.count ?? 0)")
+            try? FileManager.default.removeItem(at: fileURL)
+            return
+        }
+        
         defer { try? FileManager.default.removeItem(at: fileURL) }
         
-        viewModel.isUploading = true
-        viewModel.uploadCurrentName = title ?? fileURL.lastPathComponent
+        let ext = fileURL.pathExtension
+        let cleanedTitle: String? = {
+            if let t = title, let clean = cleanTitle(from: t) { return clean }
+            return cleanTitle(from: fileURL.lastPathComponent)
+        }()
         
-        let ok = await viewModel.uploadSingleFileFromURL(
-            fileURL,
-            forcedMime: path.hasSuffix(".jpg") || path.hasSuffix(".jpeg") ? "image/jpeg" : nil,
-            forcedTitle: title
+        let forcedTitle  = cleanedTitle
+        let displayName  = cleanedTitle.map { "\($0).\(ext)" } ?? fileURL.lastPathComponent
+        
+        // Se il file nell'AppGroup non ha estensione, crea un tmp rinominato
+        // così uploadSingleFileFromData deduce il MIME corretto.
+        let uploadURL: URL
+        let hasExt = !fileURL.pathExtension.isEmpty
+        if !hasExt, let clean = cleanedTitle, !ext.isEmpty {
+            let renamed = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString + "_\(clean).\(ext)")
+            if (try? data.write(to: renamed, options: .atomic)) != nil {
+                uploadURL = renamed
+                print("[DocumentFolderView] uploadFromAppGroup renamed to \(renamed.lastPathComponent)")
+            } else {
+                uploadURL = fileURL
+            }
+        } else {
+            uploadURL = fileURL
+        }
+        defer { if uploadURL != fileURL { try? FileManager.default.removeItem(at: uploadURL) } }
+        
+        print("[DocumentFolderView] uploadFromAppGroup cleanedTitle=\(forcedTitle ?? "nil") displayName=\(displayName) bytes=\(data.count)")
+        
+        viewModel.isUploading       = true
+        viewModel.uploadCurrentName = displayName
+        
+        // Passa i dati già letti direttamente al ViewModel per evitare una seconda lettura
+        let ok = await viewModel.uploadSingleFileFromData(
+            data,
+            fileURL: uploadURL,
+            forcedMime: nil,
+            forcedTitle: forcedTitle
         )
         
-        viewModel.uploadDone     = 1
-        viewModel.uploadFailures = ok ? 0 : 1
-        viewModel.isUploading    = false
+        viewModel.uploadDone        = 1
+        viewModel.uploadFailures    = ok ? 0 : 1
+        viewModel.isUploading       = false
         viewModel.uploadCurrentName = ""
         
         viewModel.reload()
@@ -712,15 +802,17 @@ private extension DocumentFolderView {
                         coordinator.pendingShareDocumentPath = nil
                         let title = coordinator.pendingShareDocumentTitle
                         coordinator.pendingShareDocumentTitle = nil
+                        print("[DocumentFolderView] pending path=\(path) title=\(title ?? "nil")")
                         Task { await view.uploadFromAppGroup(path: path, title: title) }
                     }
                 }
-                // Gestisce il caso in cui la view fosse già visibile quando
-                // l'app torna in foreground dopo lo share (onAppear non si ri-triggera)
+            // Gestisce il caso in cui la view fosse già visibile quando
+            // l'app torna in foreground dopo lo share (onAppear non si ri-triggera)
                 .onReceive(coordinator.$pendingShareDocumentPath.compactMap { $0 }) { path in
                     coordinator.pendingShareDocumentPath = nil
                     let title = coordinator.pendingShareDocumentTitle
                     coordinator.pendingShareDocumentTitle = nil
+                    print("[DocumentFolderView] onReceive path=\(path) title=\(title ?? "nil")")
                     Task { await view.uploadFromAppGroup(path: path, title: title) }
                 }
                 .onChange(of: coordinator.pendingOpenDocumentId) { _, newDocId in

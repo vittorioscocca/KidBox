@@ -475,7 +475,13 @@ final class AppCoordinator: ObservableObject {
                 return
             }
             pendingShareDocumentPath  = filePath
-            pendingShareDocumentTitle = title.isEmpty ? data["sharedFileName"] : title
+            let uuidPattern = #"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"#
+            let isUUIDTitle = title.range(of: uuidPattern, options: .regularExpression) != nil
+            pendingShareDocumentTitle = (!title.isEmpty && !isUUIDTitle) ? title
+            : (data["sharedFileName"].flatMap {
+                let base = ($0 as NSString).deletingPathExtension
+                return base.range(of: uuidPattern, options: .regularExpression) != nil ? nil : base
+            })
             let alreadyInStack = path.contains { if case .documentsHome = $0 { return true }; return false }
             if !alreadyInStack { navigate(to: .documentsHome) }
             KBLog.sync.kbInfo("handleIncomingShare document: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")

@@ -737,7 +737,17 @@ struct KBShareEditView: View {
                 editedText  = u
             }
         case .file(let url):
-            editedTitle = url.deletingPathExtension().lastPathComponent
+            let raw = url.deletingPathExtension().lastPathComponent
+            // Rimuovi prefisso "share_UUID_" o puro UUID
+            let uuidPattern = #"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"#
+            let isUUID = raw.range(of: uuidPattern, options: .regularExpression) != nil
+            if isUUID {
+                editedTitle = ""  // mostra placeholder vuoto, utente inserisce il titolo
+            } else if let range = raw.range(of: "_") {
+                editedTitle = String(raw[range.upperBound...])
+            } else {
+                editedTitle = raw
+            }
         default:
             break
         }
@@ -1029,18 +1039,26 @@ struct KBShareEditView: View {
         )
     }
     
+    private func makeSharedCopyName(for originalURL: URL) -> String {
+        let ext = originalURL.pathExtension
+        let uuid = UUID().uuidString
+        return ext.isEmpty ? "share_\(uuid)" : "share_\(uuid).\(ext)"
+    }
+    
     // MARK: - App Group (per destinazioni non-chat)
     
     private func saveToAppGroup() {
         var data: [String: String] = [
             "destination": destination.rawStringValue,
-            "timestamp":   ISO8601DateFormatter().string(from: Date())
+            "timestamp": ISO8601DateFormatter().string(from: Date())
         ]
+        
         switch payload.type {
         case .text(let t):
             let finalText = editedText.isEmpty ? t : editedText
-            data["text"]  = finalText
+            data["text"] = finalText
             data["title"] = editedTitle
+            
             if destination == .event {
                 let parsed = parseEventText(finalText)
                 data["title"] = editedTitle.isEmpty ? parsed.title : editedTitle
@@ -1048,15 +1066,18 @@ struct KBShareEditView: View {
                     data["eventStartDate"] = ISO8601DateFormatter().string(from: date)
                 }
             }
+            
         case .url(let u):
             if let fileURL = URL(string: u), fileURL.isFileURL {
-                let name = "share_\(UUID().uuidString)_\(fileURL.lastPathComponent)"
-                if let groupURL = copyFileToAppGroup(fileURL, name: name) {
+                let copyName = makeSharedCopyName(for: fileURL)
+                if let groupURL = copyFileToAppGroup(fileURL, name: copyName) {
                     data["sharedFilePath"] = groupURL.path
                     data["sharedFileType"] = "file"
-                    data["sharedFileName"] = fileURL.lastPathComponent
+                    data["sharedFileName"] = fileURL.lastPathComponent   // nome originale
+                    data["title"] = editedTitle.isEmpty
+                    ? fileURL.deletingPathExtension().lastPathComponent
+                    : editedTitle
                 }
-                data["title"] = editedTitle
             } else {
                 data["text"] = u
                 if destination == .event {
@@ -1069,24 +1090,33 @@ struct KBShareEditView: View {
                     data["title"] = editedTitle
                 }
             }
+            
         case .image(let url):
-            let name = "share_\(UUID().uuidString).jpg"
-            if let sourceURL = url, let groupURL = copyFileToAppGroup(sourceURL, name: name) {
-                data["sharedFilePath"] = groupURL.path
-                data["sharedFileType"] = "image"
+            if let sourceURL = url {
+                let copyName = makeSharedCopyName(for: sourceURL)
+                if let groupURL = copyFileToAppGroup(sourceURL, name: copyName) {
+                    data["sharedFilePath"] = groupURL.path
+                    data["sharedFileType"] = "image"
+                    data["sharedFileName"] = sourceURL.lastPathComponent
+                }
             }
             data["title"] = editedTitle
+            
         case .file(let url):
-            let name = "share_\(UUID().uuidString)_\(url.lastPathComponent)"
-            if let groupURL = copyFileToAppGroup(url, name: name) {
+            let copyName = makeSharedCopyName(for: url)
+            if let groupURL = copyFileToAppGroup(url, name: copyName) {
                 data["sharedFilePath"] = groupURL.path
                 data["sharedFileType"] = "file"
-                data["sharedFileName"] = url.lastPathComponent
+                data["sharedFileName"] = url.lastPathComponent          // nome originale
+                data["title"] = editedTitle.isEmpty
+                ? url.deletingPathExtension().lastPathComponent
+                : editedTitle
             }
-            data["title"] = editedTitle
+            
         case .unknown:
             break
         }
+        
         guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
         defaults.set(data, forKey: "pendingShare")
         log("saveToAppGroup saved keys=\(data.keys.sorted())")
@@ -1107,12 +1137,25 @@ struct KBShareEditView: View {
         ) else { return nil }
         let dest = container.appendingPathComponent(name)
         try? FileManager.default.removeItem(at: dest)
-        if (try? FileManager.default.copyItem(at: source, to: dest)) != nil { return dest }
+        
         let accessed = source.startAccessingSecurityScopedResource()
         defer { if accessed { source.stopAccessingSecurityScopedResource() } }
-        guard let data = try? Data(contentsOf: source),
-              (try? data.write(to: dest, options: .atomic)) != nil else { return nil }
-        return dest
+        
+        // Usa NSFileCoordinator per forzare download iCloud
+        var coordError: NSError?
+        let coordinator = NSFileCoordinator()
+        var result: URL? = nil
+        coordinator.coordinate(readingItemAt: source, options: .withoutChanges, error: &coordError) { coordURL in
+            if let data = try? Data(contentsOf: coordURL),
+               (try? data.write(to: dest, options: .atomic)) != nil {
+                result = dest
+            }
+        }
+        if result != nil { return result }
+        
+        // Fallback copyItem
+        if (try? FileManager.default.copyItem(at: source, to: dest)) != nil { return dest }
+        return nil
     }
 }
 

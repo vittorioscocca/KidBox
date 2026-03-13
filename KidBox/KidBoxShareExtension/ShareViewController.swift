@@ -73,9 +73,13 @@ class ShareViewController: UIViewController {
                 // URL web (solo se non è un file locale)
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     if let url = await loadURL(from: provider, type: UTType.url.identifier) {
-                        // Se è un file URL, trattalo come file (fallback di sicurezza)
+                        // Se è un file URL, usiamo loadFileURL per copiare in tmp
+                        // con estensione corretta (dedotta da UTI se necessario)
                         if url.isFileURL {
                             print("[ShareVC] detected file url via url-type url=\(url)")
+                            if let fileURL = await loadFileURL(from: provider, type: "public.file-url") {
+                                return KBSharePayload(type: .file(fileURL))
+                            }
                             if let fileURL = await loadFileURL(from: provider, type: UTType.url.identifier) {
                                 return KBSharePayload(type: .file(fileURL))
                             }
@@ -143,32 +147,115 @@ class ShareViewController: UIViewController {
     }
     
     private func loadFileURL(from provider: NSItemProvider, type: String) async -> URL? {
-        await withCheckedContinuation { cont in
+        
+        // Helper: calcola estensione dal tipo UTI
+        func resolveExt(_ url: URL) -> String {
+            if !url.pathExtension.isEmpty { return ".\(url.pathExtension)" }
+            let utiToExt: [String: String] = [
+                "com.adobe.pdf":                                          ".pdf",
+                "org.openxmlformats.wordprocessingml.document":           ".docx",
+                "com.microsoft.word.doc":                                 ".doc",
+                "org.openxmlformats.spreadsheetml.sheet":                 ".xlsx",
+                "com.microsoft.excel.xls":                                ".xls",
+                "org.openxmlformats.presentationml.presentation":         ".pptx",
+                "com.microsoft.powerpoint.ppt":                           ".ppt",
+                "public.plain-text":                                      ".txt",
+                "public.rtf":                                             ".rtf",
+                "public.html":                                            ".html",
+                "com.apple.iwork.pages.pages":                            ".pages",
+                "com.apple.iwork.numbers.numbers":                        ".numbers",
+                "com.apple.iwork.keynote.key":                            ".key",
+            ]
+            if let mapped = utiToExt[type] { return mapped }
+            for uti in provider.registeredTypeIdentifiers {
+                if let mapped = utiToExt[uti] { return mapped }
+            }
+            if let preferred = UTType(type)?.preferredFilenameExtension { return ".\(preferred)" }
+            return ""
+        }
+        
+        // Helper: nome sicuro (scarta UUID puri)
+        func safeName(from url: URL) -> String {
+            if let suggested = provider.suggestedName, !suggested.isEmpty {
+                return (suggested as NSString).deletingPathExtension
+            }
+            let base = url.deletingPathExtension().lastPathComponent
+            let uuidPattern = #"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"#
+            let isUUID = base.range(of: uuidPattern, options: .regularExpression) != nil
+            if isUUID || ["file url", "document", "untitled", ""].contains(base.lowercased()) {
+                return UUID().uuidString
+            }
+            return base
+        }
+        
+        // STEP 1: loadFileRepresentation (async puro)
+        let (fileRepURL, _): (URL?, Error?) = await withCheckedContinuation { cont in
             provider.loadFileRepresentation(forTypeIdentifier: type) { url, error in
-                if let error {
-                    print("[ShareVC] loadFileURL error type=\(type) error=\(error.localizedDescription)")
-                }
-                
-                guard let url else {
-                    cont.resume(returning: nil)
-                    return
-                }
-                
-                let ext = url.pathExtension.isEmpty ? "" : ".\(url.pathExtension)"
-                let tmp = FileManager.default.temporaryDirectory
-                    .appendingPathComponent(UUID().uuidString + ext)
-                
-                do {
-                    if FileManager.default.fileExists(atPath: tmp.path) {
-                        try FileManager.default.removeItem(at: tmp)
+                cont.resume(returning: (url, error))
+            }
+        }
+        
+        guard let srcURL = fileRepURL else {
+            print("[ShareVC] loadFileURL ABORT — loadFileRepresentation returned nil")
+            return nil
+        }
+        
+        let ext  = resolveExt(srcURL)
+        let name = safeName(from: srcURL)
+        
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let tmp = tmpDir.appendingPathComponent(name + ext)
+        
+        print("[ShareVC] loadFileURL suggestedName=\(provider.suggestedName ?? "nil") safeName=\(name) ext=\(ext)")
+        
+        // STEP 2: leggi dati con NSFileCoordinator
+        var coordError: NSError?
+        var data: Data? = nil
+        let coordinator = NSFileCoordinator()
+        coordinator.coordinate(readingItemAt: srcURL, options: .withoutChanges, error: &coordError) { coordURL in
+            data = try? Data(contentsOf: coordURL)
+        }
+        print("[ShareVC] loadFileURL coordinator bytes=\(data?.count ?? 0)")
+        
+        // STEP 3: se ancora pochi byte, prova loadItem (async puro, niente semaphore)
+        if (data?.count ?? 0) < 512 {
+            print("[ShareVC] loadFileURL trying loadItem fallback")
+            let fallbackData: Data? = await withCheckedContinuation { cont in
+                provider.loadItem(forTypeIdentifier: type, options: nil) { item, _ in
+                    if let d = item as? Data {
+                        cont.resume(returning: d)
+                    } else if let u = item as? URL, let d = try? Data(contentsOf: u) {
+                        cont.resume(returning: d)
+                    } else {
+                        cont.resume(returning: nil)
                     }
-                    try FileManager.default.copyItem(at: url, to: tmp)
-                    cont.resume(returning: tmp)
-                } catch {
-                    print("[ShareVC] loadFileURL copy failed: \(error.localizedDescription)")
-                    cont.resume(returning: nil)
                 }
             }
+            if let fb = fallbackData, fb.count > (data?.count ?? 0) {
+                data = fb
+            }
+            print("[ShareVC] loadFileURL after loadItem fallback bytes=\(data?.count ?? 0)")
+        }
+        
+        // STEP 4: scrivi il file tmp — anche se sono 198 byte di placeholder,
+        // la main app scaricherà il file reale tramite NSFileCoordinator
+        guard let finalData = data else {
+            print("[ShareVC] loadFileURL ABORT — data nil")
+            return nil
+        }
+        
+        do {
+            if FileManager.default.fileExists(atPath: tmp.path) {
+                try FileManager.default.removeItem(at: tmp)
+            }
+            try finalData.write(to: tmp, options: .atomic)
+            print("[ShareVC] loadFileURL OK bytes=\(finalData.count) path=\(tmp.lastPathComponent)")
+            return tmp
+        } catch {
+            print("[ShareVC] loadFileURL write failed: \(error.localizedDescription)")
+            return nil
         }
     }
     
