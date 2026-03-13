@@ -35,6 +35,8 @@ struct PediatricVisitEditView: View {
     @State private var visitDate          = Date()
     @State private var reason             = ""
     @State private var showNewDoctorForm  = false
+    @State private var visitStatus: KBVisitStatus = .pending
+    @State private var visitReminderOn    = false
     
     @Query private var recentVisitsQ: [KBMedicalVisit]
     
@@ -51,6 +53,7 @@ struct PediatricVisitEditView: View {
     @State private var showAddExamSheet      = false
     @State private var showAddDrugSheet      = false
     @State private var showAddTreatmentSheet = false
+    @State private var editingDrug: KBAsNeededDrug? = nil
     
     // ── Step 4: Foto & Appunti ──
     @State private var notes = ""
@@ -348,6 +351,46 @@ struct PediatricVisitEditView: View {
                     Label("Data Visita", systemImage: "calendar").font(.headline).padding(.horizontal)
                     DatePicker("", selection: $visitDate, displayedComponents: [.date, .hourAndMinute])
                         .datePickerStyle(.compact).labelsHidden().padding(.horizontal)
+                    // ── Promemoria visita ──
+                    HStack(spacing: 12) {
+                        Image(systemName: visitReminderOn ? "bell.fill" : "bell")
+                            .foregroundStyle(visitReminderOn ? tint : .secondary)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Promemoria il giorno prima")
+                                .font(.subheadline)
+                            Text("Notifica alle 09:00")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: $visitReminderOn)
+                            .labelsHidden()
+                            .tint(tint)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 4)
+                }
+                Divider().padding(.horizontal)
+                // ── Stato visita ──
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Stato Visita", systemImage: "flag.fill").font(.headline).padding(.horizontal)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(KBVisitStatus.allCases, id: \.self) { s in
+                                Button { visitStatus = s } label: {
+                                    Label(s.rawValue, systemImage: s.icon)
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 12).padding(.vertical, 8)
+                                        .background(
+                                            Capsule().fill(visitStatus == s ? tint : Color.secondary.opacity(0.1))
+                                        )
+                                        .foregroundStyle(visitStatus == s ? .white : KBTheme.primaryText(colorScheme))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
                 }
             }
             .padding(.vertical)
@@ -489,8 +532,15 @@ struct PediatricVisitEditView: View {
                                 Text(d.drugName).font(.subheadline.bold())
                                 Text("\(d.dosageValue, specifier: "%.0f") \(d.dosageUnit)")
                                     .font(.caption).foregroundStyle(.secondary)
+                                if let instr = d.instructions, !instr.isEmpty {
+                                    Text(instr).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                }
                             }
                             Spacer()
+                            Button { editingDrug = d } label: {
+                                Image(systemName: "pencil.circle.fill").foregroundStyle(tint).font(.title3)
+                            }
+                            .buttonStyle(.plain)
                             Button { asNeededDrugs.removeAll { $0.id == d.id } } label: {
                                 Image(systemName: "trash.fill").foregroundStyle(.red).font(.subheadline)
                             }
@@ -514,6 +564,13 @@ struct PediatricVisitEditView: View {
         .padding(.vertical)
         .sheet(isPresented: $showAddDrugSheet) {
             AddAsNeededDrugSheet(tint: tint) { drug in asNeededDrugs.append(drug) }
+        }
+        .sheet(item: $editingDrug) { drug in
+            EditAsNeededDrugSheet(tint: tint, drug: drug) { updated in
+                if let idx = asNeededDrugs.firstIndex(where: { $0.id == updated.id }) {
+                    asNeededDrugs[idx] = updated
+                }
+            }
         }
     }
     
@@ -795,6 +852,10 @@ struct PediatricVisitEditView: View {
         hasNextVisit       = v.nextVisitDate != nil
         nextVisitDate      = v.nextVisitDate ?? Date()
         nextVisitReminder  = v.nextVisitDate != nil  // se aveva già una data, reminder era attivo
+        visitStatus        = v.visitStatus ?? .pending
+        KBExamReminderService.shared.isScheduled(examId: "visit-\(vid)") { scheduled in
+            visitReminderOn = scheduled
+        }
     }
     
     private func save() {
@@ -830,11 +891,18 @@ struct PediatricVisitEditView: View {
             v.linkedExamIds      = linkedExamIds
             v.notes              = notes.isEmpty ? nil : notes
             v.nextVisitDate      = hasNextVisit ? nextVisitDate : nil
+            v.visitStatus        = visitStatus
             v.updatedAt          = now; v.updatedBy = uid; v.syncState = .pendingUpsert
             linkExamsToVisit(vid)
             try? modelContext.save()
             SyncCenter.shared.enqueueVisitUpsert(visitId: v.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            // Promemoria data visita
+            if visitReminderOn {
+                scheduleVisitReminder(visitId: v.id, date: visitDate, reason: v.reason, childName: childName)
+            } else {
+                cancelVisitReminder(visitId: v.id)
+            }
             if hasNextVisit && nextVisitReminder {
                 scheduleNextVisitReminder(visitId: v.id, date: nextVisitDate, reason: v.reason, childName: childName)
             } else {
@@ -863,6 +931,7 @@ struct PediatricVisitEditView: View {
             therapyTypes:        therapyTypes,
             notes:               notes.isEmpty ? nil : notes,
             nextVisitDate:       hasNextVisit ? nextVisitDate : nil,
+            visitStatus:         visitStatus,
             createdAt:           now, updatedAt: now, updatedBy: uid, createdBy: uid
         )
         modelContext.insert(visit)
@@ -870,6 +939,9 @@ struct PediatricVisitEditView: View {
         try? modelContext.save()
         SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        if visitReminderOn {
+            scheduleVisitReminder(visitId: visit.id, date: visitDate, reason: reason, childName: childName)
+        }
         if hasNextVisit && nextVisitReminder {
             scheduleNextVisitReminder(visitId: visit.id, date: nextVisitDate, reason: reason, childName: childName)
         }
@@ -927,6 +999,21 @@ struct PediatricVisitEditView: View {
     private func cancelNextVisitReminder(visitId: String) {
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ["next-visit-\(visitId)"])
+    }
+    
+    // MARK: - Visit date notification
+    
+    private func scheduleVisitReminder(visitId: String, date: Date, reason: String, childName: String) {
+        KBExamReminderService.shared.schedule(
+            examId:    "visit-\(visitId)",
+            examName:  reason.isEmpty ? "visita medica" : reason,
+            childName: childName,
+            date:      date
+        ) { _ in }
+    }
+    
+    private func cancelVisitReminder(visitId: String) {
+        KBExamReminderService.shared.cancel(examId: "visit-\(visitId)")
     }
     
     // MARK: - View helpers
@@ -1143,6 +1230,65 @@ struct AddAsNeededDrugSheet: View {
                     }
                     .disabled(drugName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+            }
+        }
+    }
+}
+
+// MARK: - EditAsNeededDrugSheet
+
+struct EditAsNeededDrugSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let tint:    Color
+    let drug:    KBAsNeededDrug
+    let onSave:  (KBAsNeededDrug) -> Void
+    
+    @State private var drugName     = ""
+    @State private var dosageValue  = 0.0
+    @State private var dosageUnit   = "ml"
+    @State private var instructions = ""
+    
+    private let units = ["ml", "mg", "gocce", "cp", "bustina"]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Farmaco") { TextField("Nome farmaco", text: $drugName) }
+                Section("Dosaggio") {
+                    HStack {
+                        TextField("Quantità", value: $dosageValue, format: .number).keyboardType(.decimalPad)
+                        Picker("Unità", selection: $dosageUnit) {
+                            ForEach(units, id: \.self) { Text($0) }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+                Section("Istruzioni") {
+                    TextField("Es: In caso di febbre > 38°", text: $instructions, axis: .vertical).lineLimit(2...4)
+                }
+            }
+            .navigationTitle("Modifica Farmaco")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading)  { Button("Annulla") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Salva") {
+                        var updated = drug
+                        updated.drugName     = drugName
+                        updated.dosageValue  = dosageValue
+                        updated.dosageUnit   = dosageUnit
+                        updated.instructions = instructions.isEmpty ? nil : instructions
+                        onSave(updated)
+                        dismiss()
+                    }
+                    .disabled(drugName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .onAppear {
+                drugName     = drug.drugName
+                dosageValue  = drug.dosageValue
+                dosageUnit   = drug.dosageUnit
+                instructions = drug.instructions ?? ""
             }
         }
     }

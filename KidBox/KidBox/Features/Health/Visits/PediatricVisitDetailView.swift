@@ -138,6 +138,14 @@ struct PediatricVisitDetailView: View {
                         Text(v.date.formatted(date: .long, time: .shortened))
                             .font(.caption)
                             .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                        // ── Stato visita ──
+                        if let status = v.visitStatus {
+                            Label(status.rawValue, systemImage: status.icon)
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(Capsule().fill(statusColor(status).opacity(0.15)))
+                                .foregroundStyle(statusColor(status))
+                        }
                     }
                 }
                 Spacer(minLength: 8)
@@ -363,6 +371,15 @@ struct PediatricVisitDetailView: View {
     
     private func hasPrescriptions(_ v: KBMedicalVisit) -> Bool {
         !v.asNeededDrugs.isEmpty || !v.therapyTypes.isEmpty || !v.linkedExamIds.isEmpty
+    }
+    
+    private func statusColor(_ status: KBVisitStatus) -> Color {
+        switch status {
+        case .pending:         return .gray
+        case .booked:          return .blue
+        case .completed:       return .green
+        case .resultAvailable: return .purple
+        }
     }
     
     private func deleteVisit(_ v: KBMedicalVisit) {

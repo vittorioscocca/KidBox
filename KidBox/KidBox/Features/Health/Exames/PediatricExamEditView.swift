@@ -6,6 +6,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import MapKit
 import QuickLook
 
 struct PediatricExamEditView: View {
@@ -30,6 +31,7 @@ struct PediatricExamEditView: View {
     @State private var isUrgent    = false
     @State private var hasDeadline = false
     @State private var deadline    = Date()
+    @State private var reminderOn  = false   // ← promemoria
     @State private var preparation = ""
     @State private var notes       = ""
     @State private var location    = ""   // ← NUOVO
@@ -111,21 +113,25 @@ struct PediatricExamEditView: View {
                         Label("Urgente", systemImage: "exclamationmark.triangle.fill")
                     }
                     Toggle(isOn: $hasDeadline) {
-                        Label("Da eseguire entro", systemImage: "calendar")
+                        Label("Da eseguire il", systemImage: "calendar")
                     }
                     if hasDeadline {
                         DatePicker("Scadenza", selection: $deadline, displayedComponents: .date)
+                        // ── Promemoria ──
+                        Toggle(isOn: $reminderOn) {
+                            Label("Promemoria il giorno dell'esame", systemImage: reminderOn ? "bell.fill" : "bell")
+                                .foregroundStyle(reminderOn ? .orange : .primary)
+                        }
+                        .tint(.orange)
+                        .onChange(of: reminderOn) { _, newValue in
+                            handleReminderToggle(newValue)
+                        }
                     }
                 }
                 
-                // ── Luogo ── (NUOVO)
+                // ── Luogo ──
                 Section("Luogo") {
-                    HStack {
-                        Image(systemName: "mappin.and.ellipse")
-                            .foregroundStyle(tint)
-                        TextField("Es: Ospedale Civile, Via Roma 1", text: $location, axis: .vertical)
-                            .lineLimit(1...3)
-                    }
+                    KBLocationSearchField(location: $location, tint: tint)
                 }
                 
                 // ── Preparazione & Note ──
@@ -350,6 +356,13 @@ struct PediatricExamEditView: View {
         isUrgent    = e.isUrgent
         hasDeadline = e.deadline != nil
         deadline    = e.deadline ?? Date()
+        // Carica stato promemoria
+        if let dl = e.deadline {
+            KBExamReminderService.shared.isScheduled(examId: e.id) { scheduled in
+                reminderOn = scheduled
+                _ = dl   // usato implicitamente da handleReminderToggle
+            }
+        }
         preparation = e.preparation ?? ""
         notes       = e.notes ?? ""
         location    = e.location ?? ""   // ← NUOVO
@@ -412,6 +425,18 @@ struct PediatricExamEditView: View {
         try? modelContext.save()
         SyncCenter.shared.enqueueMedicalExamUpsert(examId: exam.id, familyId: familyId, modelContext: modelContext)
         
+        // ── Gestione promemoria ──
+        if hasDeadline && reminderOn {
+            KBExamReminderService.shared.schedule(
+                examId:    exam.id,
+                examName:  exam.name,
+                childName: childName,
+                date:      deadline
+            ) { _ in }
+        } else {
+            KBExamReminderService.shared.cancel(examId: exam.id)
+        }
+        
         // Upload allegati pendenti
         if !pendingURLs.isEmpty {
             let eid = exam.id
@@ -431,6 +456,20 @@ struct PediatricExamEditView: View {
         onSaved?(exam.id)
         isSaving = false
         dismiss()
+    }
+    
+    // MARK: - Promemoria
+    
+    private func handleReminderToggle(_ newValue: Bool) {
+        guard hasDeadline else { return }
+        // Richiede il permesso subito così l'utente vede il dialog di sistema
+        // prima di toccare Salva
+        if newValue {
+            KBExamReminderService.shared.requestAuthorization { granted in
+                if !granted { reminderOn = false }
+            }
+        }
+        // La pianificazione/cancellazione effettiva avviene in save()
     }
     
     // MARK: - Helpers

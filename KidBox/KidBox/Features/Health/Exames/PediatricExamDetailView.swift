@@ -25,8 +25,13 @@ struct PediatricExamDetailView: View {
     private var exam:      KBMedicalExam? { exams.first }
     private var childName: String         { children.first?.name ?? members.first?.displayName ?? "bambino" }
     
-    @State private var showEditSheet   = false
-    @State private var showDeleteAlert = false
+    @State private var showEditSheet      = false
+    @State private var showDeleteAlert    = false
+    
+    // Promemoria
+    @State private var reminderScheduled  = false
+    @State private var showReminderAlert  = false   // feedback dopo l'azione
+    @State private var reminderAlertMsg   = ""
     
     private let tint = Color(red: 0.25, green: 0.65, blue: 0.75)
     
@@ -78,6 +83,18 @@ struct PediatricExamDetailView: View {
             Button("Annulla", role: .cancel) { }
         } message: {
             Text("Questa azione non può essere annullata.")
+        }
+        .alert("Promemoria", isPresented: $showReminderAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(reminderAlertMsg)
+        }
+        .onAppear {
+            if let exam {
+                KBExamReminderService.shared.isScheduled(examId: exam.id) { scheduled in
+                    reminderScheduled = scheduled
+                }
+            }
         }
     }
     
@@ -157,6 +174,18 @@ struct PediatricExamDetailView: View {
                                 .font(.caption2.bold()).foregroundStyle(.red)
                         }
                     }
+                    Spacer()
+                    // ── Pulsante promemoria ──
+                    Button {
+                        toggleReminder(exam: e, date: dl)
+                    } label: {
+                        Image(systemName: reminderScheduled ? "bell.fill" : "bell")
+                            .font(.system(size: 18))
+                            .foregroundStyle(reminderScheduled ? .orange : .secondary)
+                            .symbolEffect(.bounce, value: reminderScheduled)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(reminderScheduled ? "Rimuovi promemoria" : "Aggiungi promemoria")
                 }
             }
             
@@ -312,6 +341,32 @@ struct PediatricExamDetailView: View {
         case .booked:   return tint
         case .done:     return .green
         case .resultIn: return Color(red: 0.4, green: 0.75, blue: 0.65)
+        }
+    }
+    
+    // MARK: - Reminder
+    
+    private func toggleReminder(exam: KBMedicalExam, date: Date) {
+        if reminderScheduled {
+            KBExamReminderService.shared.cancel(examId: exam.id)
+            reminderScheduled  = false
+            reminderAlertMsg   = "Promemoria rimosso."
+            showReminderAlert  = true
+        } else {
+            KBExamReminderService.shared.schedule(
+                examId:    exam.id,
+                examName:  exam.name,
+                childName: childName,
+                date:      date
+            ) { success in
+                if success {
+                    reminderScheduled = true
+                    reminderAlertMsg  = "Promemoria impostato per il \(date.formatted(date: .long, time: .omitted)) alle 08:00."
+                } else {
+                    reminderAlertMsg  = "Impossibile impostare il promemoria. Controlla i permessi in Impostazioni → Notifiche."
+                }
+                showReminderAlert = true
+            }
         }
     }
     

@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 enum KBDoctorSpecialization: String, Codable, CaseIterable {
     case pediatra            = "Pediatra"
@@ -39,6 +40,31 @@ enum KBTherapyType: String, Codable, CaseIterable {
     case dieta        = "Dieta"
     case aerosol      = "Aerosol"
     case altro        = "Altro"
+}
+
+enum KBVisitStatus: String, Codable, CaseIterable {
+    case pending           = "In attesa"
+    case booked            = "Prenotata"
+    case completed         = "Eseguita"
+    case resultAvailable   = "Risultato disponibile"
+    
+    var icon: String {
+        switch self {
+        case .pending:         return "clock"
+        case .booked:          return "calendar.badge.checkmark"
+        case .completed:       return "checkmark.circle.fill"
+        case .resultAvailable: return "doc.text.magnifyingglass"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .pending:         return .gray
+        case .booked:          return .blue
+        case .completed:       return .green
+        case .resultAvailable: return .purple
+        }
+    }
 }
 
 struct KBTravelDetails: Codable {

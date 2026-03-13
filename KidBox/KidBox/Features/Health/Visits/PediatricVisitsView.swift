@@ -76,6 +76,25 @@ struct PediatricVisitsView: View {
         }
     }
     
+    private struct VisitSection {
+        let status: KBVisitStatus
+        let visits: [KBMedicalVisit]
+    }
+    
+    // Ordine di visualizzazione delle sezioni
+    private let sectionOrder: [KBVisitStatus] = [.booked, .pending, .completed, .resultAvailable]
+    
+    private var visitSections: [VisitSection] {
+        // Visite senza stato → trattate come .pending
+        let grouped = Dictionary(grouping: filteredVisits) { v in
+            v.visitStatus ?? .pending
+        }
+        return sectionOrder.compactMap { status in
+            guard let visits = grouped[status], !visits.isEmpty else { return nil }
+            return VisitSection(status: status, visits: visits)
+        }
+    }
+    
     private var filteredVisits: [KBMedicalVisit] {
         let periodFiltered: [KBMedicalVisit]
         switch selectedPeriod {
@@ -111,7 +130,6 @@ struct PediatricVisitsView: View {
             if selectedPeriod != .all { filterPill.padding(.horizontal).padding(.top, 8) }
             
             List {
-                // ── Lista ──
                 if filteredVisits.isEmpty {
                     Section {
                         emptyState
@@ -119,18 +137,26 @@ struct PediatricVisitsView: View {
                             .listRowSeparator(.hidden)
                     }
                 } else {
-                    Section {
-                        ForEach(filteredVisits) { visitRow($0) }
-                            .onDelete(perform: isSelecting ? nil : { deleteItems(offsets: $0) })
-                    } header: {
-                        HStack {
-                            Label("Visite recenti", systemImage: "clock.arrow.circlepath")
-                                .foregroundStyle(tint)
-                            Spacer()
-                            Text("\(filteredVisits.count)")
-                                .font(.caption.bold()).foregroundStyle(.white)
-                                .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Capsule().fill(tint))
+                    // ── Sezioni per stato ──
+                    ForEach(visitSections, id: \.status) { section in
+                        Section {
+                            ForEach(section.visits) { visitRow($0) }
+                                .onDelete(perform: isSelecting ? nil : { offsets in
+                                    deleteItems(offsets: offsets, in: section.visits)
+                                })
+                        } header: {
+                            HStack(spacing: 6) {
+                                Image(systemName: section.status.icon)
+                                    .foregroundStyle(section.status.color)
+                                Text(section.status.rawValue)
+                                    .foregroundStyle(section.status.color)
+                                    .font(.caption.bold().uppercaseSmallCaps())
+                                Spacer()
+                                Text("\(section.visits.count)")
+                                    .font(.caption.bold()).foregroundStyle(.white)
+                                    .padding(.horizontal, 7).padding(.vertical, 2)
+                                    .background(Capsule().fill(section.status.color))
+                            }
                         }
                     }
                 }
@@ -252,6 +278,11 @@ struct PediatricVisitsView: View {
                     }
                     Text(v.date.formatted(date: .abbreviated, time: .shortened))
                         .font(.caption).foregroundStyle(KBTheme.secondaryText(colorScheme))
+                    if let status = v.visitStatus {
+                        Label(status.rawValue, systemImage: status.icon)
+                            .font(.caption2.bold())
+                            .foregroundStyle(status.color)
+                    }
                 }
                 Spacer()
                 if !isSelecting {
@@ -430,11 +461,11 @@ struct PediatricVisitsView: View {
         withAnimation { selectedIds.removeAll(); isSelecting = false }
     }
     
-    private func deleteItems(offsets: IndexSet) {
+    private func deleteItems(offsets: IndexSet, in source: [KBMedicalVisit]) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         for i in offsets {
-            let v = filteredVisits[i]
+            let v = source[i]
             v.isDeleted = true; v.updatedBy = uid; v.updatedAt = now
             v.syncState = .pendingUpsert; v.lastSyncError = nil
             SyncCenter.shared.enqueueVisitDelete(visitId: v.id, familyId: familyId, modelContext: modelContext)

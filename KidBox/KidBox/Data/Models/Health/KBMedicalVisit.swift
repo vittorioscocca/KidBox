@@ -39,6 +39,9 @@ final class KBMedicalVisit {
     var nextVisitDate: Date?
     var nextVisitReason: String?
     
+    // MARK: Stato visita
+    var visitStatusRaw: String?
+    
     // MARK: Soft delete
     var isDeleted: Bool
     
@@ -84,6 +87,11 @@ final class KBMedicalVisit {
         set { therapyTypesRaw = newValue.map { $0.rawValue } }
     }
     
+    var visitStatus: KBVisitStatus? {
+        get { visitStatusRaw.flatMap { KBVisitStatus(rawValue: $0) } }
+        set { visitStatusRaw = newValue?.rawValue }
+    }
+    
     // MARK: - Init
     
     init(
@@ -106,6 +114,7 @@ final class KBMedicalVisit {
         notes: String? = nil,
         nextVisitDate: Date? = nil,
         nextVisitReason: String? = nil,
+        visitStatus: KBVisitStatus? = nil,
         isDeleted: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -128,6 +137,7 @@ final class KBMedicalVisit {
         self.notes                   = notes
         self.nextVisitDate           = nextVisitDate
         self.nextVisitReason         = nextVisitReason
+        self.visitStatusRaw          = visitStatus?.rawValue
         self.isDeleted               = isDeleted
         self.createdAt               = createdAt
         self.updatedAt               = updatedAt
