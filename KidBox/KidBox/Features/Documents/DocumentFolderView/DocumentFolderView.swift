@@ -1,3 +1,4 @@
+
 //
 //  DocumentFolderView.swift
 //  KidBox
@@ -477,6 +478,7 @@ struct DocumentFolderView: View {
                         .padding(.horizontal)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu { if !viewModel.isSelecting { folderContextMenu(f) } }
                     .swipeActions(edge: .trailing) {
                         if !viewModel.isSelecting { folderSwipeActions(f) }
                     }
@@ -504,6 +506,11 @@ struct DocumentFolderView: View {
                         .padding(.horizontal)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        if !viewModel.isSelecting {
+                            docContextMenu(doc)
+                        }
+                    }
                     .swipeActions(edge: .trailing) {
                         if !viewModel.isSelecting { docSwipeActions(doc) }
                     }
@@ -538,6 +545,27 @@ struct DocumentFolderView: View {
         Divider()
         Button(role: .destructive) { viewModel.deleteFolderCascade(f) } label: {
             Label("Elimina cartella", systemImage: "trash")
+        }
+    }
+    
+    @ViewBuilder
+    private func docContextMenu(_ doc: KBDocument) -> some View {
+        Button { viewModel.docToRename = doc; viewModel.renameText = doc.title } label: {
+            Label("Rinomina", systemImage: "pencil")
+        }
+        Divider()
+        Button { viewModel.beginMoveDocument(doc) } label: {
+            Label("Sposta in…", systemImage: "folder")
+        }
+        Button { viewModel.beginCopyDocument(doc) } label: {
+            Label("Copia in…", systemImage: "doc.on.doc")
+        }
+        Button { viewModel.duplicateDocument(doc) } label: {
+            Label("Duplica", systemImage: "plus.square.on.square")
+        }
+        Divider()
+        Button(role: .destructive) { viewModel.deleteDocument(doc) } label: {
+            Label("Elimina documento", systemImage: "trash")
         }
     }
     
@@ -656,6 +684,11 @@ private extension DocumentFolderView {
                     Image(systemName: "trash")
                 }
                 .accessibilityLabel("Elimina selezionati")
+                
+                Button { viewModel.beginMoveSelectedItems() } label: {
+                    Image(systemName: "folder")
+                }
+                .accessibilityLabel("Sposta selezionati")
             }
             
             // Menu +

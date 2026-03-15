@@ -231,28 +231,62 @@ private struct YearOverviewView: View {
     @Binding var selectedDate: Date
     let onSelectDate: (Date) -> Void
     
+    private let todayYear: Int = Calendar.current.component(.year, from: Date())
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+    
+    private var firstYear: Int { todayYear - 40 }
+    private var lastYear:  Int { todayYear + 40 }
+    
+    private func anchorID(for y: Int) -> String { "year-\(y)" }
     
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(1...12, id: \.self) { month in
-                        MiniMonthView(
-                            year:            year,
-                            month:           month,
-                            datesWithEvents: datesWithEvents,
-                            selectedDate:    selectedDate,
-                            onSelectDate:    onSelectDate
-                        )
-                        .id(month)
+                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                    ForEach(firstYear...lastYear, id: \.self) { y in
+                        Section {
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(1...12, id: \.self) { month in
+                                    MiniMonthView(
+                                        year:            y,
+                                        month:           month,
+                                        datesWithEvents: datesWithEvents,
+                                        selectedDate:    selectedDate,
+                                        onSelectDate:    onSelectDate
+                                    )
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.bottom, 20)
+                        } header: {
+                            HStack(spacing: 8) {
+                                Text(String(y))
+                                    .font(.title2.weight(.bold))
+                                if y == todayYear {
+                                    Text("oggi")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Color.accentColor, in: Capsule())
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                            .background(.thinMaterial)
+                            .id(anchorID(for: y))
+                        }
                     }
                 }
-                .padding()
+                .padding(.top, 4)
             }
             .onAppear {
-                let currentMonth = Calendar.current.component(.month, from: selectedDate)
-                proxy.scrollTo(currentMonth, anchor: .center)
+                let targetYear = Calendar.current.component(.year, from: selectedDate)
+                let clamped    = min(max(targetYear, firstYear), lastYear)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    proxy.scrollTo(anchorID(for: clamped), anchor: .top)
+                }
             }
         }
     }

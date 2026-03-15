@@ -49,7 +49,14 @@ struct TreatmentDetailView: View {
     // MARK: Computed
     
     private var childName: String { children.first?.name ?? "" }
-    private var totalDays: Int { treatment.isLongTerm ? 30 : treatment.durationDays }
+    private var totalDays: Int {
+        guard treatment.isLongTerm else { return treatment.durationDays }
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: treatment.startDate)
+        let today = cal.startOfDay(for: Date())
+        let daysSinceStart = cal.dateComponents([.day], from: start, to: today).day ?? 0
+        return max(daysSinceStart + 7, 7)   // almeno 7 giorni futuri visibili
+    }
     private var timelineDays: [Int] { Array(0..<totalDays) }
     
     private var dateForOffset: (Int) -> Date {
@@ -74,6 +81,7 @@ struct TreatmentDetailView: View {
         let startDay = cal.startOfDay(for: treatment.startDate)
         let today    = cal.startOfDay(for: Date())
         let days     = cal.dateComponents([.day], from: startDay, to: today).day ?? 0
+        if treatment.isLongTerm { return max(0, days) }
         return max(0, min(days, totalDays - 1))
     }
     
@@ -199,26 +207,39 @@ struct TreatmentDetailView: View {
             HStack(spacing: 16) {
                 ZStack {
                     Circle().stroke(tint.opacity(0.15), lineWidth: 6).frame(width: 56, height: 56)
-                    Circle()
-                        .trim(from: 0, to: progressFraction)
-                        .stroke(tint, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: 56, height: 56)
-                        .animation(.easeInOut, value: progressFraction)
-                    Text("\(Int(progressFraction * 100))%")
-                        .font(.caption.bold()).foregroundStyle(tint)
+                    if treatment.isLongTerm {
+                        Image(systemName: "infinity")
+                            .font(.title3.bold()).foregroundStyle(tint)
+                    } else {
+                        Circle()
+                            .trim(from: 0, to: progressFraction)
+                            .stroke(tint, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .frame(width: 56, height: 56)
+                            .animation(.easeInOut, value: progressFraction)
+                        Text("\(Int(progressFraction * 100))%")
+                            .font(.caption.bold()).foregroundStyle(tint)
+                    }
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    let day = currentDayOffset + 1
-                    Text("Giorno \(day) di \(totalDays)").font(.subheadline.bold())
-                    if !treatment.isLongTerm {
+                    if treatment.isLongTerm {
+                        HStack(spacing: 6) {
+                            Image(systemName: "infinity").foregroundStyle(tint).font(.caption.bold())
+                            Text("Cura a lungo termine").font(.subheadline.bold())
+                        }
+                        Text("In corso dal \(treatment.startDate.formatted(.dateTime.day().month(.abbreviated).year()))")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text("\(takenCount) dosi somministrate").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        let day = currentDayOffset + 1
+                        Text("Giorno \(day) di \(totalDays)").font(.subheadline.bold())
                         let end = dateForOffset(totalDays - 1)
                         Text("\(treatment.startDate.formatted(.dateTime.day().month(.abbreviated).year())) – \(end.formatted(.dateTime.day().month(.abbreviated).year()))")
                             .font(.caption).foregroundStyle(.secondary)
+                        Text("\(takenCount)/\(totalDoseCount) Dosi totali")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text("\(takenCount)/\(totalDoseCount) Dosi totali")
-                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
         }

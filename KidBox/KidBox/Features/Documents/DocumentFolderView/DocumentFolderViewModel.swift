@@ -77,7 +77,7 @@ final class DocumentFolderViewModel: ObservableObject {
     /// Mostra il FolderPickerSheet
     @Published var showFolderPicker = false
     /// Tipo di operazione corrente
-    enum PendingOperation { case moveDoc, copyDoc, moveFolder, copyFolder }
+    enum PendingOperation { case moveDoc, copyDoc, moveFolder, copyFolder, moveSelected }
     @Published var pendingOperation: PendingOperation?
     
     // MARK: - Services
@@ -620,12 +620,36 @@ final class DocumentFolderViewModel: ObservableObject {
             if let folder = folderPendingMove { moveFolder(folder, toFolderId: destinationId) }
         case .copyFolder:
             if let folder = folderPendingCopy { copyFolder(folder, toFolderId: destinationId) }
+        case .moveSelected:
+            moveSelectedItems(toFolderId: destinationId)
         case nil:
             break
         }
     }
     
-    /// ID cartelle da escludere nel FolderPicker (per Sposta cartella).
+    /// Avvia il flusso "Sposta selezionati": apre il FolderPicker.
+    func beginMoveSelectedItems() {
+        guard !selectedItems.isEmpty else { return }
+        pendingOperation = .moveSelected
+        showFolderPicker = true
+    }
+    
+    /// Sposta tutti gli elementi selezionati nella cartella destinazione.
+    func moveSelectedItems(toFolderId destId: String?) {
+        let folderIds = selectedItems.compactMap { if case .folder(let id) = $0 { return id } else { return nil } }
+        let docIds    = selectedItems.compactMap { if case .doc(let id) = $0    { return id } else { return nil } }
+        
+        let foldersToMove = folders.filter { folderIds.contains($0.id) }
+        let docsToMove    = docs.filter    { docIds.contains($0.id) }
+        
+        for folder in foldersToMove { moveFolder(folder, toFolderId: destId) }
+        for doc    in docsToMove    { moveDocument(doc, toFolderId: destId) }
+        
+        exitSelectionMode()
+        reload()
+    }
+    
+    
     func excludedFolderIdsForCurrentOperation() -> Set<String> {
         guard let modelContext else { return [] }
         switch pendingOperation {
@@ -638,6 +662,23 @@ final class DocumentFolderViewModel: ObservableObject {
             )) ?? []
             let subtree = computeFolderSubtree(root: source, allCategories: all)
             return Set(subtree.map(\.id))
+        case .moveSelected:
+            // Escludi tutte le cartelle selezionate e i loro subtree
+            let selectedFolderIds = selectedItems.compactMap {
+                if case .folder(let id) = $0 { return id } else { return nil }
+            }
+            guard !selectedFolderIds.isEmpty else { return [] }
+            let fid = familyId
+            let all = (try? modelContext.fetch(
+                FetchDescriptor<KBDocumentCategory>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
+            )) ?? []
+            var excluded = Set<String>()
+            for folderId in selectedFolderIds {
+                if let root = all.first(where: { $0.id == folderId }) {
+                    computeFolderSubtree(root: root, allCategories: all).forEach { excluded.insert($0.id) }
+                }
+            }
+            return excluded
         default:
             return []
         }
@@ -646,11 +687,12 @@ final class DocumentFolderViewModel: ObservableObject {
     /// Titolo dinamico del FolderPickerSheet.
     var folderPickerTitle: String {
         switch pendingOperation {
-        case .moveDoc:    return "Sposta documento in…"
-        case .copyDoc:    return "Copia documento in…"
-        case .moveFolder: return "Sposta cartella in…"
-        case .copyFolder: return "Copia cartella in…"
-        case nil:         return "Scegli cartella"
+        case .moveDoc:      return "Sposta documento in…"
+        case .copyDoc:      return "Copia documento in…"
+        case .moveFolder:   return "Sposta cartella in…"
+        case .copyFolder:   return "Copia cartella in…"
+        case .moveSelected: return "Sposta \(selectedItems.count) elementi in…"
+        case nil:           return "Scegli cartella"
         }
     }
     

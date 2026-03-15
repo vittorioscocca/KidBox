@@ -290,9 +290,11 @@ struct PediatricTreatmentEditView: View {
             
             styledGroupBox(title: "Riepilogo") {
                 VStack(spacing: 6) {
-                    summaryRow(label: "Durata",      value: isLongTerm ? "A lungo termine" : "\(durationDays) giorni")
+                    summaryRow(label: "Durata",      value: isLongTerm ? "A lungo termine (senza fine)" : "\(durationDays) giorni")
                     summaryRow(label: "Data inizio", value: startDate.formatted(.dateTime.day().month(.abbreviated).year()))
-                    if !isLongTerm {
+                    if isLongTerm {
+                        summaryRow(label: "Data fine", value: "Nessuna — cura permanente")
+                    } else {
                         summaryRow(label: "Data fine",   value: endDate.formatted(.dateTime.day().month(.abbreviated).year()))
                         summaryRow(label: "Dosi totali", value: "\(totalDoses)")
                     }
@@ -325,7 +327,10 @@ struct PediatricTreatmentEditView: View {
                     }
                     Divider()
                     summaryRow(label: "Dosaggio",  value: "\(dosageValue, default: "%.0f") \(dosageUnit)")
-                    if !isLongTerm { summaryRow(label: "Durata", value: "\(durationDays) giorni") }
+                    summaryRow(label: "Tipo", value: isLongTerm ? "A lungo termine ∞" : "\(durationDays) giorni")
+                    if isLongTerm {
+                        summaryRow(label: "Fine", value: "Senza fine — cura permanente")
+                    }
                     summaryRow(label: "Frequenza", value: "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno")
                     Divider()
                     Text("Orari somministrazione:").font(.caption).foregroundStyle(.secondary)

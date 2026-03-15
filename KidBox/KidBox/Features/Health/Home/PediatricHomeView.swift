@@ -366,6 +366,9 @@ struct HealthTimelineView: View {
     
     @State private var activeFilters: Set<String> = []
     @State private var selectedYear: Int? = nil
+    @State private var showYearSheet = false
+    @State private var searchText = ""
+    @State private var isSearchPresented = false
     
     private let allKinds: [HealthEventKind] = [.visit, .exam, .treatment, .vaccine]
     
@@ -396,8 +399,16 @@ struct HealthTimelineView: View {
             yearFiltered = kindFiltered
         }
         
-        // 3. Raggruppa per anno → mese
-        let byYear = Dictionary(grouping: yearFiltered) { cal.component(.year, from: $0.date) }
+        // 3. Filtro testo
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let searched: [HealthTimelineEvent] = q.isEmpty ? yearFiltered : yearFiltered.filter {
+            $0.title.localizedCaseInsensitiveContains(q)
+            || ($0.subtitle ?? "").localizedCaseInsensitiveContains(q)
+            || $0.kind.rawValue.localizedCaseInsensitiveContains(q)
+        }
+        
+        // 4. Raggruppa per anno → mese
+        let byYear = Dictionary(grouping: searched) { cal.component(.year, from: $0.date) }
         return byYear.keys.sorted(by: >).map { year in
             let byMonth = Dictionary(grouping: byYear[year]!) { cal.component(.month, from: $0.date) }
             let months = byMonth.keys.sorted(by: >).map { month in
@@ -412,26 +423,28 @@ struct HealthTimelineView: View {
             // ── Barra filtri ──
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    // Chip anni
-                    Button { selectedYear = nil } label: {
-                        Text("Tutti")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(Capsule().fill(selectedYear == nil ? Color.primary : Color.secondary.opacity(0.12)))
-                            .foregroundStyle(selectedYear == nil ? Color(uiColor: .systemBackground) : .secondary)
+                    // Pulsante anno → sheet
+                    Button { showYearSheet = true } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: selectedYear == nil ? "calendar" : "calendar.badge.checkmark")
+                                .font(.caption.bold())
+                            Text(selectedYear.map(String.init) ?? "Anno")
+                                .font(.caption.bold())
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(Capsule().fill(
+                            selectedYear == nil
+                            ? Color.secondary.opacity(0.12)
+                            : Color(red: 0.85, green: 0.55, blue: 0.35).opacity(0.15)
+                        ))
+                        .foregroundStyle(selectedYear == nil ? .secondary : Color(red: 0.85, green: 0.55, blue: 0.35))
+                        .overlay(Capsule().strokeBorder(
+                            selectedYear == nil ? Color.clear : Color(red: 0.85, green: 0.55, blue: 0.35).opacity(0.4),
+                            lineWidth: 1))
                     }
                     .buttonStyle(.plain)
-                    
-                    ForEach(availableYears, id: \.self) { year in
-                        Button { selectedYear = selectedYear == year ? nil : year } label: {
-                            Text(String(year))
-                                .font(.caption.bold())
-                                .padding(.horizontal, 12).padding(.vertical, 7)
-                                .background(Capsule().fill(selectedYear == year ? Color.primary : Color.secondary.opacity(0.12)))
-                                .foregroundStyle(selectedYear == year ? Color(uiColor: .systemBackground) : .secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
                     
                     Rectangle()
                         .fill(Color.secondary.opacity(0.3))
@@ -519,6 +532,74 @@ struct HealthTimelineView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Storico")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button { isSearchPresented = true } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                if isSearchPresented {
+                    Button {
+                        searchText = ""
+                        isSearchPresented = false
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+            }
+        }
+        .searchable(
+            text: $searchText,
+            isPresented: $isSearchPresented,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Cerca visite, esami, cure…"
+        )
+        .sheet(isPresented: $showYearSheet) {
+            NavigationStack {
+                List {
+                    Button {
+                        selectedYear = nil; showYearSheet = false
+                    } label: {
+                        HStack {
+                            Label("Tutti gli anni", systemImage: "calendar").foregroundStyle(.primary)
+                            Spacer()
+                            if selectedYear == nil {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Color(red: 0.85, green: 0.55, blue: 0.35))
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    ForEach(availableYears, id: \.self) { year in
+                        let count = events.filter {
+                            Calendar.current.component(.year, from: $0.date) == year
+                        }.count
+                        Button {
+                            selectedYear = year; showYearSheet = false
+                        } label: {
+                            HStack {
+                                Text(String(year)).foregroundStyle(.primary)
+                                Spacer()
+                                Text("\(count) eventi").font(.caption).foregroundStyle(.secondary)
+                                if selectedYear == year {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(Color(red: 0.85, green: 0.55, blue: 0.35))
+                                        .padding(.leading, 6)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .navigationTitle("Filtra per anno")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Chiudi") { showYearSheet = false }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+        }
     }
     
     // MARK: - Row
@@ -639,7 +720,7 @@ struct PediatricTimelineDestinationView: View {
         _members       = Query(filter: #Predicate<KBFamilyMember>  { $0.userId == cid })
         _allVisits     = Query(filter: #Predicate<KBMedicalVisit>  { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
         _allExams      = Query(filter: #Predicate<KBMedicalExam>   { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
-        _allTreatments = Query(filter: #Predicate<KBTreatment>     { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true })
+        _allTreatments = Query(filter: #Predicate<KBTreatment>     { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
         _allVaccines   = Query(filter: #Predicate<KBVaccine>       { $0.familyId == fid && $0.childId == cid && $0.isDeleted == false })
     }
     
