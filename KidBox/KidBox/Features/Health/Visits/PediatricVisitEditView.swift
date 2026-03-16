@@ -853,8 +853,9 @@ struct PediatricVisitEditView: View {
         nextVisitDate      = v.nextVisitDate ?? Date()
         nextVisitReminder  = v.nextVisitDate != nil  // se aveva già una data, reminder era attivo
         visitStatus        = v.visitStatus ?? .pending
-        KBExamReminderService.shared.isScheduled(examId: "visit-\(vid)") { scheduled in
-            visitReminderOn = scheduled
+        UNUserNotificationCenter.current().getPendingNotificationRequests { reqs in
+            let scheduled = reqs.contains { $0.identifier == "visit-reminder-\(vid)" }
+            DispatchQueue.main.async { visitReminderOn = scheduled }
         }
     }
     
@@ -985,6 +986,12 @@ struct PediatricVisitEditView: View {
             }
             content.sound = .default
             content.categoryIdentifier = "NEXT_VISIT"
+            content.userInfo = [
+                "type":     "visit_reminder",
+                "familyId": familyId,
+                "childId":  childId,
+                "visitId":  visitId
+            ]
             
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(
@@ -1004,16 +1011,49 @@ struct PediatricVisitEditView: View {
     // MARK: - Visit date notification
     
     private func scheduleVisitReminder(visitId: String, date: Date, reason: String, childName: String) {
-        KBExamReminderService.shared.schedule(
-            examId:    "visit-\(visitId)",
-            examName:  reason.isEmpty ? "visita medica" : reason,
-            childName: childName,
-            date:      date
-        ) { _ in }
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let settings = await center.notificationSettings()
+            guard settings.authorizationStatus == .authorized else {
+                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+                return
+            }
+            
+            let cal = Calendar.current
+            guard let dayBefore = cal.date(byAdding: .day, value: -1, to: date) else { return }
+            var components = cal.dateComponents([.year, .month, .day], from: dayBefore)
+            components.hour   = 9
+            components.minute = 0
+            
+            center.removePendingNotificationRequests(withIdentifiers: ["visit-reminder-\(visitId)"])
+            
+            let content = UNMutableNotificationContent()
+            content.title = "Visita domani 🏥"
+            let name = childName.isEmpty ? "il bambino" : childName
+            content.body  = reason.isEmpty
+            ? "Ricorda: domani c'è una visita medica per \(name)."
+            : "Ricorda: domani c'è \"\(reason)\" per \(name)."
+            content.sound = .default
+            content.userInfo = [
+                "type":     "visit_reminder",
+                "familyId": familyId,
+                "childId":  childId,
+                "visitId":  visitId
+            ]
+            
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "visit-reminder-\(visitId)",
+                content:    content,
+                trigger:    trigger
+            )
+            try? await center.add(request)
+        }
     }
     
     private func cancelVisitReminder(visitId: String) {
-        KBExamReminderService.shared.cancel(examId: "visit-\(visitId)")
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["visit-reminder-\(visitId)"])
     }
     
     // MARK: - View helpers

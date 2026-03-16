@@ -134,6 +134,41 @@ struct KidBoxApp: App {
                             coordinator.setActiveFamily(familyId)
                             coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: eventId))
                             NotificationManager.shared.consumeDeepLink()
+                            
+                            // ── NUOVO: promemoria visita pediatrica ──────────────
+                        case .pediatricVisit(let familyId, let childId, let visitId):
+                            KBLog.navigation.kbInfo("Deep link -> open pediatric visit visitId=\(visitId)")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.openVisitFromPush(
+                                familyId: familyId,
+                                childId: childId,
+                                visitId: visitId,
+                                modelContext: modelContainer.mainContext
+                            )
+                            NotificationManager.shared.consumeDeepLink()
+                            // ── NUOVO: promemoria cura ────────────────────────────
+                        case .treatmentReminder(let familyId, let childId, let treatmentId):
+                            KBLog.navigation.kbInfo("Deep link -> open treatment treatmentId=\(treatmentId)")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.openTreatmentFromPush(
+                                familyId: familyId,
+                                childId: childId,
+                                treatmentId: treatmentId,
+                                modelContext: modelContainer.mainContext
+                            )
+                            NotificationManager.shared.consumeDeepLink()
+                            // ── NUOVO: promemoria esame ───────────────────────────
+                        case .examReminder(let familyId, let childId, let examId):
+                            KBLog.navigation.kbInfo("Deep link -> open exam examId=\(examId)")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.openExamFromPush(
+                                familyId: familyId,
+                                childId: childId,
+                                examId: examId,
+                                modelContext: modelContainer.mainContext
+                            )
+                            NotificationManager.shared.consumeDeepLink()
+                            // ────────────────────────────────────────────────────
                         }
                         notifications.consumeDeepLink()
                         KBLog.auth.kbDebug("Deep link consumed")

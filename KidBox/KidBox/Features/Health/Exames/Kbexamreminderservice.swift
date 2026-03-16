@@ -5,9 +5,16 @@
 //  Created by vscocca on 13/03/26.
 //
 
-
 import Foundation
 import UserNotifications
+
+// MARK: - Notification.Name
+
+extension Notification.Name {
+    /// Postata ogni volta che un promemoria esame viene aggiunto o rimosso,
+    /// così la lista può aggiornare le badge campanellina senza aspettare onAppear.
+    static let examReminderChanged = Notification.Name("kb.examReminderChanged")
+}
 
 // MARK: - KBExamReminderService
 
@@ -46,48 +53,94 @@ final class KBExamReminderService {
     
     /// Pianifica (o sostituisce) un promemoria per un esame.
     /// - Parameters:
-    ///   - examId:    Identificatore dell'esame.
-    ///   - examName:  Nome dell'esame, usato nel corpo della notifica.
-    ///   - childName: Nome del bambino.
-    ///   - date:      Data a cui mostrare il promemoria (alle 08:00 del mattino).
-    ///   - completion: Chiude con `true` se la notifica è stata pianificata con successo.
+    ///   - examId:       Identificatore dell'esame.
+    ///   - examName:     Nome dell'esame, usato nel corpo della notifica.
+    ///   - childName:    Nome del bambino / membro.
+    ///   - familyId:     ID famiglia, necessario per il deep link.
+    ///   - childId:      ID bambino, necessario per il deep link.
+    ///   - date:         Data a cui mostrare il promemoria.
+    ///   - reminderTime: Orario del promemoria. Se nil, scatta alle 08:00.
+    ///   - completion:   Chiude con `true` se la notifica è stata pianificata con successo.
     func schedule(
-        examId:    String,
-        examName:  String,
-        childName: String,
-        date:      Date,
-        completion: @escaping (Bool) -> Void
+        examId:       String,
+        examName:     String,
+        childName:    String,
+        familyId:     String,
+        childId:      String,
+        date:         Date,
+        reminderTime: Date? = nil,
+        completion:   @escaping (Bool) -> Void
     ) {
-        requestAuthorization { [weak self] granted in
-            guard let self, granted else {
-                completion(false)
-                return
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            guard let self else { return }
+            switch settings.authorizationStatus {
+            case .authorized, .provisional:
+                self.doSchedule(examId: examId, examName: examName, childName: childName,
+                                familyId: familyId, childId: childId,
+                                date: date, reminderTime: reminderTime, completion: completion)
+            case .notDetermined:
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                    guard granted else { DispatchQueue.main.async { completion(false) }; return }
+                    self.doSchedule(examId: examId, examName: examName, childName: childName,
+                                    familyId: familyId, childId: childId,
+                                    date: date, reminderTime: reminderTime, completion: completion)
+                }
+            default:
+                DispatchQueue.main.async { completion(false) }
             }
-            
-            let content = UNMutableNotificationContent()
-            content.title = "Promemoria esame 🩺"
-            content.body  = "\(childName) ha l'esame \"\(examName)\" oggi."
-            content.sound = .default
-            
-            // Scatta alle 08:00 della data indicata
-            var components        = Calendar.current.dateComponents([.year, .month, .day], from: date)
-            components.hour       = 8
-            components.minute     = 0
-            
-            let trigger = UNCalendarNotificationTrigger(
-                dateMatching: components,
-                repeats: false
-            )
-            
-            let request = UNNotificationRequest(
-                identifier: self.notificationId(for: examId),
-                content:    content,
-                trigger:    trigger
-            )
-            
-            UNUserNotificationCenter.current().add(request) { error in
-                DispatchQueue.main.async { completion(error == nil) }
-            }
+        }
+    }
+    
+    private func doSchedule(
+        examId:       String,
+        examName:     String,
+        childName:    String,
+        familyId:     String,
+        childId:      String,
+        date:         Date,
+        reminderTime: Date?,
+        completion:   @escaping (Bool) -> Void
+    ) {
+        let content = UNMutableNotificationContent()
+        content.title = "Promemoria esame domani 🩺"
+        content.body  = "\(childName) ha l'esame \"\(examName)\" domani."
+        content.sound = .default
+        content.userInfo = [
+            "type":     "exam_reminder",
+            "familyId": familyId,
+            "childId":  childId,
+            "examId":   examId
+        ]
+        
+        let cal = Calendar.current
+        guard let dayBefore = cal.date(byAdding: .day, value: -1, to: date) else {
+            DispatchQueue.main.async { completion(false) }
+            return
+        }
+        var components = cal.dateComponents([.year, .month, .day], from: dayBefore)
+        if let time = reminderTime {
+            let tc = cal.dateComponents([.hour, .minute], from: time)
+            components.hour   = tc.hour   ?? 8
+            components.minute = tc.minute ?? 0
+        } else {
+            components.hour   = 8
+            components.minute = 0
+        }
+        
+        guard let fireDate = cal.date(from: components), fireDate > Date() else {
+            DispatchQueue.main.async { completion(false) }
+            return
+        }
+        _ = fireDate
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: self.notificationId(for: examId),
+            content:    content,
+            trigger:    trigger
+        )
+        UNUserNotificationCenter.current().add(request) { error in
+            DispatchQueue.main.async { completion(error == nil) }
         }
     }
     
@@ -103,7 +156,7 @@ final class KBExamReminderService {
     
     // MARK: - Privato
     
-    private func notificationId(for examId: String) -> String {
+    func notificationId(for examId: String) -> String {
         idPrefix + examId
     }
 }

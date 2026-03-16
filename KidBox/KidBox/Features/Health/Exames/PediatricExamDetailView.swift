@@ -22,16 +22,53 @@ struct PediatricExamDetailView: View {
     @Query private var children: [KBChild]
     @Query private var members:  [KBFamilyMember]
     
-    private var exam:      KBMedicalExam? { exams.first }
-    private var childName: String         { children.first?.name ?? members.first?.displayName ?? "bambino" }
+    // childName derivato dalle @Query — usato solo per la UI.
+    // Per le notifiche si usa resolveSubjectName() che legge dal modelContext
+    // in modo sincrono e non dipende dal timing del fetch SwiftUI.
+    private var childName: String {
+        if let name = children.first?.name, !name.isEmpty { return name }
+        if let name = members.first?.displayName, !name.isEmpty { return name }
+        if let email = members.first?.email, !email.isEmpty { return email }
+        return "bambino"
+    }
+    
+    /// Legge il nome del soggetto DIRETTAMENTE dal modelContext (fetch sincrono).
+    /// Questo garantisce che il nome sia sempre corretto anche se le @Query
+    /// non hanno ancora completato il caricamento quando l'utente tocca il campanellino.
+    private func resolveSubjectName() -> String {
+        // 1. Prova come KBChild
+        let childDesc = FetchDescriptor<KBChild>(
+            predicate: #Predicate<KBChild> { $0.id == childId }
+        )
+        if let child = try? modelContext.fetch(childDesc).first,
+           !child.name.isEmpty {
+            return child.name
+        }
+        // 2. Prova come KBFamilyMember (genitori o adulti)
+        let fid = familyId
+        let cid = childId
+        let memberDesc = FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate<KBFamilyMember> {
+                $0.userId == cid && $0.familyId == fid && $0.isDeleted == false
+            }
+        )
+        if let member = try? modelContext.fetch(memberDesc).first {
+            if let name = member.displayName, !name.isEmpty { return name }
+            if let email = member.email,       !email.isEmpty { return email }
+        }
+        return "bambino"
+    }
     
     @State private var showEditSheet      = false
     @State private var showDeleteAlert    = false
     
     // Promemoria
-    @State private var reminderScheduled  = false
-    @State private var showReminderAlert  = false   // feedback dopo l'azione
-    @State private var reminderAlertMsg   = ""
+    @State private var reminderScheduled      = false
+    @State private var showReminderAlert      = false
+    @State private var reminderAlertMsg       = ""
+    @State private var showReminderTimePicker = false
+    @State private var reminderTime           = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var pendingReminderExam:   KBMedicalExam? = nil
     
     private let tint = Color(red: 0.25, green: 0.65, blue: 0.75)
     
@@ -41,9 +78,12 @@ struct PediatricExamDetailView: View {
         self.examId   = examId
         let eid = examId
         let cid = childId
+        let fid = familyId
         _exams    = Query(filter: #Predicate<KBMedicalExam>  { $0.id == eid })
         _children = Query(filter: #Predicate<KBChild>         { $0.id == cid })
-        _members  = Query(filter: #Predicate<KBFamilyMember>  { $0.userId == cid })
+        _members  = Query(filter: #Predicate<KBFamilyMember> {
+            $0.userId == cid && $0.familyId == fid && $0.isDeleted == false
+        })
     }
     
     // MARK: - Body
@@ -89,16 +129,66 @@ struct PediatricExamDetailView: View {
         } message: {
             Text(reminderAlertMsg)
         }
-        .onAppear {
-            if let exam {
-                KBExamReminderService.shared.isScheduled(examId: exam.id) { scheduled in
-                    reminderScheduled = scheduled
+        // ── Sheet scelta orario promemoria ───────────────────────────
+        .sheet(isPresented: $showReminderTimePicker) {
+            if let exam = pendingReminderExam, let dl = exam.deadline {
+                NavigationStack {
+                    VStack(spacing: 32) {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle().fill(Color.orange.opacity(0.1)).frame(width: 56, height: 56)
+                                Image(systemName: "bell.fill").font(.title2).foregroundStyle(.orange)
+                            }
+                            Text("Orario promemoria").font(.title3.bold())
+                            Text("Scegli a che ora ricevere il promemoria per \"\(exam.name)\"")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding(.top)
+                        
+                        DatePicker("Orario", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                        
+                        Button {
+                            showReminderTimePicker = false
+                            scheduleReminder(exam: exam, date: dl)
+                        } label: {
+                            Text("Imposta promemoria")
+                                .frame(maxWidth: .infinity).padding()
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange))
+                                .foregroundStyle(.white).font(.headline)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal)
+                        
+                        Spacer()
+                    }
+                    .background(KBTheme.background(colorScheme).ignoresSafeArea())
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Annulla") { showReminderTimePicker = false }
+                        }
+                    }
                 }
+                .presentationDetents([.medium])
+            }
+        }
+        .task(id: examId) {
+            await reloadReminderState()
+        }
+        .onChange(of: showEditSheet) { _, isShowing in
+            if !isShowing {
+                Task { await reloadReminderState() }
             }
         }
     }
     
     // MARK: - Main content
+    
+    private var exam: KBMedicalExam? { exams.first }
     
     private func content(_ e: KBMedicalExam) -> some View {
         VStack(spacing: 0) {
@@ -319,7 +409,6 @@ struct PediatricExamDetailView: View {
                         .font(.headline)
                 }
                 .buttonStyle(.plain)
-                
             }
             .padding(.horizontal)
         }
@@ -349,24 +438,59 @@ struct PediatricExamDetailView: View {
     private func toggleReminder(exam: KBMedicalExam, date: Date) {
         if reminderScheduled {
             KBExamReminderService.shared.cancel(examId: exam.id)
-            reminderScheduled  = false
-            reminderAlertMsg   = "Promemoria rimosso."
-            showReminderAlert  = true
+            reminderScheduled = false
+            NotificationCenter.default.post(name: .examReminderChanged, object: nil)
+            reminderAlertMsg  = "Promemoria rimosso."
+            showReminderAlert = true
         } else {
-            KBExamReminderService.shared.schedule(
-                examId:    exam.id,
-                examName:  exam.name,
-                childName: childName,
-                date:      date
-            ) { success in
-                if success {
-                    reminderScheduled = true
-                    reminderAlertMsg  = "Promemoria impostato per il \(date.formatted(date: .long, time: .omitted)) alle 08:00."
-                } else {
-                    reminderAlertMsg  = "Impossibile impostare il promemoria. Controlla i permessi in Impostazioni → Notifiche."
-                }
-                showReminderAlert = true
+            pendingReminderExam = exam
+            showReminderTimePicker = true
+        }
+    }
+    
+    private func scheduleReminder(exam: KBMedicalExam, date: Date) {
+        // FIX "bambino": usa resolveSubjectName() che fa un fetch sincrono
+        // direttamente dal modelContext. Questo bypassa il timing lazy delle
+        // @Query SwiftUI e funziona correttamente sia per KBChild che per
+        // KBFamilyMember (genitori/adulti).
+        let resolvedName = resolveSubjectName()
+        
+        KBExamReminderService.shared.schedule(
+            examId:       exam.id,
+            examName:     exam.name,
+            childName:    resolvedName,
+            familyId:     familyId,
+            childId:      childId,
+            date:         date,
+            reminderTime: reminderTime
+        ) { success in
+            if success {
+                self.reminderScheduled = true
+                NotificationCenter.default.post(name: .examReminderChanged, object: nil)
+                let cal = Calendar.current
+                let h = cal.component(.hour,   from: self.reminderTime)
+                let m = cal.component(.minute, from: self.reminderTime)
+                self.reminderAlertMsg = "Promemoria impostato per il \(date.formatted(date: .long, time: .omitted)) alle \(String(format: "%02d:%02d", h, m))."
+            } else {
+                self.reminderAlertMsg = "Impossibile impostare il promemoria. Controlla i permessi in Impostazioni → Notifiche."
             }
+            self.showReminderAlert = true
+        }
+    }
+    
+    // MARK: - Reminder state reload
+    
+    @MainActor
+    private func reloadReminderState() async {
+        let id = KBExamReminderService.shared.notificationId(for: examId)
+        let requests = await UNUserNotificationCenter.current().pendingNotificationRequests()
+        reminderScheduled = requests.contains { $0.identifier == id }
+        if let req = requests.first(where: { $0.identifier == id }),
+           let cal = req.trigger as? UNCalendarNotificationTrigger,
+           let h = cal.dateComponents.hour,
+           let m = cal.dateComponents.minute,
+           let restored = Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: Date()) {
+            reminderTime = restored
         }
     }
     
@@ -505,8 +629,6 @@ struct ExamAttachmentsSection: View {
         }
     }
     
-    // MARK: - Row helpers
-    
     private func docRow(_ doc: KBDocument) -> some View {
         HStack(spacing: 10) {
             docIcon(doc)
@@ -566,8 +688,6 @@ struct ExamAttachmentsSection: View {
         }
         .buttonStyle(.plain)
     }
-    
-    // MARK: - Extraction status
     
     @ViewBuilder
     private func extractionStatusLabel(_ doc: KBDocument) -> some View {

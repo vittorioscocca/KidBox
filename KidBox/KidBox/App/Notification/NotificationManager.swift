@@ -56,14 +56,17 @@ final class NotificationManager: NSObject, ObservableObject {
         case chat(familyId: String)
         case familyLocation(familyId: String)
         case todo(familyId: String, childId: String, listId: String, todoId: String)
-        case groceryItem(familyId: String, itemId: String)   // ← NEW
-        case note(familyId: String, noteId: String)          // ← NEW
+        case groceryItem(familyId: String, itemId: String)
+        case note(familyId: String, noteId: String)
         case calendarEvent(familyId: String, eventId: String)
+        case pediatricVisit(familyId: String, childId: String, visitId: String)
+        case treatmentReminder(familyId: String, childId: String, treatmentId: String)
+        case examReminder(familyId: String, childId: String, examId: String)
     }
     
     // MARK: - Deep Link Handling
     
-    /// Parses FCM payload and sets pending deep link if needed.
+    /// Parses FCM payload (o userInfo di notifica locale) e imposta il pending deep link.
     func handleNotificationUserInfo(_ userInfo: [AnyHashable: Any]) {
         KBLog.auth.kbDebug("Handling push userInfo")
         
@@ -105,7 +108,7 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .todo(familyId: familyId, childId: childId, listId: listId, todoId: todoId)
             KBLog.auth.kbInfo("DeepLink set for todo familyId=\(familyId) listId=\(listId) todoId=\(todoId)")
             
-        } else if type == "new_grocery_item" {            // ← NEW
+        } else if type == "new_grocery_item" {
             guard
                 let familyId = userInfo["familyId"] as? String,
                 let itemId   = userInfo["itemId"]   as? String
@@ -116,7 +119,7 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .groceryItem(familyId: familyId, itemId: itemId)
             KBLog.auth.kbInfo("DeepLink set for groceryItem familyId=\(familyId) itemId=\(itemId)")
             
-        } else if type == "new_note" {                    // ← NEW
+        } else if type == "new_note" {
             guard
                 let familyId = userInfo["familyId"] as? String,
                 let noteId   = userInfo["noteId"]   as? String
@@ -137,6 +140,42 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .calendarEvent(familyId: familyId, eventId: eventId)
             KBLog.auth.kbInfo("DeepLink set for calendarEvent familyId=\(familyId) eventId=\(eventId)")
+            
+        } else if type == "visit_reminder" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let childId  = userInfo["childId"]  as? String,
+                let visitId  = userInfo["visitId"]  as? String
+            else {
+                KBLog.auth.kbError("Invalid visit_reminder payload")
+                return
+            }
+            pendingDeepLink = .pediatricVisit(familyId: familyId, childId: childId, visitId: visitId)
+            KBLog.auth.kbInfo("DeepLink set for pediatricVisit visitId=\(visitId)")
+            
+        } else if type == "treatment_reminder" {
+            guard
+                let familyId    = userInfo["familyId"]    as? String,
+                let childId     = userInfo["childId"]     as? String,
+                let treatmentId = userInfo["treatmentId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid treatment_reminder payload")
+                return
+            }
+            pendingDeepLink = .treatmentReminder(familyId: familyId, childId: childId, treatmentId: treatmentId)
+            KBLog.auth.kbInfo("DeepLink set for treatmentReminder treatmentId=\(treatmentId)")
+            
+        } else if type == "exam_reminder" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let childId  = userInfo["childId"]  as? String,
+                let examId   = userInfo["examId"]   as? String
+            else {
+                KBLog.auth.kbError("Invalid exam_reminder payload")
+                return
+            }
+            pendingDeepLink = .examReminder(familyId: familyId, childId: childId, examId: examId)
+            KBLog.auth.kbInfo("DeepLink set for examReminder examId=\(examId)")
         }
     }
     
@@ -166,7 +205,7 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - Shopping notification preference  ← NEW
+    // MARK: - Shopping notification preference
     
     func fetchNotifyOnNewGroceryItemPreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return true }
@@ -194,7 +233,7 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - Notes notification preference  ← NEW
+    // MARK: - Notes notification preference
     
     func fetchNotifyOnNewNotePreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return true }
@@ -464,6 +503,33 @@ final class NotificationManager: NSObject, ObservableObject {
         if let token = Messaging.messaging().fcmToken, !token.isEmpty {
             try await persistFCMToken(token)
         }
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension NotificationManager: UNUserNotificationCenterDelegate {
+    
+    /// Intercetta il tap su qualsiasi notifica (locale o remota) quando l'app è in background o chiusa.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        Task { @MainActor in
+            NotificationManager.shared.handleNotificationUserInfo(userInfo)
+        }
+        completionHandler()
+    }
+    
+    /// Mostra il banner anche con l'app in foreground.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
     }
 }
 

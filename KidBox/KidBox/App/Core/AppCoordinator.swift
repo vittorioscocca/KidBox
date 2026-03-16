@@ -580,6 +580,87 @@ final class AppCoordinator: ObservableObject {
         }
     }
     
+    // MARK: - Open Visit from Push
+    
+    /// Apre direttamente la visita che ha scatenato il promemoria.
+    /// Path: pediatricHome → pediatricVisits → pediatricVisitDetail
+    @MainActor
+    func openVisitFromPush(familyId: String, childId: String, visitId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openVisitFromPush familyId=\(familyId) childId=\(childId) visitId=\(visitId)")
+        
+        Task { @MainActor in
+            let vid = visitId
+            let desc = FetchDescriptor<KBMedicalVisit>(predicate: #Predicate { $0.id == vid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+            
+            path.removeAll()
+            if found {
+                path.append(.pediatricHome(familyId: familyId, childId: childId))
+                path.append(.pediatricVisits(familyId: familyId, childId: childId))
+                path.append(.pediatricVisitDetail(familyId: familyId, childId: childId, visitId: visitId))
+                KBLog.navigation.kbInfo("openVisitFromPush: navigating to pediatricVisitDetail")
+            } else {
+                path.append(.pediatricHome(familyId: familyId, childId: childId))
+                path.append(.pediatricVisits(familyId: familyId, childId: childId))
+                KBLog.navigation.kbError("openVisitFromPush: visit not found, fallback to pediatricVisits")
+            }
+        }
+    }
+    
+    // MARK: - Open Treatment from Push
+    
+    /// Apre direttamente la cura che ha scatenato il promemoria dose.
+    /// Path: pediatricHome → pediatricTreatments → pediatricTreatmentDetail
+    @MainActor
+    func openTreatmentFromPush(familyId: String, childId: String, treatmentId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openTreatmentFromPush familyId=\(familyId) childId=\(childId) treatmentId=\(treatmentId)")
+        
+        Task { @MainActor in
+            let tid = treatmentId
+            let desc = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.id == tid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+            
+            path.removeAll()
+            if found {
+                path.append(.pediatricHome(familyId: familyId, childId: childId))
+                path.append(.pediatricTreatments(familyId: familyId, childId: childId))
+                path.append(.pediatricTreatmentDetail(familyId: familyId, childId: childId, treatmentId: treatmentId))
+                KBLog.navigation.kbInfo("openTreatmentFromPush: navigating to pediatricTreatmentDetail")
+            } else {
+                path.append(.pediatricHome(familyId: familyId, childId: childId))
+                path.append(.pediatricTreatments(familyId: familyId, childId: childId))
+                KBLog.navigation.kbError("openTreatmentFromPush: treatment not found, fallback to pediatricTreatments")
+            }
+        }
+    }
+    
+    // MARK: - Open Exam from Push
+    
+    /// Apre direttamente l'esame che ha scatenato il promemoria.
+    /// Path: pediatricHome → pediatricExams → examDetail
+    @MainActor
+    func openExamFromPush(familyId: String, childId: String, examId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openExamFromPush familyId=\(familyId) childId=\(childId) examId=\(examId)")
+        
+        Task { @MainActor in
+            let eid = examId
+            let desc = FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.id == eid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+            
+            path.removeAll()
+            if found {
+                path.append(.pediatricHome(familyId: familyId, childId: childId))
+                path.append(.pediatricExams(familyId: familyId, childId: childId))
+                path.append(.examDetail(familyId: familyId, childId: childId, examId: examId))
+                KBLog.navigation.kbInfo("openExamFromPush: navigating to examDetail")
+            } else {
+                path.append(.pediatricHome(familyId: familyId, childId: childId))
+                path.append(.pediatricExams(familyId: familyId, childId: childId))
+                KBLog.navigation.kbError("openExamFromPush: exam not found, fallback to pediatricExams")
+            }
+        }
+    }
+    
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
         path.removeAll()

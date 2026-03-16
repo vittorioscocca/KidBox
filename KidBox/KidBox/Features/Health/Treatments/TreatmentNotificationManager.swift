@@ -41,6 +41,14 @@ enum TreatmentNotificationManager {
                 content.title = "💊 \(treatment.drugName)"
                 content.body  = "\(i < labels.count ? labels[i] : "Dose") · \(treatment.dosageValue) \(treatment.dosageUnit) per \(childName)"
                 content.sound = .default
+                // ── Deep link payload ──────────────────────────────────────
+                content.userInfo = [
+                    "type":        "treatment_reminder",
+                    "familyId":    treatment.familyId,
+                    "childId":     treatment.childId,
+                    "treatmentId": treatment.id
+                ]
+                // ──────────────────────────────────────────────────────────
                 
                 let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
                 let req = UNNotificationRequest(

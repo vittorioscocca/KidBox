@@ -44,7 +44,13 @@ struct PediatricExamsView: View {
     
     @Query private var exams:    [KBMedicalExam]
     @Query private var children: [KBChild]
-    private var childName: String { children.first?.name ?? "bambino" }
+    @Query private var members:  [KBFamilyMember]
+    private var childName: String {
+        if let name = children.first?.name, !name.isEmpty { return name }
+        if let name = members.first?.displayName, !name.isEmpty { return name }
+        if let email = members.first?.email, !email.isEmpty { return email }
+        return "bambino"
+    }
     
     // Selection
     @State private var isSelecting       = false
@@ -57,11 +63,21 @@ struct PediatricExamsView: View {
     @State private var customFilterStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var customFilterEnd   = Date()
     
-    // Add sheet (nuovo esame) — l'edit avviene dal detail
+    // Add sheet
     @State private var showAddSheet   = false
-    @State private var editingExamId: String? = nil  // nil = nuovo
+    @State private var editingExamId: String? = nil
     
-    // Colore coerente con la card "Analisi & Esami" in PediatricHomeView
+    // Badge campanellina:
+    // - badgeRefreshTick: incrementato da onAppear E da .examReminderChanged
+    // - pendingBadgeRefresh: flag settato quando arriva .examReminderChanged
+    //   mentre la view è in background (sotto la DetailView nello stack).
+    //   Viene consumato al prossimo onAppear.
+    @State private var badgeRefreshTick    = 0
+    @State private var pendingBadgeRefresh = false
+    
+    // Realtime: avviato una sola volta per tutta la vita della view
+    @State private var realtimeStarted = false
+    
     private let tint = Color(red: 0.25, green: 0.65, blue: 0.75)
     
     init(familyId: String, childId: String) {
@@ -73,6 +89,9 @@ struct PediatricExamsView: View {
             sort:   [SortDescriptor(\KBMedicalExam.createdAt, order: .reverse)]
         )
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
+        _members  = Query(
+            filter: #Predicate<KBFamilyMember> { $0.userId == cid && $0.familyId == fid && $0.isDeleted == false }
+        )
     }
     
     // MARK: - Filter
@@ -125,7 +144,7 @@ struct PediatricExamsView: View {
             .scrollContentBackground(.hidden)
             .background(KBTheme.background(colorScheme))
             .overlay {
-                if exams.isEmpty     { emptyState }
+                if exams.isEmpty         { emptyState }
                 else if filtered.isEmpty { emptyFilterState }
             }
             
@@ -141,22 +160,38 @@ struct PediatricExamsView: View {
                     .padding(.bottom, 96)
             }
         }
-        .onAppear {
+        // Avvia il realtime UNA SOLA VOLTA (non si riavvia al pop dalla Detail)
+        .task {
+            guard !realtimeStarted else { return }
+            realtimeStarted = true
             SyncCenter.shared.startMedicalExamsRealtime(
                 familyId: familyId, childId: childId, modelContext: modelContext
             )
         }
-        .onDisappear {
-            SyncCenter.shared.stopMedicalExamsRealtime()
+        // onAppear: scatta sia al mount iniziale sia al pop dalla DetailView.
+        // È IL POSTO GIUSTO per aggiornare le badge perché la view è tornata visibile.
+        // Se era arrivata una .examReminderChanged mentre eravamo in background
+        // (pendingBadgeRefresh == true), forziamo comunque il refresh.
+        .onAppear {
+            badgeRefreshTick += 1
+            pendingBadgeRefresh = false
         }
-        // FIX: sheet(item:) — usato solo per NUOVO esame (examId nil).
-        // L'edit avviene da PediatricExamDetailView.
+        // .examReminderChanged arriva dalla DetailView subito dopo set/cancel reminder.
+        // Se la ExamsView è in background (sotto la Detail nello stack), SwiftUI
+        // potrebbe sospendere il .task(id:) nelle badge prima che venga rieseguito.
+        // Solviamo su due livelli:
+        // 1. Incrementiamo subito badgeRefreshTick (funziona se la view è attiva)
+        // 2. Settiamo pendingBadgeRefresh = true (viene consumato al prossimo onAppear)
+        .onReceive(NotificationCenter.default.publisher(for: .examReminderChanged)) { _ in
+            badgeRefreshTick += 1
+            pendingBadgeRefresh = true
+        }
         .sheet(isPresented: $showAddSheet, onDismiss: { editingExamId = nil }) {
             PediatricExamEditView(
                 familyId:  familyId,
                 childId:   childId,
                 childName: childName,
-                examId:    nil   // sempre nuovo da qui
+                examId:    nil
             )
         }
         .sheet(isPresented: $showFilterSheet) { filterSheet }
@@ -214,7 +249,10 @@ struct PediatricExamsView: View {
                 }
                 Spacer()
                 if !isSelecting {
-                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                    HStack(spacing: 6) {
+                        ExamReminderBadge(examId: e.id, refreshTick: badgeRefreshTick)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                    }
                 }
             }
             .padding(.vertical, 4)
@@ -449,5 +487,41 @@ struct PediatricExamsView: View {
     private func deadlineLabel(_ date: Date) -> String {
         let fmt = DateFormatter(); fmt.dateStyle = .medium; fmt.locale = Locale(identifier: "it_IT")
         return "Entro \(fmt.string(from: date))"
+    }
+}
+
+// MARK: - ExamReminderBadge
+
+/// Mostra la campanellina arancione se l'esame ha un promemoria attivo.
+///
+/// Il controllo avviene tramite `.task(id: refreshTick)`:
+/// ogni volta che `refreshTick` cambia (onAppear della lista o .examReminderChanged)
+/// il task si ri-esegue e verifica le pending notifications.
+private struct ExamReminderBadge: View {
+    let examId:      String
+    let refreshTick: Int
+    
+    @State private var isScheduled = false
+    
+    var body: some View {
+        Group {
+            if isScheduled {
+                Image(systemName: "bell.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else {
+                // Placeholder trasparente per mantenere la larghezza costante
+                // ed evitare layout shift quando la badge appare/sparisce.
+                Image(systemName: "bell.fill")
+                    .font(.caption)
+                    .foregroundStyle(.clear)
+            }
+        }
+        .task(id: refreshTick) {
+            let notifId  = KBExamReminderService.shared.notificationId(for: examId)
+            let requests = await UNUserNotificationCenter.current().pendingNotificationRequests()
+            let found    = requests.contains { $0.identifier == notifId }
+            await MainActor.run { isScheduled = found }
+        }
     }
 }

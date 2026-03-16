@@ -21,8 +21,15 @@ extension SyncCenter {
     // MARK: - Realtime listener
     
     func startMedicalExamsRealtime(familyId: String, childId: String, modelContext: ModelContext) {
-        guard medicalExamListener == nil else { return }
-        stopMedicalExamsRealtime()
+        // FIX: la guard originale usciva correttamente se il listener era già attivo,
+        // ma poi chiamava stopMedicalExamsRealtime() inutilmente prima di creare
+        // il nuovo listener — causando un doppio "MedicalExam realtime stopped" nei log
+        // e un ciclo stop/start ad ogni push/pop della NavigationStack.
+        // Ora: se il listener esiste già, usciamo subito senza fare nulla.
+        guard medicalExamListener == nil else {
+            KBLog.sync.kbDebug("startMedicalExamsRealtime: already active, skip")
+            return
+        }
         
         medicalExamListener = medicalExamRemote.listen(
             familyId: familyId,
@@ -47,6 +54,7 @@ extension SyncCenter {
     }
     
     func stopMedicalExamsRealtime() {
+        guard medicalExamListener != nil else { return }  // FIX: evita log spuri se già fermo
         medicalExamListener?.remove()
         medicalExamListener = nil
         KBLog.sync.kbInfo("MedicalExam realtime stopped")
@@ -82,7 +90,7 @@ extension SyncCenter {
                             local.deadline           = dto.deadline
                             local.preparation        = dto.preparation
                             local.notes              = dto.notes
-                            local.location           = dto.location   // ← NUOVO
+                            local.location           = dto.location
                             local.statusRaw          = dto.statusRaw
                             local.resultText         = dto.resultText
                             local.resultDate         = dto.resultDate
@@ -105,7 +113,7 @@ extension SyncCenter {
                         deadline:           dto.deadline,
                         preparation:        dto.preparation,
                         notes:              dto.notes,
-                        location:           dto.location,   // ← NUOVO
+                        location:           dto.location,
                         status:             KBExamStatus(rawValue: dto.statusRaw) ?? .pending,
                         resultText:         dto.resultText,
                         resultDate:         dto.resultDate,
@@ -181,7 +189,7 @@ extension SyncCenter {
                 deadline:           e.deadline,
                 preparation:        e.preparation,
                 notes:              e.notes,
-                location:           e.location,   // ← NUOVO
+                location:           e.location,
                 statusRaw:          e.statusRaw,
                 resultText:         e.resultText,
                 resultDate:         e.resultDate,

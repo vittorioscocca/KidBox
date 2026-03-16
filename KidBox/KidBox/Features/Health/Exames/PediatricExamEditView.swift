@@ -8,6 +8,7 @@ import SwiftData
 import FirebaseAuth
 import MapKit
 import QuickLook
+import UserNotifications
 
 struct PediatricExamEditView: View {
     
@@ -31,7 +32,8 @@ struct PediatricExamEditView: View {
     @State private var isUrgent    = false
     @State private var hasDeadline = false
     @State private var deadline    = Date()
-    @State private var reminderOn  = false   // ← promemoria
+    @State private var reminderOn   = false
+    @State private var reminderTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var preparation = ""
     @State private var notes       = ""
     @State private var location    = ""   // ← NUOVO
@@ -119,12 +121,20 @@ struct PediatricExamEditView: View {
                         DatePicker("Scadenza", selection: $deadline, displayedComponents: .date)
                         // ── Promemoria ──
                         Toggle(isOn: $reminderOn) {
-                            Label("Promemoria il giorno dell'esame", systemImage: reminderOn ? "bell.fill" : "bell")
+                            Label("Promemoria il giorno prima", systemImage: reminderOn ? "bell.fill" : "bell")
                                 .foregroundStyle(reminderOn ? .orange : .primary)
                         }
                         .tint(.orange)
                         .onChange(of: reminderOn) { _, newValue in
                             handleReminderToggle(newValue)
+                        }
+                        if reminderOn {
+                            DatePicker(
+                                "Orario promemoria",
+                                selection: $reminderTime,
+                                displayedComponents: .hourAndMinute
+                            )
+                            .foregroundStyle(.orange)
                         }
                     }
                 }
@@ -356,20 +366,31 @@ struct PediatricExamEditView: View {
         isUrgent    = e.isUrgent
         hasDeadline = e.deadline != nil
         deadline    = e.deadline ?? Date()
-        // Carica stato promemoria
-        if let dl = e.deadline {
-            KBExamReminderService.shared.isScheduled(examId: e.id) { scheduled in
-                reminderOn = scheduled
-                _ = dl   // usato implicitamente da handleReminderToggle
-            }
-        }
         preparation = e.preparation ?? ""
         notes       = e.notes ?? ""
-        location    = e.location ?? ""   // ← NUOVO
+        location    = e.location ?? ""
         status      = e.status
         hasResult   = e.resultText != nil
         resultText  = e.resultText ?? ""
         resultDate  = e.resultDate ?? Date()
+        
+        // Carica stato promemoria e orario dalla notifica già schedulata
+        let notifId = KBExamReminderService.shared.notificationId(for: e.id)
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+            DispatchQueue.main.async {
+                if let req = requests.first(where: { $0.identifier == notifId }),
+                   let calTrigger = req.trigger as? UNCalendarNotificationTrigger {
+                    reminderOn = true
+                    if let h = calTrigger.dateComponents.hour,
+                       let m = calTrigger.dateComponents.minute,
+                       let restored = Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: Date()) {
+                        reminderTime = restored
+                    }
+                } else {
+                    reminderOn = false
+                }
+            }
+        }
     }
     
     private func save() {
@@ -428,10 +449,13 @@ struct PediatricExamEditView: View {
         // ── Gestione promemoria ──
         if hasDeadline && reminderOn {
             KBExamReminderService.shared.schedule(
-                examId:    exam.id,
-                examName:  exam.name,
-                childName: childName,
-                date:      deadline
+                examId:       exam.id,
+                examName:     exam.name,
+                childName:    childName,
+                familyId:     familyId,
+                childId:      childId,
+                date:         deadline,
+                reminderTime: reminderTime
             ) { _ in }
         } else {
             KBExamReminderService.shared.cancel(examId: exam.id)
