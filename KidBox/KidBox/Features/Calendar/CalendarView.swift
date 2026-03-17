@@ -916,7 +916,7 @@ struct CalendarEventFormView: View {
 
 // MARK: - Color hex
 
-private extension Color {
+extension Color {
     init?(hex: String) {
         var h = hex.trimmingCharacters(in: .alphanumerics.inverted)
         if h.count == 6 { h = "FF" + h }
@@ -930,3 +930,5 @@ private extension Color {
         )
     }
 }
+
+

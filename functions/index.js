@@ -9,6 +9,31 @@ const STORAGE_BUCKET = "kidbox-42cd7-eu";
 admin.initializeApp();
 
 /**
+ * Ref al documento stats/storage di una famiglia.
+ * @param {string} familyId
+ * @return {FirebaseFirestore.DocumentReference}
+ */
+function storageStatsRef(familyId) {
+  return admin.firestore()
+      .collection("families").doc(familyId)
+      .collection("stats").doc("storage");
+}
+
+/**
+ * Aggiorna usedBytes con un delta atomico.
+ * @param {string} familyId
+ * @param {number} delta - Byte da aggiungere (positivo) o sottrarre (negativo).
+ * @return {Promise<void>}
+ */
+async function updateStorageBytes(familyId, delta) {
+  if (delta === 0) return;
+  await storageStatsRef(familyId).set({
+    usedBytes: admin.firestore.FieldValue.increment(delta),
+    lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, {merge: true});
+}
+
+/**
  * Sums chat, documents and location counters from the given data.
  * @param {object} data - The counter data object.
  * @return {{chat: number, documents: number, location: number, total: number}}
@@ -120,6 +145,11 @@ exports.notifyNewDocument = onDocumentCreated(
       }
 
       logger.info("notifyNewDocument triggered", {familyId, docId, uploaderUid});
+
+      // ── Storage tracking ──
+      if (!docData.isDeleted && typeof docData.fileSize === "number" && docData.fileSize > 0) {
+        await updateStorageBytes(familyId, docData.fileSize);
+      }
 
       // 1️⃣ Leggi membri
       const membersSnap = await admin.firestore()
@@ -362,6 +392,14 @@ exports.notifyNewChatMessage = onDocumentCreated(
       }
 
       if (msgData.isDeleted === true) return;
+
+      // ── Storage tracking: solo messaggi con media ──
+      if (msgData.mediaStoragePath) {
+        const mediaTypes = ["photo", "video", "audio", "document"];
+        if (mediaTypes.includes(msgData.typeRaw || "")) {
+          await updateStorageBytes(familyId, 512 * 1024);
+        }
+      }
 
       const senderUid = msgData.senderId;
       const senderName = msgData.senderName || "Qualcuno";
@@ -1386,3 +1424,145 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
     },
 );
 
+// ── Hard-delete documento → sottrai fileSize dal contatore storage ────────────
+
+exports.onDocumentHardDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/documents/{docId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      // Solo hard-delete: documento esisteva prima e non esiste più
+      if (!before || after) return;
+
+      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
+      if (sizeBefore <= 0) return;
+
+      logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
+      await updateStorageBytes(familyId, -sizeBefore);
+    },
+);
+
+// ── Callable: il client legge usedBytes e quotaBytes ─────────────────────────
+
+exports.getStorageUsage = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) {
+        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      }
+      const {familyId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId richiesto.");
+      }
+      const memberSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("members").doc(uid)
+          .get();
+      if (!memberSnap.exists) {
+        throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+      }
+      const snap = await storageStatsRef(familyId).get();
+      const usedBytes = snap.exists ? (snap.data().usedBytes || 0) : 0;
+      logger.info("getStorageUsage", {uid, familyId, usedBytes});
+      return {
+        usedBytes: Math.max(0, Math.round(usedBytes)),
+        quotaBytes: 200 * 1024 * 1024,
+      };
+    },
+);
+
+// ── Inizializzazione contatore storage per dati storici ───────────────────────
+// Chiamare UNA VOLTA SOLA per famiglia dopo il deploy.
+// Calcola lo stato attuale leggendo Firestore e sovrascrive usedBytes.
+
+exports.initStorageUsage = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) {
+        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      }
+      const {familyId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId richiesto.");
+      }
+
+      // Verifica membership
+      const memberSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("members").doc(uid)
+          .get();
+      if (!memberSnap.exists) {
+        throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+      }
+
+      logger.info("initStorageUsage: starting", {uid, familyId});
+
+      // 1. Somma fileSize di tutti i documenti non eliminati
+      const docsSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("documents")
+          .where("isDeleted", "==", false)
+          .get();
+
+      let docBytes = 0;
+      docsSnap.forEach((d) => {
+        const size = d.get("fileSize");
+        if (typeof size === "number" && size > 0) docBytes += size;
+      });
+
+      // 2. Conta messaggi chat con media (non eliminati)
+      const chatSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("chatMessages")
+          .where("isDeleted", "==", false)
+          .get();
+
+      const mediaTypes = ["photo", "video", "audio", "document"];
+      let chatMediaCount = 0;
+      chatSnap.forEach((d) => {
+        const hasMedia = d.get("mediaStoragePath");
+        const type = d.get("typeRaw") || "";
+        if (hasMedia && mediaTypes.includes(type)) chatMediaCount++;
+      });
+
+      const chatBytes = chatMediaCount * 512 * 1024;
+      const totalBytes = docBytes + chatBytes;
+
+      // 3. Sovrascrive il contatore (non increment, set diretto)
+      await storageStatsRef(familyId).set({
+        usedBytes: totalBytes,
+        lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        initializedAt: admin.firestore.FieldValue.serverTimestamp(),
+        initializedBy: uid,
+      }, {merge: false});
+
+      logger.info("initStorageUsage: completed", {
+        familyId,
+        docBytes,
+        chatBytes,
+        chatMediaCount,
+        totalBytes,
+      });
+
+      return {
+        docBytes,
+        chatBytes,
+        chatMediaCount,
+        totalBytes,
+        quotaBytes: 200 * 1024 * 1024,
+      };
+    },
+);

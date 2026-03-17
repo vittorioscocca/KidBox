@@ -82,6 +82,18 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            
+            NavigationLink {
+                StorageUsageView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "externaldrive.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    Text("Utilizzo spazio")
+                        .foregroundStyle(.primary)
+                }
+            }
         }
         .navigationTitle("Impostazioni")
         .tint(.primary)
