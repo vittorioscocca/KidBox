@@ -298,6 +298,12 @@ final class NotificationManager: NSObject, ObservableObject {
         pendingDeepLink = nil
     }
     
+    /// Imposta direttamente un deep link (es. da notifiche locali).
+    /// Usato dall'AppDelegate dopo aver letto lo userInfo della notifica locale.
+    func setDeepLink(_ link: DeepLink) {
+        pendingDeepLink = link
+    }
+    
     // MARK: - Authorization
     
     func refreshAuthorizationStatus() async {
@@ -506,35 +512,7 @@ final class NotificationManager: NSObject, ObservableObject {
     }
 }
 
-// MARK: - UNUserNotificationCenterDelegate
-
-extension NotificationManager: UNUserNotificationCenterDelegate {
-    
-    /// Intercetta il tap su qualsiasi notifica (locale o remota) quando l'app è in background o chiusa.
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
-        Task { @MainActor in
-            NotificationManager.shared.handleNotificationUserInfo(userInfo)
-        }
-        completionHandler()
-    }
-    
-    /// Mostra il banner anche con l'app in foreground.
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        completionHandler([.banner, .sound, .badge])
-    }
-}
-
-//
-//  NotificationManager+AI.swift
+// MARK: - NotificationManager+AI.swift
 //  KidBox
 //
 //  Estensione di NotificationManager per la preferenza AI.

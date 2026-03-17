@@ -289,6 +289,11 @@ struct PediatricVisitsView: View {
                     if v.diagnosis != nil {
                         Image(systemName: "doc.text.fill").font(.caption).foregroundStyle(tint.opacity(0.6))
                     }
+                    if v.reminderOn || v.nextVisitReminderOn {
+                        Image(systemName: "bell.fill")
+                            .font(.caption)
+                            .foregroundStyle(tint)
+                    }
                     Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                 }
             }

@@ -851,12 +851,9 @@ struct PediatricVisitEditView: View {
         notes              = v.notes ?? ""
         hasNextVisit       = v.nextVisitDate != nil
         nextVisitDate      = v.nextVisitDate ?? Date()
-        nextVisitReminder  = v.nextVisitDate != nil  // se aveva già una data, reminder era attivo
         visitStatus        = v.visitStatus ?? .pending
-        UNUserNotificationCenter.current().getPendingNotificationRequests { reqs in
-            let scheduled = reqs.contains { $0.identifier == "visit-reminder-\(vid)" }
-            DispatchQueue.main.async { visitReminderOn = scheduled }
-        }
+        visitReminderOn    = v.reminderOn
+        nextVisitReminder  = v.nextVisitReminderOn
     }
     
     private func save() {
@@ -893,21 +890,29 @@ struct PediatricVisitEditView: View {
             v.notes              = notes.isEmpty ? nil : notes
             v.nextVisitDate      = hasNextVisit ? nextVisitDate : nil
             v.visitStatus        = visitStatus
+            v.reminderOn         = visitReminderOn
+            v.nextVisitReminderOn = hasNextVisit && nextVisitReminder
             v.updatedAt          = now; v.updatedBy = uid; v.syncState = .pendingUpsert
             linkExamsToVisit(vid)
             try? modelContext.save()
             SyncCenter.shared.enqueueVisitUpsert(visitId: v.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
-            // Promemoria data visita
+            // Promemoria data visita — usa KBVisitReminderService (stesso pattern di KBExamReminderService)
             if visitReminderOn {
-                scheduleVisitReminder(visitId: v.id, date: visitDate, reason: v.reason, childName: childName)
+                KBVisitReminderService.shared.scheduleVisitReminder(
+                    visitId: v.id, date: visitDate, reason: v.reason,
+                    childName: childName, familyId: familyId, childId: childId
+                )
             } else {
-                cancelVisitReminder(visitId: v.id)
+                KBVisitReminderService.shared.cancelVisitReminder(visitId: v.id)
             }
             if hasNextVisit && nextVisitReminder {
-                scheduleNextVisitReminder(visitId: v.id, date: nextVisitDate, reason: v.reason, childName: childName)
+                KBVisitReminderService.shared.scheduleNextVisitReminder(
+                    visitId: v.id, date: nextVisitDate, reason: v.reason,
+                    childName: childName, familyId: familyId, childId: childId
+                )
             } else {
-                cancelNextVisitReminder(visitId: v.id)
+                KBVisitReminderService.shared.cancelNextVisitReminder(visitId: v.id)
             }
             if !pendingAttachmentURLs.isEmpty {
                 KBEventBus.shared.emit(KBAppEvent.visitAttachmentPending(
@@ -933,6 +938,8 @@ struct PediatricVisitEditView: View {
             notes:               notes.isEmpty ? nil : notes,
             nextVisitDate:       hasNextVisit ? nextVisitDate : nil,
             visitStatus:         visitStatus,
+            reminderOn:          visitReminderOn,
+            nextVisitReminderOn: hasNextVisit && nextVisitReminder,
             createdAt:           now, updatedAt: now, updatedBy: uid, createdBy: uid
         )
         modelContext.insert(visit)
@@ -941,10 +948,16 @@ struct PediatricVisitEditView: View {
         SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         if visitReminderOn {
-            scheduleVisitReminder(visitId: visit.id, date: visitDate, reason: reason, childName: childName)
+            KBVisitReminderService.shared.scheduleVisitReminder(
+                visitId: visit.id, date: visitDate, reason: reason,
+                childName: childName, familyId: familyId, childId: childId
+            )
         }
         if hasNextVisit && nextVisitReminder {
-            scheduleNextVisitReminder(visitId: visit.id, date: nextVisitDate, reason: reason, childName: childName)
+            KBVisitReminderService.shared.scheduleNextVisitReminder(
+                visitId: visit.id, date: nextVisitDate, reason: reason,
+                childName: childName, familyId: familyId, childId: childId
+            )
         }
         if !pendingAttachmentURLs.isEmpty {
             KBEventBus.shared.emit(KBAppEvent.visitAttachmentPending(
@@ -952,108 +965,6 @@ struct PediatricVisitEditView: View {
             ))
         }
         isSaving = false; dismiss()
-    }
-    
-    // MARK: - Next visit notification
-    
-    private func scheduleNextVisitReminder(visitId: String, date: Date, reason: String, childName: String) {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            let settings = await center.notificationSettings()
-            guard settings.authorizationStatus == .authorized else {
-                // Prova a richiedere il permesso
-                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-                return
-            }
-            
-            // Calcola il giorno prima alle 09:00
-            let cal = Calendar.current
-            guard let dayBefore = cal.date(byAdding: .day, value: -1, to: date) else { return }
-            var components = cal.dateComponents([.year, .month, .day], from: dayBefore)
-            components.hour   = 9
-            components.minute = 0
-            
-            // Cancella eventuale reminder precedente per questa visita
-            center.removePendingNotificationRequests(withIdentifiers: ["next-visit-\(visitId)"])
-            
-            let content = UNMutableNotificationContent()
-            content.title = "Visita domani 🏥"
-            let name = childName.isEmpty ? "il bambino" : childName
-            if reason.isEmpty {
-                content.body = "Ricorda: domani c'è una visita medica per \(name)."
-            } else {
-                content.body = "Ricorda: domani c'è \"\(reason)\" per \(name)."
-            }
-            content.sound = .default
-            content.categoryIdentifier = "NEXT_VISIT"
-            content.userInfo = [
-                "type":     "visit_reminder",
-                "familyId": familyId,
-                "childId":  childId,
-                "visitId":  visitId
-            ]
-            
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-            let request = UNNotificationRequest(
-                identifier: "next-visit-\(visitId)",
-                content:    content,
-                trigger:    trigger
-            )
-            try? await center.add(request)
-        }
-    }
-    
-    private func cancelNextVisitReminder(visitId: String) {
-        UNUserNotificationCenter.current()
-            .removePendingNotificationRequests(withIdentifiers: ["next-visit-\(visitId)"])
-    }
-    
-    // MARK: - Visit date notification
-    
-    private func scheduleVisitReminder(visitId: String, date: Date, reason: String, childName: String) {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            let settings = await center.notificationSettings()
-            guard settings.authorizationStatus == .authorized else {
-                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-                return
-            }
-            
-            let cal = Calendar.current
-            guard let dayBefore = cal.date(byAdding: .day, value: -1, to: date) else { return }
-            var components = cal.dateComponents([.year, .month, .day], from: dayBefore)
-            components.hour   = 9
-            components.minute = 0
-            
-            center.removePendingNotificationRequests(withIdentifiers: ["visit-reminder-\(visitId)"])
-            
-            let content = UNMutableNotificationContent()
-            content.title = "Visita domani 🏥"
-            let name = childName.isEmpty ? "il bambino" : childName
-            content.body  = reason.isEmpty
-            ? "Ricorda: domani c'è una visita medica per \(name)."
-            : "Ricorda: domani c'è \"\(reason)\" per \(name)."
-            content.sound = .default
-            content.userInfo = [
-                "type":     "visit_reminder",
-                "familyId": familyId,
-                "childId":  childId,
-                "visitId":  visitId
-            ]
-            
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-            let request = UNNotificationRequest(
-                identifier: "visit-reminder-\(visitId)",
-                content:    content,
-                trigger:    trigger
-            )
-            try? await center.add(request)
-        }
-    }
-    
-    private func cancelVisitReminder(visitId: String) {
-        UNUserNotificationCenter.current()
-            .removePendingNotificationRequests(withIdentifiers: ["visit-reminder-\(visitId)"])
     }
     
     // MARK: - View helpers

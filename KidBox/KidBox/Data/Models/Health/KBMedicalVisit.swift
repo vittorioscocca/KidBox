@@ -42,6 +42,12 @@ final class KBMedicalVisit {
     // MARK: Stato visita
     var visitStatusRaw: String?
     
+    // MARK: Promemoria locali
+    /// true se è attivo un promemoria UNNotification per il giorno prima della visita
+    var reminderOn: Bool = false
+    /// true se è attivo un promemoria UNNotification per il giorno prima della visita successiva
+    var nextVisitReminderOn: Bool = false
+    
     // MARK: Soft delete
     var isDeleted: Bool
     
@@ -115,6 +121,8 @@ final class KBMedicalVisit {
         nextVisitDate: Date? = nil,
         nextVisitReason: String? = nil,
         visitStatus: KBVisitStatus? = nil,
+        reminderOn: Bool = false,
+        nextVisitReminderOn: Bool = false,
         isDeleted: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -138,6 +146,8 @@ final class KBMedicalVisit {
         self.nextVisitDate           = nextVisitDate
         self.nextVisitReason         = nextVisitReason
         self.visitStatusRaw          = visitStatus?.rawValue
+        self.reminderOn              = reminderOn
+        self.nextVisitReminderOn     = nextVisitReminderOn
         self.isDeleted               = isDeleted
         self.createdAt               = createdAt
         self.updatedAt               = updatedAt

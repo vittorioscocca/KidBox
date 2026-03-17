@@ -146,6 +146,17 @@ struct PediatricVisitDetailView: View {
                                 .background(Capsule().fill(statusColor(status).opacity(0.15)))
                                 .foregroundStyle(statusColor(status))
                         }
+                        // ── Promemoria attivo ──
+                        if v.reminderOn || v.nextVisitReminderOn {
+                            let label: String = v.reminderOn && v.nextVisitReminderOn
+                            ? "2 promemoria attivi"
+                            : v.reminderOn ? "Promemoria attivo" : "Promemoria visita successiva"
+                            Label(label, systemImage: "bell.fill")
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(Capsule().fill(tint.opacity(0.12)))
+                                .foregroundStyle(tint)
+                        }
                     }
                 }
                 Spacer(minLength: 8)

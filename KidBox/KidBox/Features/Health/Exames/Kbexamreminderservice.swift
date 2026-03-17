@@ -103,7 +103,13 @@ final class KBExamReminderService {
     ) {
         let content = UNMutableNotificationContent()
         content.title = "Promemoria esame domani 🩺"
-        content.body  = "\(childName) ha l'esame \"\(examName)\" domani."
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "it_IT")
+        fmt.dateFormat = "HH:mm"
+        let timeStr = fmt.string(from: date)
+        content.body  = examName.isEmpty
+        ? "Domani alle \(timeStr) \(childName) ha un esame."
+        : "Domani alle \(timeStr) \(childName) ha l'esame \"\(examName)\"."
         content.sound = .default
         content.userInfo = [
             "type":     "exam_reminder",
@@ -117,14 +123,17 @@ final class KBExamReminderService {
             DispatchQueue.main.async { completion(false) }
             return
         }
-        var components = cal.dateComponents([.year, .month, .day], from: dayBefore)
+        
+        // Se l'utente ha scelto un orario specifico, usalo; altrimenti usa la stessa ora dell'esame
+        let components: DateComponents
         if let time = reminderTime {
+            var c = cal.dateComponents([.year, .month, .day], from: dayBefore)
             let tc = cal.dateComponents([.hour, .minute], from: time)
-            components.hour   = tc.hour   ?? 8
-            components.minute = tc.minute ?? 0
+            c.hour   = tc.hour   ?? 8
+            c.minute = tc.minute ?? 0
+            components = c
         } else {
-            components.hour   = 8
-            components.minute = 0
+            components = cal.dateComponents([.year, .month, .day, .hour, .minute], from: dayBefore)
         }
         
         guard let fireDate = cal.date(from: components), fireDate > Date() else {

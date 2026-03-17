@@ -34,7 +34,7 @@ final class AppDelegate: NSObject,
                          UIApplicationDelegate,
                          UNUserNotificationCenterDelegate,
                          MessagingDelegate,
- CLLocationManagerDelegate {
+                         CLLocationManagerDelegate {
     
     // MARK: - Background location manager
     
@@ -238,7 +238,15 @@ final class AppDelegate: NSObject,
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
+        let type = notification.request.content.userInfo["type"] as? String
+        // Mostra banner, suono e badge per i promemoria visita locali schedulate
+        // da PediatricVisitEditView (visit_reminder). Tutte le altre notifiche
+        // remote vengono soppresse in foreground (comportamento precedente).
+        if type == "visit_reminder" {
+            KBLog.auth.kbDebug("Notification in foreground: visit_reminder → show banner")
+            return [.banner, .sound, .badge]
+        }
         KBLog.auth.kbDebug("Notification received in foreground (suppressed)")
-        return []   // ✅ niente banner, niente suono, niente badge in foreground
+        return []
     }
 }
