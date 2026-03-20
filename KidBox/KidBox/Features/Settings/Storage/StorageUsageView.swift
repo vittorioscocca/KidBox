@@ -221,24 +221,30 @@ struct StorageUsageView: View {
     
     private var segmentedBar: some View {
         GeometryReader { geo in
-            HStack(spacing: 2) {
-                let sectionsWithBytes = vm.sections.filter { $0.bytes > 0 }
-                ForEach(sectionsWithBytes) { s in
-                    let fraction = Double(s.bytes) / Double(StorageUsageViewModel.totalQuotaBytes)
-                    let w = max(4, geo.size.width * fraction)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: s.color) ?? .accentColor)
-                        .frame(width: w, height: 12)
+            let totalWidth = geo.size.width
+            let usedWidth  = totalWidth * min(vm.usedFraction, 1.0)
+            let sectionsWithBytes = vm.sections.filter { $0.bytes > 0 }
+            let sectionTotal = max(1, sectionsWithBytes.reduce(0) { $0 + $1.bytes })
+            
+            ZStack(alignment: .leading) {
+                // Sfondo spazio libero
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.secondary.opacity(0.15))
+                    .frame(width: totalWidth, height: 12)
+                
+                // Segmenti colorati — clipped a usedWidth, mai oltre
+                HStack(spacing: 1) {
+                    ForEach(sectionsWithBytes) { s in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color(hex: s.color) ?? .accentColor)
+                            .frame(
+                                width: usedWidth * (Double(s.bytes) / Double(sectionTotal)),
+                                height: 12
+                            )
+                    }
                 }
-                Spacer(minLength: 0)
-                    .frame(
-                        width: max(0, geo.size.width * (1.0 - vm.usedFraction) - 2),
-                        height: 12
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.secondary.opacity(0.15))
-                    )
+                .frame(width: usedWidth, alignment: .leading)
+                .clipped()
             }
         }
         .frame(height: 12)

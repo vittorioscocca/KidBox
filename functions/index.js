@@ -1424,7 +1424,39 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
     },
 );
 
-// ── Hard-delete documento → sottrai fileSize dal contatore storage ────────────
+// ── Chat media: sottrai bytes subito quando il messaggio viene soft-deleted ───
+// L'utente non vede alcun cestino per la chat — il messaggio sparisce
+// immediatamente quindi lo spazio deve liberarsi subito, non dopo 30gg.
+// Il GC settimanale si occuperà solo di rimuovere il blob Storage,
+// senza toccare più il contatore usedBytes (già aggiornato qui).
+
+exports.onChatMessageSoftDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/chatMessages/{messageId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      // Solo transizione false→true su isDeleted
+      if (!before || !after) return;
+      if (before.isDeleted === true) return; // era già deleted
+      if (after.isDeleted !== true) return; // non è un delete
+
+      // Sottrai solo se aveva media
+      const mediaPath = after.mediaStoragePath || before.mediaStoragePath || "";
+      if (!mediaPath) return;
+
+      const mediaTypes = ["photo", "video", "audio", "document"];
+      const type = after.typeRaw || before.typeRaw || "";
+      if (!mediaTypes.includes(type)) return;
+
+      logger.info("onChatMessageSoftDeleted: freeing 512KB", {familyId, messageId: event.params.messageId});
+      await updateStorageBytes(familyId, -(512 * 1024));
+    },
+);
 
 exports.onDocumentHardDeleted = onDocumentWritten(
     {
@@ -1443,6 +1475,48 @@ exports.onDocumentHardDeleted = onDocumentWritten(
       if (sizeBefore <= 0) return;
 
       logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
+      await updateStorageBytes(familyId, -sizeBefore);
+    },
+);
+
+// ── Foto/video: traccia fileSize al caricamento ──────────────────
+
+exports.onPhotoCreated = onDocumentCreated(
+    {
+      document: "families/{familyId}/photos/{photoId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const data = event.data ? event.data.data() : null;
+      if (!data) return;
+
+      if (!data.isDeleted && typeof data.fileSize === "number" && data.fileSize > 0) {
+        logger.info("onPhotoCreated: adding bytes", {familyId, fileSize: data.fileSize});
+        await updateStorageBytes(familyId, data.fileSize);
+      }
+    },
+);
+
+// ── Foto/video: hard-delete → sottrai fileSize ───────────────────
+
+exports.onPhotoHardDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/photos/{photoId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      // Solo hard-delete: documento esisteva prima e non esiste più
+      if (!before || after) return;
+
+      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
+      if (sizeBefore <= 0) return;
+
+      logger.info("onPhotoHardDeleted: removing bytes", {familyId, sizeBefore});
       await updateStorageBytes(familyId, -sizeBefore);
     },
 );
@@ -1539,7 +1613,21 @@ exports.initStorageUsage = onCall(
       });
 
       const chatBytes = chatMediaCount * 512 * 1024;
-      const totalBytes = docBytes + chatBytes;
+
+      // 3. Somma fileSize di tutte le foto/video non eliminati
+      const photosSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("photos")
+          .where("isDeleted", "==", false)
+          .get();
+
+      let photoBytes = 0;
+      photosSnap.forEach((d) => {
+        const size = d.get("fileSize");
+        if (typeof size === "number" && size > 0) photoBytes += size;
+      });
+
+      const totalBytes = docBytes + chatBytes + photoBytes;
 
       // 3. Sovrascrive il contatore (non increment, set diretto)
       await storageStatsRef(familyId).set({
@@ -1553,6 +1641,7 @@ exports.initStorageUsage = onCall(
         familyId,
         docBytes,
         chatBytes,
+        photoBytes,
         chatMediaCount,
         totalBytes,
       });
@@ -1560,9 +1649,117 @@ exports.initStorageUsage = onCall(
       return {
         docBytes,
         chatBytes,
+        photoBytes,
         chatMediaCount,
         totalBytes,
         quotaBytes: 200 * 1024 * 1024,
       };
+    },
+);
+
+// ── Garbage Collector notturno — hard delete di documenti e chat media ────────
+//
+// Strategia (standard industry: Google Photos, iCloud, Dropbox):
+//
+//   Entità          | Al delete dell'utente  | GC notturno (30gg)
+//   ─────────────── | ───────────────────────| ───────────────────────────────
+//   Foto/video      | Hard delete immediato  | —  (gestito lato Swift)
+//   Documenti       | Soft delete            | Cancella Storage blob + doc
+//   Chat media      | Soft delete            | Cancella Storage blob + doc
+//   Record Firestore| Soft delete            | Hard delete documento
+//
+// Gira ogni notte alle 03:00 Europe/Rome.
+
+exports.garbageCollectDeleted = onSchedule(
+    {
+      schedule: "0 3 * * 0", // domenica notte alle 03:00 — settimanale è sufficiente
+      timeZone: "Europe/Rome",
+      region: "europe-west1",
+      timeoutSeconds: 540,
+      memory: "512MiB",
+    },
+    async () => {
+      const bucket = admin.storage().bucket(STORAGE_BUCKET);
+      const db = admin.firestore();
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      logger.info("garbageCollectDeleted: start", {cutoff: cutoff.toISOString()});
+
+      const familiesSnap = await db.collection("families")
+          .where("isDeleted", "!=", true)
+          .get();
+
+      let totalDocsDeleted = 0;
+      let totalChatDeleted = 0;
+      let totalBytesFreed = 0;
+
+      for (const familyDoc of familiesSnap.docs) {
+        const familyId = familyDoc.id;
+
+        // ── 1. Documenti soft-deleted oltre 30gg ──────────────────────────────
+        const docsSnap = await db.collection("families").doc(familyId)
+            .collection("documents")
+            .where("isDeleted", "==", true)
+            .where("updatedAt", "<=", cutoff)
+            .get();
+
+        for (const doc of docsSnap.docs) {
+          const data = doc.data();
+          const storagePath = data.storagePath || data.firebasePath || "";
+          const fileSize = typeof data.fileSize === "number" ? data.fileSize : 0;
+
+          if (storagePath) {
+            try {
+              await bucket.file(storagePath).delete();
+              logger.info("GC: deleted Storage blob", {familyId, storagePath});
+            } catch (e) {
+              if (e.code !== 404) {
+                logger.warn("GC: Storage delete failed", {familyId, storagePath, err: e.message});
+              }
+            }
+          }
+
+          await doc.ref.delete();
+          totalDocsDeleted++;
+          if (fileSize > 0) {
+            totalBytesFreed += fileSize;
+            await updateStorageBytes(familyId, -fileSize);
+          }
+        }
+
+        // ── 2. Chat media soft-deleted oltre 30gg ─────────────────────────────
+        const chatSnap = await db.collection("families").doc(familyId)
+            .collection("chatMessages")
+            .where("isDeleted", "==", true)
+            .where("updatedAt", "<=", cutoff)
+            .get();
+
+        for (const msg of chatSnap.docs) {
+          const data = msg.data();
+          const mediaPath = data.mediaStoragePath || "";
+
+          if (mediaPath) {
+            try {
+              await bucket.file(mediaPath).delete();
+              logger.info("GC: deleted chat media blob", {familyId, mediaPath});
+              totalChatDeleted++;
+              // NON sottraiamo bytes qui — onChatMessageSoftDeleted lo ha già fatto
+              // al momento del delete. Il GC pulisce solo il blob Storage.
+            } catch (e) {
+              if (e.code !== 404) {
+                logger.warn("GC: chat media delete failed", {familyId, mediaPath, err: e.message});
+              }
+            }
+          }
+          await msg.ref.delete();
+        }
+      }
+
+      logger.info("garbageCollectDeleted: complete", {
+        totalDocsDeleted,
+        totalChatDeleted,
+        totalBytesFreed,
+        families: familiesSnap.size,
+      });
     },
 );

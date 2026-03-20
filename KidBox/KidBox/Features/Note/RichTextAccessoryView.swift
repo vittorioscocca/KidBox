@@ -22,7 +22,13 @@ final class RichTextToolbarModel: ObservableObject {
 
 // MARK: - RichTextAccessoryView
 
-final class RichTextAccessoryView: UIView {
+// ✅ Strategia definitiva "liquid":
+//    Usiamo UIToolbar come contenitore — è esattamente il componente che iOS
+//    usa internamente per le inputAccessoryView native (inclusa quella di Safari,
+//    Mail, Note). UIToolbar conosce il colore e il materiale della tastiera
+//    dall'interno della gerarchia e si fonde senza alcuna linea di separazione.
+//    L'altezza è 0 nel frame iniziale: UIToolbar si dimensiona via auto-layout.
+final class RichTextAccessoryView: UIToolbar {
     
     private weak var textView: UITextView?
     let model = RichTextToolbarModel()
@@ -41,11 +47,25 @@ final class RichTextAccessoryView: UIView {
     // MARK: - Init
     
     init(onDismiss: @escaping () -> Void) {
-        super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 44))
+        super.init(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
         autoresizingMask = [.flexibleWidth]
-        backgroundColor  = .clear
-        isOpaque         = false
         
+        // UIToolbar usa automaticamente il materiale translucente della tastiera.
+        // barStyle .default + isTranslucent true = stesso blur della QuickType bar.
+        // NON azzerare setBackgroundImage/setShadowImage: si perderebbe il materiale.
+        barStyle      = .default
+        isTranslucent = true
+        // Rimuove solo l'ombra superiore (la reimpostiamo noi con 0.33pt precisi)
+        setShadowImage(UIImage(), forToolbarPosition: .any)
+        
+        // Separatore superiore sottilissimo
+        let sep = UIView()
+        sep.backgroundColor  = UIColor.separator.withAlphaComponent(0.4)
+        sep.autoresizingMask = [.flexibleWidth]
+        sep.frame            = CGRect(x: 0, y: 0, width: bounds.width, height: 0.33)
+        addSubview(sep)
+        
+        // ── SwiftUI content ──────────────────────────────────────────────
         let barView = NoteLiquidBarView(
             model: model,
             onCommand: { [weak self] cmd in

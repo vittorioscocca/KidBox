@@ -323,9 +323,21 @@ extension SyncCenter {
                 
             case "delete":
                 KBLog.sync.kbInfo("processPhotoOp: delete photoId=\(pid)")
-                try await Self.photoRemote.softDeletePhoto(familyId: op.familyId, photoId: pid)
+                // Hard delete: cancella il file da Firebase Storage, rimuove il
+                // documento Firestore e sottrae fileSize dal contatore usedBytes.
+                // Non esiste un motivo per mantenere un soft-delete per le foto:
+                // l'utente le elimina intenzionalmente e lo spazio deve liberarsi
+                // immediatamente. Il trigger onPhotoHardDeleted lato Cloud Function
+                // si occupa di aggiornare il contatore usedBytes.
+                let fileSizeToFree = photo?.fileSize ?? 0
+                let storagePath    = photo?.storagePath ?? ""
+                try await Self.photoRemote.hardDeletePhoto(
+                    familyId: op.familyId,
+                    photoId: pid,
+                    storagePath: storagePath
+                )
                 if let photo { modelContext.delete(photo); try modelContext.save() }
-                KBLog.sync.kbInfo("processPhotoOp: delete DONE photoId=\(pid)")
+                KBLog.sync.kbInfo("processPhotoOp: delete DONE photoId=\(pid) freedBytes=\(fileSizeToFree)")
                 
             default: break
             }

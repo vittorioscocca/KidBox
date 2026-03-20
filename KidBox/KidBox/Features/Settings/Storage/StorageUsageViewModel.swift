@@ -107,13 +107,23 @@ final class StorageUsageViewModel: ObservableObject {
         let calCount   = fetchCount(modelContext: modelContext, predicate: #Predicate<KBCalendarEvent> { $0.familyId == fid && $0.isDeleted == false })
         let todoCount  = fetchCount(modelContext: modelContext, predicate: #Predicate<KBTodoItem>      { $0.familyId == fid && $0.isDeleted == false })
         
+        // Foto e video: usa fileSize reale salvato nel modello.
+        // Per i video aggiunge anche i byte di durata stimati (1 MB/s) come overhead
+        // rispetto alle immagini, in modo che il breakdown sia più preciso.
+        let photoBytes = fetchSum(modelContext: modelContext,
+                                  predicate: #Predicate<KBFamilyPhoto> { $0.familyId == fid && $0.isDeleted == false },
+                                  value: { $0.fileSize })
+        let photoCount = fetchCount(modelContext: modelContext,
+                                    predicate: #Predicate<KBFamilyPhoto> { $0.familyId == fid && $0.isDeleted == false })
+        
         return [
-            KBStorageSection(id: "documents", name: "Documenti",   icon: "doc.fill",                             color: "5B8FDE", bytes: docBytes,                    recordCount: docCount),
-            KBStorageSection(id: "chat",      name: "Chat",         icon: "bubble.left.and.bubble.right.fill",    color: "34C759", bytes: chatBytes,                   recordCount: chatCount),
-            KBStorageSection(id: "salute",    name: "Salute",       icon: "stethoscope",                          color: "FF6B6B", bytes: saluteBytes,                 recordCount: visitCount + examCount + treatmentCount + vaccineCount),
-            KBStorageSection(id: "notes",     name: "Note",         icon: "note.text",                            color: "FF9F0A", bytes: Int64(noteCount) * 3 * kb,   recordCount: noteCount),
-            KBStorageSection(id: "calendar",  name: "Calendario",   icon: "calendar",                             color: "BF5AF2", bytes: Int64(calCount) * kb,        recordCount: calCount),
-            KBStorageSection(id: "todo",      name: "Liste & Todo", icon: "checklist",                            color: "30B0C7", bytes: Int64(todoCount) * kb,       recordCount: todoCount),
+            KBStorageSection(id: "photos",    name: "Foto e video", icon: "photo.on.rectangle.angled",           color: "FF6B9D", bytes: photoBytes,                  recordCount: photoCount),
+            KBStorageSection(id: "documents", name: "Documenti",    icon: "doc.fill",                            color: "5B8FDE", bytes: docBytes,                    recordCount: docCount),
+            KBStorageSection(id: "chat",      name: "Chat",          icon: "bubble.left.and.bubble.right.fill",   color: "34C759", bytes: chatBytes,                   recordCount: chatCount),
+            KBStorageSection(id: "salute",    name: "Salute",        icon: "stethoscope",                         color: "FF6B6B", bytes: saluteBytes,                 recordCount: visitCount + examCount + treatmentCount + vaccineCount),
+            KBStorageSection(id: "notes",     name: "Note",          icon: "note.text",                           color: "FF9F0A", bytes: Int64(noteCount) * 3 * kb,   recordCount: noteCount),
+            KBStorageSection(id: "calendar",  name: "Calendario",    icon: "calendar",                            color: "BF5AF2", bytes: Int64(calCount) * kb,        recordCount: calCount),
+            KBStorageSection(id: "todo",      name: "Liste & Todo",  icon: "checklist",                           color: "30B0C7", bytes: Int64(todoCount) * kb,       recordCount: todoCount),
         ]
     }
     
@@ -126,7 +136,11 @@ final class StorageUsageViewModel: ObservableObject {
                                        value: { $0.fileSize })
         let chatMediaCount = fetchCount(modelContext: modelContext,
                                         predicate: #Predicate<KBChatMessage> { $0.familyId == fid && $0.mediaStoragePath != nil })
-        return docBytes + Int64(chatMediaCount) * 512 * 1024
+        // Foto e video: usa fileSize reale dal modello SwiftData
+        let photoBytes: Int64 = fetchSum(modelContext: modelContext,
+                                         predicate: #Predicate<KBFamilyPhoto> { $0.familyId == fid && $0.isDeleted == false },
+                                         value: { $0.fileSize })
+        return docBytes + Int64(chatMediaCount) * 512 * 1024 + photoBytes
     }
     
     // MARK: - SwiftData helpers

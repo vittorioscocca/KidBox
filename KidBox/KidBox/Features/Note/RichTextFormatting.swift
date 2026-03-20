@@ -125,7 +125,10 @@ final class RichTextFormatter {
         let range = tv.selectedRange
         if range.length == 0 { tv.typingAttributes[.font] = font; return }
         let text = mutableCopy(tv)
-        forEachParagraph(in: text, selection: range) { pr in text.addAttribute(.font, value: font, range: pr) }
+        forEachParagraph(in: text, selection: range) { pr in
+            text.addAttribute(.font, value: font, range: pr)
+            text.addAttribute(.foregroundColor, value: UIColor.richTextPrimary, range: pr)
+        }
         apply(text, to: tv, selection: range)
     }
     
@@ -252,7 +255,7 @@ final class RichTextFormatter {
             if currentLineLen > 0 {
                 let safeRange = NSRange(location: lineRange.location, length: currentLineLen)
                 ms.removeAttribute(.strikethroughStyle, range: safeRange)
-                ms.addAttribute(.foregroundColor, value: UIColor.label, range: safeRange)
+                ms.addAttribute(.foregroundColor, value: UIColor.richTextPrimary, range: safeRange)
             }
             
             if shouldRemove {
@@ -370,7 +373,7 @@ final class RichTextFormatter {
                 // Deseleziona: testo normale
                 if textRange.length > 0 {
                     ms.removeAttribute(.strikethroughStyle, range: textRange)
-                    ms.addAttribute(.foregroundColor, value: UIColor.label, range: textRange)
+                    ms.addAttribute(.foregroundColor, value: UIColor.richTextPrimary, range: textRange)
                 }
                 ms.addAttribute(.foregroundColor, value: UIColor.secondaryLabel,
                                 range: NSRange(location: start, length: 1))

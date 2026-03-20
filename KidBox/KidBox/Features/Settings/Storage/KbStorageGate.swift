@@ -159,7 +159,16 @@ final class KBStorageGate {
             return Int64((try? modelContext.fetchCount(d)) ?? 0) * kb
         }()
         
-        return docBytes + chatBytes + saluteBytes + noteBytes + calBytes + todoBytes
+        // Foto e video: fileSize reale salvato in KBFamilyPhoto
+        let photoBytes: Int64 = {
+            let desc = FetchDescriptor<KBFamilyPhoto>(
+                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+            )
+            let photos = (try? modelContext.fetch(desc)) ?? []
+            return photos.reduce(0) { $0 + $1.fileSize }
+        }()
+        
+        return docBytes + chatBytes + saluteBytes + noteBytes + calBytes + todoBytes + photoBytes
     }
 }
 

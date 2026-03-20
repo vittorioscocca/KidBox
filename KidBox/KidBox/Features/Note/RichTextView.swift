@@ -45,7 +45,7 @@ struct RichTextView: UIViewRepresentable {
         tv.backgroundColor      = .clear
         tv.delegate             = context.coordinator
         tv.textContainerInset   = UIEdgeInsets(top: 2, left: 6, bottom: 10, right: 6)
-        tv.typingAttributes     = [.font: baseFont, .foregroundColor: UIColor.label]
+        tv.typingAttributes     = NSAttributedString.defaultTypingAttributes(font: baseFont)
         
         tv.onTab = { isShift in
             if isShift { RichTextFormatter.outdentList(in: tv) }
@@ -113,9 +113,9 @@ struct RichTextView: UIViewRepresentable {
             guard isShowingPlaceholder else { return }
             isShowingPlaceholder = false
             textView.text = ""
-            textView.textColor = .label
+            textView.textColor = .richTextPrimary
             textView.font = parent.baseFont
-            textView.typingAttributes = [.font: parent.baseFont, .foregroundColor: UIColor.label]
+            textView.typingAttributes = NSAttributedString.defaultTypingAttributes(font: parent.baseFont)
         }
         
         func textViewDidEndEditing(_ textView: UITextView) {
@@ -309,15 +309,30 @@ struct RichTextView: UIViewRepresentable {
         
         func handlePastePlainText(_ pasted: String, in tv: UITextView) -> Bool {
             guard !pasted.isEmpty else { return false }
-            let ms  = NSMutableAttributedString(attributedString: tv.attributedText)
-            let sel = tv.selectedRange
-            let len = ms.length
-            let loc = max(0, min(sel.location, len))
+            let ms   = NSMutableAttributedString(attributedString: tv.attributedText)
+            let sel  = tv.selectedRange
+            let len  = ms.length
+            let loc  = max(0, min(sel.location, len))
             let slen = max(0, min(sel.length, len - loc))
             let font = (tv.typingAttributes[.font] as? UIFont) ?? parent.baseFont
-            ms.replaceCharacters(in: NSRange(location: loc, length: slen),
-                                 with: NSAttributedString(string: pasted,
-                                                          attributes: [.font: font, .foregroundColor: UIColor.label]))
+            
+            // Recupera paragraphStyle del punto di inserimento (mantiene indent ecc.)
+            let psAtCaret: NSParagraphStyle
+            if len > 0 {
+                let idx = max(0, min(loc, len - 1))
+                psAtCaret = (ms.attribute(.paragraphStyle, at: idx, effectiveRange: nil)
+                             as? NSParagraphStyle) ?? NSMutableParagraphStyle.editorDefault()
+            } else {
+                psAtCaret = NSMutableParagraphStyle.editorDefault()
+            }
+            
+            // Costruisci attributed string del testo incollato con stile coerente
+            let pasteAttr = NSAttributedString(string: pasted, attributes: [
+                .font:            font,
+                .foregroundColor: UIColor.richTextPrimary,
+                .paragraphStyle:  psAtCaret
+            ])
+            ms.replaceCharacters(in: NSRange(location: loc, length: slen), with: pasteAttr)
             tv.textStorage.setAttributedString(ms)
             tv.selectedRange = NSRange(location: loc + (pasted as NSString).length, length: 0)
             return true
@@ -325,32 +340,124 @@ struct RichTextView: UIViewRepresentable {
     }
 }
 
+// MARK: - Colore testo standard (leggermente meno nero di .label)
+//
+// UIColor.label = #000000 in light mode — troppo duro.
+// Usiamo un grigio scuro con ~88% opacità che si adatta a dark mode.
+extension UIColor {
+    static var richTextPrimary: UIColor {
+        UIColor { traits in
+            traits.userInterfaceStyle == .dark
+            ? UIColor(white: 0.92, alpha: 1)   // dark: quasi bianco morbido
+            : UIColor(white: 0.10, alpha: 1)   // light: antracite (non nero puro)
+        }
+    }
+}
+
+// MARK: - Paragraph style di default per l'editor
+//
+// Interlinea e spaziatura applicati globalmente al testo del corpo.
+extension NSMutableParagraphStyle {
+    static func editorDefault() -> NSMutableParagraphStyle {
+        let ps = NSMutableParagraphStyle()
+        ps.lineHeightMultiple  = 1.35   // respiro verticale tra le righe
+        ps.paragraphSpacing    = 4      // piccolo gap tra paragrafi
+        ps.lineBreakMode       = .byWordWrapping
+        return ps
+    }
+}
+
 // MARK: - HTML helpers
 
 extension NSAttributedString {
+    /// Converte HTML in NSAttributedString preservando bold/italic/size originali
+    /// ma normalizzando il font-family al sistema e imponendo colore e interlinea coerenti.
     static func fromHTML(_ html: String, fallbackFont: UIFont) -> NSAttributedString? {
         let trimmed = html.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            return NSAttributedString(string: "", attributes: [.font: fallbackFont, .foregroundColor: UIColor.label])
+            return NSAttributedString(string: "",
+                                      attributes: defaultTypingAttributes(font: fallbackFont))
         }
-        guard let data = trimmed.data(using: .utf8) else { return nil }
+        
+        // Inietta CSS che normalizza font, colore, interlinea prima del parse
+        let styled = """
+        <html><head><meta charset="UTF-8">
+        <style>
+          body, p, li, td, div, span {
+            font-family: -apple-system, sans-serif;
+            font-size: \(Int(fallbackFont.pointSize))px;
+            color: #1A1A1A;
+            line-height: 1.45;
+          }
+          h1 { font-size: \(Int(fallbackFont.pointSize * 1.9))px; font-weight: bold; }
+          h2 { font-size: \(Int(fallbackFont.pointSize * 1.45))px; font-weight: bold; }
+          h3 { font-size: \(Int(fallbackFont.pointSize * 1.2))px; font-weight: 600; }
+        </style>
+        </head><body>\(trimmed)</body></html>
+        """
+        
+        guard let data = styled.data(using: .utf8) else { return nil }
         let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
             .documentType: NSAttributedString.DocumentType.html,
             .characterEncoding: String.Encoding.utf8.rawValue
         ]
-        guard let raw = try? NSMutableAttributedString(data: data, options: options, documentAttributes: nil)
+        guard let raw = try? NSMutableAttributedString(data: data,
+                                                       options: options,
+                                                       documentAttributes: nil)
         else { return nil }
         
-        raw.enumerateAttribute(.font, in: NSRange(location: 0, length: raw.length)) { value, range, _ in
-            let current = (value as? UIFont) ?? fallbackFont
-            let traits  = current.fontDescriptor.symbolicTraits
-            var desc    = fallbackFont.fontDescriptor
-            if let t = desc.withSymbolicTraits(traits) { desc = t }
-            raw.addAttribute(.font, value: UIFont(descriptor: desc, size: fallbackFont.pointSize), range: range)
+        let fullRange = NSRange(location: 0, length: raw.length)
+        
+        // 1) Normalizza font: mantieni size e traits (bold/italic) dall'HTML,
+        //    ma forza il font-family di sistema.
+        raw.enumerateAttribute(.font, in: fullRange) { value, range, _ in
+            let parsed  = (value as? UIFont) ?? fallbackFont
+            let traits  = parsed.fontDescriptor.symbolicTraits
+            let size    = parsed.pointSize   // rispetta h1/h2/h3 etc.
+            var desc    = UIFont.systemFont(ofSize: size).fontDescriptor
+            if let t    = desc.withSymbolicTraits(traits) { desc = t }
+            raw.addAttribute(.font, value: UIFont(descriptor: desc, size: size), range: range)
         }
-        raw.addAttribute(.foregroundColor, value: UIColor.label,
-                         range: NSRange(location: 0, length: raw.length))
+        
+        // 2) Colore testo uniforme, leggermente più morbido del nero puro
+        raw.addAttribute(.foregroundColor, value: UIColor.richTextPrimary, range: fullRange)
+        
+        // 3) Migliora il paragraphStyle: aumenta interlinea e spaziatura
+        //    preservando indent (liste), alignment e altri attributi già presenti.
+        raw.enumerateAttribute(.paragraphStyle, in: fullRange) { value, range, _ in
+            let existing = (value as? NSParagraphStyle) ?? NSParagraphStyle()
+            let ps       = (existing.mutableCopy() as? NSMutableParagraphStyle)
+            ?? NSMutableParagraphStyle()
+            // Solo se non c'è già un'interlinea significativa (es. dall'HTML)
+            if ps.lineHeightMultiple < 1.1 {
+                ps.lineHeightMultiple = 1.35
+            }
+            if ps.paragraphSpacing < 1 {
+                ps.paragraphSpacing = 4
+            }
+            raw.addAttribute(.paragraphStyle, value: ps, range: range)
+        }
+        
+        // 4) Paragrafi senza .paragraphStyle esplicito (testo piatto) → applica default
+        raw.enumerateAttribute(.paragraphStyle, in: fullRange,
+                               options: .longestEffectiveRangeNotRequired) { value, range, _ in
+            if value == nil {
+                raw.addAttribute(.paragraphStyle, value: NSMutableParagraphStyle.editorDefault(),
+                                 range: range)
+            }
+        }
+        
         return raw
+    }
+    
+    // MARK: - Typing attributes di default per la UITextView
+    
+    static func defaultTypingAttributes(font: UIFont) -> [NSAttributedString.Key: Any] {
+        [
+            .font:            font,
+            .foregroundColor: UIColor.richTextPrimary,
+            .paragraphStyle:  NSMutableParagraphStyle.editorDefault()
+        ]
     }
     
     func toHTML() -> String? {

@@ -309,6 +309,39 @@ final class PhotoRemoteStore {
                       "updatedAt": FieldValue.serverTimestamp()], merge: true)
     }
     
+    /// Hard-delete di una foto/video:
+    /// 1. Cancella il blob cifrato da Firebase Storage.
+    /// 2. Hard-deletes il documento Firestore (delete reale, non isDeleted=true).
+    ///
+    /// Il trigger `onPhotoHardDeleted` lato Cloud Functions legge `before.fileSize`
+    /// e sottrae i bytes da `stats/storage` — lo spazio viene liberato immediatamente.
+    ///
+    /// Se il blob è già assente su Storage (404) si procede comunque con il delete
+    /// Firestore, in modo che device multipli non si blocchino a vicenda.
+    func hardDeletePhoto(familyId: String, photoId: String, storagePath: String) async throws {
+        // 1. Cancella il blob da Firebase Storage
+        if !storagePath.isEmpty {
+            do {
+                try await storage.reference().child(storagePath).delete()
+                KBLog.sync.kbInfo("hardDeletePhoto: Storage blob deleted path=\(storagePath)")
+            } catch let err as NSError where
+                        err.domain == StorageErrorDomain &&
+                        err.code == StorageErrorCode.objectNotFound.rawValue {
+                // Già assente (upload mai completato o rimosso da altro device) — non bloccante.
+                KBLog.sync.kbInfo("hardDeletePhoto: blob already absent path=\(storagePath)")
+            }
+            // Qualsiasi altro errore Storage viene rilanciato → l'outbox riprova.
+        }
+        
+        // 2. Hard-delete il documento Firestore
+        // Non usiamo setData(isDeleted:true) — vogliamo un .delete() reale così
+        // il trigger onPhotoHardDeleted si attiva e sottrae fileSize da usedBytes.
+        try await db.collection("families").document(familyId)
+            .collection("photos").document(photoId)
+            .delete()
+        KBLog.sync.kbInfo("hardDeletePhoto: Firestore doc deleted familyId=\(familyId) photoId=\(photoId)")
+    }
+    
     // MARK: - Realtime listener — photos
     
     func listenPhotos(

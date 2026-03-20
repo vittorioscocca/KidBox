@@ -369,14 +369,27 @@ struct PhotoAlbumDetailView: View {
     }
     
     private func softDeletePhoto(_ photo: KBFamilyPhoto) {
+        // Rimuovi subito dalla UI — non aspettiamo la risposta Firebase
         photo.isDeleted = true; photo.updatedAt = Date()
         try? modelContext.save()
-        let photoId = photo.id; let fid = familyId
+        let photoId     = photo.id
+        let storagePath = photo.storagePath
+        let fid         = familyId
         Task {
             do {
-                try await SyncCenter.photoRemote.softDeletePhoto(familyId: fid, photoId: photoId)
+                // Hard delete: rimuove blob Storage + documento Firestore.
+                // onPhotoHardDeleted lato Cloud Functions aggiorna usedBytes.
+                try await SyncCenter.photoRemote.hardDeletePhoto(
+                    familyId: fid, photoId: photoId, storagePath: storagePath
+                )
+                KBLog.sync.kbInfo("AlbumDetail deletePhoto: OK photoId=\(photoId)")
             } catch {
-                KBLog.sync.kbError("AlbumDetail softDelete FAILED photoId=\(photoId) err=\(error.localizedDescription)")
+                // Fallback: se l'hard delete fallisce rimetti la foto
+                await MainActor.run {
+                    photo.isDeleted = false
+                    try? modelContext.save()
+                }
+                KBLog.sync.kbError("AlbumDetail deletePhoto: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
             }
         }
     }

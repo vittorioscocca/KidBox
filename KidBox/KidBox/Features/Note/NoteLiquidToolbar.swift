@@ -75,12 +75,10 @@ struct NoteLiquidBarView: View {
         }
         .frame(height: 44)
         .padding(.leading, 6)
+        // ✅ Sfondo trasparente: il colore lo fornisce RichTextAccessoryView (UIKit)
+        //    con UIColor.systemGroupedBackground, identico alla tastiera.
         .background(Color.clear)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(Color.primary.opacity(0.09))
-                .frame(height: 0.33)
-        }
+        // Il separatore in cima è gestito dal CALayer in RichTextAccessoryView.
     }
     
     // MARK: Aa button

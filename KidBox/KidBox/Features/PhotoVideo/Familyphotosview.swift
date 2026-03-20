@@ -1632,6 +1632,7 @@ struct PhotoFullscreenView: View {
     @State private var imageCache: [String: UIImage] = [:]
     /// Cache per gli URL locali dei video decrittati (Caches/KBPhotos/{id}.mp4)
     @State private var videoURLCache: [String: URL] = [:]
+    @State private var showEditor = false
     
     init(startPhoto: KBFamilyPhoto, allPhotos: [KBFamilyPhoto],
          familyId: String, userId: String, onDismiss: @escaping () -> Void) {
@@ -1641,7 +1642,7 @@ struct PhotoFullscreenView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Color.black.ignoresSafeArea()
             TabView(selection: $currentIndex) {
                 ForEach(allPhotos.indices, id: \.self) { i in
@@ -1658,11 +1659,54 @@ struct PhotoFullscreenView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             
-            Button { onDismiss() } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 30)).foregroundStyle(.white).shadow(radius: 6)
+            // ── Tasto chiudi (top-trailing) ──────────────────────────────────
+            VStack {
+                HStack {
+                    Spacer()
+                    Button { onDismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 30)).foregroundStyle(.white).shadow(radius: 6)
+                    }
+                    .padding(20).padding(.top, 44)
+                }
+                Spacer()
+                // ── Tasto modifica (bottom-trailing) — solo per immagini ─────
+                let currentPhoto = allPhotos[currentIndex]
+                if !currentPhoto.isVideo, imageCache[currentPhoto.id] != nil {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showEditor = true
+                        } label: {
+                            Label("Modifica", systemImage: "slider.horizontal.3")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 16).padding(.vertical, 9)
+                                .background(.ultraThinMaterial, in: Capsule())
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 52)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
             }
-            .padding(20).padding(.top, 44)
+        }
+        .sheet(isPresented: $showEditor) {
+            let currentPhoto = allPhotos[currentIndex]
+            if let img = imageCache[currentPhoto.id] {
+                PhotoEditorView(
+                    photo:    currentPhoto,
+                    image:    img,
+                    familyId: familyId,
+                    userId:   userId,
+                    onSaved:  { newPhoto in
+                        // La nuova foto è già nel SwiftData context — il listener
+                        // Firestore la sincronizzerà e reloadLocal() la mostrerà
+                        // in griglia automaticamente.
+                        KBLog.sync.kbInfo("PhotoEditor: saved new photo id=\(newPhoto.id)")
+                    }
+                )
+            }
         }
     }
     
