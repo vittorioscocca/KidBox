@@ -26,6 +26,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnTodos: Bool = true
     @Published var notifyOnNewGroceryItem: Bool = true
     @Published var notifyOnNewNote: Bool = true
+    @Published var notifyOnNewExpense: Bool = true
     @Published var audioTranscriptionEnabled: Bool = true
     @Published var appearanceMode: AppearanceMode = .system
     
@@ -40,6 +41,7 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnTodos            = "kb_notifyOnTodos"
         static let notifyOnNewGroceryItem   = "kb_notifyOnNewGroceryItem"
         static let notifyOnNewNote          = "kb_notifyOnNewNote"
+        static let notifyOnNewExpense       = "kb_notifyOnNewExpense"
         static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"
         static let appearanceMode           = "kb_appearanceMode"
     }
@@ -69,6 +71,10 @@ final class SettingsViewModel: ObservableObject {
         let cachedNote = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewNote) as? Bool ?? true
         self.notifyOnNewNote = cachedNote
         KBLog.settings.debug("SettingsVM init cached notifyOnNewNote=\(cachedNote, privacy: .public)")
+        
+        let cachedExpense = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewExpense) as? Bool ?? true
+        self.notifyOnNewExpense = cachedExpense
+        KBLog.settings.debug("SettingsVM init cached notifyOnNewExpense=\(cachedExpense, privacy: .public)")
         
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
         self.audioTranscriptionEnabled = cachedTranscription
@@ -122,6 +128,11 @@ final class SettingsViewModel: ObservableObject {
             KBLog.settings.info("SettingsVM fetch remote note pref=\(remoteNote, privacy: .public)")
             if notifyOnNewNote != remoteNote { notifyOnNewNote = remoteNote }
             UserDefaults.standard.set(remoteNote, forKey: LocalKeys.notifyOnNewNote)
+            
+            let remoteExpense = await notifications.fetchNotifyOnNewExpensePreference()
+            KBLog.settings.info("SettingsVM fetch remote expense pref=\(remoteExpense, privacy: .public)")
+            if notifyOnNewExpense != remoteExpense { notifyOnNewExpense = remoteExpense }
+            UserDefaults.standard.set(remoteExpense, forKey: LocalKeys.notifyOnNewExpense)
         }
     }
     
@@ -231,6 +242,26 @@ final class SettingsViewModel: ObservableObject {
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewNote)
                 infoText = error.localizedDescription
                 KBLog.settings.error("SettingsVM setNotifyOnNewNote failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+    
+    // MARK: - Expense toggle
+    
+    func toggleNotifyOnNewExpense(_ enabled: Bool) {
+        KBLog.settings.info("SettingsVM toggleNotifyOnNewExpense enabled=\(enabled, privacy: .public)")
+        notifyOnNewExpense = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewExpense)
+        
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnNewExpense(enabled)
+                infoText = enabled ? "Notifiche spese attive." : "Notifiche spese disattivate."
+            } catch {
+                notifyOnNewExpense = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewExpense)
+                infoText = error.localizedDescription
+                KBLog.settings.error("SettingsVM setNotifyOnNewExpense failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

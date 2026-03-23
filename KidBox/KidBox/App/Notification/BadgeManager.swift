@@ -25,6 +25,7 @@ final class BadgeManager: ObservableObject {
     @Published var todos: Int = 0
     @Published var notes: Int = 0      // ← NEW
     @Published var calendar: Int = 0
+    @Published var expenses: Int = 0   // ← NEW
     
     private var listener: ListenerRegistration?
     
@@ -58,6 +59,7 @@ final class BadgeManager: ObservableObject {
                 let shoppingCount = data["shopping"]  as? Int ?? 0
                 let notesCount    = data["notes"]     as? Int ?? 0
                 let calendarCount = data["calendar"]  as? Int ?? 0
+                let expensesCount = data["expenses"]  as? Int ?? 0
                 
                 Task {
                     await MainActor.run {
@@ -68,6 +70,7 @@ final class BadgeManager: ObservableObject {
                         if !self.activeSections.contains("shopping")  { self.shopping  = shoppingCount }
                         if !self.activeSections.contains("notes")     { self.notes     = notesCount }
                         if !self.activeSections.contains("calendar")  { self.calendar  = calendarCount }
+                        if !self.activeSections.contains("expenses")  { self.expenses  = expensesCount }
                         self.refreshAppBadge()
                     }
                 }
@@ -80,7 +83,7 @@ final class BadgeManager: ObservableObject {
     }
     
     func refreshAppBadge() {
-        let total = chat + documents + location + todos + shopping + notes + calendar
+        let total = chat + documents + location + todos + shopping + notes + calendar + expenses
         UNUserNotificationCenter.current().setBadgeCount(total) { error in
             if let error {
                 print("Failed to set badge count:", error)
@@ -95,4 +98,5 @@ final class BadgeManager: ObservableObject {
     @MainActor func clearShopping()  { self.shopping  = 0 }
     @MainActor func clearNotes()     { self.notes     = 0 }
     @MainActor func clearCalendar()  { self.calendar  = 0 }
+    @MainActor func clearExpenses()  { self.expenses  = 0 }
 }

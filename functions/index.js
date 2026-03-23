@@ -54,9 +54,10 @@ function sumCounters(data) {
   const shopping = data?.shopping || 0;
   const notes = data?.notes || 0;
   const calendar = data?.calendar || 0;
+  const expenses = data?.expenses || 0;
 
-  const total = chat + documents + location + todos + shopping + notes + calendar;
-  return {chat, documents, location, todos, shopping, notes, calendar, total};
+  const total = chat + documents + location + todos + shopping + notes + calendar + expenses;
+  return {chat, documents, location, todos, shopping, notes, calendar, expenses, total};
 }
 
 /**
@@ -87,10 +88,11 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
       shopping: counters.shopping + (field === "shopping" ? 1 : 0),
       notes: counters.notes + (field === "notes" ? 1 : 0),
       calendar: counters.calendar + (field === "calendar" ? 1 : 0),
+      expenses: counters.expenses + (field === "expenses" ? 1 : 0),
     };
 
     let badge = Math.floor(
-        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes + next.calendar,
+        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes + next.calendar + next.expenses,
     );
 
     if (!Number.isFinite(badge) || badge < 0) badge = 0;
@@ -1595,6 +1597,146 @@ exports.initStorageUsage = onCall(
         totalBytes,
         quotaBytes: 200 * kb * kb,
       };
+    },
+);
+
+// ── Notifica nuova spesa ──────────────────────────────────────────────────────
+//
+// Trigger: onDocumentCreated su families/{familyId}/expenses/{expenseId}
+// Preferenza utente: notificationPrefs.notifyOnNewExpense (default ON)
+// Payload push: type=new_expense, familyId, expenseId
+// Counter badge: expenses
+//
+exports.notifyNewExpense = onDocumentCreated(
+    {
+      document: "families/{familyId}/expenses/{expenseId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const expenseId = event.params.expenseId;
+
+      const expenseData = event.data ? event.data.data() : null;
+      if (!expenseData) {
+        logger.warn("notifyNewExpense: missing expense data");
+        return;
+      }
+
+      // Salta le spese soft-deleted (non dovrebbero arrivare da onDocumentCreated
+      // ma è un guard di sicurezza)
+      if (expenseData.isDeleted) {
+        logger.info("notifyNewExpense: isDeleted=true, skip", {familyId, expenseId});
+        return;
+      }
+
+      const creatorUid = expenseData.createdByUid || expenseData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewExpense: missing creatorUid", {familyId, expenseId});
+        return;
+      }
+
+      logger.info("notifyNewExpense triggered", {familyId, expenseId, creatorUid});
+
+      // Recupera tutti i membri della famiglia
+      const membersSnap = await admin.firestore()
+          .collection("families")
+          .doc(familyId)
+          .collection("members")
+          .get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewExpense: members subcollection is empty", {familyId});
+        return;
+      }
+
+      // Notifica tutti i membri tranne chi ha creato la spesa
+      const memberUids = membersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid && uid !== creatorUid);
+
+      if (memberUids.length === 0) {
+        logger.info("notifyNewExpense: no targets (only creator)", {familyId});
+        return;
+      }
+
+      // Titolo e corpo della notifica
+      const title = "💸 Nuova spesa registrata";
+      const expenseTitle = expenseData.title || "Spesa";
+      const amount = typeof expenseData.amount === "number" ?
+        `${expenseData.amount.toFixed(2).replace(".", ",")} €` :
+        "";
+      const body = amount ? `${expenseTitle} · ${amount}` : expenseTitle;
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        // Controlla preferenza notifiche spese (default ON se non impostata)
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewExpense");
+        if (tokens.length === 0) {
+          logger.info("notifyNewExpense: user opted out or no tokens", {uid});
+          continue;
+        }
+
+        // Incrementa il counter expenses e ottieni il badge totale
+        const badge = await incrementCounterAndGetBadge({
+          familyId,
+          uid,
+          field: "expenses",
+        });
+
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {
+            type: "new_expense",
+            familyId: familyId,
+            expenseId: expenseId,
+          },
+          apns: {
+            payload: {
+              aps: {
+                badge,
+                sound: "default",
+              },
+            },
+          },
+          android: {
+            notification: {
+              sound: "default",
+            },
+          },
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewExpense: no per-user notifications to send", {familyId});
+        return;
+      }
+
+      // Invia tutte le notifiche
+      const results = await Promise.allSettled(
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+      );
+
+      let totalSuccess = 0;
+      let totalFailure = 0;
+
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount;
+          totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+
+      logger.info("notifyNewExpense: send result", {
+        familyId,
+        expenseId,
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        userTargets: messagesToSend.length,
+      });
     },
 );
 

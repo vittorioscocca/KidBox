@@ -626,7 +626,18 @@ private struct HomeCardGrid: View {
         case .expenses:
             HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
                 KBLog.navigation.debug("Home: tap Expenses")
+                Task {
+                    BadgeManager.shared.clearExpenses()
+                    await CountersService.shared.reset(familyId: familyId, field: .expenses)
+                }
                 onNavigate(.expenses(familyId: familyId))
+            }
+            .overlay(alignment: .topTrailing) {
+                if badge.expenses > 0 {
+                    BadgeView(count: badge.expenses)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
             }
             
         case .location:

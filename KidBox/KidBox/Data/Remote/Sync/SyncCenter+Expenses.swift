@@ -7,28 +7,74 @@ import Foundation
 import SwiftData
 import FirebaseFirestore
 import FirebaseAuth
+import Combine
 
 extension SyncCenter {
+    
+    // MARK: - Change Publisher
+    //
+    // Emesso da applyExpensesInbound dopo ogni save riuscito con cambiamenti effettivi.
+    // ExpensesHomeView si subscribe e chiama vm.reload() per aggiornare
+    // la UI (incluso MonthlyBarChartView) senza usare @Query.
+    
+    private static var _expensesChanged = PassthroughSubject<String, Never>()
+    
+    var expensesChanged: AnyPublisher<String, Never> {
+        Self._expensesChanged.eraseToAnyPublisher()
+    }
+    
+    func emitExpensesChanged(familyId: String) {
+        KBLog.sync.kbDebug("📣 [expenses][publisher] emitExpensesChanged familyId=\(familyId)")
+        Self._expensesChanged.send(familyId)
+    }
     
     // MARK: - Realtime Listener (Inbound)
     
     func startExpensesRealtime(familyId: String, modelContext: ModelContext) {
-        KBLog.sync.kbInfo("startExpensesRealtime familyId=\(familyId)")
+        KBLog.sync.kbInfo("▶️ [expenses][listener] startExpensesRealtime familyId=\(familyId)")
         stopExpensesRealtime()
+        
+        // ── Seed categorie con ID deterministici ─────────────────────────────
+        // Eseguito qui (oltre che nel VM) così le categorie sono pronte
+        // prima che arrivi il primo batch inbound dal listener.
+        // Gli ID deterministici (expcat-{familyId}-{slug}) garantiscono che
+        // il categoryId di una spesa sincronizzata trovi sempre la categoria
+        // locale → grafico a torta visibile su tutti i dispositivi.
+        KBLog.sync.kbDebug("🌱 [expenses][listener] seeding categories familyId=\(familyId)")
+        KBExpenseCategory.seedDefaults(familyId: familyId, context: modelContext)
+        try? modelContext.save()
+        
+        // ── Seed cartella Documenti/Spese ─────────────────────────────────────
+        // Crea la gerarchia root "Spese" in Documents in modo che esista
+        // sul dispositivo ricevente PRIMA che arrivino allegati inbound.
+        // Senza questo, ensureExpensesFolder veniva chiamato solo durante
+        // upload() sul dispositivo mittente, mai sul ricevente.
+        KBLog.sync.kbDebug("📁 [expenses][listener] ensuring Spese folder familyId=\(familyId)")
+        _ = ExpenseAttachmentService.shared.ensureExpensesFolder(
+            familyId:      familyId,
+            expenseId:     "",       // stringa vuota = crea solo la root "Spese", non la subfolder
+            expenseTitle:  "",
+            modelContext:  modelContext
+        )
+        try? modelContext.save()
+        // ─────────────────────────────────────────────────────────────────────
         
         expenseListener = expenseRemote.listen(
             familyId: familyId,
             onChange: { [weak self] changes in
                 guard let self else { return }
-                // FIX 1: Salta batch vuoti (allineato a SyncCenter+Visits che fa
-                // `if !changes.isEmpty { onChange(changes) }` nel remote store).
-                guard !changes.isEmpty else { return }
+                guard !changes.isEmpty else {
+                    KBLog.sync.kbDebug("⚠️ [expenses][listener] onChange: empty batch skipped familyId=\(familyId)")
+                    return
+                }
+                KBLog.sync.kbInfo("📥 [expenses][listener] onChange: received changes=\(changes.count) familyId=\(familyId)")
                 Task { @MainActor in
                     self.applyExpensesInbound(changes: changes, modelContext: modelContext)
                 }
             },
             onError: { [weak self] err in
                 guard let self else { return }
+                KBLog.sync.kbError("❌ [expenses][listener] onError: \(err.localizedDescription) familyId=\(familyId)")
                 if Self.isPermissionDenied(err) {
                     Task { @MainActor in
                         self.handleFamilyAccessLost(familyId: familyId, source: "expenses", error: err)
@@ -36,11 +82,13 @@ extension SyncCenter {
                 }
             }
         )
-        KBLog.sync.kbInfo("Expenses listener attached familyId=\(familyId)")
+        KBLog.sync.kbInfo("✅ [expenses][listener] Listener attached familyId=\(familyId)")
     }
     
     func stopExpensesRealtime() {
-        if expenseListener != nil { KBLog.sync.kbInfo("stopExpensesRealtime") }
+        if expenseListener != nil {
+            KBLog.sync.kbInfo("⏹️ [expenses][listener] stopExpensesRealtime")
+        }
         expenseListener?.remove()
         expenseListener = nil
     }
@@ -48,42 +96,55 @@ extension SyncCenter {
     // MARK: - Apply inbound (LWW)
     
     private func applyExpensesInbound(changes: [ExpenseRemoteChange], modelContext: ModelContext) {
-        KBLog.sync.kbDebug("applyExpensesInbound changes=\(changes.count)")
+        KBLog.sync.kbDebug("🔄 [expenses][inbound] applyExpensesInbound START changes=\(changes.count)")
+        
         guard !isWipingLocalData else {
-            KBLog.sync.kbDebug("applyExpensesInbound skipped: wipe in progress")
+            KBLog.sync.kbDebug("⚠️ [expenses][inbound] skipped: wipe in progress")
             return
         }
+        
+        var resolvedFamilyId: String? = nil
+        var appliedCount  = 0
+        var skippedCount  = 0
+        var deletedCount  = 0
+        var createdCount  = 0
         
         do {
             for change in changes {
                 switch change {
                     
                 case .upsert(let dto):
+                    resolvedFamilyId = dto.familyId
                     let eid = dto.id
                     let desc = FetchDescriptor<KBExpense>(predicate: #Predicate { $0.id == eid })
                     let local = try modelContext.fetch(desc).first
                     let remoteStamp = dto.updatedAt
                     
                     if let local {
-                        // Anti-resurrect: pendingUpsert locale vince sul remoto
+                        // Anti-resurrect
                         if local.isDeleted && local.syncState == .pendingUpsert {
-                            KBLog.sync.kbDebug("applyExpensesInbound skip anti-resurrect id=\(eid)")
+                            KBLog.sync.kbDebug("🛡️ [expenses][inbound] anti-resurrect SKIP id=\(eid)")
+                            skippedCount += 1
                             continue
                         }
+                        
                         if remoteStamp >= local.updatedAt {
                             if dto.isDeleted {
+                                KBLog.sync.kbDebug("🗑️ [expenses][inbound] remote isDeleted=true -> delete local id=\(eid)")
                                 modelContext.delete(local)
-                                KBLog.sync.kbDebug("applyExpensesInbound: deleted locally id=\(eid)")
+                                deletedCount += 1
                             } else {
                                 let previousDocId = local.attachedDocumentId
                                 applyExpenseFields(local, from: dto)
                                 local.syncState     = .synced
                                 local.lastSyncError = nil
+                                appliedCount += 1
+                                KBLog.sync.kbDebug("✏️ [expenses][inbound] updated local id=\(eid) remoteStamp=\(remoteStamp)")
                                 
                                 if let newDocId = dto.attachedDocumentId,
                                    !newDocId.isEmpty,
                                    newDocId != previousDocId {
-                                    KBLog.sync.kbDebug("applyExpensesInbound: new attachedDocumentId on update id=\(eid) docId=\(newDocId)")
+                                    KBLog.sync.kbDebug("📎 [expenses][inbound] new attachedDocumentId on update id=\(eid) docId=\(newDocId)")
                                     Task { [weak self] in
                                         guard let self else { return }
                                         await self.downloadExpenseAttachmentIfNeeded(
@@ -94,9 +155,16 @@ extension SyncCenter {
                                     }
                                 }
                             }
+                        } else {
+                            KBLog.sync.kbDebug("⏩ [expenses][inbound] SKIP local is newer id=\(eid) localStamp=\(local.updatedAt) remoteStamp=\(remoteStamp)")
+                            skippedCount += 1
                         }
                     } else {
-                        if dto.isDeleted { continue }
+                        if dto.isDeleted {
+                            KBLog.sync.kbDebug("⏩ [expenses][inbound] SKIP remote isDeleted + local missing id=\(eid)")
+                            skippedCount += 1
+                            continue
+                        }
                         let exp = KBExpense(
                             familyId:           dto.familyId,
                             title:              dto.title,
@@ -115,10 +183,11 @@ extension SyncCenter {
                         exp.syncState     = .synced
                         exp.lastSyncError = nil
                         modelContext.insert(exp)
-                        KBLog.sync.kbDebug("applyExpensesInbound: created expenseId=\(eid)")
+                        createdCount += 1
+                        KBLog.sync.kbDebug("➕ [expenses][inbound] created new expense id=\(eid) title='\(dto.title)' amount=\(dto.amount) categoryId=\(dto.categoryId ?? "nil")")
                         
                         if let attachedDocId = dto.attachedDocumentId, !attachedDocId.isEmpty {
-                            KBLog.sync.kbDebug("applyExpensesInbound: kicking off attachment download for new expense id=\(eid) docId=\(attachedDocId)")
+                            KBLog.sync.kbDebug("📎 [expenses][inbound] kicking off attachment download for new expense id=\(eid) docId=\(attachedDocId)")
                             Task { [weak self] in
                                 guard let self else { return }
                                 await self.downloadExpenseAttachmentIfNeeded(
@@ -135,16 +204,37 @@ extension SyncCenter {
                     let desc = FetchDescriptor<KBExpense>(predicate: #Predicate { $0.id == eid })
                     if let local = try modelContext.fetch(desc).first {
                         modelContext.delete(local)
-                        KBLog.sync.kbDebug("applyExpensesInbound: removed id=\(id)")
+                        deletedCount += 1
+                        KBLog.sync.kbDebug("🗑️ [expenses][inbound] .remove -> deleted local id=\(id)")
+                    } else {
+                        KBLog.sync.kbDebug("⏩ [expenses][inbound] .remove -> local not found id=\(id)")
+                        skippedCount += 1
                     }
                 }
             }
             
             try modelContext.save()
-            KBLog.sync.kbInfo("applyExpensesInbound saved")
+            
+            KBLog.sync.kbInfo("""
+            ✅ [expenses][inbound] SAVED \
+            created=\(createdCount) \
+            updated=\(appliedCount) \
+            deleted=\(deletedCount) \
+            skipped=\(skippedCount) \
+            familyId=\(resolvedFamilyId ?? "unknown")
+            """)
+            
+            // Notifica la UI solo se c'è stato almeno un cambiamento effettivo
+            let hasChanges = (createdCount + appliedCount + deletedCount) > 0
+            if hasChanges, let fid = resolvedFamilyId {
+                KBLog.sync.kbInfo("📣 [expenses][inbound] emitting expensesChanged familyId=\(fid) (created=\(createdCount) updated=\(appliedCount) deleted=\(deletedCount))")
+                emitExpensesChanged(familyId: fid)
+            } else {
+                KBLog.sync.kbDebug("⏩ [expenses][inbound] no effective changes, publisher NOT emitted")
+            }
             
         } catch {
-            KBLog.sync.kbError("applyExpensesInbound failed: \(error.localizedDescription)")
+            KBLog.sync.kbError("❌ [expenses][inbound] FAILED: \(error.localizedDescription)")
         }
     }
     
@@ -174,11 +264,11 @@ extension SyncCenter {
               let dlURL = doc.downloadURL, !dlURL.isEmpty,
               doc.localPath == nil || doc.localPath!.isEmpty
         else {
-            KBLog.sync.kbDebug("downloadExpenseAttachmentIfNeeded: skip (not ready or already cached) docId=\(docId)")
+            KBLog.sync.kbDebug("📎 [expenses][attachment] skip download (not ready or already cached) docId=\(docId)")
             return
         }
         
-        KBLog.sync.kbInfo("downloadExpenseAttachmentIfNeeded: starting download docId=\(docId)")
+        KBLog.sync.kbInfo("📎 [expenses][attachment] starting download docId=\(docId) familyId=\(familyId)")
         await ExpenseAttachmentService.shared.downloadRemoteAttachment(
             docId:        doc.id,
             familyId:     familyId,
@@ -191,7 +281,7 @@ extension SyncCenter {
     // MARK: - Outbox enqueue
     
     func enqueueExpenseUpsert(expenseId: String, familyId: String, modelContext: ModelContext) {
-        KBLog.sync.kbDebug("enqueueExpenseUpsert familyId=\(familyId) id=\(expenseId)")
+        KBLog.sync.kbDebug("📤 [expenses][outbox] enqueueExpenseUpsert familyId=\(familyId) id=\(expenseId)")
         upsertOp(
             familyId:     familyId,
             entityType:   SyncEntityType.expense.rawValue,
@@ -202,7 +292,7 @@ extension SyncCenter {
     }
     
     func enqueueExpenseDelete(expenseId: String, familyId: String, modelContext: ModelContext) {
-        KBLog.sync.kbDebug("enqueueExpenseDelete familyId=\(familyId) id=\(expenseId)")
+        KBLog.sync.kbDebug("📤 [expenses][outbox] enqueueExpenseDelete familyId=\(familyId) id=\(expenseId)")
         upsertOp(
             familyId:     familyId,
             entityType:   SyncEntityType.expense.rawValue,
@@ -216,18 +306,22 @@ extension SyncCenter {
     
     func processExpense(op: KBSyncOp, modelContext: ModelContext) async throws {
         let eid = op.entityId
+        KBLog.sync.kbDebug("⚙️ [expenses][outbox] processExpense opType=\(op.opType) id=\(eid)")
+        
         let desc = FetchDescriptor<KBExpense>(predicate: #Predicate { $0.id == eid })
         let expense = try modelContext.fetch(desc).first
         
         switch op.opType {
         case "upsert":
             guard let exp = expense else {
-                KBLog.sync.kbDebug("processExpense upsert skip: missing id=\(eid)")
+                KBLog.sync.kbDebug("⚠️ [expenses][outbox] upsert skip: expense missing id=\(eid)")
                 return
             }
             exp.syncState     = .pendingUpsert
             exp.lastSyncError = nil
             try modelContext.save()
+            
+            KBLog.sync.kbDebug("📤 [expenses][outbox] upsert sending id=\(eid) title='\(exp.title)' amount=\(exp.amount) categoryId=\(exp.categoryId ?? "nil")")
             
             let dto = RemoteExpenseDTO(
                 id:                 exp.id,
@@ -249,22 +343,22 @@ extension SyncCenter {
             exp.syncState     = .synced
             exp.lastSyncError = nil
             try modelContext.save()
-            KBLog.sync.kbDebug("processExpense upsert OK id=\(eid)")
+            KBLog.sync.kbInfo("✅ [expenses][outbox] upsert OK id=\(eid)")
             
         case "delete":
+            KBLog.sync.kbDebug("🗑️ [expenses][outbox] soft-delete remote id=\(eid)")
             try await expenseRemote.softDelete(familyId: op.familyId, expenseId: eid)
-            // FIX 2: Elimina il record locale dopo il soft-delete remoto,
-            // esattamente come fa processVisit. Senza questo, la spesa rimane
-            // in SwiftData con isDeleted=true e syncState=pendingUpsert,
-            // bloccando l'anti-resurrect per tutti i successivi inbound.
+            
             if let exp = expense {
                 modelContext.delete(exp)
                 try modelContext.save()
+                KBLog.sync.kbInfo("✅ [expenses][outbox] delete OK + hard-deleted local id=\(eid)")
+            } else {
+                KBLog.sync.kbDebug("⚠️ [expenses][outbox] delete OK but local expense already missing id=\(eid)")
             }
-            KBLog.sync.kbDebug("processExpense delete OK id=\(eid)")
             
         default:
-            KBLog.sync.kbDebug("processExpense unknown opType=\(op.opType)")
+            KBLog.sync.kbDebug("⚠️ [expenses][outbox] unknown opType=\(op.opType) id=\(eid)")
         }
     }
 }

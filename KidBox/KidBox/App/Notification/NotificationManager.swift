@@ -62,6 +62,7 @@ final class NotificationManager: NSObject, ObservableObject {
         case pediatricVisit(familyId: String, childId: String, visitId: String)
         case treatmentReminder(familyId: String, childId: String, treatmentId: String)
         case examReminder(familyId: String, childId: String, examId: String)
+        case expense(familyId: String, expenseId: String)
     }
     
     // MARK: - Deep Link Handling
@@ -176,6 +177,17 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .examReminder(familyId: familyId, childId: childId, examId: examId)
             KBLog.auth.kbInfo("DeepLink set for examReminder examId=\(examId)")
+            
+        } else if type == "new_expense" {
+            guard
+                let familyId  = userInfo["familyId"]  as? String,
+                let expenseId = userInfo["expenseId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid new_expense payload")
+                return
+            }
+            pendingDeepLink = .expense(familyId: familyId, expenseId: expenseId)
+            KBLog.auth.kbInfo("DeepLink set for expense familyId=\(familyId) expenseId=\(expenseId)")
         }
     }
     
@@ -262,7 +274,33 @@ final class NotificationManager: NSObject, ObservableObject {
     }
     
     
-    // MARK: - Calendar notification preference
+    // MARK: - Expense notification preference
+    
+    func fetchNotifyOnNewExpensePreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnNewExpense"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+    
+    func setNotifyOnNewExpense(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewExpense": enabled]
+        ], merge: true)
+        
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
     
     func fetchNotifyOnNewCalendarEventPreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return true }

@@ -6,6 +6,7 @@
 import SwiftUI
 import SwiftData
 import Charts
+import Combine
 
 // MARK: - Root entry point
 
@@ -19,6 +20,7 @@ struct ExpensesHomeView: View {
     // Il VM viene creato nell'onAppear usando il modelContext dall'environment,
     // lo stesso approccio usato da DocumentFolderView con bind(modelContext:).
     @StateObject private var vm: ExpensesViewModel
+    @State private var syncCancellable: AnyCancellable? = nil
     
     init(familyId: String) {
         self.familyId = familyId
@@ -84,6 +86,10 @@ struct ExpensesHomeView: View {
         }
         .onAppear {
             SyncCenter.shared.startExpensesRealtime(familyId: familyId, modelContext: modelContext)
+            syncCancellable = SyncCenter.shared.expensesChanged
+                .filter { fid in fid == familyId }
+                .receive(on: DispatchQueue.main)
+                .sink { fid in vm.reload() }
             vm.bind(modelContext: modelContext)
             vm.reload()
         }
@@ -93,6 +99,7 @@ struct ExpensesHomeView: View {
         .onChange(of: vm.selectedCategoryFilter) { vm.reload() }
         .onDisappear() {
             SyncCenter.shared.stopExpensesRealtime()
+            syncCancellable = nil
         }
     }
 }

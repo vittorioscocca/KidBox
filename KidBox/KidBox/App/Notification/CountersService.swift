@@ -18,6 +18,7 @@ enum CountersField: String {
     case shopping  // ← NEW
     case notes     // ← NEW
     case calendar
+    case expenses  // ← NEW
 }
 
 final class CountersService {

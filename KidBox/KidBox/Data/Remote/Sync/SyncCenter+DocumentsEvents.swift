@@ -280,6 +280,9 @@ extension SyncCenter {
                         // non veniva mai scaricato da Firebase Storage, rendendo
                         // l'allegato non apribile dall'altro account.
                         let isExpenseAttachment = dto.notes?.hasPrefix("expense:") == true
+                        if isExpenseAttachment {
+                            KBLog.sync.kbInfo("📎 [docs][inbound] expense attachment check: docId=\(local.id) missingLocal=\(missingLocal) isDeleted=\(dto.isDeleted) dlURL='\(dto.downloadURL ?? "nil")'")
+                        }
                         if isExpenseAttachment && missingLocal && !dto.isDeleted,
                            let dlURL = dto.downloadURL, !dlURL.isEmpty {
                             let docId       = local.id

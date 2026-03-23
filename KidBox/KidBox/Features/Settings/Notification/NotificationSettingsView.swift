@@ -84,6 +84,19 @@ struct NotificationSettingsView: View {
             .disabled(vm.isLoading)
             .accessibilityHint("Ricevi una notifica quando un membro crea una nuova nota.")
             
+            Toggle(
+                "Notifiche nuove spese",
+                isOn: Binding(
+                    get: { vm.notifyOnNewExpense },
+                    set: { newValue in
+                        KBLog.settings.info("Toggle notifyOnNewExpense set=\(newValue, privacy: .public)")
+                        vm.toggleNotifyOnNewExpense(newValue)
+                    }
+                )
+            )
+            .disabled(vm.isLoading)
+            .accessibilityHint("Ricevi una notifica quando un membro registra una nuova spesa di famiglia.")
+            
             if let t = vm.infoText {
                 Text(t)
                     .font(.footnote)

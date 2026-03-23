@@ -67,13 +67,60 @@ final class ExpenseAttachmentService {
     
     // MARK: - Ensure "Spese" folder hierarchy in Documents
     
+    /// Crea (o recupera) SOLO la cartella root "Spese" (parentId = nil).
+    ///
+    /// Chiamato da SyncCenter.startExpensesRealtime per garantire che la
+    /// cartella esista sul dispositivo ricevente prima che arrivino allegati
+    /// inbound — senza dover attendere il primo upload locale.
+    @discardableResult
+    func ensureExpensesRootFolder(
+        familyId: String,
+        modelContext: ModelContext
+    ) -> KBDocumentCategory {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        let fid = familyId
+        
+        let rootDesc = FetchDescriptor<KBDocumentCategory>(
+            predicate: #Predicate {
+                $0.familyId == fid &&
+                $0.parentId == nil &&
+                $0.isDeleted == false
+            }
+        )
+        let roots = (try? modelContext.fetch(rootDesc)) ?? []
+        if let existing = roots.first(where: { $0.title == "Spese" }) {
+            KBLog.storage.kbDebug("📁 [expenses][folder] root already exists catId=\(existing.id)")
+            return existing
+        }
+        
+        let speseFolder = KBDocumentCategory(
+            id: UUID().uuidString,
+            familyId: familyId,
+            title: "Spese",
+            sortOrder: 99,
+            parentId: nil,
+            updatedBy: uid
+        )
+        modelContext.insert(speseFolder)
+        try? modelContext.save()
+        SyncCenter.shared.enqueueDocumentCategoryUpsert(
+            categoryId: speseFolder.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        KBLog.storage.kbInfo("📁 [expenses][folder] root created catId=\(speseFolder.id) familyId=\(familyId)")
+        return speseFolder
+    }
+    
     /// Crea (o recupera) la gerarchia:
     ///   📁 Spese                    ← root, parentId = nil
     ///     📁 <titolo spesa>         ← sottocartella per spesa, id = "exp-cat-<expenseId>"
     ///
+    /// Se `expenseId` è vuoto, crea/restituisce solo la root "Spese".
     /// Entrambe le categorie vengono inserite in SwiftData e accodate
     /// al SyncCenter esattamente come fa TreatmentAttachmentService.
-    /// Restituisce la sottocartella da usare come categoryId del documento.
+    /// Restituisce la sottocartella (o la root se expenseId è vuoto).
     func ensureExpensesFolder(
         familyId: String,
         expenseId: String,
@@ -116,6 +163,14 @@ final class ExpenseAttachmentService {
             // così Firestore la riceve prima della subfolder che dipende dal suo id.
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             KBLog.storage.kbInfo("SpeseFolderRoot created catId=\(speseFolder.id)")
+        }
+        
+        // ── Early return se expenseId è vuoto: serve solo la root ────────
+        // Questo path viene usato da SyncCenter.startExpensesRealtime per
+        // pre-creare la cartella "Spese" senza una spesa specifica.
+        if expenseId.isEmpty {
+            KBLog.storage.kbDebug("📁 [expenses][folder] expenseId empty → returning root only")
+            return speseFolder
         }
         
         // ── 2. Sottocartella per la singola spesa ────────────────────────
