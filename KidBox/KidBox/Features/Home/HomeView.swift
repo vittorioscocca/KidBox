@@ -376,7 +376,8 @@ struct HomeView: View {
 
 enum HomeDestination {
     case notes(familyId: String), todo, calendar(familyId: String), care
-    case chat, document, expenses
+    case chat, document
+    case expenses(familyId: String)
     case familyLocation(familyId: String), familyPhotos(familyId: String), familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
     case pediatric(familyId: String, childId: String)
@@ -390,7 +391,7 @@ enum HomeDestination {
         case .care:                          return .familySettings  // legacy, non usato
         case .chat:                          return .chat
         case .document:                      return .document
-        case .expenses:                      return .familySettings
+        case .expenses(let familyId):        return .expensesHome(familyId: familyId)
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
         case .familyPhotos(let familyId):    return .familyPhotos(familyId: familyId)
         case .familySettings:                return .familySettings
@@ -625,7 +626,7 @@ private struct HomeCardGrid: View {
         case .expenses:
             HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
                 KBLog.navigation.debug("Home: tap Expenses")
-                onNavigate(.expenses)
+                onNavigate(.expenses(familyId: familyId))
             }
             
         case .location:

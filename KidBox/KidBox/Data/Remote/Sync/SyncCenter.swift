@@ -55,8 +55,8 @@ final class SyncCenter: ObservableObject {
     let medicalExamRemote = MedicalExamRemoteStore()
     var calendarListener: ListenerRegistration?
     let calendarRemote = CalendarRemoteStore()
-    // In stop*: stopMedicalExamsRealtime()
-    // In process(op:) switch: case "medicalExam": try await processMedicalExam(op:modelContext:)
+    var expenseListener: ListenerRegistration?
+    let expenseRemote = ExpenseRemoteStore()
     
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
@@ -127,9 +127,9 @@ final class SyncCenter: ObservableObject {
         stopVaccinesRealtime()
         stopMedicalExamsRealtime()
         stopCalendarRealtime()
-        stopPhotosRealtime()    // ← Photos
+        stopPhotosRealtime()
+        stopExpensesRealtime()
         
-        // Notifica UI: "sei stato buttato fuori"
         Self._currentUserRevoked.send(familyId)
     }
     
@@ -732,6 +732,9 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.calendarEvent.rawValue:
                 try await processCalendarEvent(op: op, modelContext: modelContext)
+                
+            case SyncEntityType.expense.rawValue:
+                try await processExpense(op: op, modelContext: modelContext)
                 
                 // MARK: - Photos (SyncCenter+Photos.swift)
             case "photo", "photoAlbum":

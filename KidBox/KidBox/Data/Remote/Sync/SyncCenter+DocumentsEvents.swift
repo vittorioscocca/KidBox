@@ -215,10 +215,10 @@ extension SyncCenter {
                         local.syncState = .synced
                         local.lastSyncError = nil
                         
+                        let missingLocal = local.localPath == nil || local.localPath?.isEmpty == true
+                        
                         // 📎 Auto-download allegati treatment arrivati dal remoto
                         let isTreatmentAttachment = dto.notes?.hasPrefix("treatment:") == true
-                        let isVisitAttachment     = dto.notes?.hasPrefix("visit:") == true
-                        let missingLocal = local.localPath == nil || local.localPath?.isEmpty == true
                         if isTreatmentAttachment && missingLocal && !dto.isDeleted,
                            let dlURL = dto.downloadURL, !dlURL.isEmpty {
                             let docId       = local.id
@@ -236,6 +236,8 @@ extension SyncCenter {
                             }
                         }
                         
+                        // 📎 Auto-download allegati visite arrivati dal remoto
+                        let isVisitAttachment = dto.notes?.hasPrefix("visit:") == true
                         if isVisitAttachment && missingLocal && !dto.isDeleted,
                            let dlURL = dto.downloadURL, !dlURL.isEmpty {
                             let docId       = local.id
@@ -263,6 +265,29 @@ extension SyncCenter {
                             let fileName    = local.fileName
                             Task.detached {
                                 await TreatmentAttachmentService.shared.downloadRemoteAttachment(
+                                    docId:        docId,
+                                    familyId:     familyId,
+                                    storagePath:  storagePath,
+                                    fileName:     fileName,
+                                    modelContext: modelContext
+                                )
+                            }
+                        }
+                        
+                        // 📎 Auto-download allegati spese arrivati dal remoto
+                        // FIX: aggiunto blocco mancante, allineato agli altri tipi di allegato.
+                        // Senza questo, il KBDocument arrivava in SwiftData ma il file
+                        // non veniva mai scaricato da Firebase Storage, rendendo
+                        // l'allegato non apribile dall'altro account.
+                        let isExpenseAttachment = dto.notes?.hasPrefix("expense:") == true
+                        if isExpenseAttachment && missingLocal && !dto.isDeleted,
+                           let dlURL = dto.downloadURL, !dlURL.isEmpty {
+                            let docId       = local.id
+                            let familyId    = local.familyId
+                            let storagePath = local.storagePath
+                            let fileName    = local.fileName
+                            Task.detached {
+                                await ExpenseAttachmentService.shared.downloadRemoteAttachment(
                                     docId:        docId,
                                     familyId:     familyId,
                                     storagePath:  storagePath,

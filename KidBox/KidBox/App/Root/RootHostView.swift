@@ -255,5 +255,18 @@ struct RootHostView: View {
             familyId: familyId,
             modelContext: modelContext
         )
+        
+        KBLog.sync.kbDebug("startCalendarRealtime familyId=\(familyId)")
+        SyncCenter.shared.startCalendarRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        
+        KBLog.sync.kbDebug("startExpensesRealtime familyId=\(familyId)")
+        SyncCenter.shared.startExpensesRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        
     }
 }

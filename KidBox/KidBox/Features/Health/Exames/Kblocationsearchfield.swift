@@ -183,7 +183,7 @@ private struct SuggestionRow: View {
     private func highlightedText(_ text: String, ranges: [NSValue]) -> Text {
         var result     = Text("")
         var lastEnd    = text.startIndex
-        let nsText     = text as NSString
+        _     = text as NSString
         
         let nsRanges: [NSRange] = ranges.compactMap { $0.rangeValue }
         

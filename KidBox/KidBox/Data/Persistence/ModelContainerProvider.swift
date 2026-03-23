@@ -58,7 +58,9 @@ enum ModelContainerProvider {
             KBMedicalExam.self,
             KBCalendarEvent.self,
             KBFamilyPhoto.self,
-            KBPhotoAlbum.self
+            KBPhotoAlbum.self,
+            KBExpenseCategory.self,
+            KBExpense.self
         ])
         
         let configuration = ModelConfiguration(

@@ -25,6 +25,13 @@ enum KBAppEvent {
         familyId: String,
         childId:  String
     )
+    // Spese
+    case expenseAttachmentPending(
+        urls:         [URL],
+        expenseId:    String,
+        expenseTitle: String,
+        familyId:     String
+    )
 }
 
 // MARK: - Bus
