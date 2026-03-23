@@ -44,8 +44,12 @@ struct RichTextView: UIViewRepresentable {
         tv.alwaysBounceVertical = true
         tv.backgroundColor      = .clear
         tv.delegate             = context.coordinator
-        tv.textContainerInset   = UIEdgeInsets(top: 2, left: 6, bottom: 10, right: 6)
+        tv.textContainerInset   = UIEdgeInsets(top: 2, left: 6, bottom: 16, right: 6)
         tv.typingAttributes     = NSAttributedString.defaultTypingAttributes(font: baseFont)
+        // ✅ Fondamentale: contentInset bottom sarà aggiornato dinamicamente con la tastiera
+        tv.contentInset          = .zero
+        tv.scrollIndicatorInsets = .zero
+        tv.automaticallyAdjustsScrollIndicatorInsets = false
         
         tv.onTab = { isShift in
             if isShift { RichTextFormatter.outdentList(in: tv) }
@@ -76,6 +80,9 @@ struct RichTextView: UIViewRepresentable {
         tapGR.delegate = context.coordinator
         tv.addGestureRecognizer(tapGR)
         accessory.attach(to: tv)
+        
+        // ✅ Keyboard observers per aggiornare contentInset e scrollare il cursore in vista
+        context.coordinator.registerKeyboardObservers(for: tv)
         
         return tv
     }
@@ -289,8 +296,16 @@ struct RichTextView: UIViewRepresentable {
             let insertion = NSMutableAttributedString(attributedString: nl)
             insertion.append(prefix)
             
-            // Body text part will use normal font on next keystroke
             insertAtCaret(tv, attributed: insertion)
+            
+            // ✅ Fix: dopo l'inserimento il cursore è dopo "○ ".
+            //    Reimposta typingAttributes con il font corpo normale, altrimenti
+            //    il testo digitato eredita il font size=20 del cerchio.
+            tv.typingAttributes = [
+                .font:            parent.baseFont,
+                .foregroundColor: UIColor.richTextPrimary,
+                .paragraphStyle:  ps
+            ]
         }
         
         private func insertAtCaret(_ tv: UITextView, attributed: NSAttributedString) {
@@ -336,6 +351,62 @@ struct RichTextView: UIViewRepresentable {
             tv.textStorage.setAttributedString(ms)
             tv.selectedRange = NSRange(location: loc + (pasted as NSString).length, length: 0)
             return true
+        }
+        
+        // MARK: - Keyboard scroll handling
+        
+        private weak var observedTextView: UITextView?
+        
+        func registerKeyboardObservers(for tv: UITextView) {
+            observedTextView = tv
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(keyboardWillShow(_:)),
+                name: UIResponder.keyboardWillShowNotification,
+                object: nil
+            )
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(keyboardWillHide(_:)),
+                name: UIResponder.keyboardWillHideNotification,
+                object: nil
+            )
+        }
+        
+        @objc private func keyboardWillShow(_ n: Notification) {
+            guard let tv = observedTextView,
+                  let info = n.userInfo,
+                  let kbFrame = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue,
+                  let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+                  let curve = info[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+            else { return }
+            
+            // ✅ Con ignoresSafeArea(.keyboard) il frame della tv resta invariato.
+            //    Il contentInset.bottom deve essere = altezza tastiera in coordinate locali.
+            //    Usiamo la screen height come riferimento stabile.
+            let screenH   = UIScreen.main.bounds.height
+            let kbH       = max(0, screenH - kbFrame.minY)
+            
+            let options = UIView.AnimationOptions(rawValue: curve << 16)
+            UIView.animate(withDuration: duration, delay: 0, options: options) {
+                tv.contentInset          = UIEdgeInsets(top: 0, left: 0, bottom: kbH, right: 0)
+                tv.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: kbH, right: 0)
+            }
+            // Porta il cursore in vista dopo l'animazione
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.05) {
+                guard let tv = self.observedTextView else { return }
+                tv.scrollRangeToVisible(tv.selectedRange)
+            }
+        }
+        
+        @objc private func keyboardWillHide(_ n: Notification) {
+            guard let tv = observedTextView,
+                  let duration = (n.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double)
+            else { return }
+            UIView.animate(withDuration: duration) {
+                tv.contentInset          = .zero
+                tv.scrollIndicatorInsets = .zero
+            }
         }
     }
 }

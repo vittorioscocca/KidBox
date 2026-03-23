@@ -288,10 +288,16 @@ final class RichTextFormatter {
                     ps.defaultTabInterval = indent
                     
                 case .checklist:
-                    let indent: CGFloat = 34
-                    ps.firstLineHeadIndent = indent; ps.headIndent = indent
-                    ps.tabStops = [NSTextTab(textAlignment: .left, location: indent)]
-                    ps.defaultTabInterval = indent
+                    // ✅ Fix indentazione:
+                    //    firstLineHeadIndent = 0  → il cerchio ○ parte dal margine sinistro
+                    //    headIndent = 28          → le righe wrapped si allineano sotto
+                    //                               il testo (dopo "○ " che occupa ~28pt)
+                    //    tabStop a 28             → il cursore dopo ○<tab/space> salta al testo
+                    let textIndent: CGFloat = 28
+                    ps.firstLineHeadIndent = 0
+                    ps.headIndent          = textIndent
+                    ps.tabStops            = [NSTextTab(textAlignment: .left, location: textIndent)]
+                    ps.defaultTabInterval  = textIndent
                 }
             }
             
@@ -317,8 +323,8 @@ final class RichTextFormatter {
         let ins = tv.textContainerInset
         let adj = CGPoint(x: point.x - ins.left, y: point.y - ins.top)
         
-        // Hit zone allargata per il cerchio grande
-        guard adj.x < 44 else { return false }
+        // ✅ Pre-filtro veloce: il cerchio non può stare oltre 40pt dal margine sinistro
+        guard adj.x < 40 else { return false }
         
         var frac: CGFloat = 0
         let charIdx = lm.characterIndex(for: adj, in: tc, fractionOfDistanceBetweenInsertionPoints: &frac)
@@ -333,6 +339,17 @@ final class RichTextFormatter {
         
         // Solo righe checklist
         guard trimmed.hasPrefix("○ ") || trimmed.hasPrefix("◉ ") else { return false }
+        
+        // ✅ Verifica precisa: calcola il bounding rect del glifo del cerchio
+        //    e accetta il tap solo se il punto è dentro quella zona (+ 6pt padding).
+        let circleIdx = para.location
+        guard circleIdx < full.length else { return false }
+        let glyphRange = lm.glyphRange(forCharacterRange: NSRange(location: circleIdx, length: 1),
+                                       actualCharacterRange: nil)
+        let glyphRect  = lm.boundingRect(forGlyphRange: glyphRange, in: tc)
+        // Offset dal textContainerInset già sottratto in adj
+        let hitRect    = glyphRect.insetBy(dx: -8, dy: -6)
+        guard hitRect.contains(adj) else { return false }
         
         let ms    = NSMutableAttributedString(attributedString: full)
         let start = para.location
@@ -361,16 +378,11 @@ final class RichTextFormatter {
                                     length: max(0, lineRange.location + lineRange.length - textStart))
             
             if willCheck {
-                // Spunta: testo barrato e grigio
-                if textRange.length > 0 {
-                    ms.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
-                    ms.addAttribute(.foregroundColor,    value: UIColor.secondaryLabel,           range: textRange)
-                }
-                // Il cerchio rimane verde
+                // ✅ Spunta: solo il cerchio diventa verde, il testo resta invariato
                 ms.addAttribute(.foregroundColor, value: UIColor.systemGreen,
                                 range: NSRange(location: start, length: 1))
             } else {
-                // Deseleziona: testo normale
+                // Deseleziona: cerchio torna grigio, testo normale (rimuovi eventuale barrato residuo)
                 if textRange.length > 0 {
                     ms.removeAttribute(.strikethroughStyle, range: textRange)
                     ms.addAttribute(.foregroundColor, value: UIColor.richTextPrimary, range: textRange)

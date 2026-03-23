@@ -52,6 +52,17 @@ class ShareViewController: UIViewController {
             for provider in attachments {
                 print("[ShareVC] provider registeredTypeIdentifiers=\(provider.registeredTypeIdentifiers)")
                 
+                // ✅ Video/movie — PRIMA di tutto il resto.
+                //    WhatsApp registra i video con più UTI (movie, file-url, url).
+                //    Se public.file-url venisse prima, il file arriverebbe senza estensione
+                //    e verrebbe classificato come documento invece che come video.
+                if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+                    if let url = await loadFileURL(from: provider, type: UTType.movie.identifier) {
+                        print("[ShareVC] detected movie file url=\(url)")
+                        return KBSharePayload(type: .file(url))
+                    }
+                }
+                
                 // Immagine
                 if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                     if let url = await loadURL(from: provider, type: UTType.image.identifier) {
@@ -60,9 +71,7 @@ class ShareViewController: UIViewController {
                     }
                 }
                 
-                // ✅ NUOVO: file-url (documenti da Files/iCloud) — usa loadFileURL come per i video
-                // Deve stare PRIMA del branch UTType.url per intercettare i PDF/doc prima
-                // che vengano trattati come URL web
+                // file-url (documenti da Files/iCloud) — dopo movie e image
                 if provider.hasItemConformingToTypeIdentifier("public.file-url") {
                     if let url = await loadFileURL(from: provider, type: "public.file-url") {
                         print("[ShareVC] detected file-url (document) url=\(url)")
@@ -73,8 +82,6 @@ class ShareViewController: UIViewController {
                 // URL web (solo se non è un file locale)
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     if let url = await loadURL(from: provider, type: UTType.url.identifier) {
-                        // Se è un file URL, usiamo loadFileURL per copiare in tmp
-                        // con estensione corretta (dedotta da UTI se necessario)
                         if url.isFileURL {
                             print("[ShareVC] detected file url via url-type url=\(url)")
                             if let fileURL = await loadFileURL(from: provider, type: "public.file-url") {
@@ -94,14 +101,6 @@ class ShareViewController: UIViewController {
                     if let text = await loadString(from: provider, type: UTType.plainText.identifier) {
                         print("[ShareVC] detected text")
                         return KBSharePayload(type: .text(text))
-                    }
-                }
-                
-                // Video / movie
-                if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
-                    if let url = await loadFileURL(from: provider, type: UTType.movie.identifier) {
-                        print("[ShareVC] detected movie file url=\(url)")
-                        return KBSharePayload(type: .file(url))
                     }
                 }
                 
@@ -165,6 +164,18 @@ class ShareViewController: UIViewController {
                 "com.apple.iwork.pages.pages":                            ".pages",
                 "com.apple.iwork.numbers.numbers":                        ".numbers",
                 "com.apple.iwork.keynote.key":                            ".key",
+                // ✅ Video — necessario perché WhatsApp non sempre fornisce
+                //    suggestedName o un srcURL con estensione
+                "public.movie":                                           ".mp4",
+                "public.mpeg-4":                                          ".mp4",
+                "com.apple.quicktime-movie":                              ".mov",
+                "public.avi":                                             ".avi",
+                "public.3gpp":                                            ".3gp",
+                // Foto
+                "public.jpeg":                                            ".jpg",
+                "public.png":                                             ".png",
+                "public.heic":                                            ".heic",
+                "public.heif":                                            ".heif",
             ]
             if let mapped = utiToExt[type] { return mapped }
             for uti in provider.registeredTypeIdentifiers {

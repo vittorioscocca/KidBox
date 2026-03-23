@@ -50,9 +50,14 @@ struct NoteDetailView: View {
             .onChange(of: titleText) { isDirty = true }
             
             // ── Corpo ─────────────────────────────────────────────────────
+            // ✅ La UITextView gestisce lo scroll internamente tramite contentInset.
+            //    ignoresSafeArea(.keyboard) impedisce a SwiftUI di shrinkare il frame
+            //    quando compare la tastiera — altrimenti la tv perde altezza e non scrolla.
             RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
                          focusTrigger: bodyFocusTrigger)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.top, 12)
+            .ignoresSafeArea(.keyboard)
             .onChange(of: bodyHTML) { isDirty = true }
         }
         .padding(.horizontal, 16)

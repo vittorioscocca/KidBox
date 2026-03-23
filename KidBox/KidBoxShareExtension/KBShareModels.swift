@@ -55,24 +55,30 @@ extension KBSharePayload {
             
         case .url(let u):
             if let f = URL(string: u), f.isFileURL {
-                return [.chat, .document]
+                // ✅ Controlla l'estensione anche per file-URL, così i video
+                //    da WhatsApp (che arrivano come .url con isFileURL=true)
+                //    mostrano "Foto e video" invece di "Documenti"
+                return mediaDestinations(for: f)
             }
             return [.chat, .note, .todo]
             
         case .file(let url):
-            let ext = url.pathExtension.lowercased()
-            let isVideo = ["mp4", "mov", "m4v"].contains(ext)
-            let isPhoto = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
-            if isVideo || isPhoto {
-                // Media → chat + Foto e video crittografati
-                return [.chat, .encryptedMedia]
-            }
-            // File generico → chat + documenti
-            return [.chat, .document]
+            return mediaDestinations(for: url)
             
         case .unknown:
             return [.chat]
         }
+    }
+    
+    /// Restituisce le destinazioni corrette in base all'estensione di un file URL locale.
+    private func mediaDestinations(for url: URL) -> [KBShareDestination] {
+        let ext = url.pathExtension.lowercased()
+        let isVideo = ["mp4", "mov", "m4v", "m4p", "3gp", "avi", "mkv"].contains(ext)
+        let isPhoto = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
+        if isVideo || isPhoto {
+            return [.chat, .encryptedMedia]
+        }
+        return [.chat, .document]
     }
     
     /// Classificazione async AI — da chiamare in .task {} o in un Task dal ViewController.

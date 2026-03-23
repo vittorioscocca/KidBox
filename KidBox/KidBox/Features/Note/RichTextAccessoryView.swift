@@ -50,13 +50,21 @@ final class RichTextAccessoryView: UIToolbar {
         super.init(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
         autoresizingMask = [.flexibleWidth]
         
-        // UIToolbar usa automaticamente il materiale translucente della tastiera.
-        // barStyle .default + isTranslucent true = stesso blur della QuickType bar.
-        // NON azzerare setBackgroundImage/setShadowImage: si perderebbe il materiale.
+        // ✅ Con ignoresSafeArea(.keyboard) sulla UITextView, il blur nativo di UIToolbar
+        //    non funziona più correttamente (diventa trasparente).
+        //    Usiamo uno sfondo esplicito con UIVisualEffectView che replica il materiale
+        //    della tastiera in modo affidabile in qualsiasi contesto.
         barStyle      = .default
         isTranslucent = true
-        // Rimuove solo l'ombra superiore (la reimpostiamo noi con 0.33pt precisi)
+        // Azzera il background nativo di UIToolbar e lo sostituiamo noi
+        setBackgroundImage(UIImage(), forToolbarPosition: .any, barMetrics: .default)
         setShadowImage(UIImage(), forToolbarPosition: .any)
+        
+        // Sfondo blur identico alla QuickType bar
+        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+        blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        blur.frame = bounds
+        insertSubview(blur, at: 0)
         
         // Separatore superiore sottilissimo
         let sep = UIView()
