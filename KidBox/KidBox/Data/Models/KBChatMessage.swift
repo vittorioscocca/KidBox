@@ -35,42 +35,31 @@ final class KBChatMessage {
     
     var mediaLocalPath: String?
     
+    /// Dimensione reale in byte del file media caricato su Firebase Storage.
+    /// Popolato al momento dell'upload lato Swift e scritto su Firestore
+    /// insieme al documento messaggio. Le Cloud Functions lo usano per
+    /// aggiornare stats/storage con il valore reale anziché una stima flat.
+    /// nil per messaggi di testo o messaggi media anteriori a questo campo.
+    var mediaFileSize: Int64?
+    
     var reactionsJSON: String?
     
     /// JSON serializzato degli UID che hanno letto il messaggio.
-    /// Es. ["uid1", "uid2"]
     var readByJSON: String?
     
     // MARK: - Transcript
     
-    /// Trascrizione automatica del messaggio audio
     var transcriptText: String?
-    
-    /// Stato della trascrizione
     var transcriptStatusRaw: String
-    
-    /// Origine della trascrizione
     var transcriptSourceRaw: String?
-    
-    /// Locale usata, es. it-IT
     var transcriptLocaleIdentifier: String?
-    
-    /// true quando il risultato è definitivo
     var transcriptIsFinal: Bool
-    
-    /// ultimo aggiornamento transcript
     var transcriptUpdatedAt: Date?
-    
-    /// eventuale errore
     var transcriptErrorMessage: String?
     
     var createdAt: Date
     var editedAt: Date?
     var isDeleted: Bool
-    
-    /// true quando il messaggio è stato eliminato per tutti i partecipanti.
-    /// A differenza di `isDeleted` (elimina solo per me), questo campo
-    /// mantiene il messaggio visibile come tombstone ("Messaggio eliminato").
     var isDeletedForEveryone: Bool = false
     
     var syncStateRaw: Int
@@ -98,12 +87,9 @@ final class KBChatMessage {
             guard let transcriptSourceRaw else { return nil }
             return KBTranscriptSource(rawValue: transcriptSourceRaw)
         }
-        set {
-            transcriptSourceRaw = newValue?.rawValue
-        }
+        set { transcriptSourceRaw = newValue?.rawValue }
     }
     
-    /// Reazioni decodificate: emoji → [userId]
     var reactions: [String: [String]] {
         get {
             guard let json = reactionsJSON,
@@ -122,7 +108,6 @@ final class KBChatMessage {
         }
     }
     
-    /// UID degli utenti che hanno letto il messaggio.
     var readBy: [String] {
         get {
             guard let json = readByJSON,
@@ -151,10 +136,8 @@ final class KBChatMessage {
     var shouldShowTranscript: Bool {
         guard type == .audio else { return false }
         switch transcriptStatus {
-        case .none:
-            return hasTranscriptText
-        case .processing, .completed, .failed:
-            return true
+        case .none:       return hasTranscriptText
+        case .processing, .completed, .failed: return true
         }
     }
     
@@ -179,6 +162,7 @@ final class KBChatMessage {
         mediaURL: String? = nil,
         mediaDurationSeconds: Int? = nil,
         mediaThumbnailURL: String? = nil,
+        mediaFileSize: Int64? = nil,
         transcriptText: String? = nil,
         mediaLocalPath: String? = nil,
         transcriptStatus: KBTranscriptStatus = .none,
@@ -192,41 +176,36 @@ final class KBChatMessage {
         isDeleted: Bool = false,
         isDeletedForEveryone: Bool = false
     ) {
-        self.id = id
-        self.familyId = familyId
-        self.senderId = senderId
-        self.senderName = senderName
-        self.typeRaw = type.rawValue
-        self.text = text
-        
-        self.latitude = latitude
-        self.longitude = longitude
-        self.mediaLocalPath = mediaLocalPath
-        
-        self.mediaStoragePath = mediaStoragePath
-        self.mediaURL = mediaURL
-        self.mediaDurationSeconds = mediaDurationSeconds
-        self.mediaThumbnailURL = mediaThumbnailURL
-        self.replyToId = nil
-        
-        self.reactionsJSON = nil
-        self.readByJSON = nil
-        
-        self.transcriptText = transcriptText
-        self.transcriptStatusRaw = transcriptStatus.rawValue
-        self.transcriptSourceRaw = transcriptSource?.rawValue
+        self.id                       = id
+        self.familyId                 = familyId
+        self.senderId                 = senderId
+        self.senderName               = senderName
+        self.typeRaw                  = type.rawValue
+        self.text                     = text
+        self.latitude                 = latitude
+        self.longitude                = longitude
+        self.mediaLocalPath           = mediaLocalPath
+        self.mediaStoragePath         = mediaStoragePath
+        self.mediaURL                 = mediaURL
+        self.mediaDurationSeconds     = mediaDurationSeconds
+        self.mediaThumbnailURL        = mediaThumbnailURL
+        self.mediaFileSize            = mediaFileSize
+        self.replyToId                = nil
+        self.reactionsJSON            = nil
+        self.readByJSON               = nil
+        self.transcriptText           = transcriptText
+        self.transcriptStatusRaw      = transcriptStatus.rawValue
+        self.transcriptSourceRaw      = transcriptSource?.rawValue
         self.transcriptLocaleIdentifier = transcriptLocaleIdentifier
-        self.transcriptIsFinal = transcriptIsFinal
-        self.transcriptUpdatedAt = transcriptUpdatedAt
-        self.transcriptErrorMessage = transcriptErrorMessage
-        
-        self.createdAt = createdAt
-        self.editedAt = editedAt
-        self.isDeleted = isDeleted
-        self.isDeletedForEveryone = isDeletedForEveryone
-        
-        self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
-        self.lastSyncError = nil
+        self.transcriptIsFinal        = transcriptIsFinal
+        self.transcriptUpdatedAt      = transcriptUpdatedAt
+        self.transcriptErrorMessage   = transcriptErrorMessage
+        self.createdAt                = createdAt
+        self.editedAt                 = editedAt
+        self.isDeleted                = isDeleted
+        self.isDeletedForEveryone     = isDeletedForEveryone
+        self.syncStateRaw             = KBSyncState.pendingUpsert.rawValue
+        self.lastSyncError            = nil
     }
 }
 

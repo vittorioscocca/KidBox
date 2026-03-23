@@ -79,7 +79,9 @@ final class KBStorageGate {
     /// Controlla se è possibile caricare un file di `bytes` byte.
     /// Passare `bytes: 0` per verificare solo se il limite è già superato.
     func canUpload(bytes: Int64 = 0, modelContext: ModelContext, familyId: String) -> KBStorageGateResult {
-        let used = KBStorageGate.shared.cachedUsedBytes > 0 ? KBStorageGate.shared.cachedUsedBytes : calculateUsedBytes(modelContext: modelContext, familyId: familyId)
+        let used = cachedUsedBytes > 0
+        ? cachedUsedBytes
+        : calculateUsedBytes(modelContext: modelContext, familyId: familyId)
         let quota = currentQuota
         
         if used >= quota {
@@ -102,73 +104,55 @@ final class KBStorageGate {
         )
     }
     
-    // MARK: - Calcolo locale (specchio di StorageUsageViewModel)
+    // MARK: - Calcolo locale
+    //
+    // Allineato con StorageUsageViewModel.localUsedBytes.
+    // Conta solo ciò che occupa realmente Firebase Storage:
+    //
+    // • Documenti       → fileSize reale da KBDocument
+    // • Chat media      → mediaFileSize reale (se disponibile) o 512KB fallback
+    // • Foto album      → fileSize reale da KBFamilyPhoto
+    // • Foto visite     → KBMedicalVisit.photoURLs, stima 200KB/foto
+    // • Expense         → attachedDocumentId punta a KBDocument (già contato).
+    //                     receiptThumbnailData è locale SwiftData → non contato.
+    // • Esami/cure/vac  → nessun allegato su Storage → non contati
     
     func calculateUsedBytes(modelContext: ModelContext, familyId: String) -> Int64 {
         let fid = familyId
-        let kb: Int64 = 1024
+        let chatMediaFallback: Int64 = 512 * 1024
+        let visitPhotoEstimate: Int64 = 200 * 1024
         
-        let docBytes: Int64 = {
-            let desc = FetchDescriptor<KBDocument>(
-                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
-            )
-            let docs = (try? modelContext.fetch(desc)) ?? []
-            return docs.reduce(0) { $0 + $1.fileSize } + Int64(docs.count) * kb
-        }()
+        // Documenti (fileSize reale)
+        let docDesc = FetchDescriptor<KBDocument>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        let docBytes: Int64 = ((try? modelContext.fetch(docDesc)) ?? [])
+            .reduce(0) { $0 + $1.fileSize }
         
-        let chatBytes: Int64 = {
-            var da = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            da.fetchLimit = 100_000
-            let total = (try? modelContext.fetchCount(da)) ?? 0
-            let dm = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.familyId == fid && $0.mediaStoragePath != nil })
-            let media = (try? modelContext.fetchCount(dm)) ?? 0
-            return Int64(media) * 512 * kb + Int64(total) * kb
-        }()
+        // Chat media (fileSize reale o fallback per messaggi vecchi)
+        var chatDesc = FetchDescriptor<KBChatMessage>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false && $0.mediaStoragePath != nil }
+        )
+        chatDesc.fetchLimit = 100_000
+        let chatBytes: Int64 = ((try? modelContext.fetch(chatDesc)) ?? [])
+            .reduce(0) { acc, msg in acc + (msg.mediaFileSize ?? chatMediaFallback) }
         
-        let saluteBytes: Int64 = {
-            var dv = FetchDescriptor<KBMedicalVisit>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            dv.fetchLimit = 100_000
-            var de = FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            de.fetchLimit = 100_000
-            var dt = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            dt.fetchLimit = 100_000
-            var dvc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            dvc.fetchLimit = 100_000
-            let v  = (try? modelContext.fetchCount(dv))  ?? 0
-            let e  = (try? modelContext.fetchCount(de))  ?? 0
-            let t  = (try? modelContext.fetchCount(dt))  ?? 0
-            let vc = (try? modelContext.fetchCount(dvc)) ?? 0
-            return Int64(v + t) * 2 * kb + Int64(e + vc) * kb
-        }()
+        // Foto album condiviso (fileSize reale)
+        let photoDesc = FetchDescriptor<KBFamilyPhoto>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        let photoBytes: Int64 = ((try? modelContext.fetch(photoDesc)) ?? [])
+            .reduce(0) { $0 + $1.fileSize }
         
-        let noteBytes: Int64 = {
-            var d = FetchDescriptor<KBNote>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            d.fetchLimit = 100_000
-            return Int64((try? modelContext.fetchCount(d)) ?? 0) * 3 * kb
-        }()
+        // Foto visite pediatriche (stima 200KB/foto)
+        var visitDesc = FetchDescriptor<KBMedicalVisit>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        visitDesc.fetchLimit = 100_000
+        let visitPhotoBytes: Int64 = ((try? modelContext.fetch(visitDesc)) ?? [])
+            .reduce(0) { acc, v in acc + Int64(v.photoURLs.count) * visitPhotoEstimate }
         
-        let calBytes: Int64 = {
-            var d = FetchDescriptor<KBCalendarEvent>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            d.fetchLimit = 100_000
-            return Int64((try? modelContext.fetchCount(d)) ?? 0) * kb
-        }()
-        
-        let todoBytes: Int64 = {
-            var d = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false })
-            d.fetchLimit = 100_000
-            return Int64((try? modelContext.fetchCount(d)) ?? 0) * kb
-        }()
-        
-        // Foto e video: fileSize reale salvato in KBFamilyPhoto
-        let photoBytes: Int64 = {
-            let desc = FetchDescriptor<KBFamilyPhoto>(
-                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
-            )
-            let photos = (try? modelContext.fetch(desc)) ?? []
-            return photos.reduce(0) { $0 + $1.fileSize }
-        }()
-        
-        return docBytes + chatBytes + saluteBytes + noteBytes + calBytes + todoBytes + photoBytes
+        return docBytes + chatBytes + photoBytes + visitPhotoBytes
     }
 }
 

@@ -23,7 +23,7 @@ function storageStatsRef(familyId) {
  * Aggiorna usedBytes e il breakdown per sezione con un delta atomico.
  * @param {string} familyId
  * @param {number} delta - Byte da aggiungere (positivo) o sottrarre (negativo).
- * @param {string|null} section - Sezione da aggiornare (documents, chat, photos, salute, notes, calendar, todo).
+ * @param {string|null} section - Sezione da aggiornare.
  * @return {Promise<void>}
  */
 async function updateStorageBytes(familyId, delta, section = null) {
@@ -42,9 +42,9 @@ async function updateStorageBytes(familyId, delta, section = null) {
 }
 
 /**
- * Sums chat, documents and location counters from the given data.
+ * Sums notification counters from the given data.
  * @param {object} data - The counter data object.
- * @return {{chat: number, documents: number, location: number, total: number}}
+ * @return {object}
  */
 function sumCounters(data) {
   const chat = data?.chat || 0;
@@ -62,11 +62,11 @@ function sumCounters(data) {
 
 /**
  * Increments a notification counter and returns the updated badge count.
- * @param {object} params - The parameters.
- * @param {string} params.familyId - The family ID.
- * @param {string} params.uid - The user ID.
- * @param {string} params.field - The counter field to increment.
- * @return {Promise<number>} The updated badge total.
+ * @param {object} params
+ * @param {string} params.familyId
+ * @param {string} params.uid
+ * @param {string} params.field
+ * @return {Promise<number>}
  */
 async function incrementCounterAndGetBadge({familyId, uid, field}) {
   const ref = admin.firestore()
@@ -108,9 +108,9 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
 
 /**
  * Returns FCM tokens for a user if the given notification preference is enabled.
- * @param {string} uid - The user ID.
- * @param {string} prefField - The notification preference field to check.
- * @return {Promise<string[]>} The list of FCM tokens.
+ * @param {string} uid
+ * @param {string} prefField
+ * @return {Promise<string[]>}
  */
 async function getUserTokensIfEnabled(uid, prefField) {
   const userRef = admin.firestore().collection("users").doc(uid);
@@ -130,6 +130,10 @@ async function getUserTokensIfEnabled(uid, prefField) {
 
   return tokens;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENTI
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.notifyNewDocument = onDocumentCreated(
     {
@@ -154,16 +158,13 @@ exports.notifyNewDocument = onDocumentCreated(
 
       logger.info("notifyNewDocument triggered", {familyId, docId, uploaderUid});
 
-      // ── Storage tracking ──
+      // ── Storage tracking: fileSize reale ──
       if (!docData.isDeleted && typeof docData.fileSize === "number" && docData.fileSize > 0) {
         await updateStorageBytes(familyId, docData.fileSize, "documents");
       }
 
       const membersSnap = await admin.firestore()
-          .collection("families")
-          .doc(familyId)
-          .collection("members")
-          .get();
+          .collection("families").doc(familyId).collection("members").get();
 
       if (membersSnap.empty) {
         logger.warn("notifyNewDocument: members subcollection is empty");
@@ -181,35 +182,19 @@ exports.notifyNewDocument = onDocumentCreated(
 
       const title = "Nuovo documento caricato";
       const body = docData.title || docData.fileName || "Documento";
-
       const messagesToSend = [];
 
       for (const uid of memberUids) {
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewDocs");
         if (tokens.length === 0) continue;
 
-        const badge = await incrementCounterAndGetBadge({
-          familyId,
-          uid,
-          field: "documents",
-        });
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "documents"});
 
         messagesToSend.push({
           tokens,
           notification: {title, body},
-          data: {
-            type: "new_document",
-            familyId: familyId,
-            docId: docId,
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: "default",
-                badge: badge,
-              },
-            },
-          },
+          data: {type: "new_document", familyId, docId},
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
@@ -219,14 +204,11 @@ exports.notifyNewDocument = onDocumentCreated(
       }
 
       const results = await Promise.allSettled(
-          messagesToSend.map((msg) =>
-            admin.messaging().sendEachForMulticast(msg),
-          ),
+          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
       );
 
       let totalSuccess = 0;
       let totalFailure = 0;
-
       results.forEach((r) => {
         if (r.status === "fulfilled") {
           totalSuccess += r.value.successCount;
@@ -236,136 +218,33 @@ exports.notifyNewDocument = onDocumentCreated(
         }
       });
 
-      logger.info("notifyNewDocument: send result", {
-        successCount: totalSuccess,
-        failureCount: totalFailure,
-        userTargets: messagesToSend.length,
-      });
+      logger.info("notifyNewDocument: send result", {successCount: totalSuccess, failureCount: totalFailure});
     },
 );
 
-const FAMILY_SUBCOLLECTIONS = [
-  "members",
-  "children",
-  "documents",
-  "documentCategories",
-  "todos",
-  "invites",
-];
-
-/**
- * Deletes all documents in a Firestore collection.
- * @param {object} colRef - The Firestore collection reference.
- * @param {number} batchSize - The number of documents to delete per batch.
- * @return {Promise<void>}
- */
-async function deleteCollection(colRef, batchSize = 300) {
-  let snap = await colRef.limit(batchSize).get();
-  while (!snap.empty) {
-    const batch = admin.firestore().batch();
-    snap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-    snap = await colRef.limit(batchSize).get();
-  }
-}
-
-/**
- * Deletes all files in Cloud Storage with a given prefix.
- * @param {string} prefix - The storage path prefix.
- * @return {Promise<void>}
- */
-async function deleteStoragePrefix(prefix) {
-  const bucket = admin.storage().bucket(STORAGE_BUCKET);
-  const [files] = await bucket.getFiles({prefix});
-  if (!files.length) return;
-
-  const chunkSize = 50;
-  for (let i = 0; i < files.length; i += chunkSize) {
-    const chunk = files.slice(i, i + chunkSize);
-    await Promise.allSettled(chunk.map((f) => f.delete()));
-  }
-}
-
-/**
- * Counts the number of active members in a family.
- * @param {string} familyId - The family ID.
- * @return {Promise<number>} The count of active members.
- */
-async function countActiveMembers(familyId) {
-  const snap = await admin.firestore()
-      .collection("families")
-      .doc(familyId)
-      .collection("members")
-      .get();
-
-  return snap.docs.filter((d) => d.get("isDeleted") !== true).length;
-}
-
-/**
- * Completely deletes a family and all its data.
- * @param {string} familyId - The family ID.
- * @return {Promise<void>}
- */
-async function deleteFamilyCompletely(familyId) {
-  const db = admin.firestore();
-
-  for (const sub of FAMILY_SUBCOLLECTIONS) {
-    await deleteCollection(db.collection(`families/${familyId}/${sub}`));
-  }
-
-  await db.collection("families").doc(familyId).delete().catch(() => {});
-  await deleteStoragePrefix(`families/${familyId}/`);
-}
-
-exports.deleteAccount = onCall(
-    {region: "europe-west1",
-      invoker: "public",
+exports.onDocumentHardDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/documents/{docId}",
+      region: "europe-west1",
     },
-    async (request) => {
-      const uid = request.auth?.uid;
-      if (!uid) {
-        throw new HttpsError("unauthenticated", "Not authenticated");
-      }
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
 
-      const db = admin.firestore();
-      logger.info("deleteAccount started", {uid});
+      if (!before || after) return;
 
-      const membershipsRef = db.collection("users").doc(uid).collection("memberships");
-      const membershipsSnap = await membershipsRef.get();
-      const familyIds = membershipsSnap.docs.map((d) => d.id);
+      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
+      if (sizeBefore <= 0) return;
 
-      for (const familyId of familyIds) {
-        let memberCount = 0;
-        try {
-          memberCount = await countActiveMembers(familyId);
-        } catch (e) {
-          memberCount = 0;
-        }
-
-        if (memberCount > 1) {
-          await db.collection("families")
-              .doc(familyId)
-              .collection("members")
-              .doc(uid)
-              .delete()
-              .catch(() => {});
-        } else {
-          await deleteFamilyCompletely(familyId);
-        }
-
-        await membershipsRef.doc(familyId).delete().catch(() => {});
-      }
-
-      await deleteCollection(db.collection(`users/${uid}/fcmTokens`)).catch(() => {});
-      await deleteCollection(db.collection(`users/${uid}/memberships`)).catch(() => {});
-      await db.collection("users").doc(uid).delete().catch(() => {});
-      await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
-      await admin.auth().deleteUser(uid);
-
-      logger.info("deleteAccount completed", {uid, families: familyIds.length});
-      return {ok: true, familiesProcessed: familyIds.length};
+      logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
+      await updateStorageBytes(familyId, -sizeBefore, "documents");
     },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.notifyNewChatMessage = onDocumentCreated(
     {
@@ -384,11 +263,23 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
       if (msgData.isDeleted === true) return;
 
-      // ── Storage tracking: solo messaggi con media ──
+      // ── Storage tracking: solo file media, dimensione reale ──────────────
+      // I messaggi di testo NON occupano Firebase Storage → non contati.
+      // mediaFileSize è il campo aggiunto a KBChatMessage: contiene la dimensione
+      // reale del file caricato su Storage. Fallback 512KB per messaggi precedenti.
       if (msgData.mediaStoragePath) {
         const mediaTypes = ["photo", "video", "audio", "document"];
         if (mediaTypes.includes(msgData.typeRaw || "")) {
-          await updateStorageBytes(familyId, 512 * 1024, "chat");
+          const mediaFileSize = (typeof msgData.mediaFileSize === "number" && msgData.mediaFileSize > 0) ?
+            msgData.mediaFileSize :
+            512 * 1024;
+          await updateStorageBytes(familyId, mediaFileSize, "chat");
+          logger.info("notifyNewChatMessage: storage tracked", {
+            familyId,
+            messageId,
+            bytes: mediaFileSize,
+            source: msgData.mediaFileSize ? "real" : "fallback",
+          });
         }
       }
 
@@ -402,10 +293,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
       logger.info("notifyNewChatMessage triggered", {familyId, messageId, senderUid});
 
       const membersSnap = await admin.firestore()
-          .collection("families")
-          .doc(familyId)
-          .collection("members")
-          .get();
+          .collection("families").doc(familyId).collection("members").get();
 
       if (membersSnap.empty) {
         logger.warn("notifyNewChatMessage: no members found");
@@ -423,26 +311,16 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
       const msgType = msgData.typeRaw || "text";
       let body;
-
       switch (msgType) {
         case "text":
           body = msgData.text || "Nuovo messaggio";
           if (body.length > 100) body = body.substring(0, 97) + "…";
           break;
-        case "photo":
-          body = "📷 Ha inviato una foto";
-          break;
-        case "video":
-          body = "🎥 Ha inviato un video";
-          break;
-        case "audio":
-          body = "🎤 Ha inviato un messaggio vocale";
-          break;
-        case "document":
-          body = "📎 Ha inviato un documento";
-          break;
-        default:
-          body = "Nuovo messaggio";
+        case "photo": body = "📷 Ha inviato una foto"; break;
+        case "video": body = "🎥 Ha inviato un video"; break;
+        case "audio": body = "🎤 Ha inviato un messaggio vocale"; break;
+        case "document": body = "📎 Ha inviato un documento"; break;
+        default: body = "Nuovo messaggio";
       }
 
       const messagesToSend = [];
@@ -451,30 +329,13 @@ exports.notifyNewChatMessage = onDocumentCreated(
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewMessages");
         if (tokens.length === 0) continue;
 
-        const badge = await incrementCounterAndGetBadge({
-          familyId,
-          uid,
-          field: "chat",
-        });
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "chat"});
 
         messagesToSend.push({
           tokens,
           notification: {title: senderName, body},
-          data: {
-            type: "new_chat_message",
-            familyId: familyId,
-            messageId: messageId,
-            senderId: senderUid,
-            msgType: msgType,
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: "default",
-                badge: badge,
-              },
-            },
-          },
+          data: {type: "new_chat_message", familyId, messageId, senderId: senderUid, msgType},
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
@@ -489,7 +350,6 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
       let totalSuccess = 0;
       let totalFailure = 0;
-
       results.forEach((r) => {
         if (r.status === "fulfilled") {
           totalSuccess += r.value.successCount;
@@ -506,6 +366,135 @@ exports.notifyNewChatMessage = onDocumentCreated(
       });
     },
 );
+
+// Sottrae i bytes quando un messaggio con media viene soft-deleted.
+// Usa mediaFileSize reale; fallback 512KB per messaggi precedenti al campo.
+exports.onChatMessageSoftDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/chatMessages/{messageId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      if (!before || !after) return;
+      if (before.isDeleted === true) return;
+      if (after.isDeleted !== true) return;
+
+      const mediaPath = after.mediaStoragePath || before.mediaStoragePath || "";
+      if (!mediaPath) return;
+
+      const mediaTypes = ["photo", "video", "audio", "document"];
+      const type = after.typeRaw || before.typeRaw || "";
+      if (!mediaTypes.includes(type)) return;
+
+      // Usa il fileSize reale registrato sul messaggio.
+      // Fallback 512KB per messaggi anteriori all'introduzione del campo.
+      const mediaFileSize = after.mediaFileSize || before.mediaFileSize || null;
+      const delta = (typeof mediaFileSize === "number" && mediaFileSize > 0) ?
+        -mediaFileSize :
+        -(512 * 1024);
+
+      logger.info("onChatMessageSoftDeleted: freeing bytes", {
+        familyId,
+        messageId: event.params.messageId,
+        bytes: Math.abs(delta),
+        source: mediaFileSize ? "real" : "fallback",
+      });
+
+      await updateStorageBytes(familyId, delta, "chat");
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FOTO ALBUM CONDIVISO
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.onPhotoCreated = onDocumentCreated(
+    {
+      document: "families/{familyId}/photos/{photoId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const data = event.data ? event.data.data() : null;
+      if (!data) return;
+
+      if (!data.isDeleted && typeof data.fileSize === "number" && data.fileSize > 0) {
+        logger.info("onPhotoCreated: adding bytes", {familyId, fileSize: data.fileSize});
+        await updateStorageBytes(familyId, data.fileSize, "photos");
+      }
+    },
+);
+
+exports.onPhotoHardDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/photos/{photoId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      if (!before || after) return;
+
+      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
+      if (sizeBefore <= 0) return;
+
+      logger.info("onPhotoHardDeleted: removing bytes", {familyId, sizeBefore});
+      await updateStorageBytes(familyId, -sizeBefore, "photos");
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SALUTE — foto visite pediatriche
+// Quando una visita viene creata/aggiornata con photoURLs, aggiorna lo storage.
+// Stima 200KB per foto (compressa, media mobile) perché non c'è fileSize nel modello.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const VISIT_PHOTO_ESTIMATE_BYTES = 200 * 1024; // 200 KB
+
+exports.onMedicalVisitWritten = onDocumentWritten(
+    {
+      document: "families/{familyId}/medicalVisits/{visitId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      // Hard delete: rimuovi i bytes delle foto che c'erano
+      if (before && !after) {
+        const photosBefore = Array.isArray(before.photoURLs) ? before.photoURLs.length : 0;
+        if (photosBefore > 0) {
+          const delta = -(photosBefore * VISIT_PHOTO_ESTIMATE_BYTES);
+          logger.info("onMedicalVisitWritten: hard delete, freeing photo bytes", {familyId, delta});
+          await updateStorageBytes(familyId, delta, "salute");
+        }
+        return;
+      }
+
+      if (!after) return;
+
+      const photosAfter = Array.isArray(after.photoURLs) ? after.photoURLs.length : 0;
+      const photosBefore = before && Array.isArray(before.photoURLs) ? before.photoURLs.length : 0;
+      const photoDelta = photosAfter - photosBefore;
+
+      if (photoDelta === 0) return;
+
+      const bytesDelta = photoDelta * VISIT_PHOTO_ESTIMATE_BYTES;
+      logger.info("onMedicalVisitWritten: photo delta", {familyId, photoDelta, bytesDelta});
+      await updateStorageBytes(familyId, bytesDelta, "salute");
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POSIZIONE
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.notifyLocationSharingChanged = onDocumentWritten(
     {
@@ -526,18 +515,11 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
 
       if (beforeIsSharing === afterIsSharing) return;
 
-      logger.info("notifyLocationSharingChanged triggered", {
-        familyId,
-        subjectUid,
-        from: beforeIsSharing,
-        to: afterIsSharing,
-      });
+      logger.info("notifyLocationSharingChanged triggered", {familyId, subjectUid, from: beforeIsSharing, to: afterIsSharing});
 
       const locRef = admin.firestore()
-          .collection("families")
-          .doc(familyId)
-          .collection("locations")
-          .doc(subjectUid);
+          .collection("families").doc(familyId)
+          .collection("locations").doc(subjectUid);
 
       const COOLDOWN_MS = 15 * 1000;
       let shouldSend = false;
@@ -550,9 +532,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         const now = new Date();
         if (!last || (now.getTime() - last.getTime()) >= COOLDOWN_MS) {
           shouldSend = true;
-          tx.set(locRef, {
-            lastNotifyAt: admin.firestore.FieldValue.serverTimestamp(),
-          }, {merge: true});
+          tx.set(locRef, {lastNotifyAt: admin.firestore.FieldValue.serverTimestamp()}, {merge: true});
         }
       });
 
@@ -564,10 +544,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       const subjectName = after.name || "Qualcuno";
 
       const membersSnap = await admin.firestore()
-          .collection("families")
-          .doc(familyId)
-          .collection("members")
-          .get();
+          .collection("families").doc(familyId).collection("members").get();
 
       if (membersSnap.empty) {
         logger.warn("notifyLocationSharingChanged: members subcollection is empty");
@@ -590,38 +567,26 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
 
       const mode = after.mode || null;
       const expiresAt = after.expiresAt || null;
-
       const messagesToSend = [];
 
       for (const uid of targetUids) {
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnLocationSharing");
         if (tokens.length === 0) continue;
 
-        const badge = await incrementCounterAndGetBadge({
-          familyId,
-          uid,
-          field: "location",
-        });
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "location"});
 
         messagesToSend.push({
           tokens,
           notification: {title, body},
           data: {
             type: afterIsSharing ? "location_sharing_started" : "location_sharing_stopped",
-            familyId: familyId,
+            familyId,
             uid: subjectUid,
             name: subjectName,
             mode: mode ? String(mode) : "",
             expiresAt: expiresAt ? String(expiresAt.seconds || "") : "",
           },
-          apns: {
-            payload: {
-              aps: {
-                sound: "default",
-                badge: badge,
-              },
-            },
-          },
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
@@ -636,7 +601,6 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
 
       let totalSuccess = 0;
       let totalFailure = 0;
-
       results.forEach((r) => {
         if (r.status === "fulfilled") {
           totalSuccess += r.value.successCount;
@@ -646,11 +610,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         }
       });
 
-      logger.info("notifyLocationSharingChanged: send result", {
-        successCount: totalSuccess,
-        failureCount: totalFailure,
-        userTargets: messagesToSend.length,
-      });
+      logger.info("notifyLocationSharingChanged: send result", {successCount: totalSuccess, failureCount: totalFailure});
     },
 );
 
@@ -703,6 +663,10 @@ exports.expireTemporaryLocations = onSchedule(
     },
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TODO
+// ─────────────────────────────────────────────────────────────────────────────
+
 exports.notifyTodoAssigned = onDocumentWritten(
     {
       document: "families/{familyId}/todos/{todoId}",
@@ -731,15 +695,12 @@ exports.notifyTodoAssigned = onDocumentWritten(
       if (!before) {
         shouldNotify = true;
       }
-
       if (before && oldAssignee !== newAssignee) {
         shouldNotify = true;
       }
-
       if (before && oldAssignee === newAssignee) {
         const beforeDue = before.dueAt?.toMillis?.() || null;
         const afterDue = after.dueAt?.toMillis?.() || null;
-
         if (beforeDue !== afterDue) {
           shouldNotify = true;
           notificationType = "todo_due_changed";
@@ -753,49 +714,29 @@ exports.notifyTodoAssigned = onDocumentWritten(
       const tokens = await getUserTokensIfEnabled(newAssignee, "notifyOnTodoAssigned");
       if (tokens.length === 0) return;
 
-      const badge = await incrementCounterAndGetBadge({
-        familyId,
-        uid: newAssignee,
-        field: "todos",
-      });
+      const badge = await incrementCounterAndGetBadge({familyId, uid: newAssignee, field: "todos"});
 
       const payload = {
         tokens,
-        notification: {
-          title: "Nuovo To-Do",
-          body: after.title || "Hai un nuovo promemoria",
-        },
-        data: {
-          type: notificationType,
-          familyId,
-          childId: after.childId || "",
-          listId: after.listId || "",
-          todoId,
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: badge,
-            },
-          },
-        },
+        notification: {title: "Nuovo To-Do", body: after.title || "Hai un nuovo promemoria"},
+        data: {type: notificationType, familyId, childId: after.childId || "", listId: after.listId || "", todoId},
+        apns: {payload: {aps: {sound: "default", badge}}},
       };
 
       const result = await admin.messaging().sendEachForMulticast(payload);
-
       result.responses.forEach((resp) => {
         if (!resp.success) {
           console.error("FCM error detail:", resp.error?.code, resp.error?.message);
         }
       });
 
-      logger.info("notifyTodoAssigned send result", {
-        successCount: result.successCount,
-        failureCount: result.failureCount,
-      });
+      logger.info("notifyTodoAssigned send result", {successCount: result.successCount, failureCount: result.failureCount});
     },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Resolves a display name for a uid within a family.
@@ -815,10 +756,7 @@ async function resolveMemberName(familyId, uid) {
       if (name) return name;
     }
 
-    const userSnap = await admin.firestore()
-        .collection("users").doc(uid)
-        .get();
-
+    const userSnap = await admin.firestore().collection("users").doc(uid).get();
     if (userSnap.exists) {
       const name = userSnap.get("displayName") || userSnap.get("name");
       if (name) return name;
@@ -829,6 +767,10 @@ async function resolveMemberName(familyId, uid) {
 
   return "Un membro della famiglia";
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SPESA
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.notifyNewGroceryItem = onDocumentCreated(
     {
@@ -841,16 +783,13 @@ exports.notifyNewGroceryItem = onDocumentCreated(
 
       const itemData = event.data ? event.data.data() : null;
       if (!itemData) {
-        logger.warn("notifyNewGroceryItem: missing item data");
-        return;
+        logger.warn("notifyNewGroceryItem: missing item data"); return;
       }
-
       if (itemData.isDeleted === true) return;
 
       const creatorUid = itemData.createdBy || itemData.updatedBy || null;
       if (!creatorUid) {
-        logger.warn("notifyNewGroceryItem: missing creatorUid");
-        return;
+        logger.warn("notifyNewGroceryItem: missing creatorUid"); return;
       }
 
       logger.info("notifyNewGroceryItem triggered", {familyId, itemId, creatorUid});
@@ -858,27 +797,20 @@ exports.notifyNewGroceryItem = onDocumentCreated(
       const creatorName = await resolveMemberName(familyId, creatorUid);
 
       const membersSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").get();
+          .collection("families").doc(familyId).collection("members").get();
 
       if (membersSnap.empty) {
-        logger.warn("notifyNewGroceryItem: members subcollection is empty");
-        return;
+        logger.warn("notifyNewGroceryItem: members subcollection is empty"); return;
       }
 
-      const memberUids = membersSnap.docs
-          .map((d) => d.id)
-          .filter((uid) => uid && uid !== creatorUid);
-
+      const memberUids = membersSnap.docs.map((d) => d.id).filter((uid) => uid && uid !== creatorUid);
       if (memberUids.length === 0) {
-        logger.info("notifyNewGroceryItem: no targets");
-        return;
+        logger.info("notifyNewGroceryItem: no targets"); return;
       }
 
       const itemName = itemData.name || "Prodotto";
       const title = "Lista della spesa 🛒";
       const body = `${creatorName} ha aggiunto: ${itemName}`;
-
       const messagesToSend = [];
 
       for (const uid of memberUids) {
@@ -886,44 +818,34 @@ exports.notifyNewGroceryItem = onDocumentCreated(
         if (tokens.length === 0) continue;
 
         const badge = await incrementCounterAndGetBadge({familyId, uid, field: "shopping"});
-
         messagesToSend.push({
           tokens,
           notification: {title, body},
-          data: {
-            type: "new_grocery_item",
-            familyId: familyId,
-            itemId: itemId,
-          },
-          apns: {
-            payload: {aps: {sound: "default", badge}},
-          },
+          data: {type: "new_grocery_item", familyId, itemId},
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
       if (messagesToSend.length === 0) {
-        logger.info("notifyNewGroceryItem: no per-user notifications to send");
-        return;
+        logger.info("notifyNewGroceryItem: no per-user notifications to send"); return;
       }
 
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
+      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
       let totalSuccess = 0; let totalFailure = 0;
       results.forEach((r) => {
         if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
+          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
         } else {
           totalFailure += 1;
         }
       });
-
-      logger.info("notifyNewGroceryItem: send result",
-          {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
+      logger.info("notifyNewGroceryItem: send result", {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTE
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.notifyNewNote = onDocumentCreated(
     {
@@ -936,16 +858,13 @@ exports.notifyNewNote = onDocumentCreated(
 
       const noteData = event.data ? event.data.data() : null;
       if (!noteData) {
-        logger.warn("notifyNewNote: missing note data");
-        return;
+        logger.warn("notifyNewNote: missing note data"); return;
       }
-
       if (noteData.isDeleted === true) return;
 
       const creatorUid = noteData.createdBy || noteData.updatedBy || null;
       if (!creatorUid) {
-        logger.warn("notifyNewNote: missing creatorUid");
-        return;
+        logger.warn("notifyNewNote: missing creatorUid"); return;
       }
 
       logger.info("notifyNewNote triggered", {familyId, noteId, creatorUid});
@@ -953,26 +872,19 @@ exports.notifyNewNote = onDocumentCreated(
       const creatorName = await resolveMemberName(familyId, creatorUid);
 
       const membersSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").get();
+          .collection("families").doc(familyId).collection("members").get();
 
       if (membersSnap.empty) {
-        logger.warn("notifyNewNote: members subcollection is empty");
-        return;
+        logger.warn("notifyNewNote: members subcollection is empty"); return;
       }
 
-      const memberUids = membersSnap.docs
-          .map((d) => d.id)
-          .filter((uid) => uid && uid !== creatorUid);
-
+      const memberUids = membersSnap.docs.map((d) => d.id).filter((uid) => uid && uid !== creatorUid);
       if (memberUids.length === 0) {
-        logger.info("notifyNewNote: no targets");
-        return;
+        logger.info("notifyNewNote: no targets"); return;
       }
 
       const title = "📝 Nuova nota";
       const body = `${creatorName} ha aggiunto una nuova nota`;
-
       const messagesToSend = [];
 
       for (const uid of memberUids) {
@@ -980,47 +892,33 @@ exports.notifyNewNote = onDocumentCreated(
         if (tokens.length === 0) continue;
 
         const badge = await incrementCounterAndGetBadge({familyId, uid, field: "notes"});
-
         messagesToSend.push({
           tokens,
           notification: {title, body},
-          data: {
-            type: "new_note",
-            familyId,
-            noteId,
-          },
-          apns: {
-            payload: {aps: {sound: "default", badge}},
-          },
+          data: {type: "new_note", familyId, noteId},
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
       if (messagesToSend.length === 0) {
-        logger.info("notifyNewNote: no per-user notifications to send");
-        return;
+        logger.info("notifyNewNote: no per-user notifications to send"); return;
       }
 
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
+      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
       let totalSuccess = 0; let totalFailure = 0;
       results.forEach((r) => {
         if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
+          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
         } else {
           totalFailure += 1;
         }
       });
-
-      logger.info("notifyNewNote: send result",
-          {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
+      logger.info("notifyNewNote: send result", {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AI Assistant — askAI + getAIUsage
+// AI — askAI + getAIUsage
 // ─────────────────────────────────────────────────────────────────────────────
 
 const {defineSecret} = require("firebase-functions/params");
@@ -1059,7 +957,7 @@ async function resolveAIDailyLimit(uid) {
  * Checks the daily counter and increments it atomically.
  * @param {string} uid
  * @param {number} limit
- * @return {Promise<number>} updated count
+ * @return {Promise<number>}
  */
 async function checkAndIncrementAIUsage(uid, limit) {
   const ref = admin.firestore()
@@ -1096,9 +994,7 @@ exports.askAI = onCall(
     },
     async (request) => {
       const uid = request.auth?.uid;
-      if (!uid) {
-        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
-      }
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
 
       const {messages, systemPrompt} = request.data || {};
 
@@ -1107,21 +1003,15 @@ exports.askAI = onCall(
       }
       const validRoles = ["user", "assistant"];
       const allValid = messages.every(
-          (m) => typeof m.role === "string" &&
-                 typeof m.content === "string" &&
-                 validRoles.includes(m.role),
+          (m) => typeof m.role === "string" && typeof m.content === "string" && validRoles.includes(m.role),
       );
-      if (!allValid) {
-        throw new HttpsError("invalid-argument", "messages non valido.");
-      }
+      if (!allValid) throw new HttpsError("invalid-argument", "messages non valido.");
       if (typeof systemPrompt !== "string" || systemPrompt.trim().length === 0) {
         throw new HttpsError("invalid-argument", "systemPrompt è richiesto.");
       }
 
       const totalChars = messages.reduce((acc, m) => acc + m.content.length, 0) + systemPrompt.length;
-      if (totalChars > 50000) {
-        throw new HttpsError("invalid-argument", "Payload troppo grande.");
-      }
+      if (totalChars > 50000) throw new HttpsError("invalid-argument", "Payload troppo grande.");
 
       const dailyLimit = await resolveAIDailyLimit(uid);
       const usageCount = await checkAndIncrementAIUsage(uid, dailyLimit);
@@ -1137,7 +1027,6 @@ exports.askAI = onCall(
       let reply;
       try {
         const fetch = (await import("node-fetch")).default;
-
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: {
@@ -1154,10 +1043,7 @@ exports.askAI = onCall(
         });
 
         if (res.status === 429) {
-          throw new HttpsError(
-              "resource-exhausted",
-              "Servizio AI temporaneamente sovraccarico. Riprova tra qualche secondo.",
-          );
+          throw new HttpsError("resource-exhausted", "Servizio AI temporaneamente sovraccarico. Riprova tra qualche secondo.");
         }
         if (!res.ok) {
           const errText = await res.text();
@@ -1167,10 +1053,7 @@ exports.askAI = onCall(
 
         const json = await res.json();
         reply = json?.content?.[0]?.text;
-
-        if (!reply) {
-          throw new HttpsError("internal", "Risposta AI non valida.");
-        }
+        if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
       } catch (e) {
         if (e instanceof HttpsError) throw e;
         logger.error("askAI: fetch failed", {error: e.message});
@@ -1178,16 +1061,12 @@ exports.askAI = onCall(
       }
 
       logger.info("askAI success", {uid, usageCount});
-
       return {reply, usageToday: usageCount, dailyLimit};
     },
 );
 
 exports.getAIUsage = onCall(
-    {
-      region: "europe-west1",
-      invoker: "public",
-    },
+    {region: "europe-west1", invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
@@ -1204,6 +1083,10 @@ exports.getAIUsage = onCall(
     },
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CALENDARIO
+// ─────────────────────────────────────────────────────────────────────────────
+
 exports.notifyNewCalendarEvent = onDocumentCreated(
     {
       document: "families/{familyId}/calendarEvents/{eventId}",
@@ -1215,16 +1098,13 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
 
       const eventData = event.data ? event.data.data() : null;
       if (!eventData) {
-        logger.warn("notifyNewCalendarEvent: missing event data");
-        return;
+        logger.warn("notifyNewCalendarEvent: missing event data"); return;
       }
-
       if (eventData.isDeleted === true) return;
 
       const creatorUid = eventData.createdBy || eventData.updatedBy || null;
       if (!creatorUid) {
-        logger.warn("notifyNewCalendarEvent: missing creatorUid");
-        return;
+        logger.warn("notifyNewCalendarEvent: missing creatorUid"); return;
       }
 
       logger.info("notifyNewCalendarEvent triggered", {familyId, eventId, creatorUid});
@@ -1232,32 +1112,22 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
       const creatorName = await resolveMemberName(familyId, creatorUid);
 
       const membersSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("members").get();
+          .collection("families").doc(familyId).collection("members").get();
 
       if (membersSnap.empty) {
-        logger.warn("notifyNewCalendarEvent: members subcollection is empty");
-        return;
+        logger.warn("notifyNewCalendarEvent: members subcollection is empty"); return;
       }
 
-      const memberUids = membersSnap.docs
-          .map((d) => d.id)
-          .filter((uid) => uid && uid !== creatorUid);
-
+      const memberUids = membersSnap.docs.map((d) => d.id).filter((uid) => uid && uid !== creatorUid);
       if (memberUids.length === 0) {
-        logger.info("notifyNewCalendarEvent: no targets (only creator)");
-        return;
+        logger.info("notifyNewCalendarEvent: no targets (only creator)"); return;
       }
 
       const eventTitle = eventData.title || "Nuovo evento";
       const startDate = eventData.startDate?.toDate?.();
       let dateStr = "";
       if (startDate) {
-        dateStr = startDate.toLocaleDateString("it-IT", {
-          timeZone: "Europe/Rome",
-          day: "numeric",
-          month: "long",
-        });
+        dateStr = startDate.toLocaleDateString("it-IT", {timeZone: "Europe/Rome", day: "numeric", month: "long"});
       }
 
       const title = "📅 Calendario";
@@ -1271,167 +1141,132 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewCalendarEvent");
         if (tokens.length === 0) continue;
 
-        const badge = await incrementCounterAndGetBadge({
-          familyId,
-          uid,
-          field: "calendar",
-        });
-
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "calendar"});
         messagesToSend.push({
           tokens,
           notification: {title, body},
-          data: {
-            type: "new_calendar_event",
-            familyId: familyId,
-            eventId: eventId,
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: "default",
-                badge,
-              },
-            },
-          },
+          data: {type: "new_calendar_event", familyId, eventId},
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
       if (messagesToSend.length === 0) {
-        logger.info("notifyNewCalendarEvent: no per-user notifications to send");
-        return;
+        logger.info("notifyNewCalendarEvent: no per-user notifications to send"); return;
       }
 
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
-      let totalSuccess = 0;
-      let totalFailure = 0;
+      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
+      let totalSuccess = 0; let totalFailure = 0;
       results.forEach((r) => {
         if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
+          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
         } else {
           totalFailure += 1;
         }
       });
-
-      logger.info("notifyNewCalendarEvent: send result", {
-        successCount: totalSuccess,
-        failureCount: totalFailure,
-        userTargets: messagesToSend.length,
-      });
+      logger.info("notifyNewCalendarEvent: send result", {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
 
-// ── Chat media: sottrai bytes subito quando il messaggio viene soft-deleted ───
+// ─────────────────────────────────────────────────────────────────────────────
+// SPESE
+// ─────────────────────────────────────────────────────────────────────────────
 
-exports.onChatMessageSoftDeleted = onDocumentWritten(
+exports.notifyNewExpense = onDocumentCreated(
     {
-      document: "families/{familyId}/chatMessages/{messageId}",
+      document: "families/{familyId}/expenses/{expenseId}",
       region: "europe-west1",
     },
     async (event) => {
       const familyId = event.params.familyId;
-      const before = event.data?.before?.exists ? event.data.before.data() : null;
-      const after = event.data?.after?.exists ? event.data.after.data() : null;
+      const expenseId = event.params.expenseId;
 
-      if (!before || !after) return;
-      if (before.isDeleted === true) return;
-      if (after.isDeleted !== true) return;
-
-      const mediaPath = after.mediaStoragePath || before.mediaStoragePath || "";
-      if (!mediaPath) return;
-
-      const mediaTypes = ["photo", "video", "audio", "document"];
-      const type = after.typeRaw || before.typeRaw || "";
-      if (!mediaTypes.includes(type)) return;
-
-      logger.info("onChatMessageSoftDeleted: freeing 512KB", {familyId, messageId: event.params.messageId});
-      await updateStorageBytes(familyId, -(512 * 1024), "chat");
-    },
-);
-
-exports.onDocumentHardDeleted = onDocumentWritten(
-    {
-      document: "families/{familyId}/documents/{docId}",
-      region: "europe-west1",
-    },
-    async (event) => {
-      const familyId = event.params.familyId;
-      const before = event.data?.before?.exists ? event.data.before.data() : null;
-      const after = event.data?.after?.exists ? event.data.after.data() : null;
-
-      if (!before || after) return;
-
-      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
-      if (sizeBefore <= 0) return;
-
-      logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
-      await updateStorageBytes(familyId, -sizeBefore, "documents");
-    },
-);
-
-exports.onPhotoCreated = onDocumentCreated(
-    {
-      document: "families/{familyId}/photos/{photoId}",
-      region: "europe-west1",
-    },
-    async (event) => {
-      const familyId = event.params.familyId;
-      const data = event.data ? event.data.data() : null;
-      if (!data) return;
-
-      if (!data.isDeleted && typeof data.fileSize === "number" && data.fileSize > 0) {
-        logger.info("onPhotoCreated: adding bytes", {familyId, fileSize: data.fileSize});
-        await updateStorageBytes(familyId, data.fileSize, "photos");
+      const expenseData = event.data ? event.data.data() : null;
+      if (!expenseData) {
+        logger.warn("notifyNewExpense: missing expense data"); return;
       }
+      if (expenseData.isDeleted) {
+        logger.info("notifyNewExpense: isDeleted=true, skip", {familyId, expenseId}); return;
+      }
+
+      const creatorUid = expenseData.createdByUid || expenseData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewExpense: missing creatorUid", {familyId, expenseId}); return;
+      }
+
+      logger.info("notifyNewExpense triggered", {familyId, expenseId, creatorUid});
+
+      const membersSnap = await admin.firestore()
+          .collection("families").doc(familyId).collection("members").get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewExpense: members subcollection is empty", {familyId}); return;
+      }
+
+      const memberUids = membersSnap.docs.map((d) => d.id).filter((uid) => uid && uid !== creatorUid);
+      if (memberUids.length === 0) {
+        logger.info("notifyNewExpense: no targets (only creator)", {familyId}); return;
+      }
+
+      const title = "💸 Nuova spesa registrata";
+      const expenseTitle = expenseData.title || "Spesa";
+      const amount = typeof expenseData.amount === "number" ?
+        `${expenseData.amount.toFixed(2).replace(".", ",")} €` : "";
+      const body = amount ? `${expenseTitle} · ${amount}` : expenseTitle;
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewExpense");
+        if (tokens.length === 0) {
+          logger.info("notifyNewExpense: user opted out or no tokens", {uid}); continue;
+        }
+
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "expenses"});
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {type: "new_expense", familyId, expenseId},
+          apns: {payload: {aps: {badge, sound: "default"}}},
+          android: {notification: {sound: "default"}},
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewExpense: no per-user notifications to send", {familyId}); return;
+      }
+
+      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
+      let totalSuccess = 0; let totalFailure = 0;
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+      logger.info("notifyNewExpense: send result", {familyId, expenseId, successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
 
-exports.onPhotoHardDeleted = onDocumentWritten(
-    {
-      document: "families/{familyId}/photos/{photoId}",
-      region: "europe-west1",
-    },
-    async (event) => {
-      const familyId = event.params.familyId;
-      const before = event.data?.before?.exists ? event.data.before.data() : null;
-      const after = event.data?.after?.exists ? event.data.after.data() : null;
-
-      if (!before || after) return;
-
-      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
-      if (sizeBefore <= 0) return;
-
-      logger.info("onPhotoHardDeleted: removing bytes", {familyId, sizeBefore});
-      await updateStorageBytes(familyId, -sizeBefore, "photos");
-    },
-);
-
-// ── getStorageUsage: restituisce usedBytes + breakdown per sezione ────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// STORAGE — getStorageUsage
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.getStorageUsage = onCall(
-    {
-      region: "europe-west1",
-      invoker: "public",
-    },
+    {region: "europe-west1", invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
-      if (!uid) {
-        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
-      }
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+
       const {familyId} = request.data || {};
       if (!familyId || typeof familyId !== "string") {
         throw new HttpsError("invalid-argument", "familyId richiesto.");
       }
+
       const memberSnap = await admin.firestore()
           .collection("families").doc(familyId)
-          .collection("members").doc(uid)
-          .get();
-      if (!memberSnap.exists) {
-        throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
-      }
+          .collection("members").doc(uid).get();
+      if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
 
       const snap = await storageStatsRef(familyId).get();
       const data = snap.exists ? snap.data() : {};
@@ -1448,6 +1283,7 @@ exports.getStorageUsage = onCall(
           chat: Math.max(0, Math.round(rawSections.chat || 0)),
           photos: Math.max(0, Math.round(rawSections.photos || 0)),
           salute: Math.max(0, Math.round(rawSections.salute || 0)),
+          expenses: Math.max(0, Math.round(rawSections.expenses || 0)),
           notes: Math.max(0, Math.round(rawSections.notes || 0)),
           calendar: Math.max(0, Math.round(rawSections.calendar || 0)),
           todo: Math.max(0, Math.round(rawSections.todo || 0)),
@@ -1456,18 +1292,29 @@ exports.getStorageUsage = onCall(
     },
 );
 
-// ── initStorageUsage: ricalcola tutto da zero e scrive il breakdown ───────────
+// ─────────────────────────────────────────────────────────────────────────────
+// STORAGE — initStorageUsage (ricalcolo completo da zero)
+//
+// Conteggio per sezione:
+// • documents → fileSize reale da KBDocument
+// • chat      → mediaFileSize reale per ogni messaggio con media;
+//               fallback 512KB per messaggi senza il campo (retrocompatibilità)
+//               I messaggi di testo NON occupano Firebase Storage.
+// • photos    → fileSize reale da KBFamilyPhoto (album condiviso)
+// • salute    → foto visite pediatriche (photoURLs), stima 200KB/foto.
+//               KBMedicalExam, KBTreatment, KBVaccine non hanno allegati su Storage.
+// • expenses  → KBExpense.attachedDocumentId punta a KBDocument (già in documents).
+//               KBExpense.receiptThumbnailData è Data locale SwiftData, non su Storage.
+//               → expenses = 0 per Storage.
+// • notes/calendar/todo → solo Firestore, niente file su Storage.
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.initStorageUsage = onCall(
-    {
-      region: "europe-west1",
-      invoker: "public",
-    },
+    {region: "europe-west1", invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
-      if (!uid) {
-        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
-      }
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+
       const {familyId} = request.data || {};
       if (!familyId || typeof familyId !== "string") {
         throw new HttpsError("invalid-argument", "familyId richiesto.");
@@ -1475,17 +1322,14 @@ exports.initStorageUsage = onCall(
 
       const memberSnap = await admin.firestore()
           .collection("families").doc(familyId)
-          .collection("members").doc(uid)
-          .get();
-      if (!memberSnap.exists) {
-        throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
-      }
+          .collection("members").doc(uid).get();
+      if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
 
       logger.info("initStorageUsage: starting", {uid, familyId});
 
       const kb = 1024;
 
-      // 1. Documenti
+      // ── 1. Documenti (fileSize reale) ─────────────────────────────────────
       const docsSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("documents")
@@ -1498,7 +1342,7 @@ exports.initStorageUsage = onCall(
         if (typeof size === "number" && size > 0) docBytes += size;
       });
 
-      // 2. Chat media (solo messaggi non eliminati con media)
+      // ── 2. Chat media (mediaFileSize reale, fallback 512KB) ────────────────
       const chatSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("chatMessages")
@@ -1506,15 +1350,17 @@ exports.initStorageUsage = onCall(
           .get();
 
       const mediaTypes = ["photo", "video", "audio", "document"];
-      let chatMediaCount = 0;
+      let chatBytes = 0;
       chatSnap.forEach((d) => {
         const hasMedia = d.get("mediaStoragePath");
         const type = d.get("typeRaw") || "";
-        if (hasMedia && mediaTypes.includes(type)) chatMediaCount++;
+        if (hasMedia && mediaTypes.includes(type)) {
+          const size = d.get("mediaFileSize");
+          chatBytes += (typeof size === "number" && size > 0) ? size : 512 * kb;
+        }
       });
-      const chatBytes = chatMediaCount * 512 * kb;
 
-      // 3. Foto e video
+      // ── 3. Foto album condiviso (fileSize reale) ───────────────────────────
       const photosSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("photos")
@@ -1527,49 +1373,28 @@ exports.initStorageUsage = onCall(
         if (typeof size === "number" && size > 0) photoBytes += size;
       });
 
-      // 4. Salute
-      const [visitsSnap, examsSnap, treatmentsSnap, vaccinesSnap] = await Promise.all([
-        admin.firestore().collection("families").doc(familyId)
-            .collection("medicalVisits").where("isDeleted", "==", false).get(),
-        admin.firestore().collection("families").doc(familyId)
-            .collection("medicalExams").where("isDeleted", "==", false).get(),
-        admin.firestore().collection("families").doc(familyId)
-            .collection("treatments").where("isDeleted", "==", false).get(),
-        admin.firestore().collection("families").doc(familyId)
-            .collection("vaccines").where("isDeleted", "==", false).get(),
-      ]);
-      const saluteBytes =
-          (visitsSnap.size + treatmentsSnap.size) * 2 * kb +
-          (examsSnap.size + vaccinesSnap.size) * kb;
-
-      // 5. Note
-      const notesSnap = await admin.firestore()
+      // ── 4. Salute: foto visite pediatriche (stima 200KB/foto) ─────────────
+      // KBMedicalExam, KBTreatment, KBVaccine non hanno allegati su Storage.
+      const visitsSnap = await admin.firestore()
           .collection("families").doc(familyId)
-          .collection("notes")
+          .collection("medicalVisits")
           .where("isDeleted", "==", false)
           .get();
-      const noteBytes = notesSnap.size * 3 * kb;
 
-      // 6. Calendario
-      const calSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("calendarEvents")
-          .where("isDeleted", "==", false)
-          .get();
-      const calBytes = calSnap.size * kb;
+      let saluteBytes = 0;
+      visitsSnap.forEach((d) => {
+        const photoURLs = d.get("photoURLs");
+        if (Array.isArray(photoURLs) && photoURLs.length > 0) {
+          saluteBytes += photoURLs.length * VISIT_PHOTO_ESTIMATE_BYTES;
+        }
+      });
 
-      // 7. Todo
-      const todoSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("todos")
-          .where("isDeleted", "==", false)
-          .get();
-      const todoBytes = todoSnap.size * kb;
+      // ── 5. Expense: attachedDocumentId → già in documents, niente extra ───
+      const expensesBytes = 0;
 
-      const totalBytes = docBytes + chatBytes + photoBytes +
-                         saluteBytes + noteBytes + calBytes + todoBytes;
+      // ── Totale ────────────────────────────────────────────────────────────
+      const totalBytes = docBytes + chatBytes + photoBytes + saluteBytes + expensesBytes;
 
-      // Sovrascrive tutto (merge: false per pulizia completa)
       await storageStatsRef(familyId).set({
         usedBytes: totalBytes,
         sections: {
@@ -1577,170 +1402,142 @@ exports.initStorageUsage = onCall(
           chat: chatBytes,
           photos: photoBytes,
           salute: saluteBytes,
-          notes: noteBytes,
-          calendar: calBytes,
-          todo: todoBytes,
+          expenses: expensesBytes,
         },
         lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
         initializedAt: admin.firestore.FieldValue.serverTimestamp(),
         initializedBy: uid,
       }, {merge: false});
 
-      logger.info("initStorageUsage: completed", {
-        familyId, docBytes, chatBytes, photoBytes,
-        saluteBytes, noteBytes, calBytes, todoBytes, totalBytes,
-      });
+      logger.info("initStorageUsage: completed", {familyId, docBytes, chatBytes, photoBytes, saluteBytes, expensesBytes, totalBytes});
 
       return {
-        docBytes, chatBytes, photoBytes,
-        saluteBytes, noteBytes, calBytes, todoBytes,
+        docBytes,
+        chatBytes,
+        photoBytes,
+        saluteBytes,
+        expensesBytes,
         totalBytes,
         quotaBytes: 200 * kb * kb,
       };
     },
 );
 
-// ── Notifica nuova spesa ──────────────────────────────────────────────────────
-//
-// Trigger: onDocumentCreated su families/{familyId}/expenses/{expenseId}
-// Preferenza utente: notificationPrefs.notifyOnNewExpense (default ON)
-// Payload push: type=new_expense, familyId, expenseId
-// Counter badge: expenses
-//
-exports.notifyNewExpense = onDocumentCreated(
-    {
-      document: "families/{familyId}/expenses/{expenseId}",
-      region: "europe-west1",
-    },
-    async (event) => {
-      const familyId = event.params.familyId;
-      const expenseId = event.params.expenseId;
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCOUNT DELETION
+// ─────────────────────────────────────────────────────────────────────────────
 
-      const expenseData = event.data ? event.data.data() : null;
-      if (!expenseData) {
-        logger.warn("notifyNewExpense: missing expense data");
-        return;
-      }
+const FAMILY_SUBCOLLECTIONS = [
+  "members",
+  "children",
+  "documents",
+  "documentCategories",
+  "todos",
+  "invites",
+];
 
-      // Salta le spese soft-deleted (non dovrebbero arrivare da onDocumentCreated
-      // ma è un guard di sicurezza)
-      if (expenseData.isDeleted) {
-        logger.info("notifyNewExpense: isDeleted=true, skip", {familyId, expenseId});
-        return;
-      }
+/**
+ * Deletes all documents in a Firestore collection.
+ * @param {object} colRef
+ * @param {number} batchSize
+ * @return {Promise<void>}
+ */
+async function deleteCollection(colRef, batchSize = 300) {
+  let snap = await colRef.limit(batchSize).get();
+  while (!snap.empty) {
+    const batch = admin.firestore().batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+    snap = await colRef.limit(batchSize).get();
+  }
+}
 
-      const creatorUid = expenseData.createdByUid || expenseData.updatedBy || null;
-      if (!creatorUid) {
-        logger.warn("notifyNewExpense: missing creatorUid", {familyId, expenseId});
-        return;
-      }
+/**
+ * Deletes all files in Cloud Storage with a given prefix.
+ * @param {string} prefix
+ * @return {Promise<void>}
+ */
+async function deleteStoragePrefix(prefix) {
+  const bucket = admin.storage().bucket(STORAGE_BUCKET);
+  const [files] = await bucket.getFiles({prefix});
+  if (!files.length) return;
 
-      logger.info("notifyNewExpense triggered", {familyId, expenseId, creatorUid});
+  const chunkSize = 50;
+  for (let i = 0; i < files.length; i += chunkSize) {
+    const chunk = files.slice(i, i + chunkSize);
+    await Promise.allSettled(chunk.map((f) => f.delete()));
+  }
+}
 
-      // Recupera tutti i membri della famiglia
-      const membersSnap = await admin.firestore()
-          .collection("families")
-          .doc(familyId)
-          .collection("members")
-          .get();
+/**
+ * Counts the number of active members in a family.
+ * @param {string} familyId
+ * @return {Promise<number>}
+ */
+async function countActiveMembers(familyId) {
+  const snap = await admin.firestore()
+      .collection("families").doc(familyId).collection("members").get();
+  return snap.docs.filter((d) => d.get("isDeleted") !== true).length;
+}
 
-      if (membersSnap.empty) {
-        logger.warn("notifyNewExpense: members subcollection is empty", {familyId});
-        return;
-      }
+/**
+ * Completely deletes a family and all its data.
+ * @param {string} familyId
+ * @return {Promise<void>}
+ */
+async function deleteFamilyCompletely(familyId) {
+  const db = admin.firestore();
+  for (const sub of FAMILY_SUBCOLLECTIONS) {
+    await deleteCollection(db.collection(`families/${familyId}/${sub}`));
+  }
+  await db.collection("families").doc(familyId).delete().catch(() => {});
+  await deleteStoragePrefix(`families/${familyId}/`);
+}
 
-      // Notifica tutti i membri tranne chi ha creato la spesa
-      const memberUids = membersSnap.docs
-          .map((d) => d.id)
-          .filter((uid) => uid && uid !== creatorUid);
+exports.deleteAccount = onCall(
+    {region: "europe-west1", invoker: "public"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Not authenticated");
 
-      if (memberUids.length === 0) {
-        logger.info("notifyNewExpense: no targets (only creator)", {familyId});
-        return;
-      }
+      const db = admin.firestore();
+      logger.info("deleteAccount started", {uid});
 
-      // Titolo e corpo della notifica
-      const title = "💸 Nuova spesa registrata";
-      const expenseTitle = expenseData.title || "Spesa";
-      const amount = typeof expenseData.amount === "number" ?
-        `${expenseData.amount.toFixed(2).replace(".", ",")} €` :
-        "";
-      const body = amount ? `${expenseTitle} · ${amount}` : expenseTitle;
+      const membershipsRef = db.collection("users").doc(uid).collection("memberships");
+      const membershipsSnap = await membershipsRef.get();
+      const familyIds = membershipsSnap.docs.map((d) => d.id);
 
-      const messagesToSend = [];
-
-      for (const uid of memberUids) {
-        // Controlla preferenza notifiche spese (default ON se non impostata)
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewExpense");
-        if (tokens.length === 0) {
-          logger.info("notifyNewExpense: user opted out or no tokens", {uid});
-          continue;
+      for (const familyId of familyIds) {
+        let memberCount = 0;
+        try {
+          memberCount = await countActiveMembers(familyId);
+        } catch (e) {
+          memberCount = 0;
         }
 
-        // Incrementa il counter expenses e ottieni il badge totale
-        const badge = await incrementCounterAndGetBadge({
-          familyId,
-          uid,
-          field: "expenses",
-        });
-
-        messagesToSend.push({
-          tokens,
-          notification: {title, body},
-          data: {
-            type: "new_expense",
-            familyId: familyId,
-            expenseId: expenseId,
-          },
-          apns: {
-            payload: {
-              aps: {
-                badge,
-                sound: "default",
-              },
-            },
-          },
-          android: {
-            notification: {
-              sound: "default",
-            },
-          },
-        });
-      }
-
-      if (messagesToSend.length === 0) {
-        logger.info("notifyNewExpense: no per-user notifications to send", {familyId});
-        return;
-      }
-
-      // Invia tutte le notifiche
-      const results = await Promise.allSettled(
-          messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
-      );
-
-      let totalSuccess = 0;
-      let totalFailure = 0;
-
-      results.forEach((r) => {
-        if (r.status === "fulfilled") {
-          totalSuccess += r.value.successCount;
-          totalFailure += r.value.failureCount;
+        if (memberCount > 1) {
+          await db.collection("families").doc(familyId).collection("members").doc(uid).delete().catch(() => {});
         } else {
-          totalFailure += 1;
+          await deleteFamilyCompletely(familyId);
         }
-      });
 
-      logger.info("notifyNewExpense: send result", {
-        familyId,
-        expenseId,
-        successCount: totalSuccess,
-        failureCount: totalFailure,
-        userTargets: messagesToSend.length,
-      });
+        await membershipsRef.doc(familyId).delete().catch(() => {});
+      }
+
+      await deleteCollection(db.collection(`users/${uid}/fcmTokens`)).catch(() => {});
+      await deleteCollection(db.collection(`users/${uid}/memberships`)).catch(() => {});
+      await db.collection("users").doc(uid).delete().catch(() => {});
+      await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
+      await admin.auth().deleteUser(uid);
+
+      logger.info("deleteAccount completed", {uid, families: familyIds.length});
+      return {ok: true, familiesProcessed: familyIds.length};
     },
 );
 
-// ── Garbage Collector notturno ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// GARBAGE COLLECTOR NOTTURNO
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.garbageCollectDeleted = onSchedule(
     {
@@ -1757,9 +1554,7 @@ exports.garbageCollectDeleted = onSchedule(
 
       logger.info("garbageCollectDeleted: start", {cutoff: cutoff.toISOString()});
 
-      const familiesSnap = await db.collection("families")
-          .where("isDeleted", "!=", true)
-          .get();
+      const familiesSnap = await db.collection("families").where("isDeleted", "!=", true).get();
 
       let totalDocsDeleted = 0;
       let totalChatDeleted = 0;
@@ -1785,9 +1580,7 @@ exports.garbageCollectDeleted = onSchedule(
               await bucket.file(storagePath).delete();
               logger.info("GC: deleted Storage blob", {familyId, storagePath});
             } catch (e) {
-              if (e.code !== 404) {
-                logger.warn("GC: Storage delete failed", {familyId, storagePath, err: e.message});
-              }
+              if (e.code !== 404) logger.warn("GC: Storage delete failed", {familyId, storagePath, err: e.message});
             }
           }
 
@@ -1800,6 +1593,8 @@ exports.garbageCollectDeleted = onSchedule(
         }
 
         // ── 2. Chat media soft-deleted oltre 30gg ──
+        // NON sottraiamo bytes chat qui: onChatMessageSoftDeleted lo ha già fatto
+        // al momento della soft-deletion. Qui solo pulizia del blob su Storage.
         const chatSnap = await db.collection("families").doc(familyId)
             .collection("chatMessages")
             .where("isDeleted", "==", true)
@@ -1815,22 +1610,14 @@ exports.garbageCollectDeleted = onSchedule(
               await bucket.file(mediaPath).delete();
               logger.info("GC: deleted chat media blob", {familyId, mediaPath});
               totalChatDeleted++;
-              // NON sottraiamo bytes chat qui — onChatMessageSoftDeleted lo ha già fatto
             } catch (e) {
-              if (e.code !== 404) {
-                logger.warn("GC: chat media delete failed", {familyId, mediaPath, err: e.message});
-              }
+              if (e.code !== 404) logger.warn("GC: chat media delete failed", {familyId, mediaPath, err: e.message});
             }
           }
           await msg.ref.delete();
         }
       }
 
-      logger.info("garbageCollectDeleted: complete", {
-        totalDocsDeleted,
-        totalChatDeleted,
-        totalBytesFreed,
-        families: familiesSnap.size,
-      });
+      logger.info("garbageCollectDeleted: complete", {totalDocsDeleted, totalChatDeleted, totalBytesFreed, families: familiesSnap.size});
     },
 );
