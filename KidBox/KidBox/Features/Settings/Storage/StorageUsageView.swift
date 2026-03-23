@@ -18,8 +18,21 @@ struct StorageUsageView: View {
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
+    
     // Recupera familyId: prima dal coordinator, fallback da SwiftData locale.
-    // Funziona anche sul simulatore al primo lancio quando activeFamilyId è ancora nil.
     private var familyId: String {
         if let fid = coordinator.activeFamilyId, !fid.isEmpty { return fid }
         return families.first?.id ?? ""
@@ -47,14 +60,18 @@ struct StorageUsageView: View {
                 Section("Utilizzo per sezione") {
                     ForEach(vm.sections) { section in
                         SectionRow(section: section, totalBytes: StorageUsageViewModel.totalQuotaBytes)
+                            .listRowBackground(cardBackground)
                     }
                 }
             }
             
             Section("Piani disponibili") {
                 planRow(name: "Free",  quota: StorageUsageViewModel.quotaFree,  price: "Gratis",     isCurrent: true)
+                    .listRowBackground(cardBackground)
                 planRow(name: "Pro",   quota: StorageUsageViewModel.quotaPro,   price: "€4,99/mese", isCurrent: false)
+                    .listRowBackground(cardBackground)
                 planRow(name: "Max",   quota: StorageUsageViewModel.quotaMax,   price: "€9,99/mese", isCurrent: false)
+                    .listRowBackground(cardBackground)
             }
             
             Section {
@@ -79,8 +96,11 @@ struct StorageUsageView: View {
                     }
                 }
             }
+            .listRowBackground(cardBackground)
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Utilizzo spazio")
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
@@ -227,12 +247,10 @@ struct StorageUsageView: View {
             let sectionTotal = max(1, sectionsWithBytes.reduce(0) { $0 + $1.bytes })
             
             ZStack(alignment: .leading) {
-                // Sfondo spazio libero
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color.secondary.opacity(0.15))
                     .frame(width: totalWidth, height: 12)
                 
-                // Segmenti colorati — clipped a usedWidth, mai oltre
                 HStack(spacing: 1) {
                     ForEach(sectionsWithBytes) { s in
                         RoundedRectangle(cornerRadius: 2)

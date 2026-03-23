@@ -11,11 +11,6 @@ import FirebaseAuth
 import OSLog
 
 /// Displays the destination for editing a specific child.
-///
-/// This view resolves a `KBChild` from SwiftData by id and routes to `EditChildView`.
-/// Logging strategy:
-/// - Log only meaningful events (fetch success/failure).
-/// - Avoid noisy logs for body recomputation.
 struct ChildDestinationView: View {
     @Environment(\.modelContext) private var modelContext
     let childId: String
@@ -49,16 +44,9 @@ struct ChildDestinationView: View {
 }
 
 /// Allows editing a child and deleting it.
-///
-/// Persistence model:
-/// - Save: updates local SwiftData immediately, then best-effort remote upsert.
-/// - Delete: hard delete locally, then best-effort remote soft delete so other devices remove it via inbound.
-///
-/// Logging strategy:
-/// - Log user actions and outcomes (save/delete start, local save OK/failed, remote sync OK/failed).
-/// - No `print`.
 struct EditChildView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
     
     @Bindable var child: KBChild
@@ -68,10 +56,25 @@ struct EditChildView: View {
     @State private var errorMessage = ""
     @State private var showDeleteConfirm = false
     
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
+    
     var body: some View {
         Form {
             Section("Dati") {
                 TextField("Nome", text: $child.name)
+                    .listRowBackground(cardBackground)
                 
                 DatePicker(
                     "Data di nascita",
@@ -81,12 +84,14 @@ struct EditChildView: View {
                     ),
                     displayedComponents: .date
                 )
+                .listRowBackground(cardBackground)
             }
             
             Section {
                 Button("Salva") {
                     save()
                 }
+                .listRowBackground(cardBackground)
             }
             
             Section {
@@ -98,12 +103,15 @@ struct EditChildView: View {
                         Text("Elimina figlio")
                     }
                 }
+                .listRowBackground(cardBackground)
             } header: {
                 Text("Zona Pericolosa")
             } footer: {
                 Text("Questa azione non può essere annullata. Il figlio verrà eliminato da tutti i dispositivi della famiglia.")
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Figlio")
         .confirmationDialog(
             "Eliminare \(child.name)?",
@@ -128,7 +136,6 @@ struct EditChildView: View {
         let familyId = child.familyId ?? ""
         KBLog.data.info("EditChildView: save requested childId=\(childId, privacy: .public) familyId=\(familyId, privacy: .public)")
         
-        // Minimal validation.
         let trimmed = child.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             errorMessage = "Inserisci un nome."
@@ -137,15 +144,12 @@ struct EditChildView: View {
             return
         }
         child.name = trimmed
-        
-        // LWW metadata.
         child.updatedAt = Date()
         
         do {
             try modelContext.save()
             KBLog.data.info("EditChildView: local save OK childId=\(childId, privacy: .public)")
             
-            // Remote best-effort.
             Task {
                 do {
                     try await ChildSyncService().upsert(child: child)
@@ -170,12 +174,10 @@ struct EditChildView: View {
         KBLog.data.info("EditChildView: delete requested childId=\(childId, privacy: .public) familyId=\(familyId, privacy: .public)")
         
         do {
-            // 1) Hard delete local.
             modelContext.delete(child)
             try modelContext.save()
             KBLog.data.info("EditChildView: local delete OK childId=\(childId, privacy: .public)")
             
-            // 2) Remote soft delete best-effort.
             Task {
                 do {
                     try await ChildSyncService().softDeleteChild(
@@ -193,7 +195,6 @@ struct EditChildView: View {
                 }
             }
             
-            // 3) Navigate back.
             dismiss()
         } catch {
             errorMessage = "Errore locale: \(error.localizedDescription)"

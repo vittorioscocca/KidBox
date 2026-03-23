@@ -13,7 +13,22 @@ import Combine
 struct GroceryListView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     @Query private var allItems: [KBGroceryItem]
     
@@ -69,6 +84,7 @@ struct GroceryListView: View {
             if toBuy.isEmpty && purchased.isEmpty {
                 Text("Lista vuota")
                     .foregroundStyle(.secondary)
+                    .listRowBackground(cardBackground)
             }
             
             if !toBuy.isEmpty {
@@ -76,6 +92,7 @@ struct GroceryListView: View {
                     Section(group.category) {
                         ForEach(group.items) { item in
                             row(item)
+                                .listRowBackground(cardBackground)
                         }
                         .onDelete { offsets in
                             deleteItems(offsets: offsets, from: group.items)
@@ -89,6 +106,7 @@ struct GroceryListView: View {
                 Section {
                     ForEach(purchased) { item in
                         row(item)
+                            .listRowBackground(cardBackground)
                     }
                     .onDelete { offsets in
                         deleteItems(offsets: offsets, from: purchased)
@@ -109,6 +127,8 @@ struct GroceryListView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
+        .background(backgroundColor)
         .navigationTitle("Spesa")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -135,15 +155,12 @@ struct GroceryListView: View {
         }
         .onAppear {
             BadgeManager.shared.activeSections.insert("shopping")
-            // Realtime: avvia una sola volta
             guard !didStartRealtime else { return }
             didStartRealtime = true
             SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
-            // Fallback: se onReceive non ha ancora scattato (cold start)
             consumePendingShare()
         }
-        // onReceive: scatta anche se GroceryListView era già montata
         .onReceive(coordinator.$pendingShareText.compactMap { $0 }) { text in
             consumePendingShare()
         }
@@ -238,8 +255,6 @@ struct GroceryListView: View {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
         if lines.count > 1 {
-            // Lista multi-riga → crea tutti gli articoli direttamente,
-            // senza aprire lo sheet (stessa UX del todo multi-item)
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
             for line in lines {
@@ -264,7 +279,6 @@ struct GroceryListView: View {
             try? modelContext.save()
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
         } else {
-            // Singolo elemento → apri lo sheet con prefill
             sharePrefillName = lines.first ?? text
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 showAddSheet = true

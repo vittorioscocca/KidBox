@@ -13,25 +13,21 @@ import SwiftData
 import Combine
 
 /// Family settings hub.
-///
-/// Responsibilities:
-/// - Shows current family summary and members list (local SwiftData).
-/// - Provides navigation to invite/join/setup routes.
-/// - Starts/stops realtime listeners for members + children while the view is visible.
-///
-/// Logging strategy (important for SwiftUI views):
-/// - Avoid logging in `body` (recomputed frequently).
-/// - Log only lifecycle transitions and user-triggered actions.
-/// - Use `KBLog.*` and keep messages short but searchable.
 struct FamilySettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
     
     @Query private var families: [KBFamily]
     @Query private var members: [KBFamilyMember]
-    
-    // ⚠️ Compatibilità con route legacy `.editFamily(familyId:childId:)`.
-    // NON renderizziamo children qui (niente card figli), li usiamo solo per ricavare un childId.
     @Query private var allChildren: [KBChild]
     
     @State private var showLeaveFamilyConfirm = false
@@ -40,8 +36,6 @@ struct FamilySettingsView: View {
     @State private var showRevokeConfirm = false
     @State private var revokeError: String?
     
-    /// La famiglia attiva: prima cerca per activeFamilyId del coordinator,
-    /// poi fallback a families.first (primo avvio, utente con una sola famiglia).
     private var family: KBFamily? {
         if let activeId = coordinator.activeFamilyId {
             return families.first(where: { $0.id == activeId }) ?? families.first
@@ -50,8 +44,6 @@ struct FamilySettingsView: View {
     }
     private var hasFamily: Bool { family != nil }
     
-    /// Primo childId disponibile per la family (serve solo per la route legacy).
-    /// Se non esiste, ritorna stringa vuota: la destination deve gestire fallback.
     private var firstChildIdForRoute: String {
         guard let family else { return "" }
         return allChildren.first(where: { $0.familyId == family.id })?.id ?? ""
@@ -76,7 +68,6 @@ struct FamilySettingsView: View {
     private var currentUid: String { Auth.auth().currentUser?.uid ?? "" }
     private var isOwner: Bool { family?.createdBy == currentUid }
     
-    /// Membri attivi (non eliminati) della famiglia corrente
     private var activeMembers: [KBFamilyMember] {
         guard let fid = family?.id else { return [] }
         return members
@@ -84,25 +75,28 @@ struct FamilySettingsView: View {
             .sorted { displayLabel(for: $0) < displayLabel(for: $1) }
     }
     
-    /// Il bottone "Esci" è visibile solo se ci sono almeno 2 membri attivi
     private var canLeave: Bool { activeMembers.count >= 2 }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                header
-                
-                if hasFamily {
-                    familySummaryCard
-                    familyMembersCard
-                    actionsWithFamily
-                    if canLeave { dangerZone }
-                } else {
-                    emptyStateCard
-                    actionsWithoutFamily
+        ZStack {
+            backgroundColor.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 12) {
+                    header
+                    
+                    if hasFamily {
+                        familySummaryCard
+                        familyMembersCard
+                        actionsWithFamily
+                        if canLeave { dangerZone }
+                    } else {
+                        emptyStateCard
+                        actionsWithoutFamily
+                    }
                 }
+                .padding()
             }
-            .padding()
         }
         .navigationTitle("Family")
         .onAppear {
@@ -119,12 +113,10 @@ struct FamilySettingsView: View {
             guard let fid = family?.id, fid == revokedFamilyId else { return }
             KBLog.sync.info("FamilySettingsView: currentUserRevoked received familyId=\(revokedFamilyId, privacy: .public)")
             Task { @MainActor in
-                // Wipe local data and return to root
                 do {
                     let service = FamilyLeaveService(modelContext: modelContext)
                     try await service.leaveFamily(familyId: revokedFamilyId)
                 } catch {
-                    // Wipe failed (e.g. already wiped) — still reset to root
                     KBLog.sync.error("FamilySettingsView: post-revoke wipe failed: \(error.localizedDescription, privacy: .public)")
                 }
                 coordinator.setActiveFamily(nil)
@@ -173,7 +165,7 @@ struct FamilySettingsView: View {
         }
     }
     
-    // MARK: - Lifecycle (logs only here, not in body)
+    // MARK: - Lifecycle
     
     @MainActor
     private func onAppearStartRealtime() {
@@ -181,7 +173,6 @@ struct FamilySettingsView: View {
             KBLog.navigation.debug("FamilySettingsView appeared (no family)")
             return
         }
-        
         KBLog.navigation.info("FamilySettingsView appeared familyId=\(fid, privacy: .public) start realtime (members+children)")
         SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
         SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
@@ -200,7 +191,7 @@ struct FamilySettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Famiglia")
                 .font(.title2).bold()
-            Text("Qui gestisci la famiglia e inviti l’altro genitore.")
+            Text("Qui gestisci la famiglia e inviti l'altro genitore.")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -217,10 +208,7 @@ struct FamilySettingsView: View {
             trailingSystemImage: "pencil",
             trailingAction: {
                 guard let family else { return }
-                
                 KBLog.navigation.debug("FamilySettingsView: tap editFamily familyId=\(family.id, privacy: .public)")
-                
-                // Route legacy: richiede childId.
                 coordinator.navigate(
                     to: .editFamily(
                         familyId: family.id,
@@ -264,7 +252,6 @@ struct FamilySettingsView: View {
                             
                             Spacer()
                             
-                            // Bottone revoca: visibile solo all'owner, non su se stesso
                             if isOwner && m.userId != currentUid {
                                 Button {
                                     memberToRevoke = m
@@ -290,7 +277,7 @@ struct FamilySettingsView: View {
     private var actionsWithFamily: some View {
         VStack(spacing: 12) {
             KBSettingsCard(
-                title: "Invita l’altro genitore o un altro componente della famiglia",
+                title: "Invita l'altro genitore o un altro componente della famiglia",
                 subtitle: "Genera un codice e condividilo.",
                 systemImage: "qrcode",
                 style: .primary,
@@ -302,7 +289,7 @@ struct FamilySettingsView: View {
             
             KBSettingsCard(
                 title: "Entra con codice",
-                subtitle: "Usa un codice se vuoi unirti a un’altra famiglia.",
+                subtitle: "Usa un codice se vuoi unirti a un'altra famiglia.",
                 systemImage: "key.fill",
                 style: .secondary,
                 action: {
@@ -352,7 +339,7 @@ struct FamilySettingsView: View {
             
             KBSettingsCard(
                 title: "Entra con codice",
-                subtitle: "Se l’altro genitore ha già creato la famiglia, inserisci il codice.",
+                subtitle: "Se l'altro genitore ha già creato la famiglia, inserisci il codice.",
                 systemImage: "key.fill",
                 style: .secondary,
                 action: {
@@ -365,20 +352,10 @@ struct FamilySettingsView: View {
     
     // MARK: - Actions
     
-    /// Leaves the current family.
-    ///
-    /// Expected side effects:
-    /// - Local data for that family is removed from this device (by `FamilyLeaveService`).
-    /// - UI navigates back to root.
-    ///
-    /// Logging:
-    /// - Info on start + success, error on failure.
     @MainActor
     private func leaveFamily() async {
         guard let familyId = family?.id else { return }
-        
         KBLog.sync.info("FamilySettingsView: leaving familyId=\(familyId, privacy: .public)")
-        
         do {
             let service = FamilyLeaveService(modelContext: modelContext)
             try await service.leaveFamily(familyId: familyId)
@@ -408,8 +385,6 @@ struct FamilySettingsView: View {
     
     // MARK: - Name sync helpers
     
-    /// Chiamato all'onAppear: allinea KBFamilyMember.displayName con KBUserProfile
-    /// (self-healing nel caso in cui il cambio nome sia avvenuto offline o su altro device).
     private func syncMyMemberName() {
         let uid = currentUid
         guard !uid.isEmpty else { return }
@@ -431,25 +406,20 @@ struct FamilySettingsView: View {
         updateMyMemberDisplayName(name)
     }
     
-    /// Aggiorna il displayName del membro corrente:
-    /// 1. Localmente su SwiftData (effetto immediato nella lista)
-    /// 2. Su Firestore (propagato agli altri device)
     private func updateMyMemberDisplayName(_ name: String) {
         let uid = currentUid
         guard !uid.isEmpty, let fid = family?.id else { return }
         
-        // 1. SwiftData locale
         let desc = FetchDescriptor<KBFamilyMember>(
             predicate: #Predicate { $0.userId == uid && $0.familyId == fid }
         )
         if let member = try? modelContext.fetch(desc).first {
-            guard member.displayName != name else { return } // evita write inutili
+            guard member.displayName != name else { return }
             member.displayName = name
             try? modelContext.save()
             KBLog.sync.debug("FamilySettings: updated local member displayName=\(name, privacy: .public)")
         }
         
-        // 2. Firestore remoto
         Task {
             do {
                 try await Firestore.firestore()

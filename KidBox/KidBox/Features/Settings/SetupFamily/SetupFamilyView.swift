@@ -12,15 +12,6 @@ import CryptoKit
 internal import os
 
 /// Setup / modifica della famiglia.
-///
-/// Modalità:
-/// - `.create`: crea una nuova famiglia + almeno 1 figlio (draft), genera e salva la master key.
-/// - `.edit`: modifica il nome famiglia e gestisce i figli (lista + aggiungi/elimina).
-///
-/// Note importanti:
-/// - Niente `print`: usa `KBLog` (e log solo in punti “stabili”, non nel `body`).
-/// - In view SwiftUI, evitare log in computed properties che vengono rivalutati spesso.
-/// - La logica non cambia: sostituzione `print` -> log, più commenti e piccoli guard rail (senza cambiare flusso).
 struct SetupFamilyView: View {
     enum Mode {
         case create
@@ -29,7 +20,16 @@ struct SetupFamilyView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme)  private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
     
     @Query private var allChildren: [KBChild]
     
@@ -56,52 +56,55 @@ struct SetupFamilyView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                header
-                
-                KBSettingsCardWithExtra(
-                    title: "Famiglia",
-                    subtitle: modeSubtitle,
-                    systemImage: "person.2.fill",
-                    style: .info,
-                    action: nil
-                ) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        TextField("Nome famiglia", text: $familyName)
-                            .textInputAutocapitalization(.words)
-                            .textFieldStyle(.roundedBorder)
-                    }
-                }
-                
-                setupFamilyChildrenCard
-                
-                if let errorText {
-                    KBSettingsCard(
-                        title: "Errore",
-                        subtitle: errorText,
-                        systemImage: "exclamationmark.triangle",
-                        style: .danger,
+        ZStack {
+            backgroundColor.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 12) {
+                    header
+                    
+                    KBSettingsCardWithExtra(
+                        title: "Famiglia",
+                        subtitle: modeSubtitle,
+                        systemImage: "person.2.fill",
+                        style: .info,
                         action: nil
+                    ) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            TextField("Nome famiglia", text: $familyName)
+                                .textInputAutocapitalization(.words)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                    }
+                    
+                    setupFamilyChildrenCard
+                    
+                    if let errorText {
+                        KBSettingsCard(
+                            title: "Errore",
+                            subtitle: errorText,
+                            systemImage: "exclamationmark.triangle",
+                            style: .danger,
+                            action: nil
+                        )
+                    }
+                    
+                    KBSettingsCard(
+                        title: isBusy ? buttonBusyTitle : buttonTitle,
+                        subtitle: buttonSubtitle,
+                        systemImage: "checkmark.circle.fill",
+                        style: .primary,
+                        action: { Task { await primaryAction() } }
                     )
+                    .disabled(primaryDisabled)
                 }
-                
-                KBSettingsCard(
-                    title: isBusy ? buttonBusyTitle : buttonTitle,
-                    subtitle: buttonSubtitle,
-                    systemImage: "checkmark.circle.fill",
-                    style: .primary,
-                    action: { Task { await primaryAction() } }
-                )
-                .disabled(primaryDisabled)
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(navTitle)
         .onAppear {
             hydrateIfNeeded()
             
-            // children realtime solo in edit mode (come prima)
             if case let .edit(family, _) = mode {
                 KBLog.sync.info("SetupFamilyView appear (edit) familyId=\(family.id, privacy: .public)")
                 SyncCenter.shared.startChildrenRealtime(familyId: family.id, modelContext: modelContext)
@@ -186,7 +189,6 @@ struct SetupFamilyView: View {
         return nil
     }
     
-    /// In edit mode, i figli derivano dalla query globale filtrata per familyId.
     private var childrenForEditFamily: [KBChild] {
         guard let fid = familyIdInEdit else { return [] }
         return allChildren
@@ -363,8 +365,6 @@ struct SetupFamilyView: View {
     
     // MARK: - Hydrate
     
-    /// In edit mode inizializza i campi UI una sola volta.
-    /// Non loggare nel `body`: qui è un punto stabile.
     private func hydrateIfNeeded() {
         guard !didHydrate else { return }
         didHydrate = true
@@ -392,12 +392,6 @@ struct SetupFamilyView: View {
         }
     }
     
-    /// Crea famiglia + genera master key in Keychain + crea eventuali figli extra.
-    ///
-    /// Logica invariata:
-    /// - Usa `FamilyCreationService` per creare famiglia + primo figlio.
-    /// - Genera e salva master key subito dopo.
-    /// - Crea extra children in locale + sync remoto best-effort.
     @MainActor
     private func createFamilyWithDrafts() async {
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -423,7 +417,6 @@ struct SetupFamilyView: View {
             
             let familyId = created.familyId
             
-            // ✅ Genera master key subito dopo aver creato la famiglia (come prima, ma con log)
             KBLog.crypto.info("Creating master key for familyId=\(familyId, privacy: .public)")
             do {
                 let masterKey = InviteCrypto.randomBytes(32)
@@ -438,7 +431,6 @@ struct SetupFamilyView: View {
                 return
             }
             
-            // create & sync extra children (best effort come prima)
             let now = Date()
             for extra in drafts.dropFirst() {
                 let child = KBChild(
@@ -456,7 +448,6 @@ struct SetupFamilyView: View {
                 do {
                     try modelContext.save()
                 } catch {
-                    // non blocchiamo create (stessa logica: best effort)
                     KBLog.data.error(
                         "SetupFamilyView create: save extra child failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
                     )
@@ -485,8 +476,6 @@ struct SetupFamilyView: View {
         }
     }
     
-    /// In edit mode aggiorna solo il nome famiglia e sincronizza via outbox.
-    /// Logica invariata: save locale -> enqueue -> flush -> dismiss.
     @MainActor
     private func updateFamilyNameOnly(family: KBFamily) async {
         let uid = Auth.auth().currentUser?.uid ?? "local"

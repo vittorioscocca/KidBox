@@ -9,6 +9,21 @@ struct AISettingsView: View {
     
     @StateObject private var viewModel = AISettingsViewModel()
     @State private var showConsent = false
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     var body: some View {
         List {
@@ -35,6 +50,7 @@ struct AISettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
+                .listRowBackground(cardBackground)
             }
             
             // MARK: - Toggle
@@ -43,7 +59,6 @@ struct AISettingsView: View {
                     get: { viewModel.aiEnabled },
                     set: { newValue in
                         if newValue && !viewModel.consentGiven {
-                            // Mostra consent sheet prima di attivare
                             showConsent = true
                         } else {
                             viewModel.toggleAIEnabled(newValue)
@@ -52,11 +67,13 @@ struct AISettingsView: View {
                 )) {
                     Label("Attiva assistente AI", systemImage: "brain.head.profile")
                 }
+                .listRowBackground(cardBackground)
                 
                 if let info = viewModel.infoText {
                     Text(info)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .listRowBackground(cardBackground)
                 }
                 
             } footer: {
@@ -72,6 +89,7 @@ struct AISettingsView: View {
                             ProgressView().controlSize(.small)
                             Text("Caricamento…").foregroundStyle(.secondary)
                         }
+                        .listRowBackground(cardBackground)
                     } else if let usage = viewModel.usage {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -88,8 +106,10 @@ struct AISettingsView: View {
                                 .tint(usage.isNearLimit ? .orange : .blue)
                         }
                         .padding(.vertical, 2)
+                        .listRowBackground(cardBackground)
                     } else {
                         Text("—").foregroundStyle(.secondary)
+                            .listRowBackground(cardBackground)
                     }
                 }
                 .task { await viewModel.loadUsage() }
@@ -106,11 +126,13 @@ struct AISettingsView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    .listRowBackground(cardBackground)
                     Button(role: .destructive) {
                         viewModel.revokeConsent()
                     } label: {
                         Label("Revoca consenso e disattiva", systemImage: "hand.raised")
                     }
+                    .listRowBackground(cardBackground)
                 }
             }
             
@@ -119,14 +141,19 @@ struct AISettingsView: View {
                 infoRow(icon: "lock.shield.fill", color: .green,
                         title: "Dati al sicuro",
                         body: "Nessuna API key sul tuo dispositivo. Tutto passa per i server KidBox.")
+                .listRowBackground(cardBackground)
                 infoRow(icon: "gauge.with.dots.needle.bottom.50percent", color: .blue,
                         title: "Limite giornaliero",
                         body: "Ogni piano include un numero di messaggi AI al giorno. Piani superiori sbloccano limiti più alti.")
+                .listRowBackground(cardBackground)
                 infoRow(icon: "exclamationmark.triangle", color: .orange,
                         title: "Non è un parere medico",
                         body: "L'AI spiega e informa. Per decisioni cliniche consulta sempre il tuo medico.")
+                .listRowBackground(cardBackground)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Assistente AI")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.load() }

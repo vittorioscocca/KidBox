@@ -13,6 +13,21 @@ struct NotesHomeView: View {
     let familyId: String
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     @Query private var notes: [KBNote]
     @Query private var members: [KBFamilyMember]
@@ -86,19 +101,19 @@ struct NotesHomeView: View {
     
     var body: some View {
         contentView
+            .background(backgroundColor.ignoresSafeArea())
             .navigationTitle("Note")
             .searchable(text: $searchQuery, prompt: "Cerca nelle note")
             .onAppear {
                 SyncCenter.shared.startNotesRealtime(familyId: familyId, modelContext: modelContext)
                 loadPinned()
-                BadgeManager.shared.activeSections.insert("notes")  // ← attivo
+                BadgeManager.shared.activeSections.insert("notes")
                 Task { @MainActor in
                     BadgeManager.shared.clearNotes()
                     await CountersService.shared.reset(familyId: familyId, field: .notes)
                 }
                 if let text = coordinator.pendingShareText {
                     coordinator.pendingShareText = nil
-                    // Crea una nuova nota con il testo e naviga al detail
                     let uid = Auth.auth().currentUser?.uid ?? "local"
                     let noteId = UUID().uuidString
                     let note = KBNote(
@@ -116,7 +131,6 @@ struct NotesHomeView: View {
                     SyncCenter.shared.enqueueNoteUpsert(
                         noteId: noteId, familyId: familyId, modelContext: modelContext
                     )
-                    // Naviga al detail così l'utente può rifinire
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                         coordinator.navigate(to: .noteDetail(familyId: familyId, noteId: noteId))
                     }
@@ -124,7 +138,7 @@ struct NotesHomeView: View {
             }
             .onDisappear {
                 SyncCenter.shared.stopNotesRealtime()
-                BadgeManager.shared.activeSections.remove("notes")  // ← non più attivo
+                BadgeManager.shared.activeSections.remove("notes")
             }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -175,19 +189,23 @@ struct NotesHomeView: View {
     private var contentView: some View {
         if notes.isEmpty {
             NotesEmptyStateView { createNewNote() }
+                .background(backgroundColor)
         } else if sectioned.isEmpty {
             NotesNoResultsView(query: searchQuery)
+                .background(backgroundColor)
         } else {
             List {
                 ForEach(sectioned, id: \.0.rawValue) { section, sectionNotes in
                     Section(section.rawValue) {
                         ForEach(sectionNotes, id: \.id) { note in
                             noteRow(note)
+                                .listRowBackground(cardBackground)
                         }
                     }
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
             .animation(.default, value: isSelecting)
         }
     }

@@ -6,7 +6,22 @@ import OSLog
 struct TodoListView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     @Query private var todos: [KBTodoItem]
     @Query private var members: [KBFamilyMember]
@@ -73,14 +88,18 @@ struct TodoListView: View {
                 if visibleTodos.isEmpty {
                     Text("Nessun To-Do")
                         .foregroundStyle(.secondary)
+                        .listRowBackground(cardBackground)
                 } else {
                     ForEach(visibleTodos) { todo in
                         row(todo)
-                            .id(todo.id) // ✅ per scrollTo
+                            .id(todo.id)
+                            .listRowBackground(cardBackground)
                     }
                     .onDelete(perform: deleteTodos)
                 }
             }
+            .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
+            .background(backgroundColor)
             .navigationTitle(listName)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -115,7 +134,6 @@ struct TodoListView: View {
                 KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] visible sample ids=[\(sample)]")
                 
                 guard !didStartRealtime else {
-                    // anche se realtime era già partito, se abbiamo highlight pendente proviamo subito
                     Task { @MainActor in
                         applyHighlightIfNeeded(proxy: proxy, reason: "onAppear (already started)")
                     }
@@ -136,7 +154,6 @@ struct TodoListView: View {
                     KBLog.sync.kbDebug("[TodoListView][\(viewTrace)] flush (onAppear)")
                     await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
                     
-                    // dopo flush, prova highlight
                     applyHighlightIfNeeded(proxy: proxy, reason: "onAppear after flush")
                 }
             }
@@ -153,8 +170,6 @@ struct TodoListView: View {
             }
             .onDisappear {
                 KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId)")
-                // qui NON stoppo io, perché gestisci già i listener da SyncCenter altrove.
-                // Se vuoi, puoi rimettere stopTodoRealtime() qui, ma dipende dalla tua strategia globale.
             }
         }
     }
@@ -172,7 +187,6 @@ struct TodoListView: View {
         BadgeManager.shared.clearTodos()
         guard let targetId = highlightStore.todoIdToHighlight else { return }
         
-        // Aspetta che il todo sia realmente visibile in questa lista
         guard visibleTodos.contains(where: { $0.id == targetId }) else {
             KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] highlight pending (not in visibleTodos yet) todoId=\(targetId) reason=\(reason)")
             return

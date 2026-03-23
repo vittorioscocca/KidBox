@@ -11,6 +11,21 @@ import SwiftUI
 struct MessageSettingsView: View {
     
     @StateObject private var viewModel = SettingsViewModel()
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     var body: some View {
         List {
@@ -34,6 +49,7 @@ struct MessageSettingsView: View {
                     }
                 }
                 .tint(KBTheme.bubbleTint)
+                .listRowBackground(cardBackground)
             } header: {
                 Text("Messaggi vocali")
             } footer: {
@@ -47,9 +63,12 @@ struct MessageSettingsView: View {
                     Text(info)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .listRowBackground(cardBackground)
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Messaggi")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.load() }

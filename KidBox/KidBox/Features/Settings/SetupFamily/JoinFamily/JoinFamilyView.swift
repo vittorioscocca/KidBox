@@ -29,8 +29,23 @@ private struct JoinFamilyViewBody: View {
     @State private var showScanner = false
     let modelContext: ModelContext
     @StateObject private var vm: JoinFamilyViewModel
+    @Environment(\.colorScheme) private var colorScheme
     
-    init(modelContext: ModelContext,  coordinator: AppCoordinator) {
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
+    
+    init(modelContext: ModelContext, coordinator: AppCoordinator) {
         self.modelContext = modelContext
         _vm = StateObject(wrappedValue: JoinFamilyViewModel(
             service: FamilyJoinService(
@@ -49,10 +64,10 @@ private struct JoinFamilyViewBody: View {
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
                     .onChange(of: vm.code) { _, newValue in
-                        // Logga solo metadati (lunghezza), non il contenuto del codice.
                         KBLog.ui.debug("JoinFamilyView code changed len=\(newValue.count, privacy: .public)")
                     }
             }
+            .listRowBackground(cardBackground)
             
             Button {
                 showScanner = true
@@ -60,6 +75,7 @@ private struct JoinFamilyViewBody: View {
             } label: {
                 Label("Scansiona QR code", systemImage: "qrcode.viewfinder")
             }
+            .listRowBackground(cardBackground)
             .sheet(isPresented: $showScanner) {
                 QRScannerSheet(
                     onDetected: { raw in
@@ -67,12 +83,10 @@ private struct JoinFamilyViewBody: View {
                             do {
                                 KBLog.ui.info("JoinFamilyView: QR scanned (processing)")
                                 
-                                // 1️⃣ Decifra la chiave dal QR (non loggare raw: contiene segreti)
                                 KBLog.sync.info("JoinFamilyView: unwrap master key from encrypted invite (start)")
                                 try await JoinWrapService().join(usingQRPayload: raw)
                                 KBLog.sync.info("JoinFamilyView: master key saved to Keychain (ok)")
                                 
-                                // 2️⃣ Estrai il codice membership dal QR
                                 KBLog.sync.debug("JoinFamilyView: extract membership code from QR payload")
                                 guard let code = JoinPayloadParser.extractCode(from: raw) else {
                                     showScanner = false
@@ -81,14 +95,11 @@ private struct JoinFamilyViewBody: View {
                                     return
                                 }
                                 
-                                // Non loggare il codice; al massimo la lunghezza.
                                 KBLog.sync.info("JoinFamilyView: membership code extracted len=\(code.count, privacy: .public)")
                                 
-                                // 3️⃣ Join membership
                                 vm.code = code
                                 showScanner = false
                                 
-                                // Give UI time to update (as in original)
                                 try? await Task.sleep(nanoseconds: 500_000_000)
                                 
                                 KBLog.sync.info("JoinFamilyView: starting membership join")
@@ -119,6 +130,7 @@ private struct JoinFamilyViewBody: View {
                     }
                     .accessibilityLabel("Errore: \(err)")
                 }
+                .listRowBackground(cardBackground)
             }
             
             if vm.didJoin {
@@ -128,10 +140,12 @@ private struct JoinFamilyViewBody: View {
                             .foregroundStyle(.green)
                         Text("Sei entrato nella famiglia!")
                     }
+                    .listRowBackground(cardBackground)
                     Button("Continua") {
                         KBLog.navigation.info("JoinFamilyView: continue -> resetToRoot")
                         coordinator.resetToRoot()
                     }
+                    .listRowBackground(cardBackground)
                 }
             } else {
                 Button(vm.isBusy ? "Ingresso…" : "Entra") {
@@ -139,8 +153,11 @@ private struct JoinFamilyViewBody: View {
                     Task { await vm.join() }
                 }
                 .disabled(vm.isBusy || vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .listRowBackground(cardBackground)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .onAppear {
             KBLog.ui.debug("JoinFamilyViewBody appeared")
         }

@@ -13,6 +13,15 @@ struct NoteDetailView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
+    @Environment(\.colorScheme)  private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
     
     // ✅ @Query osserva automaticamente i cambiamenti da SyncCenter (listener realtime)
     @Query private var queriedNotes: [KBNote]
@@ -38,29 +47,33 @@ struct NoteDetailView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        ZStack {
+            backgroundColor.ignoresSafeArea()
             
-            // ── Titolo ────────────────────────────────────────────────────
-            NoteTitleTextField(text: $titleText, placeholder: "Titolo") {
-                bodyFocusTrigger = UUID()
+            VStack(alignment: .leading, spacing: 0) {
+                
+                // ── Titolo ────────────────────────────────────────────────────
+                NoteTitleTextField(text: $titleText, placeholder: "Titolo") {
+                    bodyFocusTrigger = UUID()
+                }
+                .padding(.top, 12)
+                .padding(.leading, 8)
+                .fixedSize(horizontal: false, vertical: true)
+                .onChange(of: titleText) { isDirty = true }
+                
+                // ── Corpo ─────────────────────────────────────────────────────
+                // ✅ La UITextView gestisce lo scroll internamente tramite contentInset.
+                //    ignoresSafeArea(.keyboard) impedisce a SwiftUI di shrinkare il frame
+                //    quando compare la tastiera — altrimenti la tv perde altezza e non scrolla.
+                RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
+                             focusTrigger: bodyFocusTrigger)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 12)
+                .ignoresSafeArea(.keyboard)
+                .onChange(of: bodyHTML) { isDirty = true }
             }
-            .padding(.top, 12)
-            .padding(.leading, 8)
-            .fixedSize(horizontal: false, vertical: true)
-            .onChange(of: titleText) { isDirty = true }
-            
-            // ── Corpo ─────────────────────────────────────────────────────
-            // ✅ La UITextView gestisce lo scroll internamente tramite contentInset.
-            //    ignoresSafeArea(.keyboard) impedisce a SwiftUI di shrinkare il frame
-            //    quando compare la tastiera — altrimenti la tv perde altezza e non scrolla.
-            RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
-                         focusTrigger: bodyFocusTrigger)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.top, 12)
-            .ignoresSafeArea(.keyboard)
-            .onChange(of: bodyHTML) { isDirty = true }
+            .padding(.horizontal, 16)
         }
-        .padding(.horizontal, 16)
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear  {

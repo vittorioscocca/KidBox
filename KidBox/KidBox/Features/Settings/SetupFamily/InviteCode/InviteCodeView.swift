@@ -10,10 +10,6 @@ import SwiftData
 import OSLog
 
 /// Screen that generates and shows an invite QR code for the current family.
-///
-/// Logging policy (SwiftUI-safe):
-/// - ✅ Log only on user actions (tap) and lifecycle edges (first appear).
-/// - ❌ Avoid logs in `body` rendering paths that may re-run often.
 struct InviteCodeView: View {
     @Environment(\.modelContext) private var modelContext
     
@@ -27,6 +23,21 @@ struct InviteCodeView: View {
 private struct InviteCodeViewBody: View {
     let modelContext: ModelContext
     @StateObject private var vm: InviteCodeViewModel
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     @State private var didLogAppear = false
     
@@ -43,8 +54,6 @@ private struct InviteCodeViewBody: View {
             Section {
                 if let qrPayload = vm.qrPayload {
                     VStack(spacing: 16) {
-                        // ✅ QR code payload includes the crypto key material (as designed).
-                        // The QR rendering is handled by `QRCodeView`.
                         QRCodeView(payload: qrPayload)
                             .frame(maxWidth: .infinity)
                         
@@ -59,12 +68,10 @@ private struct InviteCodeViewBody: View {
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                         
-                        // Share button (shares the payload string)
                         ShareLink(item: qrPayload) {
                             Label("Condividi QR", systemImage: "square.and.arrow.up")
                         }
                         .onTapGesture {
-                            // Note: ShareLink doesn't expose completion; we only log the user intent.
                             KBLog.navigation.debug("InviteCode: tap ShareLink")
                         }
                     }
@@ -84,12 +91,14 @@ private struct InviteCodeViewBody: View {
                     .padding(.vertical, 20)
                 }
             }
+            .listRowBackground(cardBackground)
             
             if let err = vm.errorMessage {
                 Section {
                     Label(err, systemImage: "exclamationmark.circle.fill")
                         .foregroundStyle(.red)
                 }
+                .listRowBackground(cardBackground)
             }
             
             Section {
@@ -109,20 +118,17 @@ private struct InviteCodeViewBody: View {
                 }
                 .disabled(vm.isBusy)
             }
+            .listRowBackground(cardBackground)
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .onAppear {
-            // SwiftUI can call onAppear multiple times (navigation stack, state changes).
-            // We log only once per view lifetime.
             guard !didLogAppear else { return }
             didLogAppear = true
             KBLog.navigation.debug("InviteCode: appeared")
         }
     }
     
-    /// Starts the async generation flow in the ViewModel.
-    ///
-    /// - Note: The ViewModel is responsible for validating family state,
-    ///   contacting the server, and producing `qrPayload` or an error message.
     private func generateInvite() {
         KBLog.navigation.debug("InviteCode: tap Generate QR (busy=\(vm.isBusy, privacy: .public))")
         Task { await vm.generateInviteCode() }

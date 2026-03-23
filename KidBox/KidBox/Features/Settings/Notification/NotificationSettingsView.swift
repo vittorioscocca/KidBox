@@ -11,6 +11,21 @@ internal import os
 
 struct NotificationSettingsView: View {
     @StateObject private var vm = SettingsViewModel()
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     var body: some View {
         List {
@@ -26,6 +41,7 @@ struct NotificationSettingsView: View {
                 )
             )
             .disabled(vm.isLoading)
+            .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifica nuovi messaggi in chat",
@@ -35,6 +51,7 @@ struct NotificationSettingsView: View {
                 )
             )
             .disabled(vm.isLoading)
+            .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche posizione (inizio/fine condivisione)",
@@ -48,6 +65,7 @@ struct NotificationSettingsView: View {
                 )
             )
             .disabled(vm.isLoading)
+            .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche Todo (assegnazioni/scadenze)",
@@ -57,6 +75,7 @@ struct NotificationSettingsView: View {
                 )
             )
             .disabled(vm.isLoading)
+            .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche lista della spesa",
@@ -70,6 +89,7 @@ struct NotificationSettingsView: View {
             )
             .disabled(vm.isLoading)
             .accessibilityHint("Ricevi una notifica quando un membro aggiunge un prodotto alla lista della spesa.")
+            .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche nuove note",
@@ -83,6 +103,7 @@ struct NotificationSettingsView: View {
             )
             .disabled(vm.isLoading)
             .accessibilityHint("Ricevi una notifica quando un membro crea una nuova nota.")
+            .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche nuove spese",
@@ -96,13 +117,17 @@ struct NotificationSettingsView: View {
             )
             .disabled(vm.isLoading)
             .accessibilityHint("Ricevi una notifica quando un membro registra una nuova spesa di famiglia.")
+            .listRowBackground(cardBackground)
             
             if let t = vm.infoText {
                 Text(t)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .listRowBackground(cardBackground)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Notifiche")
         .task {
             KBLog.settings.debug("NotificationSettingsView task start")

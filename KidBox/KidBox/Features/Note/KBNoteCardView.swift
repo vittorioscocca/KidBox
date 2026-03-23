@@ -12,7 +12,17 @@ struct KBNoteCardView: View {
     let members: [KBFamilyMember]
     var searchQuery: String = ""
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     @State private var previewPlain: String = " "
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {

@@ -15,6 +15,21 @@ struct TodoHomeView: View {
     
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme)  private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     // Family/Child attivi
     @Query(sort: \KBFamily.updatedAt, order: .reverse)
@@ -93,12 +108,16 @@ struct TodoHomeView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                cardsSection
-                listsSection
+        ZStack {
+            backgroundColor.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    cardsSection
+                    listsSection
+                }
+                .padding()
             }
-            .padding()
         }
         .navigationTitle("To-Do")
         .toolbar {
@@ -161,23 +180,15 @@ struct TodoHomeView: View {
                 )
             }
         }
-        // Log “se cambia qualcosa” (utile per vedere flicker o refresh)
         .onChange(of: allTodos.count) { _, newValue in
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] allTodos.count changed -> \(newValue) visible=\(visibleTodos.count)")
         }
         .onChange(of: allLists.count) { _, newValue in
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] allLists.count changed -> \(newValue) visible=\(visibleLists.count)")
         }
-        // Stessa logica di pendingShareVideoPath in ChatView:
-        // onReceive scatta appena handleIncomingShare setta il draft,
-        // anche se TodoHomeView era già montata (nessuna dipendenza da onAppear).
-        // Se c'è almeno una lista, apre direttamente lo sheet di creazione todo.
-        // Se non ci sono liste ancora, il draft rimane sul coordinator e
-        // TodoListView lo consumerà via onReceive quando l'utente apre una lista.
         .onReceive(coordinator.$pendingShareTodoDraft.compactMap { $0 }) { draft in
             guard !familyId.isEmpty, !childId.isEmpty else { return }
             guard visibleLists.first != nil else {
-                // Nessuna lista disponibile — TodoListView lo consumerà dopo
                 KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] pendingShareTodoDraft received but no lists yet — keeping for TodoListView")
                 return
             }
@@ -353,7 +364,7 @@ struct TodoHomeView: View {
             .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(tint.opacity(0.12))
+                    .fill(cardBackground)
             )
         }
         .buttonStyle(.plain)
@@ -391,7 +402,7 @@ struct TodoHomeView: View {
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color(.systemGray6))
+                                    .fill(cardBackground)
                             )
                         }
                         .buttonStyle(.plain)
@@ -458,13 +469,11 @@ struct TodoHomeView: View {
         
         if let eid = editingListId,
            let list = visibleLists.first(where: { $0.id == eid }) {
-            // modifica esistente
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] saveList update listId=\(eid)")
             list.name = name
             list.updatedAt = now
             listId = list.id
         } else {
-            // nuova lista
             let list = KBTodoList(familyId: familyId, childId: childId, name: name)
             modelContext.insert(list)
             listId = list.id
@@ -478,7 +487,6 @@ struct TodoHomeView: View {
             KBLog.todo.kbError("[TodoHomeView][\(viewTrace)] saveList save FAIL listId=\(listId) err=\(String(describing: error))")
         }
         
-        // ✅ Sync remoto
         KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] enqueueTodoListUpsert listId=\(listId) fid=\(familyId)")
         SyncCenter.shared.enqueueTodoListUpsert(listId: listId, familyId: familyId, modelContext: modelContext)
         
@@ -502,7 +510,6 @@ struct TodoHomeView: View {
         
         KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] deleteList START listId=\(listId) fid=\(fid) cid=\(cid)")
         
-        // 🔹 1) Trova tutti i todo collegati
         let desc = FetchDescriptor<KBTodoItem>(
             predicate: #Predicate {
                 $0.familyId == fid &&
@@ -517,7 +524,6 @@ struct TodoHomeView: View {
         
         KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] deleteList fetched todosToDelete=\(todosToDelete.count) sampleIds=[\(sample)]")
         
-        // 🔹 2) Soft delete todos
         for todo in todosToDelete {
             let before = "isDeleted=\(todo.isDeleted) syncState=\(todo.syncState.rawValue) updatedAt=\(todo.updatedAt)"
             
@@ -534,11 +540,8 @@ struct TodoHomeView: View {
             SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: fid, modelContext: modelContext)
         }
         
-        // 🔹 3) Soft delete lista
-        // 🔹 3) Soft delete lista
         list.isDeleted = true
         list.updatedAt = now
-        // NB: KBTodoList non ha updatedBy -> non settarlo
         KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] deleteList listId=\(listId) set isDeleted=true updatedAt=\(now)")
         
         do {
@@ -548,7 +551,6 @@ struct TodoHomeView: View {
             KBLog.todo.kbError("[TodoHomeView][\(viewTrace)] deleteList local save FAIL listId=\(listId) err=\(String(describing: error))")
         }
         
-        // 🔹 4) Sync lista
         KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] enqueueTodoListDelete listId=\(listId) fid=\(fid)")
         SyncCenter.shared.enqueueTodoListDelete(listId: listId, familyId: fid, modelContext: modelContext)
         

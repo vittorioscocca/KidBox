@@ -11,26 +11,41 @@ internal import os
 struct SettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @StateObject private var vm = SettingsViewModel()
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // MARK: - Dynamic theme (same as LoginView)
+    
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var cardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        : Color(.systemBackground)
+    }
     
     var body: some View {
         List {
-            Picker(selection: Binding(
-                get: { vm.appearanceMode },
-                set: { vm.setAppearanceMode($0, coordinator: coordinator) }
-            )) {
-                ForEach(AppearanceMode.allCases) { mode in
-                    Label(mode.label, systemImage: mode.icon).tag(mode)
-                }
+            NavigationLink {
+                AppearanceSettingsView()
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: coordinator.appearanceMode.icon)
                         .foregroundStyle(KBTheme.bubbleTint)
                         .frame(width: 22)
-                    Text("Tema")
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Tema")
+                            .foregroundStyle(.primary)
+                        Text(coordinator.appearanceMode.label)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
-            .pickerStyle(.navigationLink)
+            .listRowBackground(cardBackground)
             
             Button {
                 KBLog.navigation.debug("Settings -> Family settings tap")
@@ -46,6 +61,7 @@ struct SettingsView: View {
                 }
             }
             .accessibilityLabel("Apri impostazioni famiglia")
+            .listRowBackground(cardBackground)
             
             NavigationLink {
                 MessageSettingsView()
@@ -58,6 +74,7 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            .listRowBackground(cardBackground)
             
             NavigationLink {
                 AISettingsView()
@@ -70,6 +87,7 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            .listRowBackground(cardBackground)
             
             NavigationLink {
                 NotificationSettingsView()
@@ -82,6 +100,7 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            .listRowBackground(cardBackground)
             
             NavigationLink {
                 StorageUsageView()
@@ -94,7 +113,10 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                 }
             }
+            .listRowBackground(cardBackground)
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
         .navigationTitle("Impostazioni")
         .tint(.primary)
     }
