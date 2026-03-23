@@ -54,6 +54,8 @@ final class StorageUsageViewModel: ObservableObject {
     // usedBytes → Firebase (fonte di verità unica, identica su tutti i device)
     // sections  → SwiftData locale (solo per breakdown visuale per sezione)
     
+    // MARK: - Load
+    
     func load(modelContext: ModelContext, familyId: String) {
         guard !familyId.isEmpty else { return }
         isLoading = true
@@ -62,30 +64,48 @@ final class StorageUsageViewModel: ObservableObject {
         Task { @MainActor in
             defer { isLoading = false }
             
-            // 1. Bytes reali da Cloud Function
             do {
                 let functions = Functions.functions(region: "europe-west1")
                 let result = try await functions.httpsCallable("getStorageUsage")
                     .call(["familyId": familyId])
-                if let data = result.data as? [String: Any],
-                   let bytes = data["usedBytes"] as? Int {
-                    usedBytes = Int64(bytes)
-                    KBStorageGate.shared.cachedUsedBytes = usedBytes
+                
+                if let data = result.data as? [String: Any] {
+                    if let bytes = data["usedBytes"] as? Int {
+                        usedBytes = Int64(bytes)
+                        KBStorageGate.shared.cachedUsedBytes = usedBytes
+                    }
+                    if let rawSections = data["sections"] as? [String: Any] {
+                        sections = buildSections(from: rawSections)
+                    }
                 }
             } catch {
                 self.error = "Impossibile aggiornare lo spazio da Firebase."
                 // Fallback locale se Firebase non risponde
                 usedBytes = localUsedBytes(modelContext: modelContext, familyId: familyId)
+                sections = buildSectionsFallback(modelContext: modelContext, familyId: familyId)
             }
-            
-            // 2. Breakdown per sezione da SwiftData
-            sections = buildSections(modelContext: modelContext, familyId: familyId)
         }
+    }
+    
+    // MARK: - Build sections da Firebase
+    
+    private func buildSections(from raw: [String: Any]) -> [KBStorageSection] {
+        func bytes(_ key: String) -> Int64 { Int64(raw[key] as? Int ?? 0) }
+        
+        return [
+            KBStorageSection(id: "photos",    name: "Foto e video", icon: "photo.on.rectangle.angled",         color: "FF6B9D", bytes: bytes("photos"),   recordCount: 0),
+            KBStorageSection(id: "documents", name: "Documenti",    icon: "doc.fill",                          color: "5B8FDE", bytes: bytes("documents"), recordCount: 0),
+            KBStorageSection(id: "chat",      name: "Chat",          icon: "bubble.left.and.bubble.right.fill", color: "34C759", bytes: bytes("chat"),      recordCount: 0),
+            KBStorageSection(id: "salute",    name: "Salute",        icon: "stethoscope",                       color: "FF6B6B", bytes: bytes("salute"),    recordCount: 0),
+            KBStorageSection(id: "notes",     name: "Note",          icon: "note.text",                         color: "FF9F0A", bytes: bytes("notes"),     recordCount: 0),
+            KBStorageSection(id: "calendar",  name: "Calendario",    icon: "calendar",                          color: "BF5AF2", bytes: bytes("calendar"),  recordCount: 0),
+            KBStorageSection(id: "todo",      name: "Liste & Todo",  icon: "checklist",                         color: "30B0C7", bytes: bytes("todo"),      recordCount: 0),
+        ].filter { $0.bytes > 0 }
     }
     
     // MARK: - Breakdown locale (visualizzazione per sezione)
     
-    private func buildSections(modelContext: ModelContext, familyId: String) -> [KBStorageSection] {
+    private func buildSectionsFallback(modelContext: ModelContext, familyId: String) -> [KBStorageSection] {
         let fid = familyId
         let kb  = Self.firestoreRecordBytes
         

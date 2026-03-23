@@ -76,31 +76,37 @@ final class PhotoRemoteStore {
     
     // MARK: - Thumbnail
     
-    /// Generates a JPEG thumbnail ≤ maxDimension px from image data.
+    /// Generates a JPEG thumbnail ≤ maxDimension px from image data,
+    /// correctly applying EXIF orientation so the thumbnail is always upright.
+    ///
+    /// Uses CGImageSourceCreateThumbnailAtIndex with kCGImageSourceCreateThumbnailWithTransform
+    /// instead of CGImageSourceCreateImageAtIndex + manual CGContext draw.
+    /// The old approach ignored the EXIF orientation tag entirely, producing
+    /// rotated thumbnails for photos taken in non-landscape orientations.
     static func makeThumbnail(from data: Data, maxDimension: CGFloat = 200) -> Data? {
-        guard let src = CGImageSourceCreateWithData(data as CFData, nil),
-              let cgImg = CGImageSourceCreateImageAtIndex(src, 0, nil) else { return nil }
+        guard let src = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         
-        let w = CGFloat(cgImg.width), h = CGFloat(cgImg.height)
-        let scale = min(maxDimension / max(w, 1), maxDimension / max(h, 1), 1.0)
-        let nw = Int(w * scale), nh = Int(h * scale)
+        // Leggi le dimensioni originali per fare il clamp di maxDimension.
+        // kCGImageSourceCreateThumbnailWithTransform applica la trasformazione EXIF
+        // solo se maxDimension <= dimensione originale — il clamp lo garantisce.
+        let props  = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any]
+        let origW  = (props?[kCGImagePropertyPixelWidth]  as? CGFloat) ?? 0
+        let origH  = (props?[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
+        let origMax = max(origW, origH)
+        let clampedMax = origMax > 0 ? min(maxDimension, origMax) : maxDimension
         
-        guard
-            let cs = CGColorSpace(name: CGColorSpace.sRGB),
-            let ctx = CGContext(
-                data: nil, width: nw, height: nh,
-                bitsPerComponent: 8, bytesPerRow: 0,
-                space: cs,
-                bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-            )
-        else { return nil }
-        
-        ctx.draw(cgImg, in: CGRect(x: 0, y: 0, width: nw, height: nh))
-        guard let thumb = ctx.makeImage() else { return nil }
+        let opts: [CFString: Any] = [
+            kCGImageSourceThumbnailMaxPixelSize:             clampedMax,
+            kCGImageSourceCreateThumbnailFromImageAlways:    true,
+            kCGImageSourceCreateThumbnailWithTransform:      true   // applica rotazione EXIF
+        ]
+        guard let cgImg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else {
+            return nil
+        }
         
         let out = NSMutableData()
         guard let dst = CGImageDestinationCreateWithData(out, "public.jpeg" as CFString, 1, nil) else { return nil }
-        CGImageDestinationAddImage(dst, thumb, [kCGImageDestinationLossyCompressionQuality: 0.55] as CFDictionary)
+        CGImageDestinationAddImage(dst, cgImg, [kCGImageDestinationLossyCompressionQuality: 0.55] as CFDictionary)
         CGImageDestinationFinalize(dst)
         return out as Data
     }

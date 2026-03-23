@@ -34,14 +34,9 @@ struct VideoTransferable: Transferable {
 }
 
 // MARK: - VideoCompressor
-/// Transcodifica un video in MP4 con qualità media usando AVAssetExportSession.
-/// Preset: AVAssetExportPresetMediumQuality ≈ 640×480 / ~3 Mbps — buon compromesso
-/// tra qualità visiva e dimensioni per un album di famiglia.
 enum VideoCompressor {
     static func compress(url: URL) async -> URL? {
         let asset = AVURLAsset(url: url)
-        
-        // Verifica che il preset sia disponibile per questo asset
         let compatiblePresets = await AVAssetExportSession.exportPresets(compatibleWith: asset)
         let preset: String
         if compatiblePresets.contains(AVAssetExportPresetMediumQuality) {
@@ -52,11 +47,9 @@ enum VideoCompressor {
             KBLog.sync.kbError("VideoCompressor: no compatible export preset for \(url.lastPathComponent)")
             return nil
         }
-        
         let output = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("mp4")
-        
         KBLog.sync.kbDebug("VideoCompressor: export start preset=\(preset) output=\(output.lastPathComponent)")
         do {
             let session = AVAssetExportSession(asset: asset, presetName: preset)
@@ -70,13 +63,9 @@ enum VideoCompressor {
             return nil
         }
     }
-    /// Re-muxa un file MP4 con shouldOptimizeForNetworkUse=true per spostare
-    /// l'atom moov in testa — necessario per la riproduzione locale con AVPlayer.
-    /// Ritorna l'URL di destinazione se l'export ha successo, nil altrimenti.
+    
     static func remux(from source: URL, to destination: URL) async -> URL? {
-        // Rimuovi destinazione preesistente
         try? FileManager.default.removeItem(at: destination)
-        
         let asset = AVURLAsset(url: source)
         do {
             let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough)
@@ -90,7 +79,6 @@ enum VideoCompressor {
         }
     }
     
-    /// Ritorna la durata in secondi di un video all'URL dato.
     static func videoDuration(url: URL) async -> Double? {
         let asset = AVURLAsset(url: url)
         guard let duration = try? await asset.load(.duration) else { return nil }
@@ -108,9 +96,6 @@ struct FamilyPhotosView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
     
-    // Stesso pattern di ChatViewModel: @Published array invece di @Query.
-    // @Query non propaga affidabilmente modifiche a proprietà Optional<Double>
-    // su oggetti esistenti in una LazyVGrid (es. videoDurationSeconds).
     @StateObject private var vm: FamilyPhotosViewModel
     
     init(familyId: String) {
@@ -127,32 +112,24 @@ struct FamilyPhotosView: View {
     @State private var fullscreenPhoto: KBFamilyPhoto?
     @State private var showCreateAlbum = false
     @State private var newAlbumTitle = ""
-    // Selezione multipla
     @State private var isSelectMode = false
     @State private var selectedIds: Set<String> = []
-    @State private var dragSelectIsAdding = true   // true = stiamo aggiungendo, false = rimuovendo
-    // Condivisione
+    @State private var dragSelectIsAdding = true
     @State private var isPreparingShare = false
     @State private var shareItems: [Any] = []
     @State private var showShareSheet = false
-    // Invia in chat
     @State private var isSendingToChat = false
     @State private var sendToChatError: String?
-    // Album
     @State private var showAddToAlbum = false
     @State private var showCreateAlbumFromSelection = false
-    @State private var uploadTargetAlbumId: String? = nil   // album scelto prima dell'upload
-    // Selezione multipla album
+    @State private var uploadTargetAlbumId: String? = nil
     @State private var isAlbumSelectMode = false
     @State private var selectedAlbumIds: Set<String> = []
-    // Larghezza reale della griglia foto
     @State private var gridWidth: CGFloat = UIScreen.main.bounds.width
-    // Fotocamera
     @State private var showCamera = false
     
     private var photos: [KBFamilyPhoto] { vm.photos }
     private var albums: [KBPhotoAlbum]  { vm.albums }
-    
     private var uid: String { Auth.auth().currentUser?.uid ?? "" }
     
     private var bg: Color {
@@ -164,7 +141,6 @@ struct FamilyPhotosView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             bg.ignoresSafeArea()
-            
             VStack(spacing: 0) {
                 Picker("", selection: $tab) {
                     ForEach(PhotoTab.allCases) { t in Text(t.label).tag(t) }
@@ -172,13 +148,11 @@ struct FamilyPhotosView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal).padding(.vertical, 8)
                 Divider()
-                
                 switch tab {
                 case .library: libraryContent
                 case .albums:  albumsContent
                 }
             }
-            
             if isUploading { uploadBanner }
             if isSelectMode { selectionToolbar }
             if isAlbumSelectMode { albumSelectionToolbar }
@@ -218,7 +192,6 @@ struct FamilyPhotosView: View {
                 onDismiss: { fullscreenPhoto = nil }
             )
         }
-        // ── Fotocamera ───────────────────────────────────────────────────────
         .fullScreenCover(isPresented: $showCamera) {
             CameraCaptureView { result in
                 showCamera = false
@@ -233,7 +206,6 @@ struct FamilyPhotosView: View {
             }
             .ignoresSafeArea()
         }
-        // ────────────────────────────────────────────────────────────────────
         .sheet(isPresented: $showCreateAlbum) { createAlbumSheet }
         .sheet(isPresented: $showAddToAlbum) { addToAlbumSheet }
         .sheet(isPresented: $showCreateAlbumFromSelection) { createAlbumFromSelectionSheet }
@@ -249,8 +221,6 @@ struct FamilyPhotosView: View {
                 set: { if !$0 { sendToChatError = nil } }
             )) { Button("OK") { sendToChatError = nil } } message: { Text(sendToChatError ?? "") }
             .task {
-                // Aggancia il ViewModel al ModelContext e avvia il listener Firestore.
-                // bind() è idempotente: il secondo .task su re-render non fa nulla.
                 vm.bind(modelContext: modelContext)
                 SyncCenter.shared.startPhotosRealtime(familyId: familyId, modelContext: modelContext)
             }
@@ -258,10 +228,6 @@ struct FamilyPhotosView: View {
                 SyncCenter.shared.stopPhotosRealtime()
                 vm.cleanup()
             }
-        // ── Receive share-extension upload (encryptedMedia) ──────────────────
-        // onReceive: la view era già montata quando il coordinator ha settato il pending.
-        // onAppear: fallback per quando il pending era già settato prima che la view
-        //           apparisse (es. navigate avviene dopo il set, o view già in stack).
             .onReceive(coordinator.$pendingShareEncryptedMediaPath.compactMap { $0 }) { path in
                 coordinator.pendingShareEncryptedMediaPath = nil
                 let type = coordinator.pendingShareEncryptedMediaType ?? "image"
@@ -282,15 +248,12 @@ struct FamilyPhotosView: View {
     
     @ToolbarContentBuilder
     private var toolbarItems: some ToolbarContent {
-        // Tasto Annulla (solo in select mode)
         ToolbarItem(placement: .navigationBarLeading) {
             if isSelectMode || isAlbumSelectMode {
                 Button("Annulla") {
                     withAnimation(.snappy) {
-                        isSelectMode = false
-                        selectedIds = []
-                        isAlbumSelectMode = false
-                        selectedAlbumIds = []
+                        isSelectMode = false; selectedIds = []
+                        isAlbumSelectMode = false; selectedAlbumIds = []
                     }
                 }
             }
@@ -329,7 +292,6 @@ struct FamilyPhotosView: View {
                         }
                     } label: { Image(systemName: "slider.horizontal.3") }
                 } else {
-                    // tab == .albums
                     if !albums.isEmpty {
                         Button {
                             withAnimation(.snappy) { isAlbumSelectMode = true; selectedAlbumIds = [] }
@@ -339,7 +301,6 @@ struct FamilyPhotosView: View {
                     }
                 }
                 if tab == .library {
-                    // ── Fotocamera (solo se disponibile sul device) ──────────
                     if CameraCaptureView.isAvailable {
                         Button {
                             uploadTargetAlbumId = nil
@@ -348,7 +309,6 @@ struct FamilyPhotosView: View {
                             Image(systemName: "camera")
                         }
                     }
-                    // ── PhotosPicker (rullino) ───────────────────────────────
                     PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .any(of: [.images, .videos])) {
                         Image(systemName: "plus")
                     }
@@ -393,8 +353,6 @@ struct FamilyPhotosView: View {
                     if w > 0 && w != gridWidth { gridWidth = w }
                 }
             }
-            // .id forza SwiftUI a ricreare lo ScrollView dopo la dismiss del fullscreen,
-            // evitando il freeze dell'offset che si verifica con fullScreenCover.
             .id(fullscreenPhoto == nil ? "grid-active" : "grid-covered")
         }
     }
@@ -407,7 +365,6 @@ struct FamilyPhotosView: View {
         let gridHeight = CGFloat(rows) * cellSize + CGFloat(max(rows - 1, 0)) * spacing
         
         return ZStack(alignment: .topLeading) {
-            // Grid reale — solo rendering
             LazyVGrid(columns: cols, spacing: spacing) {
                 ForEach(items, id: \.stableGridId) { photo in
                     let isSelected = selectedIds.contains(photo.id)
@@ -431,7 +388,6 @@ struct FamilyPhotosView: View {
                                 .padding(4)
                         }
                     }
-                    // Overlay selezione
                     .overlay {
                         if isSelectMode {
                             Color.black.opacity(isSelected ? 0 : 0.28)
@@ -479,15 +435,11 @@ struct FamilyPhotosView: View {
             }
             .frame(height: gridHeight)
             
-            // Overlay trasparente per il drag-select (stile Apple Photos)
-            // Gestisce un DragGesture sull'intera griglia e calcola quale cella
-            // si trova sotto il dito per selezionare/deselezionare in modo continuo.
             if isSelectMode {
                 Color.clear
                     .frame(height: gridHeight)
                     .contentShape(Rectangle())
                     .gesture(
-                        // Drag per selezione continua stile Apple Photos
                         DragGesture(minimumDistance: 4, coordinateSpace: .local)
                             .onChanged { value in
                                 let col = Int(value.location.x / (cellSize + spacing)).clamped(to: 0...2)
@@ -503,8 +455,6 @@ struct FamilyPhotosView: View {
                                     else { selectedIds.remove(photoId) }
                                 }
                             }
-                        // Tap sullo stesso overlay — fallback per quando DragGesture
-                        // assorbe l'evento e il tap sulla cella sottostante non arriva
                             .simultaneously(with:
                                                 SpatialTapGesture()
                                 .onEnded { value in
@@ -535,8 +485,6 @@ struct FamilyPhotosView: View {
                           GridItem(.fixed(cellW), spacing: spacing)],
                 spacing: spacing
             ) {
-                // Bottone "Nuovo album" — nascosto in select mode ma sempre nel layout
-                // per evitare il re-layout animato che causa la sovrapposizione delle card.
                 Button { showCreateAlbum = true } label: {
                     AlbumCreateCard(cellWidth: cellW)
                 }
@@ -552,7 +500,6 @@ struct FamilyPhotosView: View {
                               previewPhotos: Array(albumPhotos.prefix(1)),
                               photoCount: albumPhotos.count,
                               cellWidth: cellW)
-                    // Overlay scuro + checkbox in select mode
                     .overlay {
                         if isAlbumSelectMode {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -621,7 +568,6 @@ struct FamilyPhotosView: View {
                     .padding(.horizontal, 24).padding(.vertical, 12)
                     .background(Color.pink, in: Capsule())
             }
-            // ── Fotocamera nello stato vuoto ─────────────────────────────────
             if CameraCaptureView.isAvailable {
                 Button {
                     uploadTargetAlbumId = nil
@@ -633,7 +579,6 @@ struct FamilyPhotosView: View {
                         .background(Color.pink.opacity(0.12), in: Capsule())
                 }
             }
-            // ─────────────────────────────────────────────────────────────────
             Spacer()
         }
         .padding(32)
@@ -665,17 +610,14 @@ struct FamilyPhotosView: View {
     
     private var selectionToolbar: some View {
         HStack(spacing: 0) {
-            // Condividi
             Button {
                 Task { await shareSelected() }
             } label: {
                 VStack(spacing: 4) {
                     if isPreparingShare {
-                        ProgressView()
-                            .frame(width: 22, height: 22)
+                        ProgressView().frame(width: 22, height: 22)
                     } else {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 22))
+                        Image(systemName: "square.and.arrow.up").font(.system(size: 22))
                     }
                     Text("Condividi").font(.caption2)
                 }
@@ -683,31 +625,24 @@ struct FamilyPhotosView: View {
             }
             .disabled(selectedIds.isEmpty || isPreparingShare)
             
-            // Aggiungi ad album
-            Button {
-                showAddToAlbum = true
-            } label: {
+            Button { showAddToAlbum = true } label: {
                 VStack(spacing: 4) {
-                    Image(systemName: "rectangle.stack.badge.plus")
-                        .font(.system(size: 22))
+                    Image(systemName: "rectangle.stack.badge.plus").font(.system(size: 22))
                     Text("Album").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
             }
             .disabled(selectedIds.isEmpty)
             
-            // Elimina
             Button(role: .destructive) {
                 let toDelete = photos.filter { selectedIds.contains($0.id) }
                 withAnimation(.snappy) {
                     toDelete.forEach { softDeletePhoto($0) }
-                    isSelectMode = false
-                    selectedIds = []
+                    isSelectMode = false; selectedIds = []
                 }
             } label: {
                 VStack(spacing: 4) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 22))
+                    Image(systemName: "trash").font(.system(size: 22))
                     Text("Elimina").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
@@ -715,8 +650,7 @@ struct FamilyPhotosView: View {
             }
             .disabled(selectedIds.isEmpty)
         }
-        .padding(.top, 10)
-        .padding(.bottom, 28)
+        .padding(.top, 10).padding(.bottom, 28)
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Divider() }
         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -730,13 +664,11 @@ struct FamilyPhotosView: View {
                 let toDelete = albums.filter { selectedAlbumIds.contains($0.id) }
                 withAnimation(.snappy) {
                     toDelete.forEach { softDeleteAlbum($0) }
-                    isAlbumSelectMode = false
-                    selectedAlbumIds = []
+                    isAlbumSelectMode = false; selectedAlbumIds = []
                 }
             } label: {
                 VStack(spacing: 4) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 22))
+                    Image(systemName: "trash").font(.system(size: 22))
                     Text("Elimina").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
@@ -744,8 +676,7 @@ struct FamilyPhotosView: View {
             }
             .disabled(selectedAlbumIds.isEmpty)
         }
-        .padding(.top, 10)
-        .padding(.bottom, 28)
+        .padding(.top, 10).padding(.bottom, 28)
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Divider() }
         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -756,7 +687,7 @@ struct FamilyPhotosView: View {
         else { selectedIds.insert(id) }
     }
     
-    // MARK: - Create album sheet
+    // MARK: - Sheets
     
     private var createAlbumSheet: some View {
         NavigationStack {
@@ -780,12 +711,9 @@ struct FamilyPhotosView: View {
         .presentationDetents([.medium])
     }
     
-    // MARK: - Add to album sheet
-    
     private var addToAlbumSheet: some View {
         NavigationStack {
             List {
-                // Crea nuovo album
                 Button {
                     showAddToAlbum = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -795,7 +723,6 @@ struct FamilyPhotosView: View {
                     Label("Nuovo album…", systemImage: "plus.rectangle.on.folder")
                         .foregroundStyle(.primary)
                 }
-                // Album esistenti
                 if !vm.albums.isEmpty {
                     Section("Album esistenti") {
                         ForEach(vm.albums) { album in
@@ -815,8 +742,7 @@ struct FamilyPhotosView: View {
                     }
                 }
             }
-            .navigationTitle("Aggiungi ad album")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Aggiungi ad album").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Annulla") { showAddToAlbum = false }
@@ -845,8 +771,7 @@ struct FamilyPhotosView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Crea") {
-                        let t = newAlbumTitle
-                        newAlbumTitle = ""
+                        let t = newAlbumTitle; newAlbumTitle = ""
                         showCreateAlbumFromSelection = false
                         createAlbumAndAddSelected(title: t)
                     }
@@ -890,56 +815,43 @@ struct FamilyPhotosView: View {
         }
     }
     
-    // MARK: - Actions
+    // MARK: - Upload
     
     private func uploadItems(_ items: [PhotosPickerItem]) async {
         guard !uid.isEmpty else { return }
         let total = Double(items.count); var done = 0.0
-        
         await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
         
         for item in items {
-            // Determina se è video o immagine dal contentType
             let isVideo = item.supportedContentTypes.contains(where: {
                 $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.identifier == "public.mpeg-4"
             })
-            
             let mediaData: Data?
             let mimeType: String
             let fileExt: String
-            var thumbB64FromURL: String? = nil   // thumbnail generato da URL (solo video)
-            var videoDurationSecs: Double? = nil  // durata in secondi (solo video)
+            var thumbB64FromURL: String? = nil
+            var videoDurationSecs: Double? = nil
             
             if isVideo {
-                // 1. Ottieni URL temporaneo raw dal PhotosPicker
                 guard let rawURL = try? await item.loadTransferable(type: VideoTransferable.self)?.url else {
                     KBLog.sync.kbError("uploadItems: VideoTransferable load failed")
                     done += 1; continue
                 }
-                // 2. Comprimi con AVAssetExportSession (MediumQuality ≈ 3-5 Mbps)
                 KBLog.sync.kbInfo("uploadItems: compressing video rawURL=\(rawURL.lastPathComponent)")
                 let videoURL = await VideoCompressor.compress(url: rawURL) ?? rawURL
                 KBLog.sync.kbInfo("uploadItems: videoURL ready=\(videoURL.lastPathComponent)")
-                
-                // 3. Leggi i Data PRIMA di qualsiasi operazione asincrona sul file
                 mediaData = try? Data(contentsOf: videoURL)
-                
-                // 4. Thumbnail + durata — il file è ancora su disco
                 let thumbData  = await PhotoRemoteStore.makeVideoThumbnail(url: videoURL)
                 let durSeconds = await VideoCompressor.videoDuration(url: videoURL)
                 thumbB64FromURL   = thumbData?.base64EncodedString()
                 videoDurationSecs = durSeconds
                 KBLog.sync.kbDebug("uploadItems: video thumb=\(thumbB64FromURL != nil) duration=\(durSeconds ?? -1)s")
-                
-                // 5. Cleanup — solo dopo aver letto tutto
                 if videoURL != rawURL { try? FileManager.default.removeItem(at: videoURL) }
                 try? FileManager.default.removeItem(at: rawURL)
-                mimeType = "video/mp4"
-                fileExt  = "mp4"
+                mimeType = "video/mp4"; fileExt = "mp4"
             } else {
                 mediaData = try? await item.loadTransferable(type: Data.self)
-                mimeType  = "image/jpeg"
-                fileExt   = "jpg"
+                mimeType = "image/jpeg"; fileExt = "jpg"
             }
             
             guard let data = mediaData else {
@@ -951,46 +863,32 @@ struct FamilyPhotosView: View {
             let now      = Date()
             let fileName = "\(isVideo ? "video" : "photo")_\(photoId).\(fileExt)"
             
-            // Thumbnail: per i video già generata dall'URL compresso sopra,
-            // per le immagini il resize normale da Data
             let thumbB64: String?
             if isVideo {
-                // Usa quella già generata; se mancasse (edge case) riprova da Data
                 if let t = thumbB64FromURL {
                     thumbB64 = t
-                    KBLog.sync.kbDebug("uploadItems: video thumb OK from URL photoId=\(photoId)")
                 } else {
                     KBLog.sync.kbError("uploadItems: video thumb from URL nil, retry from Data photoId=\(photoId)")
                     thumbB64 = await PhotoRemoteStore.makeVideoThumbnail(from: data)?.base64EncodedString()
-                    KBLog.sync.kbDebug("uploadItems: video thumb from Data=\(thumbB64 != nil) photoId=\(photoId)")
                 }
             } else {
                 thumbB64 = PhotoRemoteStore.makeThumbnail(from: data)?.base64EncodedString()
             }
             
             let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
-            
             let photo = KBFamilyPhoto(
-                id: photoId, familyId: familyId,
-                fileName: fileName,
+                id: photoId, familyId: familyId, fileName: fileName,
                 mimeType: mimeType, fileSize: Int64(data.count),
-                storagePath: storagePath,
-                thumbnailBase64: thumbB64,
+                storagePath: storagePath, thumbnailBase64: thumbB64,
                 takenAt: now, createdAt: now, updatedAt: now,
                 createdBy: uid, updatedBy: uid
             )
-            // IMPORTANTE: inserire come .synced per evitare che flush() chiami
-            // processPhotoOp → upsertMetadata PRIMA che upload() scriva il thumbnail.
-            // upload() chiama upsertMetadata internamente con il thumbnail già pronto.
             photo.syncState = .synced
             photo.videoDurationSeconds = isVideo ? videoDurationSecs : nil
             if let albumId = uploadTargetAlbumId { photo.albumIdsRaw = albumId }
             if !isVideo { cacheLocally(data: data, photoId: photoId, photo: photo) }
             
-            await MainActor.run {
-                modelContext.insert(photo)
-                try? modelContext.save()
-            }
+            await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
             
             do {
                 let albumIdsForUpload = uploadTargetAlbumId.map { [$0] } ?? []
@@ -1001,9 +899,7 @@ struct FamilyPhotosView: View {
                     caption: nil, albumIds: albumIdsForUpload,
                     precomputedThumbnailB64: thumbB64,
                     precomputedVideoDurationSeconds: isVideo ? videoDurationSecs : nil,
-                    onProgress: { p in
-                        Task { @MainActor in uploadProgress = (done + p) / total }
-                    }
+                    onProgress: { p in Task { @MainActor in uploadProgress = (done + p) / total } }
                 )
                 await MainActor.run {
                     photo.downloadURL = dto.downloadURL
@@ -1018,7 +914,7 @@ struct FamilyPhotosView: View {
                     try? modelContext.save()
                     uploadError = error.localizedDescription
                 }
-                KBLog.sync.kbError("uploadItems: FAILED photoId=\(photoId) isVideo=\(isVideo) err=\(error.localizedDescription)")
+                KBLog.sync.kbError("uploadItems: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
             }
             
             done += 1
@@ -1028,17 +924,8 @@ struct FamilyPhotosView: View {
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
     }
     
-    // MARK: - Upload da App Group (share extension → encryptedMedia)
-    
-    /// Legge il file copiato nell'App Group dalla Share Extension, lo carica
-    /// nell'album famiglia crittografato usando lo stesso path di uploadItems().
-    /// Cancella il file dall'App Group dopo l'upload.
     private func uploadFromAppGroup(path: String, fileType: String) async {
-        guard !uid.isEmpty else {
-            KBLog.sync.kbError("uploadFromAppGroup: uid empty — abort")
-            return
-        }
-        
+        guard !uid.isEmpty else { KBLog.sync.kbError("uploadFromAppGroup: uid empty — abort"); return }
         let fileURL  = URL(fileURLWithPath: path)
         let ext      = fileURL.pathExtension.lowercased()
         let isVideo  = ["mp4", "mov", "m4v"].contains(ext) || fileType == "video"
@@ -1047,231 +934,144 @@ struct FamilyPhotosView: View {
         let now      = Date()
         let fileName = "\(isVideo ? "video" : "photo")_\(photoId).\(isVideo ? "mp4" : "jpg")"
         
-        KBLog.sync.kbInfo("uploadFromAppGroup: START isVideo=\(isVideo) photoId=\(photoId) path=\(fileURL.lastPathComponent)")
-        
+        KBLog.sync.kbInfo("uploadFromAppGroup: START isVideo=\(isVideo) photoId=\(photoId)")
         await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
-        
-        // Cleanup App Group sempre — sia in caso di successo che di errore
         defer { try? FileManager.default.removeItem(at: fileURL) }
         
         do {
-            // ── 1. Leggi i dati ──────────────────────────────────────────────────
             guard let mediaData = try? Data(contentsOf: fileURL), !mediaData.isEmpty else {
                 KBLog.sync.kbError("uploadFromAppGroup: cannot read data path=\(path)")
                 await MainActor.run { withAnimation { isUploading = false }; uploadError = "Impossibile leggere il file." }
                 return
             }
-            
-            // ── 2. Thumbnail + durata (video) ───────────────────────────────────
             let thumbB64: String?
             var videoDurationSecs: Double? = nil
             if isVideo {
-                let thumbFromURL  = await PhotoRemoteStore.makeVideoThumbnail(url: fileURL)
-                let thumbFromData = thumbFromURL == nil
-                ? await PhotoRemoteStore.makeVideoThumbnail(from: mediaData)
-                : nil
-                let thumbData = thumbFromURL ?? thumbFromData
-                thumbB64 = thumbData?.base64EncodedString()
+                let t1 = await PhotoRemoteStore.makeVideoThumbnail(url: fileURL)
+                let t2 = t1 == nil ? await PhotoRemoteStore.makeVideoThumbnail(from: mediaData) : nil
+                thumbB64 = (t1 ?? t2)?.base64EncodedString()
                 videoDurationSecs = await VideoCompressor.videoDuration(url: fileURL)
             } else {
                 thumbB64 = PhotoRemoteStore.makeThumbnail(from: mediaData)?.base64EncodedString()
             }
-            
-            // ── 3. Crea KBFamilyPhoto locale ────────────────────────────────────
             let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
             let photo = KBFamilyPhoto(
-                id: photoId, familyId: familyId,
-                fileName: fileName, mimeType: mimeType,
-                fileSize: Int64(mediaData.count),
-                storagePath: storagePath,
-                thumbnailBase64: thumbB64,
-                takenAt: now, createdAt: now, updatedAt: now,
+                id: photoId, familyId: familyId, fileName: fileName, mimeType: mimeType,
+                fileSize: Int64(mediaData.count), storagePath: storagePath,
+                thumbnailBase64: thumbB64, takenAt: now, createdAt: now, updatedAt: now,
                 createdBy: uid, updatedBy: uid
             )
             photo.syncState = .synced
             photo.videoDurationSeconds = isVideo ? videoDurationSecs : nil
             if !isVideo { cacheLocally(data: mediaData, photoId: photoId, photo: photo) }
+            await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
             
-            await MainActor.run {
-                modelContext.insert(photo)
-                try? modelContext.save()
-            }
-            
-            // ── 4. Upload su Firebase Storage (cifrato) ─────────────────────────
             let dto = try await SyncCenter.photoRemote.upload(
                 photoId: photoId, familyId: familyId, userId: uid,
-                imageData: mediaData, fileName: fileName,
-                mimeType: mimeType, takenAt: now,
-                caption: nil, albumIds: [],
-                precomputedThumbnailB64: thumbB64,
+                imageData: mediaData, fileName: fileName, mimeType: mimeType, takenAt: now,
+                caption: nil, albumIds: [], precomputedThumbnailB64: thumbB64,
                 precomputedVideoDurationSeconds: isVideo ? videoDurationSecs : nil,
                 onProgress: { p in Task { @MainActor in uploadProgress = p } }
             )
+            await MainActor.run { photo.downloadURL = dto.downloadURL; photo.syncState = .synced; try? modelContext.save() }
             
-            await MainActor.run {
-                photo.downloadURL = dto.downloadURL
-                photo.syncState = .synced
-                try? modelContext.save()
-            }
-            
-            // ── 5. Cache locale video — prima che defer cancelli il file App Group ──
-            // PhotoFullscreenView cerca il video in Caches/KBPhotos/{id}.mp4.
-            // Senza questo, dovrebbe riscaricarlo da Firebase Storage ogni volta.
             if isVideo {
                 let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
                     .appendingPathComponent("KBPhotos", isDirectory: true)
                 try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
                 let cachedVideoURL = cacheDir.appendingPathComponent("\(photoId).mp4")
                 if (try? FileManager.default.copyItem(at: fileURL, to: cachedVideoURL)) != nil {
-                    await MainActor.run {
-                        photo.localPath = cachedVideoURL.path
-                        try? modelContext.save()
-                    }
-                    KBLog.sync.kbDebug("uploadFromAppGroup: video cached locally photoId=\(photoId)")
+                    await MainActor.run { photo.localPath = cachedVideoURL.path; try? modelContext.save() }
                 }
             }
-            
-            // ── 6. Cleanup App Group — gestito dal defer sopra ─────────────────
             KBLog.sync.kbInfo("uploadFromAppGroup: OK photoId=\(photoId) isVideo=\(isVideo)")
-            
         } catch {
             await MainActor.run {
                 uploadError = error.localizedDescription
                 KBLog.sync.kbError("uploadFromAppGroup: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
             }
         }
-        
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
     }
     
-    // MARK: - Upload da fotocamera
-    
-    /// Foto scattata dalla fotocamera → upload diretto in libreria (+ album se targetAlbumId != nil).
     private func uploadCapturedPhoto(data: Data, targetAlbumId: String?) async {
         guard !uid.isEmpty else { return }
-        let photoId     = UUID().uuidString
-        let now         = Date()
-        let fileName    = "photo_\(photoId).jpg"
-        let thumbB64    = PhotoRemoteStore.makeThumbnail(from: data)?.base64EncodedString()
+        let photoId  = UUID().uuidString; let now = Date()
+        let fileName = "photo_\(photoId).jpg"
+        let thumbB64 = PhotoRemoteStore.makeThumbnail(from: data)?.base64EncodedString()
         let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
-        
         await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
-        
         let photo = KBFamilyPhoto(
-            id: photoId, familyId: familyId,
-            fileName: fileName,
+            id: photoId, familyId: familyId, fileName: fileName,
             mimeType: "image/jpeg", fileSize: Int64(data.count),
-            storagePath: storagePath,
-            thumbnailBase64: thumbB64,
-            takenAt: now, createdAt: now, updatedAt: now,
-            createdBy: uid, updatedBy: uid
+            storagePath: storagePath, thumbnailBase64: thumbB64,
+            takenAt: now, createdAt: now, updatedAt: now, createdBy: uid, updatedBy: uid
         )
         photo.syncState = .synced
         if let albumId = targetAlbumId { photo.albumIdsRaw = albumId }
         cacheLocally(data: data, photoId: photoId, photo: photo)
-        
-        await MainActor.run {
-            modelContext.insert(photo)
-            try? modelContext.save()
-        }
-        
+        await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
         do {
-            let albumIds = targetAlbumId.map { [$0] } ?? []
             let dto = try await SyncCenter.photoRemote.upload(
                 photoId: photoId, familyId: familyId, userId: uid,
-                imageData: data, fileName: fileName,
-                mimeType: "image/jpeg", takenAt: now,
-                caption: nil, albumIds: albumIds,
-                precomputedThumbnailB64: thumbB64,
-                precomputedVideoDurationSeconds: nil,
+                imageData: data, fileName: fileName, mimeType: "image/jpeg", takenAt: now,
+                caption: nil, albumIds: targetAlbumId.map { [$0] } ?? [],
+                precomputedThumbnailB64: thumbB64, precomputedVideoDurationSeconds: nil,
                 onProgress: { p in Task { @MainActor in uploadProgress = p } }
             )
-            await MainActor.run {
-                photo.downloadURL = dto.downloadURL
-                photo.syncState = .synced
-                try? modelContext.save()
-            }
+            await MainActor.run { photo.downloadURL = dto.downloadURL; photo.syncState = .synced; try? modelContext.save() }
             KBLog.sync.kbInfo("uploadCapturedPhoto: OK photoId=\(photoId)")
         } catch {
             await MainActor.run {
-                photo.syncState = .pendingUpsert
-                photo.lastSyncError = error.localizedDescription
-                try? modelContext.save()
-                uploadError = error.localizedDescription
+                photo.syncState = .pendingUpsert; photo.lastSyncError = error.localizedDescription
+                try? modelContext.save(); uploadError = error.localizedDescription
             }
             KBLog.sync.kbError("uploadCapturedPhoto: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
         }
-        
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
     }
     
-    /// Video registrato dalla fotocamera → comprimi + upload in libreria (+ album se targetAlbumId != nil).
     private func uploadCapturedVideo(url: URL, targetAlbumId: String?) async {
         guard !uid.isEmpty else { return }
         await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
         defer { try? FileManager.default.removeItem(at: url) }
-        
         let videoURL = await VideoCompressor.compress(url: url) ?? url
         guard let data = try? Data(contentsOf: videoURL) else {
             await MainActor.run { withAnimation { isUploading = false }; uploadError = "Impossibile leggere il video." }
             return
         }
-        
-        let photoId     = UUID().uuidString
-        let now         = Date()
+        let photoId = UUID().uuidString; let now = Date()
         let fileName    = "video_\(photoId).mp4"
-        let thumbData   = await PhotoRemoteStore.makeVideoThumbnail(url: videoURL)
-        let thumbB64    = thumbData?.base64EncodedString()
+        let thumbB64    = await PhotoRemoteStore.makeVideoThumbnail(url: videoURL)?.base64EncodedString()
         let durSecs     = await VideoCompressor.videoDuration(url: videoURL)
         let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
-        
         if videoURL != url { try? FileManager.default.removeItem(at: videoURL) }
-        
         let photo = KBFamilyPhoto(
-            id: photoId, familyId: familyId,
-            fileName: fileName,
+            id: photoId, familyId: familyId, fileName: fileName,
             mimeType: "video/mp4", fileSize: Int64(data.count),
-            storagePath: storagePath,
-            thumbnailBase64: thumbB64,
-            takenAt: now, createdAt: now, updatedAt: now,
-            createdBy: uid, updatedBy: uid
+            storagePath: storagePath, thumbnailBase64: thumbB64,
+            takenAt: now, createdAt: now, updatedAt: now, createdBy: uid, updatedBy: uid
         )
-        photo.syncState            = .synced
-        photo.videoDurationSeconds = durSecs
+        photo.syncState = .synced; photo.videoDurationSeconds = durSecs
         if let albumId = targetAlbumId { photo.albumIdsRaw = albumId }
-        
-        await MainActor.run {
-            modelContext.insert(photo)
-            try? modelContext.save()
-        }
-        
+        await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
         do {
-            let albumIds = targetAlbumId.map { [$0] } ?? []
             let dto = try await SyncCenter.photoRemote.upload(
                 photoId: photoId, familyId: familyId, userId: uid,
-                imageData: data, fileName: fileName,
-                mimeType: "video/mp4", takenAt: now,
-                caption: nil, albumIds: albumIds,
-                precomputedThumbnailB64: thumbB64,
-                precomputedVideoDurationSeconds: durSecs,
+                imageData: data, fileName: fileName, mimeType: "video/mp4", takenAt: now,
+                caption: nil, albumIds: targetAlbumId.map { [$0] } ?? [],
+                precomputedThumbnailB64: thumbB64, precomputedVideoDurationSeconds: durSecs,
                 onProgress: { p in Task { @MainActor in uploadProgress = p } }
             )
-            await MainActor.run {
-                photo.downloadURL = dto.downloadURL
-                photo.syncState = .synced
-                try? modelContext.save()
-            }
+            await MainActor.run { photo.downloadURL = dto.downloadURL; photo.syncState = .synced; try? modelContext.save() }
             KBLog.sync.kbInfo("uploadCapturedVideo: OK photoId=\(photoId)")
         } catch {
             await MainActor.run {
-                photo.syncState = .pendingUpsert
-                photo.lastSyncError = error.localizedDescription
-                try? modelContext.save()
-                uploadError = error.localizedDescription
+                photo.syncState = .pendingUpsert; photo.lastSyncError = error.localizedDescription
+                try? modelContext.save(); uploadError = error.localizedDescription
             }
             KBLog.sync.kbError("uploadCapturedVideo: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
         }
-        
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
     }
     
@@ -1287,35 +1087,24 @@ struct FamilyPhotosView: View {
     private func softDeletePhoto(_ photo: KBFamilyPhoto) {
         photo.isDeleted = true; photo.updatedAt = Date()
         try? modelContext.save()
-        vm.reloadLocal()   // aggiorna subito la griglia senza aspettare il listener Firestore
-        let photoId = photo.id
-        let fid = familyId
+        vm.reloadLocal()
+        let photoId = photo.id; let fid = familyId
         Task {
-            do {
-                try await SyncCenter.photoRemote.softDeletePhoto(familyId: fid, photoId: photoId)
-                KBLog.sync.kbInfo("softDeletePhoto: OK photoId=\(photoId)")
-            } catch {
-                KBLog.sync.kbError("softDeletePhoto: FAILED photoId=\(photoId) err=\(error.localizedDescription)")
-            }
+            do { try await SyncCenter.photoRemote.softDeletePhoto(familyId: fid, photoId: photoId) }
+            catch { KBLog.sync.kbError("softDeletePhoto: FAILED photoId=\(photoId) err=\(error.localizedDescription)") }
         }
     }
     
     private func createAlbum() {
         let title = newAlbumTitle.trimmingCharacters(in: .whitespaces)
         guard !title.isEmpty, !uid.isEmpty else { return }
-        let album = KBPhotoAlbum(
-            familyId: familyId, title: title, sortOrder: vm.albums.count,
-            createdBy: uid, updatedBy: uid
-        )
-        modelContext.insert(album)
-        try? modelContext.save()
+        let album = KBPhotoAlbum(familyId: familyId, title: title, sortOrder: vm.albums.count, createdBy: uid, updatedBy: uid)
+        modelContext.insert(album); try? modelContext.save()
         vm.reloadLocal()
-        // Upload diretto (non outbox cancellabile) per garantire la sync
         SyncCenter.shared.uploadAlbumDirectly(albumId: album.id, familyId: familyId, modelContext: modelContext)
         newAlbumTitle = ""
     }
     
-    /// Aggiunge le foto selezionate ad un album esistente (aggiorna albumIdsRaw locale + Firestore)
     private func addSelectedPhotos(toAlbum albumId: String) {
         let toUpdate = photos.filter { selectedIds.contains($0.id) }
         for photo in toUpdate {
@@ -1332,15 +1121,10 @@ struct FamilyPhotosView: View {
         withAnimation(.snappy) { isSelectMode = false; selectedIds = [] }
     }
     
-    /// Crea un nuovo album e ci aggiunge subito le foto selezionate
     private func createAlbumAndAddSelected(title: String) {
         guard !title.isEmpty, !uid.isEmpty else { return }
-        let album = KBPhotoAlbum(
-            familyId: familyId, title: title, sortOrder: vm.albums.count,
-            createdBy: uid, updatedBy: uid
-        )
-        modelContext.insert(album)
-        try? modelContext.save()
+        let album = KBPhotoAlbum(familyId: familyId, title: title, sortOrder: vm.albums.count, createdBy: uid, updatedBy: uid)
+        modelContext.insert(album); try? modelContext.save()
         vm.reloadLocal()
         SyncCenter.shared.uploadAlbumDirectly(albumId: album.id, familyId: familyId, modelContext: modelContext)
         addSelectedPhotos(toAlbum: album.id)
@@ -1353,170 +1137,139 @@ struct FamilyPhotosView: View {
         SyncCenter.shared.deleteAlbumDirectly(albumId: album.id, familyId: familyId, modelContext: modelContext)
     }
     
-    // MARK: - Share selected
-    
     private func shareSelected() async {
         guard !selectedIds.isEmpty else { return }
         await MainActor.run { isPreparingShare = true }
-        
         var items: [Any] = []
-        let selected = photos.filter { selectedIds.contains($0.id) }
-        
-        for photo in selected {
-            // 1. Prova dalla cache locale
+        for photo in photos.filter({ selectedIds.contains($0.id) }) {
             if let path = photo.localPath, FileManager.default.fileExists(atPath: path) {
-                if photo.isVideo {
-                    items.append(URL(fileURLWithPath: path))
-                } else if let img = UIImage(contentsOfFile: path) {
-                    items.append(img)
-                }
+                if photo.isVideo { items.append(URL(fileURLWithPath: path)) }
+                else if let img = UIImage(contentsOfFile: path) { items.append(img) }
                 continue
             }
-            // 2. Scarica e decrittografa
             guard !photo.storagePath.isEmpty else { continue }
             do {
-                let data = try await SyncCenter.photoRemote.download(
-                    storagePath: photo.storagePath, familyId: familyId, userId: uid
-                )
+                let data = try await SyncCenter.photoRemote.download(storagePath: photo.storagePath, familyId: familyId, userId: uid)
                 if photo.isVideo {
-                    let tmpURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("\(photo.id).mp4")
-                    try? data.write(to: tmpURL)
-                    items.append(tmpURL)
-                } else if let img = UIImage(data: data) {
-                    items.append(img)
-                }
+                    let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(photo.id).mp4")
+                    try? data.write(to: tmpURL); items.append(tmpURL)
+                } else if let img = UIImage(data: data) { items.append(img) }
             } catch {
                 KBLog.sync.kbError("shareSelected: download failed photoId=\(photo.id) err=\(error.localizedDescription)")
             }
         }
-        
         await MainActor.run {
             isPreparingShare = false
-            if !items.isEmpty {
-                shareItems = items
-                showShareSheet = true
-            }
+            if !items.isEmpty { shareItems = items; showShareSheet = true }
         }
     }
     
-    // MARK: - Send to chat
-    
     private func sendToChat(_ photo: KBFamilyPhoto) async {
         await MainActor.run { isSendingToChat = true }
-        
-        let ext = photo.isVideo ? "mp4" : "jpg"
-        // File temporaneo dedicato per la chat: ChatView lo elimina dopo l'invio,
-        // quindi non usiamo la cache KBPhotos per non invalidarla.
-        let tmpURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(photo.id)_chat.\(ext)")
-        
+        let ext    = photo.isVideo ? "mp4" : "jpg"
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(photo.id)_chat.\(ext)")
         do {
-            // 1. Se già in cache su disco, copiamo lì (senza toccare la cache)
-            let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("KBPhotos", isDirectory: true)
+            let cacheDir  = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("KBPhotos", isDirectory: true)
             let cachedURL = cacheDir.appendingPathComponent("\(photo.id).\(ext)")
-            
             if FileManager.default.fileExists(atPath: cachedURL.path) {
                 try? FileManager.default.removeItem(at: tmpURL)
                 try FileManager.default.copyItem(at: cachedURL, to: tmpURL)
             } else {
-                // 2. Scarica e decrittografa
-                guard !photo.storagePath.isEmpty else {
-                    await MainActor.run { isSendingToChat = false }
-                    return
-                }
-                let data = try await SyncCenter.photoRemote.download(
-                    storagePath: photo.storagePath, familyId: familyId, userId: uid
-                )
+                guard !photo.storagePath.isEmpty else { await MainActor.run { isSendingToChat = false }; return }
+                let data = try await SyncCenter.photoRemote.download(storagePath: photo.storagePath, familyId: familyId, userId: uid)
                 try data.write(to: tmpURL, options: .atomic)
             }
-            
-            // 3. Naviga alla chat — usa sempre pendingShareImagePath (gestisce anche i video
-            //    via estensione file e attende 800ms che il ChatViewModel sia pronto)
             await MainActor.run {
                 isSendingToChat = false
                 coordinator.pendingShareImagePath = tmpURL.path
                 coordinator.navigate(to: .chat)
             }
         } catch {
-            await MainActor.run {
-                isSendingToChat = false
-                sendToChatError = error.localizedDescription
-            }
+            await MainActor.run { isSendingToChat = false; sendToChatError = error.localizedDescription }
         }
     }
 }
-
 
 // MARK: - ActivityViewController
 
 private struct ActivityViewController: UIViewControllerRepresentable {
     let activityItems: [Any]
-    
     func makeUIViewController(context: Context) -> UIActivityViewController {
         UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
     }
-    
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - KBFamilyPhoto grid identity
 
 extension KBFamilyPhoto {
-    /// ID composito usato come chiave di identità nella LazyVGrid.
-    /// Includendo videoDurationSeconds, quando la durata cambia da nil a un valore
-    /// SwiftUI ricrea la cella da zero (invece di aggiornarla), bypassando il bug
-    /// per cui @Bindable non propaga modifiche a Optional<Double> in LazyVGrid.
     var stableGridId: String {
-        if let dur = videoDurationSeconds {
-            return "\(id)-\(Int(dur * 1000))"
-        }
+        if let dur = videoDurationSeconds { return "\(id)-\(Int(dur * 1000))" }
         return id
     }
 }
 
+
+// MARK: - IdentifiableImagePath (per sheet(item:) in PhotoFullscreenView)
+// Wrapper Identifiable attorno al PATH del JPEG su disco.
+// Passare il path invece dei Data evita di tenere il JPEG (~34MB)
+// nello @State del parent view e in PhotoEditorView.imageData contemporaneamente.
+// PhotoEditorView legge i bytes dal disco solo quando necessario (flattenToJPEG).
+
+struct IdentifiableImagePath: Identifiable {
+    let id   = UUID()
+    let path: String   // percorso assoluto del JPEG su disco
+}
 // MARK: - PhotoThumbnailCell
+//
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  FIX 1 — IOSurface crash / memoria GPU esaurita                ║
+// ║    Causa: il vecchio loadFull() scaricava il file intero        ║
+// ║    (34 MB) per ogni cella visibile nella griglia, esaurendo     ║
+// ║    la memoria GPU → IOSurface creation failed: e00002c2.        ║
+// ║    Fix: la griglia mostra SOLO photo.thumbnailData (max 200 px, ║
+// ║    già in memoria, pochi KB). Il file intero viene scaricato    ║
+// ║    solo in PhotoFullscreenView quando l'utente apre la foto.    ║
+// ║                                                                  ║
+// ║  FIX 2 — download triplicato/quadruplicato                     ║
+// ║    Causa: loadFull() scaricava il file intero ad ogni .task     ║
+// ║    rilanciato da reloadLocal() (vedi FamilyPhotosViewModel).    ║
+// ║    Fix: rimosso completamente il .task e il download.           ║
+// ║                                                                  ║
+// ║  FIX 3 — _log() di debug attivo in produzione                  ║
+// ║    Causa: Self._log() chiamato in ogni body, su ogni render,    ║
+// ║    per ogni cella. Scriveva su KBLog ad ogni frame.             ║
+// ║    Fix: rimosso.                                                ║
+// ╚══════════════════════════════════════════════════════════════════╝
 
 struct PhotoThumbnailCell: View {
     @Bindable var photo: KBFamilyPhoto
     let familyId: String
     let userId: String
-    /// Passato come valore dalla griglia (copiato dal ViewModel @Published).
-    /// Quando il ViewModel riassegna l'array, SwiftUI confronta questo valore
-    /// e ri-renderizza la cella — bypassa il bug @Bindable su Optional<Double>
-    /// in LazyVGrid che impediva la comparsa della badge durata.
     let videoDurationSeconds: Double?
     let isVideo: Bool
-    @State private var image: UIImage?
-    
-    // DEBUG — rimuovere dopo il fix
-    private static func _log(_ id: String, _ isVid: Bool, _ dur: Double?) -> Bool {
-        KBLog.sync.kbError("CELL_RENDER id=\(id.prefix(8)) isVideo=\(isVid) dur=\(dur.map { String(format: "%.2f", $0) } ?? "nil")")
-        return true
-    }
     
     var body: some View {
-        let _ = Self._log(photo.id, isVideo, videoDurationSeconds)
         ZStack {
             Color.secondary.opacity(0.12)
-            if let img = image {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFill()
-            } else if let td = photo.thumbnailData, let img = UIImage(data: td) {
+            
+            if let td = photo.thumbnailData, let img = UIImage(data: td) {
+                // Thumbnail già in memoria (max 200 px, pochi KB).
+                // Nessun download, nessuna allocazione GPU grande.
                 Image(uiImage: img)
                     .resizable()
                     .scaledToFill()
             } else {
-                Image(systemName: "photo")
+                // Placeholder finché il thumbnail non arriva da Firestore.
+                Image(systemName: isVideo ? "video" : "photo")
                     .font(.title3)
                     .foregroundStyle(.quaternary)
             }
         }
         .clipped()
         .contentShape(Rectangle())
-        .task(id: photo.id) { await loadFull() }
+        // Nessun .task: non scarichiamo nulla nella griglia.
+        // Il file completo viene scaricato solo in PhotoFullscreenView.load().
     }
     
     static func formatDuration(_ seconds: Double) -> String {
@@ -1527,46 +1280,7 @@ struct PhotoThumbnailCell: View {
         if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
         return String(format: "%d:%02d", m, s)
     }
-    
-    private func loadFull() async {
-        // I video mostrano la durata da photo.videoDurationSeconds (osservato da SwiftData).
-        // Non scaricare il file intero nella griglia.
-        guard !isVideo else { return }
-        
-        // 1. Local cache — verifica che il file esista ancora (iOS può svuotare Caches)
-        if let path = photo.localPath,
-           FileManager.default.fileExists(atPath: path),
-           let img = UIImage(contentsOfFile: path) {
-            await MainActor.run { image = img }; return
-        }
-        // 2. storagePath deve essere valorizzato
-        guard !photo.storagePath.isEmpty else {
-            KBLog.sync.kbDebug("PhotoThumbnailCell: storagePath empty, skip photoId=\(photo.id)")
-            return
-        }
-        // 3. Download + decrypt with family master key (solo immagini)
-        KBLog.sync.kbDebug("PhotoThumbnailCell: start download photoId=\(photo.id)")
-        do {
-            let data = try await SyncCenter.photoRemote.download(
-                storagePath: photo.storagePath, familyId: familyId, userId: userId
-            )
-            KBLog.sync.kbDebug("PhotoThumbnailCell: download OK bytes=\(data.count) photoId=\(photo.id)")
-            guard let img = UIImage(data: data) else {
-                KBLog.sync.kbError("PhotoThumbnailCell: UIImage init failed photoId=\(photo.id)")
-                return
-            }
-            let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("KBPhotos", isDirectory: true)
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let url = dir.appendingPathComponent("\(photo.id).jpg")
-            try? data.write(to: url)
-            await MainActor.run { image = img }
-        } catch {
-            KBLog.sync.kbError("PhotoThumbnailCell: FAILED photoId=\(photo.id) err=\(error.localizedDescription)")
-        }
-    }
 }
-
 
 // MARK: - AlbumCard / AlbumCreateCard
 
@@ -1584,8 +1298,7 @@ private struct AlbumCard: View {
                    let td = cover.thumbnailData, let img = UIImage(data: td) {
                     Image(uiImage: img).resizable().scaledToFill()
                 } else {
-                    Image(systemName: "rectangle.stack.fill")
-                        .font(.largeTitle).foregroundStyle(.quaternary)
+                    Image(systemName: "rectangle.stack.fill").font(.largeTitle).foregroundStyle(.quaternary)
                 }
             }
             .frame(width: cellWidth, height: cellWidth)
@@ -1606,9 +1319,7 @@ private struct AlbumCreateCard: View {
                 .fill(Color.secondary.opacity(0.12))
                 .frame(width: cellWidth, height: cellWidth)
                 .overlay(
-                    Image(systemName: "plus")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundStyle(.secondary)
+                    Image(systemName: "plus").font(.system(size: 28, weight: .light)).foregroundStyle(.secondary)
                 )
             Text("Nuovo album").font(.subheadline.weight(.semibold))
             Text(" ").font(.caption)
@@ -1616,7 +1327,6 @@ private struct AlbumCreateCard: View {
         .frame(width: cellWidth)
     }
 }
-
 
 // MARK: - Full-screen viewer
 
@@ -1628,11 +1338,22 @@ struct PhotoFullscreenView: View {
     let onDismiss: () -> Void
     
     @State private var currentIndex: Int
-    /// Cache per le immagini decrittate
+    // FIX OOM — imageCache tiene al massimo 3 immagini in memoria simultaneamente.
+    // Ogni UIImage da 34 MB decodificata occupa ~100 MB di bitmap non compressa.
+    // Con 3 foto il picco è ~300 MB, entro il limite dei device supportati.
+    // Le immagini vengono ridimensionate alla dimensione dello schermo (vedi downscaleForDisplay)
+    // prima di entrare in cache: ~6 MB invece di ~100 MB ciascuna.
     @State private var imageCache: [String: UIImage] = [:]
-    /// Cache per gli URL locali dei video decrittati (Caches/KBPhotos/{id}.mp4)
+    // Ordine di inserimento per LRU eviction
+    @State private var imageCacheOrder: [String] = []
     @State private var videoURLCache: [String: URL] = [:]
-    @State private var showEditor = false
+    // editorImageData: nil = sheet chiusa, non-nil = sheet aperta con quei JPEG bytes.
+    // Passare Data invece di UIImage evita di tenere il bitmap (~12MB) nello @State.
+    // sheet(item:) crea la sheet solo quando è non-nil → nessun race condition.
+    @State private var editorImagePath: IdentifiableImagePath? = nil
+    
+    // Dimensione massima cache in memoria: 3 foto ridimensionate
+    private let maxCachedImages = 3
     
     init(startPhoto: KBFamilyPhoto, allPhotos: [KBFamilyPhoto],
          familyId: String, userId: String, onDismiss: @escaping () -> Void) {
@@ -1647,19 +1368,14 @@ struct PhotoFullscreenView: View {
             TabView(selection: $currentIndex) {
                 ForEach(allPhotos.indices, id: \.self) { i in
                     let p = allPhotos[i]
-                    FullscreenMediaCell(
-                        photo: p,
-                        image: imageCache[p.id],
-                        videoURL: videoURLCache[p.id]
-                    )
-                    .tag(i)
-                    .task(id: p.id) { await load(p) }
+                    FullscreenMediaCell(photo: p, image: imageCache[p.id], videoURL: videoURLCache[p.id])
+                        .tag(i)
+                        .task(id: p.id) { await load(p) }
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             
-            // ── Tasto chiudi (top-trailing) ──────────────────────────────────
             VStack {
                 HStack {
                     Spacer()
@@ -1670,64 +1386,194 @@ struct PhotoFullscreenView: View {
                     .padding(20).padding(.top, 44)
                 }
                 Spacer()
-                // ── Tasto modifica (bottom-trailing) — solo per immagini ─────
                 let currentPhoto = allPhotos[currentIndex]
                 if !currentPhoto.isVideo, imageCache[currentPhoto.id] != nil {
                     HStack {
                         Spacer()
                         Button {
-                            showEditor = true
+                            // Carica l'immagine originale (non ridimensionata) per l'editor
+                            Task { await loadOriginalForEditor(currentPhoto) }
                         } label: {
                             Label("Modifica", systemImage: "slider.horizontal.3")
-                                .font(.subheadline.bold())
-                                .foregroundStyle(.white)
+                                .font(.subheadline.bold()).foregroundStyle(.white)
                                 .padding(.horizontal, 16).padding(.vertical, 9)
                                 .background(.ultraThinMaterial, in: Capsule())
                         }
-                        .padding(.trailing, 20)
-                        .padding(.bottom, 52)
+                        .padding(.trailing, 20).padding(.bottom, 52)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
             }
         }
-        .sheet(isPresented: $showEditor) {
+        .sheet(item: $editorImagePath) { item in
+            // sheet(item:) garantisce che la sheet venga creata SOLO quando
+            // editorImageData è non-nil, eliminando il race condition dove la sheet
+            // si apriva prima che i dati fossero disponibili.
+            // Passare imagePath: String invece di Data evita di tenere il JPEG (~34MB)
+            // nello @State. PhotoEditorView legge i bytes dal disco solo quando serve.
             let currentPhoto = allPhotos[currentIndex]
-            if let img = imageCache[currentPhoto.id] {
-                PhotoEditorView(
-                    photo:    currentPhoto,
-                    image:    img,
-                    familyId: familyId,
-                    userId:   userId,
-                    onSaved:  { newPhoto in
-                        // La nuova foto è già nel SwiftData context — il listener
-                        // Firestore la sincronizzerà e reloadLocal() la mostrerà
-                        // in griglia automaticamente.
-                        KBLog.sync.kbInfo("PhotoEditor: saved new photo id=\(newPhoto.id)")
-                    }
-                )
-            }
+            PhotoEditorView(
+                photo: currentPhoto, imagePath: item.path,
+                familyId: familyId, userId: userId,
+                onSaved: { newPhoto in
+                    KBLog.sync.kbInfo("PhotoEditor: saved new photo id=\(newPhoto.id)")
+                }
+            )
+        }
+        .onDisappear {
+            // FIX OOM — svuota la cache immagini quando si chiude il fullscreen.
+            // I file rimangono su disco (Caches/KBPhotos) e vengono ricaricati
+            // se l'utente riapre lo stesso fullscreen.
+            imageCache.removeAll()
+            imageCacheOrder.removeAll()
+        }
+    }
+    
+    // MARK: - Cache management (LRU, max 3 immagini)
+    
+    private func addToImageCache(id: String, image: UIImage) {
+        // Se già presente aggiorna solo l'immagine (evita duplicati in order)
+        if imageCache[id] != nil {
+            imageCache[id] = image
+            return
+        }
+        // Evict la più vecchia se la cache è piena
+        if imageCacheOrder.count >= maxCachedImages, let oldest = imageCacheOrder.first {
+            imageCache.removeValue(forKey: oldest)
+            imageCacheOrder.removeFirst()
+            KBLog.sync.kbDebug("PhotoFullscreen: evicted imageCache id=\(oldest.prefix(8)) (LRU)")
+        }
+        imageCache[id] = image
+        imageCacheOrder.append(id)
+    }
+    
+    // MARK: - Ridimensionamento per display (FIX OOM principale)
+    //
+    // Una foto da 34 MB (es. 4032×3024 HEIC) decodificata in UIImage
+    // occupa width × height × 4 bytes ≈ 48 MB di bitmap.
+    // Ridimensionata a 1170×877 (iPhone screen) occupa ~4 MB.
+    // Questo riduce il picco di memoria GPU di ~12x.
+    //
+    // IMPORTANTE: questa immagine ridimensionata va bene per il visualizzatore
+    // ma NON per PhotoEditorView, che ha bisogno della risoluzione originale
+    // per un flatten() di qualità. Per questo usiamo loadOriginalForEditor().
+    
+    private func downscaleForDisplay(_ data: Data) -> UIImage? {
+        guard let src = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return Self.downscaleSource(src)
+    }
+    
+    /// Versione URL: NON carica il file in Data — legge solo l'header necessario.
+    /// CGImageSourceCreateWithURL usa lazy I/O: decodifica solo i byte necessari
+    /// per produrre il thumbnail, senza mai allocare il JPEG intero in RAM.
+    /// Risparmio: 34MB per ogni foto caricata nel fullscreen viewer.
+    private func downscaleForDisplayFromURL(_ url: URL) -> UIImage? {
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return Self.downscaleSource(src)
+    }
+    
+    private static func downscaleSource(_ src: CGImageSource) -> UIImage? {
+        let props     = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any]
+        let origW     = (props?[kCGImagePropertyPixelWidth]  as? CGFloat) ?? 0
+        let origH     = (props?[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
+        let origMax   = max(origW, origH)
+        let screen    = UIScreen.main.bounds.size
+        let scale     = UIScreen.main.scale
+        let targetMax = max(screen.width, screen.height) * scale * 1.5
+        let maxPx     = origMax > 0 ? min(targetMax, origMax) : targetMax
+        let opts: [CFString: Any] = [
+            kCGImageSourceThumbnailMaxPixelSize:          maxPx,
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform:   true
+        ]
+        guard let cgImg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else {
+            return nil
+        }
+        return UIImage(cgImage: cgImg)
+    }
+    
+    // MARK: - Carica immagine originale per editor
+    //
+    // Priorità di lettura:
+    //   1. photo.localPath  — scritto da cacheLocally() all'upload (foto/rullino/camera)
+    //   2. Caches/KBPhotos/{id}.jpg — scritto da load() dopo il download fullscreen
+    //   3. Download fresco da Firebase (edge case: entrambi mancanti)
+    //
+    // editorImage viene impostato prima di essere presentato come item della sheet.
+    
+    // Carica l'immagine originale a piena risoluzione per l'editor.
+    //
+    // IMPORTANTE: non usa mai il file in Caches/KBPhotos/{id}.jpg perché
+    // quel file è scritto da downscaleForDisplay() ed è ridimensionato alla
+    // dimensione dello schermo (~1/12 dei pixel originali). Usarlo nell'editor
+    // produce foto "stracchate" e salvataggi a bassa risoluzione.
+    //
+    // Strategia:
+    //   1. photo.localPath — JPEG originale scritto da cacheLocally() all'upload.
+    //      È a piena risoluzione. Usato direttamente leggendo i byte dal disco.
+    //   2. Download fresco — se localPath è assente o il file è sparito da Caches.
+    //
+    // I JPEG bytes vengono passati a PhotoEditorView che gestisce internamente
+    // la normalizzazione dell'orientamento EXIF.
+    
+    private func loadOriginalForEditor(_ photo: KBFamilyPhoto) async {
+        // Passa i JPEG bytes originali direttamente a PhotoEditorView come Data.
+        // PhotoEditorView li riceve come imageData: Data e:
+        //   - genera una preview ridimensionata (~4MB) per la UI
+        //   - usa i bytes originali solo in flattenToJPEG() al salvataggio
+        // Questo evita di allocare il bitmap non compresso (~12-27MB) nello @State.
+        
+        // 1. photo.localPath — JPEG locale scritto da cacheLocally() all'upload
+        if let localPath = photo.localPath,
+           FileManager.default.fileExists(atPath: localPath),
+           FileManager.default.fileExists(atPath: localPath) {
+            // Passa solo il path — PhotoEditorView legge i bytes dal disco quando serve.
+            // Evita di tenere 34MB in RAM nello @State.
+            KBLog.sync.kbDebug("PhotoFullscreen: editor path from localPath photoId=\(photo.id)")
+            await MainActor.run { editorImagePath = IdentifiableImagePath(path: localPath) }
+            return
+        }
+        
+        // 2. Download fresco da Firebase Storage
+        guard !photo.storagePath.isEmpty else {
+            KBLog.sync.kbError("PhotoFullscreen: loadOriginalForEditor storagePath empty photoId=\(photo.id)")
+            return
+        }
+        KBLog.sync.kbDebug("PhotoFullscreen: editor downloading photoId=\(photo.id)")
+        do {
+            let data = try await SyncCenter.photoRemote.download(
+                storagePath: photo.storagePath, familyId: familyId, userId: userId
+            )
+            let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("KBPhotos", isDirectory: true)
+            try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+            let origURL = cacheDir.appendingPathComponent("\(photo.id)_orig.jpg")
+            try? data.write(to: origURL, options: .atomic)
+            // Passa il path sul disco — non i Data in RAM.
+            KBLog.sync.kbDebug("PhotoFullscreen: editor path from download photoId=\(photo.id)")
+            await MainActor.run { editorImagePath = IdentifiableImagePath(path: origURL.path) }
+        } catch {
+            KBLog.sync.kbError("PhotoFullscreen: loadOriginalForEditor FAILED photoId=\(photo.id) err=\(error.localizedDescription)")
         }
     }
     
     private func load(_ photo: KBFamilyPhoto) async {
         let isVideo = photo.isVideo
-        
-        // Già in cache
         if isVideo && videoURLCache[photo.id] != nil { return }
         if !isVideo && imageCache[photo.id] != nil { return }
         
-        // Prova la cache locale su disco
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("KBPhotos", isDirectory: true)
-        let ext = isVideo ? "mp4" : "jpg"
+        let ext      = isVideo ? "mp4" : "jpg"
         let localURL = cacheDir.appendingPathComponent("\(photo.id).\(ext)")
         
         if FileManager.default.fileExists(atPath: localURL.path) {
             if isVideo {
                 await MainActor.run { videoURLCache[photo.id] = localURL }
-            } else if let img = UIImage(contentsOfFile: localURL.path) {
-                await MainActor.run { imageCache[photo.id] = img }
+            } else if let img = downscaleForDisplayFromURL(localURL) {
+                // FIX OOM — CGImageSourceCreateWithURL legge solo i byte necessari
+                // senza caricare il JPEG intero in RAM (risparmio ~34MB per foto).
+                await MainActor.run { addToImageCache(id: photo.id, image: img) }
             }
             return
         }
@@ -1735,35 +1581,26 @@ struct PhotoFullscreenView: View {
         guard !photo.storagePath.isEmpty else { return }
         KBLog.sync.kbDebug("PhotoFullscreen: start download photoId=\(photo.id) isVideo=\(isVideo)")
         do {
-            let data = try await SyncCenter.photoRemote.download(
-                storagePath: photo.storagePath, familyId: familyId, userId: userId
-            )
+            let data = try await SyncCenter.photoRemote.download(storagePath: photo.storagePath, familyId: familyId, userId: userId)
             KBLog.sync.kbDebug("PhotoFullscreen: download OK bytes=\(data.count) photoId=\(photo.id)")
             try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
             if isVideo {
-                // 1. Scrivi i byte decryptati in un file temporaneo
                 let rawTmp = FileManager.default.temporaryDirectory
                     .appendingPathComponent(UUID().uuidString).appendingPathExtension("mp4")
                 do { try data.write(to: rawTmp, options: .atomic) } catch {
-                    KBLog.sync.kbError("PhotoFullscreen: write tmp failed photoId=\(photo.id)")
-                    return
+                    KBLog.sync.kbError("PhotoFullscreen: write tmp failed photoId=\(photo.id)"); return
                 }
-                // 2. Re-mux con shouldOptimizeForNetworkUse=true per spostare moov in testa
-                //    Senza questo, AVPlayer locale ritorna err=-12785 su certi file.
                 let playableURL: URL
                 if let remuxed = await VideoCompressor.remux(from: rawTmp, to: localURL) {
                     playableURL = remuxed
                 } else {
-                    // Fallback: usa il file raw (funziona su device fisico anche senza moov in testa)
                     try? FileManager.default.copyItem(at: rawTmp, to: localURL)
                     playableURL = localURL
                 }
                 try? FileManager.default.removeItem(at: rawTmp)
-                
                 await MainActor.run { videoURLCache[photo.id] = playableURL }
                 KBLog.sync.kbDebug("PhotoFullscreen: video cached photoId=\(photo.id)")
                 
-                // 3. Leggi durata e persistila se mancante
                 if photo.videoDurationSeconds == nil,
                    let dur = await VideoCompressor.videoDuration(url: playableURL) {
                     await MainActor.run {
@@ -1775,13 +1612,10 @@ struct PhotoFullscreenView: View {
                             id: photo.id, familyId: familyId,
                             fileName: photo.fileName, mimeType: "video/mp4",
                             fileSize: photo.fileSize, storagePath: photo.storagePath,
-                            downloadURL: photo.downloadURL,
-                            thumbnailBase64: photo.thumbnailBase64,
-                            caption: photo.caption,
-                            albumIdsRaw: photo.albumIdsRaw,
-                            videoDurationSeconds: dur,
-                            takenAt: photo.takenAt, createdAt: photo.createdAt,
-                            updatedAt: photo.updatedAt,
+                            downloadURL: photo.downloadURL, thumbnailBase64: photo.thumbnailBase64,
+                            caption: photo.caption, albumIdsRaw: photo.albumIdsRaw,
+                            videoDurationSeconds: dur, takenAt: photo.takenAt,
+                            createdAt: photo.createdAt, updatedAt: photo.updatedAt,
                             createdBy: photo.createdBy, updatedBy: photo.updatedBy,
                             isDeleted: photo.isDeleted
                         ))
@@ -1789,19 +1623,23 @@ struct PhotoFullscreenView: View {
                     }
                 }
             } else {
-                guard let img = UIImage(data: data) else {
-                    KBLog.sync.kbError("PhotoFullscreen: UIImage init failed photoId=\(photo.id)")
-                    return
-                }
                 try? data.write(to: localURL, options: .atomic)
-                await MainActor.run { imageCache[photo.id] = img }
+                // FIX OOM — downscale prima di mettere in cache GPU.
+                // kCGImageSourceCreateThumbnailFromImageAlways non alloca mai
+                // il bitmap originale, decodifica direttamente alla dimensione target.
+                // Scrivi prima su disco, poi decodifica dall'URL — evita di tenere
+                // data (34MB) e il bitmap contemporaneamente in RAM.
+                if let img = downscaleForDisplayFromURL(localURL) {
+                    await MainActor.run { addToImageCache(id: photo.id, image: img) }
+                } else {
+                    KBLog.sync.kbError("PhotoFullscreen: UIImage init failed photoId=\(photo.id)")
+                }
             }
         } catch {
             KBLog.sync.kbError("PhotoFullscreen: FAILED photoId=\(photo.id) err=\(error.localizedDescription)")
         }
     }
 }
-
 
 // MARK: - FullscreenMediaCell
 
@@ -1810,61 +1648,40 @@ private struct FullscreenMediaCell: View {
     let image: UIImage?
     let videoURL: URL?
     
-    @State private var isPlaying = false
-    @State private var playerReady = false  // true quando AVPlayer ha il primo frame
+    @State private var isPlaying  = false
+    @State private var playerReady = false
     
     private var isVideo: Bool { photo.isVideo }
     
     var body: some View {
         ZStack {
             Color.black
-            
             if isVideo {
-                // Thumbnail sempre presente sotto finché playerReady è false
-                if !playerReady {
-                    thumbnailView
-                }
-                
+                if !playerReady { thumbnailView }
                 if isPlaying, let url = videoURL {
-                    // Player montato sopra la thumbnail — la thumbnail sparisce
-                    // solo quando playerReady diventa true (primo frame renderizzato)
                     VideoPlayerCell(url: url, onReady: {
                         withAnimation(.easeIn(duration: 0.2)) { playerReady = true }
                     })
-                    .opacity(playerReady ? 1 : 0)  // invisibile finché non è pronto
+                    .opacity(playerReady ? 1 : 0)
                 }
-                
-                // Overlay: play button o spinner, scompaiono quando playerReady
                 if !playerReady {
                     if isPlaying {
-                        // Tap già premuto, video in download/buffering
-                        ProgressView()
-                            .tint(.white)
-                            .scaleEffect(1.4)
+                        ProgressView().tint(.white).scaleEffect(1.4)
                     } else {
-                        // Stato iniziale: play button
-                        Button {
-                            isPlaying = true
-                        } label: {
+                        Button { isPlaying = true } label: {
                             ZStack {
-                                Circle()
-                                    .fill(.black.opacity(0.45))
-                                    .frame(width: 72, height: 72)
+                                Circle().fill(.black.opacity(0.45)).frame(width: 72, height: 72)
                                 Image(systemName: "play.fill")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .offset(x: 3)
+                                    .font(.system(size: 28, weight: .bold)).foregroundStyle(.white).offset(x: 3)
                             }
                         }
                     }
                 }
-                
             } else {
                 if let img = image {
                     Image(uiImage: img).resizable().scaledToFit()
                 } else {
-                    thumbnailView
-                        .overlay(ProgressView().tint(.white))
+                    thumbnailView.overlay(ProgressView().tint(.white))
                 }
             }
         }
@@ -1873,9 +1690,7 @@ private struct FullscreenMediaCell: View {
     @ViewBuilder
     private var thumbnailView: some View {
         if let td = photo.thumbnailData, let img = UIImage(data: td) {
-            Image(uiImage: img)
-                .resizable()
-                .scaledToFit()
+            Image(uiImage: img).resizable().scaledToFit()
         } else {
             Color.black
         }
@@ -1886,29 +1701,22 @@ private struct FullscreenMediaCell: View {
 
 private struct VideoPlayerCell: UIViewControllerRepresentable {
     let url: URL
-    let onReady: () -> Void  // chiamato quando il primo frame è renderizzato
+    let onReady: () -> Void
     
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let player = AVPlayer(url: url)
         let vc = AVPlayerViewController()
-        vc.player = player
-        vc.showsPlaybackControls = true
-        
-        // Osserva timeControlStatus: quando passa a .playing il primo frame è pronto
+        vc.player = player; vc.showsPlaybackControls = true
         context.coordinator.observe(player: player, onReady: onReady)
-        
         player.play()
         return vc
     }
-    
     func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
-    
     func makeCoordinator() -> Coordinator { Coordinator() }
     
     class Coordinator {
         private var observation: NSKeyValueObservation?
         private var didFire = false
-        
         func observe(player: AVPlayer, onReady: @escaping () -> Void) {
             observation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
                 guard let self, !self.didFire else { return }
@@ -1925,9 +1733,7 @@ private struct VideoPlayerCell: UIViewControllerRepresentable {
 
 private struct GridWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 // MARK: - Supporting types

@@ -20,17 +20,25 @@ function storageStatsRef(familyId) {
 }
 
 /**
- * Aggiorna usedBytes con un delta atomico.
+ * Aggiorna usedBytes e il breakdown per sezione con un delta atomico.
  * @param {string} familyId
  * @param {number} delta - Byte da aggiungere (positivo) o sottrarre (negativo).
+ * @param {string|null} section - Sezione da aggiornare (documents, chat, photos, salute, notes, calendar, todo).
  * @return {Promise<void>}
  */
-async function updateStorageBytes(familyId, delta) {
+async function updateStorageBytes(familyId, delta, section = null) {
   if (delta === 0) return;
-  await storageStatsRef(familyId).set({
+
+  const update = {
     usedBytes: admin.firestore.FieldValue.increment(delta),
     lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, {merge: true});
+  };
+
+  if (section) {
+    update[`sections.${section}`] = admin.firestore.FieldValue.increment(delta);
+  }
+
+  await storageStatsRef(familyId).set(update, {merge: true});
 }
 
 /**
@@ -45,7 +53,7 @@ function sumCounters(data) {
   const todos = data?.todos || 0;
   const shopping = data?.shopping || 0;
   const notes = data?.notes || 0;
-  const calendar = data?.calendar || 0; // ← NUOVO
+  const calendar = data?.calendar || 0;
 
   const total = chat + documents + location + todos + shopping + notes + calendar;
   return {chat, documents, location, todos, shopping, notes, calendar, total};
@@ -85,7 +93,6 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
         next.chat + next.documents + next.location + next.todos + next.shopping + next.notes + next.calendar,
     );
 
-    // safety net: APNS vuole un intero valido
     if (!Number.isFinite(badge) || badge < 0) badge = 0;
 
     tx.set(ref, {
@@ -109,7 +116,6 @@ async function getUserTokensIfEnabled(uid, prefField) {
 
   const prefs = userSnap.exists ? userSnap.get("notificationPrefs") : null;
 
-  // default ON se non c'è prefs (come già fai per i messaggi)
   const enabled = !prefs || prefs[prefField] !== false;
   if (!enabled) return [];
 
@@ -148,10 +154,9 @@ exports.notifyNewDocument = onDocumentCreated(
 
       // ── Storage tracking ──
       if (!docData.isDeleted && typeof docData.fileSize === "number" && docData.fileSize > 0) {
-        await updateStorageBytes(familyId, docData.fileSize);
+        await updateStorageBytes(familyId, docData.fileSize, "documents");
       }
 
-      // 1️⃣ Leggi membri
       const membersSnap = await admin.firestore()
           .collection("families")
           .doc(familyId)
@@ -177,12 +182,10 @@ exports.notifyNewDocument = onDocumentCreated(
 
       const messagesToSend = [];
 
-      // 2️⃣ Per ogni membro: incrementa counter + badge corretto
       for (const uid of memberUids) {
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewDocs");
         if (tokens.length === 0) continue;
 
-        // Incrementa SOLO documents, ma badge = totale
         const badge = await incrementCounterAndGetBadge({
           familyId,
           uid,
@@ -191,10 +194,7 @@ exports.notifyNewDocument = onDocumentCreated(
 
         messagesToSend.push({
           tokens,
-          notification: {
-            title,
-            body,
-          },
+          notification: {title, body},
           data: {
             type: "new_document",
             familyId: familyId,
@@ -204,7 +204,7 @@ exports.notifyNewDocument = onDocumentCreated(
             payload: {
               aps: {
                 sound: "default",
-                badge: badge, // ✅ badge corretto (chat + documents)
+                badge: badge,
               },
             },
           },
@@ -216,7 +216,6 @@ exports.notifyNewDocument = onDocumentCreated(
         return;
       }
 
-      // 3️⃣ Invio parallelo per-utente
       const results = await Promise.allSettled(
           messagesToSend.map((msg) =>
             admin.messaging().sendEachForMulticast(msg),
@@ -297,7 +296,6 @@ async function countActiveMembers(familyId) {
       .collection("members")
       .get();
 
-  // Se non usi isDeleted, conta tutti. Se lo usi, filtra.
   return snap.docs.filter((d) => d.get("isDeleted") !== true).length;
 }
 
@@ -330,12 +328,10 @@ exports.deleteAccount = onCall(
       const db = admin.firestore();
       logger.info("deleteAccount started", {uid});
 
-      // 1) Leggi memberships index -> familyIds
       const membershipsRef = db.collection("users").doc(uid).collection("memberships");
       const membershipsSnap = await membershipsRef.get();
       const familyIds = membershipsSnap.docs.map((d) => d.id);
 
-      // 2) Per ogni famiglia: se solo -> delete family; se >1 -> remove membership
       for (const familyId of familyIds) {
         let memberCount = 0;
         try {
@@ -355,20 +351,13 @@ exports.deleteAccount = onCall(
           await deleteFamilyCompletely(familyId);
         }
 
-        // rimuovi sempre membership index
         await membershipsRef.doc(familyId).delete().catch(() => {});
       }
 
-      // 3) Cancella dati utente: user doc + subcollections note
-      // notificationPrefs sta nel doc users/{uid} (campo), ok con delete doc
       await deleteCollection(db.collection(`users/${uid}/fcmTokens`)).catch(() => {});
       await deleteCollection(db.collection(`users/${uid}/memberships`)).catch(() => {});
       await db.collection("users").doc(uid).delete().catch(() => {});
-
-      // 4) Cancella storage utente (se presente)
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
-
-      // 5) Cancella Firebase Auth user (ultimo)
       await admin.auth().deleteUser(uid);
 
       logger.info("deleteAccount completed", {uid, families: familyIds.length});
@@ -397,7 +386,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
       if (msgData.mediaStoragePath) {
         const mediaTypes = ["photo", "video", "audio", "document"];
         if (mediaTypes.includes(msgData.typeRaw || "")) {
-          await updateStorageBytes(familyId, 512 * 1024);
+          await updateStorageBytes(familyId, 512 * 1024, "chat");
         }
       }
 
@@ -410,7 +399,6 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
       logger.info("notifyNewChatMessage triggered", {familyId, messageId, senderUid});
 
-      // 1) Membri
       const membersSnap = await admin.firestore()
           .collection("families")
           .doc(familyId)
@@ -431,7 +419,6 @@ exports.notifyNewChatMessage = onDocumentCreated(
         return;
       }
 
-      // 2) Body in base al tipo
       const msgType = msgData.typeRaw || "text";
       let body;
 
@@ -462,7 +449,6 @@ exports.notifyNewChatMessage = onDocumentCreated(
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewMessages");
         if (tokens.length === 0) continue;
 
-        // Incrementa SOLO chat, badge = totale
         const badge = await incrementCounterAndGetBadge({
           familyId,
           uid,
@@ -471,10 +457,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
         messagesToSend.push({
           tokens,
-          notification: {
-            title: senderName,
-            body,
-          },
+          notification: {title: senderName, body},
           data: {
             type: "new_chat_message",
             familyId: familyId,
@@ -486,7 +469,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
             payload: {
               aps: {
                 sound: "default",
-                badge: badge, // ✅ badge corretto (chat + documents)
+                badge: badge,
               },
             },
           },
@@ -521,6 +504,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
       });
     },
 );
+
 exports.notifyLocationSharingChanged = onDocumentWritten(
     {
       document: "families/{familyId}/locations/{uid}",
@@ -533,13 +517,11 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       const before = event.data?.before?.exists ? event.data.before.data() : null;
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
-      // Se documento cancellato o creato senza after, ignora
       if (!after) return;
 
       const beforeIsSharing = before?.isSharing === true;
       const afterIsSharing = after?.isSharing === true;
 
-      // Trigger solo se cambia isSharing (false->true o true->false)
       if (beforeIsSharing === afterIsSharing) return;
 
       logger.info("notifyLocationSharingChanged triggered", {
@@ -573,17 +555,12 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       });
 
       if (!shouldSend) {
-        logger.info("notifyLocationSharingChanged skipped (cooldown)", {
-          familyId,
-          subjectUid,
-        });
+        logger.info("notifyLocationSharingChanged skipped (cooldown)", {familyId, subjectUid});
         return;
       }
 
-      // Nome da after (se mancante fallback)
       const subjectName = after.name || "Qualcuno";
 
-      // Leggi membri famiglia
       const membersSnap = await admin.firestore()
           .collection("families")
           .doc(familyId)
@@ -609,13 +586,12 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         `${subjectName} sta condividendo la posizione` :
         `${subjectName} ha smesso di condividere la posizione`;
 
-      const mode = after.mode || null; // "realtime" / "temporary"
-      const expiresAt = after.expiresAt || null; // Timestamp o null
+      const mode = after.mode || null;
+      const expiresAt = after.expiresAt || null;
 
       const messagesToSend = [];
 
       for (const uid of targetUids) {
-        // Pref: notifyOnLocationSharing (default ON se non esiste prefs)
         const tokens = await getUserTokensIfEnabled(uid, "notifyOnLocationSharing");
         if (tokens.length === 0) continue;
 
@@ -675,6 +651,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       });
     },
 );
+
 exports.expireTemporaryLocations = onSchedule(
     {
       schedule: "every 5 minutes",
@@ -684,7 +661,6 @@ exports.expireTemporaryLocations = onSchedule(
     async () => {
       const now = admin.firestore.Timestamp.now();
 
-      // collectionGroup per /families/{familyId}/locations/{uid}
       const q = admin.firestore()
           .collectionGroup("locations")
           .where("isSharing", "==", true)
@@ -724,6 +700,7 @@ exports.expireTemporaryLocations = onSchedule(
       logger.info("expireTemporaryLocations: completed expired=" + i);
     },
 );
+
 exports.notifyTodoAssigned = onDocumentWritten(
     {
       document: "families/{familyId}/todos/{todoId}",
@@ -736,7 +713,7 @@ exports.notifyTodoAssigned = onDocumentWritten(
       const before = event.data?.before?.exists ? event.data.before.data() : null;
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
-      if (!after) return; // ignore delete
+      if (!after) return;
       if (after.isDeleted === true) return;
 
       const newAssignee = after.assignedTo || null;
@@ -749,17 +726,14 @@ exports.notifyTodoAssigned = onDocumentWritten(
       let shouldNotify = false;
       let notificationType = "todo_assigned";
 
-      // 1️⃣ Nuovo todo
       if (!before) {
         shouldNotify = true;
       }
 
-      // 2️⃣ Cambio assegnatario
       if (before && oldAssignee !== newAssignee) {
         shouldNotify = true;
       }
 
-      // 3️⃣ Cambio scadenza
       if (before && oldAssignee === newAssignee) {
         const beforeDue = before.dueAt?.toMillis?.() || null;
         const afterDue = after.dueAt?.toMillis?.() || null;
@@ -772,17 +746,9 @@ exports.notifyTodoAssigned = onDocumentWritten(
 
       if (!shouldNotify) return;
 
-      logger.info("notifyTodoAssigned triggered", {
-        familyId,
-        todoId,
-        newAssignee,
-      });
+      logger.info("notifyTodoAssigned triggered", {familyId, todoId, newAssignee});
 
-      const tokens = await getUserTokensIfEnabled(
-          newAssignee,
-          "notifyOnTodoAssigned",
-      );
-
+      const tokens = await getUserTokensIfEnabled(newAssignee, "notifyOnTodoAssigned");
       if (tokens.length === 0) return;
 
       const badge = await incrementCounterAndGetBadge({
@@ -816,12 +782,7 @@ exports.notifyTodoAssigned = onDocumentWritten(
 
       const result = await admin.messaging().sendEachForMulticast(payload);
 
-      logger.info("notifyTodoAssigned send result", {
-        successCount: result.successCount,
-        failureCount: result.failureCount,
-      });
-
-      result.responses.forEach((resp, idx) => {
+      result.responses.forEach((resp) => {
         if (!resp.success) {
           console.error("FCM error detail:", resp.error?.code, resp.error?.message);
         }
@@ -833,14 +794,9 @@ exports.notifyTodoAssigned = onDocumentWritten(
       });
     },
 );
+
 /**
  * Resolves a display name for a uid within a family.
- * 1st: families/{familyId}/members/{uid}.displayName
- * 2nd: users/{uid}.displayName
- * Fallback: "Un membro della famiglia"
- *
- * Needed because GroceryRemoteDTO / NoteRemoteDTO do not carry a *ByName field.
- *
  * @param {string} familyId
  * @param {string} uid
  * @return {Promise<string>}
@@ -872,19 +828,9 @@ async function resolveMemberName(familyId, uid) {
   return "Un membro della famiglia";
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// notifyNewGroceryItem
-//
-// Path reale Firestore: families/{familyId}/groceries/{itemId}
-// Fonte: GroceryRemoteStore.swift → col(familyId:) usa .collection("groceries")
-//
-// Counter : shopping
-// Pref key: notifyOnNewGroceryItem  (default ON se prefs assente)
-// ─────────────────────────────────────────────────────────────────────────────
-
 exports.notifyNewGroceryItem = onDocumentCreated(
     {
-      document: "families/{familyId}/groceries/{itemId}", // ← "groceries" non "groceryItems"
+      document: "families/{familyId}/groceries/{itemId}",
       region: "europe-west1",
     },
     async (event) => {
@@ -897,10 +843,8 @@ exports.notifyNewGroceryItem = onDocumentCreated(
         return;
       }
 
-      // Skip se già soft-deleted alla creazione (edge case)
       if (itemData.isDeleted === true) return;
 
-      // createdBy è il campo canonico — vedi GroceryRemoteStore.upsert()
       const creatorUid = itemData.createdBy || itemData.updatedBy || null;
       if (!creatorUid) {
         logger.warn("notifyNewGroceryItem: missing creatorUid");
@@ -909,8 +853,6 @@ exports.notifyNewGroceryItem = onDocumentCreated(
 
       logger.info("notifyNewGroceryItem triggered", {familyId, itemId, creatorUid});
 
-      // GroceryRemoteDTO non ha *ByName → risolviamo da members subcollection
-      // (admin SDK bypassa le Firestore security rules, nessuna regola aggiuntiva necessaria)
       const creatorName = await resolveMemberName(familyId, creatorUid);
 
       const membersSnap = await admin.firestore()
@@ -931,7 +873,6 @@ exports.notifyNewGroceryItem = onDocumentCreated(
         return;
       }
 
-      // item.name corrisponde a KBGroceryItem.name / GroceryRemoteDTO.name
       const itemName = itemData.name || "Prodotto";
       const title = "Lista della spesa 🛒";
       const body = `${creatorName} ha aggiunto: ${itemName}`;
@@ -982,17 +923,6 @@ exports.notifyNewGroceryItem = onDocumentCreated(
     },
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// notifyNewNote
-// Trigger : families/{familyId}/notes/{noteId}  — onDocumentCreated
-// Counter : notes
-// Pref key: notifyOnNewNote  (default ON)
-//
-// IMPORTANT: note title/body are E2E-encrypted (NoteCryptoService).
-// The function intentionally uses a generic body — encrypted content
-// must never be sent in plain text via push payload.
-// ─────────────────────────────────────────────────────────────────────────────
-
 exports.notifyNewNote = onDocumentCreated(
     {
       document: "families/{familyId}/notes/{noteId}",
@@ -1010,7 +940,6 @@ exports.notifyNewNote = onDocumentCreated(
 
       if (noteData.isDeleted === true) return;
 
-      // createdBy matches KBNote / NoteRemoteDTO
       const creatorUid = noteData.createdBy || noteData.updatedBy || null;
       if (!creatorUid) {
         logger.warn("notifyNewNote: missing creatorUid");
@@ -1039,7 +968,6 @@ exports.notifyNewNote = onDocumentCreated(
         return;
       }
 
-      // Generic body — title is encrypted, never readable server-side
       const title = "📝 Nuova nota";
       const body = `${creatorName} ha aggiunto una nuova nota`;
 
@@ -1088,22 +1016,13 @@ exports.notifyNewNote = onDocumentCreated(
           {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
+
 // ─────────────────────────────────────────────────────────────────────────────
 // AI Assistant — askAI + getAIUsage
-//
-// Incolla questo blocco in fondo al tuo index.js esistente.
-//
-// Prima del deploy, imposta il secret:
-//   firebase functions:secrets:set ANTHROPIC_API_KEY
-//
-// Firestore path usato:
-//   ai_usage/{uid}/daily/{YYYY-MM-DD}  →  { count, updatedAt, uid }
 // ─────────────────────────────────────────────────────────────────────────────
 
 const {defineSecret} = require("firebase-functions/params");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * Returns today's date as YYYY-MM-DD in Europe/Rome timezone.
@@ -1115,7 +1034,6 @@ function aiTodayKey() {
 
 /**
  * Reads the user's plan from Firestore and returns the daily message limit.
- * free=20 / family=50 / pro=100
  * @param {string} uid
  * @return {Promise<number>}
  */
@@ -1137,7 +1055,6 @@ async function resolveAIDailyLimit(uid) {
 
 /**
  * Checks the daily counter and increments it atomically.
- * Throws HttpsError("resource-exhausted") if the limit is reached.
  * @param {string} uid
  * @param {number} limit
  * @return {Promise<number>} updated count
@@ -1168,8 +1085,6 @@ async function checkAndIncrementAIUsage(uid, limit) {
   });
 }
 
-// ─── askAI ───────────────────────────────────────────────────────────────────
-
 exports.askAI = onCall(
     {
       region: "europe-west1",
@@ -1178,13 +1093,11 @@ exports.askAI = onCall(
       timeoutSeconds: 60,
     },
     async (request) => {
-      // 1. Auth
       const uid = request.auth?.uid;
       if (!uid) {
         throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
       }
 
-      // 2. Validazione input
       const {messages, systemPrompt} = request.data || {};
 
       if (!Array.isArray(messages) || messages.length === 0) {
@@ -1203,19 +1116,16 @@ exports.askAI = onCall(
         throw new HttpsError("invalid-argument", "systemPrompt è richiesto.");
       }
 
-      // Protezione dimensione payload
       const totalChars = messages.reduce((acc, m) => acc + m.content.length, 0) + systemPrompt.length;
       if (totalChars > 50000) {
         throw new HttpsError("invalid-argument", "Payload troppo grande.");
       }
 
-      // 3. Rate limiting
       const dailyLimit = await resolveAIDailyLimit(uid);
       const usageCount = await checkAndIncrementAIUsage(uid, dailyLimit);
 
       logger.info("askAI request", {uid, usageCount, dailyLimit, msgCount: messages.length});
 
-      // 4. Chiama Anthropic
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
         logger.error("askAI: ANTHROPIC_API_KEY secret non configurato");
@@ -1271,8 +1181,6 @@ exports.askAI = onCall(
     },
 );
 
-// ─── getAIUsage ───────────────────────────────────────────────────────────────
-
 exports.getAIUsage = onCall(
     {
       region: "europe-west1",
@@ -1293,11 +1201,6 @@ exports.getAIUsage = onCall(
       return {usageToday: count, dailyLimit};
     },
 );
-// ── NUOVA FUNCTION: notifyNewCalendarEvent ────────────────────────────────────
-// Trigger: creazione di un evento in families/{familyId}/calendarEvents/{eventId}
-// Counter: calendar
-// Pref:    notifyOnNewCalendarEvent (default ON)
-// Badge:   somma di tutti i contatori (incluso calendar)
 
 exports.notifyNewCalendarEvent = onDocumentCreated(
     {
@@ -1314,7 +1217,6 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
         return;
       }
 
-      // Ignora eventi soft-deleted alla creazione (edge case)
       if (eventData.isDeleted === true) return;
 
       const creatorUid = eventData.createdBy || eventData.updatedBy || null;
@@ -1325,10 +1227,8 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
 
       logger.info("notifyNewCalendarEvent triggered", {familyId, eventId, creatorUid});
 
-      // Risolvi il nome del creatore
       const creatorName = await resolveMemberName(familyId, creatorUid);
 
-      // Leggi tutti i membri della famiglia
       const membersSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("members").get();
@@ -1338,7 +1238,6 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
         return;
       }
 
-      // Notifica a tutti tranne chi ha creato l'evento
       const memberUids = membersSnap.docs
           .map((d) => d.id)
           .filter((uid) => uid && uid !== creatorUid);
@@ -1348,7 +1247,6 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
         return;
       }
 
-      // Componi titolo e body
       const eventTitle = eventData.title || "Nuovo evento";
       const startDate = eventData.startDate?.toDate?.();
       let dateStr = "";
@@ -1425,10 +1323,6 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
 );
 
 // ── Chat media: sottrai bytes subito quando il messaggio viene soft-deleted ───
-// L'utente non vede alcun cestino per la chat — il messaggio sparisce
-// immediatamente quindi lo spazio deve liberarsi subito, non dopo 30gg.
-// Il GC settimanale si occuperà solo di rimuovere il blob Storage,
-// senza toccare più il contatore usedBytes (già aggiornato qui).
 
 exports.onChatMessageSoftDeleted = onDocumentWritten(
     {
@@ -1440,12 +1334,10 @@ exports.onChatMessageSoftDeleted = onDocumentWritten(
       const before = event.data?.before?.exists ? event.data.before.data() : null;
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
-      // Solo transizione false→true su isDeleted
       if (!before || !after) return;
-      if (before.isDeleted === true) return; // era già deleted
-      if (after.isDeleted !== true) return; // non è un delete
+      if (before.isDeleted === true) return;
+      if (after.isDeleted !== true) return;
 
-      // Sottrai solo se aveva media
       const mediaPath = after.mediaStoragePath || before.mediaStoragePath || "";
       if (!mediaPath) return;
 
@@ -1454,7 +1346,7 @@ exports.onChatMessageSoftDeleted = onDocumentWritten(
       if (!mediaTypes.includes(type)) return;
 
       logger.info("onChatMessageSoftDeleted: freeing 512KB", {familyId, messageId: event.params.messageId});
-      await updateStorageBytes(familyId, -(512 * 1024));
+      await updateStorageBytes(familyId, -(512 * 1024), "chat");
     },
 );
 
@@ -1468,18 +1360,15 @@ exports.onDocumentHardDeleted = onDocumentWritten(
       const before = event.data?.before?.exists ? event.data.before.data() : null;
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
-      // Solo hard-delete: documento esisteva prima e non esiste più
       if (!before || after) return;
 
       const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
       if (sizeBefore <= 0) return;
 
       logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
-      await updateStorageBytes(familyId, -sizeBefore);
+      await updateStorageBytes(familyId, -sizeBefore, "documents");
     },
 );
-
-// ── Foto/video: traccia fileSize al caricamento ──────────────────
 
 exports.onPhotoCreated = onDocumentCreated(
     {
@@ -1493,12 +1382,10 @@ exports.onPhotoCreated = onDocumentCreated(
 
       if (!data.isDeleted && typeof data.fileSize === "number" && data.fileSize > 0) {
         logger.info("onPhotoCreated: adding bytes", {familyId, fileSize: data.fileSize});
-        await updateStorageBytes(familyId, data.fileSize);
+        await updateStorageBytes(familyId, data.fileSize, "photos");
       }
     },
 );
-
-// ── Foto/video: hard-delete → sottrai fileSize ───────────────────
 
 exports.onPhotoHardDeleted = onDocumentWritten(
     {
@@ -1510,18 +1397,17 @@ exports.onPhotoHardDeleted = onDocumentWritten(
       const before = event.data?.before?.exists ? event.data.before.data() : null;
       const after = event.data?.after?.exists ? event.data.after.data() : null;
 
-      // Solo hard-delete: documento esisteva prima e non esiste più
       if (!before || after) return;
 
       const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
       if (sizeBefore <= 0) return;
 
       logger.info("onPhotoHardDeleted: removing bytes", {familyId, sizeBefore});
-      await updateStorageBytes(familyId, -sizeBefore);
+      await updateStorageBytes(familyId, -sizeBefore, "photos");
     },
 );
 
-// ── Callable: il client legge usedBytes e quotaBytes ─────────────────────────
+// ── getStorageUsage: restituisce usedBytes + breakdown per sezione ────────────
 
 exports.getStorageUsage = onCall(
     {
@@ -1544,19 +1430,31 @@ exports.getStorageUsage = onCall(
       if (!memberSnap.exists) {
         throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
       }
+
       const snap = await storageStatsRef(familyId).get();
-      const usedBytes = snap.exists ? (snap.data().usedBytes || 0) : 0;
+      const data = snap.exists ? snap.data() : {};
+      const usedBytes = Math.max(0, Math.round(data.usedBytes || 0));
+      const rawSections = data.sections || {};
+
       logger.info("getStorageUsage", {uid, familyId, usedBytes});
+
       return {
-        usedBytes: Math.max(0, Math.round(usedBytes)),
+        usedBytes,
         quotaBytes: 200 * 1024 * 1024,
+        sections: {
+          documents: Math.max(0, Math.round(rawSections.documents || 0)),
+          chat: Math.max(0, Math.round(rawSections.chat || 0)),
+          photos: Math.max(0, Math.round(rawSections.photos || 0)),
+          salute: Math.max(0, Math.round(rawSections.salute || 0)),
+          notes: Math.max(0, Math.round(rawSections.notes || 0)),
+          calendar: Math.max(0, Math.round(rawSections.calendar || 0)),
+          todo: Math.max(0, Math.round(rawSections.todo || 0)),
+        },
       };
     },
 );
 
-// ── Inizializzazione contatore storage per dati storici ───────────────────────
-// Chiamare UNA VOLTA SOLA per famiglia dopo il deploy.
-// Calcola lo stato attuale leggendo Firestore e sovrascrive usedBytes.
+// ── initStorageUsage: ricalcola tutto da zero e scrive il breakdown ───────────
 
 exports.initStorageUsage = onCall(
     {
@@ -1573,7 +1471,6 @@ exports.initStorageUsage = onCall(
         throw new HttpsError("invalid-argument", "familyId richiesto.");
       }
 
-      // Verifica membership
       const memberSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("members").doc(uid)
@@ -1584,7 +1481,9 @@ exports.initStorageUsage = onCall(
 
       logger.info("initStorageUsage: starting", {uid, familyId});
 
-      // 1. Somma fileSize di tutti i documenti non eliminati
+      const kb = 1024;
+
+      // 1. Documenti
       const docsSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("documents")
@@ -1597,7 +1496,7 @@ exports.initStorageUsage = onCall(
         if (typeof size === "number" && size > 0) docBytes += size;
       });
 
-      // 2. Conta messaggi chat con media (non eliminati)
+      // 2. Chat media (solo messaggi non eliminati con media)
       const chatSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("chatMessages")
@@ -1611,10 +1510,9 @@ exports.initStorageUsage = onCall(
         const type = d.get("typeRaw") || "";
         if (hasMedia && mediaTypes.includes(type)) chatMediaCount++;
       });
+      const chatBytes = chatMediaCount * 512 * kb;
 
-      const chatBytes = chatMediaCount * 512 * 1024;
-
-      // 3. Somma fileSize di tutte le foto/video non eliminati
+      // 3. Foto e video
       const photosSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("photos")
@@ -1627,52 +1525,84 @@ exports.initStorageUsage = onCall(
         if (typeof size === "number" && size > 0) photoBytes += size;
       });
 
-      const totalBytes = docBytes + chatBytes + photoBytes;
+      // 4. Salute
+      const [visitsSnap, examsSnap, treatmentsSnap, vaccinesSnap] = await Promise.all([
+        admin.firestore().collection("families").doc(familyId)
+            .collection("medicalVisits").where("isDeleted", "==", false).get(),
+        admin.firestore().collection("families").doc(familyId)
+            .collection("medicalExams").where("isDeleted", "==", false).get(),
+        admin.firestore().collection("families").doc(familyId)
+            .collection("treatments").where("isDeleted", "==", false).get(),
+        admin.firestore().collection("families").doc(familyId)
+            .collection("vaccines").where("isDeleted", "==", false).get(),
+      ]);
+      const saluteBytes =
+          (visitsSnap.size + treatmentsSnap.size) * 2 * kb +
+          (examsSnap.size + vaccinesSnap.size) * kb;
 
-      // 3. Sovrascrive il contatore (non increment, set diretto)
+      // 5. Note
+      const notesSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("notes")
+          .where("isDeleted", "==", false)
+          .get();
+      const noteBytes = notesSnap.size * 3 * kb;
+
+      // 6. Calendario
+      const calSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("calendarEvents")
+          .where("isDeleted", "==", false)
+          .get();
+      const calBytes = calSnap.size * kb;
+
+      // 7. Todo
+      const todoSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("todos")
+          .where("isDeleted", "==", false)
+          .get();
+      const todoBytes = todoSnap.size * kb;
+
+      const totalBytes = docBytes + chatBytes + photoBytes +
+                         saluteBytes + noteBytes + calBytes + todoBytes;
+
+      // Sovrascrive tutto (merge: false per pulizia completa)
       await storageStatsRef(familyId).set({
         usedBytes: totalBytes,
+        sections: {
+          documents: docBytes,
+          chat: chatBytes,
+          photos: photoBytes,
+          salute: saluteBytes,
+          notes: noteBytes,
+          calendar: calBytes,
+          todo: todoBytes,
+        },
         lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
         initializedAt: admin.firestore.FieldValue.serverTimestamp(),
         initializedBy: uid,
       }, {merge: false});
 
       logger.info("initStorageUsage: completed", {
-        familyId,
-        docBytes,
-        chatBytes,
-        photoBytes,
-        chatMediaCount,
-        totalBytes,
+        familyId, docBytes, chatBytes, photoBytes,
+        saluteBytes, noteBytes, calBytes, todoBytes, totalBytes,
       });
 
       return {
-        docBytes,
-        chatBytes,
-        photoBytes,
-        chatMediaCount,
+        docBytes, chatBytes, photoBytes,
+        saluteBytes, noteBytes, calBytes, todoBytes,
         totalBytes,
-        quotaBytes: 200 * 1024 * 1024,
+        quotaBytes: 200 * kb * kb,
       };
     },
 );
 
-// ── Garbage Collector notturno — hard delete di documenti e chat media ────────
-//
-// Strategia (standard industry: Google Photos, iCloud, Dropbox):
-//
-//   Entità          | Al delete dell'utente  | GC notturno (30gg)
-//   ─────────────── | ───────────────────────| ───────────────────────────────
-//   Foto/video      | Hard delete immediato  | —  (gestito lato Swift)
-//   Documenti       | Soft delete            | Cancella Storage blob + doc
-//   Chat media      | Soft delete            | Cancella Storage blob + doc
-//   Record Firestore| Soft delete            | Hard delete documento
-//
-// Gira ogni notte alle 03:00 Europe/Rome.
+// ── Garbage Collector notturno ────────────────────────────────────────────────
 
 exports.garbageCollectDeleted = onSchedule(
     {
-      schedule: "0 3 * * 0", // domenica notte alle 03:00 — settimanale è sufficiente
+      schedule: "0 3 * * 0",
       timeZone: "Europe/Rome",
       region: "europe-west1",
       timeoutSeconds: 540,
@@ -1696,7 +1626,7 @@ exports.garbageCollectDeleted = onSchedule(
       for (const familyDoc of familiesSnap.docs) {
         const familyId = familyDoc.id;
 
-        // ── 1. Documenti soft-deleted oltre 30gg ──────────────────────────────
+        // ── 1. Documenti soft-deleted oltre 30gg ──
         const docsSnap = await db.collection("families").doc(familyId)
             .collection("documents")
             .where("isDeleted", "==", true)
@@ -1723,11 +1653,11 @@ exports.garbageCollectDeleted = onSchedule(
           totalDocsDeleted++;
           if (fileSize > 0) {
             totalBytesFreed += fileSize;
-            await updateStorageBytes(familyId, -fileSize);
+            await updateStorageBytes(familyId, -fileSize, "documents");
           }
         }
 
-        // ── 2. Chat media soft-deleted oltre 30gg ─────────────────────────────
+        // ── 2. Chat media soft-deleted oltre 30gg ──
         const chatSnap = await db.collection("families").doc(familyId)
             .collection("chatMessages")
             .where("isDeleted", "==", true)
@@ -1743,8 +1673,7 @@ exports.garbageCollectDeleted = onSchedule(
               await bucket.file(mediaPath).delete();
               logger.info("GC: deleted chat media blob", {familyId, mediaPath});
               totalChatDeleted++;
-              // NON sottraiamo bytes qui — onChatMessageSoftDeleted lo ha già fatto
-              // al momento del delete. Il GC pulisce solo il blob Storage.
+              // NON sottraiamo bytes chat qui — onChatMessageSoftDeleted lo ha già fatto
             } catch (e) {
               if (e.code !== 404) {
                 logger.warn("GC: chat media delete failed", {familyId, mediaPath, err: e.message});
