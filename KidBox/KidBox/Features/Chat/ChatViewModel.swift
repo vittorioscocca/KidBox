@@ -227,6 +227,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             
             msg.mediaStoragePath = storagePath
             msg.mediaURL         = downloadURL
+            msg.mediaFileSize    = Int64(compressedData.count)
             msg.syncState        = .pendingUpsert
             try? modelContext.save()
             
@@ -413,6 +414,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             existing.syncState     = .synced; existing.lastSyncError = nil
             existing.replyToId     = dto.replyToId
             existing.latitude      = dto.latitude; existing.longitude = dto.longitude
+            if let size = dto.mediaFileSize, size > 0 { existing.mediaFileSize = size }
             if existing.type == .audio, existing.senderId != myUID,
                existing.mediaURL != nil, existing.transcriptStatus == .none {
                 startTranscriptIfNeeded(for: existing, modelContext: modelContext)
@@ -431,6 +433,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             msg.replyToId = dto.replyToId; msg.reactionsJSON = dto.reactionsJSON
             msg.readByJSON = dto.readByJSON; msg.syncState = .synced; msg.lastSyncError = nil
             msg.latitude = dto.latitude; msg.longitude = dto.longitude
+            if let size = dto.mediaFileSize, size > 0 { msg.mediaFileSize = size }
             modelContext.insert(msg)
             if msg.type == .audio, msg.senderId != myUID,
                msg.mediaURL != nil, msg.transcriptStatus == .none {
@@ -584,6 +587,7 @@ final class ChatViewModel: NSObject, ObservableObject {
                 data: uploadData, familyId: familyId, messageId: messageId, fileName: fileName, mimeType: mimeType,
                 progressHandler: { [weak self] p in Task { @MainActor in self?.uploadProgress = p } })
             msg.mediaStoragePath = storagePath; msg.mediaURL = downloadURL
+            msg.mediaFileSize    = Int64(uploadData.count)
             msg.syncState = .pendingUpsert; try? modelContext.save(); reloadLocal()
             let dto = makeDTO(from: msg); try await remoteStore.upsert(dto: dto)
             msg.syncState = .synced; msg.lastSyncError = nil; try? modelContext.save()
@@ -983,6 +987,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             logAudio("uploadAndSendAudio upload OK storagePath=\(storagePath)")
             logAudio("uploadAndSendAudio upload OK downloadURL=\(downloadURL)")
             msg.mediaStoragePath = storagePath; msg.mediaURL = downloadURL
+            msg.mediaFileSize = Int64(data.count)
             msg.mediaDurationSeconds = duration; msg.syncState = .pendingUpsert
             try? modelContext.save()
             let dto = makeDTO(from: msg); try await remoteStore.upsert(dto: dto)
@@ -1015,6 +1020,7 @@ final class ChatViewModel: NSObject, ObservableObject {
                 data: data, familyId: familyId, messageId: messageId, fileName: fileName, mimeType: mimeType,
                 progressHandler: { [weak self] p in Task { @MainActor in self?.uploadProgress = p } })
             msg.mediaStoragePath = storagePath; msg.mediaURL = downloadURL
+            msg.mediaFileSize    = Int64(data.count)
             msg.syncState = .pendingUpsert; try? modelContext.save()
             let dto = makeDTO(from: msg); try await remoteStore.upsert(dto: dto)
             msg.syncState = .synced; msg.lastSyncError = nil; try? modelContext.save()
@@ -1366,7 +1372,8 @@ final class ChatViewModel: NSObject, ObservableObject {
             reactionsJSON: msg.reactionsJSON, readByJSON: nil,
             createdAt: msg.createdAt, editedAt: msg.editedAt,
             isDeleted: msg.isDeleted, deletedFor: [],
-            latitude: msg.latitude, longitude: msg.longitude
+            latitude: msg.latitude, longitude: msg.longitude,
+            mediaFileSize: msg.mediaFileSize
         )
     }
     

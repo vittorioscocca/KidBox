@@ -32,6 +32,7 @@ struct RemoteChatMessageDTO {
     let deletedFor: [String]
     let latitude: Double?
     let longitude: Double?
+    let mediaFileSize: Int64?
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -91,6 +92,7 @@ final class ChatRemoteStore {
         if let r    = dto.reactionsJSON                { data["reactionsJSON"] = r }
         if let latitude = dto.latitude                 { data["latitude"] = latitude }
         if let longitude = dto.longitude               { data["longitude"] = longitude }
+        if let size = dto.mediaFileSize, size > 0      { data["mediaFileSize"] = size }
         
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
@@ -264,7 +266,8 @@ final class ChatRemoteStore {
                 isDeleted:            data["isDeleted"]            as? Bool ?? false,
                 deletedFor:           deletedFor,
                 latitude:             data["latitude"]             as? Double,
-                longitude:            data["longitude"]            as? Double
+                longitude:            data["longitude"]            as? Double,
+                mediaFileSize:        data["mediaFileSize"]        as? Int64
             )
         }
         
@@ -344,7 +347,8 @@ final class ChatRemoteStore {
                             isDeleted:            data["isDeleted"] as? Bool ?? false,
                             deletedFor:           deletedFor,
                             latitude:             data["latitude"] as? Double,
-                            longitude:            data["longitude"] as? Double
+                            longitude:            data["longitude"] as? Double,
+                            mediaFileSize:        data["mediaFileSize"] as? Int64
                         )
                         return .upsert(dto)
                     }

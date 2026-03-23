@@ -1035,7 +1035,8 @@ struct KBShareEditView: View {
             replyToId: nil, reactionsJSON: nil, readByJSON: nil,
             createdAt: Date(), editedAt: nil,
             isDeleted: false, deletedFor: [],
-            latitude: nil, longitude: nil
+            latitude: nil, longitude: nil,
+            mediaFileSize: nil
         )
     }
     

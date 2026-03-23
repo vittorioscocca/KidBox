@@ -269,7 +269,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
       // reale del file caricato su Storage. Fallback 512KB per messaggi precedenti.
       if (msgData.mediaStoragePath) {
         const mediaTypes = ["photo", "video", "audio", "document"];
-        if (mediaTypes.includes(msgData.typeRaw || "")) {
+        if (mediaTypes.includes(msgData.type || "")) {
           const mediaFileSize = (typeof msgData.mediaFileSize === "number" && msgData.mediaFileSize > 0) ?
             msgData.mediaFileSize :
             512 * 1024;
@@ -309,7 +309,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
         return;
       }
 
-      const msgType = msgData.typeRaw || "text";
+      const msgType = msgData.type || "text";
       let body;
       switch (msgType) {
         case "text":
@@ -387,7 +387,7 @@ exports.onChatMessageSoftDeleted = onDocumentWritten(
       if (!mediaPath) return;
 
       const mediaTypes = ["photo", "video", "audio", "document"];
-      const type = after.typeRaw || before.typeRaw || "";
+      const type = after.type || before.type || "";
       if (!mediaTypes.includes(type)) return;
 
       // Usa il fileSize reale registrato sul messaggio.
@@ -1353,7 +1353,7 @@ exports.initStorageUsage = onCall(
       let chatBytes = 0;
       chatSnap.forEach((d) => {
         const hasMedia = d.get("mediaStoragePath");
-        const type = d.get("typeRaw") || "";
+        const type = d.get("type") || "";
         if (hasMedia && mediaTypes.includes(type)) {
           const size = d.get("mediaFileSize");
           chatBytes += (typeof size === "number" && size > 0) ? size : 512 * kb;

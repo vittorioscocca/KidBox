@@ -101,10 +101,15 @@ final class StorageUsageViewModel: ObservableObject {
     // perché il campo non è ancora stato inizializzato su Firestore).
     // Il recordCount viene sempre dal locale (Firebase non lo traccia).
     
+    // Sezioni per cui i BYTES vengono solo da Firebase Storage (mai stime locali).
+    // Il recordCount invece viene sempre dal locale.
+    private static let storageOnlySections: Set<String> = ["chat", "photos"]
+    
     private func mergedSections(remote: [KBStorageSection], local: [KBStorageSection]) -> [KBStorageSection] {
-        // Tutte le sezioni possibili, in ordine
         let allIds = ["photos", "documents", "chat", "salute", "expenses", "notes", "calendar", "todo"]
         
+        // Nota: buildSections filtra già { bytes > 0 }, quindi sezioni con 0 su Firebase
+        // non sono nel remoteMap. Per questo usiamo la raw map da tutti gli id.
         let remoteMap = Dictionary(uniqueKeysWithValues: remote.map { ($0.id, $0) })
         let localMap  = Dictionary(uniqueKeysWithValues: local.map  { ($0.id, $0) })
         
@@ -112,14 +117,30 @@ final class StorageUsageViewModel: ObservableObject {
             let r = remoteMap[id]
             let l = localMap[id]
             
-            let bytes       = (r?.bytes ?? 0) > 0 ? (r!.bytes) : (l?.bytes ?? 0)
+            let bytes: Int64
+            if Self.storageOnlySections.contains(id) {
+                // Bytes: solo Firebase. Se 0 o assente → 0 (non inventare stime).
+                bytes = r?.bytes ?? 0
+            } else {
+                // Bytes: Firebase se disponibile, altrimenti stima locale.
+                bytes = (r?.bytes ?? 0) > 0 ? r!.bytes : (l?.bytes ?? 0)
+            }
+            
+            // recordCount: sempre dal locale (Firebase non lo traccia)
             let recordCount = l?.recordCount ?? r?.recordCount ?? 0
             
-            guard bytes > 0 else { return nil }
+            // Per chat e photos: mostra la sezione se ci sono elementi locali
+            // anche quando Firebase ha ancora 0 (non ancora inizializzato).
+            // In quel caso bytes sarà 0 ma il recordCount mostrerà quanti file ci sono,
+            // invitando l'utente a premere "Init Storage" per allineare Firebase.
+            if Self.storageOnlySections.contains(id) {
+                guard bytes > 0 || recordCount > 0 else { return nil }
+            } else {
+                guard bytes > 0 else { return nil }
+            }
             
-            // Usa i metadati (nome, icona, colore) dalla versione remota se presente,
-            // altrimenti dalla locale
-            let source = r ?? l!
+            let source = r ?? l
+            guard let source else { return nil }
             return KBStorageSection(
                 id:          source.id,
                 name:        source.name,
@@ -171,26 +192,23 @@ final class StorageUsageViewModel: ObservableObject {
     private func buildSectionsFallback(modelContext: ModelContext, familyId: String) -> [KBStorageSection] {
         let fid = familyId
         
-        // Documenti
+        // Documenti (fileSize reale)
         let docCount     = fetchCount(modelContext: modelContext, predicate: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false })
         let docFileBytes = fetchSum(modelContext: modelContext,   predicate: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false }, value: { $0.fileSize })
         
-        // Chat media
-        let chatMessages = fetchAll(modelContext: modelContext, predicate: #Predicate<KBChatMessage> {
+        // Chat: NON calcoliamo i bytes localmente — fonte di verità = Firebase.
+        // Calcoliamo solo il recordCount per il contatore visuale nella UI.
+        let chatMediaCount = fetchCount(modelContext: modelContext, predicate: #Predicate<KBChatMessage> {
             $0.familyId == fid && $0.isDeleted == false && $0.mediaStoragePath != nil
         })
-        let chatBytes: Int64 = chatMessages.reduce(0) { acc, msg in
-            acc + (msg.mediaFileSize ?? Self.chatMediaFallbackBytes)
-        }
+        // chatBytes = 0: il merge usa sempre Firebase per questa sezione
         
-        // Foto album
-        let photoBytes = fetchSum(modelContext: modelContext,
-                                  predicate: #Predicate<KBFamilyPhoto> { $0.familyId == fid && $0.isDeleted == false },
-                                  value: { $0.fileSize })
+        // Foto album: anche qui solo recordCount, i bytes vengono da Firebase
         let photoCount = fetchCount(modelContext: modelContext,
                                     predicate: #Predicate<KBFamilyPhoto> { $0.familyId == fid && $0.isDeleted == false })
+        // photoBytes = 0: il merge usa sempre Firebase per questa sezione
         
-        // Salute: foto visite
+        // Salute: foto visite (stima 200KB/foto, Firebase non traccia ancora questo)
         let visits = fetchAll(modelContext: modelContext, predicate: #Predicate<KBMedicalVisit> {
             $0.familyId == fid && $0.isDeleted == false
         })
@@ -201,29 +219,32 @@ final class StorageUsageViewModel: ObservableObject {
         let treatmentCount = fetchCount(modelContext: modelContext, predicate: #Predicate<KBTreatment>    { $0.familyId == fid && $0.isDeleted == false })
         let vaccineCount   = fetchCount(modelContext: modelContext, predicate: #Predicate<KBVaccine>      { $0.familyId == fid && $0.isDeleted == false })
         
+        // Note/calendario/todo/spese: overhead Firestore (1KB/record)
         let noteCount  = fetchCount(modelContext: modelContext, predicate: #Predicate<KBNote>          { $0.familyId == fid && $0.isDeleted == false })
         let calCount   = fetchCount(modelContext: modelContext, predicate: #Predicate<KBCalendarEvent> { $0.familyId == fid && $0.isDeleted == false })
         let todoCount  = fetchCount(modelContext: modelContext, predicate: #Predicate<KBTodoItem>      { $0.familyId == fid && $0.isDeleted == false })
         let expCount   = fetchCount(modelContext: modelContext, predicate: #Predicate<KBExpense>       { $0.familyId == fid && $0.isDeleted == false })
         
-        // Note/calendario/todo/spese occupano solo Firestore (niente file su Storage)
-        // ma li includiamo come stima Firestore record overhead (1KB/record)
-        // così appaiono nella UI anche prima che Firebase li tracci in stats/storage.
-        let noteBytes  = Int64(noteCount)  * 3 * 1024  // 3KB/nota (HTML body)
-        let calBytes   = Int64(calCount)   * 1024
-        let todoBytes  = Int64(todoCount)  * 1024
-        let expBytes   = Int64(expCount)   * 1024
+        let noteBytes = Int64(noteCount)  * 3 * 1024
+        let calBytes  = Int64(calCount)   * 1024
+        let todoBytes = Int64(todoCount)  * 1024
+        let expBytes  = Int64(expCount)   * 1024
         
         return [
-            KBStorageSection(id: "photos",    name: "Foto e video",  icon: "photo.on.rectangle.angled",         color: "FF6B9D", bytes: photoBytes,      recordCount: photoCount),
-            KBStorageSection(id: "documents", name: "Documenti",     icon: "doc.fill",                          color: "5B8FDE", bytes: docFileBytes,    recordCount: docCount),
-            KBStorageSection(id: "chat",      name: "Chat",           icon: "bubble.left.and.bubble.right.fill", color: "34C759", bytes: chatBytes,       recordCount: chatMessages.count),
-            KBStorageSection(id: "salute",    name: "Salute",         icon: "stethoscope",                       color: "FF6B6B", bytes: visitPhotoBytes, recordCount: visitCount + examCount + treatmentCount + vaccineCount),
-            KBStorageSection(id: "expenses",  name: "Spese",          icon: "eurosign.circle.fill",              color: "FF9500", bytes: expBytes,        recordCount: expCount),
-            KBStorageSection(id: "notes",     name: "Note",           icon: "note.text",                         color: "FF9F0A", bytes: noteBytes,       recordCount: noteCount),
-            KBStorageSection(id: "calendar",  name: "Calendario",     icon: "calendar",                          color: "BF5AF2", bytes: calBytes,        recordCount: calCount),
-            KBStorageSection(id: "todo",      name: "Liste & Todo",   icon: "checklist",                         color: "30B0C7", bytes: todoBytes,       recordCount: todoCount),
-        ].filter { $0.bytes > 0 }
+            // chat e photos: bytes = 0 → il merge usa Firebase come fonte di verità
+            KBStorageSection(id: "chat",      name: "Chat",           icon: "bubble.left.and.bubble.right.fill", color: "34C759", bytes: 0,              recordCount: chatMediaCount),
+            KBStorageSection(id: "photos",    name: "Foto e video",   icon: "photo.on.rectangle.angled",         color: "FF6B9D", bytes: 0,              recordCount: photoCount),
+            // documenti: fileSize reale locale (allineato con Firebase)
+            KBStorageSection(id: "documents", name: "Documenti",      icon: "doc.fill",                          color: "5B8FDE", bytes: docFileBytes,   recordCount: docCount),
+            // salute: stima locale (Firebase non traccia ancora le foto visite)
+            KBStorageSection(id: "salute",    name: "Salute",          icon: "stethoscope",                       color: "FF6B6B", bytes: visitPhotoBytes, recordCount: visitCount + examCount + treatmentCount + vaccineCount),
+            // le seguenti: overhead Firestore
+            KBStorageSection(id: "expenses",  name: "Spese",           icon: "eurosign.circle.fill",              color: "FF9500", bytes: expBytes,       recordCount: expCount),
+            KBStorageSection(id: "notes",     name: "Note",            icon: "note.text",                         color: "FF9F0A", bytes: noteBytes,      recordCount: noteCount),
+            KBStorageSection(id: "calendar",  name: "Calendario",      icon: "calendar",                          color: "BF5AF2", bytes: calBytes,       recordCount: calCount),
+            KBStorageSection(id: "todo",      name: "Liste & Todo",    icon: "checklist",                         color: "30B0C7", bytes: todoBytes,       recordCount: todoCount),
+        ]
+        // NON filtrare qui: il merge decide quali mostrare in base a Firebase
     }
     
     // MARK: - Fallback locale usato da KBStorageGate (quando cachedUsedBytes == 0)

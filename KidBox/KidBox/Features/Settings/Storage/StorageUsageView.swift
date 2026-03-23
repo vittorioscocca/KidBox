@@ -99,7 +99,7 @@ struct StorageUsageView: View {
             .listRowBackground(cardBackground)
         }
         .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
+        .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
         .background(backgroundColor)
         .navigationTitle("Utilizzo spazio")
         .navigationBarTitleDisplayMode(.large)
@@ -300,19 +300,28 @@ private struct SectionRow: View {
                     Text(section.name)
                         .font(.subheadline.weight(.medium))
                     Spacer()
-                    Text(section.bytes.formattedFileSize)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color(hex: section.color) ?? .accentColor)
+                    if section.bytes > 0 {
+                        Text(section.bytes.formattedFileSize)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color(hex: section.color) ?? .accentColor)
+                    } else {
+                        // bytes = 0: Firebase non ha ancora questo dato
+                        Text("Premi Init Storage")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 
-                let fraction = min(1.0, Double(section.bytes) / Double(totalBytes))
+                let fraction = min(1.0, Double(section.bytes) / Double(max(1, totalBytes)))
                 GeometryReader { g in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color.secondary.opacity(0.15))
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color(hex: section.color) ?? .accentColor)
-                            .frame(width: max(4, g.size.width * fraction))
+                        if section.bytes > 0 {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color(hex: section.color) ?? .accentColor)
+                                .frame(width: max(4, g.size.width * fraction))
+                        }
                     }
                 }
                 .frame(height: 4)
