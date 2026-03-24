@@ -10,11 +10,9 @@ struct AskAIButton: View {
     let visit: KBMedicalVisit
     let child: KBChild
     
-    @ObservedObject private var settings = AISettings.shared
-    
-    @State private var showSettings = false
     @State private var showConsent  = false
     @State private var showChat     = false
+    @State private var showUpgrade  = false
     
     var body: some View {
         AskAIControl(
@@ -23,13 +21,12 @@ struct AskAIButton: View {
         ) {
             handleTap()
         }
-        .sheet(isPresented: $showSettings) {
-            NavigationStack { AISettingsView() }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeSheetView()
+                .environmentObject(KBSubscriptionManager.shared)
         }
         .sheet(isPresented: $showConsent) {
-            AIConsentSheet {
-                showChat = true
-            }
+            AIConsentSheet { showChat = true }
         }
         .sheet(isPresented: $showChat) {
             MedicalAIChatView(visit: visit, child: child)
@@ -37,7 +34,11 @@ struct AskAIButton: View {
     }
     
     private func handleTap() {
-        if !settings.consentGiven {
+        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
+            showUpgrade = true
+            return
+        }
+        if !AISettings.shared.consentGiven {
             showConsent = true
             return
         }

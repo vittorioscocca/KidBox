@@ -49,6 +49,8 @@
 		<string>remote-notification</string>
 		<string>location</string>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIImageName</key>

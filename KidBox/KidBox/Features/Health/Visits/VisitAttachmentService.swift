@@ -391,6 +391,7 @@ struct VisitAttachmentsSection: View {
     @State private var showCamera = false
     @State private var previewURL: URL? = nil
     @State private var showKeyAlert = false
+    @State private var showStorageUpgrade = false
     @State private var errorText: String? = nil
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
@@ -428,7 +429,9 @@ struct VisitAttachmentsSection: View {
                 } else {
                     Button {
                         KBLog.ui.kbDebug("Show attachment source picker visitId=\(visit.id)")
-                        showSourcePicker = true
+                        checkUploadAllowed(modelContext: modelContext, familyId: visit.familyId, showUpgrade: $showStorageUpgrade) {
+                            showSourcePicker = true
+                        }
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(tint)
@@ -534,6 +537,7 @@ struct VisitAttachmentsSection: View {
                 }
             }
         }
+        .storageUpgradeSheet($showStorageUpgrade)
     }
     
     // MARK: - Helpers

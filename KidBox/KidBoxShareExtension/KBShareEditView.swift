@@ -776,11 +776,68 @@ struct KBShareEditView: View {
     
     // MARK: - Send
     
+    /// Restituisce true se il payload corrente occupa spazio su Firebase Storage
+    /// (immagini, video, file generici). Testo, URL web, note, todo ed eventi
+    /// non fanno upload di blob, quindi non richiedono il check di quota.
+    private var payloadRequiresStorageCheck: Bool {
+        switch payload.type {
+        case .image:  return true
+        case .file:   return true
+        case .url(let u):
+            if let f = URL(string: u), f.isFileURL { return true }
+            return false
+        case .text, .unknown:
+            return false
+        }
+    }
+    
+    /// Stima la dimensione in byte del file allegato al payload (0 se non disponibile).
+    private var estimatedPayloadBytes: Int64 {
+        switch payload.type {
+        case .file(let url):
+            return (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+                .map { Int64($0) } ?? 0
+        case .image(let url):
+            return url.flatMap {
+                try? $0.resourceValues(forKeys: [.fileSizeKey]).fileSize
+            }.map { Int64($0) } ?? 0
+        case .url(let u):
+            if let f = URL(string: u), f.isFileURL {
+                return (try? f.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+                    .map { Int64($0) } ?? 0
+            }
+            return 0
+        default:
+            return 0
+        }
+    }
+    
     private func sendToDestination() async {
         guard !hasSent else {
             log("sendToDestination SKIPPED — hasSent=true (double-tap guard)")
             return
         }
+        
+        // ── Storage gate ────────────────────────────────────────────────────
+        // Blocca l'invio di media/file/documenti se la quota della famiglia
+        // è esaurita. Il check usa i byte scritti nell'App Group da
+        // StorageUsageViewModel (chiave "storageUsedBytes_<familyId>").
+        // Note, todo, eventi e URL web non occupano Storage → skip.
+        if payloadRequiresStorageCheck {
+            let defaults   = UserDefaults(suiteName: appGroupId)
+            let familyId   = defaults?.string(forKey: "activeFamilyId") ?? ""
+            let result = KBStorageGateLite.canUpload(bytes: estimatedPayloadBytes,
+                                                     appGroupId: appGroupId,
+                                                     familyId: familyId)
+            
+            if case .blocked(let title, let message) = result {
+                log("sendToDestination BLOCKED by StorageGate: \(title)")
+                errorMessage = message
+                return
+            }
+        }
+        // ────────────────────────────────────────────────────────────────────
+        
         hasSent = true
         log("sendToDestination START destination=\(destination.rawStringValue)")
         isSending = true

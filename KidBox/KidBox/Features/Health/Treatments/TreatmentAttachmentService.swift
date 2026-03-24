@@ -659,6 +659,7 @@ struct TreatmentAttachmentsSection: View {
     @State private var showCamera         = false
     @State private var previewURL:   URL? = nil
     @State private var showKeyAlert       = false
+    @State private var showStorageUpgrade = false
     @State private var errorText:    String? = nil
     
     private let tint    = KBTheme.tint
@@ -688,7 +689,11 @@ struct TreatmentAttachmentsSection: View {
                 if isUploading {
                     ProgressView().scaleEffect(0.8)
                 } else {
-                    Button { showSourcePicker = true } label: {
+                    Button {
+                        checkUploadAllowed(modelContext: modelContext, familyId: treatment.familyId, showUpgrade: $showStorageUpgrade) {
+                            showSourcePicker = true
+                        }
+                    } label: {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(tint).font(.title3)
                     }
@@ -776,6 +781,7 @@ struct TreatmentAttachmentsSection: View {
         } message: {
             Text("Chiave di crittografia non trovata. Verifica le impostazioni famiglia.")
         }
+        .storageUpgradeSheet($showStorageUpgrade)
     }
     
     // MARK: - Helpers

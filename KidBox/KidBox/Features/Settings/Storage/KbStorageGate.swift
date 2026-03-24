@@ -1,6 +1,6 @@
 //
 //  KBStorageGate.swift
-//  KidBox
+//  KidBox — target: Main App only
 //
 //  Servizio centralizzato che controlla se la famiglia ha spazio disponibile
 //  prima di eseguire qualsiasi upload su Firebase Storage.
@@ -23,6 +23,9 @@
 //
 //  NOTE:
 //  - Il calcolo è sincrono e lato client (stima da SwiftData locale).
+//  - La Share Extension usa KBStorageGateLite (nessuna dipendenza SwiftData).
+//    I dati vengono scritti nell'App Group da StorageUsageViewModel
+//    .persistUsedBytesToAppGroup() dopo ogni sync con Firebase.
 //  - Quando sarà implementato il sistema di subscription, sostituire
 //    `currentQuota` con la quota letta dal piano utente.
 
@@ -43,8 +46,8 @@ enum KBStorageBlockReason {
     
     var title: String {
         switch self {
-        case .quotaExceeded:  return "Spazio esaurito"
-        case .wouldExceed:    return "Spazio insufficiente"
+        case .quotaExceeded: return "Spazio esaurito"
+        case .wouldExceed:   return "Spazio insufficiente"
         }
     }
     
@@ -66,15 +69,14 @@ final class KBStorageGate {
     static let shared = KBStorageGate()
     private init() {}
     
-    /// Quota corrente per la famiglia.
-    /// TODO: leggere dal piano utente quando il sistema di subscription sarà implementato.
-    var currentQuota: Int64 { StorageUsageViewModel.quotaFree }
+    /// Quota corrente per la famiglia — letta dal piano utente.
+    var currentQuota: Int64 { KBSubscriptionManager.shared.currentPlan.storageQuota }
     
     /// Bytes usati aggiornati da Firebase (scritto da StorageUsageViewModel dopo ogni load).
     /// Se 0 → il gate usa il calcolo locale come fallback.
     var cachedUsedBytes: Int64 = 0
     
-    // MARK: - Check
+    // MARK: - Check (App — richiede ModelContext)
     
     /// Controlla se è possibile caricare un file di `bytes` byte.
     /// Passare `bytes: 0` per verificare solo se il limite è già superato.
@@ -99,10 +101,21 @@ final class KBStorageGate {
         Alert(
             title: Text(reason.title),
             message: Text(reason.message),
-            primaryButton: .default(Text("Passa a Pro"), action: onUpgrade),
+            primaryButton: .default(Text("Upgrade"), action: onUpgrade),
             secondaryButton: .cancel(Text("Annulla"))
         )
     }
+    
+    // MARK: - AI check
+    
+    /// nil = ok, altrimenti il motivo del blocco.
+    func canUseAI() -> KBAIBlockReason? {
+        guard KBSubscriptionManager.shared.currentPlan.includesAI else { return .planNotIncludesAI }
+        guard AISettings.shared.consentGiven else { return .consentNotGiven }
+        return nil
+    }
+    
+    var isAIAvailable: Bool { canUseAI() == nil }
     
     // MARK: - Calcolo locale
     //
@@ -119,17 +132,15 @@ final class KBStorageGate {
     
     func calculateUsedBytes(modelContext: ModelContext, familyId: String) -> Int64 {
         let fid = familyId
-        let chatMediaFallback: Int64 = 512 * 1024
+        let chatMediaFallback: Int64  = 512 * 1024
         let visitPhotoEstimate: Int64 = 200 * 1024
         
-        // Documenti (fileSize reale)
         let docDesc = FetchDescriptor<KBDocument>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
         )
         let docBytes: Int64 = ((try? modelContext.fetch(docDesc)) ?? [])
             .reduce(0) { $0 + $1.fileSize }
         
-        // Chat media (fileSize reale o fallback per messaggi vecchi)
         var chatDesc = FetchDescriptor<KBChatMessage>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false && $0.mediaStoragePath != nil }
         )
@@ -137,14 +148,12 @@ final class KBStorageGate {
         let chatBytes: Int64 = ((try? modelContext.fetch(chatDesc)) ?? [])
             .reduce(0) { acc, msg in acc + (msg.mediaFileSize ?? chatMediaFallback) }
         
-        // Foto album condiviso (fileSize reale)
         let photoDesc = FetchDescriptor<KBFamilyPhoto>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
         )
         let photoBytes: Int64 = ((try? modelContext.fetch(photoDesc)) ?? [])
             .reduce(0) { $0 + $1.fileSize }
         
-        // Foto visite pediatriche (stima 200KB/foto)
         var visitDesc = FetchDescriptor<KBMedicalVisit>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
         )
@@ -156,7 +165,7 @@ final class KBStorageGate {
     }
 }
 
-// MARK: - View modifier
+// MARK: - View modifier (Storage)
 
 private struct StorageGatedModifier: ViewModifier {
     let bytes: Int64
@@ -165,6 +174,7 @@ private struct StorageGatedModifier: ViewModifier {
     let onAllowed: () -> Void
     
     @State private var blockedReason: KBStorageBlockReason?
+    @State private var showUpgrade = false
     
     func body(content: Content) -> some View {
         content
@@ -174,9 +184,13 @@ private struct StorageGatedModifier: ViewModifier {
                 set: { blockedReason = $0?.reason }
             )) { wrapper in
                 KBStorageGate.blockedAlert(reason: wrapper.reason) {
-                    // TODO: navigare alla paywall
+                    showUpgrade = true
                     blockedReason = nil
                 }
+            }
+            .sheet(isPresented: $showUpgrade) {
+                UpgradeSheetView()
+                    .environmentObject(KBSubscriptionManager.shared)
             }
     }
     
@@ -185,8 +199,8 @@ private struct StorageGatedModifier: ViewModifier {
             bytes: bytes, modelContext: modelContext, familyId: familyId
         )
         switch result {
-        case .allowed:         onAllowed()
-        case .blocked(let r):  blockedReason = r
+        case .allowed:        onAllowed()
+        case .blocked(let r): blockedReason = r
         }
     }
 }
@@ -211,5 +225,82 @@ extension View {
             familyId: familyId,
             onAllowed: onAllowed
         ))
+    }
+}
+
+// MARK: - AI Block Reason
+
+enum KBAIBlockReason: Equatable {
+    case planNotIncludesAI
+    case consentNotGiven
+    
+    var title: String {
+        switch self {
+        case .planNotIncludesAI: return "Funzione AI non disponibile"
+        case .consentNotGiven:   return "Consenso richiesto"
+        }
+    }
+    
+    var message: String {
+        switch self {
+        case .planNotIncludesAI:
+            return "L'assistente AI è incluso nei piani Pro e Max. Passa a Pro per 20 messaggi al giorno per membro."
+        case .consentNotGiven:
+            return "Per usare l'AI devi prima accettare le condizioni d'uso in Impostazioni → Assistente AI."
+        }
+    }
+}
+
+// MARK: - AI View Modifier
+
+private struct AIGatedModifier: ViewModifier {
+    let onAllowed: () -> Void
+    
+    @State private var blockedReason: KBAIBlockReason?
+    @State private var showUpgrade = false
+    
+    func body(content: Content) -> some View {
+        content
+            .onTapGesture { checkAndProceed() }
+            .alert(item: Binding(
+                get: { blockedReason.map { AIBlockedWrapper(reason: $0) } },
+                set: { blockedReason = $0?.reason }
+            )) { wrapper in
+                Alert(
+                    title: Text(wrapper.reason.title),
+                    message: Text(wrapper.reason.message),
+                    primaryButton: .default(
+                        Text(wrapper.reason == .planNotIncludesAI ? "Upgrade" : "OK")
+                    ) {
+                        if wrapper.reason == .planNotIncludesAI { showUpgrade = true }
+                        blockedReason = nil
+                    },
+                    secondaryButton: .cancel(Text("Annulla"))
+                )
+            }
+            .sheet(isPresented: $showUpgrade) {
+                UpgradeSheetView()
+                    .environmentObject(KBSubscriptionManager.shared)
+            }
+    }
+    
+    private func checkAndProceed() {
+        if let reason = KBStorageGate.shared.canUseAI() {
+            blockedReason = reason
+        } else {
+            onAllowed()
+        }
+    }
+}
+
+private struct AIBlockedWrapper: Identifiable {
+    let id = UUID()
+    let reason: KBAIBlockReason
+}
+
+extension View {
+    /// Intercetta il tap e blocca se il piano non include l'AI o manca il consenso.
+    func aiGated(onAllowed: @escaping () -> Void) -> some View {
+        modifier(AIGatedModifier(onAllowed: onAllowed))
     }
 }

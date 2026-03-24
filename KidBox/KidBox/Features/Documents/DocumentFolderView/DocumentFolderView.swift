@@ -70,6 +70,7 @@ struct DocumentFolderView: View {
     @State var showNewFolderAlert = false
     @State var newFolderName: String = ""
     @State private var showDeleteSelectedConfirm = false
+    @State private var showStorageUpgrade = false
     
     // Importer
     @State var showImporter = false
@@ -696,14 +697,26 @@ private extension DocumentFolderView {
                 Button { showNewFolderAlert = true } label: {
                     Label("Nuova cartella", systemImage: "folder.badge.plus")
                 }
-                Button { viewModel.errorText = nil; showImporter = true } label: {
+                Button {
+                    checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                        viewModel.errorText = nil; showImporter = true
+                    }
+                } label: {
                     Label("Carica documento", systemImage: "doc.badge.plus")
                 }
-                Button { showCamera = true } label: {
+                Button {
+                    checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                        showCamera = true
+                    }
+                } label: {
                     Label("Fotocamera", systemImage: "camera")
                 }
                 .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
-                Button { viewModel.showPhotoLibrary = true } label: {
+                Button {
+                    checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                        viewModel.showPhotoLibrary = true
+                    }
+                } label: {
                     Label("Libreria foto", systemImage: "photo.on.rectangle")
                 }
             } label: {
@@ -926,6 +939,7 @@ private extension DocumentFolderView {
                     guard !items.isEmpty else { return }
                     Task { @MainActor in await view.viewModel.handlePhotoLibrarySelection(items) }
                 }
+                .storageUpgradeSheet(view.$showStorageUpgrade)
         }
         
         @ViewBuilder

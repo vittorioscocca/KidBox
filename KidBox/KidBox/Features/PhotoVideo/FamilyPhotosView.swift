@@ -127,6 +127,8 @@ struct FamilyPhotosView: View {
     @State private var selectedAlbumIds: Set<String> = []
     @State private var gridWidth: CGFloat = UIScreen.main.bounds.width
     @State private var showCamera = false
+    @State private var showStorageUpgrade = false
+    @State private var showPhotoPickerGated = false
     
     private var photos: [KBFamilyPhoto] { vm.photos }
     private var albums: [KBPhotoAlbum]  { vm.albums }
@@ -170,7 +172,7 @@ struct FamilyPhotosView: View {
         .toolbar { toolbarItems }
         .animation(.snappy(duration: 0.22), value: isSelectMode)
         .photosPicker(
-            isPresented: .constant(false),
+            isPresented: $showPhotoPickerGated,
             selection: $pickerItems,
             maxSelectionCount: 30,
             matching: .any(of: [.images, .videos])
@@ -186,6 +188,7 @@ struct FamilyPhotosView: View {
             let captured = items; pickerItems = []
             Task { await uploadItems(captured) }
         }
+        .storageUpgradeSheet($showStorageUpgrade)
         .fullScreenCover(item: $fullscreenPhoto) { photo in
             PhotoFullscreenView(
                 startPhoto: photo, allPhotos: photos, familyId: familyId, userId: uid,
@@ -303,16 +306,23 @@ struct FamilyPhotosView: View {
                 if tab == .library {
                     if CameraCaptureView.isAvailable {
                         Button {
-                            uploadTargetAlbumId = nil
-                            showCamera = true
+                            checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                                uploadTargetAlbumId = nil
+                                showCamera = true
+                            }
                         } label: {
                             Image(systemName: "camera")
                         }
                     }
-                    PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .any(of: [.images, .videos])) {
+                    Button {
+                        checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                            uploadTargetAlbumId = nil
+                            pickerItems = []
+                            showPhotoPickerGated = true
+                        }
+                    } label: {
                         Image(systemName: "plus")
                     }
-                    .simultaneousGesture(TapGesture().onEnded { uploadTargetAlbumId = nil })
                 } else {
                     Button { showCreateAlbum = true } label: {
                         Image(systemName: "plus")
@@ -568,10 +578,16 @@ struct FamilyPhotosView: View {
                     .padding(.horizontal, 24).padding(.vertical, 12)
                     .background(Color.pink, in: Capsule())
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                let result = KBStorageGate.shared.canUpload(bytes: 0, modelContext: modelContext, familyId: familyId)
+                if case .blocked = result { showStorageUpgrade = true }
+            })
             if CameraCaptureView.isAvailable {
                 Button {
-                    uploadTargetAlbumId = nil
-                    showCamera = true
+                    checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                        uploadTargetAlbumId = nil
+                        showCamera = true
+                    }
                 } label: {
                     Label("Scatta una foto", systemImage: "camera.fill")
                         .font(.subheadline.bold()).foregroundStyle(.pink)

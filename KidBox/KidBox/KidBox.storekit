@@ -1,0 +1,107 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "CED985FF",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6761055375",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "5WA8KG2G2W",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 796055376.693663,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21994693",
+      "localizations" : [
+
+      ],
+      "name" : "kidbox_premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "8.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6761060916",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "20 GB storage condiviso, 100 messaggi AI al giorno",
+              "displayName" : "KidBox Max",
+              "locale" : "it"
+            }
+          ],
+          "productID" : "it.vittorioscocca.kidbox.max.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "KidBox Max Monthly",
+          "subscriptionGroupID" : "21994693",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6761060381",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "5 GB storage condiviso, 20 messaggi AI al giorno.",
+              "displayName" : "KidBox Pro",
+              "locale" : "it"
+            }
+          ],
+          "productID" : "it.vittorioscocca.kidbox.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "KidBox Pro Monthly",
+          "subscriptionGroupID" : "21994693",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

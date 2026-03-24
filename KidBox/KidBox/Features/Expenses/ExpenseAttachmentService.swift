@@ -612,6 +612,7 @@ struct ExpenseAttachmentsSection: View {
     @State private var showCamera     = false
     @State private var previewURL: URL?  = nil
     @State private var showKeyAlert   = false
+    @State private var showStorageUpgrade = false
     @State private var errorText: String? = nil
     
     private let tint    = Color.accentColor
@@ -649,7 +650,9 @@ struct ExpenseAttachmentsSection: View {
                 } else {
                     Button {
                         KBLog.ui.kbDebug("Show attachment source picker expenseId=\(expense.id)")
-                        showSourcePicker = true
+                        checkUploadAllowed(modelContext: modelContext, familyId: expense.familyId, showUpgrade: $showStorageUpgrade) {
+                            showSourcePicker = true
+                        }
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(tint)
@@ -753,6 +756,7 @@ struct ExpenseAttachmentsSection: View {
         } message: {
             Text("Chiave di crittografia non trovata. Verifica le impostazioni famiglia.")
         }
+        .storageUpgradeSheet($showStorageUpgrade)
         // Spinner reset dopo evento
         .onReceive(KBEventBus.shared.stream) { (event: KBAppEvent) in
             if case .expenseAttachmentPending(_, let eid, _, _) = event, eid == expense.id {

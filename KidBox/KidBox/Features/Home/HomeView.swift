@@ -481,10 +481,12 @@ private struct HomeCardGrid: View {
     let onNavigate: (HomeDestination) -> Void
     
     @ObservedObject private var badge = BadgeManager.shared
+    @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
     @StateObject private var locationObserver = LocationSharingObserver()
     
     @State private var order: [HomeCardID] = []
     @State private var dragged: HomeCardID?
+    @State private var showUpgrade = false
     
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -679,9 +681,34 @@ private struct HomeCardGrid: View {
             }
             
         case .expert:
-            HomeCardView(title: "Assistente", subtitle: "Conosce calendario, spesa e documenti", systemImage: "brain.head.profile", tint: .purple) {
-                KBLog.navigation.debug("Home: tap AskExpert")
-                onNavigate(.askExpert)
+            let aiAvailable = subscriptionManager.currentPlan.includesAI
+            ZStack(alignment: .topTrailing) {
+                HomeCardView(
+                    title: "Assistente",
+                    subtitle: aiAvailable ? "Conosce calendario, spesa e documenti" : "Disponibile con Pro o Max",
+                    systemImage: aiAvailable ? "brain.head.profile" : "lock.fill",
+                    tint: aiAvailable ? .purple : .gray
+                ) {
+                    KBLog.navigation.debug("Home: tap AskExpert")
+                    if aiAvailable {
+                        onNavigate(.askExpert)
+                    } else {
+                        showUpgrade = true
+                    }
+                }
+                if !aiAvailable {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.white)
+                        .padding(5)
+                        .background(Circle().fill(Color.gray))
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            }
+            .sheet(isPresented: $showUpgrade) {
+                UpgradeSheetView()
+                    .environmentObject(KBSubscriptionManager.shared)
             }
         }
     }

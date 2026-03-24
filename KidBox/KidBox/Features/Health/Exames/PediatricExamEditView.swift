@@ -51,6 +51,7 @@ struct PediatricExamEditView: View {
     @State private var showImporter        = false
     @State private var previewURL: URL?    = nil
     @State private var showKeyAlert        = false
+    @State private var showStorageUpgrade  = false
     
     @State private var isSaving = false
     
@@ -209,7 +210,9 @@ struct PediatricExamEditView: View {
                     
                     if pendingURLs.count < 5 {
                         Button {
-                            showSourcePicker = true
+                            checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                                showSourcePicker = true
+                            }
                         } label: {
                             Label("Aggiungi allegato", systemImage: "plus.circle.fill")
                                 .foregroundStyle(tint)
@@ -282,6 +285,7 @@ struct PediatricExamEditView: View {
         } message: {
             Text("Chiave di crittografia non disponibile.")
         }
+        .storageUpgradeSheet($showStorageUpgrade)
     }
     
     // MARK: - Existing doc row

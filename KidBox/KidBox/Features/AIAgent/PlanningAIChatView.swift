@@ -214,10 +214,14 @@ struct PlanningAIChatView: View {
     // così SwiftUI mantiene viva l'istanza per tutta la vita della view
     // e non ne crea una nuova ad ogni render del body.
     @State private var vm: PlanningAIChatViewModel? = nil
+    @State private var showUpgrade = false
     
     var body: some View {
         Group {
-            if let vm {
+            if !KBSubscriptionManager.shared.currentPlan.includesAI {
+                // ── Piano Free: schermata locked ─────────────────────
+                aiLockedView
+            } else if let vm {
                 PlanningAIChatInnerView(
                     vm:               vm,
                     familyId:         familyId,
@@ -235,9 +239,12 @@ struct PlanningAIChatView: View {
         }
         .navigationTitle("Assistente")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeSheetView()
+                .environmentObject(KBSubscriptionManager.shared)
+        }
         .task {
-            // Crea il ViewModel una sola volta con i dati disponibili al momento
-            // dell'apertura. Guard evita ricreazione se la view viene re-renderizzata.
+            guard KBSubscriptionManager.shared.currentPlan.includesAI else { return }
             guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
                 familyId:               familyId,
@@ -268,6 +275,41 @@ struct PlanningAIChatView: View {
             vm = newVM
             newVM.loadOrCreateConversation()
         }
+    }
+    
+    // MARK: - AI locked view (piano Free)
+    
+    private var aiLockedView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 56))
+                .foregroundStyle(.secondary)
+            VStack(spacing: 8) {
+                Text("Assistente AI")
+                    .font(.title2.bold())
+                Text("Disponibile con i piani Pro e Max")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("Passa a Pro per accedere all'assistente che conosce calendario, spesa, salute dei tuoi figli e molto altro.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+            Button {
+                showUpgrade = true
+            } label: {
+                Text("Scopri i piani")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

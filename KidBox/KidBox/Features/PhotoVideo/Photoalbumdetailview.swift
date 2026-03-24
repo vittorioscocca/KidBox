@@ -28,6 +28,7 @@ struct PhotoAlbumDetailView: View {
     
     // ── Camera ──────────────────────────────────────────────────────────────
     @State private var showCamera = false
+    @State private var showStorageUpgrade = false
     @State private var isUploading = false
     @State private var uploadProgress: Double = 0
     @State private var uploadError: String?
@@ -111,6 +112,7 @@ struct PhotoAlbumDetailView: View {
             get: { uploadError != nil },
             set: { if !$0 { uploadError = nil } }
         )) { Button("OK") { uploadError = nil } } message: { Text(uploadError ?? "") }
+            .storageUpgradeSheet($showStorageUpgrade)
         // ────────────────────────────────────────────────────────────────────
             .confirmationDialog(
                 "Rimuovi \(selectedIds.count) foto dall'album?",
@@ -167,7 +169,9 @@ struct PhotoAlbumDetailView: View {
                 // ── Fotocamera ──────────────────────────────────────────────
                 if CameraCaptureView.isAvailable {
                     Button {
-                        showCamera = true
+                        checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                            showCamera = true
+                        }
                     } label: {
                         Image(systemName: "camera")
                     }
@@ -334,7 +338,9 @@ struct PhotoAlbumDetailView: View {
             // ── Bottone fotocamera nello stato vuoto ─────────────────────────
             if CameraCaptureView.isAvailable {
                 Button {
-                    showCamera = true
+                    checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                        showCamera = true
+                    }
                 } label: {
                     Label("Scatta una foto", systemImage: "camera.fill")
                         .font(.subheadline.bold()).foregroundStyle(.white)

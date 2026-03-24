@@ -373,6 +373,9 @@ private struct ChatConversationView: View {
     // Document picker
     @State private var showDocumentPicker = false
     
+    // Storage upgrade
+    @State private var showStorageUpgrade = false
+    
     // Reaction picker
     @State private var messageForReaction: KBChatMessage?
     
@@ -548,6 +551,7 @@ private struct ChatConversationView: View {
             DocumentPicker { url in viewModel.sendDocument(url: url) }
                 .ignoresSafeArea()
         }
+        .storageUpgradeSheet($showStorageUpgrade)
         .sheet(item: $messageForSave) { msg in
             ChatSaveSheet(
                 message: msg,
@@ -1110,9 +1114,21 @@ private struct ChatConversationView: View {
             onSendLockedRecording: { viewModel.finishLockedRecording() },
             onCancelLockedRecording: { viewModel.cancelLockedRecording() },
             onCancelRecord: { viewModel.cancelRecording() },
-            onMediaTap: { showMediaPicker = true },
-            onCameraTap: { showCamera = true },
-            onDocumentTap: { showDocumentPicker = true },
+            onMediaTap: {
+                checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                    showMediaPicker = true
+                }
+            },
+            onCameraTap: {
+                checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                    showCamera = true
+                }
+            },
+            onDocumentTap: {
+                checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                    showDocumentPicker = true
+                }
+            },
             onTextChange: { viewModel.userIsTyping() },
             onLocationTap: { showLocationSheet = true }
         )
