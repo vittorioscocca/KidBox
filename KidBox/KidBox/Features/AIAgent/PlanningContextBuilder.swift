@@ -58,6 +58,30 @@ struct PlanningContextInput {
     /// Vaccines with status `.scheduled` or `.planned`.
     let upcomingVaccines: [KBVaccine]
     
+    // ── Memoria famiglia ─────────────────────────────────────────
+    /// Note della famiglia (max ultime 10, non eliminate).
+    let recentNotes: [KBNote]
+    /// Spese recenti (ultimi 30 giorni, non eliminate).
+    let recentExpenses: [KBExpense]
+    /// Nomi categorie spesa keyed by categoryId.
+    let expenseCategoryNames: [String: String]
+    /// Articoli della lista della spesa non ancora acquistati.
+    let pendingGroceryItems: [KBGroceryItem]
+    /// Messaggi chat di testo recenti (max ultimi 20, no media).
+    let recentChatMessages: [KBChatMessage]
+    
+    // ── Profili sanitari figli (pediatria avanzata) ───────────────
+    /// Tutti i figli della famiglia — per costruire il profilo avanzato.
+    let children: [KBChild]
+    /// Profili pediatrici keyed by childId (gruppo sanguigno, allergie...).
+    let pediatricProfiles: [String: KBPediatricProfile]
+    /// Tutte le visite per tutti i figli (filtrate per childId nel builder).
+    let allVisits: [KBMedicalVisit]
+    /// Tutti gli esami per tutti i figli.
+    let allExams: [KBMedicalExam]
+    /// Tutti i vaccini per tutti i figli.
+    let allVaccines: [KBVaccine]
+    
     // ── Convenience init with sensible defaults ───────────────────
     init(
         familyName:            String,
@@ -71,7 +95,17 @@ struct PlanningContextInput {
         activeTreatments:      [KBTreatment]       = [],
         visitsWithNextDate:    [KBMedicalVisit]    = [],
         visitsWithPendingExams:[KBMedicalVisit]    = [],
-        upcomingVaccines:      [KBVaccine]         = []
+        upcomingVaccines:      [KBVaccine]         = [],
+        recentNotes:           [KBNote]            = [],
+        recentExpenses:        [KBExpense]         = [],
+        expenseCategoryNames:  [String: String]    = [:],
+        pendingGroceryItems:   [KBGroceryItem]     = [],
+        recentChatMessages:    [KBChatMessage]     = [],
+        children:              [KBChild]           = [],
+        pediatricProfiles:     [String: KBPediatricProfile] = [:],
+        allVisits:             [KBMedicalVisit]    = [],
+        allExams:              [KBMedicalExam]     = [],
+        allVaccines:           [KBVaccine]         = []
     ) {
         self.familyName             = familyName
         self.memberNames            = memberNames
@@ -85,6 +119,16 @@ struct PlanningContextInput {
         self.visitsWithNextDate     = visitsWithNextDate
         self.visitsWithPendingExams = visitsWithPendingExams
         self.upcomingVaccines       = upcomingVaccines
+        self.recentNotes            = recentNotes
+        self.recentExpenses         = recentExpenses
+        self.expenseCategoryNames   = expenseCategoryNames
+        self.pendingGroceryItems    = pendingGroceryItems
+        self.recentChatMessages     = recentChatMessages
+        self.children               = children
+        self.pediatricProfiles      = pediatricProfiles
+        self.allVisits              = allVisits
+        self.allExams               = allExams
+        self.allVaccines            = allVaccines
     }
 }
 
@@ -106,7 +150,11 @@ enum PlanningContextBuilder {
         treatments=\(input.activeTreatments.count) \
         nextVisits=\(input.visitsWithNextDate.count) \
         pendingExams=\(input.visitsWithPendingExams.count) \
-        vaccines=\(input.upcomingVaccines.count)
+        vaccines=\(input.upcomingVaccines.count) \
+        notes=\(input.recentNotes.count) \
+        expenses=\(input.recentExpenses.count) \
+        grocery=\(input.pendingGroceryItems.count) \
+        chat=\(input.recentChatMessages.count)
         """)
         
         let now      = Date()
@@ -120,7 +168,8 @@ enum PlanningContextBuilder {
         lines.append("""
         Sei un assistente di pianificazione familiare integrato nell'app KidBox.
         Hai accesso al calendario, ai to-do, alle routine dei bambini, alle cure \
-        attive e alle scadenze sanitarie della famiglia \(input.familyName).
+        attive, alle scadenze sanitarie, alle note, alle spese, alla lista della spesa \
+        e agli ultimi messaggi della chat famiglia di \(input.familyName).
         
         REGOLE IMPORTANTI:
         - Aiuta i genitori a pianificare, trovare spazi liberi e non dimenticare scadenze.
@@ -156,6 +205,16 @@ enum PlanningContextBuilder {
             horizon: horizon,
             to:     &lines
         )
+        
+        // ── Memoria famiglia ─────────────────────────────────────────
+        appendNotes(input.recentNotes, memberNames: input.memberNames, to: &lines)
+        appendExpenses(input.recentExpenses, categoryNames: input.expenseCategoryNames,
+                       memberNames: input.memberNames, to: &lines)
+        appendGrocery(input.pendingGroceryItems, to: &lines)
+        appendChatMessages(input.recentChatMessages, to: &lines)
+        
+        // ── Profili sanitari figli (pediatria avanzata) ───────────────
+        appendChildrenHealthProfiles(input: input, to: &lines)
         
         lines.append("\n--- FINE CONTESTO PIANIFICAZIONE ---")
         lines.append("""
@@ -486,6 +545,128 @@ enum PlanningContextBuilder {
         vaccines=\(upcomingVaccines.count)
         """)
     }
+    
+    // MARK: - Note
+    
+    private static func appendNotes(
+        _ notes:      [KBNote],
+        memberNames:  [String: String],
+        to lines:     inout [String]
+    ) {
+        guard !notes.isEmpty else { return }
+        let capped = Array(notes.prefix(10))
+        lines.append("\n--- NOTE FAMIGLIA (ultime \(capped.count)) ---")
+        for n in capped {
+            let author = memberNames[n.updatedBy] ?? n.updatedByName
+            var line = "• [\(formatDate(n.updatedAt))] \(n.title.isEmpty ? "(senza titolo)" : n.title)"
+            if !n.body.isEmpty {
+                // Tronca a 200 caratteri per non gonfiare il prompt
+                let preview = String(n.body.prefix(200))
+                line += ": \(preview)\(n.body.count > 200 ? "…" : "")"
+            }
+            line += " — \(author)"
+            lines.append(line)
+        }
+        KBLog.ai.kbDebug("PlanningContextBuilder notes appended count=\(capped.count)")
+    }
+    
+    // MARK: - Expenses
+    
+    private static func appendExpenses(
+        _ expenses:     [KBExpense],
+        categoryNames:  [String: String],
+        memberNames:    [String: String],
+        to lines:       inout [String]
+    ) {
+        guard !expenses.isEmpty else { return }
+        let total = expenses.reduce(0.0) { $0 + $1.amount }
+        lines.append("\n--- SPESE RECENTI (\(expenses.count) · totale €\(String(format: "%.2f", total))) ---")
+        for e in expenses.prefix(15) {
+            let cat = e.categoryId.flatMap { categoryNames[$0] } ?? "Altro"
+            let who = e.createdByUid.flatMap { memberNames[$0] } ?? ""
+            var line = "• \(formatDate(e.date)) — \(e.title) €\(String(format: "%.2f", e.amount)) [\(cat)]"
+            if !who.isEmpty { line += " — \(who)" }
+            if let notes = e.notes, !notes.isEmpty { line += " (\(notes))" }
+            lines.append(line)
+        }
+        KBLog.ai.kbDebug("PlanningContextBuilder expenses appended count=\(expenses.count) total=\(total)")
+    }
+    
+    // MARK: - Grocery
+    
+    private static func appendGrocery(
+        _ items:  [KBGroceryItem],
+        to lines: inout [String]
+    ) {
+        guard !items.isEmpty else { return }
+        lines.append("\n--- LISTA DELLA SPESA (\(items.count) articoli da acquistare) ---")
+        // Raggruppa per categoria
+        let grouped = Dictionary(grouping: items) { $0.category ?? "Altro" }
+        for (cat, catItems) in grouped.sorted(by: { $0.key < $1.key }) {
+            let names = catItems.map { $0.name }.joined(separator: ", ")
+            lines.append("  [\(cat)] \(names)")
+        }
+        KBLog.ai.kbDebug("PlanningContextBuilder grocery appended count=\(items.count)")
+    }
+    
+    // MARK: - Chat messages
+    
+    private static func appendChatMessages(
+        _ messages: [KBChatMessage],
+        to lines:   inout [String]
+    ) {
+        // Solo messaggi di testo, no media/posizione
+        let textMessages = messages.filter { $0.type == .text && !($0.text?.isEmpty ?? true) }
+        guard !textMessages.isEmpty else { return }
+        let capped = Array(textMessages.suffix(15)) // ultimi 15
+        lines.append("\n--- CHAT FAMIGLIA (ultimi \(capped.count) messaggi di testo) ---")
+        for m in capped {
+            let text = m.text ?? ""
+            let preview = String(text.prefix(150))
+            lines.append("  [\(formatDateTime(m.createdAt))] \(m.senderName): \(preview)\(text.count > 150 ? "…" : "")")
+        }
+        KBLog.ai.kbDebug("PlanningContextBuilder chat appended count=\(capped.count)")
+    }
+    
+    // MARK: - Profili sanitari figli
+    
+    /// Delega a PediatricAdvancedContextBuilder per ogni figlio.
+    /// In questo modo la logica di analisi longitudinale è in un unico posto
+    /// e può essere riusata da HealthAIChatViewModel in futuro.
+    private static func appendChildrenHealthProfiles(
+        input:    PlanningContextInput,
+        to lines: inout [String]
+    ) {
+        guard !input.children.isEmpty else { return }
+        lines.append("\n--- PROFILI SANITARI FIGLI ---")
+        
+        for child in input.children {
+            let profile         = input.pediatricProfiles[child.id]
+            let childVisits     = input.allVisits.filter     { !$0.isDeleted && $0.childId == child.id }
+            let childExams      = input.allExams.filter      { !$0.isDeleted && $0.childId == child.id }
+            let childVaccines   = input.allVaccines.filter   { !$0.isDeleted && $0.childId == child.id }
+            let childTreatments = input.activeTreatments.filter { !$0.isDeleted && $0.childId == child.id }
+            
+            let advInput = PediatricAdvancedInput(
+                familyId:      child.familyId ?? "",
+                subject:       .child(child, profile: profile),
+                subjectId:     child.id,
+                allVisits:     childVisits,
+                allExams:      childExams,
+                allTreatments: childTreatments,
+                allVaccines:   childVaccines,
+                historicDays:  365
+            )
+            
+            // buildSystemPrompt genera un testo completo — lo appendiamo
+            // direttamente come blocco nel prompt dell'agente.
+            let childPrompt = PediatricAdvancedContextBuilder.buildSystemPrompt(input: advInput)
+            lines.append(childPrompt)
+        }
+        
+        KBLog.ai.kbDebug("PlanningContextBuilder childProfiles appended count=\(input.children.count)")
+    }
+    
     
     // MARK: - Formatting helpers
     

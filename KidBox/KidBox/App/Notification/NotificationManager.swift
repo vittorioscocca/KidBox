@@ -63,6 +63,8 @@ final class NotificationManager: NSObject, ObservableObject {
         case treatmentReminder(familyId: String, childId: String, treatmentId: String)
         case examReminder(familyId: String, childId: String, examId: String)
         case expense(familyId: String, expenseId: String)
+        /// Apre PlanningAIChatView — usato dalla sintesi settimanale AI
+        case askExpert
     }
     
     // MARK: - Deep Link Handling
@@ -188,6 +190,10 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .expense(familyId: familyId, expenseId: expenseId)
             KBLog.auth.kbInfo("DeepLink set for expense familyId=\(familyId) expenseId=\(expenseId)")
+            
+        } else if type == "weekly_summary" {
+            pendingDeepLink = .askExpert
+            KBLog.auth.kbInfo("DeepLink set for weeklySummary → askExpert")
         }
     }
     
@@ -588,5 +594,52 @@ extension NotificationManager {
         ], merge: true)
         
         KBLog.settings.kbInfo("AI enabled preference saved to Firestore: \(enabled)")
+    }
+}
+
+//
+//  NotificationManager+WeeklySummary.swift
+//  KidBox
+//
+//  Estensione di NotificationManager per la sintesi settimanale AI.
+//  Aggiunge il case `.askExpert` all'enum DeepLink e gestisce il
+//  payload `type == "weekly_summary"` in handleNotificationUserInfo.
+//
+//  INTEGRAZIONE RICHIESTA in NotificationManager.swift:
+//  1. Aggiungere `.askExpert` all'enum DeepLink:
+//       case askExpert
+//  2. Aggiungere il branch `weekly_summary` in handleNotificationUserInfo:
+//       } else if type == "weekly_summary" {
+//           pendingDeepLink = .askExpert
+//           KBLog.auth.kbInfo("DeepLink set for weeklySummary → askExpert")
+//       }
+//  3. Aggiungere il case in AppCoordinator.handleDeepLink:
+//       case .askExpert:
+//           navigate(to: .askExpert)
+//
+//  Il file esistente non viene toccato — queste istruzioni documentano
+//  le modifiche manuali da fare.
+//
+
+// MARK: - Weekly summary notification preference
+
+extension NotificationManager {
+    
+    private enum WeeklySummaryPrefKey {
+        static let enabled = "kb_weeklySummaryEnabled"
+    }
+    
+    /// Preferenza locale (UserDefaults) per abilitare la sintesi settimanale.
+    var weeklySummaryEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: WeeklySummaryPrefKey.enabled) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: WeeklySummaryPrefKey.enabled)
+            if !newValue {
+                // Rimuove la notifica schedulata se l'utente disabilita
+                UNUserNotificationCenter.current()
+                    .removePendingNotificationRequests(withIdentifiers: ["kb-weekly-summary"])
+                KBLog.ai.kbInfo("NotificationManager: weekly summary disabled, notification removed")
+            }
+        }
     }
 }

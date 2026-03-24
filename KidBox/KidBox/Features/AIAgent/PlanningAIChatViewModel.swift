@@ -45,6 +45,20 @@ final class PlanningAIChatViewModel: ObservableObject {
     let visitsWithPendingExams: [KBMedicalVisit]
     let upcomingVaccines:       [KBVaccine]
     
+    // ── Memoria famiglia ─────────────────────────────────────────
+    let recentNotes:          [KBNote]
+    let recentExpenses:       [KBExpense]
+    let expenseCategoryNames: [String: String]
+    let pendingGroceryItems:  [KBGroceryItem]
+    let recentChatMessages:   [KBChatMessage]
+    
+    // ── Pediatria avanzata ────────────────────────────────────────
+    let children:          [KBChild]
+    let pediatricProfiles: [String: KBPediatricProfile]
+    let allVisits:         [KBMedicalVisit]
+    let allExams:          [KBMedicalExam]
+    let allVaccines:       [KBVaccine]
+    
     // Alias pubblici usati dal PlanningActionParser nella view
     // per abbinare oggetti SwiftData alle action cards di reminder.
     var todosForParser:    [KBTodoItem]     { openTodos }
@@ -84,6 +98,16 @@ final class PlanningAIChatViewModel: ObservableObject {
         visitsWithNextDate:     [KBMedicalVisit]  = [],
         visitsWithPendingExams: [KBMedicalVisit]  = [],
         upcomingVaccines:       [KBVaccine]       = [],
+        recentNotes:            [KBNote]          = [],
+        recentExpenses:         [KBExpense]       = [],
+        expenseCategoryNames:   [String: String]  = [:],
+        pendingGroceryItems:    [KBGroceryItem]   = [],
+        recentChatMessages:     [KBChatMessage]   = [],
+        children:               [KBChild]         = [],
+        pediatricProfiles:      [String: KBPediatricProfile] = [:],
+        allVisits:              [KBMedicalVisit]  = [],
+        allExams:               [KBMedicalExam]   = [],
+        allVaccines:            [KBVaccine]       = [],
         modelContext:           ModelContext
     ) {
         self.familyId               = familyId
@@ -99,6 +123,16 @@ final class PlanningAIChatViewModel: ObservableObject {
         self.visitsWithNextDate     = visitsWithNextDate
         self.visitsWithPendingExams = visitsWithPendingExams
         self.upcomingVaccines       = upcomingVaccines
+        self.recentNotes            = recentNotes
+        self.recentExpenses         = recentExpenses
+        self.expenseCategoryNames   = expenseCategoryNames
+        self.pendingGroceryItems    = pendingGroceryItems
+        self.recentChatMessages     = recentChatMessages
+        self.children               = children
+        self.pediatricProfiles      = pediatricProfiles
+        self.allVisits              = allVisits
+        self.allExams               = allExams
+        self.allVaccines            = allVaccines
         self.modelContext           = modelContext
         
         KBLog.ai.kbInfo("""
@@ -137,7 +171,17 @@ final class PlanningAIChatViewModel: ObservableObject {
                     activeTreatments:       activeTreatments,
                     visitsWithNextDate:     visitsWithNextDate,
                     visitsWithPendingExams: visitsWithPendingExams,
-                    upcomingVaccines:       upcomingVaccines
+                    upcomingVaccines:       upcomingVaccines,
+                    recentNotes:            recentNotes,
+                    recentExpenses:         recentExpenses,
+                    expenseCategoryNames:   expenseCategoryNames,
+                    pendingGroceryItems:    pendingGroceryItems,
+                    recentChatMessages:     recentChatMessages,
+                    children:               children,
+                    pediatricProfiles:      pediatricProfiles,
+                    allVisits:              allVisits,
+                    allExams:               allExams,
+                    allVaccines:            allVaccines
                 )
             )
             

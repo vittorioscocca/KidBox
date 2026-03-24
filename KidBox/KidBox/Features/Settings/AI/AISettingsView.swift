@@ -136,6 +136,24 @@ struct AISettingsView: View {
                 }
             }
             
+            // MARK: - Sintesi settimanale
+            Section("Sintesi settimanale") {
+                Toggle(isOn: Binding(
+                    get: { WeeklySummaryService.shared.isEnabled },
+                    set: { WeeklySummaryService.shared.isEnabled = $0 }
+                )) {
+                    Label("Recap ogni lunedì mattina", systemImage: "calendar.badge.clock")
+                }
+                .listRowBackground(cardBackground)
+                infoRow(
+                    icon: "sparkles",
+                    color: KBTheme.tint,
+                    title: "Come funziona",
+                    body: "Ogni lunedì alle 08:00 ricevi una notifica con un breve recap generato dall'AI: scadenze, cure, eventi chiave e un suggerimento pratico per la settimana."
+                )
+                .listRowBackground(cardBackground)
+            }
+            
             // MARK: - Come funziona
             Section("Come funziona") {
                 infoRow(icon: "lock.shield.fill", color: .green,

@@ -48,6 +48,18 @@ struct PlanningAIChatView: View {
     @Query private var allVaccines:       [KBVaccine]
     @Query private var allChildren:       [KBChild]
     
+    // ── Memoria famiglia ─────────────────────────────────────────
+    @Query(sort: \KBNote.updatedAt, order: .reverse)         private var allNotes:    [KBNote]
+    @Query(sort: \KBExpense.date, order: .reverse)           private var allExpenses: [KBExpense]
+    @Query                                                   private var allExpCats:  [KBExpenseCategory]
+    @Query(sort: \KBGroceryItem.createdAt, order: .reverse)  private var allGrocery:  [KBGroceryItem]
+    @Query(sort: \KBChatMessage.createdAt, order: .reverse)  private var allChat:     [KBChatMessage]
+    
+    // ── Pediatria avanzata ────────────────────────────────────────
+    // allVisits e allVaccines già presenti sopra — riutilizzati
+    @Query private var allProfiles:  [KBPediatricProfile]
+    @Query(sort: \KBMedicalExam.updatedAt, order: .reverse) private var allExamsAdv: [KBMedicalExam]
+    
     private var family:     KBFamily? { families.first }
     private var familyId:   String    { family?.id ?? "" }
     private var familyName: String    { family?.name ?? "Famiglia" }
@@ -121,6 +133,65 @@ struct PlanningAIChatView: View {
         }
     }
     
+    // ── Memoria famiglia ─────────────────────────────────────────
+    
+    private var recentNotes: [KBNote] {
+        Array(allNotes
+            .filter { $0.familyId == familyId && !$0.isDeleted }
+            .prefix(10))
+    }
+    
+    private var recentExpenses: [KBExpense] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        return allExpenses.filter {
+            $0.familyId == familyId && !$0.isDeleted && $0.date >= cutoff
+        }
+    }
+    
+    private var expenseCategoryNames: [String: String] {
+        Dictionary(uniqueKeysWithValues:
+                    allExpCats
+            .filter { $0.familyId == familyId && !$0.isDeleted }
+            .map { ($0.id, $0.name) }
+        )
+    }
+    
+    private var pendingGroceryItems: [KBGroceryItem] {
+        allGrocery.filter {
+            $0.familyId == familyId && !$0.isDeleted && !$0.isPurchased
+        }
+    }
+    
+    private var recentChatMessages: [KBChatMessage] {
+        Array(allChat
+            .filter { $0.familyId == familyId && !$0.isDeleted && $0.type == .text }
+            .prefix(20))
+    }
+    
+    // ── Pediatria avanzata ────────────────────────────────────────
+    
+    private var pediatricProfiles: [String: KBPediatricProfile] {
+        Dictionary(uniqueKeysWithValues:
+                    allProfiles
+            .filter { $0.familyId == familyId }
+            .map { ($0.childId, $0) }
+        )
+    }
+    
+    private var allVisitsForChildren: [KBMedicalVisit] {
+        // Riusa allVisits già fetchata sopra — nessuna query duplicata
+        allVisits.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+    
+    private var allExamsForChildren: [KBMedicalExam] {
+        allExamsAdv.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+    
+    private var allVaccinesForChildren: [KBVaccine] {
+        // Riusa allVaccines già fetchata sopra — nessuna query duplicata
+        allVaccines.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+    
     // ── Today briefing stats ──────────────────────────────────────
     
     private var todayEvents: [KBCalendarEvent] {
@@ -182,6 +253,16 @@ struct PlanningAIChatView: View {
                 visitsWithNextDate:     visitsWithNextDate,
                 visitsWithPendingExams: visitsWithPendingExams,
                 upcomingVaccines:       upcomingVaccines,
+                recentNotes:            recentNotes,
+                recentExpenses:         recentExpenses,
+                expenseCategoryNames:   expenseCategoryNames,
+                pendingGroceryItems:    pendingGroceryItems,
+                recentChatMessages:     recentChatMessages,
+                children:               allChildren.filter { $0.familyId == familyId },
+                pediatricProfiles:      pediatricProfiles,
+                allVisits:              allVisitsForChildren,
+                allExams:               allExamsForChildren,
+                allVaccines:            allVaccinesForChildren,
                 modelContext:           modelContext
             )
             vm = newVM
@@ -547,6 +628,12 @@ private struct PlanningAIChatInnerView: View {
     
     private var emptyState: some View {
         VStack(spacing: 20) {
+            
+            // ── Banner sintesi settimanale ────────────────────────────
+            if let summary = WeeklySummaryService.shared.lastSummaryText {
+                weeklySummaryBanner(text: summary)
+            }
+            
             ZStack {
                 Circle()
                     .fill(tint.opacity(0.10))
@@ -560,7 +647,7 @@ private struct PlanningAIChatInnerView: View {
                 Text("Ciao, sono il tuo assistente")
                     .font(.headline)
                     .foregroundStyle(KBTheme.primaryText(colorScheme))
-                Text("Conosco il tuo calendario, i to-do, le cure dei bambini e le scadenze sanitarie.\nChiedimi qualsiasi cosa.")
+                Text("Conosco il tuo calendario, i to-do, le cure, le note, le spese e le scadenze sanitarie.\nChiedimi qualsiasi cosa.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -570,6 +657,44 @@ private struct PlanningAIChatInnerView: View {
             // Quick start chips
             quickStartChips
         }
+    }
+    
+    @ViewBuilder
+    private func weeklySummaryBanner(text: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                Text("Recap settimana")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                Spacer()
+            }
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(KBTheme.primaryText(colorScheme))
+                .lineSpacing(3)
+            Button {
+                vm.inputText = "Dimmi di più sul recap di questa settimana"
+                Task { await vm.send() }
+            } label: {
+                Text("Approfondisci →")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(tint.opacity(0.07))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(tint.opacity(0.2), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 4)
     }
     
     private var quickStartChips: some View {

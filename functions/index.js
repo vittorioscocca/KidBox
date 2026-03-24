@@ -1428,12 +1428,40 @@ exports.initStorageUsage = onCall(
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FAMILY_SUBCOLLECTIONS = [
+  // ── Famiglia & accesso ──────────────────────────────────────────
   "members",
   "children",
+  "invites",
+  // ── Documenti ──────────────────────────────────────────────────
   "documents",
   "documentCategories",
+  // ── Todo & lista spesa ─────────────────────────────────────────
   "todos",
-  "invites",
+  "groceries",
+  // ── Calendario ─────────────────────────────────────────────────
+  "calendarEvents",
+  // ── Spese ──────────────────────────────────────────────────────
+  "expenses",
+  // ── Salute ─────────────────────────────────────────────────────
+  "medicalVisits",
+  "medicalExams",
+  "treatments",
+  "vaccines",
+  "pediatricProfiles",
+  // ── Localizzazione ─────────────────────────────────────────────
+  "locations",
+  // ── Foto album condiviso ────────────────────────────────────────
+  "photos",
+  // ── Note ───────────────────────────────────────────────────────
+  "notes",
+  // ── Chat ───────────────────────────────────────────────────────
+  "chatMessages",
+  // ── Routine ────────────────────────────────────────────────────
+  "routines",
+  "routineChecks",
+  // ── Contatori e statistiche ─────────────────────────────────────
+  "counters",
+  "stats",
 ];
 
 /**
@@ -1528,6 +1556,11 @@ exports.deleteAccount = onCall(
       await deleteCollection(db.collection(`users/${uid}/memberships`)).catch(() => {});
       await db.collection("users").doc(uid).delete().catch(() => {});
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
+
+      // ── AI usage giornaliero ────────────────────────────────────────────────
+      await deleteCollection(db.collection(`ai_usage/${uid}/daily`)).catch(() => {});
+      await db.collection("ai_usage").doc(uid).delete().catch(() => {});
+
       await admin.auth().deleteUser(uid);
 
       logger.info("deleteAccount completed", {uid, families: familyIds.length});

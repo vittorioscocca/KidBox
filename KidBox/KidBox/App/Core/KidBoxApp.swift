@@ -44,11 +44,9 @@ struct KidBoxApp: App {
             ZStack {
                 RootHostView()
                     .environmentObject(coordinator)
-                    // ── Tema chiaro / scuro / sistema ──────────────────────────
                     .preferredColorScheme(coordinator.appearanceMode.colorScheme)
-                    // ──────────────────────────────────────────────────────────
                 
-                    // MARK: URL handling
+                // MARK: URL handling
                     .onOpenURL { url in
                         KBLog.auth.kbInfo("[KidBoxApp] onOpenURL -> \(url.absoluteString)")
                         if url.scheme == "kidbox", url.host == "share" {
@@ -82,7 +80,7 @@ struct KidBoxApp: App {
                         SyncCenter.shared.flushGlobal(modelContext: context)
                     }
                 
-                    // MARK: Debug-only services
+                // MARK: Debug-only services
                     .task {
                         TreatmentAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         VisitAttachmentService.shared.start(modelContext: modelContainer.mainContext)
@@ -93,7 +91,7 @@ struct KidBoxApp: App {
 #endif
                     }
                 
-                    // MARK: Push deep link consumption
+                // MARK: Push deep link consumption
                     .onReceive(notifications.$pendingDeepLink) { link in
                         guard let link else { return }
                         KBLog.auth.kbInfo("Pending deep link received")
@@ -101,7 +99,6 @@ struct KidBoxApp: App {
                             
                         case .document(let familyId, let docId):
                             KBLog.navigation.kbInfo("Deep link -> open document")
-                            // ✅ Reset badge documenti
                             Task { @MainActor in
                                 BadgeManager.shared.clearDocuments()
                                 await CountersService.shared.reset(familyId: familyId, field: .documents)
@@ -114,18 +111,14 @@ struct KidBoxApp: App {
                             
                         case .chat:
                             KBLog.navigation.kbInfo("Deep link -> open chat")
-                            // ✅ Reset badge chat
                             Task { @MainActor in
                                 BadgeManager.shared.clearChat()
-                                // chat non ha familyId qui, se CountersService lo richiede
-                                // andrebbe recuperato da coordinator.activeFamilyId
                             }
                             coordinator.navigate(to: .chat)
                             
                         case .familyLocation(familyId: let familyId):
                             KBLog.navigation.kbInfo("Deep link -> open family location")
                             coordinator.setActiveFamily(familyId)
-                            // ✅ Reset badge location (se presente)
                             Task { @MainActor in
                                 BadgeManager.shared.clearLocation()
                                 await CountersService.shared.reset(familyId: familyId, field: .location)
@@ -134,7 +127,6 @@ struct KidBoxApp: App {
                             
                         case .todo(familyId: let familyId, childId: let childId, listId: let listId, todoId: let todoId):
                             KBLog.navigation.kbInfo("[DeepLink] todo -> navigate todoList listId=\(listId) todoId=\(todoId)")
-                            // ✅ Reset badge todo
                             Task { @MainActor in
                                 BadgeManager.shared.clearTodos()
                                 await CountersService.shared.reset(familyId: familyId, field: .todos)
@@ -146,7 +138,6 @@ struct KidBoxApp: App {
                         case .groceryItem(let familyId, _):
                             KBLog.navigation.kbInfo("Deep link -> open shopping list")
                             coordinator.setActiveFamily(familyId)
-                            // ✅ Reset badge spesa
                             Task { @MainActor in
                                 BadgeManager.shared.clearShopping()
                                 await CountersService.shared.reset(familyId: familyId, field: .shopping)
@@ -156,7 +147,6 @@ struct KidBoxApp: App {
                         case .note(let familyId, let noteId):
                             KBLog.navigation.kbInfo("Deep link -> open note noteId=\(noteId)")
                             coordinator.setActiveFamily(familyId)
-                            // ✅ Reset badge note
                             Task { @MainActor in
                                 BadgeManager.shared.clearNotes()
                                 await CountersService.shared.reset(familyId: familyId, field: .notes)
@@ -171,7 +161,6 @@ struct KidBoxApp: App {
                         case .calendarEvent(let familyId, let eventId):
                             KBLog.navigation.kbInfo("Deep link -> open calendar eventId=\(eventId)")
                             coordinator.setActiveFamily(familyId)
-                            // ✅ Reset badge calendario
                             Task { @MainActor in
                                 BadgeManager.shared.clearCalendar()
                                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
@@ -179,11 +168,9 @@ struct KidBoxApp: App {
                             coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: eventId))
                             NotificationManager.shared.consumeDeepLink()
                             
-                            // ── promemoria visita pediatrica ──────────────
                         case .pediatricVisit(let familyId, let childId, let visitId):
                             KBLog.navigation.kbInfo("Deep link -> open pediatric visit visitId=\(visitId)")
                             coordinator.setActiveFamily(familyId)
-                            // ℹ️ Nessun badge card in HomeView per questa sezione al momento
                             coordinator.openVisitFromPush(
                                 familyId: familyId,
                                 childId: childId,
@@ -192,11 +179,9 @@ struct KidBoxApp: App {
                             )
                             NotificationManager.shared.consumeDeepLink()
                             
-                            // ── promemoria cura ────────────────────────────
                         case .treatmentReminder(let familyId, let childId, let treatmentId):
                             KBLog.navigation.kbInfo("Deep link -> open treatment treatmentId=\(treatmentId)")
                             coordinator.setActiveFamily(familyId)
-                            // ℹ️ Nessun badge card in HomeView per questa sezione al momento
                             coordinator.openTreatmentFromPush(
                                 familyId: familyId,
                                 childId: childId,
@@ -205,11 +190,9 @@ struct KidBoxApp: App {
                             )
                             NotificationManager.shared.consumeDeepLink()
                             
-                            // ── promemoria esame ───────────────────────────
                         case .examReminder(let familyId, let childId, let examId):
                             KBLog.navigation.kbInfo("Deep link -> open exam examId=\(examId)")
                             coordinator.setActiveFamily(familyId)
-                            // ℹ️ Nessun badge card in HomeView per questa sezione al momento
                             coordinator.openExamFromPush(
                                 familyId: familyId,
                                 childId: childId,
@@ -221,12 +204,17 @@ struct KidBoxApp: App {
                         case .expense(let familyId, let expenseId):
                             KBLog.navigation.kbInfo("Deep link -> open expense expenseId=\(expenseId)")
                             coordinator.setActiveFamily(familyId)
-                            // ✅ Reset badge spese
                             Task { @MainActor in
                                 BadgeManager.shared.clearExpenses()
                                 await CountersService.shared.reset(familyId: familyId, field: .expenses)
                             }
                             coordinator.navigate(to: .expenseDetail(familyId: familyId, expenseId: expenseId))
+                            NotificationManager.shared.consumeDeepLink()
+                            
+                            // ── Sintesi settimanale AI ────────────────────────────
+                        case .askExpert:
+                            KBLog.navigation.kbInfo("Deep link -> open planning AI chat (weekly summary)")
+                            coordinator.navigate(to: .askExpert)
                             NotificationManager.shared.consumeDeepLink()
                         }
                         notifications.consumeDeepLink()
