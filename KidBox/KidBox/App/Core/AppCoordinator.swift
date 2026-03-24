@@ -196,6 +196,20 @@ final class AppCoordinator: ObservableObject {
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
                     
+                    // ── Prefetch piano + storage per il gate upload ───────────
+                    // Fatto in background dopo il bootstrap: popola
+                    // KBStorageGate.cachedUsedBytes e il piano abbonamento
+                    // così tutti i gate sono operativi prima del primo upload.
+                    let gateFamilyId = self.activeFamilyId ?? {
+                        let desc = FetchDescriptor<KBFamily>(
+                            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+                        )
+                        return (try? modelContext.fetch(desc).first)?.id ?? ""
+                    }()
+                    Task.detached(priority: .utility) {
+                        await StorageUsageViewModel.prefetchForGate(familyId: gateFamilyId)
+                    }
+                    
                     let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
                     sharedDefaults?.set(user.uid, forKey: "currentUserUID")
                     sharedDefaults?.set(

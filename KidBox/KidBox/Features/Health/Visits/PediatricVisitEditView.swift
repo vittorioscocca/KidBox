@@ -55,6 +55,7 @@ struct PediatricVisitEditView: View {
     @State private var showAddDrugSheet      = false
     @State private var showAddTreatmentSheet = false
     @State private var editingDrug: KBAsNeededDrug? = nil
+    @State private var showStorageUpgrade     = false
     
     // ── Step 4: Foto & Appunti ──
     @State private var notes = ""
@@ -170,6 +171,7 @@ struct PediatricVisitEditView: View {
                     )
                 }
             }
+            .storageUpgradeSheet($showStorageUpgrade)
         }
         .environment(\.locale, Locale(identifier: "it_IT"))
     }
@@ -686,7 +688,11 @@ struct PediatricVisitEditView: View {
                 }
                 VisitAttachmentPicker(
                     pendingURLs: $pendingAttachmentURLs,
-                    onAddTapped: { showAttachmentPicker = true }
+                    onAddTapped: {
+                        checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                            showAttachmentPicker = true
+                        }
+                    }
                 )
                 .padding(.horizontal)
                 sectionCard(icon: "square.and.pencil", title: "Appunti della Visita") {

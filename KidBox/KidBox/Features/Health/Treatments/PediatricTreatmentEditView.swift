@@ -51,6 +51,7 @@ struct PediatricTreatmentEditView: View {
     @State private var showAttachmentImporter = false
     @State private var showAttachmentGallery  = false
     @State private var showAttachmentCamera   = false
+    @State private var showStorageUpgrade     = false
     
     private let tint        = KBTheme.tint
     private let units       = ["ml", "mg", "gocce", "compresse", "bustine"]
@@ -133,6 +134,7 @@ struct PediatricTreatmentEditView: View {
                     if let url = saveImageToTemp(image) { pendingAttachmentURLs.append(url) }
                 }
             }
+            .storageUpgradeSheet($showStorageUpgrade)
         }
     }
     
@@ -407,7 +409,11 @@ struct PediatricTreatmentEditView: View {
             
             TreatmentAttachmentPicker(
                 pendingURLs: $pendingAttachmentURLs,
-                onAddTapped: { showAttachmentDialog = true }
+                onAddTapped: {
+                    checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                        showAttachmentDialog = true
+                    }
+                }
             )
         }
     }
