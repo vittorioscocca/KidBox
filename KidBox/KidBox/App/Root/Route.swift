@@ -72,6 +72,8 @@ enum Route: Hashable {
     case familyPhotos(familyId: String)
     case photoAlbumDetail(familyId: String, albumId: String, albumTitle: String)
     
+    case askExpert
+
     // MARK: - Spese
     case expensesHome(familyId: String)
     case expenseDetail(familyId: String, expenseId: String)

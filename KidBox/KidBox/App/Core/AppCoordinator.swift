@@ -359,6 +359,8 @@ final class AppCoordinator: ObservableObject {
             ExpensesHomeView(familyId: familyId)
         case .expenseDetail(familyId: let familyId, expenseId: let expenseId):
             ExpenseDetailView(familyId: familyId, expenseId: expenseId)
+        case .askExpert:
+            PlanningAIChatView()
         }
     }
     

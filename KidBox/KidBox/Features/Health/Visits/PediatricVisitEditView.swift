@@ -20,6 +20,7 @@ struct PediatricVisitEditView: View {
     let childId: String
     let childName: String
     let visitId: String?   // nil = nuova visita, non-nil = modifica esistente
+    var onCalendarProposal: ((HealthCalendarProposal) -> Void)? = nil
     
     private var isEditing: Bool { visitId != nil }
     
@@ -70,13 +71,24 @@ struct PediatricVisitEditView: View {
     
     @State private var isSaving = false
     
+    // ── Calendario ──
+    @State private var showCalendarSheet = false
+    @State private var calendarProposal: HealthCalendarProposal? = nil
+    
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
-    init(familyId: String, childId: String, childName: String, visitId: String? = nil) {
-        self.familyId  = familyId
-        self.childId   = childId
-        self.childName = childName
-        self.visitId   = visitId
+    init(
+        familyId:           String,
+        childId:            String,
+        childName:          String,
+        visitId:            String? = nil,
+        onCalendarProposal: ((HealthCalendarProposal) -> Void)? = nil
+    ) {
+        self.familyId           = familyId
+        self.childId            = childId
+        self.childName          = childName
+        self.visitId            = visitId
+        self.onCalendarProposal = onCalendarProposal
         let fid = familyId
         _recentVisitsQ = Query(
             filter: #Predicate<KBMedicalVisit> { $0.familyId == fid },
@@ -140,8 +152,23 @@ struct PediatricVisitEditView: View {
                         if !linkedExamIds.contains(newExamId) {
                             linkedExamIds.append(newExamId)
                         }
+                    },
+                    onCalendarProposal: { proposal in
+                        calendarProposal  = proposal
+                        showCalendarSheet = true
                     }
                 )
+            }
+            .sheet(isPresented: $showCalendarSheet) {
+                if let p = calendarProposal {
+                    HealthCalendarConfirmSheet(
+                        proposal:    p,
+                        familyId:    familyId,
+                        childId:     childId,
+                        onConfirmed: { },
+                        onSkipped:   { }
+                    )
+                }
             }
         }
         .environment(\.locale, Locale(identifier: "it_IT"))
@@ -919,7 +946,15 @@ struct PediatricVisitEditView: View {
                     urls: pendingAttachmentURLs, visitId: v.id, familyId: familyId, childId: childId
                 ))
             }
-            isSaving = false; dismiss(); return
+            isSaving = false
+            onCalendarProposal?(KBHealthCalendarService.proposalForVisit(
+                visitId:   v.id,
+                date:      visitDate,
+                reason:    reason,
+                doctor:    selectedDoctorName.isEmpty ? nil : selectedDoctorName,
+                childName: childName
+            ))
+            dismiss(); return
         }
         
         // ── Nuova visita ──
@@ -964,7 +999,15 @@ struct PediatricVisitEditView: View {
                 urls: pendingAttachmentURLs, visitId: visit.id, familyId: familyId, childId: childId
             ))
         }
-        isSaving = false; dismiss()
+        isSaving = false
+        onCalendarProposal?(KBHealthCalendarService.proposalForVisit(
+            visitId:   visit.id,
+            date:      visitDate,
+            reason:    reason,
+            doctor:    selectedDoctorName.isEmpty ? nil : selectedDoctorName,
+            childName: childName
+        ))
+        dismiss()
     }
     
     // MARK: - View helpers

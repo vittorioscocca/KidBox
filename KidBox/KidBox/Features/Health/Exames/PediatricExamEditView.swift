@@ -22,6 +22,7 @@ struct PediatricExamEditView: View {
     let examId:             String?
     let prescribingVisitId: String?
     let onSaved:            ((String) -> Void)?
+    var onCalendarProposal: ((HealthCalendarProposal) -> Void)? = nil
     
     private var isEditing: Bool { examId != nil }
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
@@ -69,7 +70,8 @@ struct PediatricExamEditView: View {
         childName:          String,
         examId:             String?        = nil,
         prescribingVisitId: String?        = nil,
-        onSaved:            ((String) -> Void)? = nil
+        onSaved:            ((String) -> Void)? = nil,
+        onCalendarProposal: ((HealthCalendarProposal) -> Void)? = nil
     ) {
         self.familyId           = familyId
         self.childId            = childId
@@ -77,6 +79,7 @@ struct PediatricExamEditView: View {
         self.examId             = examId
         self.prescribingVisitId = prescribingVisitId
         self.onSaved            = onSaved
+        self.onCalendarProposal = onCalendarProposal
         let fid = familyId
         _allDocs = Query(
             filter: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false },
@@ -479,6 +482,15 @@ struct PediatricExamEditView: View {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         onSaved?(exam.id)
         isSaving = false
+        if hasDeadline {
+            onCalendarProposal?(KBHealthCalendarService.proposalForExam(
+                examId:    exam.id,
+                deadline:  deadline,
+                name:      exam.name,
+                location:  location.isEmpty ? nil : location,
+                childName: childName
+            ))
+        }
         dismiss()
     }
     

@@ -42,6 +42,13 @@ final class KBCalendarEvent {
     /// Minutes before startDate; nil = no reminder.
     var reminderMinutes: Int?
     
+    // ── Health item link ──────────────────────────────────────────────────────
+    /// ID dell'oggetto sanitario collegato (KBMedicalVisit, KBMedicalExam, KBVaccine).
+    /// nil = evento libero non collegato a un oggetto sanitario.
+    var linkedHealthItemId:   String? = nil
+    /// Tipo dell'oggetto collegato: "visit" | "exam" | "vaccine"
+    var linkedHealthItemType: String? = nil
+    
     // ── Sync bookkeeping ──────────────────────────────────────────────────────
     var isDeleted: Bool
     var createdAt: Date
@@ -192,6 +199,8 @@ struct KBCalendarEventDTO {
     var categoryRaw:     String
     var recurrenceRaw:   String
     var reminderMinutes: Int?
+    var linkedHealthItemId:   String?
+    var linkedHealthItemType: String?
     var isDeleted:       Bool
     var createdAt:       Date
     var updatedAt:       Date

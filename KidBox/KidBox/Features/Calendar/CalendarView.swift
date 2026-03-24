@@ -189,20 +189,25 @@ struct CalendarView: View {
     
     private func deleteEvent(_ event: KBCalendarEvent) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
-        // Cattura i valori prima di cancellare il record
-        let eventId  = event.id
-        let fid      = event.familyId
-        // Soft-delete su Firestore via outbox
-        // Prima accoda l'op (che legge eventId/familyId dal record ancora vivo)
+        let eventId = event.id
+        let fid     = event.familyId
+        
+        // Se l'evento è collegato a un oggetto sanitario, cancella anche quello
+        if event.linkedHealthItemId != nil {
+            KBHealthCalendarService.deleteLinkedHealthItem(
+                event:        event,
+                familyId:     fid,
+                modelContext: modelContext
+            )
+        }
+        
         event.isDeleted = true
         event.updatedAt = Date()
         event.updatedBy = uid
         SyncCenter.shared.enqueueCalendarDelete(
             eventId: eventId, familyId: fid, modelContext: modelContext)
-        // Hard-delete locale subito: evita che il listener Firestore lo ricrochi
         modelContext.delete(event)
         try? modelContext.save()
-        // Flush immediato verso Firestore
         Task { @MainActor in
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
         }
@@ -930,5 +935,3 @@ extension Color {
         )
     }
 }
-
-

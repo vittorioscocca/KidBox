@@ -62,6 +62,10 @@ struct PediatricExamDetailView: View {
     @State private var showEditSheet      = false
     @State private var showDeleteAlert    = false
     
+    // ── Calendario ──
+    @State private var showCalendarSheet   = false
+    @State private var calendarProposal: HealthCalendarProposal? = nil
+    
     // Promemoria
     @State private var reminderScheduled      = false
     @State private var showReminderAlert      = false
@@ -112,7 +116,22 @@ struct PediatricExamDetailView: View {
                     familyId:  familyId,
                     childId:   childId,
                     childName: childName,
-                    examId:    exam.id
+                    examId:    exam.id,
+                    onCalendarProposal: { proposal in
+                        calendarProposal  = proposal
+                        showCalendarSheet = true
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showCalendarSheet) {
+            if let p = calendarProposal {
+                HealthCalendarConfirmSheet(
+                    proposal:    p,
+                    familyId:    familyId,
+                    childId:     childId,
+                    onConfirmed: { },
+                    onSkipped:   { }
                 )
             }
         }
@@ -496,6 +515,8 @@ struct PediatricExamDetailView: View {
     
     private func deleteExam(_ e: KBMedicalExam) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
+        KBHealthCalendarService.deleteLinkedCalendarEvent(
+            itemId: e.id, familyId: familyId, modelContext: modelContext)
         e.isDeleted     = true
         e.updatedAt     = Date()
         e.updatedBy     = uid

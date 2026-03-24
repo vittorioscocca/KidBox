@@ -34,13 +34,26 @@ struct PediatricVaccinesView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
-    @Query private var vaccines: [KBVaccine]
+    @Query private var vaccines:  [KBVaccine]
+    @Query private var children:  [KBChild]
     
-    let familyId: String
-    let childId:  String
+    let familyId:  String
+    let childId:   String
+    /// Passato dal caller se disponibile; altrimenti risolto dalla @Query children.
+    private let _childNameOverride: String
+    
+    private var childName: String {
+        _childNameOverride.isEmpty
+        ? (children.first?.name ?? "")
+        : _childNameOverride
+    }
     
     @State private var showEditSheet    = false
     @State private var editingVaccineId: String? = nil
+    
+    // ── Calendario ──
+    @State private var showCalendarSheet   = false
+    @State private var calendarProposal: HealthCalendarProposal? = nil
     
     // ── Selezione multipla ──
     @State private var isSelecting       = false
@@ -70,9 +83,10 @@ struct PediatricVaccinesView: View {
         colorScheme == .dark ? Color.clear : Color.black.opacity(0.06)
     }
     
-    init(familyId: String, childId: String) {
-        self.familyId = familyId
-        self.childId  = childId
+    init(familyId: String, childId: String, childName: String = "") {
+        self.familyId           = familyId
+        self.childId            = childId
+        self._childNameOverride = childName
         let fid = familyId, cid = childId
         _vaccines = Query(
             filter: #Predicate<KBVaccine> {
@@ -80,6 +94,7 @@ struct PediatricVaccinesView: View {
             },
             sort: [SortDescriptor(\KBVaccine.administeredDate, order: .reverse)]
         )
+        _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
     }
     
     private func passesFilter(_ v: KBVaccine) -> Bool {
@@ -156,12 +171,27 @@ struct PediatricVaccinesView: View {
             PediatricVaccineEditView(
                 familyId:  familyId,
                 childId:   childId,
-                vaccineId: editingVaccineId
+                vaccineId: editingVaccineId,
+                childName: childName
             ) { savedId in
                 SyncCenter.shared.enqueueVaccineUpsert(
                     vaccineId: savedId, familyId: familyId, modelContext: modelContext
                 )
                 SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            } onCalendarProposal: { proposal in
+                calendarProposal  = proposal
+                showCalendarSheet = true
+            }
+        }
+        .sheet(isPresented: $showCalendarSheet) {
+            if let p = calendarProposal {
+                HealthCalendarConfirmSheet(
+                    proposal:    p,
+                    familyId:    familyId,
+                    childId:     childId,
+                    onConfirmed: { },
+                    onSkipped:   { }
+                )
             }
         }
         .sheet(isPresented: $showFilterSheet) { filterSheet }
@@ -390,6 +420,8 @@ struct PediatricVaccinesView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         for v in filtered where selectedIds.contains(v.id) {
+            KBHealthCalendarService.deleteLinkedCalendarEvent(
+                itemId: v.id, familyId: familyId, modelContext: modelContext)
             v.isDeleted = true; v.updatedBy = uid; v.updatedAt = now
             v.syncState = .pendingUpsert; v.lastSyncError = nil
             SyncCenter.shared.enqueueVaccineDelete(vaccineId: v.id, familyId: familyId, modelContext: modelContext)
@@ -530,6 +562,8 @@ struct PediatricVaccinesView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         for i in offsets {
             let v = list[i]
+            KBHealthCalendarService.deleteLinkedCalendarEvent(
+                itemId: v.id, familyId: familyId, modelContext: modelContext)
             v.isDeleted = true; v.updatedBy = uid; v.updatedAt = Date(); v.syncState = .pendingUpsert
             SyncCenter.shared.enqueueVaccineDelete(vaccineId: v.id, familyId: familyId, modelContext: modelContext)
         }
@@ -549,7 +583,9 @@ struct PediatricVaccineEditView: View {
     let familyId:  String
     let childId:   String
     let vaccineId: String?
+    var childName: String = ""
     let onSaved:   (String) -> Void
+    var onCalendarProposal: ((HealthCalendarProposal) -> Void)? = nil
     
     @State private var vaccineType:      VaccineType    = .esavalente
     @State private var status:           VaccineStatus  = .administered
@@ -860,6 +896,19 @@ struct PediatricVaccineEditView: View {
         }
         try? modelContext.save()
         onSaved(savedId)
+        // Proponi aggiunta al calendario solo per vaccini scheduled o administered
+        if status == .scheduled || status == .administered {
+            let date = status == .administered ? administeredDate : scheduledDate
+            let name = commercialName.isEmpty ? vaccineType.displayName : commercialName
+            onCalendarProposal?(KBHealthCalendarService.proposalForVaccine(
+                vaccineId:   savedId,
+                date:        date,
+                vaccineName: name,
+                dose:        doseNumber,
+                totalDoses:  totalDoses,
+                childName:   childName
+            ))
+        }
         dismiss()
     }
     

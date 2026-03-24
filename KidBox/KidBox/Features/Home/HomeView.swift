@@ -395,7 +395,7 @@ enum HomeDestination {
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
         case .familyPhotos(let familyId):    return .familyPhotos(familyId: familyId)
         case .familySettings:                return .familySettings
-        case .askExpert:                     return .familySettings
+        case .askExpert:                     return .askExpert
         case .profile:                       return .profile
         case .settings:                      return .settings
         case .inviteCode:                    return .inviteCode

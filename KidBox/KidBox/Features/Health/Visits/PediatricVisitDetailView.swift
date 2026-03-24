@@ -43,6 +43,10 @@ struct PediatricVisitDetailView: View {
     @State private var showEditSheet   = false
     @State private var showDeleteAlert = false
     
+    // ── Calendario ──
+    @State private var showCalendarSheet   = false
+    @State private var calendarProposal: HealthCalendarProposal? = nil
+    
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
     init(familyId: String, childId: String, visitId: String) {
@@ -80,7 +84,22 @@ struct PediatricVisitDetailView: View {
                     familyId:  familyId,
                     childId:   childId,
                     childName: childName,
-                    visitId:   visit.id
+                    visitId:   visit.id,
+                    onCalendarProposal: { proposal in
+                        calendarProposal  = proposal
+                        showCalendarSheet = true
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showCalendarSheet) {
+            if let p = calendarProposal {
+                HealthCalendarConfirmSheet(
+                    proposal:    p,
+                    familyId:    familyId,
+                    childId:     childId,
+                    onConfirmed: { },
+                    onSkipped:   { }
                 )
             }
         }
@@ -395,6 +414,8 @@ struct PediatricVisitDetailView: View {
     
     private func deleteVisit(_ v: KBMedicalVisit) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
+        KBHealthCalendarService.deleteLinkedCalendarEvent(
+            itemId: v.id, familyId: familyId, modelContext: modelContext)
         v.isDeleted    = true
         v.updatedAt    = Date()
         v.updatedBy    = uid

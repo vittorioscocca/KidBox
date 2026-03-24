@@ -67,6 +67,10 @@ struct PediatricExamsView: View {
     @State private var showAddSheet   = false
     @State private var editingExamId: String? = nil
     
+    // ── Calendario ──
+    @State private var showCalendarSheet   = false
+    @State private var calendarProposal: HealthCalendarProposal? = nil
+    
     // Badge campanellina:
     // - badgeRefreshTick: incrementato da onAppear E da .examReminderChanged
     // - pendingBadgeRefresh: flag settato quando arriva .examReminderChanged
@@ -191,8 +195,23 @@ struct PediatricExamsView: View {
                 familyId:  familyId,
                 childId:   childId,
                 childName: childName,
-                examId:    nil
+                examId:    editingExamId,
+                onCalendarProposal: { proposal in
+                    calendarProposal  = proposal
+                    showCalendarSheet = true
+                }
             )
+        }
+        .sheet(isPresented: $showCalendarSheet) {
+            if let p = calendarProposal {
+                HealthCalendarConfirmSheet(
+                    proposal:    p,
+                    familyId:    familyId,
+                    childId:     childId,
+                    onConfirmed: { },
+                    onSkipped:   { }
+                )
+            }
         }
         .sheet(isPresented: $showFilterSheet) { filterSheet }
         .confirmationDialog(
