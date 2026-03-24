@@ -14,9 +14,11 @@ import CoreLocation
 import MapKit
 import OSLog
 import Combine
+import StoreKit
 
 struct ProfileView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
+    @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     
@@ -39,6 +41,9 @@ struct ProfileView: View {
     @State private var deleteConfirmText = ""
     @State private var isDeletingAccount = false
     @State private var deleteError: String?
+    
+    // Subscription
+    @State private var showUpgradeSheet = false
     
     // Alerts
     @State private var showSaveSuccessAlert = false
@@ -167,6 +172,49 @@ struct ProfileView: View {
                 }
             }
             
+            // MARK: - Piano abbonamento
+            Section("Abbonamento") {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(subscriptionPlanColor.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                        Image(systemName: subscriptionPlanIcon)
+                            .font(.system(size: 17))
+                            .foregroundStyle(subscriptionPlanColor)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Piano \(subscriptionManager.currentPlan.displayName)")
+                            .font(.subheadline.bold())
+                        HStack(spacing: 6) {
+                            Text(subscriptionManager.currentPlan.storageLabel + " storage")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if subscriptionManager.currentPlan.includesAI {
+                                Text("·").foregroundStyle(.secondary)
+                                Text("\(subscriptionManager.currentPlan.aiDailyLimit) msg AI/giorno")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    Spacer()
+                    if subscriptionManager.currentPlan != .max {
+                        Button("Upgrade") { showUpgradeSheet = true }
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+                    }
+                }
+                .padding(.vertical, 4)
+                .listRowBackground(cellBackground)
+                
+                NavigationLink("Gestisci spazio e piani") {
+                    StorageUsageView()
+                        .environmentObject(subscriptionManager)
+                }
+                .listRowBackground(cellBackground)
+            }
+            
             // MARK: - Actions
             Section {
                 Button(role: .destructive) {
@@ -195,6 +243,7 @@ struct ProfileView: View {
             loadAuthInfo()
             loadLocalProfile()
             Task { await loadRemoteUserProfile() }
+            Task { await subscriptionManager.loadPlan() }
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()
@@ -272,6 +321,28 @@ struct ProfileView: View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradeSheetView()
+                .environmentObject(subscriptionManager)
+        }
+    }
+    
+    // MARK: - Subscription helpers
+    
+    private var subscriptionPlanColor: Color {
+        switch subscriptionManager.currentPlan {
+        case .free: return .gray
+        case .pro:  return Color(red: 0.35, green: 0.6, blue: 0.85)
+        case .max:  return Color(red: 0.55, green: 0.35, blue: 0.9)
+        }
+    }
+    
+    private var subscriptionPlanIcon: String {
+        switch subscriptionManager.currentPlan {
+        case .free: return "person.circle"
+        case .pro:  return "star.circle.fill"
+        case .max:  return "crown.fill"
         }
     }
     

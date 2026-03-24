@@ -4,14 +4,17 @@
 //
 
 import SwiftUI
+import StoreKit
 
 struct AISettingsView: View {
     
     @StateObject private var viewModel = AISettingsViewModel()
-    @State private var showConsent = false
+    @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
+    @State private var showConsent  = false
+    @State private var showUpgrade  = false
     @Environment(\.colorScheme) private var colorScheme
     
-    // MARK: - Dynamic theme (same as LoginView)
+    // MARK: - Dynamic theme
     
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -25,8 +28,20 @@ struct AISettingsView: View {
         : Color(.systemBackground)
     }
     
+    private var plan: KBPlan { subscriptionManager.currentPlan }
+    
+    // MARK: - Body
+    
     var body: some View {
         List {
+            
+            // MARK: - Piano corrente
+            Section {
+                currentPlanCard
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
             
             // MARK: - Intro
             Section {
@@ -40,7 +55,7 @@ struct AISettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Assistente AI")
                                 .font(.headline)
-                            Text("Incluso nel tuo piano KidBox")
+                            Text(plan.includesAI ? "Incluso nel tuo piano \(plan.displayName)" : "Disponibile con Pro o Max")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -53,36 +68,46 @@ struct AISettingsView: View {
                 .listRowBackground(cardBackground)
             }
             
-            // MARK: - Toggle
-            Section {
-                Toggle(isOn: Binding(
-                    get: { viewModel.aiEnabled },
-                    set: { newValue in
-                        if newValue && !viewModel.consentGiven {
-                            showConsent = true
-                        } else {
-                            viewModel.toggleAIEnabled(newValue)
+            // MARK: - Toggle (solo se piano include AI)
+            if plan.includesAI {
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { viewModel.aiEnabled },
+                        set: { newValue in
+                            if newValue && !viewModel.consentGiven {
+                                showConsent = true
+                            } else {
+                                viewModel.toggleAIEnabled(newValue)
+                            }
                         }
+                    )) {
+                        Label("Attiva assistente AI", systemImage: "brain.head.profile")
                     }
-                )) {
-                    Label("Attiva assistente AI", systemImage: "brain.head.profile")
-                }
-                .listRowBackground(cardBackground)
-                
-                if let info = viewModel.infoText {
-                    Text(info)
+                    .listRowBackground(cardBackground)
+                    
+                    if let info = viewModel.infoText {
+                        Text(info)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .listRowBackground(cardBackground)
+                    }
+                    
+                } footer: {
+                    Text("Puoi disattivarlo in qualsiasi momento. I dati inviati all'AI sono quelli che scegli di condividere, visita per visita.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(cardBackground)
                 }
-                
-            } footer: {
-                Text("Puoi disattivarlo in qualsiasi momento. I dati inviati all'AI sono quelli che scegli di condividere, visita per visita.")
-                    .font(.caption)
+            } else {
+                // Piano Free: mostra gate upgrade
+                Section {
+                    aiLockedBanner
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
             }
             
-            // MARK: - Utilizzo
-            if viewModel.aiEnabled {
+            // MARK: - Utilizzo oggi
+            if plan.includesAI && viewModel.aiEnabled {
                 Section("Utilizzo oggi") {
                     if viewModel.loadingUsage {
                         HStack {
@@ -93,7 +118,7 @@ struct AISettingsView: View {
                     } else if let usage = viewModel.usage {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("\(usage.usageToday) di \(usage.dailyLimit) messaggi usati oggi")
+                                Text("\(usage.usageToday) di \(plan.aiDailyLimit) messaggi usati oggi")
                                     .font(.subheadline)
                                 Spacer()
                                 if usage.isNearLimit {
@@ -102,8 +127,24 @@ struct AISettingsView: View {
                                         .font(.caption)
                                 }
                             }
-                            ProgressView(value: Double(usage.usageToday), total: Double(usage.dailyLimit))
-                                .tint(usage.isNearLimit ? .orange : .blue)
+                            ProgressView(
+                                value: Double(usage.usageToday),
+                                total: Double(plan.aiDailyLimit)
+                            )
+                            .tint(usage.isNearLimit ? .orange : .blue)
+                            
+                            // Upgrade hint se vicino al limite e non già su Max
+                            if usage.isNearLimit && plan != .max {
+                                Button {
+                                    showUpgrade = true
+                                } label: {
+                                    Label("Passa a \(plan == .free ? "Pro" : "Max") per più messaggi",
+                                          systemImage: "arrow.up.circle")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.orange)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                         .padding(.vertical, 2)
                         .listRowBackground(cardBackground)
@@ -116,7 +157,7 @@ struct AISettingsView: View {
             }
             
             // MARK: - Privacy / Consenso
-            if viewModel.consentGiven, let date = viewModel.consentDate {
+            if plan.includesAI && viewModel.consentGiven, let date = viewModel.consentDate {
                 Section("Privacy") {
                     HStack {
                         Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
@@ -127,6 +168,7 @@ struct AISettingsView: View {
                         }
                     }
                     .listRowBackground(cardBackground)
+                    
                     Button(role: .destructive) {
                         viewModel.revokeConsent()
                     } label: {
@@ -136,22 +178,25 @@ struct AISettingsView: View {
                 }
             }
             
-            // MARK: - Sintesi settimanale
-            Section("Sintesi settimanale") {
-                Toggle(isOn: Binding(
-                    get: { WeeklySummaryService.shared.isEnabled },
-                    set: { WeeklySummaryService.shared.isEnabled = $0 }
-                )) {
-                    Label("Recap ogni lunedì mattina", systemImage: "calendar.badge.clock")
+            // MARK: - Sintesi settimanale (solo piani AI)
+            if plan.includesAI {
+                Section("Sintesi settimanale") {
+                    Toggle(isOn: Binding(
+                        get: { WeeklySummaryService.shared.isEnabled },
+                        set: { WeeklySummaryService.shared.isEnabled = $0 }
+                    )) {
+                        Label("Recap ogni lunedì mattina", systemImage: "calendar.badge.clock")
+                    }
+                    .listRowBackground(cardBackground)
+                    
+                    infoRow(
+                        icon: "sparkles",
+                        color: KBTheme.tint,
+                        title: "Come funziona",
+                        body: "Ogni lunedì alle 08:00 ricevi una notifica con un breve recap generato dall'AI: scadenze, cure, eventi chiave e un suggerimento pratico per la settimana."
+                    )
+                    .listRowBackground(cardBackground)
                 }
-                .listRowBackground(cardBackground)
-                infoRow(
-                    icon: "sparkles",
-                    color: KBTheme.tint,
-                    title: "Come funziona",
-                    body: "Ogni lunedì alle 08:00 ricevi una notifica con un breve recap generato dall'AI: scadenze, cure, eventi chiave e un suggerimento pratico per la settimana."
-                )
-                .listRowBackground(cardBackground)
             }
             
             // MARK: - Come funziona
@@ -160,10 +205,12 @@ struct AISettingsView: View {
                         title: "Dati al sicuro",
                         body: "Nessuna API key sul tuo dispositivo. Tutto passa per i server KidBox.")
                 .listRowBackground(cardBackground)
+                
                 infoRow(icon: "gauge.with.dots.needle.bottom.50percent", color: .blue,
                         title: "Limite giornaliero",
-                        body: "Ogni piano include un numero di messaggi AI al giorno. Piani superiori sbloccano limiti più alti.")
+                        body: "Ogni piano include un numero di messaggi AI al giorno per membro. Il contatore si azzera a mezzanotte.")
                 .listRowBackground(cardBackground)
+                
                 infoRow(icon: "exclamationmark.triangle", color: .orange,
                         title: "Non è un parere medico",
                         body: "L'AI spiega e informa. Per decisioni cliniche consulta sempre il tuo medico.")
@@ -174,13 +221,101 @@ struct AISettingsView: View {
         .background(backgroundColor)
         .navigationTitle("Assistente AI")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { viewModel.load() }
+        .onAppear {
+            viewModel.load()
+            Task { await subscriptionManager.loadPlan() }
+        }
         .sheet(isPresented: $showConsent) {
             AIConsentSheet {
                 viewModel.recordConsent()
             }
         }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeSheetView()
+                .environmentObject(subscriptionManager)
+        }
     }
+    
+    // MARK: - Piano corrente card
+    
+    private var currentPlanCard: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(planColor(plan).opacity(0.15))
+                    .frame(width: 48, height: 48)
+                Image(systemName: planIcon(plan))
+                    .font(.title3)
+                    .foregroundStyle(planColor(plan))
+            }
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Piano \(plan.displayName)")
+                    .font(.headline)
+                HStack(spacing: 8) {
+                    if plan.includesAI {
+                        Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Label("AI non inclusa", systemImage: "sparkles.slash")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            if plan != .max {
+                Button("Upgrade") { showUpgrade = true }
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(planColor(.pro)))
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(planColor(plan).opacity(0.07))
+        )
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
+    
+    // MARK: - AI locked banner (piano Free)
+    
+    private var aiLockedBanner: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "lock.fill")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("L'assistente AI è disponibile con Pro o Max")
+                .font(.subheadline.bold())
+                .multilineTextAlignment(.center)
+            Text("Passa a Pro per 20 messaggi AI al giorno per membro, o a Max per 100.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                showUpgrade = true
+            } label: {
+                Text("Scopri i piani")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24).padding(.vertical, 10)
+                    .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.secondary.opacity(0.06))
+        )
+        .padding(.horizontal)
+    }
+    
+    // MARK: - Helpers
     
     @ViewBuilder
     private func infoRow(icon: String, color: Color, title: String, body: String) -> some View {
@@ -193,8 +328,175 @@ struct AISettingsView: View {
         }
         .padding(.vertical, 2)
     }
+    
+    private func planColor(_ p: KBPlan) -> Color {
+        switch p {
+        case .free: return .gray
+        case .pro:  return Color(red: 0.35, green: 0.6, blue: 0.85)
+        case .max:  return Color(red: 0.55, green: 0.35, blue: 0.9)
+        }
+    }
+    
+    private func planIcon(_ p: KBPlan) -> String {
+        switch p {
+        case .free: return "person.circle"
+        case .pro:  return "star.circle.fill"
+        case .max:  return "crown.fill"
+        }
+    }
+}
+
+// MARK: - Upgrade Sheet (riutilizzabile da più punti)
+
+struct UpgradeSheetView: View {
+    
+    @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
+    private let maxColor = Color(red: 0.55, green: 0.35, blue: 0.9)
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    
+                    // Hero
+                    VStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 48))
+                            .foregroundStyle(tint)
+                        Text("Sblocca il meglio di KidBox")
+                            .font(.title2.bold())
+                        Text("Un piano per tutta la famiglia. Un solo abbonamento copre tutti i membri.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding(.top, 8)
+                    
+                    // Piano Pro
+                    planCard(
+                        plan:        .pro,
+                        color:       tint,
+                        icon:        "star.circle.fill",
+                        features:    ["5 GB storage famiglia", "20 msg AI/giorno per membro", "Sintesi settimanale AI"]
+                    )
+                    
+                    // Piano Max
+                    planCard(
+                        plan:        .max,
+                        color:       maxColor,
+                        icon:        "crown.fill",
+                        features:    ["20 GB storage famiglia", "100 msg AI/giorno per membro", "Sintesi settimanale AI", "Supporto prioritario"]
+                    )
+                    
+                    // Ripristina
+                    Button("Ripristina acquisti precedenti") {
+                        Task { await subscriptionManager.restorePurchases() }
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 8)
+                }
+                .padding()
+            }
+            .navigationTitle("Piani KidBox")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Chiudi") { dismiss() }
+                }
+            }
+        }
+        .task {
+            await subscriptionManager.loadProducts()
+        }
+        .alert("Errore acquisto", isPresented: .init(
+            get: { subscriptionManager.purchaseError != nil },
+            set: { if !$0 { } }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(subscriptionManager.purchaseError ?? "")
+        }
+    }
+    
+    @ViewBuilder
+    private func planCard(plan: KBPlan, color: Color, icon: String, features: [String]) -> some View {
+        let isCurrent = subscriptionManager.currentPlan == plan
+        let product   = subscriptionManager.storeProduct(for: plan)
+        
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(color)
+                Text(plan.displayName)
+                    .font(.headline)
+                if !plan.badge.isEmpty {
+                    Text(plan.badge)
+                        .font(.caption2.bold())
+                        .foregroundStyle(color)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Capsule().fill(color.opacity(0.12)))
+                }
+                Spacer()
+                if isCurrent {
+                    Text("Piano attuale")
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(color))
+                }
+            }
+            
+            ForEach(features, id: \.self) { f in
+                Label(f, systemImage: "checkmark")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+            }
+            
+            if !isCurrent {
+                Button {
+                    Task { await subscriptionManager.purchase(plan) }
+                } label: {
+                    HStack {
+                        if subscriptionManager.isPurchasing {
+                            ProgressView().controlSize(.small).tint(.white)
+                            Text("Acquisto in corso…")
+                        } else {
+                            let priceStr = product?.displayPrice ?? plan.monthlyPrice
+                            Text("Abbonati · \(priceStr)/mese")
+                        }
+                    }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(color))
+                }
+                .disabled(subscriptionManager.isPurchasing)
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(colorScheme == .dark
+                      ? Color.white.opacity(0.07)
+                      : color.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(isCurrent ? color : Color.clear, lineWidth: 2)
+                )
+        )
+    }
 }
 
 #Preview {
     NavigationStack { AISettingsView() }
+        .environmentObject(KBSubscriptionManager.shared)
 }

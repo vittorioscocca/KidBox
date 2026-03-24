@@ -6,19 +6,23 @@
 import SwiftUI
 import SwiftData
 import FirebaseFunctions
+import StoreKit
 
 struct StorageUsageView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
+    @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     
     @StateObject private var vm = StorageUsageViewModel()
     @Query private var families: [KBFamily]
     
+    @State private var showUpgradeSheet = false
+    
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
-    // MARK: - Dynamic theme (same as LoginView)
+    // MARK: - Dynamic theme
     
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -32,14 +36,17 @@ struct StorageUsageView: View {
         : Color(.systemBackground)
     }
     
-    // Recupera familyId: prima dal coordinator, fallback da SwiftData locale.
     private var familyId: String {
         if let fid = coordinator.activeFamilyId, !fid.isEmpty { return fid }
         return families.first?.id ?? ""
     }
     
+    // MARK: - Body
+    
     var body: some View {
         List {
+            
+            // ── Quota card ──────────────────────────────────────────────────
             Section {
                 quotaCard
                     .listRowInsets(EdgeInsets())
@@ -47,6 +54,7 @@ struct StorageUsageView: View {
                     .listRowSeparator(.hidden)
             }
             
+            // ── Banner warning ──────────────────────────────────────────────
             if vm.isOverLimit || vm.isNearLimit {
                 Section {
                     upgradeBanner
@@ -56,56 +64,75 @@ struct StorageUsageView: View {
                 }
             }
             
+            // ── Sezioni ─────────────────────────────────────────────────────
             if !vm.isLoading && !vm.sections.isEmpty {
                 Section("Utilizzo per sezione") {
                     ForEach(vm.sections) { section in
-                        SectionRow(section: section, totalBytes: StorageUsageViewModel.totalQuotaBytes)
-                            .listRowBackground(cardBackground)
+                        SectionRow(section: section,
+                                   totalBytes: subscriptionManager.currentPlan.storageQuota)
+                        .listRowBackground(cardBackground)
                     }
                 }
             }
             
+            // ── Piani disponibili ───────────────────────────────────────────
             Section("Piani disponibili") {
-                planRow(name: "Free",  quota: StorageUsageViewModel.quotaFree,  price: "Gratis",     isCurrent: true)
-                    .listRowBackground(cardBackground)
-                planRow(name: "Pro",   quota: StorageUsageViewModel.quotaPro,   price: "€4,99/mese", isCurrent: false)
-                    .listRowBackground(cardBackground)
-                planRow(name: "Max",   quota: StorageUsageViewModel.quotaMax,   price: "€9,99/mese", isCurrent: false)
-                    .listRowBackground(cardBackground)
+                ForEach(KBPlan.allCases, id: \.rawValue) { plan in
+                    planRow(plan: plan)
+                        .listRowBackground(cardBackground)
+                }
             }
             
+            // ── Note ────────────────────────────────────────────────────────
             Section {
                 Text("Lo spazio è condiviso da tutti i membri della famiglia.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                
+                Button("Ripristina acquisti") {
+                    Task { await subscriptionManager.restorePurchases() }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
             
-            Button("Init Storage") {
-                let fid = familyId
-                Task {
-                    do {
-                        let functions = Functions.functions(region: "europe-west1")
-                        let result = try await functions.httpsCallable("initStorageUsage")
-                            .call(["familyId": fid])
-                        print("✅ result:", result.data)
-                        vm.load(modelContext: modelContext, familyId: fid)
-                    } catch {
-                        print("❌ error:", error)
+            // ── Init storage (debug/admin) ───────────────────────────────────
+            Section {
+                Button("Ricalcola storage") {
+                    let fid = familyId
+                    Task {
+                        do {
+                            let functions = Functions.functions(region: "europe-west1")
+                            let result = try await functions.httpsCallable("initStorageUsage")
+                                .call(["familyId": fid])
+                            print("✅ initStorageUsage:", result.data)
+                            vm.load(modelContext: modelContext, familyId: fid)
+                        } catch {
+                            print("❌ initStorageUsage error:", error)
+                        }
                     }
                 }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .listRowBackground(cardBackground)
             }
-            .listRowBackground(cardBackground)
         }
         .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
+        .scrollContentBackground(.hidden)
         .background(backgroundColor)
         .navigationTitle("Utilizzo spazio")
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
             guard !familyId.isEmpty else { return }
             vm.load(modelContext: modelContext, familyId: familyId)
+            Task {
+                await subscriptionManager.loadPlan()
+                await subscriptionManager.loadProducts()
+            }
         }
         .onChange(of: familyId) { _, newId in
             guard !newId.isEmpty, vm.usedBytes == 0 else { return }
@@ -114,76 +141,26 @@ struct StorageUsageView: View {
         .refreshable {
             guard !familyId.isEmpty else { return }
             vm.load(modelContext: modelContext, familyId: familyId)
+            await subscriptionManager.loadPlan()
         }
-    }
-    
-    // MARK: - Upgrade banner
-    
-    private var upgradeBanner: some View {
-        HStack(spacing: 12) {
-            Image(systemName: vm.isOverLimit ? "exclamationmark.triangle.fill" : "bell.badge.fill")
-                .font(.title3)
-                .foregroundStyle(vm.isOverLimit ? .red : .orange)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(vm.isOverLimit ? "Spazio esaurito" : "Spazio quasi esaurito")
-                    .font(.subheadline.bold())
-                Text(vm.isOverLimit
-                     ? "Gli upload sono bloccati. Passa a Pro per 5 GB."
-                     : "Hai usato l'80% dello spazio. Passa a Pro per continuare.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-            
-            Spacer()
-            
-            Button("Upgrade") { }
-                .font(.caption.bold())
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(vm.isOverLimit ? Color.red : Color.orange))
+        .alert("Errore acquisto", isPresented: .init(
+            get: { subscriptionManager.purchaseError != nil },
+            set: { if !$0 { } }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(subscriptionManager.purchaseError ?? "")
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(vm.isOverLimit
-                      ? Color.red.opacity(0.08)
-                      : Color.orange.opacity(0.08))
-        )
-        .padding(.horizontal)
-    }
-    
-    // MARK: - Plan row
-    
-    private func planRow(name: String, quota: Int64, price: String, isCurrent: Bool) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(name).font(.subheadline.bold())
-                    if isCurrent {
-                        Text("Piano attuale")
-                            .font(.caption2.bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Capsule().fill(tint))
-                    }
-                }
-                Text(quota.formattedFileSize + " storage")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Text(price)
-                .font(.subheadline)
-                .foregroundStyle(isCurrent ? .secondary : tint)
-        }
-        .padding(.vertical, 2)
     }
     
     // MARK: - Quota card
     
     private var quotaCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let plan     = subscriptionManager.currentPlan
+        let quota    = plan.storageQuota
+        let fraction = Double(vm.usedBytes) / Double(quota)
+        
+        return VStack(alignment: .leading, spacing: 16) {
             
             HStack {
                 Label("Spazio famiglia", systemImage: "person.2.fill")
@@ -191,33 +168,33 @@ struct StorageUsageView: View {
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
                 Spacer()
-                Text("Piano Free · 200 MB")
+                Text("Piano \(plan.displayName) · \(plan.storageLabel)")
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().fill(tint))
+                    .background(Capsule().fill(planColor(plan)))
             }
             
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(vm.usedBytes.formattedFileSize)
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(tint)
-                Text("/ \(StorageUsageViewModel.totalQuotaBytes.formattedFileSize)")
+                Text("/ \(quota.formattedFileSize)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(Int(vm.usedFraction * 100))%")
+                Text("\(Int(min(fraction, 1.0) * 100))%")
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(usedColor)
+                    .foregroundStyle(usedColor(fraction: fraction))
             }
             
-            segmentedBar
+            segmentedBar(fraction: min(fraction, 1.0), totalQuota: quota)
             
             HStack {
                 Circle()
                     .fill(Color.secondary.opacity(0.2))
                     .frame(width: 8, height: 8)
-                Text("\(vm.freeBytes.formattedFileSize) disponibili per la famiglia")
+                Text("\(max(0, quota - vm.usedBytes).formattedFileSize) disponibili per la famiglia")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -239,10 +216,10 @@ struct StorageUsageView: View {
     
     // MARK: - Segmented bar
     
-    private var segmentedBar: some View {
+    private func segmentedBar(fraction: Double, totalQuota: Int64) -> some View {
         GeometryReader { geo in
-            let totalWidth = geo.size.width
-            let usedWidth  = totalWidth * min(vm.usedFraction, 1.0)
+            let totalWidth  = geo.size.width
+            let usedWidth   = totalWidth * fraction
             let sectionsWithBytes = vm.sections.filter { $0.bytes > 0 }
             let sectionTotal = max(1, sectionsWithBytes.reduce(0) { $0 + $1.bytes })
             
@@ -268,11 +245,130 @@ struct StorageUsageView: View {
         .frame(height: 12)
     }
     
-    private var usedColor: Color {
-        switch vm.usedFraction {
+    // MARK: - Plan row
+    
+    @ViewBuilder
+    private func planRow(plan: KBPlan) -> some View {
+        let isCurrent = subscriptionManager.currentPlan == plan
+        let product   = subscriptionManager.storeProduct(for: plan)
+        
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(plan.displayName).font(.subheadline.bold())
+                    if isCurrent {
+                        Text("Piano attuale")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Capsule().fill(tint))
+                    } else if !plan.badge.isEmpty {
+                        Text(plan.badge)
+                            .font(.caption2.bold())
+                            .foregroundStyle(planColor(plan))
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Capsule().fill(planColor(plan).opacity(0.12)))
+                    }
+                }
+                HStack(spacing: 8) {
+                    Label(plan.storageLabel + " storage", systemImage: "internaldrive")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if plan.includesAI {
+                        Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Label("Senza AI", systemImage: "sparkles")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            if isCurrent {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(planColor(plan))
+                    .font(.title3)
+            } else if let product {
+                Button {
+                    Task { await subscriptionManager.purchase(plan) }
+                } label: {
+                    if subscriptionManager.isPurchasing {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Text(product.displayPrice + "/mese")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(planColor(plan)))
+                    }
+                }
+                .disabled(subscriptionManager.isPurchasing)
+                .buttonStyle(.plain)
+            } else {
+                Text(plan.monthlyPrice)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+    
+    // MARK: - Upgrade banner
+    
+    private var upgradeBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: vm.isOverLimit ? "exclamationmark.triangle.fill" : "bell.badge.fill")
+                .font(.title3)
+                .foregroundStyle(vm.isOverLimit ? .red : .orange)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(vm.isOverLimit ? "Spazio esaurito" : "Spazio quasi esaurito")
+                    .font(.subheadline.bold())
+                Text(vm.isOverLimit
+                     ? "Gli upload sono bloccati. Passa a Pro per 5 GB."
+                     : "Hai usato l'80% dello spazio. Passa a Pro per continuare.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            Button("Upgrade") {
+                Task { await subscriptionManager.purchase(.pro) }
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(vm.isOverLimit ? Color.red : Color.orange))
+            .disabled(subscriptionManager.isPurchasing)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(vm.isOverLimit
+                      ? Color.red.opacity(0.08)
+                      : Color.orange.opacity(0.08))
+        )
+        .padding(.horizontal)
+    }
+    
+    // MARK: - Helpers
+    
+    private func usedColor(fraction: Double) -> Color {
+        switch fraction {
         case ..<0.6:  return .green
         case ..<0.85: return .orange
         default:      return .red
+        }
+    }
+    
+    private func planColor(_ plan: KBPlan) -> Color {
+        switch plan {
+        case .free: return .gray
+        case .pro:  return tint
+        case .max:  return Color(red: 0.55, green: 0.35, blue: 0.9)
         }
     }
 }
@@ -305,8 +401,7 @@ private struct SectionRow: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(hex: section.color) ?? .accentColor)
                     } else {
-                        // bytes = 0: Firebase non ha ancora questo dato
-                        Text("Premi Init Storage")
+                        Text("Nessun dato")
                             .font(.caption.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
@@ -334,5 +429,3 @@ private struct SectionRow: View {
         .padding(.vertical, 4)
     }
 }
-
-// Color(hex:) è definita in CalendarView.swift — non duplicare qui.
