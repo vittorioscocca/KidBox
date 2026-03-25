@@ -114,6 +114,8 @@ final class KBSubscriptionManager: ObservableObject {
         currentPlan != .free && !subscriptionWillRenew && subscriptionExpirationDate != nil
     }
     
+    
+    
     // MARK: - Private
     
     private let db        = Firestore.firestore()
@@ -158,6 +160,10 @@ final class KBSubscriptionManager: ObservableObject {
         } catch {
             KBLog.app.kbError("SubscriptionManager: loadPlan failed \(error.localizedDescription)")
         }
+    }
+    
+    func clearPurchaseError() {
+        purchaseError = nil
     }
     
     // MARK: - Load StoreKit products
@@ -239,19 +245,9 @@ final class KBSubscriptionManager: ObservableObject {
     
     // MARK: - Manage / Cancel subscription
     
-    /// Apre la pagina di gestione abbonamenti di Apple.
-    /// L'utente può cancellare da lì — la cancellazione viene rilevata
-    /// automaticamente da refreshCurrentEntitlement al prossimo foreground.
-    func openManageSubscriptions() async {
-        guard let scene = await UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first else { return }
-        do {
-            try await AppStore.showManageSubscriptions(in: scene)
-        } catch {
-            KBLog.app.kbError("SubscriptionManager: showManageSubscriptions failed \(error.localizedDescription)")
-        }
-    }
+    // Lo sheet Apple viene aperto dalla view tramite il modifier
+    // .manageSubscriptionsSheet(isPresented:) con uno @State locale.
+    // Non serve alcun metodo qui: il button nella view setta direttamente il bool.
     
     // MARK: - Private helpers
     
@@ -299,7 +295,39 @@ final class KBSubscriptionManager: ObservableObject {
         }
     }
     
+    // MARK: - Debug (rimuovere prima del rilascio)
+    
+    func debugDumpAllTransactions() async {
+        KBLog.app.kbInfo("=== DEBUG: Transaction.currentEntitlements ===")
+        for await result in Transaction.currentEntitlements {
+            switch result {
+            case .verified(let tx):
+                KBLog.app.kbInfo("  ✅ VERIFIED: \(tx.productID) | expires: \(tx.expirationDate?.description ?? "nil") | revoked: \(tx.revocationDate?.description ?? "nil")")
+            case .unverified(let tx, let err):
+                KBLog.app.kbInfo("  ❌ UNVERIFIED: \(tx.productID) | err: \(err)")
+            }
+        }
+        KBLog.app.kbInfo("=== DEBUG: Transaction.latest per product ===")
+        for plan in KBPlan.allCases {
+            guard let pid = plan.productId else { continue }
+            let result = await Transaction.latest(for: pid)
+            switch result {
+            case .verified(let tx):
+                KBLog.app.kbInfo("  latest \(pid): expires=\(tx.expirationDate?.description ?? "nil") revoked=\(tx.revocationDate?.description ?? "nil")")
+            case .unverified(_, let err):
+                KBLog.app.kbInfo("  latest \(pid): UNVERIFIED \(err)")
+            case nil:
+                KBLog.app.kbInfo("  latest \(pid): NIL - nessuna transazione")
+            }
+        }
+        KBLog.app.kbInfo("=== END DEBUG ===")
+    }
+    
     /// Listener per transazioni completate anche fuori dall'app (rinnovi, acquisti web).
+    ///
+    /// FIX: dopo ogni evento in Transaction.updates viene chiamato refreshCurrentEntitlement().
+    /// Questo copre il caso della cancellazione, che non genera una nuova transazione
+    /// ma modifica RenewalInfo.willAutoRenew — aggiornato solo tramite entitlement check.
     private func startTransactionListener() {
         listenerTask = Task.detached(priority: .background) { [weak self] in
             for await result in Transaction.updates {
@@ -313,6 +341,9 @@ final class KBSubscriptionManager: ObservableObject {
                     }
                     await tx.finish()
                 }
+                // FIX: rivaluta sempre willAutoRenew e expirationDate dopo ogni update,
+                // indipendentemente dal tipo di transazione (acquisto, rinnovo, cancellazione).
+                await self.refreshCurrentEntitlement()
             }
         }
     }
@@ -320,15 +351,14 @@ final class KBSubscriptionManager: ObservableObject {
     // MARK: - Entitlement check (scadenza / downgrade)
     
     /// Verifica lo stato corrente degli abbonamenti StoreKit.
-    /// Da chiamare ogni volta che l'app torna in foreground (scenePhase .active).
+    /// Da chiamare ogni volta che l'app torna in foreground (scenePhase .active)
+    /// e al rientro dallo sheet di gestione abbonamenti Apple.
     ///
-    /// Logica:
-    /// - Cerca un abbonamento attivo (non scaduto, non revocato) tra i currentEntitlements
-    /// - Se trovato → aggiorna il piano se diverso da quello corrente
-    /// - Se non trovato → downgrade automatico a Free
-    ///
-    /// Non tocca Firestore se il piano non è cambiato (guard su resolvedPlan != currentPlan).
-    /// I dati esistenti non vengono mai cancellati — viene solo aggiornata la quota.
+    /// FIX 1: usa subscriptionGroupID per leggere willAutoRenew — Product.SubscriptionInfo.status(for:)
+    ///         si aspetta il group ID, non il product ID. Con il product ID restituisce sempre nil
+    ///         e willRenew cade nel default `true`, nascondendo la cancellazione.
+    /// FIX 2: currentPlan viene aggiornato SUBITO da StoreKit, prima dell'aggiornamento Firestore,
+    ///         così la UI riflette lo stato reale senza attendere la Cloud Function.
     func refreshCurrentEntitlement() async {
         guard Auth.auth().currentUser != nil else { return }
         KBLog.app.kbInfo("SubscriptionManager: refreshCurrentEntitlement")
@@ -338,6 +368,12 @@ final class KBSubscriptionManager: ObservableObject {
         var willRenew: Bool             = true
         var expiryDate: Date?           = nil
         
+        // Strategia a due livelli:
+        // 1. Transaction.currentEntitlements — fonte di verità ufficiale
+        // 2. Transaction.latest(for:) per ogni product ID — fallback per Sandbox
+        //    dove currentEntitlements può restare stale dopo un upgrade nello sheet.
+        
+        // — Livello 1: currentEntitlements —
         for await result in Transaction.currentEntitlements {
             guard case .verified(let tx) = result else { continue }
             if let revoked = tx.revocationDate, revoked <= Date() { continue }
@@ -346,44 +382,86 @@ final class KBSubscriptionManager: ObservableObject {
             let planRaw = tx.productID
                 .replacingOccurrences(of: "it.vittorioscocca.kidbox.", with: "")
                 .replacingOccurrences(of: ".monthly", with: "")
+            guard let plan = KBPlan(rawValue: planRaw) else { continue }
+            guard activePlan == nil || plan.storageQuota > (activePlan?.storageQuota ?? 0) else { continue }
             
-            if let plan = KBPlan(rawValue: planRaw) {
-                if activePlan == nil || plan.storageQuota > (activePlan?.storageQuota ?? 0) {
-                    activePlan          = plan
-                    activeTransactionId = String(tx.id)
-                    expiryDate          = tx.expirationDate
-                    
-                    // Legge lo stato di rinnovo dalla RenewalInfo
-                    if let statusArray = try? await Product.SubscriptionInfo.status(for: tx.productID),
-                       let status = statusArray.first,
-                       case .verified(let info) = status.renewalInfo {
-                        willRenew = info.willAutoRenew
-                    } else {
-                        willRenew = true // default conservativo
-                    }
+            activePlan          = plan
+            activeTransactionId = String(tx.id)
+            expiryDate          = tx.expirationDate
+            
+            let groupID = tx.subscriptionGroupID ?? tx.productID
+            if let statuses = try? await Product.SubscriptionInfo.status(for: groupID) {
+                let matched = statuses.first {
+                    if case .verified(let info) = $0.renewalInfo,
+                       info.currentProductID == tx.productID { return true }
+                    return false
+                } ?? statuses.first
+                if let status = matched, case .verified(let info) = status.renewalInfo {
+                    willRenew = info.willAutoRenew
+                    KBLog.app.kbDebug("SubscriptionManager: willAutoRenew=\(willRenew) groupID=\(groupID) product=\(tx.productID)")
+                } else {
+                    willRenew = true
                 }
+            } else {
+                willRenew = true
+            }
+        }
+        
+        // — Livello 2: fallback Transaction.latest(for:) —
+        // In Sandbox, currentEntitlements può restare su Pro anche dopo che
+        // l'utente ha cambiato piano a Max nello sheet. Transaction.latest(for:)
+        // interroga il server StoreKit fresco e restituisce la transazione
+        // più recente per quel product ID, indipendentemente dalla cache locale.
+        for plan in KBPlan.allCases {
+            guard let productId = plan.productId else { continue }
+            // Salta se currentEntitlements ha già trovato un piano migliore
+            if let current = activePlan, current.storageQuota >= plan.storageQuota { continue }
+            
+            guard let result = await Transaction.latest(for: productId),
+                  case .verified(let tx) = result else { continue }
+            if let revoked = tx.revocationDate, revoked <= Date() { continue }
+            if let expiry  = tx.expirationDate,  expiry  <= Date() { continue }
+            
+            // Transazione valida trovata — sovrascrive il piano corrente se più alto
+            KBLog.app.kbInfo("SubscriptionManager: fallback latest tx found product=\(productId) plan=\(plan.rawValue)")
+            activePlan          = plan
+            activeTransactionId = String(tx.id)
+            expiryDate          = tx.expirationDate
+            
+            let groupID = tx.subscriptionGroupID ?? tx.productID
+            if let statuses = try? await Product.SubscriptionInfo.status(for: groupID),
+               let matched  = statuses.first(where: {
+                   if case .verified(let info) = $0.renewalInfo,
+                      info.currentProductID == tx.productID { return true }
+                   return false
+               }) ?? statuses.first,
+               case .verified(let info) = matched.renewalInfo {
+                willRenew = info.willAutoRenew
+            } else {
+                willRenew = true
             }
         }
         
         let resolvedPlan = activePlan ?? .free
         
-        // Aggiorna stato rinnovo e scadenza (sempre, indipendentemente dal piano)
         subscriptionWillRenew      = resolvedPlan == .free ? true : willRenew
         subscriptionExpirationDate = resolvedPlan == .free ? nil  : expiryDate
         
-        // Schedula notifica locale se cancellato ma ancora attivo
+        let planDidChange = resolvedPlan != currentPlan
+        if planDidChange {
+            KBLog.app.kbInfo("SubscriptionManager: entitlement changed \(currentPlan.rawValue) → \(resolvedPlan.rawValue)")
+            currentPlan = resolvedPlan
+        }
+        
+        KBLog.app.kbDebug("SubscriptionManager: resolved plan=\(resolvedPlan.rawValue) willRenew=\(subscriptionWillRenew) expiry=\(subscriptionExpirationDate?.description ?? "nil")")
+        
         if resolvedPlan != .free && !willRenew, let expiry = expiryDate {
             await scheduleExpirationNotification(plan: resolvedPlan, expirationDate: expiry)
         } else {
             cancelExpirationNotification()
         }
         
-        guard resolvedPlan != currentPlan else {
-            KBLog.app.kbDebug("SubscriptionManager: entitlement unchanged plan=\(currentPlan.rawValue) willRenew=\(willRenew)")
-            return
-        }
-        
-        KBLog.app.kbInfo("SubscriptionManager: entitlement changed \(currentPlan.rawValue) → \(resolvedPlan.rawValue)")
+        guard planDidChange else { return }
         await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
     }
     

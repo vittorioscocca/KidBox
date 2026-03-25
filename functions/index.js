@@ -1089,6 +1089,40 @@ exports.askAI = onCall(
         const json = await res.json();
         reply = json?.content?.[0]?.text;
         if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
+
+        // ── Tracking costi Anthropic ────────────────────────────────────────
+        // Prezzi claude-sonnet-4 (aggiornare se cambiano):
+        //   Input:  $3.00 per 1M token
+        //   Output: $15.00 per 1M token
+        const inputTokens = json?.usage?.input_tokens || 0;
+        const outputTokens = json?.usage?.output_tokens || 0;
+        const costUsd = (inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0;
+
+        const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7); // YYYY-MM
+        const costRef = admin.firestore()
+            .collection("ai_costs").doc(monthKey)
+            .collection("families").doc(familyId);
+
+        // Fire-and-forget: non blocchiamo la risposta per il tracking
+        costRef.set({
+          calls: admin.firestore.FieldValue.increment(1),
+          inputTokens: admin.firestore.FieldValue.increment(inputTokens),
+          outputTokens: admin.firestore.FieldValue.increment(outputTokens),
+          costUsd: admin.firestore.FieldValue.increment(costUsd),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true}).catch((e) => logger.warn("ai_costs write failed", {error: e.message}));
+
+        // Totale mensile globale (per dashboard)
+        const totalRef = admin.firestore().collection("ai_costs").doc(monthKey);
+        totalRef.set({
+          calls: admin.firestore.FieldValue.increment(1),
+          inputTokens: admin.firestore.FieldValue.increment(inputTokens),
+          outputTokens: admin.firestore.FieldValue.increment(outputTokens),
+          costUsd: admin.firestore.FieldValue.increment(costUsd),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true}).catch((e) => logger.warn("ai_costs total write failed", {error: e.message}));
+
+        logger.info("askAI tokens", {uid, familyId, inputTokens, outputTokens, costUsd: costUsd.toFixed(6)});
       } catch (e) {
         if (e instanceof HttpsError) throw e;
         logger.error("askAI: fetch failed", {error: e.message});

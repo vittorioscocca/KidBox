@@ -10,9 +10,13 @@ struct AISettingsView: View {
     
     @StateObject private var viewModel = AISettingsViewModel()
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
-    @State private var showConsent  = false
-    @State private var showUpgrade  = false
+    @State private var showConsent             = false
+    @State private var showUpgrade             = false
+    @State private var showManageSubscriptions = false
     @Environment(\.colorScheme) private var colorScheme
+    // Safety net: aggiorna l'entitlement se l'utente cancella da Impostazioni → App Store
+    // (percorso esterno all'app, non passa dal nostro sheet).
+    @Environment(\.scenePhase) private var scenePhase
     
     // MARK: - Dynamic theme
     
@@ -41,6 +45,7 @@ struct AISettingsView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .id(subscriptionManager.currentPlan) // forza rebuild SwiftUI al cambio piano
             }
             
             // MARK: - Banner abbonamento in scadenza
@@ -232,7 +237,7 @@ struct AISettingsView: View {
             if subscriptionManager.currentPlan != .free {
                 Section("Abbonamento") {
                     Button {
-                        Task { await subscriptionManager.openManageSubscriptions() }
+                        showManageSubscriptions = true
                     } label: {
                         HStack {
                             Label("Gestisci abbonamento", systemImage: "creditcard")
@@ -261,6 +266,33 @@ struct AISettingsView: View {
         .onAppear {
             viewModel.load()
             Task { await subscriptionManager.loadPlan() }
+        }
+        // @State locale — SwiftUI aggiorna il binding in modo affidabile al dismiss.
+        // Al dismiss (isShowing → false) eseguiamo più check con backoff progressivo:
+        // StoreKit impiega alcuni secondi a propagare la cancellazione nel RenewalInfo.
+        // @MainActor garantisce che i publish di @Published avvengano sul thread UI,
+        // evitando che SwiftUI ignori o bufferizzi gli aggiornamenti.
+        .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
+        .onChange(of: showManageSubscriptions) { _, isShowing in
+            guard !isShowing else { return }
+            Task { @MainActor in
+                await subscriptionManager.debugDumpAllTransactions()
+                // Check immediato (ottimistico)
+                await subscriptionManager.refreshCurrentEntitlement()
+                // Retry a 3s — StoreKit di solito ha aggiornato RenewalInfo entro qui
+                try? await Task.sleep(for: .seconds(3))
+                await subscriptionManager.refreshCurrentEntitlement()
+                // Retry a 10s — safety net per connessioni lente
+                try? await Task.sleep(for: .seconds(7))
+                await subscriptionManager.refreshCurrentEntitlement()
+            }
+        }
+        // Safety net: copre il caso in cui l'utente cancella dall'esterno
+        // (Impostazioni → App Store), senza passare dal nostro sheet.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await subscriptionManager.refreshCurrentEntitlement() }
+            }
         }
         .sheet(isPresented: $showConsent) {
             AIConsentSheet {
@@ -304,7 +336,7 @@ struct AISettingsView: View {
             
             if subscriptionManager.isCancelledButActive {
                 Button("Gestisci") {
-                    Task { await subscriptionManager.openManageSubscriptions() }
+                    showManageSubscriptions = true
                 }
                 .font(.caption.bold())
                 .foregroundStyle(.white)
@@ -352,7 +384,7 @@ struct AISettingsView: View {
             Spacer()
             
             Button("Rinnova") {
-                Task { await subscriptionManager.openManageSubscriptions() }
+                showManageSubscriptions = true
             }
             .font(.caption.bold())
             .foregroundStyle(.white)
@@ -390,6 +422,7 @@ struct AISettingsView: View {
                     .padding(.horizontal, 24).padding(.vertical, 10)
                     .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
             }
+            .buttonStyle(.plain)
         }
         .padding(20)
         .frame(maxWidth: .infinity)
@@ -509,12 +542,19 @@ struct UpgradeSheetView: View {
         }
     }
     
+    // MARK: - Plan card
+    
     @ViewBuilder
     private func planCard(plan: KBPlan, color: Color, icon: String, features: [String]) -> some View {
-        let isCurrent = subscriptionManager.currentPlan == plan
-        let product   = subscriptionManager.storeProduct(for: plan)
+        let isCurrent   = subscriptionManager.currentPlan == plan
+        // FIX: distingue "piano attivo e si rinnoverà" da "piano attivo ma cancellato"
+        let isCancelled = isCurrent && subscriptionManager.isCancelledButActive
+        let expiryDate  = subscriptionManager.subscriptionExpirationDate
+        let product     = subscriptionManager.storeProduct(for: plan)
         
         VStack(alignment: .leading, spacing: 14) {
+            
+            // Header: icona, nome, badge piano + badge stato
             HStack {
                 Image(systemName: icon)
                     .font(.title3)
@@ -530,21 +570,37 @@ struct UpgradeSheetView: View {
                 }
                 Spacer()
                 if isCurrent {
-                    Text("Piano attuale")
+                    // FIX: badge arancione "In scadenza" se cancellato, altrimenti "Piano attuale"
+                    Text(isCancelled ? "In scadenza" : "Piano attuale")
                         .font(.caption.bold())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(Capsule().fill(color))
+                        .background(Capsule().fill(isCancelled ? Color.orange : color))
                 }
             }
             
+            // FIX: riga con la data di scadenza, visibile solo se cancellato
+            if isCancelled, let expiry = expiryDate {
+                Label {
+                    Text("Attivo fino al \(expiry.formatted(date: .long, time: .omitted))")
+                        .font(.caption)
+                } icon: {
+                    Image(systemName: "clock.badge.exclamationmark")
+                        .foregroundStyle(.orange)
+                }
+                .foregroundStyle(.orange)
+            }
+            
+            // Feature list
             ForEach(features, id: \.self) { f in
                 Label(f, systemImage: "checkmark")
                     .font(.subheadline)
                     .foregroundStyle(.primary)
             }
             
-            if !isCurrent {
+            // FIX: mostra il pulsante d'azione anche quando isCancelled,
+            // con label e colore diversi rispetto al primo acquisto.
+            if !isCurrent || isCancelled {
                 Button {
                     Task { await subscriptionManager.purchase(plan) }
                 } label: {
@@ -554,14 +610,19 @@ struct UpgradeSheetView: View {
                             Text("Acquisto in corso…")
                         } else {
                             let priceStr = product?.displayPrice ?? plan.monthlyPrice
-                            Text("Abbonati · \(priceStr)/mese")
+                            Text(isCancelled
+                                 ? "Riattiva · \(priceStr)/mese"
+                                 : "Abbonati · \(priceStr)/mese")
                         }
                     }
                     .font(.subheadline.bold())
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(color))
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(isCancelled ? Color.orange : color)
+                    )
                 }
                 .disabled(subscriptionManager.isPurchasing)
                 .buttonStyle(.plain)

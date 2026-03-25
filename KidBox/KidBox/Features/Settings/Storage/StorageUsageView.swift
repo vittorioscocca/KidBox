@@ -18,7 +18,8 @@ struct StorageUsageView: View {
     @StateObject private var vm = StorageUsageViewModel()
     @Query private var families: [KBFamily]
     
-    @State private var showUpgradeSheet = false
+    @State private var showUpgradeSheet        = false
+    @State private var showManageSubscriptions = false
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
@@ -52,6 +53,7 @@ struct StorageUsageView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .id(subscriptionManager.currentPlan) // forza rebuild SwiftUI al cambio piano
             }
             
             // ── Banner warning storage ──────────────────────────────────────
@@ -98,7 +100,7 @@ struct StorageUsageView: View {
             if subscriptionManager.currentPlan != .free {
                 Section("Abbonamento attivo") {
                     Button {
-                        Task { await subscriptionManager.openManageSubscriptions() }
+                        showManageSubscriptions = true
                     } label: {
                         HStack {
                             Label("Gestisci abbonamento", systemImage: "creditcard")
@@ -191,8 +193,6 @@ struct StorageUsageView: View {
             vm.load(modelContext: modelContext, familyId: newId)
         }
         .onChange(of: subscriptionManager.currentPlan) { _, _ in
-            // Quando il piano cambia (es. dopo un acquisto) ricarica lo storage
-            // così il banner "Spazio esaurito" scompare immediatamente se c'è spazio.
             guard !familyId.isEmpty else { return }
             vm.load(modelContext: modelContext, familyId: familyId)
         }
@@ -201,11 +201,30 @@ struct StorageUsageView: View {
             vm.load(modelContext: modelContext, familyId: familyId)
             await subscriptionManager.loadPlan()
         }
+        // Apre lo sheet Apple di gestione abbonamenti.
+        // Al dismiss (isShowing → false) eseguiamo più check con backoff progressivo:
+        // StoreKit impiega alcuni secondi a propagare la cancellazione nel RenewalInfo.
+        // @MainActor garantisce che i publish di @Published avvengano sul thread UI,
+        // evitando che SwiftUI ignori o bufferizzi gli aggiornamenti.
+        .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
+        .onChange(of: showManageSubscriptions) { _, isShowing in
+            guard !isShowing else { return }
+            Task { @MainActor in
+                await subscriptionManager.debugDumpAllTransactions()
+                await subscriptionManager.refreshCurrentEntitlement()
+                try? await Task.sleep(for: .seconds(3))
+                await subscriptionManager.refreshCurrentEntitlement()
+                try? await Task.sleep(for: .seconds(7))
+                await subscriptionManager.refreshCurrentEntitlement()
+            }
+        }
         .alert("Errore acquisto", isPresented: .init(
             get: { subscriptionManager.purchaseError != nil },
-            set: { if !$0 { } }
+            set: { if !$0 { subscriptionManager.clearPurchaseError() } }
         )) {
-            Button("OK", role: .cancel) { }
+            Button("OK", role: .cancel) {
+                subscriptionManager.clearPurchaseError()
+            }
         } message: {
             Text(subscriptionManager.purchaseError ?? "")
         }
@@ -397,7 +416,7 @@ struct StorageUsageView: View {
             Spacer()
             
             Button("Rinnova") {
-                Task { await subscriptionManager.openManageSubscriptions() }
+                showManageSubscriptions = true
             }
             .font(.caption.bold())
             .foregroundStyle(.white)
