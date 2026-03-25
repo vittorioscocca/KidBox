@@ -54,10 +54,21 @@ struct StorageUsageView: View {
                     .listRowSeparator(.hidden)
             }
             
-            // ── Banner warning ──────────────────────────────────────────────
+            // ── Banner warning storage ──────────────────────────────────────
             if vm.isOverLimit || vm.isNearLimit {
                 Section {
                     upgradeBanner
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+            
+            // ── Banner abbonamento in scadenza ──────────────────────────────
+            if subscriptionManager.isCancelledButActive,
+               let expiry = subscriptionManager.subscriptionExpirationDate {
+                Section {
+                    expiringBanner(expirationDate: expiry)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -83,21 +94,62 @@ struct StorageUsageView: View {
                 }
             }
             
-            // ── Note ────────────────────────────────────────────────────────
-            Section {
-                Text("Lo spazio è condiviso da tutti i membri della famiglia.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                
-                Button("Ripristina acquisti") {
-                    Task { await subscriptionManager.restorePurchases() }
+            // ── Gestione abbonamento ─────────────────────────────────────────
+            if subscriptionManager.currentPlan != .free {
+                Section("Abbonamento attivo") {
+                    Button {
+                        Task { await subscriptionManager.openManageSubscriptions() }
+                    } label: {
+                        HStack {
+                            Label("Gestisci abbonamento", systemImage: "creditcard")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                    
+                    if let expiry = subscriptionManager.subscriptionExpirationDate {
+                        SubscriptionExpiryRow(
+                            expirationDate: expiry,
+                            willRenew: subscriptionManager.subscriptionWillRenew
+                        )
+                        .listRowBackground(cardBackground)
+                    }
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+            }
+            
+            // ── Footer actions ───────────────────────────────────────────────
+            Section {
+                // Info condivisione spazio
+                Label {
+                    Text("Lo spazio è condiviso tra tutti i membri della famiglia.")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                } icon: {
+                    Image(systemName: "person.2.fill")
+                        .foregroundStyle(tint)
+                }
+                .listRowBackground(cardBackground)
+                
+                // Ripristina acquisti
+                Button {
+                    Task { await subscriptionManager.restorePurchases() }
+                } label: {
+                    Label {
+                        Text("Ripristina acquisti")
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundStyle(tint)
+                    }
+                }
+                .listRowBackground(cardBackground)
+            } footer: {
+                Text("Gli acquisti vengono verificati tramite il tuo ID Apple. Il piano si applica all'intera famiglia.")
+                    .font(.caption)
             }
             
             // ── Init storage (debug/admin) ───────────────────────────────────
@@ -137,6 +189,12 @@ struct StorageUsageView: View {
         .onChange(of: familyId) { _, newId in
             guard !newId.isEmpty, vm.usedBytes == 0 else { return }
             vm.load(modelContext: modelContext, familyId: newId)
+        }
+        .onChange(of: subscriptionManager.currentPlan) { _, _ in
+            // Quando il piano cambia (es. dopo un acquisto) ricarica lo storage
+            // così il banner "Spazio esaurito" scompare immediatamente se c'è spazio.
+            guard !familyId.isEmpty else { return }
+            vm.load(modelContext: modelContext, familyId: familyId)
         }
         .refreshable {
             guard !familyId.isEmpty else { return }
@@ -314,6 +372,47 @@ struct StorageUsageView: View {
         .padding(.vertical, 4)
     }
     
+    // MARK: - Expiring banner (abbonamento cancellato ma attivo)
+    
+    private func expiringBanner(expirationDate: Date) -> some View {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale    = Locale(identifier: "it_IT")
+        let dateStr = formatter.string(from: expirationDate)
+        
+        return HStack(spacing: 12) {
+            Image(systemName: "clock.badge.exclamationmark.fill")
+                .font(.title3)
+                .foregroundStyle(.orange)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Abbonamento in scadenza")
+                    .font(.subheadline.bold())
+                Text("Il tuo piano \(subscriptionManager.currentPlan.displayName) scade il \(dateStr). Dopo quella data tornerai al piano Free.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            Button("Rinnova") {
+                Task { await subscriptionManager.openManageSubscriptions() }
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color.orange))
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .padding(.horizontal)
+    }
+    
     // MARK: - Upgrade banner
     
     private var upgradeBanner: some View {
@@ -369,6 +468,32 @@ struct StorageUsageView: View {
         case .free: return .gray
         case .pro:  return tint
         case .max:  return Color(red: 0.55, green: 0.35, blue: 0.9)
+        }
+    }
+}
+
+// MARK: - Subscription Expiry Row
+
+struct SubscriptionExpiryRow: View {
+    let expirationDate: Date
+    let willRenew: Bool
+    
+    private static let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .long
+        f.timeStyle = .none
+        f.locale    = Locale(identifier: "it_IT")
+        return f
+    }()
+    
+    var body: some View {
+        HStack {
+            Text(willRenew ? "Rinnovo automatico il" : "Scade il")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(Self.formatter.string(from: expirationDate))
+                .font(.caption.bold())
+                .foregroundStyle(willRenew ? .secondary : Color.orange)
         }
     }
 }

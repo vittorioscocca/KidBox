@@ -48,10 +48,13 @@ final class StorageUsageViewModel: ObservableObject {
     
     // MARK: - Computed
     
-    var freeBytes: Int64     { max(0, Self.totalQuotaBytes - usedBytes) }
-    var usedFraction: Double { Double(usedBytes) / Double(Self.totalQuotaBytes) }
+    /// Quota corrente in base al piano abbonamento — aggiornata dinamicamente.
+    var currentQuota: Int64  { KBSubscriptionManager.shared.currentPlan.storageQuota }
+    
+    var freeBytes: Int64     { max(0, currentQuota - usedBytes) }
+    var usedFraction: Double { Double(usedBytes) / Double(max(1, currentQuota)) }
     var isNearLimit: Bool    { usedFraction >= 0.8 }
-    var isOverLimit: Bool    { usedBytes >= Self.totalQuotaBytes }
+    var isOverLimit: Bool    { usedBytes >= currentQuota }
     
     // MARK: - Load
     //
@@ -81,10 +84,23 @@ final class StorageUsageViewModel: ObservableObject {
             if let data = result.data as? [String: Any],
                let remoteBytes = data["usedBytes"] as? Int {
                 let bytes = Int64(remoteBytes)
+                let quota = KBSubscriptionManager.shared.currentPlan.storageQuota
+                
                 await MainActor.run {
                     KBStorageGate.shared.cachedUsedBytes = bytes
                 }
-                KBLog.app.kbInfo("StorageUsageViewModel.prefetchForGate: cachedUsedBytes=\(bytes)")
+                
+                // ── Aggiorna App Group per KBStorageGateLite (Share Extension) ──
+                // KBStorageGateLite legge queste chiavi da UserDefaults App Group.
+                // Vanno aggiornate ogni volta che il gate principale si aggiorna
+                // così la Share Extension usa sempre dati freschi.
+                let appGroupId = "group.it.vittorioscocca.kidbox"
+                let defaults   = UserDefaults(suiteName: appGroupId)
+                defaults?.set(bytes, forKey: "storageUsedBytes_\(familyId)")
+                defaults?.set(quota, forKey: "storageQuotaBytes_\(familyId)")
+                defaults?.synchronize()
+                
+                KBLog.app.kbInfo("StorageUsageViewModel.prefetchForGate: cachedUsedBytes=\(bytes) quota=\(quota) appGroup=OK")
             }
         } catch {
             KBLog.app.kbError("StorageUsageViewModel.prefetchForGate failed: \(error.localizedDescription)")
@@ -108,7 +124,15 @@ final class StorageUsageViewModel: ObservableObject {
                 
                 if let data = result.data as? [String: Any] {
                     if let remoteBytes = data["usedBytes"] as? Int {
-                        KBStorageGate.shared.cachedUsedBytes = Int64(remoteBytes)
+                        let bytes = Int64(remoteBytes)
+                        KBStorageGate.shared.cachedUsedBytes = bytes
+                        
+                        // Aggiorna App Group per KBStorageGateLite (Share Extension)
+                        let quota    = KBSubscriptionManager.shared.currentPlan.storageQuota
+                        let defaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+                        defaults?.set(bytes, forKey: "storageUsedBytes_\(familyId)")
+                        defaults?.set(quota, forKey: "storageQuotaBytes_\(familyId)")
+                        defaults?.synchronize()
                     }
                     if let rawSections = data["sections"] as? [String: Any] {
                         let remoteSections = buildSections(from: rawSections)

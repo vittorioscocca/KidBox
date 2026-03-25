@@ -37,7 +37,7 @@ struct VideoTransferable: Transferable {
 enum VideoCompressor {
     static func compress(url: URL) async -> URL? {
         let asset = AVURLAsset(url: url)
-        let compatiblePresets = await AVAssetExportSession.exportPresets(compatibleWith: asset)
+        let compatiblePresets = AVAssetExportSession.exportPresets(compatibleWith: asset)
         let preset: String
         if compatiblePresets.contains(AVAssetExportPresetMediumQuality) {
             preset = AVAssetExportPresetMediumQuality

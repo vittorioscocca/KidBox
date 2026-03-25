@@ -119,8 +119,6 @@ struct KidBoxApp: App {
                             // ✅ Reset badge chat
                             Task { @MainActor in
                                 BadgeManager.shared.clearChat()
-                                // chat non ha familyId qui, se CountersService lo richiede
-                                // andrebbe recuperato da coordinator.activeFamilyId
                             }
                             coordinator.navigate(to: .chat)
                             
@@ -185,7 +183,6 @@ struct KidBoxApp: App {
                         case .pediatricVisit(let familyId, let childId, let visitId):
                             KBLog.navigation.kbInfo("Deep link -> open pediatric visit visitId=\(visitId)")
                             coordinator.setActiveFamily(familyId)
-                            // ℹ️ Nessun badge card in HomeView per questa sezione al momento
                             coordinator.openVisitFromPush(
                                 familyId: familyId,
                                 childId: childId,
@@ -198,7 +195,6 @@ struct KidBoxApp: App {
                         case .treatmentReminder(let familyId, let childId, let treatmentId):
                             KBLog.navigation.kbInfo("Deep link -> open treatment treatmentId=\(treatmentId)")
                             coordinator.setActiveFamily(familyId)
-                            // ℹ️ Nessun badge card in HomeView per questa sezione al momento
                             coordinator.openTreatmentFromPush(
                                 familyId: familyId,
                                 childId: childId,
@@ -211,7 +207,6 @@ struct KidBoxApp: App {
                         case .examReminder(let familyId, let childId, let examId):
                             KBLog.navigation.kbInfo("Deep link -> open exam examId=\(examId)")
                             coordinator.setActiveFamily(familyId)
-                            // ℹ️ Nessun badge card in HomeView per questa sezione al momento
                             coordinator.openExamFromPush(
                                 familyId: familyId,
                                 childId: childId,
@@ -268,6 +263,12 @@ struct KidBoxApp: App {
                 SyncCenter.shared.startAutoFlush(modelContext: context)
                 SyncCenter.shared.flushGlobal(modelContext: context)
                 BadgeManager.shared.refreshAppBadge()
+                // ── Verifica entitlement StoreKit ────────────────────────
+                // Gestisce scadenze e downgrade automatici ogni volta che
+                // l'app torna in foreground. Se il piano è scaduto → Free.
+                // Se rinnovato → aggiorna la quota. I dati non vengono mai
+                // cancellati: cambia solo la quota del gate.
+                Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
             case .inactive:
                 KBLog.sync.kbDebug("ScenePhase inactive")
             case .background:

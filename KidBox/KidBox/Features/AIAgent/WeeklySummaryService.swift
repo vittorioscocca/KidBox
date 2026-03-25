@@ -170,7 +170,7 @@ final class WeeklySummaryService {
         fmt.timeStyle = .none
         
         let weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
-        let weekEnd   = cal.date(byAdding: .day, value: 6, to: weekStart) ?? now
+        _   = cal.date(byAdding: .day, value: 6, to: weekStart) ?? now
         let nextEnd   = cal.date(byAdding: .day, value: 13, to: weekStart) ?? now
         lines.append("Settimana: \(fmt.string(from: weekStart)) — \(fmt.string(from: nextEnd))\n")
         

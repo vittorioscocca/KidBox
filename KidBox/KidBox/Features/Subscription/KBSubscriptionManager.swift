@@ -20,6 +20,7 @@ import StoreKit
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseFunctions
+import UserNotifications
 import Combine
 
 // MARK: - Plan
@@ -53,11 +54,11 @@ enum KBPlan: String, CaseIterable {
         }
     }
     
-    /// Messaggi AI al giorno per membro
+    /// Messaggi AI al giorno per famiglia (condivisi tra tutti i membri)
     var aiDailyLimit: Int {
         switch self {
         case .free: return 0
-        case .pro:  return 20
+        case .pro:  return 30
         case .max:  return 100
         }
     }
@@ -101,6 +102,18 @@ final class KBSubscriptionManager: ObservableObject {
     /// Prodotti StoreKit caricati
     @Published private(set) var products: [Product] = []
     
+    /// true = l'abbonamento si rinnoverà automaticamente
+    /// false = l'utente ha cancellato, le quote restano attive fino a expirationDate
+    @Published private(set) var subscriptionWillRenew: Bool = true
+    
+    /// Data di scadenza dell'abbonamento corrente (nil se Free o non disponibile)
+    @Published private(set) var subscriptionExpirationDate: Date? = nil
+    
+    /// true = abbonamento attivo ma cancellato (non si rinnoverà)
+    var isCancelledButActive: Bool {
+        currentPlan != .free && !subscriptionWillRenew && subscriptionExpirationDate != nil
+    }
+    
     // MARK: - Private
     
     private let db        = Firestore.firestore()
@@ -122,11 +135,26 @@ final class KBSubscriptionManager: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        
         do {
-            let snap = try await db.collection("users").document(uid).getDocument()
-            let raw  = snap.data()?["plan"] as? String ?? "free"
-            currentPlan = KBPlan(rawValue: raw) ?? .free
-            KBLog.app.kbInfo("SubscriptionManager: plan loaded plan=\(currentPlan.rawValue)")
+            var plan = "free"
+            
+            // 1. Piano famiglia — fonte di verità
+            if !familyId.isEmpty {
+                let familySnap = try await db.collection("families").document(familyId).getDocument()
+                plan = familySnap.data()?["plan"] as? String ?? "free"
+            }
+            
+            // 2. Fallback piano utente (retrocompatibilità primo avvio)
+            if plan == "free" {
+                let userSnap = try await db.collection("users").document(uid).getDocument()
+                plan = userSnap.data()?["plan"] as? String ?? "free"
+            }
+            
+            currentPlan = KBPlan(rawValue: plan) ?? .free
+            KBLog.app.kbInfo("SubscriptionManager: plan loaded plan=\(currentPlan.rawValue) familyId=\(familyId)")
         } catch {
             KBLog.app.kbError("SubscriptionManager: loadPlan failed \(error.localizedDescription)")
         }
@@ -190,6 +218,13 @@ final class KBSubscriptionManager: ObservableObject {
         do {
             try await AppStore.sync()
             await loadPlan()
+            // Aggiorna il gate con il piano ripristinato
+            let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId") ?? ""
+            if !familyId.isEmpty {
+                Task.detached(priority: .utility) {
+                    await StorageUsageViewModel.prefetchForGate(familyId: familyId)
+                }
+            }
         } catch {
             purchaseError = "Ripristino non riuscito: \(error.localizedDescription)"
         }
@@ -200,6 +235,22 @@ final class KBSubscriptionManager: ObservableObject {
     func storeProduct(for plan: KBPlan) -> Product? {
         guard let pid = plan.productId else { return nil }
         return products.first(where: { $0.id == pid })
+    }
+    
+    // MARK: - Manage / Cancel subscription
+    
+    /// Apre la pagina di gestione abbonamenti di Apple.
+    /// L'utente può cancellare da lì — la cancellazione viene rilevata
+    /// automaticamente da refreshCurrentEntitlement al prossimo foreground.
+    func openManageSubscriptions() async {
+        guard let scene = await UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first else { return }
+        do {
+            try await AppStore.showManageSubscriptions(in: scene)
+        } catch {
+            KBLog.app.kbError("SubscriptionManager: showManageSubscriptions failed \(error.localizedDescription)")
+        }
     }
     
     // MARK: - Private helpers
@@ -215,13 +266,33 @@ final class KBSubscriptionManager: ObservableObject {
     /// In produzione sostituire con una Cloud Function che verifica il receipt lato server.
     private func updatePlanOnServer(plan: KBPlan, transactionId: String) async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
+        let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
+        let familyId = sharedDefaults?.string(forKey: "activeFamilyId") ?? ""
+        
         do {
+            // 1. Scrivi su families/{familyId} — fonte di verità condivisa da tutti i membri
+            if !familyId.isEmpty {
+                try await db.collection("families").document(familyId).setData(
+                    ["plan": plan.rawValue, "planUpdatedAt": FieldValue.serverTimestamp()],
+                    merge: true
+                )
+            }
+            
+            // 2. Scrivi su users/{uid} — retrocompatibilità e fallback Cloud Functions
             try await db.collection("users").document(uid).setData(
                 ["plan": plan.rawValue, "planUpdatedAt": FieldValue.serverTimestamp()],
                 merge: true
             )
+            
             currentPlan = plan
-            KBLog.app.kbInfo("SubscriptionManager: plan updated to \(plan.rawValue) txId=\(transactionId)")
+            KBLog.app.kbInfo("SubscriptionManager: plan updated to \(plan.rawValue) txId=\(transactionId) familyId=\(familyId)")
+            
+            // Aggiorna il gate con la nuova quota
+            if !familyId.isEmpty {
+                Task.detached(priority: .utility) {
+                    await StorageUsageViewModel.prefetchForGate(familyId: familyId)
+                }
+            }
         } catch {
             purchaseError = "Piano acquistato ma aggiornamento profilo fallito. Contatta il supporto."
             KBLog.app.kbError("SubscriptionManager: updatePlan failed \(error.localizedDescription)")
@@ -244,5 +315,142 @@ final class KBSubscriptionManager: ObservableObject {
                 }
             }
         }
+    }
+    
+    // MARK: - Entitlement check (scadenza / downgrade)
+    
+    /// Verifica lo stato corrente degli abbonamenti StoreKit.
+    /// Da chiamare ogni volta che l'app torna in foreground (scenePhase .active).
+    ///
+    /// Logica:
+    /// - Cerca un abbonamento attivo (non scaduto, non revocato) tra i currentEntitlements
+    /// - Se trovato → aggiorna il piano se diverso da quello corrente
+    /// - Se non trovato → downgrade automatico a Free
+    ///
+    /// Non tocca Firestore se il piano non è cambiato (guard su resolvedPlan != currentPlan).
+    /// I dati esistenti non vengono mai cancellati — viene solo aggiornata la quota.
+    func refreshCurrentEntitlement() async {
+        guard Auth.auth().currentUser != nil else { return }
+        KBLog.app.kbInfo("SubscriptionManager: refreshCurrentEntitlement")
+        
+        var activePlan: KBPlan?         = nil
+        var activeTransactionId: String = "entitlement-check"
+        var willRenew: Bool             = true
+        var expiryDate: Date?           = nil
+        
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let tx) = result else { continue }
+            if let revoked = tx.revocationDate, revoked <= Date() { continue }
+            if let expiry  = tx.expirationDate,  expiry  <= Date() { continue }
+            
+            let planRaw = tx.productID
+                .replacingOccurrences(of: "it.vittorioscocca.kidbox.", with: "")
+                .replacingOccurrences(of: ".monthly", with: "")
+            
+            if let plan = KBPlan(rawValue: planRaw) {
+                if activePlan == nil || plan.storageQuota > (activePlan?.storageQuota ?? 0) {
+                    activePlan          = plan
+                    activeTransactionId = String(tx.id)
+                    expiryDate          = tx.expirationDate
+                    
+                    // Legge lo stato di rinnovo dalla RenewalInfo
+                    if let statusArray = try? await Product.SubscriptionInfo.status(for: tx.productID),
+                       let status = statusArray.first,
+                       case .verified(let info) = status.renewalInfo {
+                        willRenew = info.willAutoRenew
+                    } else {
+                        willRenew = true // default conservativo
+                    }
+                }
+            }
+        }
+        
+        let resolvedPlan = activePlan ?? .free
+        
+        // Aggiorna stato rinnovo e scadenza (sempre, indipendentemente dal piano)
+        subscriptionWillRenew      = resolvedPlan == .free ? true : willRenew
+        subscriptionExpirationDate = resolvedPlan == .free ? nil  : expiryDate
+        
+        // Schedula notifica locale se cancellato ma ancora attivo
+        if resolvedPlan != .free && !willRenew, let expiry = expiryDate {
+            await scheduleExpirationNotification(plan: resolvedPlan, expirationDate: expiry)
+        } else {
+            cancelExpirationNotification()
+        }
+        
+        guard resolvedPlan != currentPlan else {
+            KBLog.app.kbDebug("SubscriptionManager: entitlement unchanged plan=\(currentPlan.rawValue) willRenew=\(willRenew)")
+            return
+        }
+        
+        KBLog.app.kbInfo("SubscriptionManager: entitlement changed \(currentPlan.rawValue) → \(resolvedPlan.rawValue)")
+        await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
+    }
+    
+    // MARK: - Notifiche scadenza abbonamento
+    
+    private static let expirationNotificationId = "kb.subscription.expiring"
+    
+    /// Schedula una notifica locale 3 giorni prima della scadenza.
+    /// Sostituisce sempre la notifica precedente (idempotente).
+    private func scheduleExpirationNotification(plan: KBPlan, expirationDate: Date) async {
+        let center = UNUserNotificationCenter.current()
+        
+        // Rimuovi notifica precedente
+        center.removePendingNotificationRequests(withIdentifiers: [Self.expirationNotificationId])
+        
+        // Calcola data notifica: 3 giorni prima della scadenza
+        let notifyDate = expirationDate.addingTimeInterval(-3 * 24 * 60 * 60)
+        guard notifyDate > Date() else {
+            // Meno di 3 giorni alla scadenza: notifica immediata (1 minuto)
+            let soon = Date().addingTimeInterval(60)
+            await scheduleNotification(triggerDate: soon, plan: plan, expirationDate: expirationDate)
+            return
+        }
+        
+        await scheduleNotification(triggerDate: notifyDate, plan: plan, expirationDate: expirationDate)
+    }
+    
+    private func scheduleNotification(triggerDate: Date, plan: KBPlan, expirationDate: Date) async {
+        let center = UNUserNotificationCenter.current()
+        
+        let authStatus = await center.notificationSettings().authorizationStatus
+        guard authStatus == .authorized || authStatus == .provisional else {
+            KBLog.app.kbDebug("SubscriptionManager: notifiche non autorizzate, skip expiration reminder")
+            return
+        }
+        
+        let content = UNMutableNotificationContent()
+        content.title = "Il tuo piano \(plan.displayName) sta per scadere"
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale    = Locale(identifier: "it_IT")
+        let dateStr = formatter.string(from: expirationDate)
+        content.body  = "Il tuo abbonamento KidBox \(plan.displayName) scade il \(dateStr). Rinnova per continuare ad usare AI e storage esteso."
+        content.sound = .default
+        
+        var components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
+        components.second = 0
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: Self.expirationNotificationId,
+            content:    content,
+            trigger:    trigger
+        )
+        
+        do {
+            try await center.add(request)
+            KBLog.app.kbInfo("SubscriptionManager: expiration notification scheduled for \(triggerDate)")
+        } catch {
+            KBLog.app.kbError("SubscriptionManager: failed to schedule expiration notification: \(error.localizedDescription)")
+        }
+    }
+    
+    private func cancelExpirationNotification() {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [Self.expirationNotificationId])
+        KBLog.app.kbDebug("SubscriptionManager: expiration notification cancelled")
     }
 }

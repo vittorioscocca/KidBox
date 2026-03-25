@@ -933,35 +933,66 @@ function aiTodayKey() {
 }
 
 /**
- * Reads the user's plan from Firestore and returns the daily message limit.
+ * Reads the family's plan from Firestore and returns the daily message limit.
+ * Piano per famiglia: Pro = 30 msg/giorno, Max = 100 msg/giorno.
+ * Legge prima da families/{familyId}.plan (fonte di verità),
+ * fallback a users/{uid}.plan per retrocompatibilità.
  * @param {string} uid
+ * @param {string|null} familyId
  * @return {Promise<number>}
  */
-async function resolveAIDailyLimit(uid) {
+async function resolveAIDailyLimit(uid, familyId = null) {
   try {
-    const snap = await admin.firestore().collection("users").doc(uid).get();
-    const plan = snap.exists ? (snap.data().plan || "free") : "free";
+    let plan = "free";
+
+    // 1. Fonte di verità: piano famiglia
+    if (familyId) {
+      const familySnap = await admin.firestore().collection("families").doc(familyId).get();
+      if (familySnap.exists) {
+        plan = familySnap.data().plan || "free";
+      }
+    }
+
+    // 2. Fallback: piano utente (retrocompatibilità)
+    if (plan === "free") {
+      const userSnap = await admin.firestore().collection("users").doc(uid).get();
+      if (userSnap.exists) {
+        plan = userSnap.data().plan || "free";
+      }
+    }
+
     switch (plan) {
-      case "pro": return 100;
-      case "family": return 50;
+      case "pro": return 30;
+      case "max": return 100;
       case "free":
-      default: return 20;
+      default: return 0;
     }
   } catch (e) {
-    logger.warn("resolveAIDailyLimit failed, using default", {uid, error: e.message});
-    return 20;
+    logger.warn("resolveAIDailyLimit failed, using default", {uid, familyId, error: e.message});
+    return 0;
   }
 }
 
 /**
  * Checks the daily counter and increments it atomically.
+ * Il contatore è per famiglia (family_{familyId}) così tutti i membri
+ * condividono il limite giornaliero del piano famiglia.
+ * @param {string} familyId
  * @param {string} uid
  * @param {number} limit
  * @return {Promise<number>}
  */
-async function checkAndIncrementAIUsage(uid, limit) {
+async function checkAndIncrementAIUsage(familyId, uid, limit) {
+  // Free = 0 messaggi → blocca subito senza toccare il contatore
+  if (limit <= 0) {
+    throw new HttpsError(
+        "resource-exhausted",
+        "L'assistente AI è disponibile con i piani Pro e Max. Passa a Pro per 30 messaggi al giorno.",
+    );
+  }
+
   const ref = admin.firestore()
-      .collection("ai_usage").doc(uid)
+      .collection("ai_usage").doc(`family_${familyId}`)
       .collection("daily").doc(aiTodayKey());
 
   return await admin.firestore().runTransaction(async (tx) => {
@@ -971,14 +1002,15 @@ async function checkAndIncrementAIUsage(uid, limit) {
     if (current >= limit) {
       throw new HttpsError(
           "resource-exhausted",
-          `Hai raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`,
+          `La famiglia ha raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`,
       );
     }
 
     tx.set(ref, {
       count: admin.firestore.FieldValue.increment(1),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      uid,
+      familyId,
+      lastUid: uid,
     }, {merge: true});
 
     return current + 1;
@@ -996,7 +1028,7 @@ exports.askAI = onCall(
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
 
-      const {messages, systemPrompt} = request.data || {};
+      const {messages, systemPrompt, familyId} = request.data || {};
 
       if (!Array.isArray(messages) || messages.length === 0) {
         throw new HttpsError("invalid-argument", "messages è richiesto.");
@@ -1009,14 +1041,17 @@ exports.askAI = onCall(
       if (typeof systemPrompt !== "string" || systemPrompt.trim().length === 0) {
         throw new HttpsError("invalid-argument", "systemPrompt è richiesto.");
       }
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
 
       const totalChars = messages.reduce((acc, m) => acc + m.content.length, 0) + systemPrompt.length;
       if (totalChars > 50000) throw new HttpsError("invalid-argument", "Payload troppo grande.");
 
-      const dailyLimit = await resolveAIDailyLimit(uid);
-      const usageCount = await checkAndIncrementAIUsage(uid, dailyLimit);
+      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
+      const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit);
 
-      logger.info("askAI request", {uid, usageCount, dailyLimit, msgCount: messages.length});
+      logger.info("askAI request", {uid, familyId, usageCount, dailyLimit, msgCount: messages.length});
 
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
@@ -1071,13 +1106,18 @@ exports.getAIUsage = onCall(
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
 
+      const {familyId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+
       const ref = admin.firestore()
-          .collection("ai_usage").doc(uid)
+          .collection("ai_usage").doc(`family_${familyId}`)
           .collection("daily").doc(aiTodayKey());
 
       const snap = await ref.get();
       const count = snap.exists ? (snap.data().count || 0) : 0;
-      const dailyLimit = await resolveAIDailyLimit(uid);
+      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
 
       return {usageToday: count, dailyLimit};
     },
@@ -1520,6 +1560,10 @@ async function deleteFamilyCompletely(familyId) {
   }
   await db.collection("families").doc(familyId).delete().catch(() => {});
   await deleteStoragePrefix(`families/${familyId}/`);
+
+  // Rimuovi contatore AI famiglia
+  await deleteCollection(db.collection(`ai_usage/family_${familyId}/daily`)).catch(() => {});
+  await db.collection("ai_usage").doc(`family_${familyId}`).delete().catch(() => {});
 }
 
 exports.deleteAccount = onCall(
@@ -1557,9 +1601,11 @@ exports.deleteAccount = onCall(
       await db.collection("users").doc(uid).delete().catch(() => {});
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
 
-      // ── AI usage giornaliero ────────────────────────────────────────────────
+      // ── AI usage: rimuovi contatore utente e, se ultimo membro, anche quello famiglia ──
       await deleteCollection(db.collection(`ai_usage/${uid}/daily`)).catch(() => {});
       await db.collection("ai_usage").doc(uid).delete().catch(() => {});
+      // Il contatore famiglia (family_{familyId}) viene rimosso da deleteFamilyCompletely
+      // se l'utente era l'ultimo membro — altrimenti resta per gli altri.
 
       await admin.auth().deleteUser(uid);
 

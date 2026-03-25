@@ -5,6 +5,10 @@
 //  Chiama la Cloud Function `askAI` su Firebase invece di Anthropic direttamente.
 //  La API key Anthropic è gestita interamente lato server — mai sul client.
 //
+//  Il limite AI è per FAMIGLIA (non per utente):
+//  Pro = 30 msg/giorno/famiglia, Max = 100 msg/giorno/famiglia.
+//  familyId viene letto dall'App Group e passato in ogni chiamata.
+//
 
 import Foundation
 import FirebaseFunctions
@@ -18,6 +22,7 @@ enum AIServiceError: LocalizedError {
     case networkError(String)
     case serverError(String)
     case invalidResponse
+    case missingFamilyId
     
     var errorDescription: String? {
         switch self {
@@ -31,6 +36,8 @@ enum AIServiceError: LocalizedError {
             return msg
         case .invalidResponse:
             return "Risposta non valida dal servizio AI."
+        case .missingFamilyId:
+            return "Famiglia non trovata. Riprova dopo aver effettuato il login."
         }
     }
 }
@@ -62,6 +69,18 @@ final class AIService {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
     }
     
+    // MARK: - FamilyId helper
+    
+    /// Legge il familyId corrente dall'App Group.
+    /// Tutte le chiamate AI richiedono familyId per il contatore condiviso.
+    private var currentFamilyId: String? {
+        let id = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        return id.isEmpty ? nil : id
+    }
+    
+    // MARK: - Send message
+    
     /// Sends the conversation to the AI and returns the assistant reply.
     func sendMessage(
         messages: [KBAIMessage],
@@ -73,14 +92,20 @@ final class AIService {
             throw AIServiceError.notEnabled
         }
         
-        KBLog.ai.kbInfo("sendMessage started messagesCount=\(messages.count) systemPromptLength=\(systemPrompt.count)")
+        guard let familyId = currentFamilyId else {
+            KBLog.ai.kbError("sendMessage blocked: missing familyId")
+            throw AIServiceError.missingFamilyId
+        }
+        
+        KBLog.ai.kbInfo("sendMessage started messagesCount=\(messages.count) familyId=\(familyId)")
         
         let payload: [String: Any] = [
             "messages": messages.map { [
                 "role": $0.role.rawValue,
                 "content": $0.content
             ] },
-            "systemPrompt": systemPrompt
+            "systemPrompt": systemPrompt,
+            "familyId": familyId
         ]
         
         KBLog.ai.kbDebug("Calling Firebase Function askAI payloadMessagesCount=\(messages.count)")
@@ -132,12 +157,20 @@ final class AIService {
         }
     }
     
+    // MARK: - Fetch usage
+    
     /// Fetches today's usage counters without sending a message.
     func fetchUsage() async throws -> AIResponse {
         KBLog.ai.kbDebug("fetchUsage started")
         
+        guard let familyId = currentFamilyId else {
+            KBLog.ai.kbError("fetchUsage blocked: missing familyId")
+            throw AIServiceError.missingFamilyId
+        }
+        
         do {
-            let result = try await functions.httpsCallable("getAIUsage").call([:])
+            let result = try await functions.httpsCallable("getAIUsage")
+                .call(["familyId": familyId])
             
             guard
                 let data = result.data as? [String: Any],
@@ -148,7 +181,7 @@ final class AIService {
                 throw AIServiceError.invalidResponse
             }
             
-            KBLog.ai.kbInfo("fetchUsage succeeded usageToday=\(usageToday) dailyLimit=\(dailyLimit)")
+            KBLog.ai.kbInfo("fetchUsage succeeded usageToday=\(usageToday) dailyLimit=\(dailyLimit) familyId=\(familyId)")
             
             return AIResponse(
                 reply: "",

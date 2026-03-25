@@ -43,6 +43,17 @@ struct AISettingsView: View {
                     .listRowSeparator(.hidden)
             }
             
+            // MARK: - Banner abbonamento in scadenza
+            if subscriptionManager.isCancelledButActive,
+               let expiry = subscriptionManager.subscriptionExpirationDate {
+                Section {
+                    aiExpiringBanner(expirationDate: expiry)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+            
             // MARK: - Intro
             Section {
                 VStack(alignment: .leading, spacing: 10) {
@@ -216,6 +227,32 @@ struct AISettingsView: View {
                         body: "L'AI spiega e informa. Per decisioni cliniche consulta sempre il tuo medico.")
                 .listRowBackground(cardBackground)
             }
+            
+            // MARK: - Gestione abbonamento
+            if subscriptionManager.currentPlan != .free {
+                Section("Abbonamento") {
+                    Button {
+                        Task { await subscriptionManager.openManageSubscriptions() }
+                    } label: {
+                        HStack {
+                            Label("Gestisci abbonamento", systemImage: "creditcard")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                    
+                    if let expiry = subscriptionManager.subscriptionExpirationDate {
+                        SubscriptionExpiryRow(
+                            expirationDate: expiry,
+                            willRenew: subscriptionManager.subscriptionWillRenew
+                        )
+                        .listRowBackground(cardBackground)
+                    }
+                }
+            }
         }
         .scrollContentBackground(.hidden)
         .background(backgroundColor)
@@ -265,7 +302,15 @@ struct AISettingsView: View {
             
             Spacer()
             
-            if plan != .max {
+            if subscriptionManager.isCancelledButActive {
+                Button("Gestisci") {
+                    Task { await subscriptionManager.openManageSubscriptions() }
+                }
+                .font(.caption.bold())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(Capsule().fill(Color.orange))
+            } else if plan != .max {
                 Button("Upgrade") { showUpgrade = true }
                     .font(.caption.bold())
                     .foregroundStyle(.white)
@@ -280,6 +325,46 @@ struct AISettingsView: View {
         )
         .padding(.horizontal)
         .padding(.top, 8)
+    }
+    
+    // MARK: - AI expiring banner
+    
+    private func aiExpiringBanner(expirationDate: Date) -> some View {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        formatter.locale    = Locale(identifier: "it_IT")
+        let dateStr = formatter.string(from: expirationDate)
+        
+        return HStack(spacing: 12) {
+            Image(systemName: "clock.badge.exclamationmark.fill")
+                .font(.title3)
+                .foregroundStyle(.orange)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Abbonamento in scadenza")
+                    .font(.subheadline.bold())
+                Text("L'AI sarà disponibile fino al \(dateStr), poi passerai al piano Free.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            Button("Rinnova") {
+                Task { await subscriptionManager.openManageSubscriptions() }
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .background(Capsule().fill(Color.orange))
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .padding(.horizontal)
     }
     
     // MARK: - AI locked banner (piano Free)
