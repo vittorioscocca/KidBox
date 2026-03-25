@@ -673,6 +673,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBox/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Serve per scattare e salvare documenti/foto in KidBox.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
@@ -706,7 +707,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2,6,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -739,6 +740,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBox/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Serve per scattare e salvare documenti/foto in KidBox.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "KidBox usa la tua posizione in background per aggiornarla anche quando l'app non è aperta.";
@@ -772,7 +774,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2,6,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
