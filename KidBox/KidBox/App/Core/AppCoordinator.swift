@@ -186,6 +186,14 @@ final class AppCoordinator: ObservableObject {
             Task { @MainActor in
                 self.isCheckingAuth = false
                 if let user {
+                    let isEmailProvider = user.providerData.contains { $0.providerID == "password" }
+                    if isEmailProvider && !user.isEmailVerified {
+                        KBLog.auth.info("Email not verified for uid=\(user.uid) — signing out")
+                        try? Auth.auth().signOut()
+                        self.isAuthenticated = false
+                        self.uid = nil
+                        return
+                    }
                     self.isAuthenticated = true
                     self.uid = user.uid
                     

@@ -125,6 +125,30 @@ struct EmailAuthView: View {
                 
                 Spacer().frame(height: 28)
                 
+                // Aggiungi il banner sopra il pulsante CTA:
+                if vm.registrationPendingVerification {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "envelope.badge.fill")
+                                .foregroundStyle(.orange)
+                            Text("Controlla la tua email!")
+                                .font(.footnote.weight(.semibold))
+                        }
+                        Text("Abbiamo inviato un link di verifica a \(email). Verifica l'indirizzo e poi accedi.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button("Torna al login") {
+                            vm.registrationPendingVerification = false
+                            isRegistering = false
+                        }
+                        .font(.footnote.weight(.medium))
+                    }
+                    .padding()
+                    .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 28)
+                }
+                
                 // ── CTA principale ─────────────────────────────────────────
                 Button {
                     Task {
@@ -132,8 +156,8 @@ struct EmailAuthView: View {
                             await vm.registerEmail(email: email, password: password)
                         } else {
                             await vm.signInEmail(email: email, password: password)
+                            if vm.errorMessage == nil { dismiss() }
                         }
-                        if vm.errorMessage == nil { dismiss() }
                     }
                 } label: {
                     Group {

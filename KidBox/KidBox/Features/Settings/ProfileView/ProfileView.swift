@@ -16,65 +16,103 @@ import OSLog
 import Combine
 import StoreKit
 
+// MARK: - AddressSearchCompleter
+
+@MainActor
+final class AddressSearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
+    @Published var suggestions: [MKLocalSearchCompletion] = []
+    @Published var isSearching = false
+    
+    private let completer = MKLocalSearchCompleter()
+    
+    override init() {
+        super.init()
+        completer.delegate = self
+        completer.resultTypes = .address
+    }
+    
+    func search(_ query: String) {
+        guard !query.isEmpty else {
+            suggestions = []
+            return
+        }
+        isSearching = true
+        completer.queryFragment = query
+    }
+    
+    func clear() {
+        suggestions = []
+        isSearching = false
+        completer.queryFragment = ""
+    }
+    
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        isSearching = false
+        suggestions = completer.results
+    }
+    
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        isSearching = false
+        suggestions = []
+    }
+}
+
+// MARK: - ProfileView
+
 struct ProfileView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     
-    // MARK: - Dynamic theme (same as LoginView / HomeView)
+    // MARK: - Theme
     private var backgroundColor: Color {
         colorScheme == .dark
-        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        ? Color(red: 0.10, green: 0.10, blue: 0.11)
         : Color(red: 0.961, green: 0.957, blue: 0.945)
     }
     
-    /// Background delle celle/sezioni della List
-    private var cellBackground: Color {
+    private var cardBackground: Color {
         colorScheme == .dark
-        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+        ? Color(red: 0.16, green: 0.16, blue: 0.18)
         : Color(.systemBackground)
     }
     
-    // Delete
+    private var secondaryCardBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.15)
+        : Color(red: 0.96, green: 0.96, blue: 0.97)
+    }
+    
+    private var accent: Color { Color(red: 0.95, green: 0.38, blue: 0.10) }
+    
+    // MARK: - State
     @State private var showDeleteAccountSheet = false
     @State private var deleteConfirmText = ""
     @State private var isDeletingAccount = false
     @State private var deleteError: String?
-    
-    // Subscription
     @State private var showUpgradeSheet = false
-    
-    // Alerts
     @State private var showSaveSuccessAlert = false
     @State private var showSaveErrorAlert = false
-    
-    // Profile fields
     @State private var firstName: String = ""
     @State private var lastName: String = ""
     @State private var familyAddress: String = ""
-    
-    // Avatar
+    @State private var addressSearchText: String = ""
+    @State private var showAddressSuggestions = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var avatarData: Data?
-    
-    // Account info
     @State private var email: String = ""
     @State private var lastLoginAt: Date?
-    
-    // UI state
     @State private var saveErrorText: String?
-    
-    // Dirty tracking
     @State private var didLoadInitial = false
     @State private var isDirty = false
-    
-    // Snapshot of last saved values
     @State private var savedFirstName: String = ""
     @State private var savedLastName: String = ""
     @State private var savedFamilyAddress: String = ""
     @State private var savedAvatarHash: Int = 0
+    @State private var showLogoutConfirm = false
     
+    @StateObject private var addressCompleter = AddressSearchCompleter()
     @StateObject private var locationService = OneShotLocationService()
     
     private let locationRemoteStore = LocationRemoteStore()
@@ -82,163 +120,35 @@ struct ProfileView: View {
     private let avatarRemoteStore = AvatarRemoteStore()
     
     var body: some View {
-        List {
+        ZStack {
+            backgroundColor.ignoresSafeArea()
             
-            // MARK: - Profile
-            Section("Profilo") {
-                HStack(spacing: 14) {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        avatarView
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Seleziona foto profilo")
+            ScrollView {
+                VStack(spacing: 20) {
                     
-                    VStack(alignment: .leading, spacing: 10) {
-                        TextField("Nome", text: $firstName)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                        
-                        TextField("Cognome", text: $lastName)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-                    }
+                    // MARK: - Avatar + Nome
+                    profileHeaderCard
+                    
+                    // MARK: - Indirizzo famiglia
+                    familyAddressCard
+                    
+                    // MARK: - Account info
+                    accountInfoCard
+                    
+                    // MARK: - Abbonamento
+                    subscriptionCard
+                    
+                    // MARK: - Azioni
+                    actionsCard
+                    
+                    Spacer(minLength: 32)
                 }
-                .padding(.vertical, 6)
-                .listRowBackground(cellBackground)
-                
-                if isDirty {
-                    Button {
-                        KBLog.auth.debug("Profile: tap Save")
-                        saveProfile()
-                    } label: {
-                        Text("Salva profilo")
-                    }
-                    .listRowBackground(cellBackground)
-                }
-                
-                if let saveErrorText {
-                    Text(saveErrorText)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .listRowBackground(cellBackground)
-                }
-            }
-            
-            // MARK: - Family address
-            Section("Famiglia") {
-                TextField("Indirizzo famiglia", text: $familyAddress, axis: .vertical)
-                    .lineLimit(2...4)
-                    .listRowBackground(cellBackground)
-                
-                Button {
-                    KBLog.app.debug("Profile: tap Detect Address")
-                    detectFamilyAddress()
-                } label: {
-                    HStack {
-                        Image(systemName: "location.fill")
-                        Text(locationService.isWorking ? "Rilevamento..." : "Rileva da posizione")
-                    }
-                }
-                .disabled(locationService.isWorking)
-                .listRowBackground(cellBackground)
-                
-                if let locError = locationService.errorText {
-                    Text(locError)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .listRowBackground(cellBackground)
-                }
-            }
-            
-            // MARK: - Account
-            Section("Account") {
-                if email.isEmpty {
-                    Text("Email: —").foregroundStyle(.secondary)
-                        .listRowBackground(cellBackground)
-                } else {
-                    Text("Email: \(email)")
-                        .textSelection(.enabled)
-                        .listRowBackground(cellBackground)
-                }
-                
-                if let lastLoginAt {
-                    Text("Ultimo login: \(lastLoginAt.formatted(date: .abbreviated, time: .shortened))")
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(cellBackground)
-                } else {
-                    Text("Ultimo login: —")
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(cellBackground)
-                }
-            }
-            
-            // MARK: - Piano abbonamento
-            Section("Abbonamento") {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill(subscriptionPlanColor.opacity(0.15))
-                            .frame(width: 40, height: 40)
-                        Image(systemName: subscriptionPlanIcon)
-                            .font(.system(size: 17))
-                            .foregroundStyle(subscriptionPlanColor)
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Piano \(subscriptionManager.currentPlan.displayName)")
-                            .font(.subheadline.bold())
-                        HStack(spacing: 6) {
-                            Text(subscriptionManager.currentPlan.storageLabel + " storage")
-                                .font(.caption).foregroundStyle(.secondary)
-                            if subscriptionManager.currentPlan.includesAI {
-                                Text("·").foregroundStyle(.secondary)
-                                Text("\(subscriptionManager.currentPlan.aiDailyLimit) msg AI/giorno")
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    Spacer()
-                    if subscriptionManager.currentPlan != .max {
-                        Button("Upgrade") { showUpgradeSheet = true }
-                            .font(.caption.bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
-                    }
-                }
-                .padding(.vertical, 4)
-                .listRowBackground(cellBackground)
-                
-                NavigationLink("Gestisci spazio e piani") {
-                    StorageUsageView()
-                        .environmentObject(subscriptionManager)
-                }
-                .listRowBackground(cellBackground)
-            }
-            
-            // MARK: - Actions
-            Section {
-                Button(role: .destructive) {
-                    KBLog.auth.debug("Logout tap")
-                    signOut()
-                } label: {
-                    Text("Logout")
-                }
-                .accessibilityLabel("Logout")
-                .listRowBackground(cellBackground)
-                
-                Button(role: .destructive) {
-                    deleteConfirmText = ""
-                    deleteError = nil
-                    showDeleteAccountSheet = true
-                } label: {
-                    Text("Elimina account")
-                }
-                .listRowBackground(cellBackground)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(backgroundColor)
         .navigationTitle("Profilo")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear {
             loadAuthInfo()
             loadLocalProfile()
@@ -247,6 +157,7 @@ struct ProfileView: View {
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()
+            addressSearchText = familyAddress
         }
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
@@ -255,9 +166,7 @@ struct ProfileView: View {
                     await MainActor.run {
                         self.avatarData = data
                         self.saveErrorText = nil
-                        if didLoadInitial {
-                            recomputeDirty()
-                        }
+                        if didLoadInitial { recomputeDirty() }
                     }
                 }
             }
@@ -265,19 +174,14 @@ struct ProfileView: View {
         .onReceive(locationService.$resolvedAddress) { address in
             guard let address, !address.isEmpty else { return }
             familyAddress = address
-            if didLoadInitial {
-                recomputeDirty()
-            }
-        }
-        .onChange(of: firstName) { _, _ in
+            addressSearchText = address
+            addressCompleter.clear()
+            showAddressSuggestions = false
             if didLoadInitial { recomputeDirty() }
         }
-        .onChange(of: lastName) { _, _ in
-            if didLoadInitial { recomputeDirty() }
-        }
-        .onChange(of: familyAddress) { _, _ in
-            if didLoadInitial { recomputeDirty() }
-        }
+        .onChange(of: firstName) { _, _ in if didLoadInitial { recomputeDirty() } }
+        .onChange(of: lastName)  { _, _ in if didLoadInitial { recomputeDirty() } }
+        .onChange(of: familyAddress) { _, _ in if didLoadInitial { recomputeDirty() } }
         .alert("Profilo salvato ✅", isPresented: $showSaveSuccessAlert) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -287,6 +191,12 @@ struct ProfileView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(saveErrorText ?? "Errore sconosciuto")
+        }
+        .confirmationDialog("Esci dall'account?", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
+            Button("Esci", role: .destructive) { signOut() }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("Verrai reindirizzato alla schermata di accesso.")
         }
         .sheet(isPresented: $showDeleteAccountSheet) {
             DeleteAccountConfirmSheet(
@@ -299,20 +209,16 @@ struct ProfileView: View {
                         let normalized = deleteConfirmText
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                             .uppercased()
-                        
                         guard normalized == "ELIMINA" else {
                             deleteError = "Per confermare, digita ELIMINA."
                             return
                         }
-                        
                         isDeletingAccount = true
                         deleteError = nil
                         defer { isDeletingAccount = false }
-                        
                         do {
                             try await AccountDeletionService(modelContext: modelContext).deleteMyAccount()
                             showDeleteAccountSheet = false
-                            
                             coordinator.setActiveFamily(nil)
                             coordinator.resetToRoot()
                         } catch {
@@ -328,7 +234,479 @@ struct ProfileView: View {
         }
     }
     
-    // MARK: - Subscription helpers
+    // MARK: - Profile Header Card
+    
+    private var profileHeaderCard: some View {
+        VStack(spacing: 0) {
+            // Avatar
+            HStack {
+                Spacer()
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    ZStack(alignment: .bottomTrailing) {
+                        avatarView
+                        Circle()
+                            .fill(accent)
+                            .frame(width: 26, height: 26)
+                            .overlay(
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.white)
+                            )
+                            .offset(x: 2, y: 2)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Seleziona foto profilo")
+                Spacer()
+            }
+            .padding(.top, 24)
+            .padding(.bottom, 20)
+            
+            Divider().padding(.horizontal, 20)
+            
+            VStack(spacing: 12) {
+                KBProfileField(icon: "person.fill", placeholder: "Nome", text: $firstName,
+                               colorScheme: colorScheme, accent: accent)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                
+                KBProfileField(icon: "person.fill", placeholder: "Cognome", text: $lastName,
+                               colorScheme: colorScheme, accent: accent)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            
+            if let saveErrorText {
+                Text(saveErrorText)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+            }
+            
+            if isDirty {
+                Button(action: {
+                    KBLog.auth.debug("Profile: tap Save")
+                    saveProfile()
+                }) {
+                    Label("Salva modifiche", systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(accent, in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.3), value: isDirty)
+            }
+        }
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - Family Address Card
+    
+    private var familyAddressCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader(icon: "house.fill", title: "Indirizzo famiglia")
+            
+            Divider().padding(.horizontal, 16)
+            
+            VStack(spacing: 0) {
+                // Campo di ricerca indirizzo
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                    
+                    TextField("Cerca indirizzo...", text: $addressSearchText)
+                        .font(.system(size: 15))
+                        .onChange(of: addressSearchText) { _, newValue in
+                            familyAddress = newValue
+                            if newValue.count > 2 {
+                                addressCompleter.search(newValue)
+                                showAddressSuggestions = true
+                            } else {
+                                addressCompleter.clear()
+                                showAddressSuggestions = false
+                            }
+                            if didLoadInitial { recomputeDirty() }
+                        }
+                    
+                    if !addressSearchText.isEmpty {
+                        Button {
+                            addressSearchText = ""
+                            familyAddress = ""
+                            addressCompleter.clear()
+                            showAddressSuggestions = false
+                            if didLoadInitial { recomputeDirty() }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
+                
+                // Suggerimenti autocomplete
+                if showAddressSuggestions && !addressCompleter.suggestions.isEmpty {
+                    Divider().padding(.horizontal, 16)
+                    
+                    VStack(spacing: 0) {
+                        ForEach(Array(addressCompleter.suggestions.prefix(5).enumerated()), id: \.offset) { index, suggestion in
+                            Button {
+                                let full = suggestion.title + (suggestion.subtitle.isEmpty ? "" : ", \(suggestion.subtitle)")
+                                addressSearchText = full
+                                familyAddress = full
+                                addressCompleter.clear()
+                                showAddressSuggestions = false
+                                if didLoadInitial { recomputeDirty() }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "mappin.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(accent)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(suggestion.title)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                        if !suggestion.subtitle.isEmpty {
+                                            Text(suggestion.subtitle)
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .background(
+                                index % 2 == 0
+                                ? Color.clear
+                                : secondaryCardBackground.opacity(0.5)
+                            )
+                            
+                            if index < min(4, addressCompleter.suggestions.count - 1) {
+                                Divider().padding(.leading, 44)
+                            }
+                        }
+                    }
+                    .background(cardBackground)
+                }
+                
+                // Pulsante rileva posizione
+                Divider().padding(.horizontal, 16)
+                
+                Button {
+                    KBLog.app.debug("Profile: tap Detect Address")
+                    detectFamilyAddress()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: locationService.isWorking ? "location.fill.viewfinder" : "location.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(accent)
+                            .symbolEffect(.pulse, isActive: locationService.isWorking)
+                        
+                        Text(locationService.isWorking ? "Rilevamento in corso..." : "Usa la mia posizione attuale")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(accent)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+                .disabled(locationService.isWorking)
+                
+                if let locError = locationService.errorText {
+                    Text(locError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 10)
+                }
+            }
+        }
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - Account Info Card
+    
+    private var accountInfoCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader(icon: "person.badge.key.fill", title: "Account")
+            
+            Divider().padding(.horizontal, 16)
+            
+            VStack(spacing: 0) {
+                accountRow(
+                    icon: "envelope.fill",
+                    iconColor: Color(red: 0.2, green: 0.6, blue: 0.9),
+                    label: "Email",
+                    value: email.isEmpty ? "—" : email
+                )
+                
+                Divider().padding(.leading, 52)
+                
+                accountRow(
+                    icon: "clock.fill",
+                    iconColor: Color(red: 0.4, green: 0.75, blue: 0.4),
+                    label: "Ultimo accesso",
+                    value: lastLoginAt?.formatted(date: .abbreviated, time: .shortened) ?? "—"
+                )
+            }
+            .padding(.vertical, 4)
+        }
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - Subscription Card
+    
+    private var subscriptionCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader(icon: "star.fill", title: "Abbonamento")
+            
+            Divider().padding(.horizontal, 16)
+            
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(subscriptionPlanColor.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: subscriptionPlanIcon)
+                        .font(.system(size: 18))
+                        .foregroundStyle(subscriptionPlanColor)
+                }
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Piano \(subscriptionManager.currentPlan.displayName)")
+                        .font(.system(size: 15, weight: .semibold))
+                    HStack(spacing: 4) {
+                        Text(subscriptionManager.currentPlan.storageLabel + " storage")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if subscriptionManager.currentPlan.includesAI {
+                            Text("·").foregroundStyle(.secondary)
+                            Text("\(subscriptionManager.currentPlan.aiDailyLimit) msg AI/giorno")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
+                Spacer()
+                
+                if subscriptionManager.currentPlan != .max {
+                    Button { showUpgradeSheet = true } label: {
+                        Text("Upgrade")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            
+            Divider().padding(.horizontal, 16)
+            
+            NavigationLink {
+                StorageUsageView()
+                    .environmentObject(subscriptionManager)
+            } label: {
+                HStack {
+                    Image(systemName: "internaldrive.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                    Text("Gestisci spazio e piani")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
+            }
+            .buttonStyle(.plain)
+        }
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - Actions Card
+    
+    private var actionsCard: some View {
+        VStack(spacing: 0) {
+            // Esci
+            Button {
+                showLogoutConfirm = true
+            } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color(red: 1.0, green: 0.58, blue: 0.0).opacity(0.15))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(Color(red: 1.0, green: 0.58, blue: 0.0))
+                    }
+                    
+                    Text("Esci")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Esci dall'account")
+            
+            Divider().padding(.leading, 66)
+            
+            // Elimina account
+            Button {
+                deleteConfirmText = ""
+                deleteError = nil
+                showDeleteAccountSheet = true
+            } label: {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.red.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "person.crop.circle.badge.minus")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.red)
+                    }
+                    
+                    Text("Elimina account")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.red)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - Reusable Components
+    
+    private func sectionHeader(icon: String, title: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(accent)
+            Text(title.uppercased())
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .kerning(0.5)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+    
+    private func accountRow(icon: String, iconColor: Color, label: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(iconColor)
+            }
+            .padding(.leading, 4)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+    
+    // MARK: - Avatar View
+    
+    private var avatarView: some View {
+        Group {
+            if let avatarData, let uiImage = UIImage(data: avatarData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(accent.opacity(0.12))
+                    Image(systemName: "person.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .padding(18)
+                        .foregroundStyle(accent.opacity(0.6))
+                }
+            }
+        }
+        .frame(width: 88, height: 88)
+        .clipShape(Circle())
+        .overlay(
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        colors: [accent.opacity(0.6), accent.opacity(0.2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2.5
+                )
+        )
+        .shadow(color: accent.opacity(0.25), radius: 8, x: 0, y: 4)
+    }
+    
+    // MARK: - Subscription Helpers
     
     private var subscriptionPlanColor: Color {
         switch subscriptionManager.currentPlan {
@@ -346,26 +724,8 @@ struct ProfileView: View {
         }
     }
     
-    // MARK: - Avatar view
-    private var avatarView: some View {
-        Group {
-            if let avatarData, let uiImage = UIImage(data: avatarData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .scaledToFill()
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(width: 72, height: 72)
-        .clipShape(Circle())
-        .overlay(Circle().stroke(.quaternary, lineWidth: 1))
-    }
-    
     // MARK: - Load
+    
     private func loadAuthInfo() {
         let user = Auth.auth().currentUser
         email = user?.email ?? ""
@@ -376,48 +736,44 @@ struct ProfileView: View {
     private func loadLocalProfile() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
-        
         if let profile = try? modelContext.fetch(desc).first {
             firstName = profile.firstName ?? ""
             lastName = profile.lastName ?? ""
             familyAddress = profile.familyAddress ?? ""
+            addressSearchText = familyAddress
             avatarData = profile.avatarData
-            
             if email.isEmpty { email = profile.email ?? "" }
             if lastLoginAt == nil { lastLoginAt = profile.lastLoginAt }
         }
     }
     
     private func resolvedFamilyId() -> String? {
-        if let active = coordinator.activeFamilyId, !active.isEmpty {
-            return active
-        }
+        if let active = coordinator.activeFamilyId, !active.isEmpty { return active }
         let descriptor = FetchDescriptor<KBFamily>()
         let families = try? modelContext.fetch(descriptor)
         return families?.first?.id
     }
     
-    // MARK: - Dirty helpers
+    // MARK: - Dirty Helpers
+    
     private func syncSavedSnapshotFromCurrentState() {
-        savedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedLastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedFirstName     = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        savedLastName      = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
         savedFamilyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-        savedAvatarHash = avatarData?.hashValue ?? 0
+        savedAvatarHash    = avatarData?.hashValue ?? 0
     }
     
     private func recomputeDirty() {
-        let fn = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let ln = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let addr = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fn     = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let ln     = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let addr   = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
         let avHash = avatarData?.hashValue ?? 0
-        
-        isDirty = (fn != savedFirstName) ||
-        (ln != savedLastName) ||
-        (addr != savedFamilyAddress) ||
-        (avHash != savedAvatarHash)
+        isDirty = (fn != savedFirstName) || (ln != savedLastName) ||
+        (addr != savedFamilyAddress) || (avHash != savedAvatarHash)
     }
     
     // MARK: - Save
+    
     private func saveProfile() {
         guard let user = Auth.auth().currentUser else {
             saveErrorText = "Utente non autenticato."
@@ -429,42 +785,31 @@ struct ProfileView: View {
         let authEmail = user.email ?? ""
         
         do {
-            // 1) Upsert profilo locale (SwiftData)
             let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
             let existing = try modelContext.fetch(desc).first
-            
             let profile: KBUserProfile
-            if let existing {
-                profile = existing
-            } else {
+            if let existing { profile = existing } else {
                 profile = KBUserProfile(uid: uid)
                 modelContext.insert(profile)
             }
             
-            profile.email = authEmail.ifEmpty(profile.email ?? "")
-            profile.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-            profile.lastName  = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let ln = (profile.lastName  ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.email       = authEmail.ifEmpty(profile.email ?? "")
+            profile.firstName   = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.lastName    = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let fn   = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let ln   = (profile.lastName  ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let full = "\(fn) \(ln)".trimmingCharacters(in: .whitespacesAndNewlines)
-            profile.displayName = full.isEmpty ? "Utente" : full
-            
-            profile.familyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-            profile.avatarData = avatarData
-            
-            profile.lastLoginAt = user.metadata.lastSignInDate ?? profile.lastLoginAt
-            profile.updatedAt = Date()
+            profile.displayName    = full.isEmpty ? "Utente" : full
+            profile.familyAddress  = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+            profile.avatarData     = avatarData
+            profile.lastLoginAt    = user.metadata.lastSignInDate ?? profile.lastLoginAt
+            profile.updatedAt      = Date()
             
             try modelContext.save()
+            KBLog.auth.info("Profile saved (local) uid=\(uid, privacy: .public)")
             
-            KBLog.auth.info("Profile saved (local) uid=\(uid, privacy: .public) displayName=\(profile.displayName ?? "nil", privacy: .public)")
-            
-            // 2) UI feedback
             saveErrorText = nil
             showSaveSuccessAlert = true
-            
-            // aggiorna snapshot "salvato" e nascondi bottone
             syncSavedSnapshotFromCurrentState()
             recomputeDirty()
             
@@ -476,94 +821,65 @@ struct ProfileView: View {
                 )
             }
             
-            // 3) Remote sync (Firestore/Storage) - SEMPRE users/{uid}
             Task {
-                // 3.a) Salva profilo utente globale (persistente tra logout/login)
                 do {
                     try await Firestore.firestore()
                         .collection("users").document(uid)
                         .setData([
-                            "firstName": profile.firstName ?? "",
-                            "lastName": profile.lastName ?? "",
-                            "displayName": profile.displayName ?? "",
+                            "firstName":     profile.firstName ?? "",
+                            "lastName":      profile.lastName ?? "",
+                            "displayName":   profile.displayName ?? "",
                             "familyAddress": profile.familyAddress ?? "",
-                            "email": profile.email ?? "",
-                            "updatedAt": Timestamp(date: Date())
+                            "email":         profile.email ?? "",
+                            "updatedAt":     Timestamp(date: Date())
                         ], merge: true)
-                    
                     KBLog.app.debug("Profile: saved to users/\(uid, privacy: .public)")
                 } catch {
                     KBLog.app.error("Profile: users/\(uid, privacy: .public) save failed: \(error.localizedDescription, privacy: .public)")
                 }
                 
-                // 2) ✅ upload avatar USER-scoped + salva avatarURL su users/{uid}
                 if let avatarData = profile.avatarData {
                     do {
                         var avatarURL: String?
-                        if let familyId = resolvedFamilyId(){
+                        if let familyId = resolvedFamilyId() {
                             avatarURL = await avatarRemoteStore.uploadAvatar(imageData: avatarData, uid: uid, familyId: familyId)
                         } else {
                             avatarURL = await avatarRemoteStore.uploadUserAvatar(imageData: avatarData, uid: uid)
                         }
-                        
                         try await Firestore.firestore()
                             .collection("users").document(uid)
-                            .setData([
-                                "avatarURL": avatarURL ?? "",
-                                "updatedAt": Timestamp(date: Date())
-                            ], merge: true)
-                        
-                        KBLog.app.debug("Profile: saved avatarURL to users/\(uid, privacy: .public)")
+                            .setData(["avatarURL": avatarURL ?? "", "updatedAt": Timestamp(date: Date())], merge: true)
                     } catch {
                         KBLog.app.error("Profile: avatar upload failed: \(error.localizedDescription, privacy: .public)")
                     }
                 }
                 
-                // 3.b) Aggiornamenti “family scoped” SOLO se abbiamo familyId
-                guard !uid.isEmpty, let familyId = resolvedFamilyId() else {
-                    KBLog.app.debug("Profile: skip family-scoped updates (missing familyId)")
-                    return
-                }
-                
+                guard !uid.isEmpty, let familyId = resolvedFamilyId() else { return }
                 await chatRemoteStore.setTyping(false, familyId: familyId, uid: uid, displayName: profile.displayName ?? "")
                 await locationRemoteStore.updateDisplayName(familyId: familyId, uid: uid, displayName: profile.displayName ?? "")
                 
-                // Aggiorna displayName nel members/{uid} della famiglia
                 if let name = profile.displayName, !name.isEmpty, name != "Utente" {
                     do {
                         try await Firestore.firestore()
                             .collection("families").document(familyId)
                             .collection("members").document(uid)
-                            .setData([
-                                "displayName": name,
-                                "updatedAt": Timestamp(date: Date())
-                            ], merge: true)
+                            .setData(["displayName": name, "updatedAt": Timestamp(date: Date())], merge: true)
                         
-                        KBLog.app.debug("Profile: updated remote member displayName=\(name, privacy: .public)")
+                        let desc2 = FetchDescriptor<KBFamilyMember>(
+                            predicate: #Predicate { $0.userId == uid && $0.familyId == familyId }
+                        )
+                        await MainActor.run {
+                            if let member = try? modelContext.fetch(desc2).first {
+                                member.displayName = name
+                                member.updatedAt = Date()
+                                try? modelContext.save()
+                            }
+                        }
                     } catch {
                         KBLog.app.error("Profile: remote member name update failed: \(error.localizedDescription, privacy: .public)")
                     }
-                    
-                    // Aggiorna KBFamilyMember locale in SwiftData (main actor)
-                    await MainActor.run {
-                        let desc = FetchDescriptor<KBFamilyMember>(
-                            predicate: #Predicate { $0.userId == uid && $0.familyId == familyId }
-                        )
-                        if let member = try? modelContext.fetch(desc).first {
-                            member.displayName = name
-                            member.updatedAt = Date()
-                            try? modelContext.save()
-                            KBLog.app.debug("Profile: updated local KBFamilyMember displayName=\(name, privacy: .public)")
-                        }
-                    }
-                }
-                
-                // Upload avatar (family scoped nella tua implementazione attuale)
-                if let avatarData = profile.avatarData {
-                    await avatarRemoteStore.uploadAvatar(imageData: avatarData, uid: uid, familyId: familyId)
                 }
             }
-            
         } catch {
             saveErrorText = error.localizedDescription
             showSaveErrorAlert = true
@@ -590,64 +906,85 @@ struct ProfileView: View {
     
     private func loadRemoteUserProfile() async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
-        
         do {
             let snap = try await Firestore.firestore().collection("users").document(uid).getDocument()
             guard let data = snap.data() else { return }
-            
             let remoteFirstName = data["firstName"] as? String
             let remoteLastName  = data["lastName"] as? String
             let remoteAddress   = data["familyAddress"] as? String
-            
             await MainActor.run {
                 if let v = remoteFirstName, !v.isEmpty { firstName = v }
-                if let v = remoteLastName,  !v.isEmpty { lastName = v }
-                if let v = remoteAddress,   !v.isEmpty { familyAddress = v }
+                if let v = remoteLastName,  !v.isEmpty { lastName  = v }
+                if let v = remoteAddress,   !v.isEmpty {
+                    familyAddress    = v
+                    addressSearchText = v
+                }
             }
-            
             Task {
                 guard let uid = Auth.auth().currentUser?.uid else { return }
                 guard avatarData == nil else { return }
-                
-                let familyId = resolvedFamilyId() // può essere nil
-                
+                let familyId = resolvedFamilyId()
                 do {
                     let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyId)
                     await MainActor.run { avatarData = data }
-                    KBLog.app.debug("Profile: avatar downloaded bytes=\(data.count, privacy: .public)")
                 } catch {
                     KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
-            
-            // Aggiorna anche SwiftData (così resta cache locale)
             await MainActor.run {
                 let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
                 let existing = try? modelContext.fetch(desc).first
-                let profile = existing ?? KBUserProfile(uid: uid)
+                let profile  = existing ?? KBUserProfile(uid: uid)
                 if existing == nil { modelContext.insert(profile) }
-                
-                profile.firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-                profile.lastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+                profile.firstName     = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+                profile.lastName      = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
                 profile.familyAddress = familyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-                profile.avatarData = avatarData
-                profile.updatedAt = Date()
+                profile.avatarData    = avatarData
+                profile.updatedAt     = Date()
                 try? modelContext.save()
-                
                 syncSavedSnapshotFromCurrentState()
                 recomputeDirty()
             }
-            
         } catch {
             KBLog.app.error("Profile: users/\(uid, privacy: .public) load failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
 
+// MARK: - KBProfileField
+
+private struct KBProfileField: View {
+    let icon: String
+    let placeholder: String
+    @Binding var text: String
+    let colorScheme: ColorScheme
+    let accent: Color
+    
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+            
+            TextField(placeholder, text: $text)
+                .font(.system(size: 15))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(colorScheme == .dark
+                      ? Color(red: 0.12, green: 0.12, blue: 0.14)
+                      : Color(red: 0.96, green: 0.96, blue: 0.97))
+        )
+    }
+}
+
 // MARK: - OneShotLocationService
+
 @MainActor
 final class OneShotLocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
-    
     @Published var resolvedAddress: String?
     @Published var errorText: String?
     @Published var isWorking: Bool = false
@@ -664,7 +1001,6 @@ final class OneShotLocationService: NSObject, ObservableObject, CLLocationManage
         errorText = nil
         resolvedAddress = nil
         isWorking = true
-        
         let status = manager.authorizationStatus
         switch status {
         case .notDetermined:
@@ -701,7 +1037,6 @@ final class OneShotLocationService: NSObject, ObservableObject, CLLocationManage
             errorText = "Posizione non disponibile."
             return
         }
-        
         Task {
             do {
                 guard let request = MKReverseGeocodingRequest(location: location) else {
@@ -711,21 +1046,14 @@ final class OneShotLocationService: NSObject, ObservableObject, CLLocationManage
                     }
                     return
                 }
-                
                 let mapItems = try await request.mapItems
-                let mapItem = mapItems.first
-                
-                let formatted =
-                mapItem?.address?.fullAddress
-                ?? mapItem?.address?.shortAddress
-                ?? ""
-                
+                let mapItem  = mapItems.first
+                let formatted = mapItem?.address?.fullAddress ?? mapItem?.address?.shortAddress ?? ""
                 await MainActor.run {
                     self.resolvedAddress = formatted.isEmpty ? nil : formatted
                     self.isWorking = false
                     self.errorText = formatted.isEmpty ? "Indirizzo non trovato." : nil
                 }
-                
             } catch {
                 await MainActor.run {
                     self.isWorking = false

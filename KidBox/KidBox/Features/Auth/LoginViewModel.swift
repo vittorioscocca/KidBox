@@ -36,6 +36,8 @@ final class LoginViewModel: ObservableObject {
     /// Set to `true` after a successful password-reset email dispatch.
     @Published var resetPasswordSent = false
     
+    @Published var registrationPendingVerification = false
+    
     // MARK: - Dependencies
     
     private let auth:        AuthFacade
@@ -108,8 +110,13 @@ final class LoginViewModel: ObservableObject {
         defer { isBusy = false }
         
         do {
-            try await Auth.auth().createUser(withEmail: email, password: password)
-            KBLog.auth.kbInfo("LoginViewModel registerEmail success")
+            let result = try await Auth.auth().createUser(withEmail: email, password: password)
+            try await result.user.sendEmailVerification()
+            KBLog.auth.kbInfo("LoginViewModel registerEmail: verification email sent")
+            // Sign out subito — l'utente non può entrare finché non verifica
+            try Auth.auth().signOut()
+            registrationPendingVerification = true
+            KBLog.auth.kbInfo("LoginViewModel registerEmail: signed out, awaiting verification")
         } catch {
             errorMessage = friendlyError(error)
             KBLog.auth.kbError("LoginViewModel registerEmail failed: \(error.localizedDescription)")
