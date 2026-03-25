@@ -99,6 +99,8 @@ struct ProfileView: View {
     @State private var familyAddress: String = ""
     @State private var addressSearchText: String = ""
     @State private var showAddressSuggestions = false
+    // ── FLAG: impedisce al completer di attivarsi durante i caricamenti ──
+    @State private var isLoadingAddress = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var avatarData: Data?
     @State private var email: String = ""
@@ -157,7 +159,6 @@ struct ProfileView: View {
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()
-            addressSearchText = familyAddress
         }
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
@@ -173,11 +174,9 @@ struct ProfileView: View {
         }
         .onReceive(locationService.$resolvedAddress) { address in
             guard let address, !address.isEmpty else { return }
-            familyAddress = address
-            addressSearchText = address
-            addressCompleter.clear()
-            showAddressSuggestions = false
-            if didLoadInitial { recomputeDirty() }
+            // La posizione GPS è una selezione esplicita dell'utente:
+            // aggiorna il campo e chiudi i suggerimenti senza attivare il completer
+            setAddress(address)
         }
         .onChange(of: firstName) { _, _ in if didLoadInitial { recomputeDirty() } }
         .onChange(of: lastName)  { _, _ in if didLoadInitial { recomputeDirty() } }
@@ -232,6 +231,20 @@ struct ProfileView: View {
             UpgradeSheetView()
                 .environmentObject(subscriptionManager)
         }
+    }
+    
+    // MARK: - Address helper
+    // Usa questo per settare l'indirizzo programmaticamente (load/GPS)
+    // senza innescare il completer
+    private func setAddress(_ value: String) {
+        isLoadingAddress = true
+        familyAddress = value
+        addressSearchText = value
+        addressCompleter.clear()
+        showAddressSuggestions = false
+        // Rilascia il lock al prossimo ciclo RunLoop, dopo che onChange è già scattato
+        DispatchQueue.main.async { isLoadingAddress = false }
+        if didLoadInitial { recomputeDirty() }
     }
     
     // MARK: - Profile Header Card
@@ -327,6 +340,8 @@ struct ProfileView: View {
                     TextField("Cerca indirizzo...", text: $addressSearchText)
                         .font(.system(size: 15))
                         .onChange(of: addressSearchText) { _, newValue in
+                            // Se il valore è stato settato da codice (load/GPS), ignoriamo
+                            guard !isLoadingAddress else { return }
                             familyAddress = newValue
                             if newValue.count > 2 {
                                 addressCompleter.search(newValue)
@@ -340,11 +355,7 @@ struct ProfileView: View {
                     
                     if !addressSearchText.isEmpty {
                         Button {
-                            addressSearchText = ""
-                            familyAddress = ""
-                            addressCompleter.clear()
-                            showAddressSuggestions = false
-                            if didLoadInitial { recomputeDirty() }
+                            setAddress("")
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 14))
@@ -364,11 +375,8 @@ struct ProfileView: View {
                         ForEach(Array(addressCompleter.suggestions.prefix(5).enumerated()), id: \.offset) { index, suggestion in
                             Button {
                                 let full = suggestion.title + (suggestion.subtitle.isEmpty ? "" : ", \(suggestion.subtitle)")
-                                addressSearchText = full
-                                familyAddress = full
-                                addressCompleter.clear()
-                                showAddressSuggestions = false
-                                if didLoadInitial { recomputeDirty() }
+                                // Selezione da dropdown: usa setAddress per evitare il re-trigger
+                                setAddress(full)
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: "mappin.circle.fill")
@@ -739,8 +747,10 @@ struct ProfileView: View {
         if let profile = try? modelContext.fetch(desc).first {
             firstName = profile.firstName ?? ""
             lastName = profile.lastName ?? ""
-            familyAddress = profile.familyAddress ?? ""
-            addressSearchText = familyAddress
+            // Usa setAddress per non innescare il completer
+            if let addr = profile.familyAddress, !addr.isEmpty {
+                setAddress(addr)
+            }
             avatarData = profile.avatarData
             if email.isEmpty { email = profile.email ?? "" }
             if lastLoginAt == nil { lastLoginAt = profile.lastLoginAt }
@@ -915,10 +925,8 @@ struct ProfileView: View {
             await MainActor.run {
                 if let v = remoteFirstName, !v.isEmpty { firstName = v }
                 if let v = remoteLastName,  !v.isEmpty { lastName  = v }
-                if let v = remoteAddress,   !v.isEmpty {
-                    familyAddress    = v
-                    addressSearchText = v
-                }
+                // Usa setAddress per non innescare il completer
+                if let v = remoteAddress, !v.isEmpty { setAddress(v) }
             }
             Task {
                 guard let uid = Auth.auth().currentUser?.uid else { return }

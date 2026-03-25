@@ -635,6 +635,26 @@ final class ChatViewModel: NSObject, ObservableObject {
     
     func startRecording() {
         logAudio("startRecording BEGIN familyId=\(familyId)")
+        
+#if targetEnvironment(macCatalyst)
+        AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+            guard let self else { return }
+            Task { @MainActor [self] in
+                guard granted else {
+                    self.logAudio("startRecording DENIED microphone permission")
+                    self.errorText = "Permesso microfono negato. Vai in Preferenze di Sistema → Privacy e Sicurezza → Microfono."
+                    return
+                }
+                self.logAudio("startRecording permission granted")
+                self.startRecordingInternal()
+            }
+        }
+#else
+        startRecordingInternal()
+#endif
+    }
+    
+    private func startRecordingInternal() {
         describeAudioSession("beforeConfig")
         let session = AVAudioSession.sharedInstance()
         do {
@@ -668,7 +688,6 @@ final class ChatViewModel: NSObject, ObservableObject {
         let inputFormat = inputNode.outputFormat(forBus: 0)
         logAudio("startRecording inputFormat=\(inputFormat)")
         
-        // Scrivi nel formato nativo Float32 — nessuna conversione nel tap.
         let audioFile: AVAudioFile
         do {
             audioFile = try AVAudioFile(forWriting: url, settings: inputFormat.settings)
@@ -898,11 +917,49 @@ final class ChatViewModel: NSObject, ObservableObject {
             bufferList.mNumberBuffers = channelCount
             
             try withUnsafeMutablePointer(to: &bufferList) { blPtr in
+                
+#if targetEnvironment(macCatalyst)
+                // Su Mac Catalyst UnsafeMutableAudioBufferListPointer ha un layout
+                // diverso — accediamo ai buffer tramite offset calcolato con KeyPath.
+                let mBuffersOffset = MemoryLayout<AudioBufferList>.offset(of: \AudioBufferList.mBuffers)!
+                let rawBlPtr = UnsafeMutableRawPointer(blPtr)
+                let buffersPtr = rawBlPtr
+                    .advanced(by: mBuffersOffset)
+                    .bindMemory(to: AudioBuffer.self, capacity: channelInt)
+                
+                var framesRead = blockFrames
+                while framesRead == blockFrames {
+                    for ch in 0..<channelInt {
+                        buffersPtr[ch].mNumberChannels = 1
+                        buffersPtr[ch].mDataByteSize   = bufferSize
+                        buffersPtr[ch].mData           = UnsafeMutableRawPointer(channelBuffers[ch])
+                    }
+                    
+                    framesRead = blockFrames
+                    let readStatus = ExtAudioFileRead(srcFile, &framesRead, blPtr)
+                    guard readStatus == noErr else {
+                        throw NSError(domain: "ChatVM", code: 53,
+                                      userInfo: [NSLocalizedDescriptionKey: "ExtAudioFileRead failed: \(readStatus)"])
+                    }
+                    guard framesRead > 0 else { break }
+                    
+                    for ch in 0..<channelInt {
+                        buffersPtr[ch].mDataByteSize = framesRead * 4
+                    }
+                    
+                    let writeStatus = ExtAudioFileWrite(dstFile, framesRead, blPtr)
+                    guard writeStatus == noErr else {
+                        throw NSError(domain: "ChatVM", code: 54,
+                                      userInfo: [NSLocalizedDescriptionKey: "ExtAudioFileWrite failed: \(writeStatus)"])
+                    }
+                }
+                
+#else
+                // iOS: UnsafeMutableAudioBufferListPointer funziona correttamente.
                 let ablPtr = UnsafeMutableAudioBufferListPointer(blPtr)
                 
                 var framesRead = blockFrames
                 while framesRead == blockFrames {
-                    // Configura AudioBufferList per questo blocco
                     for ch in 0..<channelInt {
                         ablPtr[ch].mNumberChannels = 1
                         ablPtr[ch].mDataByteSize   = bufferSize
@@ -917,7 +974,6 @@ final class ChatViewModel: NSObject, ObservableObject {
                     }
                     guard framesRead > 0 else { break }
                     
-                    // Aggiorna dataByteSize con i frame effettivamente letti
                     for ch in 0..<channelInt {
                         ablPtr[ch].mDataByteSize = framesRead * 4
                     }
@@ -928,6 +984,7 @@ final class ChatViewModel: NSObject, ObservableObject {
                                       userInfo: [NSLocalizedDescriptionKey: "ExtAudioFileWrite failed: \(writeStatus)"])
                     }
                 }
+#endif
             }
             
             try? FileManager.default.removeItem(at: cafURL)

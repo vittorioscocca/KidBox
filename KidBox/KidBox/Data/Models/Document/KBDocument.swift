@@ -44,7 +44,7 @@ final class KBDocument {
     // OCR / text extraction
     var extractedText: String?
     var extractedTextUpdatedAt: Date?
-    var extractionStatusRaw: Int
+    var extractionStatusRaw: Int = 0
     var extractionError: String?
     
     // Dates

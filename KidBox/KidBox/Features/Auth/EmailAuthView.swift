@@ -13,6 +13,7 @@ struct EmailAuthView: View {
     
     @ObservedObject var vm: LoginViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     // MARK: - Local state
     
@@ -22,7 +23,19 @@ struct EmailAuthView: View {
     @State private var confirmPwd    = ""
     @State private var showPassword  = false
     
-    private let cream = Color(red: 0.961, green: 0.957, blue: 0.945)
+    private var sheetBackground: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.15)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
+    
+    private var ctaBackground: Color {
+        colorScheme == .dark ? .white : .black
+    }
+    
+    private var ctaForeground: Color {
+        colorScheme == .dark ? .black : .white
+    }
     
     // MARK: - Validation
     
@@ -44,7 +57,7 @@ struct EmailAuthView: View {
     
     var body: some View {
         ZStack {
-            cream.ignoresSafeArea()
+            sheetBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
                 
@@ -170,8 +183,8 @@ struct EmailAuthView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .foregroundStyle(.white)
-                    .background(isFormValid ? Color.black : Color.black.opacity(0.3), in: Capsule())
+                    .foregroundStyle(ctaForeground)
+                    .background(isFormValid ? ctaBackground : ctaBackground.opacity(0.3), in: Capsule())
                 }
                 .buttonStyle(.plain)
                 .disabled(!isFormValid || vm.isBusy)

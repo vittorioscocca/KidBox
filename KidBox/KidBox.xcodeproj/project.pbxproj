@@ -14,7 +14,7 @@
 		7CB37F452F72B12F00CD0F7C /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CB37F442F72B12F00CD0F7C /* StoreKit.framework */; };
 		7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 7CE572032F47900B008FE22B /* FirebaseFunctions */; };
 		7CED80602F5B0F2E00CB9923 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 7CED805F2F5B0F2E00CB9923 /* ZIPFoundation */; };
-		7CF6177D2F609689007587D9 /* KidBoxShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CF617732F609689007587D9 /* KidBoxShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7CF6177D2F609689007587D9 /* KidBoxShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CF617732F609689007587D9 /* KidBoxShareExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7CF6178C2F60B281007587D9 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 7CF6178B2F60B281007587D9 /* FirebaseAuth */; };
 		7CF6178E2F60B297007587D9 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 7CF6178D2F60B297007587D9 /* FirebaseFirestore */; };
 		7CF617972F60B72B007587D9 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7CF617962F60B72B007587D9 /* FirebaseStorage */; };
@@ -441,6 +441,7 @@
 /* Begin PBXTargetDependency section */
 		7CF6177C2F609689007587D9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = 7CF617722F609689007587D9 /* KidBoxShareExtension */;
 			targetProxy = 7CF6177B2F609689007587D9 /* PBXContainerItemProxy */;
 		};
@@ -462,7 +463,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -493,7 +494,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -653,7 +654,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -719,7 +720,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -946,7 +947,7 @@
 			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 14.1.0;
+				minimumVersion = 17.0.0;
 			};
 		};
 		7CED805E2F5B0F2E00CB9923 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
