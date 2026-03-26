@@ -47,7 +47,7 @@ extension SyncCenter {
     
     // MARK: - Apply inbound
     
-    private func applyVisitsInbound(changes: [VisitRemoteChange], modelContext: ModelContext) {
+    func applyVisitsInbound(changes: [VisitRemoteChange], modelContext: ModelContext) {
         KBLog.sync.kbDebug("applyVisitsInbound changes=\(changes.count)")
         do {
             for change in changes {

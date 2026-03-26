@@ -100,7 +100,7 @@ extension SyncCenter {
                     
                     let local = try fetchOrCreatePhoto(id: dto.id, familyId: familyId, modelContext: modelContext)
                     let remoteAt = dto.updatedAt ?? Date()
-                    let isPlaceholder = local.storagePath.isEmpty
+                    let isPlaceholder = local.fileName.isEmpty && local.updatedAt == .distantPast
                     KBLog.sync.kbDebug("applyPhotosInbound: upsert id=\(dto.id) storagePath=\(dto.storagePath) thumbPresent=\(dto.thumbnailBase64 != nil) downloadURL=\(dto.downloadURL ?? "nil") isPlaceholder=\(isPlaceholder) remoteAt=\(remoteAt) localUpdatedAt=\(local.updatedAt)")
                     
                     KBLog.sync.kbError("applyPhotosInbound: CHECK id=\(dto.id) isPlaceholder=\(isPlaceholder) remoteAt=\(remoteAt) localAt=\(local.updatedAt) dtoDuration=\(dto.videoDurationSeconds != nil ? String(dto.videoDurationSeconds!) : "nil") isVideo=\(local.isVideo)")

@@ -52,7 +52,7 @@ extension SyncCenter {
     
     // MARK: - Apply inbound (LWW)
     
-    private func applyVaccinesInbound(
+    func applyVaccinesInbound(
         changes: [VaccineRemoteChange],
         modelContext: ModelContext
     ) {
@@ -71,7 +71,7 @@ extension SyncCenter {
                     
                     if let local {
                         // 🛡️ Anti-resurrect
-                        if local.isDeleted && local.syncState == .pendingUpsert {
+                        if local.isDeleted && (local.syncState == .pendingDelete || local.syncState == .pendingUpsert) {
                             KBLog.sync.kbDebug("applyVaccinesInbound: skip anti-resurrect id=\(vid)")
                             continue
                         }

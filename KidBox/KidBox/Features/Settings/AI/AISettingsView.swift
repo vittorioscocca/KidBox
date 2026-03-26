@@ -14,8 +14,6 @@ struct AISettingsView: View {
     @State private var showUpgrade             = false
     @State private var showManageSubscriptions = false
     @Environment(\.colorScheme) private var colorScheme
-    // Safety net: aggiorna l'entitlement se l'utente cancella da Impostazioni → App Store
-    // (percorso esterno all'app, non passa dal nostro sheet).
     @Environment(\.scenePhase) private var scenePhase
     
     // MARK: - Dynamic theme
@@ -45,7 +43,7 @@ struct AISettingsView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .id(subscriptionManager.currentPlan) // forza rebuild SwiftUI al cambio piano
+                    .id(subscriptionManager.currentPlan)
             }
             
             // MARK: - Banner abbonamento in scadenza
@@ -113,7 +111,6 @@ struct AISettingsView: View {
                         .font(.caption)
                 }
             } else {
-                // Piano Free: mostra gate upgrade
                 Section {
                     aiLockedBanner
                         .listRowInsets(EdgeInsets())
@@ -149,7 +146,6 @@ struct AISettingsView: View {
                             )
                             .tint(usage.isNearLimit ? .orange : .blue)
                             
-                            // Upgrade hint se vicino al limite e non già su Max
                             if usage.isNearLimit && plan != .max {
                                 Button {
                                     showUpgrade = true
@@ -194,7 +190,7 @@ struct AISettingsView: View {
                 }
             }
             
-            // MARK: - Sintesi settimanale (solo piani AI)
+            // MARK: - Sintesi settimanale
             if plan.includesAI {
                 Section("Sintesi settimanale") {
                     Toggle(isOn: Binding(
@@ -267,28 +263,18 @@ struct AISettingsView: View {
             viewModel.load()
             Task { await subscriptionManager.loadPlan() }
         }
-        // @State locale — SwiftUI aggiorna il binding in modo affidabile al dismiss.
-        // Al dismiss (isShowing → false) eseguiamo più check con backoff progressivo:
-        // StoreKit impiega alcuni secondi a propagare la cancellazione nel RenewalInfo.
-        // @MainActor garantisce che i publish di @Published avvengano sul thread UI,
-        // evitando che SwiftUI ignori o bufferizzi gli aggiornamenti.
         .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
         .onChange(of: showManageSubscriptions) { _, isShowing in
             guard !isShowing else { return }
             Task { @MainActor in
                 await subscriptionManager.debugDumpAllTransactions()
-                // Check immediato (ottimistico)
                 await subscriptionManager.refreshCurrentEntitlement()
-                // Retry a 3s — StoreKit di solito ha aggiornato RenewalInfo entro qui
                 try? await Task.sleep(for: .seconds(3))
                 await subscriptionManager.refreshCurrentEntitlement()
-                // Retry a 10s — safety net per connessioni lente
                 try? await Task.sleep(for: .seconds(7))
                 await subscriptionManager.refreshCurrentEntitlement()
             }
         }
-        // Safety net: copre il caso in cui l'utente cancella dall'esterno
-        // (Impostazioni → App Store), senza passare dal nostro sheet.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 Task { await subscriptionManager.refreshCurrentEntitlement() }
@@ -472,7 +458,7 @@ struct UpgradeSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     
-    private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
+    private let tint     = Color(red: 0.35, green: 0.6, blue: 0.85)
     private let maxColor = Color(red: 0.55, green: 0.35, blue: 0.9)
     
     var body: some View {
@@ -497,18 +483,18 @@ struct UpgradeSheetView: View {
                     
                     // Piano Pro
                     planCard(
-                        plan:        .pro,
-                        color:       tint,
-                        icon:        "star.circle.fill",
-                        features:    ["5 GB storage famiglia", "20 msg AI/giorno per membro", "Sintesi settimanale AI"]
+                        plan:     .pro,
+                        color:    tint,
+                        icon:     "star.circle.fill",
+                        features: ["5 GB storage famiglia", "20 msg AI/giorno per membro", "Sintesi settimanale AI"]
                     )
                     
                     // Piano Max
                     planCard(
-                        plan:        .max,
-                        color:       maxColor,
-                        icon:        "crown.fill",
-                        features:    ["20 GB storage famiglia", "100 msg AI/giorno per membro", "Sintesi settimanale AI", "Supporto prioritario"]
+                        plan:     .max,
+                        color:    maxColor,
+                        icon:     "crown.fill",
+                        features: ["20 GB storage famiglia", "100 msg AI/giorno per membro", "Sintesi settimanale AI", "Supporto prioritario"]
                     )
                     
                     // Ripristina
@@ -517,7 +503,9 @@ struct UpgradeSheetView: View {
                     }
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
+                    
+                    // ✅ Legal footer — FUORI dalla planCard, visibile a tutti
+                    legalFooter
                 }
                 .padding()
             }
@@ -547,14 +535,13 @@ struct UpgradeSheetView: View {
     @ViewBuilder
     private func planCard(plan: KBPlan, color: Color, icon: String, features: [String]) -> some View {
         let isCurrent   = subscriptionManager.currentPlan == plan
-        // FIX: distingue "piano attivo e si rinnoverà" da "piano attivo ma cancellato"
         let isCancelled = isCurrent && subscriptionManager.isCancelledButActive
         let expiryDate  = subscriptionManager.subscriptionExpirationDate
         let product     = subscriptionManager.storeProduct(for: plan)
         
         VStack(alignment: .leading, spacing: 14) {
             
-            // Header: icona, nome, badge piano + badge stato
+            // Header
             HStack {
                 Image(systemName: icon)
                     .font(.title3)
@@ -570,7 +557,6 @@ struct UpgradeSheetView: View {
                 }
                 Spacer()
                 if isCurrent {
-                    // FIX: badge arancione "In scadenza" se cancellato, altrimenti "Piano attuale"
                     Text(isCancelled ? "In scadenza" : "Piano attuale")
                         .font(.caption.bold())
                         .foregroundStyle(.white)
@@ -579,7 +565,7 @@ struct UpgradeSheetView: View {
                 }
             }
             
-            // FIX: riga con la data di scadenza, visibile solo se cancellato
+            // Data scadenza se cancellato
             if isCancelled, let expiry = expiryDate {
                 Label {
                     Text("Attivo fino al \(expiry.formatted(date: .long, time: .omitted))")
@@ -598,8 +584,7 @@ struct UpgradeSheetView: View {
                     .foregroundStyle(.primary)
             }
             
-            // FIX: mostra il pulsante d'azione anche quando isCancelled,
-            // con label e colore diversi rispetto al primo acquisto.
+            // Bottone acquisto — solo testo, niente legalFooter dentro
             if !isCurrent || isCancelled {
                 Button {
                     Task { await subscriptionManager.purchase(plan) }
@@ -639,6 +624,29 @@ struct UpgradeSheetView: View {
                         .stroke(isCurrent ? color : Color.clear, lineWidth: 2)
                 )
         )
+    }
+    
+    // MARK: - Legal footer
+    private var legalFooter: some View {
+        let privacyURL = URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!
+        let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
+        
+        return VStack(spacing: 6) {
+            Text("L'abbonamento si rinnova automaticamente ogni mese. Puoi annullare in qualsiasi momento dalle impostazioni del tuo account Apple.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            HStack(spacing: 16) {
+                Link("Privacy Policy", destination: privacyURL)
+                Text("·").foregroundStyle(.secondary)
+                Link("Termini di utilizzo", destination: termsURL)
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.bottom, 8)
     }
 }
 
