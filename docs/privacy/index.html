@@ -2,102 +2,675 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Privacy Policy - KidBox</title>
+  <title>Privacy Policy — KidBox</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --orange: #F2622E;
+      --orange-light: #FFF0EB;
+      --orange-mid: #FFD6C7;
+      --ink: #1A1208;
+      --ink-mid: #4A3F35;
+      --ink-light: #8C7B6E;
+      --cream: #FAF7F4;
+      --white: #FFFFFF;
+      --border: #EDE8E3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.6;
-      color: #222;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.7;
     }
-    h1 { margin-bottom: 6px; }
-    .meta { color: #666; margin-top: 0; }
-    h2 { margin-top: 28px; }
-    ul { padding-left: 18px; }
-    a { color: inherit; }
-    .box {
-      background: #f6f6f6;
-      border: 1px solid #e7e7e7;
+
+    /* ── Header ── */
+    header {
+      background: var(--ink);
+      padding: 48px 24px 56px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: var(--orange);
+      opacity: 0.12;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -40px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: var(--orange);
+      opacity: 0.08;
+    }
+
+    .logo-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--orange);
+      color: white;
+      padding: 6px 16px 6px 10px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-pill .dot {
+      width: 20px; height: 20px;
+      background: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-pill .dot::after {
+      content: '';
+      width: 8px; height: 8px;
+      background: var(--orange);
+      border-radius: 50%;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(32px, 6vw, 52px);
+      color: white;
+      line-height: 1.1;
+      position: relative;
+      z-index: 1;
+    }
+
+    header h1 em {
+      color: var(--orange);
+      font-style: italic;
+    }
+
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .meta-tag .icon {
+      width: 16px; height: 16px;
+      opacity: 0.7;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Intro box ── */
+    .intro-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin: 40px 0 48px;
+      position: relative;
+    }
+
+    .intro-card p {
+      color: var(--ink-mid);
+      font-size: 15px;
+    }
+
+    .owner-strip {
+      display: flex;
+      gap: 24px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .owner-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .owner-item .label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-light);
+    }
+
+    .owner-item .value {
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .owner-item a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .section-num {
+      width: 36px; height: 36px;
+      background: var(--orange-light);
+      color: var(--orange);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .section-body {
+      padding-left: 50px;
+    }
+
+    .section-body p {
+      color: var(--ink-mid);
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+
+    /* ── Item list ── */
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item {
+      background: white;
+      border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 14px 16px;
-      margin-top: 12px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
     }
-    .small { font-size: 0.95rem; color: #444; }
+
+    .item-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 15px;
+    }
+
+    .item-icon.orange { background: var(--orange-light); }
+    .item-icon.green  { background: #EDFAF3; }
+    .item-icon.blue   { background: #EBF3FF; }
+    .item-icon.purple { background: #F3EEFF; }
+    .item-icon.red    { background: #FFF0EE; }
+
+    .item-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    .item-text span {
+      font-size: 13px;
+      color: var(--ink-light);
+      line-height: 1.5;
+    }
+
+    /* ── Provider chips ── */
+    .provider-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .provider-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .chip-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Highlight box ── */
+    .highlight {
+      background: var(--orange-light);
+      border: 1px solid var(--orange-mid);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-top: 16px;
+    }
+
+    .highlight p {
+      font-size: 14px;
+      color: var(--ink-mid);
+      margin: 0;
+    }
+
+    .highlight strong {
+      display: block;
+      font-size: 15px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .highlight .path {
+      font-family: 'DM Sans', monospace;
+      font-size: 13px;
+      color: var(--orange);
+      font-weight: 500;
+    }
+
+    /* ── AI section ── */
+    .ai-card {
+      background: var(--ink);
+      border-radius: 16px;
+      padding: 24px 28px;
+      color: white;
+    }
+
+    .ai-card .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--orange);
+      color: white;
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+
+    .ai-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .ai-card p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .ai-card a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    .ai-detail-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-top: 10px;
+    }
+
+    .ai-detail-row .bullet {
+      color: var(--orange);
+      font-size: 18px;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    .ai-detail-row p {
+      margin: 0;
+    }
+
+    /* ── Rights grid ── */
+    .rights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .right-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .right-card .r-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .right-card strong {
+      display: block;
+      font-size: 14px;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .right-card span {
+      font-size: 12px;
+      color: var(--ink-light);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 40px 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--ink-light);
+    }
+
+    footer a { color: var(--orange); text-decoration: none; }
+
+    @media (max-width: 500px) {
+      .section-body { padding-left: 0; margin-top: 12px; }
+      .section-header { flex-direction: row; }
+    }
   </style>
 </head>
 <body>
 
-<h1>Privacy Policy - KidBox</h1>
-<p class="meta">Ultimo aggiornamento: 27 febbraio 2026</p>
+<header>
+  <div class="logo-pill">
+    <span class="dot"></span>
+    KidBox
+  </div>
+  <h1>Privacy <em>Policy</em></h1>
+  <div class="meta-bar">
+    <span class="meta-tag">Ultimo aggiornamento: 27 febbraio 2026</span>
+    <span class="meta-tag">·</span>
+    <span class="meta-tag">GDPR compliant</span>
+  </div>
+</header>
 
-<p>
-KidBox (“App”) è un’applicazione pensata per la gestione condivisa di informazioni familiari (es. chat, documenti, note, attività).
-Questa informativa spiega quali dati trattiamo e perché.
-</p>
+<div class="container">
 
-<div class="box">
-  <p class="small"><strong>Titolare del trattamento:</strong> KidBox</p>
-  <p class="small"><strong>Contatto:</strong> <a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
+  <div class="intro-card">
+    <p>KidBox è un'applicazione pensata per la gestione condivisa di informazioni familiari — chat, documenti, note, attività e salute dei bambini. Questa informativa spiega in modo trasparente quali dati trattiamo, perché e con chi li condividiamo.</p>
+    <div class="owner-strip">
+      <div class="owner-item">
+        <span class="label">Titolare del trattamento</span>
+        <span class="value">KidBox — Vittorio Scocca</span>
+      </div>
+      <div class="owner-item">
+        <span class="label">Contatto</span>
+        <span class="value"><a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Dati raccolti -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2 class="section-title">Dati che raccogliamo</h2>
+    </div>
+    <div class="section-body">
+      <div class="item-list">
+        <div class="item">
+          <div class="item-icon orange">👤</div>
+          <div class="item-text">
+            <strong>Dati account</strong>
+            <span>Email, nome o alias, foto profilo e identificativi di accesso (Apple, Google, Facebook o email/password).</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon blue">🏠</div>
+          <div class="item-text">
+            <strong>Dati di famiglia e contenuti</strong>
+            <span>Membri della famiglia, chat, note, documenti, media caricati o condivisi, eventi del calendario, to-do, spese e dati sanitari dei bambini (visite, farmaci, vaccini, esami).</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon green">⚙️</div>
+          <div class="item-text">
+            <strong>Dati tecnici</strong>
+            <span>Token notifiche (APNs/FCM) e log tecnici necessari per sicurezza e diagnostica. Non includiamo informazioni identificative nei log.</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon purple">📍</div>
+          <div class="item-text">
+            <strong>Dati di posizione</strong>
+            <span>Solo se attivi la funzione di condivisione posizione. Trattiamo la posizione in primo piano e/o in background esclusivamente per mostrarla ai membri della tua famiglia.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Finalità -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2 class="section-title">Perché usiamo i dati</h2>
+    </div>
+    <div class="section-body">
+      <div class="item-list">
+        <div class="item">
+          <div class="item-icon orange">🔑</div>
+          <div class="item-text">
+            <strong>Accesso e autenticazione</strong>
+            <span>Creazione e gestione dell'account e delle sessioni.</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon blue">✨</div>
+          <div class="item-text">
+            <strong>Funzionalità principali</strong>
+            <span>Famiglia, chat, documenti, note, attività, calendario, spese e salute dei bambini.</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon green">🔔</div>
+          <div class="item-text">
+            <strong>Notifiche e comunicazioni</strong>
+            <span>Push notification e aggiornamenti di servizio rilevanti per te.</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-icon red">🛡️</div>
+          <div class="item-text">
+            <strong>Sicurezza e miglioramento</strong>
+            <span>Prevenzione abusi, rilevamento anomalie e miglioramento continuo dell'app.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Con chi condividiamo -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2 class="section-title">Con chi condividiamo i dati</h2>
+    </div>
+    <div class="section-body">
+      <p>KidBox utilizza fornitori tecnici selezionati per erogare il servizio. Non vendiamo i tuoi dati.</p>
+      <div class="provider-grid" style="margin-top:16px; margin-bottom: 20px;">
+        <div class="provider-chip"><span class="chip-dot" style="background:#F4A100"></span>Google Firebase</div>
+        <div class="provider-chip"><span class="chip-dot" style="background:#1877F2"></span>Meta (Facebook)</div>
+        <div class="provider-chip"><span class="chip-dot" style="background:#000000"></span>Apple</div>
+        <div class="provider-chip"><span class="chip-dot" style="background:#4285F4"></span>Google Auth</div>
+      </div>
+      <p style="font-size:13px; color: var(--ink-light);">Firebase gestisce autenticazione, database, archiviazione file, funzioni cloud e notifiche push. Apple, Google e Meta sono usati esclusivamente per il login social, se scegli quei metodi.</p>
+    </div>
+  </div>
+
+  <!-- AI section -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2 class="section-title">Assistente AI e Anthropic</h2>
+    </div>
+    <div class="section-body">
+      <div class="ai-card">
+        <div class="ai-badge">⚡ Terza parte AI</div>
+        <h3>Powered by Anthropic</h3>
+        <p>KidBox utilizza le API di <strong style="color:white">Anthropic PBC</strong> per fornire le funzionalità di assistente AI (chat intelligente, pianificazione familiare, analisi dati sanitari). Quando usi l'assistente AI, alcuni dati vengono inviati ad Anthropic per generare la risposta.</p>
+
+        <div class="ai-detail-row">
+          <span class="bullet">→</span>
+          <p><strong style="color:white">Cosa viene inviato:</strong> le tue domande, il contesto familiare necessario a rispondere (nomi, eventi, dati sanitari dei bambini come visite, farmaci, esami e vaccini).</p>
+        </div>
+        <div class="ai-detail-row">
+          <span class="bullet">→</span>
+          <p><strong style="color:white">Chi riceve i dati:</strong> Anthropic PBC, con sede negli Stati Uniti. Anthropic tratta i dati secondo la propria <a href="https://www.anthropic.com/privacy" target="_blank">Privacy Policy</a>, che garantisce protezioni equivalenti.</p>
+        </div>
+        <div class="ai-detail-row">
+          <span class="bullet">→</span>
+          <p><strong style="color:white">Il tuo consenso:</strong> prima del primo utilizzo l'app ti chiede conferma esplicita. Puoi revocare il consenso in qualsiasi momento da <span style="color: var(--orange)">Impostazioni → Assistente AI</span>.</p>
+        </div>
+        <div class="ai-detail-row">
+          <span class="bullet">→</span>
+          <p><strong style="color:white">Non è un parere medico:</strong> l'AI fornisce informazioni generali, non sostituisce il tuo medico.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Conservazione -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2 class="section-title">Conservazione dei dati</h2>
+    </div>
+    <div class="section-body">
+      <p>Conserviamo i dati finché mantieni l'account attivo. In caso di eliminazione dell'account, tutti i dati vengono cancellati o resi non più associabili alla tua persona, salvo obblighi di legge che richiedano una conservazione più lunga.</p>
+    </div>
+  </div>
+
+  <!-- 6. Eliminazione -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2 class="section-title">Eliminazione account</h2>
+    </div>
+    <div class="section-body">
+      <p>Puoi eliminare il tuo account direttamente dall'app in qualsiasi momento.</p>
+      <div class="highlight">
+        <strong>Come eliminare l'account</strong>
+        <p>Apri l'app e vai su <span class="path">KidBox → Profilo → Elimina account</span></p>
+        <p style="margin-top:10px">Se non riesci ad accedere, contattaci via email: <a href="mailto:ing.vittorioscocca@gmail.com" style="color: var(--orange)">ing.vittorioscocca@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Diritti -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2 class="section-title">I tuoi diritti</h2>
+    </div>
+    <div class="section-body">
+      <div class="rights-grid">
+        <div class="right-card">
+          <div class="r-icon">📋</div>
+          <strong>Accesso</strong>
+          <span>Puoi richiedere una copia dei tuoi dati in qualsiasi momento.</span>
+        </div>
+        <div class="right-card">
+          <div class="r-icon">✏️</div>
+          <strong>Rettifica</strong>
+          <span>Puoi correggere dati inesatti o incompleti.</span>
+        </div>
+        <div class="right-card">
+          <div class="r-icon">🗑️</div>
+          <strong>Cancellazione</strong>
+          <span>Puoi eliminare il tuo account e tutti i dati associati.</span>
+        </div>
+        <div class="right-card">
+          <div class="r-icon">↩️</div>
+          <strong>Revoca consenso</strong>
+          <span>Posizione e AI possono essere disattivate dalle impostazioni.</span>
+        </div>
+      </div>
+      <p style="margin-top: 16px; font-size: 14px;">Per qualsiasi richiesta: <a href="mailto:ing.vittorioscocca@gmail.com" style="color: var(--orange)">ing.vittorioscocca@gmail.com</a></p>
+    </div>
+  </div>
+
+  <!-- 8. Sicurezza -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2 class="section-title">Sicurezza</h2>
+    </div>
+    <div class="section-body">
+      <p>Adottiamo misure tecniche e organizzative adeguate per proteggere i tuoi dati, inclusa la crittografia in transito e a riposo, l'accesso con autenticazione e la separazione dei dati per nucleo familiare. Nessun sistema è infallibile — ti invitiamo a mantenere sicure le tue credenziali e ad attivare l'autenticazione a due fattori dove disponibile.</p>
+    </div>
+  </div>
+
 </div>
 
-<h2>Dati che raccogliamo</h2>
-<p>A seconda delle funzionalità usate, possiamo trattare:</p>
-<ul>
-  <li><strong>Dati account:</strong> email, nome/alias, foto profilo (se presente) e identificativi di accesso (Apple/Google/Facebook/email).</li>
-  <li><strong>Dati di famiglia e contenuti:</strong> membri della famiglia, chat, note, documenti e media caricati/condivisi.</li>
-  <li><strong>Dati tecnici:</strong> token notifiche (APNs/FCM) e log tecnici necessari per sicurezza e diagnostica.</li>
-  <li><strong>Dati di posizione</strong> (solo se attivi la funzione): posizione in primo piano e/o in background per condivisione con i membri della famiglia.</li>
-</ul>
-
-<h2>Perché usiamo i dati (finalità)</h2>
-<ul>
-  <li>Creazione e gestione dell’account e dell’accesso.</li>
-  <li>Funzionalità principali: famiglia, chat, documenti, note e attività.</li>
-  <li>Notifiche push e aggiornamenti di servizio.</li>
-  <li>Sicurezza, prevenzione abusi e miglioramento del servizio.</li>
-  <li>Condivisione posizione (solo se attivata dall’utente).</li>
-</ul>
-
-<h2>Con chi condividiamo i dati</h2>
-<p>
-KidBox utilizza fornitori tecnici per erogare il servizio:
-</p>
-<ul>
-  <li><strong>Google Firebase</strong> (Authentication, Firestore, Cloud Functions, Cloud Storage, Messaging).</li>
-  <li><strong>Apple / Google / Meta (Facebook)</strong> solo per l’autenticazione, se scegli quei metodi di accesso.</li>
-</ul>
-<p>Non vendiamo i tuoi dati.</p>
-
-<h2>Conservazione</h2>
-<p>
-Conserviamo i dati finché mantieni l’account.
-In caso di eliminazione dell’account, i dati vengono cancellati o resi non più associabili, salvo obblighi di legge.
-</p>
-
-<h2>Eliminazione account e dati</h2>
-<p>
-Puoi eliminare il tuo account dall’app:
-</p>
-<div class="box">
-  <p><strong>KidBox → Profilo → Elimina account</strong></p>
-  <p class="small">Se non riesci ad accedere, puoi richiedere supporto via email: <a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
-</div>
-
-<h2>I tuoi diritti</h2>
-<ul>
-  <li>Accesso, rettifica o cancellazione dei tuoi dati.</li>
-  <li>Revoca del consenso (es. posizione) dalle impostazioni dell’app e/o del dispositivo.</li>
-  <li>Richieste e supporto: <a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></li>
-</ul>
-
-<h2>Sicurezza</h2>
-<p>
-Adottiamo misure tecniche e organizzative adeguate per proteggere i dati.
-Nessun sistema è infallibile: ti invitiamo a mantenere sicure le tue credenziali.
-</p>
+<footer>
+  <p>© 2026 KidBox — Vittorio Scocca &nbsp;·&nbsp; <a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
+  <p style="margin-top: 6px; font-size: 12px; opacity: 0.7;">Questa privacy policy è soggetta ad aggiornamenti. La versione più recente è sempre disponibile su questa pagina.</p>
+</footer>
 
 </body>
 </html>
