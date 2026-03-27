@@ -80,6 +80,10 @@ final class ExpensesViewModel: ObservableObject {
     @Published var showFilters:             Bool    = false
     @Published var selectedCategoryFilter:  String? = nil
     
+    // MARK: Multi-selezione
+    @Published var isSelecting:         Bool        = false
+    @Published var selectedExpenseIds:  Set<String> = []
+    
     let familyId: String
     private var modelContext: ModelContext
     
@@ -269,6 +273,26 @@ final class ExpensesViewModel: ObservableObject {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         // ─────────────────────────────────────────────────────────────────────
         
+        reload()
+    }
+    
+    // MARK: Bulk delete (multi-selezione)
+    
+    func deleteSelectedExpenses() {
+        let toDelete = expenses.filter { selectedExpenseIds.contains($0.id) }
+        toDelete.forEach { expense in
+            expense.isDeleted = true
+            expense.updatedAt = Date()
+            SyncCenter.shared.enqueueExpenseDelete(
+                expenseId: expense.id,
+                familyId:  familyId,
+                modelContext: modelContext
+            )
+        }
+        try? modelContext.save()
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        selectedExpenseIds.removeAll()
+        isSelecting = false
         reload()
     }
     

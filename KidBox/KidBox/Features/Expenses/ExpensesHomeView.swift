@@ -70,11 +70,14 @@ struct ExpensesHomeView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    vm.showAddExpense = true
-                } label: {
-                    Image(systemName: "plus")
-                        .fontWeight(.semibold)
+                // Nasconde il "+" durante la selezione multipla
+                if !vm.isSelecting {
+                    Button {
+                        vm.showAddExpense = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.semibold)
+                    }
                 }
             }
         }
@@ -362,6 +365,7 @@ private struct CategoryBreakdownView: View {
 private struct ExpenseListSection: View {
     @ObservedObject var vm: ExpensesViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @State private var showDeleteConfirm = false
     
     private var cardBg: Color {
         colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : .white
@@ -377,19 +381,34 @@ private struct ExpenseListSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            
+            // ── Header ────────────────────────────────────────────────────────
             HStack {
                 Label(filteredLabel, systemImage: "list.bullet")
                     .font(.headline)
                 Spacer()
-                if vm.selectedCategoryFilter != nil {
+                // "Mostra tutto" visibile solo se non siamo in selezione
+                if vm.selectedCategoryFilter != nil && !vm.isSelecting {
                     Button("Mostra tutto") {
                         vm.selectedCategoryFilter = nil
                     }
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Color.accentColor)
                 }
+                // Pulsante Seleziona / Annulla
+                if !vm.expenses.isEmpty {
+                    Button(vm.isSelecting ? "Annulla" : "Seleziona") {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            vm.isSelecting.toggle()
+                            vm.selectedExpenseIds.removeAll()
+                        }
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.accentColor)
+                }
             }
             
+            // ── Lista ─────────────────────────────────────────────────────────
             if vm.expenses.isEmpty {
                 ContentUnavailableView(
                     "Nessuna spesa",
@@ -402,16 +421,74 @@ private struct ExpenseListSection: View {
                     ForEach(vm.expenses) { expense in
                         ExpenseRowView(expense: expense, vm: vm)
                         if expense.id != vm.expenses.last?.id {
-                            Divider().padding(.leading, 56)
+                            Divider().padding(.leading, vm.isSelecting ? 68 : 56)
                         }
                     }
                 }
+            }
+            
+            // ── Barra azioni selezione ────────────────────────────────────────
+            if vm.isSelecting && !vm.expenses.isEmpty {
+                Divider()
+                HStack {
+                    // Seleziona / deseleziona tutto
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            if vm.selectedExpenseIds.count == vm.expenses.count {
+                                vm.selectedExpenseIds.removeAll()
+                            } else {
+                                vm.selectedExpenseIds = Set(vm.expenses.map(\.id))
+                            }
+                        }
+                    } label: {
+                        let allSelected = vm.selectedExpenseIds.count == vm.expenses.count
+                        Label(
+                            allSelected ? "Deseleziona tutte" : "Seleziona tutte",
+                            systemImage: allSelected ? "checkmark.circle.fill" : "circle"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Spacer()
+                    
+                    // Elimina selezionate
+                    Button {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label(
+                            "Elimina (\(vm.selectedExpenseIds.count))",
+                            systemImage: "trash"
+                        )
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(vm.selectedExpenseIds.isEmpty ? Color.secondary : Color.red)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(vm.selectedExpenseIds.isEmpty)
+                }
+                .padding(.top, 4)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .padding(20)
         .background(cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .animation(.easeInOut(duration: 0.2), value: vm.isSelecting)
+        // ── Confirmation dialog eliminazione multipla ─────────────────────────
+        .confirmationDialog(
+            "Elimina \(vm.selectedExpenseIds.count) \(vm.selectedExpenseIds.count == 1 ? "spesa" : "spese")",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Elimina", role: .destructive) {
+                withAnimation { vm.deleteSelectedExpenses() }
+            }
+            Button("Annulla", role: .cancel) {}
+        } message: {
+            Text("Questa azione non può essere annullata.")
+        }
     }
 }
 
@@ -423,10 +500,20 @@ private struct ExpenseRowView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     
     private var category: KBExpenseCategory? { vm.categoryForId(expense.categoryId) }
+    private var isSelected: Bool { vm.selectedExpenseIds.contains(expense.id) }
     
     var body: some View {
         HStack(spacing: 12) {
-            // Category icon
+            
+            // ── Cerchio di selezione ──────────────────────────────────────────
+            if vm.isSelecting {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .animation(.easeInOut(duration: 0.15), value: isSelected)
+            }
+            
+            // ── Icona categoria ───────────────────────────────────────────────
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(hex: category?.colorHex ?? "#9E9E9E")?.opacity(0.15) ?? Color.gray.opacity(0.15))
@@ -460,20 +547,35 @@ private struct ExpenseRowView: View {
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .onTapGesture {
-            coordinator.navigate(to: .expenseDetail(familyId: vm.familyId, expenseId: expense.id))
+            if vm.isSelecting {
+                // Modalità selezione: toggle check
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    if isSelected {
+                        vm.selectedExpenseIds.remove(expense.id)
+                    } else {
+                        vm.selectedExpenseIds.insert(expense.id)
+                    }
+                }
+            } else {
+                // Modalità normale: naviga al dettaglio
+                coordinator.navigate(to: .expenseDetail(familyId: vm.familyId, expenseId: expense.id))
+            }
         }
+        // Le swipe actions sono disabilitate durante la selezione multipla
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) {
-                vm.deleteExpense(expense)
-            } label: {
-                Label("Elimina", systemImage: "trash")
+            if !vm.isSelecting {
+                Button(role: .destructive) {
+                    vm.deleteExpense(expense)
+                } label: {
+                    Label("Elimina", systemImage: "trash")
+                }
+                Button {
+                    vm.expenseToEdit = expense
+                } label: {
+                    Label("Modifica", systemImage: "pencil")
+                }
+                .tint(.orange)
             }
-            Button {
-                vm.expenseToEdit = expense
-            } label: {
-                Label("Modifica", systemImage: "pencil")
-            }
-            .tint(.orange)
         }
     }
 }
