@@ -47,14 +47,14 @@ struct AIConsentSheet: View {
                         icon: "arrow.up.doc.fill",
                         color: .orange,
                         title: "Cosa viene inviato",
-                        body: "I dati della visita medica (diagnosi, farmaci, terapie, esami) vengono elaborati dall'assistente AI di KidBox per generare la risposta."
+                        body: "Le tue domande e il contesto della tua famiglia (nomi, visite, farmaci, esami) vengono inviati ad Anthropic (claude.ai) per generare la risposta. Anthropic è il fornitore AI di terze parti utilizzato da KidBox."
                     )
                     
                     infoBlock(
-                        icon: "key.fill",
-                        color: .green,
-                        title: "La tua API key",
-                        body: "La chiave API è salvata in modo sicuro sul tuo dispositivo (Keychain). KidBox non ha mai accesso alla tua chiave."
+                        icon: "building.2.fill",
+                        color: .blue,
+                        title: "Fornitore AI: Anthropic",
+                        body: "KidBox usa l'API di Anthropic per elaborare le richieste. I tuoi dati vengono trattati secondo la Privacy Policy di Anthropic, che garantisce protezioni equivalenti a quelle di KidBox."
                     )
                     
                     infoBlock(
@@ -79,6 +79,10 @@ struct AIConsentSheet: View {
                         
                         Link("Anthropic — Privacy Policy",
                              destination: URL(string: "https://www.anthropic.com/privacy")!)
+                        .font(.caption)
+                        
+                        Link("KidBox — Privacy Policy",
+                             destination: URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!)
                         .font(.caption)
                     }
                     .padding()
