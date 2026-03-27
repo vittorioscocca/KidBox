@@ -414,7 +414,6 @@ final class KBSubscriptionManager: ObservableObject {
         // più recente per quel product ID, indipendentemente dalla cache locale.
         for plan in KBPlan.allCases {
             guard let productId = plan.productId else { continue }
-            // Salta se currentEntitlements ha già trovato un piano migliore
             if let current = activePlan, current.storageQuota >= plan.storageQuota { continue }
             
             guard let result = await Transaction.latest(for: productId),
@@ -422,7 +421,6 @@ final class KBSubscriptionManager: ObservableObject {
             if let revoked = tx.revocationDate, revoked <= Date() { continue }
             if let expiry  = tx.expirationDate,  expiry  <= Date() { continue }
             
-            // Transazione valida trovata — sovrascrive il piano corrente se più alto
             KBLog.app.kbInfo("SubscriptionManager: fallback latest tx found product=\(productId) plan=\(plan.rawValue)")
             activePlan          = plan
             activeTransactionId = String(tx.id)
@@ -461,8 +459,26 @@ final class KBSubscriptionManager: ObservableObject {
             cancelExpirationNotification()
         }
         
-        guard planDidChange else { return }
-        await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
+        // ── Scrittura Firestore ───────────────────────────────────────────────────
+        // REGOLA: solo chi ha trovato una transazione StoreKit attiva (activePlan != nil)
+        // può scrivere il piano su Firestore. Questo impedisce che il device di un
+        // membro della famiglia (es. B) che non ha comprato nulla sovrascriva il piano
+        // pagato da A con "free".
+        //
+        // Se activePlan == nil significa che su questo device/account Apple non esiste
+        // nessuna transazione valida → non siamo il compratore → leggiamo solo da
+        // Firestore senza toccarla.
+        if activePlan != nil {
+            // Siamo il compratore (o stesso Apple ID): aggiorniamo Firestore
+            guard planDidChange else { return }
+            await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
+        } else {
+            // Non siamo il compratore: carichiamo il piano dalla fonte di verità cloud
+            // solo se la UI locale non corrisponde già a quanto c'è su Firestore
+            if planDidChange {
+                await loadPlan()
+            }
+        }
     }
     
     // MARK: - Notifiche scadenza abbonamento

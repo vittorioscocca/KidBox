@@ -249,39 +249,44 @@ struct PhotoAlbumDetailView: View {
                 }
             }
             .frame(height: gridHeight)
+            // Dentro photoGrid, dopo il .frame(height: gridHeight) del ZStack:
+            // Rimuovi il vecchio blocco Color.clear con DragGesture e metti:
             
-            if isSelectMode {
-                Color.clear
-                    .frame(height: gridHeight)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 4, coordinateSpace: .local)
-                            .onChanged { value in
-                                let col = Int(value.location.x / (cellSize + spacing)).clamped(to: 0...2)
-                                let row = Int(value.location.y / (cellSize + spacing))
-                                let index = row * 3 + col
-                                guard index >= 0, index < items.count else { return }
-                                let photoId = items[index].id
-                                if value.translation.width.magnitude < 6 && value.translation.height.magnitude < 6 {
-                                    dragSelectIsAdding = !selectedIds.contains(photoId)
-                                }
-                                withAnimation(.snappy(duration: 0.1)) {
-                                    if dragSelectIsAdding { selectedIds.insert(photoId) }
-                                    else { selectedIds.remove(photoId) }
-                                }
-                            }
-                            .simultaneously(with:
-                                                SpatialTapGesture().onEnded { value in
-                                                    let col = Int(value.location.x / (cellSize + spacing)).clamped(to: 0...2)
-                                                    let row = Int(value.location.y / (cellSize + spacing))
-                                                    let index = row * 3 + col
-                                                    guard index >= 0, index < items.count else { return }
-                                                    withAnimation(.snappy) { toggleSelection(items[index].id) }
-                                                }
-                                           )
-                    )
-            }
+            .modifier(DragSelectOverlay(
+                isActive: isSelectMode,
+                cellSize: cellSize,
+                spacing: spacing,
+                itemCount: items.count,
+                scrollView: findScrollView(),   // vedi sotto
+                onToggle: { index in
+                    let photoId = items[index].id
+                    withAnimation(.snappy(duration: 0.1)) {
+                        if dragSelectIsAdding { selectedIds.insert(photoId) }
+                        else { selectedIds.remove(photoId) }
+                    }
+                },
+                onDragStart: { adding in
+                    dragSelectIsAdding = adding
+                },
+                isAdding: dragSelectIsAdding
+            ))
         }
+    }
+    
+    private func findScrollView() -> UIScrollView? {
+        // Cerca il primo UIScrollView nella gerarchia di UIKit
+        func search(_ view: UIView) -> UIScrollView? {
+            if let sv = view as? UIScrollView { return sv }
+            for sub in view.subviews {
+                if let found = search(sub) { return found }
+            }
+            return nil
+        }
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first?.windows.first(where: \.isKeyWindow)
+        else { return nil }
+        return search(window)
     }
     
     // MARK: - Selection toolbar

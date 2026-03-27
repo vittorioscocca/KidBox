@@ -1654,7 +1654,7 @@ exports.deleteAccount = onCall(
 
 exports.garbageCollectDeleted = onSchedule(
     {
-      schedule: "0 3 * * 0",
+      schedule: "0 3 * * *",
       timeZone: "Europe/Rome",
       region: "europe-west1",
       timeoutSeconds: 540,
@@ -1663,7 +1663,7 @@ exports.garbageCollectDeleted = onSchedule(
     async () => {
       const bucket = admin.storage().bucket(STORAGE_BUCKET);
       const db = admin.firestore();
-      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const cutoff = new Date(); // elimina subito — nessun periodo di grazia
 
       logger.info("garbageCollectDeleted: start", {cutoff: cutoff.toISOString()});
 

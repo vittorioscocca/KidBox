@@ -31,6 +31,25 @@ final class ExpenseAttachmentService {
     
     private var cancellables = Set<AnyCancellable>()
     
+    // MARK: - ID deterministici
+    //
+    // Gli ID sono deterministici per evitare duplicati su device diversi.
+    // Se due device chiamano ensureExpensesFolder contemporaneamente, troveranno
+    // (o creeranno) esattamente la stessa cartella con lo stesso ID —
+    // nessuna duplicazione in SwiftData né su Firestore.
+    
+    /// ID fisso della root "Spese" per questa famiglia.
+    /// Formato: "exp-root-<familyId>"
+    private static func speseRootId(familyId: String) -> String {
+        "exp-root-\(familyId)"
+    }
+    
+    /// ID fisso della sottocartella per una singola spesa.
+    /// Formato: "exp-cat-<expenseId>"
+    private static func speseSubfolderId(expenseId: String) -> String {
+        "exp-cat-\(expenseId)"
+    }
+    
     // MARK: - Start (KBEventBus listener)
     
     func start(modelContext: ModelContext) {
@@ -69,32 +88,31 @@ final class ExpenseAttachmentService {
     
     /// Crea (o recupera) SOLO la cartella root "Spese" (parentId = nil).
     ///
+    /// L'ID è deterministico ("exp-root-<familyId>") — idempotente su tutti i device.
     /// Chiamato da SyncCenter.startExpensesRealtime per garantire che la
-    /// cartella esista sul dispositivo ricevente prima che arrivino allegati
-    /// inbound — senza dover attendere il primo upload locale.
+    /// cartella esista sul dispositivo ricevente prima che arrivino allegati inbound.
     @discardableResult
     func ensureExpensesRootFolder(
         familyId: String,
         modelContext: ModelContext
     ) -> KBDocumentCategory {
-        let uid = Auth.auth().currentUser?.uid ?? "local"
-        let fid = familyId
+        let uid    = Auth.auth().currentUser?.uid ?? "local"
+        let rootId = Self.speseRootId(familyId: familyId)
+        let rid    = rootId   // copia locale per #Predicate
         
-        let rootDesc = FetchDescriptor<KBDocumentCategory>(
-            predicate: #Predicate {
-                $0.familyId == fid &&
-                $0.parentId == nil &&
-                $0.isDeleted == false
-            }
+        // Cerca per ID deterministico — non per titolo+parentId per evitare
+        // falsi negativi se la cartella esiste già con questo ID ma non è
+        // ancora visibile tramite la query generica.
+        let desc = FetchDescriptor<KBDocumentCategory>(
+            predicate: #Predicate { $0.id == rid && $0.isDeleted == false }
         )
-        let roots = (try? modelContext.fetch(rootDesc)) ?? []
-        if let existing = roots.first(where: { $0.title == "Spese" }) {
+        if let existing = (try? modelContext.fetch(desc))?.first {
             KBLog.storage.kbDebug("📁 [expenses][folder] root already exists catId=\(existing.id)")
             return existing
         }
         
         let speseFolder = KBDocumentCategory(
-            id: UUID().uuidString,
+            id: rootId,          // ← ID deterministico, mai duplicato
             familyId: familyId,
             title: "Spese",
             sortOrder: 99,
@@ -114,13 +132,14 @@ final class ExpenseAttachmentService {
     }
     
     /// Crea (o recupera) la gerarchia:
-    ///   📁 Spese                    ← root, parentId = nil
-    ///     📁 <titolo spesa>         ← sottocartella per spesa, id = "exp-cat-<expenseId>"
+    ///   📁 Spese                    ← root, id = "exp-root-<familyId>"
+    ///     📁 <titolo spesa>         ← sottocartella, id = "exp-cat-<expenseId>"
+    ///
+    /// Entrambi gli ID sono deterministici → idempotente su tutti i device,
+    /// nessuna duplicazione anche se chiamato più volte o da device diversi.
     ///
     /// Se `expenseId` è vuoto, crea/restituisce solo la root "Spese".
-    /// Entrambe le categorie vengono inserite in SwiftData e accodate
-    /// al SyncCenter esattamente come fa TreatmentAttachmentService.
-    /// Restituisce la sottocartella (o la root se expenseId è vuoto).
+    @discardableResult
     func ensureExpensesFolder(
         familyId: String,
         expenseId: String,
@@ -128,64 +147,27 @@ final class ExpenseAttachmentService {
         modelContext: ModelContext
     ) -> KBDocumentCategory {
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        let fid = familyId
         
-        // ── 1. Root "Spese" ──────────────────────────────────────────────
-        let rootDesc = FetchDescriptor<KBDocumentCategory>(
-            predicate: #Predicate {
-                $0.familyId == fid &&
-                $0.parentId == nil &&
-                $0.isDeleted == false
-            }
-        )
-        let roots = (try? modelContext.fetch(rootDesc)) ?? []
-        let speseFolder: KBDocumentCategory
-        if let existing = roots.first(where: { $0.title == "Spese" }) {
-            KBLog.storage.kbDebug("SpeseFolderRoot already exists catId=\(existing.id)")
-            speseFolder = existing
-        } else {
-            speseFolder = KBDocumentCategory(
-                id: UUID().uuidString,
-                familyId: familyId,
-                title: "Spese",
-                sortOrder: 99,
-                parentId: nil,
-                updatedBy: uid
-            )
-            modelContext.insert(speseFolder)
-            try? modelContext.save()
-            SyncCenter.shared.enqueueDocumentCategoryUpsert(
-                categoryId: speseFolder.id,
-                familyId: familyId,
-                modelContext: modelContext
-            )
-            // FIX 4: flush immediatamente dopo aver accodato la root "Spese"
-            // così Firestore la riceve prima della subfolder che dipende dal suo id.
-            SyncCenter.shared.flushGlobal(modelContext: modelContext)
-            KBLog.storage.kbInfo("SpeseFolderRoot created catId=\(speseFolder.id)")
-        }
+        // ── 1. Root "Spese" — ID deterministico ─────────────────────────────
+        let speseFolder = ensureExpensesRootFolder(familyId: familyId, modelContext: modelContext)
         
-        // ── Early return se expenseId è vuoto: serve solo la root ────────
+        // ── Early return se expenseId è vuoto ───────────────────────────────
         // Questo path viene usato da SyncCenter.startExpensesRealtime per
         // pre-creare la cartella "Spese" senza una spesa specifica.
-        if expenseId.isEmpty {
-            KBLog.storage.kbDebug("📁 [expenses][folder] expenseId empty → returning root only")
+        guard !expenseId.isEmpty else {
+            KBLog.storage.kbDebug("📁 [expenses][folder] expenseId empty → returning root only catId=\(speseFolder.id)")
             return speseFolder
         }
         
-        // ── 2. Sottocartella per la singola spesa ────────────────────────
-        // L'id è deterministico ("exp-cat-<expenseId>") quindi è idempotente:
-        // chiamate multiple per la stessa spesa trovano sempre la cartella esistente.
-        let subFolderId = "exp-cat-\(expenseId)"
-        let subIdLocal  = subFolderId          // copia locale per #Predicate
+        // ── 2. Sottocartella per la singola spesa — ID deterministico ────────
+        let subFolderId = Self.speseSubfolderId(expenseId: expenseId)
+        let subId       = subFolderId   // copia locale per #Predicate
         
         let subDesc = FetchDescriptor<KBDocumentCategory>(
-            predicate: #Predicate {
-                $0.id == subIdLocal && $0.isDeleted == false
-            }
+            predicate: #Predicate { $0.id == subId && $0.isDeleted == false }
         )
         if let existing = (try? modelContext.fetch(subDesc))?.first {
-            KBLog.storage.kbDebug("ExpenseSubfolder already exists catId=\(existing.id) expenseId=\(expenseId)")
+            KBLog.storage.kbDebug("📁 [expenses][folder] subfolder already exists catId=\(existing.id) expenseId=\(expenseId)")
             return existing
         }
         
@@ -198,7 +180,7 @@ final class ExpenseAttachmentService {
             familyId: familyId,
             title: safeName,
             sortOrder: 0,
-            parentId: speseFolder.id,
+            parentId: speseFolder.id,   // ← parentId deterministico
             updatedBy: uid
         )
         modelContext.insert(subFolder)
@@ -208,7 +190,9 @@ final class ExpenseAttachmentService {
             familyId: familyId,
             modelContext: modelContext
         )
-        KBLog.storage.kbInfo("ExpenseSubfolder created catId=\(subFolder.id) expenseId=\(expenseId)")
+        // Flush dopo la subfolder (la root è già stata flushata da ensureExpensesRootFolder)
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        KBLog.storage.kbInfo("📁 [expenses][folder] subfolder created catId=\(subFolder.id) expenseId=\(expenseId)")
         return subFolder
     }
     
@@ -238,19 +222,17 @@ final class ExpenseAttachmentService {
         
         KBLog.storage.kbDebug("Loaded local file bytes=\(data.count) file=\(url.lastPathComponent)")
         
-        let uid          = Auth.auth().currentUser?.uid ?? "local"
-        let now          = Date()
-        let docId        = UUID().uuidString
-        let fileName     = url.lastPathComponent
-        let ext          = url.pathExtension.lowercased()
-        let mime         = mimeType(for: ext)
-        let title        = url.deletingPathExtension().lastPathComponent
+        let uid         = Auth.auth().currentUser?.uid ?? "local"
+        let now         = Date()
+        let docId       = UUID().uuidString
+        let fileName    = url.lastPathComponent
+        let ext         = url.pathExtension.lowercased()
+        let mime        = mimeType(for: ext)
+        let title       = url.deletingPathExtension().lastPathComponent
         
-        // FIX 5: Il path di Storage DEVE usare "documents" invece di
-        // "expense-attachments". Le Firebase Storage Security Rules
-        // concedono accesso solo a families/{fid}/documents/... —
-        // usare un path custom bloccava l'upload silenziosamente.
-        let storagePath  = "families/\(familyId)/documents/\(docId)/\(fileName).kbenc"
+        // Il path di Storage usa "documents" — le Security Rules concedono
+        // accesso solo a families/{fid}/documents/...
+        let storagePath = "families/\(familyId)/documents/\(docId)/\(fileName).kbenc"
         
         KBLog.storage.kbDebug("Resolved attachment metadata docId=\(docId) mime=\(mime) storagePath=\(storagePath)")
         
@@ -291,8 +273,8 @@ final class ExpenseAttachmentService {
             isDeleted: false
         )
         
-        doc.localPath  = localRelPath
-        doc.syncState  = .pendingUpsert
+        doc.localPath = localRelPath
+        doc.syncState = .pendingUpsert
         
         modelContext.insert(doc)
         
@@ -303,7 +285,6 @@ final class ExpenseAttachmentService {
             KBLog.persistence.kbError("Failed saving expense attachment docId=\(doc.id): \(error.localizedDescription)")
         }
         
-        // Aggiorna il riferimento sull'entità KBExpense e propaga su Firestore
         updateExpenseAttachmentRef(expenseId: expenseId, docId: docId, modelContext: modelContext)
         
         KBLog.storage.kbInfo("Enqueue text extraction docId=\(doc.id)")
@@ -344,9 +325,9 @@ final class ExpenseAttachmentService {
                 metadata.contentType = "application/octet-stream"
                 metadata.customMetadata = [
                     "kb_encrypted": "1",
-                    "kb_alg":        "AES-GCM",
-                    "kb_orig_mime":  mime,
-                    "kb_orig_name":  fileName
+                    "kb_alg":       "AES-GCM",
+                    "kb_orig_mime": mime,
+                    "kb_orig_name": fileName
                 ]
                 
                 _ = try await ref.putDataAsync(encrypted, metadata: metadata)
@@ -368,7 +349,6 @@ final class ExpenseAttachmentService {
                         KBLog.persistence.kbError("Failed saving synced attachment docId=\(doc.id): \(error.localizedDescription)")
                     }
                     
-                    // Ri-sincronizza il documento ora che ha il downloadURL definitivo
                     SyncCenter.shared.enqueueDocumentUpsert(
                         documentId: doc.id,
                         familyId: familyId,
@@ -380,8 +360,8 @@ final class ExpenseAttachmentService {
                 await KBLog.storage.kbError("Remote upload failed docId=\(docId): \(error.localizedDescription)")
                 
                 await MainActor.run {
-                    doc.syncState      = .error
-                    doc.lastSyncError  = error.localizedDescription
+                    doc.syncState     = .error
+                    doc.lastSyncError = error.localizedDescription
                     
                     do {
                         try modelContext.save()
@@ -450,7 +430,7 @@ final class ExpenseAttachmentService {
     ) -> [KBDocument] {
         KBLog.storage.kbDebug("Fetch expense attachments expenseId=\(expenseId) familyId=\(familyId)")
         
-        let fid = familyId
+        let fid  = familyId
         let desc = FetchDescriptor<KBDocument>(
             predicate: #Predicate<KBDocument> {
                 $0.familyId == fid && $0.isDeleted == false
@@ -521,7 +501,7 @@ final class ExpenseAttachmentService {
         docId: String,
         modelContext: ModelContext
     ) {
-        let eid = expenseId
+        let eid  = expenseId
         let desc = FetchDescriptor<KBExpense>(
             predicate: #Predicate { $0.id == eid && $0.isDeleted == false }
         )
@@ -548,7 +528,7 @@ final class ExpenseAttachmentService {
         docId: String,
         modelContext: ModelContext
     ) {
-        let eid = expenseId
+        let eid  = expenseId
         let desc = FetchDescriptor<KBExpense>(
             predicate: #Predicate { $0.id == eid && $0.isDeleted == false }
         )
@@ -601,17 +581,17 @@ struct ExpenseAttachmentsSection: View {
     let expense: KBExpense
     
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme)  private var colorScheme
     
     @Query private var attachments: [KBDocument]
     
-    @State private var isUploading    = false
+    @State private var isUploading     = false
     @State private var showSourcePicker = false
-    @State private var showImporter   = false
-    @State private var showGallery    = false
-    @State private var showCamera     = false
-    @State private var previewURL: URL?  = nil
-    @State private var showKeyAlert   = false
+    @State private var showImporter    = false
+    @State private var showGallery     = false
+    @State private var showCamera      = false
+    @State private var previewURL: URL? = nil
+    @State private var showKeyAlert    = false
     @State private var showStorageUpgrade = false
     @State private var errorText: String? = nil
     
