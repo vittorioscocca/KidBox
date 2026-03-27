@@ -16,6 +16,7 @@ import FirebaseStorage
 import Firebase
 import FBSDKCoreKit
 import FirebaseAuth
+import SwiftData
 
 /// UIApplication delegate for KidBox.
 ///
@@ -24,17 +25,27 @@ import FirebaseAuth
 /// - Bridge APNs token to Firebase Messaging (FCM)
 /// - Receive FCM token updates (registration token refresh)
 /// - Handle user interaction with notifications (tap)
+/// - Handle quick actions on treatment dose notifications (Assunto / Saltato)
 /// - Present notifications while app is in foreground
 /// - Handle background location relaunch (significant location changes)
 ///
 /// Notes:
 /// - Avoid logging sensitive notification payload data (could contain PII).
 /// - Avoid logging full FCM tokens (treat as sensitive).
+/// - `modelContainer` viene iniettato da `KidBoxApp.init()` prima che qualsiasi
+///   notifica possa arrivare, quindi è sempre disponibile quando serve.
 final class AppDelegate: NSObject,
                          UIApplicationDelegate,
                          UNUserNotificationCenterDelegate,
                          MessagingDelegate,
                          CLLocationManagerDelegate {
+    
+    // MARK: - SwiftData container (iniettato da KidBoxApp)
+    
+    /// Iniettato da `KidBoxApp.init()` subito dopo la costruzione del container.
+    /// Usato da `TreatmentDoseActionHandler` per aggiornare i `KBDoseLog`
+    /// direttamente dalla quick action senza aprire l'app.
+    var modelContainer: ModelContainer?
     
     // MARK: - Background location manager
     
@@ -55,6 +66,13 @@ final class AppDelegate: NSObject,
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
         
+        // ── Registra le categorie di notifica con azioni rapide ────────────
+        // Deve essere chiamato il prima possibile, prima di impostare il delegate,
+        // così iOS conosce già le categorie quando arriva la prima notifica.
+        TreatmentNotificationCategory.register()
+        KBLog.app.kbDebug("Notification categories registered")
+        // ──────────────────────────────────────────────────────────────────
+        
         // Condividi la sessione Auth con la Share Extension tramite Keychain sharing.
         // Richiede "Keychain Sharing" capability con gruppo "it.vittorioscocca.kidbox"
         // attivato su ENTRAMBI i target in Xcode → Signing & Capabilities.
@@ -73,9 +91,10 @@ final class AppDelegate: NSObject,
         KBLog.app.kbInfo("Facebook SDK configured")
         
         let opts = FirebaseApp.app()?.options
-        KBLog.app.kbInfo("✅ PROJECT:\(opts?.projectID ?? "nil")" )
+        KBLog.app.kbInfo("✅ PROJECT:\(opts?.projectID ?? "nil")")
         KBLog.app.kbInfo("✅ STORAGE_BUCKET:\(opts?.storageBucket ?? "nil")")
         KBLog.app.kbInfo("✅ STORAGE via Storage.storage:\(Storage.storage().app.options.storageBucket ?? "nil")")
+        
         // 🔔 Notifications delegate
         UNUserNotificationCenter.current().delegate = self
         KBLog.app.kbDebug("UNUserNotificationCenter delegate set")
@@ -179,18 +198,59 @@ final class AppDelegate: NSObject,
         KBLog.app.kbError("Background location error: \(error.localizedDescription)")
     }
     
-    // MARK: - Notification tap handling
+    // MARK: - Notification response handling
     
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        KBLog.auth.kbInfo("Notification tapped (didReceive response)")
+        KBLog.auth.kbInfo("Notification response received actionId=\(response.actionIdentifier)")
         
         let userInfo = response.notification.request.content.userInfo
         
+        // ── Quick action: Assunto / Saltato ────────────────────────────────
+        // Se l'utente ha toccato una delle azioni rapide della notifica dose,
+        // registriamo il KBDoseLog direttamente senza aprire l'app.
+        // TreatmentDoseActionHandler.handle() restituisce `true` solo per le
+        // due azioni rapide; per il tap normale (UNNotificationDefaultActionIdentifier)
+        // restituisce `false` e proseguiamo con il deep link.
+        if let container = modelContainer {
+            let handled = await MainActor.run {
+                TreatmentDoseActionHandler.handle(
+                    response:     response,
+                    modelContext: container.mainContext
+                )
+            }
+            if handled {
+                KBLog.auth.kbInfo("Treatment dose quick action handled — skipping deep link")
+                return
+            }
+        } else {
+            KBLog.auth.kbError("AppDelegate.modelContainer is nil — quick actions unavailable")
+        }
+        // ──────────────────────────────────────────────────────────────────
+        
+        // ── Tap normale sulla notifica → deep link ─────────────────────────
         await MainActor.run {
             NotificationManager.shared.handleNotificationUserInfo(userInfo)
+        }
+    }
+    
+    // MARK: - Foreground presentation
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        let type = notification.request.content.userInfo["type"] as? String
+        switch type {
+        case "visit_reminder", "treatment_reminder":
+            // Mostra banner + suono anche con l'app aperta in foreground
+            KBLog.auth.kbDebug("Notification in foreground: \(type ?? "") → show banner")
+            return [.banner, .sound, .badge]
+        default:
+            KBLog.auth.kbDebug("Notification received in foreground (suppressed)")
+            return []
         }
     }
     
@@ -230,23 +290,5 @@ final class AppDelegate: NSObject,
         Task { @MainActor in
             await NotificationManager.shared.handleFCMToken(token)
         }
-    }
-    
-    // MARK: - Foreground presentation
-    
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        let type = notification.request.content.userInfo["type"] as? String
-        // Mostra banner, suono e badge per i promemoria visita locali schedulate
-        // da PediatricVisitEditView (visit_reminder). Tutte le altre notifiche
-        // remote vengono soppresse in foreground (comportamento precedente).
-        if type == "visit_reminder" {
-            KBLog.auth.kbDebug("Notification in foreground: visit_reminder → show banner")
-            return [.banner, .sound, .badge]
-        }
-        KBLog.auth.kbDebug("Notification received in foreground (suppressed)")
-        return []
     }
 }

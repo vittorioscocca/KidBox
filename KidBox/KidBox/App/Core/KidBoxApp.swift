@@ -27,6 +27,7 @@ struct KidBoxApp: App {
         KBLog.app.kbInfo("KidBoxApp init")
         let container = ModelContainerProvider.makeContainer(inMemory: false)
         self.modelContainer = container
+        _appDelegate.wrappedValue.modelContainer = container
         KBLog.persistence.kbInfo("Starting migrations (best effort)")
         Task {
             do {
@@ -171,7 +172,6 @@ struct KidBoxApp: App {
                         case .calendarEvent(let familyId, let eventId):
                             KBLog.navigation.kbInfo("Deep link -> open calendar eventId=\(eventId)")
                             coordinator.setActiveFamily(familyId)
-                            // ✅ Reset badge calendario
                             Task { @MainActor in
                                 BadgeManager.shared.clearCalendar()
                                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
@@ -179,7 +179,6 @@ struct KidBoxApp: App {
                             coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: eventId))
                             NotificationManager.shared.consumeDeepLink()
                             
-                            // ── promemoria visita pediatrica ──────────────
                         case .pediatricVisit(let familyId, let childId, let visitId):
                             KBLog.navigation.kbInfo("Deep link -> open pediatric visit visitId=\(visitId)")
                             coordinator.setActiveFamily(familyId)
@@ -250,7 +249,7 @@ struct KidBoxApp: App {
                         }
                 }
                 
-            } // ZStack
+            }
         }
         .modelContainer(modelContainer)
         

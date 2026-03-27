@@ -197,6 +197,11 @@ extension SyncCenter {
                     if let local {
                         // 🛡️ Anti-resurrect
                         if local.isDeleted && local.syncState == .pendingUpsert { continue }
+                        let localIsRecent = local.updatedAt.timeIntervalSince(remoteStamp) > -30
+                        if localIsRecent && local.taken && !dto.taken {
+                            KBLog.sync.kbDebug("applyDoseLogsInbound skip anti-overwrite (local taken=true protetto) id=\(lid)")
+                            continue
+                        }
                         
                         if remoteStamp >= local.updatedAt {
                             local.taken         = dto.taken

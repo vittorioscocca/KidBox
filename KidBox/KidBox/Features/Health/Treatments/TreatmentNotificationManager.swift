@@ -2,7 +2,11 @@
 //  TreatmentNotificationManager.swift
 //  KidBox
 //
-//  Created by vscocca on 03/03/26.
+//  MODIFICHE rispetto alla versione precedente:
+//  • content.categoryIdentifier = TreatmentNotificationCategory.identifier
+//    → abilita le azioni rapide [✅ Assunto] [⏭ Saltato] nella notifica
+//  • userInfo ora include "dayOffset" e "slotIndex"
+//    → TreatmentDoseActionHandler può registrare la dose senza aprire l'app
 //
 
 import Foundation
@@ -29,10 +33,14 @@ enum TreatmentNotificationManager {
         let cal    = Calendar.current
         
         for dayOffset in 0..<days {
-            guard let dayDate = cal.date(byAdding: .day, value: dayOffset, to: treatment.startDate) else { continue }
+            guard let dayDate = cal.date(
+                byAdding: .day, value: dayOffset, to: treatment.startDate
+            ) else { continue }
+            
             for (i, timeStr) in treatment.scheduleTimes.enumerated() {
                 let parts = timeStr.split(separator: ":").compactMap { Int($0) }
                 guard parts.count == 2 else { continue }
+                
                 var dc = cal.dateComponents([.year, .month, .day], from: dayDate)
                 dc.hour = parts[0]; dc.minute = parts[1]
                 guard let fire = cal.date(from: dc), fire > Date() else { continue }
@@ -41,16 +49,28 @@ enum TreatmentNotificationManager {
                 content.title = "💊 \(treatment.drugName)"
                 content.body  = "\(i < labels.count ? labels[i] : "Dose") · \(treatment.dosageValue) \(treatment.dosageUnit) per \(childName)"
                 content.sound = .default
+                
+                // ── Categoria con azioni rapide ────────────────────────────
+                content.categoryIdentifier = TreatmentNotificationCategory.identifier
+                // ──────────────────────────────────────────────────────────
+                
                 // ── Deep link payload ──────────────────────────────────────
+                // dayOffset e slotIndex sono necessari a TreatmentDoseActionHandler
+                // per aggiornare il KBDoseLog corretto senza aprire l'app.
                 content.userInfo = [
                     "type":        "treatment_reminder",
                     "familyId":    treatment.familyId,
                     "childId":     treatment.childId,
-                    "treatmentId": treatment.id
+                    "treatmentId": treatment.id,
+                    "dayOffset":   dayOffset,   // ← NUOVO
+                    "slotIndex":   i            // ← NUOVO
                 ]
                 // ──────────────────────────────────────────────────────────
                 
-                let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
+                let trigger = UNCalendarNotificationTrigger(
+                    dateMatching: dc,
+                    repeats: false
+                )
                 let req = UNNotificationRequest(
                     identifier: "treatment-\(treatment.id)-d\(dayOffset)-s\(i)",
                     content: content,
@@ -66,7 +86,9 @@ enum TreatmentNotificationManager {
             let ids = reqs
                 .filter { $0.identifier.hasPrefix("treatment-\(treatmentId)-") }
                 .map    { $0.identifier }
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+            UNUserNotificationCenter.current().removePendingNotificationRequests(
+                withIdentifiers: ids
+            )
         }
     }
 }

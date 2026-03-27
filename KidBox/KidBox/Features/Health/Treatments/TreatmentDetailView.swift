@@ -133,10 +133,26 @@ struct TreatmentDetailView: View {
         }
         .onAppear {
             selectedDayOffset = currentDayOffset
+            print("🔍 onAppear selectedDayOffset=\(selectedDayOffset) currentDayOffset=\(currentDayOffset)")
+            print("🔍 doseLogs count=\(doseLogs.count)")
+            for log in doseLogs {
+                print("🔍 log dayNumber=\(log.dayNumber) slotIndex=\(log.slotIndex) taken=\(log.taken)")
+            }
             Task {
                 let s = await UNUserNotificationCenter.current().notificationSettings()
                 notifGranted = s.authorizationStatus == .authorized
             }
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .treatmentDoseQuickAction)
+        ) { notification in
+            guard
+                let info = notification.userInfo,
+                let tid  = info[TreatmentDoseQuickActionKey.treatmentId] as? String,
+                tid == treatment.id
+            else { return }
+            let day = (info[TreatmentDoseQuickActionKey.dayOffset] as? NSNumber)?.intValue ?? selectedDayOffset
+            selectedDayOffset = day
         }
         .sheet(isPresented: $showExtendSheet) { ExtendTreatmentSheet(treatment: treatment) }
         .sheet(isPresented: $showTimeEditor)  { EditScheduleTimesSheet(treatment: treatment) }
