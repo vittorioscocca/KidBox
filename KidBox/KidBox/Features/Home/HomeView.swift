@@ -55,6 +55,9 @@ struct HomeView: View {
     @State private var isUploadingHero = false
     @State private var heroUploadError: String?
     
+    // MARK: - FAB
+    @State private var fabExpanded = false
+    
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
     
     private var myProfile: KBUserProfile? {
@@ -95,6 +98,18 @@ struct HomeView: View {
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
+            
+            if fabExpanded {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                            fabExpanded = false
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
             
             ScrollView {
                 VStack(spacing: 14) {
@@ -138,6 +153,15 @@ struct HomeView: View {
             }
         } // ZStack
         .navigationTitle("KidBox")
+        .navigationBarTitleDisplayMode(.large)
+        .overlay(alignment: .bottomTrailing) {
+            if hasFamily {
+                HomeFAB(familyId: activeFamilyId, isExpanded: $fabExpanded)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 32)
+                    .zIndex(2)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -535,6 +559,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
                     KBLog.navigation.debug("Home: tap Notes")
+                    FABUsageTracker.shared.record("note")
                     // reset badge note prima di navigare
                     Task { @MainActor in
                         BadgeManager.shared.clearNotes()
@@ -553,6 +578,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
                     KBLog.navigation.debug("Home: tap Todo")
+                    FABUsageTracker.shared.record("todo")
                     onNavigate(.todo)
                 }
                 if badge.todos > 0 {
@@ -566,6 +592,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Lista della Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
                     KBLog.navigation.debug("Home: tap Shopping")
+                    FABUsageTracker.shared.record("grocery")
                     // reset badge spesa prima di navigare
                     Task { @MainActor in
                         BadgeManager.shared.clearShopping()
@@ -584,6 +611,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
                     KBLog.navigation.debug("Home: tap Calendar")
+                    FABUsageTracker.shared.record("event")
                     onNavigate(.calendar(familyId: familyId))
                 }
                 if badge.calendar > 0 {
@@ -596,6 +624,7 @@ private struct HomeCardGrid: View {
         case .care:
             HomeCardView(title: "Salute", subtitle: "Health tracker", systemImage: "cross.case", tint: .red) {
                 KBLog.navigation.debug("Home: tap Care")
+                FABUsageTracker.shared.record("health")
                 onNavigate(.pediatric(familyId: familyId, childId: ""))
             }
             
@@ -603,6 +632,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
                     KBLog.navigation.debug("Home: tap Chat")
+                    FABUsageTracker.shared.record("chat")
                     onNavigate(.chat)
                 }
                 if badge.chat > 0 {
@@ -616,6 +646,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
                     KBLog.navigation.debug("Home: tap Documents")
+                    FABUsageTracker.shared.record("documents")
                     onNavigate(.document)
                 }
                 if badge.documents > 0 {
@@ -628,6 +659,7 @@ private struct HomeCardGrid: View {
         case .expenses:
             HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
                 KBLog.navigation.debug("Home: tap Expenses")
+                FABUsageTracker.shared.record("expense")
                 Task {
                     BadgeManager.shared.clearExpenses()
                     await CountersService.shared.reset(familyId: familyId, field: .expenses)
