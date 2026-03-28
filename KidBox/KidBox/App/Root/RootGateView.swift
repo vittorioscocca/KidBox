@@ -30,6 +30,10 @@ struct RootGateView: View {
                     .ignoresSafeArea()
             } else if !coordinator.isAuthenticated {
                 LoginView()
+            } else if !coordinator.hasSeenOnboarding {
+                OnboardingWalkthroughView {
+                    coordinator.completeOnboarding()
+                }
             } else {
                 HomeView()
             }

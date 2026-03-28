@@ -39,6 +39,14 @@ final class AppCoordinator: ObservableObject {
     /// Evita il flash della login screen all'avvio quando l'utente è già loggato.
     @Published private(set) var isCheckingAuth: Bool = true
     
+    // MARK: - Onboarding
+    
+    private static let onboardingKey = "hasSeenOnboarding"
+    
+    /// true se l'utente ha già completato il walkthrough di benvenuto.
+    @Published var hasSeenOnboarding: Bool =
+    UserDefaults.standard.bool(forKey: AppCoordinator.onboardingKey)
+    
     /// Cached Firebase UID of the current user (if authenticated).
     @Published private(set) var uid: String?
     
@@ -131,6 +139,13 @@ final class AppCoordinator: ObservableObject {
         let rawAppearance = UserDefaults.standard.string(forKey: Self.appearanceModeKey) ?? AppearanceMode.system.rawValue
         appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
         KBLog.settings.debug("AppCoordinator init appearanceMode=\(rawAppearance, privacy: .public)")
+        // Solo in debug — rimuovere prima del lancio
+        // DOPO — resetta anche la proprietà @Published
+#if DEBUG
+        UserDefaults.standard.removeObject(forKey: Self.onboardingKey)
+        hasSeenOnboarding = false   // ← aggiunge questa riga
+#endif
+        KBLog.navigation.kbInfo("hasSeenOnboarding = \(UserDefaults.standard.bool(forKey: "hasSeenOnboarding"))")
     }
     
     // MARK: - Appearance management
@@ -142,6 +157,13 @@ final class AppCoordinator: ObservableObject {
         KBLog.settings.info("AppCoordinator setAppearanceMode mode=\(mode.rawValue, privacy: .public)")
         appearanceMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: Self.appearanceModeKey)
+    }
+    
+    
+    func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: Self.onboardingKey)
+        hasSeenOnboarding = true
+        KBLog.navigation.kbInfo("Onboarding completed")
     }
     
     // MARK: - Active family management
@@ -224,6 +246,22 @@ final class AppCoordinator: ObservableObject {
                         user.displayName ?? user.email ?? "Utente",
                         forKey: "currentUserDisplayName"
                     )
+                    
+                    // ── Onboarding gate ──────────────────────────────────────────
+                    // Utenti esistenti (già con famiglia) → salta il walkthrough
+                    // Utenti nuovi (nessuna famiglia ancora) → mostreranno il walkthrough
+                    // tramite RootGateView che legge hasSeenOnboarding
+                    if !self.hasSeenOnboarding {
+                        let familyDescriptor = FetchDescriptor<KBFamily>()
+                        let hasFamily = ((try? modelContext.fetch(familyDescriptor)) ?? []).isEmpty == false
+                        if hasFamily {
+                            // Utente esistente aggiornato all'app con onboarding → skip
+                            self.completeOnboarding()
+                            KBLog.navigation.kbInfo("Onboarding skipped: existing user with family")
+                        }
+                        // Se non ha famiglia → hasSeenOnboarding rimane false
+                        // → RootGateView mostrerà OnboardingWalkthroughView
+                    }
                     
                     if let fid = self.activeFamilyId {
                         sharedDefaults?.set(fid, forKey: "activeFamilyId")
