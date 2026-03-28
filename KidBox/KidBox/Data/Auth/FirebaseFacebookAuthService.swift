@@ -2,7 +2,12 @@
 //  FirebaseFacebookAuthService.swift
 //  KidBox
 //
-//  Created by vscocca on 27/02/26.
+//  Fix per Facebook SDK 17.4.0:
+//  Il token restituito da LoginManager.logIn() non è più direttamente
+//  utilizzabile da Firebase come OAuth token. Occorre:
+//  1. Fare il login normalmente con LoginManager
+//  2. Usare AccessToken.current (che SDK 17.x popola correttamente)
+//  3. Passare tokenString di AccessToken.current a Firebase
 //
 
 import UIKit
@@ -10,59 +15,20 @@ import FirebaseAuth
 import FBSDKLoginKit
 import FBSDKCoreKit
 
-/// Firebase-backed "Sign in with Facebook" implementation.
-///
-/// Responsibilities:
-/// - Present the Facebook login dialog via `LoginManager`.
-/// - Bridge the callback-based Facebook SDK into async/await.
-/// - Build a Firebase OAuth credential from the Facebook access token.
-/// - Sign in/out using FirebaseAuth.
-///
-/// Prerequisites:
-/// 1. Add `FacebookSDK` (FBSDKLoginKit, FBSDKCoreKit) via SPM:
-///    `https://github.com/facebook/facebook-ios-sdk`
-/// 2. Configure `Info.plist`:
-///    - `FacebookAppID`        → your Meta App ID (string)
-///    - `FacebookClientToken`  → your Meta Client Token
-///    - `FacebookDisplayName`  → your app name
-///    - `CFBundleURLTypes`     → add scheme `fb<APP_ID>`
-/// 3. In `AppDelegate.application(_:didFinishLaunchingWithOptions:)`:
-///    ```swift
-///    ApplicationDelegate.shared.application(app, didFinishLaunchingWithOptions: options)
-///    ```
-/// 4. In `AppDelegate.application(_:open:options:)`:
-///    ```swift
-///    ApplicationDelegate.shared.application(app, open: url, options: options)
-///    ```
-/// 5. Enable Facebook provider in Firebase Console → Authentication → Sign-in method.
-///
-/// Security notes:
-/// - Never log access tokens or user PII.
-/// - The Facebook access token is passed directly to Firebase and not stored locally.
 @MainActor
 final class FirebaseFacebookAuthService: NSObject {
     
     // MARK: - Public API
     
-    /// Presents the Facebook login dialog and signs into Firebase using the resulting credential.
-    ///
-    /// Flow:
-    /// 1. Present Facebook login via `LoginManager` (bridged to async/await)
-    /// 2. Extract access token from the result
-    /// 3. Build Firebase `OAuthCredential` from the token
-    /// 4. Sign into Firebase
-    ///
-    /// - Parameter viewController: The view controller used to present the Facebook login sheet.
-    /// - Returns: The authenticated Firebase `User`.
     func signInWithFacebook(presentingViewController: UIViewController) async throws -> User {
         KBLog.auth.kbInfo("Facebook sign-in (Firebase) started")
         
-        // Step 1 — Facebook login
-        let accessToken = try await FacebookLoginDelegate.signIn(from: presentingViewController)
+        // Step 1 — Facebook login + token
+        let tokenString = try await FacebookLoginDelegate.signIn(from: presentingViewController)
         KBLog.auth.kbDebug("Facebook login completed, building Firebase credential")
         
         // Step 2 — Firebase credential
-        let credential = FacebookAuthProvider.credential(withAccessToken: accessToken)
+        let credential = FacebookAuthProvider.credential(withAccessToken: tokenString)
         
         // Step 3 — Firebase sign-in
         let authResult = try await Auth.auth().signIn(with: credential)
@@ -71,7 +37,6 @@ final class FirebaseFacebookAuthService: NSObject {
         return authResult.user
     }
     
-    /// Signs out of both Firebase and the Facebook SDK.
     func signOut() throws {
         KBLog.auth.kbInfo("Firebase sign-out requested (Facebook service)")
         do {
@@ -84,7 +49,6 @@ final class FirebaseFacebookAuthService: NSObject {
         }
     }
     
-    /// Returns the current Firebase user if available.
     func currentUser() -> User? {
         Auth.auth().currentUser
     }
@@ -92,19 +56,15 @@ final class FirebaseFacebookAuthService: NSObject {
 
 // MARK: - Facebook login delegate bridge
 
-/// Bridges `LoginManager`'s callback-based API into async/await.
-///
-/// Kept private to ensure callers go through `FirebaseFacebookAuthService.signInWithFacebook`.
 private final class FacebookLoginDelegate {
     
-    /// Presents the Facebook login UI and returns the raw access token string.
-    ///
-    /// - Parameter viewController: The presenting view controller.
-    /// - Returns: Facebook access token string (never logged).
-    /// - Throws: `AuthError.cancelled` if the user dismisses the dialog,
-    ///           or any error returned by the Facebook SDK.
     static func signIn(from viewController: UIViewController) async throws -> String {
         KBLog.auth.kbDebug("FacebookLoginDelegate.signIn invoked")
+        
+        // Prima logga out qualsiasi sessione Facebook precedente
+        // per forzare un token fresco — evita il "Cannot parse access token"
+        // che si verifica con sessioni cached del SDK 17.x
+        await MainActor.run { LoginManager().logOut() }
         
         return try await withCheckedThrowingContinuation { continuation in
             let manager = LoginManager()
@@ -112,6 +72,7 @@ private final class FacebookLoginDelegate {
                 permissions: ["public_profile", "email"],
                 from: viewController
             ) { result, error in
+                
                 if let error {
                     KBLog.auth.kbError("Facebook SDK login error: \(error.localizedDescription)")
                     continuation.resume(throwing: error)
@@ -130,14 +91,19 @@ private final class FacebookLoginDelegate {
                     return
                 }
                 
-                guard let tokenString = result.token?.tokenString else {
-                    KBLog.auth.kbError("Facebook login succeeded but access token is missing")
+                // FIX SDK 17.x: result.token può essere nil o avere un token
+                // non parsabile da Firebase. Usiamo AccessToken.current
+                // che viene popolato correttamente dal SDK dopo il login.
+                let tokenString = AccessToken.current?.tokenString
+                ?? result.token?.tokenString
+                
+                guard let tokenString, !tokenString.isEmpty else {
+                    KBLog.auth.kbError("Facebook login: access token nil after login")
                     continuation.resume(throwing: AuthError.missingToken)
                     return
                 }
                 
-                // Do not log tokenString (sensitive).
-                KBLog.auth.kbDebug("Facebook access token obtained (not logged)")
+                KBLog.auth.kbDebug("Facebook access token obtained via AccessToken.current (not logged)")
                 continuation.resume(returning: tokenString)
             }
         }
