@@ -23,7 +23,6 @@ struct PhotoAlbumDetailView: View {
     @State private var fullscreenPhoto: KBFamilyPhoto?
     @State private var isSelectMode = false
     @State private var selectedIds: Set<String> = []
-    @State private var dragSelectIsAdding = true
     @State private var showRemoveConfirm = false
     
     // ── Camera ──────────────────────────────────────────────────────────────
@@ -249,44 +248,19 @@ struct PhotoAlbumDetailView: View {
                 }
             }
             .frame(height: gridHeight)
-            // Dentro photoGrid, dopo il .frame(height: gridHeight) del ZStack:
-            // Rimuovi il vecchio blocco Color.clear con DragGesture e metti:
-            
             .modifier(DragSelectOverlay(
-                isActive: isSelectMode,
-                cellSize: cellSize,
-                spacing: spacing,
-                itemCount: items.count,
-                scrollView: findScrollView(),   // vedi sotto
-                onToggle: { index in
-                    let photoId = items[index].id
+                isActive:   isSelectMode,
+                cellSize:   cellSize,
+                spacing:    spacing,
+                itemCount:  items.count,
+                isSelected: { index in selectedIds.contains(items[index].id) },
+                onToggle:   { index in
                     withAnimation(.snappy(duration: 0.1)) {
-                        if dragSelectIsAdding { selectedIds.insert(photoId) }
-                        else { selectedIds.remove(photoId) }
+                        toggleSelection(items[index].id)
                     }
-                },
-                onDragStart: { adding in
-                    dragSelectIsAdding = adding
-                },
-                isAdding: dragSelectIsAdding
+                }
             ))
         }
-    }
-    
-    private func findScrollView() -> UIScrollView? {
-        // Cerca il primo UIScrollView nella gerarchia di UIKit
-        func search(_ view: UIView) -> UIScrollView? {
-            if let sv = view as? UIScrollView { return sv }
-            for sub in view.subviews {
-                if let found = search(sub) { return found }
-            }
-            return nil
-        }
-        guard let window = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first?.windows.first(where: \.isKeyWindow)
-        else { return nil }
-        return search(window)
     }
     
     // MARK: - Selection toolbar

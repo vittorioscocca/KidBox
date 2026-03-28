@@ -2,220 +2,115 @@
 //  DragSelectOverlay.swift
 //  KidBox
 //
-//  Created by vscocca on 27/03/26.
+//  ViewModifier che gestisce la selezione/deselezione multipla nella griglia
+//  foto tramite DragGesture + SpatialTapGesture simultanei.
 //
-
-// MARK: - DragSelectOverlay.swift
-// Sostituisce il Color.clear + DragGesture nelle griglie foto.
-// Funzionalità:
-//   • Drag per selezionare/deselezionare celle (non blocca lo scroll)
-//   • Auto-scroll quando il dito si avvicina al bordo superiore/inferiore
-//   • Tap singolo per toggle selezione
+//  ┌─────────────────────────────────────────────────────────────────┐
+//  │  BUG ORIGINALE                                                  │
+//  │  Il vecchio Color.clear + DragGesture inline ricalcolava        │
+//  │  dragSelectIsAdding a ogni onChanged, anche sulle celle già     │
+//  │  visitate. Se l'utente trascinava su una cella già selezionata  │
+//  │  il flag si ribaltava da "rimuovi" → "aggiungi", rendendo       │
+//  │  impossibile deselezionare con il drag.                         │
+//  │                                                                 │
+//  │  FIX                                                            │
+//  │  • dragAdding viene calcolato UNA SOLA VOLTA per drag,          │
+//  │    leggendo isSelected(index) sulla prima cella toccata.        │
+//  │  • draggedIndices (Set<Int>) impedisce di rielaborare la stessa │
+//  │    cella più di una volta nello stesso drag.                    │
+//  │  • SpatialTapGesture chiama sempre onToggle (bidirezionale),    │
+//  │    indipendente dal drag.                                       │
+//  └─────────────────────────────────────────────────────────────────┘
 
 import SwiftUI
-import UIKit
 
-// MARK: - ViewModifier pubblico
+// MARK: - DragSelectOverlay
 
 struct DragSelectOverlay: ViewModifier {
-    let isActive: Bool
-    let cellSize: CGFloat
-    let spacing: CGFloat
-    let itemCount: Int
-    let scrollView: UIScrollView?          // passato da ScrollViewProxy reader
     
-    let onToggle: (Int) -> Void            // index dell'item
-    let onDragStart: (Bool) -> Void        // true = stiamo aggiungendo
-    let isAdding: Bool
+    // MARK: Input
+    
+    /// Attiva l'overlay solo in modalità selezione.
+    let isActive:   Bool
+    /// Larghezza/altezza di ogni cella quadrata.
+    let cellSize:   CGFloat
+    /// Gap tra le celle.
+    let spacing:    CGFloat
+    /// Numero totale di elementi nella griglia.
+    let itemCount:  Int
+    /// Chiede al parent se l'elemento all'indice dato è selezionato.
+    /// Usato per determinare la direzione del drag alla prima cella toccata.
+    let isSelected: (Int) -> Bool
+    /// Il parent esegue insert o remove in base alla propria logica.
+    let onToggle:   (Int) -> Void
+    
+    // MARK: Private state
+    
+    /// true  → questo drag sta aggiungendo selezioni
+    /// false → questo drag sta rimuovendo selezioni
+    @State private var dragAdding:     Bool     = true
+    /// La direzione è già stata determinata per il drag corrente.
+    @State private var directionSet:   Bool     = false
+    /// Indici già processati nel drag corrente: evita il flip su celle già visitate.
+    @State private var draggedIndices: Set<Int> = []
+    
+    // MARK: Body
     
     func body(content: Content) -> some View {
-        content.overlay(
-            Group {
-                if isActive {
-                    DragSelectUIView(
-                        cellSize: cellSize,
-                        spacing: spacing,
-                        itemCount: itemCount,
-                        scrollView: scrollView,
-                        isAdding: isAdding,
-                        onToggle: onToggle,
-                        onDragStart: onDragStart
-                    )
+        content.overlay {
+            if isActive {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(combinedGesture)
+            }
+        }
+    }
+    
+    // MARK: Gesture
+    
+    private var combinedGesture: some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .local)
+            .onChanged { value in
+                guard let index = cellIndex(at: value.location) else { return }
+                
+                // ── Determina la direzione UNA SOLA VOLTA per drag ────────
+                if !directionSet {
+                    dragAdding   = !isSelected(index)  // non sel → aggiungi; sel → rimuovi
+                    directionSet = true
+                    draggedIndices.removeAll()
                 }
-            }
-        )
-    }
-}
-
-// MARK: - UIViewRepresentable
-
-private struct DragSelectUIView: UIViewRepresentable {
-    let cellSize: CGFloat
-    let spacing: CGFloat
-    let itemCount: Int
-    let scrollView: UIScrollView?
-    let isAdding: Bool
-    let onToggle: (Int) -> Void
-    let onDragStart: (Bool) -> Void
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.backgroundColor = .clear
-        view.isUserInteractionEnabled = true
-        
-        let pan = UIPanGestureRecognizer(
-            target: context.coordinator,
-            action: #selector(Coordinator.handlePan(_:))
-        )
-        // CHIAVE: permette al pan di coesistere con lo scroll
-        pan.delegate = context.coordinator
-        view.addGestureRecognizer(pan)
-        
-        let tap = UITapGestureRecognizer(
-            target: context.coordinator,
-            action: #selector(Coordinator.handleTap(_:))
-        )
-        view.addGestureRecognizer(tap)
-        
-        return view
-    }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {
-        context.coordinator.parent = self
-    }
-    
-    // MARK: Coordinator
-    
-    class Coordinator: NSObject, UIGestureRecognizerDelegate {
-        var parent: DragSelectUIView
-        private var lastToggledIndex: Int = -1
-        private var autoScrollTimer: Timer?
-        private var currentDragY: CGFloat = 0
-        private var isAddingMode: Bool = true
-        
-        init(_ parent: DragSelectUIView) {
-            self.parent = parent
-        }
-        
-        // MARK: UIGestureRecognizerDelegate
-        // Permette al pan di coesistere con lo UIScrollView sottostante.
-        // Il pan viene riconosciuto solo se il movimento è prevalentemente orizzontale
-        // oppure se siamo già in modalità selezione (isActive è garantito dall'overlay).
-        func gestureRecognizer(
-            _ gestureRecognizer: UIGestureRecognizer,
-            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
-        ) -> Bool {
-            // Permetti scroll verticale e drag selezione contemporaneamente
-            return other is UIPanGestureRecognizer
-        }
-        
-        func gestureRecognizer(
-            _ gestureRecognizer: UIGestureRecognizer,
-            shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer
-        ) -> Bool {
-            return false
-        }
-        
-        // MARK: Pan handler
-        
-        @objc func handlePan(_ pan: UIPanGestureRecognizer) {
-            guard let view = pan.view else { return }
-            let location = pan.location(in: view)
-            currentDragY = pan.location(in: pan.view?.superview).y
-            
-            switch pan.state {
-            case .began:
-                let index = indexAt(location, in: view)
-                guard index >= 0 else { return }
-                // Determina se stiamo aggiungendo o rimuovendo
-                isAddingMode = true // sarà sovrascritta da onDragStart
-                parent.onDragStart(isAddingMode)
-                parent.onToggle(index)
-                lastToggledIndex = index
-                startAutoScroll()
                 
-            case .changed:
-                let index = indexAt(location, in: view)
-                guard index >= 0, index != lastToggledIndex else { return }
-                parent.onToggle(index)
-                lastToggledIndex = index
+                // ── Ogni cella viene processata al più una volta per drag ──
+                guard !draggedIndices.contains(index) else { return }
+                draggedIndices.insert(index)
                 
-            case .ended, .cancelled, .failed:
-                stopAutoScroll()
-                lastToggledIndex = -1
-                
-            default:
-                break
+                // Applica solo se la cella è nello stato atteso
+                let sel = isSelected(index)
+                guard (dragAdding && !sel) || (!dragAdding && sel) else { return }
+                onToggle(index)
             }
-        }
-        
-        @objc func handleTap(_ tap: UITapGestureRecognizer) {
-            guard let view = tap.view else { return }
-            let location = tap.location(in: view)
-            let index = indexAt(location, in: view)
-            guard index >= 0 else { return }
-            parent.onToggle(index)
-        }
-        
-        // MARK: Index calculation
-        
-        private func indexAt(_ location: CGPoint, in view: UIView) -> Int {
-            let col = Int(location.x / (parent.cellSize + parent.spacing)).clamped(to: 0...2)
-            let row = Int(location.y / (parent.cellSize + parent.spacing))
-            let index = row * 3 + col
-            guard index >= 0, index < parent.itemCount else { return -1 }
-            return index
-        }
-        
-        // MARK: Auto-scroll (stile Apple Foto)
-        
-        private func startAutoScroll() {
-            stopAutoScroll()
-            autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { [weak self] _ in
-                self?.performAutoScroll()
+            .onEnded { _ in
+                directionSet   = false
+                draggedIndices.removeAll()
             }
-        }
-        
-        private func stopAutoScroll() {
-            autoScrollTimer?.invalidate()
-            autoScrollTimer = nil
-        }
-        
-        private func performAutoScroll() {
-            guard let scrollView = parent.scrollView else { return }
-            
-            let viewportHeight = scrollView.bounds.height
-            // Zona di trigger: ultimi/primi 80pt della viewport
-            let edgeZone: CGFloat = 80
-            // Velocità massima di scroll: 8pt per frame (≈480pt/sec a 60fps)
-            let maxSpeed: CGFloat = 8
-            
-            // Posizione Y del dito rispetto alla scrollView
-            let fingerY = currentDragY - scrollView.frame.minY
-            
-            var delta: CGFloat = 0
-            
-            if fingerY < edgeZone {
-                // Vicino al bordo superiore → scroll verso l'alto
-                let ratio = 1 - (fingerY / edgeZone)  // 0...1
-                delta = -maxSpeed * ratio
-            } else if fingerY > viewportHeight - edgeZone {
-                // Vicino al bordo inferiore → scroll verso il basso
-                let ratio = (fingerY - (viewportHeight - edgeZone)) / edgeZone
-                delta = maxSpeed * ratio
-            }
-            
-            guard abs(delta) > 0.5 else { return }
-            
-            let currentOffset = scrollView.contentOffset
-            let maxY = scrollView.contentSize.height - scrollView.bounds.height
-            let newY = (currentOffset.y + delta).clamped(to: 0...maxY)
-            
-            scrollView.setContentOffset(CGPoint(x: currentOffset.x, y: newY), animated: false)
-        }
+            .simultaneously(with:
+                                SpatialTapGesture()
+                .onEnded { value in
+                    // Tap singolo: sempre bidirezionale (toggle puro)
+                    guard let index = cellIndex(at: value.location) else { return }
+                    onToggle(index)
+                }
+            )
+    }
+    
+    // MARK: Helpers
+    
+    /// Converte un punto nell'overlay nell'indice piatto della griglia (0-based).
+    private func cellIndex(at point: CGPoint) -> Int? {
+        let col   = Int(point.x / (cellSize + spacing)).clamped(to: 0...2)
+        let row   = Int(point.y / (cellSize + spacing))
+        let index = row * 3 + col
+        guard index >= 0, index < itemCount else { return nil }
+        return index
     }
 }
