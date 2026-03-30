@@ -29,6 +29,7 @@ struct ChatView: View {
     
     @State private var searchText: String = ""
     @State private var isSearchPresented: Bool = false
+    @State private var showClearConfirm = false
     
     private var familyId: String { families.first?.id ?? "" }
     
@@ -37,22 +38,47 @@ struct ChatView: View {
             if familyId.isEmpty {
                 emptyNoFamily
             } else {
-                ChatConversationView(familyId: familyId, searchText: searchText)
+                ChatConversationView(
+                    familyId: familyId,
+                    searchText: searchText,
+                    showClearConfirm: $showClearConfirm
+                )
             }
         }
         .navigationTitle("Chat famiglia")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button { isSearchPresented = true } label: {
-                    Image(systemName: "magnifyingglass")
-                }
                 if isSearchPresented {
                     Button {
                         searchText = ""
                         isSearchPresented = false
                     } label: {
                         Image(systemName: "xmark")
+                    }
+                } else {
+                    Menu {
+                        Button {
+                            isSearchPresented = true
+                        } label: {
+                            Label("Cerca", systemImage: "magnifyingglass")
+                        }
+                        
+                        Button {
+                            // TODO: navigare alla schermata Media, link e documenti
+                        } label: {
+                            Label("Media, link e documenti", systemImage: "photo.on.rectangle")
+                        }
+                        
+                        Button(role: .destructive) {
+                            showClearConfirm = true
+                        } label: {
+                            Label("Svuota chat", systemImage: "trash")
+                        }
+                        
+                       
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
@@ -329,9 +355,9 @@ struct BubbleRowView: View, Equatable {
 // MARK: - ChatConversationView
 
 private struct ChatConversationView: View {
-    
     let familyId: String
     let searchText: String
+    @Binding private var showClearConfirm: Bool
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
@@ -387,7 +413,7 @@ private struct ChatConversationView: View {
     @State private var messageForReaction: KBChatMessage?
     
     // Clear chat
-    @State private var showClearConfirm = false
+   
     
     // Delete
     @State private var showDeleteConfirm: Bool = false
@@ -402,9 +428,10 @@ private struct ChatConversationView: View {
     @State private var isSelecting: Bool = false
     @State private var selectedMessageIds: Set<String> = []
     
-    init(familyId: String, searchText: String) {
+    init(familyId: String, searchText: String, showClearConfirm: Binding<Bool>) {
         self.familyId = familyId
         self.searchText = searchText
+        self._showClearConfirm = showClearConfirm
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
     }
     
@@ -1469,15 +1496,6 @@ private struct ChatConversationView: View {
         selectedMessageIds.removeAll()
         isSelecting = false
         showDeleteBar = false
-    }
-    
-    private var trashButton: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Button { showClearConfirm = true } label: {
-                Image(systemName: "trash").foregroundStyle(.red)
-            }
-            .disabled(viewModel.messages.isEmpty)
-        }
     }
     
     private var cameraSheet: some View {
