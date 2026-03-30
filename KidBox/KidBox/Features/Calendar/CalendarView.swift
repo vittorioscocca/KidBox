@@ -21,7 +21,6 @@ struct CalendarView: View {
     @State private var sharePrefillNotes: String = ""
     @State private var sharePrefillDate: Date? = nil
     
-    // MARK: Theming (identico a LoginView)
     private var backgroundColor: Color {
         colorScheme == .dark
         ? Color(red: 0.13, green: 0.13, blue: 0.13)
@@ -41,8 +40,6 @@ struct CalendarView: View {
         colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.05)
     }
     
-    // MARK: Data
-    // @Query senza filtro su familyId (non supportato con var) → filtro locale
     @Query(
         sort: \KBCalendarEvent.startDate,
         order: .forward
@@ -61,13 +58,10 @@ struct CalendarView: View {
         })
     }
     
-    // MARK: State
     @State private var selectedDate = Date()
     @State private var showAddSheet = false
     @State private var editingEvent: KBCalendarEvent?
     @State private var viewMode: CalendarViewMode = .month
-    
-    // MARK: Body
     
     var body: some View {
         ZStack {
@@ -123,7 +117,7 @@ struct CalendarView: View {
                 familyId: familyId,
                 initialDate: sharePrefillDate ?? selectedDate,
                 event: nil,
-                prefillTitle: sharePrefillTitle,
+                prefillTitle: sharePrefillTitle
             )
             .environment(\.modelContext, modelContext)
         }
@@ -132,30 +126,26 @@ struct CalendarView: View {
                 .environment(\.modelContext, modelContext)
         }
         .onReceive(coordinator.$pendingShareEventDraft.compactMap { $0 }) { draft in
-            KBLog.sync.kbInfo("CalendarView.onReceive: draft received title=\(draft.title) — consuming and opening sheet")
+            KBLog.sync.kbInfo("CalendarView.onReceive: draft received title=\(draft.title)")
             coordinator.pendingShareEventDraft = nil
             sharePrefillTitle = draft.title
             sharePrefillNotes = draft.notes
             sharePrefillDate  = draft.startDate
             if let d = draft.startDate { selectedDate = d }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                KBLog.sync.kbInfo("CalendarView.onReceive: showAddSheet = true")
                 showAddSheet = true
             }
         }
         .onAppear {
-            KBLog.sync.kbInfo("CalendarView.onAppear familyId=\(familyId) pendingDraft=\(coordinator.pendingShareEventDraft?.title ?? "nil")")
-            // Azzera badge calendario
+            KBLog.sync.kbInfo("CalendarView.onAppear familyId=\(familyId)")
             Task {
                 BadgeManager.shared.clearCalendar()
                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
             }
-            // Deep link: seleziona il giorno dell'evento
             if let eid = highlightEventId,
                let match = events.first(where: { $0.id == eid }) {
                 selectedDate = match.startDate
             }
-            
             if let pending = coordinator.pendingShareText {
                 sharePrefillTitle = pending
                 coordinator.pendingShareText = nil
@@ -163,36 +153,23 @@ struct CalendarView: View {
                     showAddSheet = true
                 }
             }
-            
-            // Fallback: se onReceive ha già emesso prima che CalendarView
-            // fosse montata (navigate avviene dopo il draft), leggiamo qui.
             if let draft = coordinator.pendingShareEventDraft {
-                KBLog.sync.kbInfo("CalendarView.onAppear: consumed draft via fallback title=\(draft.title)")
                 coordinator.pendingShareEventDraft = nil
                 sharePrefillTitle = draft.title
                 sharePrefillNotes = draft.notes
                 sharePrefillDate  = draft.startDate
                 if let d = draft.startDate { selectedDate = d }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    KBLog.sync.kbInfo("CalendarView.onAppear: showAddSheet = true (fallback)")
                     showAddSheet = true
                 }
-            } else {
-                KBLog.sync.kbInfo("CalendarView.onAppear: no pending draft (onReceive handles if draft arrives late)")
             }
-            
         }
-        
     }
-    
-    
     
     private func deleteEvent(_ event: KBCalendarEvent) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let eventId = event.id
         let fid     = event.familyId
-        
-        // Se l'evento è collegato a un oggetto sanitario, cancella anche quello
         if event.linkedHealthItemId != nil {
             KBHealthCalendarService.deleteLinkedHealthItem(
                 event:        event,
@@ -200,7 +177,6 @@ struct CalendarView: View {
                 modelContext: modelContext
             )
         }
-        
         event.isDeleted = true
         event.updatedAt = Date()
         event.updatedBy = uid
@@ -319,14 +295,23 @@ private struct MiniMonthView: View {
         Calendar.current.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
     }
     
+    // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
+    private func monthAbbrev(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "it_IT")
+        f.dateFormat = "MMM"
+        return f.string(from: date).capitalized
+    }
+    // ─────────────────────────────────────────────────────────────────────
+    
     var body: some View {
         VStack(spacing: 4) {
-            Text(monthDate, format: .dateTime.month(.abbreviated).locale(Locale(identifier: "it_IT")))
+            Text(monthAbbrev(monthDate))
                 .font(.caption.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
             
-            let symbols = italianCalendar.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased() }
+            let symbols = localizedCalendar.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased() }
             HStack(spacing: 0) {
                 ForEach(symbols.indices, id: \.self) { i in
                     Text(symbols[i])
@@ -404,6 +389,15 @@ private struct MonthDetailView: View {
         events.filter { Calendar.current.isDate($0.startDate, inSameDayAs: selectedDate) }
     }
     
+    // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
+    private func monthTitle(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "it_IT")
+        f.dateFormat = "MMMM yyyy"
+        return f.string(from: date).capitalized
+    }
+    // ─────────────────────────────────────────────────────────────────────
+    
     var body: some View {
         VStack(spacing: 0) {
             monthGrid
@@ -432,8 +426,10 @@ private struct MonthDetailView: View {
                     Image(systemName: "chevron.left").foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(displayedMonth, format: .dateTime.month(.wide).year().locale(Locale(identifier: "it_IT")))
+                // ── FIX: usa monthTitle con DateFormatter ─────────────────
+                Text(monthTitle(displayedMonth))
                     .font(.headline)
+                // ─────────────────────────────────────────────────────────
                 Spacer()
                 Button {
                     displayedMonth = Calendar.current.date(
@@ -443,7 +439,7 @@ private struct MonthDetailView: View {
                 }
             }
             
-            let weekdays = italianCalendar.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased() }
+            let weekdays = localizedCalendar.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased() }
             HStack(spacing: 0) {
                 ForEach(weekdays.indices, id: \.self) { i in
                     Text(weekdays[i])
@@ -525,18 +521,19 @@ private struct MonthDetailView: View {
     }
 }
 
-// MARK: - Shared helper
+// MARK: - Shared helpers
 
-// Calendario italiano: prima settimana = lunedì, simboli in italiano
-fileprivate var italianCalendar: Calendar = {
+// Calendario con primo giorno = lunedì e locale di sistema
+// I shortWeekdaySymbols usano il locale corrente → italiano se il sistema è in italiano
+fileprivate var localizedCalendar: Calendar = {
     var cal = Calendar(identifier: .gregorian)
     cal.locale = Locale(identifier: "it_IT")
-    cal.firstWeekday = 2   // 1=domenica, 2=lunedì
+    cal.firstWeekday = 2   // lunedì
     return cal
 }()
 
 fileprivate func calendarDays(for month: Date) -> [Date?] {
-    let cal   = italianCalendar
+    let cal   = localizedCalendar
     let start = cal.date(from: cal.dateComponents([.year, .month], from: month))!
     let range = cal.range(of: .day, in: .month, for: start)!
     let first = cal.component(.weekday, from: start)
@@ -619,7 +616,6 @@ struct CalendarEventFormView: View {
     @State private var hasReminder   = false
     @State private var reminderIndex = 1
     
-    // MARK: Theming (identico a LoginView)
     private var backgroundColor: Color {
         colorScheme == .dark
         ? Color(red: 0.13, green: 0.13, blue: 0.13)
@@ -634,7 +630,6 @@ struct CalendarEventFormView: View {
     private var secondaryText:   Color { .secondary }
     private var buttonBg:        Color { colorScheme == .dark ? .white : .black }
     private var buttonFg:        Color { colorScheme == .dark ? .black : .white }
-    private var destructiveBg:   Color { Color.red.opacity(0.12) }
     
     private let reminderOptions: [(label: String, minutes: Int)] = [
         ("Al momento", 0),
@@ -654,7 +649,6 @@ struct CalendarEventFormView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         
-                        // ── Titolo ──────────────────────────────────────
                         formCard {
                             VStack(alignment: .leading, spacing: 8) {
                                 label("Titolo")
@@ -662,7 +656,6 @@ struct CalendarEventFormView: View {
                                     .font(.body)
                             }
                             Divider()
-                            // Categoria
                             VStack(alignment: .leading, spacing: 8) {
                                 label("Categoria")
                                 ScrollView(.horizontal, showsIndicators: false) {
@@ -676,7 +669,6 @@ struct CalendarEventFormView: View {
                             }
                         }
                         
-                        // ── Quando ──────────────────────────────────────
                         formCard {
                             Toggle(isOn: $isAllDay) {
                                 Label("Tutto il giorno", systemImage: "sun.max")
@@ -709,7 +701,6 @@ struct CalendarEventFormView: View {
                             }
                         }
                         
-                        // ── Promemoria ──────────────────────────────────
                         formCard {
                             Toggle(isOn: $hasReminder) {
                                 Label("Promemoria", systemImage: "bell")
@@ -728,7 +719,6 @@ struct CalendarEventFormView: View {
                             }
                         }
                         
-                        // ── Dettagli ─────────────────────────────────────
                         formCard {
                             VStack(alignment: .leading, spacing: 8) {
                                 label("Luogo")
@@ -746,7 +736,6 @@ struct CalendarEventFormView: View {
                             }
                         }
                         
-                        // ── Salva ────────────────────────────────────────
                         Button(action: save) {
                             Text(event == nil ? "Aggiungi evento" : "Salva modifiche")
                                 .font(.system(size: 16, weight: .semibold))
@@ -777,8 +766,6 @@ struct CalendarEventFormView: View {
         }
     }
     
-    // MARK: - Helpers
-    
     @ViewBuilder
     private func formCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -807,7 +794,7 @@ struct CalendarEventFormView: View {
             Spacer()
             DatePicker("", selection: selection, displayedComponents: components)
                 .labelsHidden()
-                .environment(\.locale, Locale(identifier: "it_IT"))
+                .environment(\.locale, .current)
         }
     }
     
@@ -831,9 +818,7 @@ struct CalendarEventFormView: View {
                 .overlay(
                     Capsule()
                         .strokeBorder(
-                            isSelected
-                            ? Color.clear
-                            : primaryText.opacity(0.12),
+                            isSelected ? Color.clear : primaryText.opacity(0.12),
                             lineWidth: 1)
                 )
         }
@@ -859,7 +844,6 @@ struct CalendarEventFormView: View {
             startDate = Calendar.current.startOfDay(for: initialDate)
             endDate   = startDate.addingTimeInterval(3600)
         }
-        
         if event == nil && !prefillTitle.isEmpty {
             title = prefillTitle
         }
@@ -909,12 +893,9 @@ struct CalendarEventFormView: View {
         }
         
         try? modelContext.save()
-        
-        // Flush immediato verso Firestore senza aspettare il ciclo automatico (30s)
         Task { @MainActor in
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
         }
-        
         dismiss()
     }
 }

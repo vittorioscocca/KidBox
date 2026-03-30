@@ -1498,6 +1498,92 @@ exports.initStorageUsage = onCall(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// STORAGE — initStorageUsageAdmin (reset globale per tutte le famiglie)
+//
+// Chiamata solo dalla console admin. Non verifica la membership.
+// Itera su tutte le famiglie e ricalcola stats/storage per ognuna.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ADMIN_UIDS = ["efw85HN41nb1rmslevC3wkFpVUo1"]; // aggiungi il tuo UID Firebase Auth
+
+exports.initStorageUsageAdmin = onCall(
+    {region: "europe-west1", invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      if (!ADMIN_UIDS.includes(uid)) throw new HttpsError("permission-denied", "Non autorizzato.");
+
+      const db = admin.firestore();
+      const kb = 1024;
+      const mediaTypes = ["photo", "video", "audio", "document"];
+
+      logger.info("initStorageUsageAdmin: start", {uid});
+
+      const familiesSnap = await db.collection("families").get();
+      let totalFamilies = 0;
+      let grandTotalBytes = 0;
+
+      for (const familyDoc of familiesSnap.docs) {
+        const familyId = familyDoc.id;
+
+        const [docsSnap, chatSnap, photosSnap, visitsSnap] = await Promise.all([
+          db.collection("families").doc(familyId).collection("documents").where("isDeleted", "==", false).get(),
+          db.collection("families").doc(familyId).collection("chatMessages").where("isDeleted", "==", false).get(),
+          db.collection("families").doc(familyId).collection("photos").where("isDeleted", "==", false).get(),
+          db.collection("families").doc(familyId).collection("medicalVisits").where("isDeleted", "==", false).get(),
+        ]);
+
+        let docBytes = 0;
+        docsSnap.forEach((d) => {
+          const size = d.get("fileSize");
+          if (typeof size === "number" && size > 0) docBytes += size;
+        });
+
+        let chatBytes = 0;
+        chatSnap.forEach((d) => {
+          const hasMedia = d.get("mediaStoragePath");
+          const type = d.get("type") || "";
+          if (hasMedia && mediaTypes.includes(type)) {
+            const size = d.get("mediaFileSize");
+            chatBytes += (typeof size === "number" && size > 0) ? size : 512 * kb;
+          }
+        });
+
+        let photoBytes = 0;
+        photosSnap.forEach((d) => {
+          const size = d.get("fileSize");
+          if (typeof size === "number" && size > 0) photoBytes += size;
+        });
+
+        let saluteBytes = 0;
+        visitsSnap.forEach((d) => {
+          const photoURLs = d.get("photoURLs");
+          if (Array.isArray(photoURLs) && photoURLs.length > 0) {
+            saluteBytes += photoURLs.length * VISIT_PHOTO_ESTIMATE_BYTES;
+          }
+        });
+
+        const totalBytes = docBytes + chatBytes + photoBytes + saluteBytes;
+        grandTotalBytes += totalBytes;
+
+        await storageStatsRef(familyId).set({
+          usedBytes: totalBytes,
+          sections: {documents: docBytes, chat: chatBytes, photos: photoBytes, salute: saluteBytes, expenses: 0},
+          lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          initializedAt: admin.firestore.FieldValue.serverTimestamp(),
+          initializedBy: uid,
+        }, {merge: false});
+
+        logger.info("initStorageUsageAdmin: family done", {familyId, totalBytes});
+        totalFamilies++;
+      }
+
+      logger.info("initStorageUsageAdmin: complete", {totalFamilies, grandTotalBytes});
+      return {totalFamilies, grandTotalBytes};
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ACCOUNT DELETION
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1654,7 +1740,7 @@ exports.deleteAccount = onCall(
 
 exports.garbageCollectDeleted = onSchedule(
     {
-      schedule: "0 3 * * *",
+      schedule: "0 3 */5 * *",
       timeZone: "Europe/Rome",
       region: "europe-west1",
       timeoutSeconds: 540,
@@ -1663,30 +1749,32 @@ exports.garbageCollectDeleted = onSchedule(
     async () => {
       const bucket = admin.storage().bucket(STORAGE_BUCKET);
       const db = admin.firestore();
-      const cutoff = new Date(); // elimina subito — nessun periodo di grazia
 
-      logger.info("garbageCollectDeleted: start", {cutoff: cutoff.toISOString()});
+      logger.info("garbageCollectDeleted: start");
 
-      const familiesSnap = await db.collection("families").where("isDeleted", "!=", true).get();
+      const familiesSnap = await db.collection("families").get();
+      logger.info("garbageCollectDeleted: families to scan", {count: familiesSnap.size});
 
       let totalDocsDeleted = 0;
       let totalChatDeleted = 0;
-      let totalBytesFreed = 0;
+      let totalPhotosDeleted = 0;
 
       for (const familyDoc of familiesSnap.docs) {
         const familyId = familyDoc.id;
 
-        // ── 1. Documenti soft-deleted oltre 30gg ──
+        // ── 1. Documenti soft-deleted ──────────────────────────────────────────
+        // onDocumentHardDeleted aggiorna già il contatore storage quando il doc
+        // viene eliminato da Firestore — non serve chiamare updateStorageBytes qui.
         const docsSnap = await db.collection("families").doc(familyId)
             .collection("documents")
             .where("isDeleted", "==", true)
-            .where("updatedAt", "<=", cutoff)
             .get();
+
+        logger.info("GC: documents to delete", {familyId, count: docsSnap.size});
 
         for (const doc of docsSnap.docs) {
           const data = doc.data();
           const storagePath = data.storagePath || data.firebasePath || "";
-          const fileSize = typeof data.fileSize === "number" ? data.fileSize : 0;
 
           if (storagePath) {
             try {
@@ -1699,20 +1787,17 @@ exports.garbageCollectDeleted = onSchedule(
 
           await doc.ref.delete();
           totalDocsDeleted++;
-          if (fileSize > 0) {
-            totalBytesFreed += fileSize;
-            await updateStorageBytes(familyId, -fileSize, "documents");
-          }
         }
 
-        // ── 2. Chat media soft-deleted oltre 30gg ──
-        // NON sottraiamo bytes chat qui: onChatMessageSoftDeleted lo ha già fatto
-        // al momento della soft-deletion. Qui solo pulizia del blob su Storage.
+        // ── 2. Chat media soft-deleted ─────────────────────────────────────────
+        // onChatMessageSoftDeleted ha già sottratto i bytes al momento della
+        // soft-deletion. Qui solo pulizia del blob su Storage e del doc Firestore.
         const chatSnap = await db.collection("families").doc(familyId)
             .collection("chatMessages")
             .where("isDeleted", "==", true)
-            .where("updatedAt", "<=", cutoff)
             .get();
+
+        logger.info("GC: chatMessages to delete", {familyId, count: chatSnap.size});
 
         for (const msg of chatSnap.docs) {
           const data = msg.data();
@@ -1729,8 +1814,40 @@ exports.garbageCollectDeleted = onSchedule(
           }
           await msg.ref.delete();
         }
+
+        // ── 3. Foto album condiviso soft-deleted ───────────────────────────────
+        // onPhotoHardDeleted aggiorna già il contatore storage quando la foto
+        // viene eliminata da Firestore — non serve chiamare updateStorageBytes qui.
+        const photosSnap = await db.collection("families").doc(familyId)
+            .collection("photos")
+            .where("isDeleted", "==", true)
+            .get();
+
+        logger.info("GC: photos to delete", {familyId, count: photosSnap.size});
+
+        for (const photo of photosSnap.docs) {
+          const data = photo.data();
+          const storagePath = data.storagePath || "";
+
+          if (storagePath) {
+            try {
+              await bucket.file(storagePath).delete();
+              logger.info("GC: deleted photo blob", {familyId, storagePath});
+            } catch (e) {
+              if (e.code !== 404) logger.warn("GC: photo delete failed", {familyId, storagePath, err: e.message});
+            }
+          }
+
+          await photo.ref.delete();
+          totalPhotosDeleted++;
+        }
       }
 
-      logger.info("garbageCollectDeleted: complete", {totalDocsDeleted, totalChatDeleted, totalBytesFreed, families: familiesSnap.size});
+      logger.info("garbageCollectDeleted: complete", {
+        totalDocsDeleted,
+        totalChatDeleted,
+        totalPhotosDeleted,
+        families: familiesSnap.size,
+      });
     },
 );
