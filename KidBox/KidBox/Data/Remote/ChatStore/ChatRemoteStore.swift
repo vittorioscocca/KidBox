@@ -3,6 +3,8 @@
 //  KidBox
 //
 //  Created by vscocca on 21/02/26.
+//  MODIFICATO: aggiunto supporto mediaGroupURLsJSON / mediaGroupTypesJSON nel DTO,
+//              in upsert(), fetchOlderMessages() e listenMessages().
 //
 
 import Foundation
@@ -33,6 +35,9 @@ struct RemoteChatMessageDTO {
     let latitude: Double?
     let longitude: Double?
     let mediaFileSize: Int64?
+    // NUOVO ↓
+    let mediaGroupURLsJSON: String?
+    let mediaGroupTypesJSON: String?
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -93,6 +98,9 @@ final class ChatRemoteStore {
         if let latitude = dto.latitude                 { data["latitude"] = latitude }
         if let longitude = dto.longitude               { data["longitude"] = longitude }
         if let size = dto.mediaFileSize, size > 0      { data["mediaFileSize"] = size }
+        // NUOVO ↓
+        if let grpURLs  = dto.mediaGroupURLsJSON       { data["mediaGroupURLsJSON"]  = grpURLs }
+        if let grpTypes = dto.mediaGroupTypesJSON      { data["mediaGroupTypesJSON"] = grpTypes }
         
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
@@ -267,7 +275,10 @@ final class ChatRemoteStore {
                 deletedFor:           deletedFor,
                 latitude:             data["latitude"]             as? Double,
                 longitude:            data["longitude"]            as? Double,
-                mediaFileSize:        data["mediaFileSize"]        as? Int64
+                mediaFileSize:        data["mediaFileSize"]        as? Int64,
+                // NUOVO ↓
+                mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]   as? String,
+                mediaGroupTypesJSON:  data["mediaGroupTypesJSON"]  as? String
             )
         }
         
@@ -348,7 +359,10 @@ final class ChatRemoteStore {
                             deletedFor:           deletedFor,
                             latitude:             data["latitude"] as? Double,
                             longitude:            data["longitude"] as? Double,
-                            mediaFileSize:        data["mediaFileSize"] as? Int64
+                            mediaFileSize:        data["mediaFileSize"] as? Int64,
+                            // NUOVO ↓
+                            mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]  as? String,
+                            mediaGroupTypesJSON:  data["mediaGroupTypesJSON"] as? String
                         )
                         return .upsert(dto)
                     }
@@ -359,6 +373,7 @@ final class ChatRemoteStore {
                 }
             }
     }
+    
     // MARK: - TYPING INDICATOR
     
     /// Struttura Firestore: `families/{familyId}/typing/{uid}`

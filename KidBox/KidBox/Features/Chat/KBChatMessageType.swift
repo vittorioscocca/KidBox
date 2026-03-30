@@ -10,11 +10,12 @@
 import Foundation
 
 /// Tipo di messaggio supportato dalla chat familiare.
-enum KBChatMessageType: String, Codable {
+enum KBChatMessageType: String, Codable, Equatable {
     case text
     case audio
     case photo
     case video
     case document
     case location
+    case mediaGroup
 }

@@ -1084,16 +1084,28 @@ struct KBShareEditView: View {
         let senderId   = defaults?.string(forKey: "currentUserUID") ?? "unknown"
         log("makeDTO senderId=\(senderId) senderName=\(senderName)")
         return RemoteChatMessageDTO(
-            id: messageId, familyId: familyId,
-            senderId: senderId, senderName: senderName,
-            typeRaw: typeRaw, text: text,
-            mediaStoragePath: mediaStoragePath, mediaURL: mediaURL,
-            mediaDurationSeconds: nil, mediaThumbnailURL: nil,
-            replyToId: nil, reactionsJSON: nil, readByJSON: nil,
-            createdAt: Date(), editedAt: nil,
-            isDeleted: false, deletedFor: [],
-            latitude: nil, longitude: nil,
-            mediaFileSize: nil
+            id: messageId,
+            familyId: familyId,
+            senderId: senderId,
+            senderName: senderName,
+            typeRaw: typeRaw,
+            text: text,
+            mediaStoragePath: mediaStoragePath,
+            mediaURL: mediaURL,
+            mediaDurationSeconds: nil,
+            mediaThumbnailURL: nil,
+            replyToId: nil,
+            reactionsJSON: nil,
+            readByJSON: nil,
+            createdAt: Date(),
+            editedAt: nil,
+            isDeleted: false,
+            deletedFor: [],
+            latitude: nil,
+            longitude: nil,
+            mediaFileSize: nil,
+            mediaGroupURLsJSON: nil,
+            mediaGroupTypesJSON: nil
         )
     }
     

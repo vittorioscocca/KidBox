@@ -340,6 +340,7 @@ private struct ChatConversationView: View {
     @State private var dayGroups: [ChatDayGroup] = []
     @FocusState private var isInputFocused: Bool
     @State private var messageForSave: KBChatMessage? = nil
+    @State private var isLoadingMedia = false
     
     // MARK: - Theme
     private var backgroundColor: Color {
@@ -363,6 +364,12 @@ private struct ChatConversationView: View {
     // Media picker
     @State private var showMediaPicker = false
     @State private var mediaPickerItems: [PhotosPickerItem] = []
+    struct PendingMediaItem: Identifiable, Equatable {
+        let id = UUID()
+        let data: Data
+        let type: KBChatMessageType
+    }
+    @State private var pendingGroupItems: [PendingMediaItem] = []
     @State private var showLocationSheet = false
     
     // Camera
@@ -449,6 +456,19 @@ private struct ChatConversationView: View {
                 }
             } else {
                 Divider()
+                if isLoadingMedia {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Caricamento media…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                mediaGroupPreviewStrip
                 inputBar
             }
         }
@@ -479,11 +499,8 @@ private struct ChatConversationView: View {
             // il task in corso prima che l'invio avvenga.
             // Soluzione: capture → sleep → nil → send, tutto nella stessa esecuzione.
             guard let filePath = coordinator.pendingShareImagePath else { return }
-            // Aspetta che il ChatViewModel sia pronto prima di azzerare il path
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-            // Solo ora azzeriamo — il task non verrà ri-eseguito perché siamo
-            // già dentro la sua esecuzione e SwiftUI non può interromperla.
             coordinator.pendingShareImagePath = nil
             viewModel.resetUploadStateIfStuck()
             let fileURL = URL(fileURLWithPath: filePath)
@@ -526,15 +543,16 @@ private struct ChatConversationView: View {
             }
             .presentationDetents([.height(120)])
         }
+        // MODIFICATO: maxSelectionCount 1 → 10
         .photosPicker(
             isPresented: $showMediaPicker,
             selection: $mediaPickerItems,
-            maxSelectionCount: 1,
+            maxSelectionCount: 10,
             matching: .any(of: [.images, .videos])
         )
         .onChange(of: mediaPickerItems) { _, items in
-            guard let item = items.first else { return }
-            Task { await handlePickedMedia(item) }
+            guard !items.isEmpty else { return }
+            Task { await handlePickedMediaItems(items) }
             mediaPickerItems = []
         }
         .onChange(of: searchText) { _, _ in dayGroups = buildGroups() }
@@ -562,6 +580,163 @@ private struct ChatConversationView: View {
         }
     }
     
+    private struct MediaGroupPreviewCell: View {
+        let item: PendingMediaItem
+        let onRemove: () -> Void
+        
+        /// Thumbnail generata async — usata solo per i video.
+        @State private var videoThumbnail: UIImage? = nil
+        
+        var body: some View {
+            ZStack(alignment: .topTrailing) {
+                thumbnailView
+                
+                if item.type == .video {
+                    ZStack {
+                        Circle()
+                            .fill(Color.black.opacity(0.55))
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(width: 18, height: 18)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    .padding(.leading, 4)
+                    .padding(.bottom, 4)
+                }
+                
+                Button(action: onRemove) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .background(Circle().fill(Color.black.opacity(0.5)))
+                }
+                .padding(2)
+            }
+            .frame(width: 60, height: 60)
+            .task(id: item.id) {
+                guard item.type == .video, videoThumbnail == nil else { return }
+                videoThumbnail = await generateVideoThumbnail(from: item.data)
+            }
+        }
+        
+        @ViewBuilder
+        private var thumbnailView: some View {
+            // Per i video usa la thumbnail generata da AVAssetImageGenerator;
+            // per le foto usa direttamente UIImage(data:).
+            let image: UIImage? = item.type == .video
+            ? videoThumbnail
+            : UIImage(data: item.data)
+            
+            if let img = image {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 60, height: 60)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                // Placeholder: spinner per i video in attesa, icona per le foto senza dati
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(.secondarySystemBackground))
+                    .frame(width: 60, height: 60)
+                    .overlay {
+                        if item.type == .video {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "photo").foregroundColor(.secondary)
+                        }
+                    }
+            }
+        }
+        
+        /// Scrive i byte del video in un file temporaneo, estrae il primo frame
+        /// con AVAssetImageGenerator e restituisce l'UIImage risultante.
+        private func generateVideoThumbnail(from data: Data) async -> UIImage? {
+            let tmpURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("mp4")
+            do {
+                try data.write(to: tmpURL)
+            } catch {
+                return nil
+            }
+            defer { try? FileManager.default.removeItem(at: tmpURL) }
+            
+            let asset = AVURLAsset(url: tmpURL)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.maximumSize = CGSize(width: 120, height: 120)
+            
+            do {
+                let (cgImage, _) = try await generator.image(at: .zero)
+                return UIImage(cgImage: cgImage)
+            } catch {
+                return nil
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var mediaGroupPreviewStrip: some View {
+        if !pendingGroupItems.isEmpty {
+            VStack(spacing: 0) {
+                Divider()
+                
+                HStack(spacing: 0) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(pendingGroupItems) { item in
+                                MediaGroupPreviewCell(item: item) {
+                                    removePendingItem(item)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                    }
+                    
+                    VStack(spacing: 4) {
+                        Text("\(pendingGroupItems.count)/10")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundColor(.secondary)
+                        
+                        Button {
+                            let snapshot = pendingGroupItems.map { (data: $0.data, type: $0.type) }
+                            pendingGroupItems.removeAll()
+                            viewModel.sendMediaGroup(items: snapshot)
+                        } label: {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(KBTheme.bubbleTint)
+                        }
+                        
+                        Button {
+                            withAnimation {
+                                pendingGroupItems.removeAll()
+                            }
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        } label: {
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 20))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                    }
+                    .padding(.trailing, 12)
+                }
+                .background(.ultraThinMaterial)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .animation(.spring(response: 0.3, dampingFraction: 0.85), value: pendingGroupItems.count)
+        }
+    }
+    
+    private func removePendingItem(_ item: PendingMediaItem) {
+        withAnimation {
+            pendingGroupItems.removeAll { $0.id == item.id }
+        }
+    }
     // MARK: - buildGroups
     
     private func buildGroups() -> [ChatDayGroup] {
@@ -647,6 +822,41 @@ private struct ChatConversationView: View {
         highlightedMessageId = id
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
             if highlightedMessageId == id { highlightedMessageId = nil }
+        }
+    }
+    
+    // MARK: - handlePickedMediaItems (NUOVO — sostituisce handlePickedMedia)
+    
+    private func handlePickedMediaItems(_ items: [PhotosPickerItem]) async {
+        await MainActor.run {
+            isLoadingMedia = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+        var loaded: [(data: Data, type: KBChatMessageType)] = []
+        for item in items {
+            let isVideo = item.supportedContentTypes.contains {
+                $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.conforms(to: .mpeg4Movie)
+            }
+            let msgType: KBChatMessageType = isVideo ? .video : .photo
+            if let data = try? await item.loadTransferable(type: Data.self) {
+                loaded.append((data: data, type: msgType))
+            }
+        }
+        await MainActor.run {
+            isLoadingMedia = false
+            guard !loaded.isEmpty else { return }
+            if loaded.count == 1 && pendingGroupItems.isEmpty {
+                viewModel.sendMedia(data: loaded[0].data, type: loaded[0].type)
+            } else {
+                let freeSlots = 10 - pendingGroupItems.count
+                let toAdd = loaded
+                    .prefix(freeSlots)
+                    .map { PendingMediaItem(data: $0.data, type: $0.type) }
+                withAnimation {
+                    pendingGroupItems.append(contentsOf: toAdd)
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
         }
     }
     
@@ -759,8 +969,6 @@ private struct ChatConversationView: View {
             let uid = Auth.auth().currentUser?.uid ?? ""
             guard !uid.isEmpty, !familyId.isEmpty else { return }
             
-            // Naviga subito a FamilyPhotosView — l'upload avviene in background.
-            // Se la view è già nello stack non la pushuiamo di nuovo.
             let alreadyInStack = coordinator.path.contains {
                 if case .familyPhotos(let fid) = $0 { return fid == familyId }
                 return false
@@ -777,7 +985,6 @@ private struct ChatConversationView: View {
                 ? "\(isVideo ? "video" : "photo")_\(photoId).\(isVideo ? "mp4" : "jpg")"
                 : fileName
                 
-                // 1. Scarica i bytes dal download URL della chat (non cifrato lato chat)
                 guard let remoteURL = URL(string: sourceURL),
                       let (mediaData, _) = try? await URLSession.shared.data(from: remoteURL),
                       !mediaData.isEmpty else {
@@ -785,7 +992,6 @@ private struct ChatConversationView: View {
                     return
                 }
                 
-                // 2. Thumbnail + durata video
                 let thumbB64: String?
                 var videoDurationSecs: Double? = nil
                 
@@ -812,7 +1018,6 @@ private struct ChatConversationView: View {
                     thumbB64 = PhotoRemoteStore.makeThumbnail(from: mediaData)?.base64EncodedString()
                 }
                 
-                // 3. Inserisci KBFamilyPhoto in SwiftData
                 let storagePath = "families/\(familyId)/photos/\(photoId)/original.enc"
                 let photo = KBFamilyPhoto(
                     id: photoId, familyId: familyId,
@@ -826,7 +1031,6 @@ private struct ChatConversationView: View {
                 photo.syncState = .synced
                 photo.videoDurationSeconds = isVideo ? videoDurationSecs : nil
                 if !isVideo {
-                    // Cache locale immagine
                     let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
                         .appendingPathComponent("KBPhotos", isDirectory: true)
                     try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
@@ -838,7 +1042,6 @@ private struct ChatConversationView: View {
                 try? modelContext.save()
                 
                 do {
-                    // 4. Upload cifrato su Firebase Storage
                     let dto = try await SyncCenter.photoRemote.upload(
                         photoId: photoId, familyId: familyId, userId: uid,
                         imageData: mediaData, fileName: safeFileName,
@@ -850,7 +1053,6 @@ private struct ChatConversationView: View {
                     )
                     photo.downloadURL = dto.downloadURL
                     photo.syncState = .synced
-                    // Cache locale video dopo upload
                     if isVideo {
                         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
                             .appendingPathComponent("KBPhotos", isDirectory: true)
@@ -993,6 +1195,15 @@ private struct ChatConversationView: View {
                         .overlay(Image(systemName: "video.fill").font(.caption))
                 }
                 Text("Video")
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        case .mediaGroup:
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(pillBackground)
+                    .frame(width: 36, height: 36)
+                    .overlay(Image(systemName: "photo.on.rectangle").font(.caption))
+                Text(viewModel.replyingPreviewText)
                     .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
         case .text, .none:
@@ -1258,16 +1469,6 @@ private struct ChatConversationView: View {
         selectedMessageIds.removeAll()
         isSelecting = false
         showDeleteBar = false
-    }
-    
-    private func handlePickedMedia(_ item: PhotosPickerItem) async {
-        let isVideo = item.supportedContentTypes.contains {
-            $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.conforms(to: .mpeg4Movie)
-        }
-        let type: KBChatMessageType = isVideo ? .video : .photo
-        if let data = try? await item.loadTransferable(type: Data.self) {
-            viewModel.sendMedia(data: data, type: type)
-        }
     }
     
     private var trashButton: some ToolbarContent {

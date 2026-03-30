@@ -49,9 +49,6 @@ struct ChatBubble: View {
     @State private var dragProgress: Double = 0.0
     @State private var playbackRate: Float = 1.0
     
-    // Larghezza dello schermo calcolata una sola volta — evita @State containerWidth
-    // che causava un secondo layout pass su ogni bubble al primo render
-    // (measureBackwards nel LazyVStack).
     private static let screenWidth: CGFloat = UIScreen.main.bounds.width
     
     // Media QuickLook
@@ -63,16 +60,9 @@ struct ChatBubble: View {
     // Swipe-to-reply
     @State private var swipeX: CGFloat = 0
     
-    // Valori precalcolati nell'init — mai ricalcolati nel body
     private let cachedLinkURL: URL?
     private let cachedHighlightedText: AttributedString
-    // URL del messaggio citato in risposta — anche questo estratto nell'init
-    // perché replySubtitle è un @ViewBuilder nel body e chiamarci extractFirstURL
-    // causava DynamicBody.updateValue → NSDataDetector ad ogni layout pass.
     private let cachedReplyLinkURL: URL?
-    // FIX 3: ora formattata una volta sola nell'init.
-    // Text(date, style: .time) chiama ICUDateFormatter ad ogni layout pass
-    // (visibile nel call stack: FormatStyleStorage → ICUDateFormatter → icu::SimpleDateFormat).
     private let cachedTimeString: String
     
     private static let timeFormatter: DateFormatter = {
@@ -111,13 +101,10 @@ struct ChatBubble: View {
         self.highlightedMessageId = highlightedMessageId
         self.searchText = searchText
         
-        // Calcolo fatto UNA SOLA VOLTA alla creazione della struct,
-        // non ad ogni chiamata del body.
         let text = message.text ?? ""
         self.cachedLinkURL = Self.extractFirstURL(from: text)
         self.cachedHighlightedText = Self.buildHighlightedText(text, searchText: searchText)
         self.cachedTimeString = Self.timeFormatter.string(from: message.createdAt)
-        // URL del replied-to message — calcolata qui, non nel body
         if let rt = repliedTo, rt.type == .text {
             let rt = (rt.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             self.cachedReplyLinkURL = Self.extractFirstURL(from: rt)
@@ -126,9 +113,6 @@ struct ChatBubble: View {
         }
     }
     
-    // FIX 4: sostituisce ViewThatFits — decisione O(1) invece di doppia misurazione layout.
-    // ViewThatFits causava specialized LazyStack measureBackwards nel call stack
-    // (315ms su 5.69s totali di CPU durante lo scroll).
     private var textIsShort: Bool {
         let text = message.text ?? ""
         return text.count <= 30 && !text.contains("\n")
@@ -220,7 +204,6 @@ struct ChatBubble: View {
     
     // MARK: - Deleted tombstone
     
-    /// Shown in place of any content when the message was deleted for everyone.
     private var deletedBubble: some View {
         HStack(spacing: 6) {
             Image(systemName: "minus.circle")
@@ -244,18 +227,15 @@ struct ChatBubble: View {
     
     @ViewBuilder
     private var bubbleBody: some View {
-        // Show tombstone for messages deleted for everyone — no content, no context menu.
         if message.isDeletedForEveryone {
             deletedBubble
         } else if message.type == .audio {
             VStack(alignment: .leading, spacing: 8) {
                 replyContextHeader
                 audioContent
-                
                 if !isOwn && message.shouldShowTranscript {
                     transcriptSection
                 }
-                
                 audioBottomRow
             }
             .padding(.horizontal, 12)
@@ -265,7 +245,8 @@ struct ChatBubble: View {
             .overlay(highlightOverlay)
             .clipShape(bubbleShape)
             .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
-        } else if message.type == .photo || message.type == .video {
+        } else if message.type == .photo || message.type == .video || message.type == .mediaGroup {
+            // MODIFICATO: aggiunto .mediaGroup — stessa logica di photo/video (no padding testo)
             if message.replyToId != nil {
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 0) {
                     replyContextHeader
@@ -346,8 +327,6 @@ struct ChatBubble: View {
     private var bubbleContent: some View {
         switch message.type {
         case .text:
-            // FIX 2: usa cachedLinkURL e cachedHighlightedText precalcolati nell'init,
-            // invece di chiamare NSDataDetector e costruire AttributedString ad ogni render.
             VStack(alignment: .leading, spacing: 4) {
                 if let url = cachedLinkURL {
                     Text(cachedHighlightedText)
@@ -356,16 +335,12 @@ struct ChatBubble: View {
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
-                    
                     LinkPreviewView(url: url, isOwn: isOwn)
-                    
                     HStack {
                         Spacer(minLength: 0)
                         timeAndChecks
                     }
                 } else {
-                    // FIX 4: if/else esplicito invece di ViewThatFits.
-                    // ViewThatFits misura entrambe le alternative ad ogni layout pass.
                     if textIsShort {
                         HStack(alignment: .lastTextBaseline, spacing: 6) {
                             Text(cachedHighlightedText)
@@ -410,6 +385,14 @@ struct ChatBubble: View {
                         .padding(6)
                 }
             }
+            
+            // NUOVO ↓
+        case .mediaGroup:
+            ChatMediaGroupBubble(
+                message: message,
+                isOwn: isOwn,
+                timeAndChecksOverlay: AnyView(timeAndChecksOverlayOnMedia)
+            )
         }
     }
     
@@ -473,7 +456,6 @@ struct ChatBubble: View {
     @ViewBuilder
     private var replySubtitle: some View {
         if let repliedTo {
-            // If the quoted message was deleted for everyone, show tombstone label.
             if repliedTo.isDeletedForEveryone {
                 HStack(spacing: 6) {
                     Image(systemName: "minus.circle").font(.caption2)
@@ -522,11 +504,27 @@ struct ChatBubble: View {
                         replyThumb(for: repliedTo)
                         Text("Posizione condivisa")
                     }
+                    // NUOVO ↓
+                case .mediaGroup:
+                    HStack(spacing: 6) {
+                        Image(systemName: "photo.on.rectangle").font(.caption2)
+                        Text(mediaGroupReplyLabel(for: repliedTo))
+                    }
                 }
-            } // end else (not deleted for everyone)
+            }
         } else {
             Text("Messaggio")
         }
+    }
+    
+    private func mediaGroupReplyLabel(for msg: KBChatMessage) -> String {
+        let types = msg.mediaGroupTypes
+        let total = types.count
+        let hasPhoto = types.contains("photo")
+        let hasVideo = types.contains("video")
+        if hasPhoto && hasVideo { return "\(total) Foto/Video" }
+        if hasVideo { return "🎬 \(total) video" }
+        return "📷 \(total) foto"
     }
     
     private var locationContent: some View {
@@ -735,6 +733,21 @@ struct ChatBubble: View {
             if let url = cachedReplyLinkURL {
                 LinkPreviewThumb(url: url, size: ChatThumbStyle.composerReplySize, corner: ChatThumbStyle.replyCorner)
             }
+        case .mediaGroup:
+            // Mostra la prima foto del gruppo come thumbnail di risposta
+            if let firstURL = msg.mediaGroupURLs.first, let url = URL(string: firstURL) {
+                let isVideo = msg.mediaGroupTypes.first == "video"
+                ZStack {
+                    if isVideo {
+                        VideoThumbnailView(videoURL: url, cacheKey: "reply_grp_\(msg.id)")
+                    } else {
+                        CachedAsyncImage(url: url, contentMode: .fill)
+                    }
+                }
+                .frame(width: ChatThumbStyle.bubbleReplySize, height: ChatThumbStyle.bubbleReplySize)
+                .clipShape(RoundedRectangle(cornerRadius: ChatThumbStyle.composerCorner))
+                .clipped()
+            } else { replyThumbPlaceholder }
         default:
             EmptyView()
         }
@@ -956,13 +969,10 @@ struct ChatBubble: View {
                     .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
                     .animation(.none, value: isDraggingSlider)
             }
-            
             Spacer(minLength: 0)
-            
             Text(cachedTimeString)
                 .font(.caption2)
                 .foregroundStyle(isOwn ? .white.opacity(0.7) : .secondary)
-            
             if isOwn { syncIcon }
         }
         .frame(maxWidth: .infinity)
@@ -988,19 +998,14 @@ struct ChatBubble: View {
                         .multilineTextAlignment(.leading)
                         .textSelection(.enabled)
                 }
-                
             case .processing:
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(isOwn ? .white : .accentColor)
-                        
+                        ProgressView().controlSize(.small).tint(isOwn ? .white : .accentColor)
                         Text("Trascrizione in corso…")
                             .font(.subheadline)
                             .foregroundStyle(isOwn ? .white.opacity(0.9) : .primary)
                     }
-                    
                     if let partial = message.transcriptPreviewText {
                         Text(partial)
                             .font(.subheadline)
@@ -1009,7 +1014,6 @@ struct ChatBubble: View {
                             .textSelection(.enabled)
                     }
                 }
-                
             case .completed:
                 if let text = message.transcriptPreviewText {
                     Text(text)
@@ -1022,7 +1026,6 @@ struct ChatBubble: View {
                         .font(.subheadline)
                         .foregroundStyle(isOwn ? .white.opacity(0.78) : .secondary)
                 }
-                
             case .failed:
                 if let text = message.transcriptPreviewText {
                     Text(text)
@@ -1078,21 +1081,17 @@ struct ChatBubble: View {
         if message.type == .text {
             Button { copyTextToPasteboard() } label: { Label("Copia", systemImage: "doc.on.doc") }
         }
-        
         if !message.quickSaveActions.isEmpty {
             Button { onSaveToApp?() } label: {
                 Label("Salva in…", systemImage: "square.and.arrow.down")
             }
         }
-        
         if isOwn, message.type == .text, let onEdit {
             Button { onEdit() } label: { Label("Modifica", systemImage: "pencil") }
         }
-        
         if let onDelete {
             Button(role: .destructive) { onDelete() } label: { Label("Elimina", systemImage: "trash") }
         }
-        
         if message.type == .audio, let transcript = message.transcriptPreviewText, !transcript.isEmpty {
             Button { copyTranscriptToPasteboard() } label: {
                 Label("Copia trascrizione", systemImage: "text.badge.checkmark")
@@ -1123,18 +1122,13 @@ struct ChatBubble: View {
         }
     }
     
-    // MARK: - Static helpers (usati nell'init, non nel body)
+    // MARK: - Static helpers
     
-    // FIX 2: static per sottolineare che non accedono a self e possono
-    // essere chiamati nell'init senza catturare la struct in modo ricorsivo.
     static func extractFirstURL(from text: String) -> URL? {
         guard let d = Self.sharedLinkDetector else { return nil }
         return d.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)).flatMap { $0.url }
     }
     
-    // Singleton: NSDataDetector è costoso da istanziare (~5-10ms la prima volta).
-    // Ricrearlo ad ogni bubble (anche nell'init) causava il DynamicBody.updateValue
-    // che vedevi nel call stack. Un'istanza condivisa e thread-safe risolve.
     private static let sharedLinkDetector: NSDataDetector? = try? NSDataDetector(
         types: NSTextCheckingResult.CheckingType.link.rawValue
     )
@@ -1202,11 +1196,7 @@ struct ChatBubble: View {
             return
         }
         if let player = audioPlayer {
-            do {
-                try configureAudioSession()
-                
-                proximityRouter.start()
-            } catch {}
+            do { try configureAudioSession(); proximityRouter.start() } catch {}
             if player.currentTime >= player.duration - 0.05 {
                 player.currentTime = 0
                 playbackProgress = 0
@@ -1221,7 +1211,6 @@ struct ChatBubble: View {
             do {
                 let (data, _) = try await URLSession.shared.data(from: url)
                 try configureAudioSession()
-                
                 proximityRouter.start()
                 let player = try AVAudioPlayer(data: data)
                 player.enableRate = true
@@ -1302,6 +1291,231 @@ struct ChatBubble: View {
     
     private func formatDuration(_ sec: Int) -> String {
         String(format: "%d:%02d", sec / 60, sec % 60)
+    }
+}
+
+// MARK: - ChatMediaGroupBubble (NUOVO)
+
+struct ChatMediaGroupBubble: View {
+    
+    let message: KBChatMessage
+    let isOwn: Bool
+    let timeAndChecksOverlay: AnyView
+    
+    private var urls:  [String] { message.mediaGroupURLs }
+    private var types: [String] { message.mediaGroupTypes }
+    private var count: Int      { urls.count }
+    
+    private let spacing: CGFloat   = 2
+    private let maxVisible: Int    = 6
+    private var bubbleWidth: CGFloat { UIScreen.main.bounds.width * 0.72 }
+    
+    // MARK: - Download / preview state
+    @State private var downloadingIndex: Int? = nil
+    @State private var previewURLs: [URL] = []
+    @State private var previewInitialIndex: Int = 0
+    @State private var showPreview: Bool = false
+    @State private var downloadError: String? = nil
+    
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: spacing) {
+                ForEach(rows.indices, id: \.self) { rowIdx in
+                    HStack(spacing: spacing) {
+                        ForEach(rows[rowIdx], id: \.self) { itemIdx in
+                            cellView(for: itemIdx, rowHeight: rowHeight(for: rowIdx))
+                        }
+                    }
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if count > maxVisible {
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    timeAndChecksOverlay
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                }
+                .background(
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.45)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: 28)
+            }
+        }
+        .frame(maxWidth: bubbleWidth)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .sheet(isPresented: $showPreview) {
+            if !previewURLs.isEmpty {
+                QuickLookPreview(urls: previewURLs, initialIndex: previewInitialIndex)
+                    .ignoresSafeArea()
+            }
+        }
+        .alert("Errore", isPresented: .constant(downloadError != nil)) {
+            Button("OK") { downloadError = nil }
+        } message: {
+            Text(downloadError ?? "")
+        }
+    }
+    
+    // MARK: - Cella
+    
+    @ViewBuilder
+    private func cellView(for index: Int, rowHeight: CGFloat) -> some View {
+        let urlString  = index < urls.count  ? urls[index]  : ""
+        let typeString = index < types.count ? types[index] : "photo"
+        let isVideo    = typeString == "video"
+        let isLast     = index == maxVisible - 1 && count > maxVisible
+        let remainder  = count - maxVisible
+        let isDownloading = downloadingIndex == index
+        
+        ZStack(alignment: .bottomTrailing) {
+            if let url = URL(string: urlString) {
+                Group {
+                    if isVideo {
+                        VideoThumbnailView(videoURL: url, cacheKey: "grp_\(message.id)_\(index)")
+                    } else {
+                        CachedAsyncImage(url: url, contentMode: .fill)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: rowHeight)
+                .clipped()
+            } else {
+                Rectangle()
+                    .fill(Color(.secondarySystemBackground))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: rowHeight)
+            }
+            
+            // Dimming durante il download
+            if isDownloading {
+                Color.black.opacity(0.35)
+                ProgressView().tint(.white)
+            }
+            
+            // Badge play su video (non sull'ultimo con overlay "+N")
+            if isVideo && !isLast && !isDownloading {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 22))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(Color.white, Color.black.opacity(0.4))
+                    .padding(6)
+            }
+            
+            // Overlay "+N" sull'ultima cella visibile
+            if isLast {
+                Color.black.opacity(0.55)
+                Text("+\(remainder)")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            
+            if index == min(count, maxVisible) - 1 && !isLast && count <= maxVisible {
+                timeAndChecksOverlay
+                    .padding(.horizontal, 7).padding(.vertical, 5)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                    .padding(6)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard downloadingIndex == nil else { return }
+            Task { await openMedia(at: index) }
+        }
+    }
+    
+    // MARK: - Download e apertura
+    
+    /// Scarica tutti i media del gruppo in parallelo e apre il QuickLook
+    /// posizionato sull'elemento toccato.
+    private func openMedia(at tappedIndex: Int) async {
+        downloadingIndex = tappedIndex
+        defer { downloadingIndex = nil }
+        
+        // ← usa count intero, non solo i visibili
+        var localURLs: [URL?] = Array(repeating: nil, count: count)
+        
+        await withTaskGroup(of: (Int, URL?).self) { group in
+            for i in 0..<count {  // ← era 0..<visibleCount
+                guard i < urls.count, let remoteURL = URL(string: urls[i]) else { continue }
+                let isVideo  = i < types.count ? types[i] == "video" : false
+                let ext      = isVideo ? "mp4" : "jpg"
+                let fileName = "grp_\(message.id)_\(i).\(ext)"
+                group.addTask {
+                    do {
+                        let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
+                        let destURL = FileManager.default.temporaryDirectory
+                            .appendingPathComponent(UUID().uuidString)
+                            .appendingPathComponent(fileName)
+                        try FileManager.default.createDirectory(
+                            at: destURL.deletingLastPathComponent(),
+                            withIntermediateDirectories: true)
+                        if FileManager.default.fileExists(atPath: destURL.path) {
+                            try FileManager.default.removeItem(at: destURL)
+                        }
+                        try FileManager.default.moveItem(at: tmpURL, to: destURL)
+                        return (i, destURL)
+                    } catch {
+                        return (i, nil)
+                    }
+                }
+            }
+            for await (i, url) in group {
+                localURLs[i] = url
+            }
+        }
+        
+        let validURLs = localURLs.compactMap { $0 }
+        guard !validURLs.isEmpty else {
+            downloadError = "Impossibile aprire il file."
+            return
+        }
+        
+        let initialIndex = max(0, localURLs.prefix(tappedIndex + 1).compactMap { $0 }.count - 1)
+        previewURLs = validURLs
+        previewInitialIndex = initialIndex
+        showPreview = true
+    }
+    
+    // MARK: - Layout engine
+    
+    private var rows: [[Int]] {
+        switch count {
+        case 1:  return [[0]]
+        case 2:  return [[0, 1]]
+        case 3:  return [[0, 1], [2]]
+        case 4:  return [[0, 1], [2, 3]]
+        case 5:  return [[0, 1], [2, 3, 4]]
+        default:
+            let visible = min(count, maxVisible)
+            var result: [[Int]] = []
+            var i = 0
+            while i < visible {
+                result.append(Array(i..<min(i + 3, visible)))
+                i += 3
+            }
+            return result
+        }
+    }
+    
+    private func rowHeight(for rowIdx: Int) -> CGFloat {
+        let w = bubbleWidth
+        let s = spacing
+        switch count {
+        case 1:  return w * 0.75
+        case 2:  return (w - s) / 2
+        case 3:  return (w - s) / 2
+        case 4:  return (w - s) / 2
+        case 5:  return rowIdx == 0 ? (w - s) / 2 : (w - 2 * s) / 3
+        default: return (w - 2 * s) / 3
+        }
     }
 }
 
@@ -1454,39 +1668,24 @@ private struct LinkPreviewView: View {
 }
 
 // MARK: - SenderAvatarCache
-//
-// Cache in-memory delle immagini avatar per la sessione corrente.
-// Priorità:
-//   1) Cache in-memory (già caricato in questa sessione)
-//   2) KBUserProfile.avatarData nel ModelContext locale (SwiftData, zero rete)
-//   3) Firebase Storage: users/{uid}/avatar.jpg  (user-scoped)
-//   4) Firebase Storage: families/{familyId}/avatars/{uid}.jpg  (family-scoped)
-// I dati scaricati da Storage vengono salvati in KBUserProfile.avatarData
-// così le sessioni successive non fanno più rete.
 
 final class SenderAvatarCache {
     static let shared = SenderAvatarCache()
     private init() {}
     
-    private var cache: [String: Any] = [:]   // UIImage | NSNull
+    private var cache: [String: Any] = [:]
     private var inFlight: Set<String> = []
     
     func cachedImage(for uid: String) -> UIImage? { cache[uid] as? UIImage }
     func isFailed(for uid: String) -> Bool { cache[uid] is NSNull }
     
-    func loadImage(
-        for uid: String,
-        familyId: String,
-        modelContext: ModelContext
-    ) async -> UIImage? {
-        // 1) cache in-memory
+    func loadImage(for uid: String, familyId: String, modelContext: ModelContext) async -> UIImage? {
         if let img = cache[uid] as? UIImage { return img }
         if cache[uid] is NSNull { return nil }
         if inFlight.contains(uid) { return nil }
         inFlight.insert(uid)
         defer { inFlight.remove(uid) }
         
-        // 2) SwiftData locale
         let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
         if let profile = try? modelContext.fetch(desc).first,
            let data = profile.avatarData,
@@ -1495,7 +1694,6 @@ final class SenderAvatarCache {
             return img
         }
         
-        // 3+4) Firebase Storage
         let storage = Storage.storage()
         let img: UIImage?
         
@@ -1508,14 +1706,9 @@ final class SenderAvatarCache {
             img = nil
         }
         
-        guard let img else {
-            cache[uid] = NSNull()
-            return nil
-        }
-        
+        guard let img else { cache[uid] = NSNull(); return nil }
         cache[uid] = img
         
-        // Persisti in locale così la prossima sessione non fa rete
         if let data = img.jpegData(compressionQuality: 0.8) {
             let desc2 = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
             if let profile = try? modelContext.fetch(desc2).first {
@@ -1523,7 +1716,6 @@ final class SenderAvatarCache {
                 try? modelContext.save()
             }
         }
-        
         return img
     }
     
@@ -1531,9 +1723,7 @@ final class SenderAvatarCache {
         do {
             let data = try await ref.data(maxSize: 5 * 1024 * 1024)
             return UIImage(data: data)
-        } catch {
-            return nil
-        }
+        } catch { return nil }
     }
 }
 
@@ -1549,8 +1739,6 @@ struct SenderAvatarView: View {
     @State private var image: UIImage? = nil
     
     var body: some View {
-        // ZStack con dimensione fissa e stabile: SwiftUI non rimisura mai questa view,
-        // anche quando image passa da nil a UIImage — evita measureBackwards nel LazyVStack.
         ZStack {
             Circle().fill(fallbackColor)
             if let img = image {

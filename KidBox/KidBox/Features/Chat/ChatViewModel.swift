@@ -401,6 +401,8 @@ final class ChatViewModel: NSObject, ObservableObject {
             existing.text          = dto.text
             existing.editedAt      = dto.editedAt
             existing.mediaURL      = dto.mediaURL
+            if let grpURLs  = dto.mediaGroupURLsJSON  { existing.mediaGroupURLsJSON  = grpURLs }
+            if let grpTypes = dto.mediaGroupTypesJSON { existing.mediaGroupTypesJSON = grpTypes }
             existing.reactionsJSON = dto.reactionsJSON
             existing.readBy        = Array(Set(existing.readBy + dto.readBy))
             // isDeletedForEveryone is signalled by dto.isDeleted (softDelete sets this on Firestore).
@@ -423,16 +425,27 @@ final class ChatViewModel: NSObject, ObservableObject {
             guard !dto.isDeleted && !deletedForMe else { return }
             let msg = KBChatMessage(
                 id: dto.id, familyId: dto.familyId,
-                senderId: dto.senderId, senderName: dto.senderName,
+                senderId: dto.senderId,
+                senderName: dto.senderName,
                 type: KBChatMessageType(rawValue: dto.typeRaw) ?? .text,
-                text: dto.text, mediaStoragePath: dto.mediaStoragePath,
-                mediaURL: dto.mediaURL, mediaDurationSeconds: dto.mediaDurationSeconds,
+                text: dto.text,
+                mediaStoragePath: dto.mediaStoragePath,
+                mediaURL: dto.mediaURL,
+                mediaDurationSeconds: dto.mediaDurationSeconds,
                 mediaThumbnailURL: dto.mediaThumbnailURL,
-                createdAt: dto.createdAt ?? Date(), editedAt: dto.editedAt, isDeleted: false
+                createdAt: dto.createdAt ?? Date(),
+                editedAt: dto.editedAt,
+                isDeleted: false
             )
-            msg.replyToId = dto.replyToId; msg.reactionsJSON = dto.reactionsJSON
-            msg.readByJSON = dto.readByJSON; msg.syncState = .synced; msg.lastSyncError = nil
-            msg.latitude = dto.latitude; msg.longitude = dto.longitude
+            msg.mediaGroupURLsJSON  = dto.mediaGroupURLsJSON
+            msg.mediaGroupTypesJSON = dto.mediaGroupTypesJSON
+            msg.replyToId = dto.replyToId;
+            msg.reactionsJSON = dto.reactionsJSON
+            msg.readByJSON = dto.readByJSON;
+            msg.syncState = .synced;
+            msg.lastSyncError = nil
+            msg.latitude = dto.latitude;
+            msg.longitude = dto.longitude
             if let size = dto.mediaFileSize, size > 0 { msg.mediaFileSize = size }
             modelContext.insert(msg)
             if msg.type == .audio, msg.senderId != myUID,
@@ -516,6 +529,20 @@ final class ChatViewModel: NSObject, ObservableObject {
         case .location:
             replyingPreviewText = "📍 Posizione condivisa"
             replyingPreviewLatitude = message.latitude; replyingPreviewLongitude = message.longitude
+        case .mediaGroup:
+            let types = message.mediaGroupTypes  // ["photo", "video", ...]
+            let total = types.count
+            let hasPhoto = types.contains("photo")
+            let hasVideo = types.contains("video")
+            let label: String
+            if hasPhoto && hasVideo {
+                label = "🖼️ \(total) Foto/Video"
+            } else if hasVideo {
+                label = "🎬 \(total) \(total == 1 ? "video" : "video")"
+            } else {
+                label = "📷 \(total) \(total == 1 ? "foto" : "foto")"
+            }
+            replyingPreviewText = label
         }
     }
     
@@ -1430,7 +1457,9 @@ final class ChatViewModel: NSObject, ObservableObject {
             createdAt: msg.createdAt, editedAt: msg.editedAt,
             isDeleted: msg.isDeleted, deletedFor: [],
             latitude: msg.latitude, longitude: msg.longitude,
-            mediaFileSize: msg.mediaFileSize
+            mediaFileSize: msg.mediaFileSize,
+            mediaGroupURLsJSON:  msg.mediaGroupURLsJSON,
+            mediaGroupTypesJSON: msg.mediaGroupTypesJSON
         )
     }
     
@@ -1533,5 +1562,119 @@ private extension URL {
         case "mov":         return "video/quicktime"
         default:            return "application/octet-stream"
         }
+    }
+}
+
+extension ChatViewModel {
+    
+    /// Invia un gruppo di fino a 10 media (foto + video) come singolo messaggio.
+    /// Chiamare da ChatView dopo che l'utente ha confermato la selezione.
+    func sendMediaGroup(items: [(data: Data, type: KBChatMessageType)]) {
+        let capped = Array(items.prefix(10))
+        guard !capped.isEmpty else { return }
+        Task { await uploadAndSendGroup(items: capped) }
+    }
+}
+
+// MARK: - 2. Upload + send
+
+private extension ChatViewModel {
+    
+    func uploadAndSendGroup(items: [(data: Data, type: KBChatMessageType)]) async {
+        guard let modelContext else { return }
+        let uid         = Auth.auth().currentUser?.uid ?? "local"
+        let senderName  = senderDisplayName()
+        let messageId   = UUID().uuidString
+        let now         = Date()
+        
+        isUploadingMedia  = true
+        isCompressingMedia = false
+        uploadProgress    = 0
+        errorText         = nil
+        
+        // Placeholder locale visibile subito
+        let msg = KBChatMessage(
+            id: messageId, familyId: familyId,
+            senderId: uid, senderName: senderName,
+            type: .mediaGroup, createdAt: now
+        )
+        msg.syncState = .pendingUpsert
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        do {
+            var downloadURLs: [String] = []
+            var typeLabels:   [String] = []
+            
+            let totalEstimated = items.reduce(0) { $0 + $1.data.count }
+            var uploadedBytes  = 0
+            
+            for (index, item) in items.enumerated() {
+                // Comprimi
+                let uploadData: Data
+                switch item.type {
+                case .photo:
+                    isCompressingMedia = true
+                    uploadData = await compressPhoto(data: item.data)
+                    isCompressingMedia = false
+                case .video:
+                    isCompressingMedia = true
+                    uploadData = try await compressVideo(data: item.data)
+                    isCompressingMedia = false
+                default:
+                    uploadData = item.data
+                }
+                
+                let isVideo   = item.type == .video
+                let ext       = isVideo ? "mp4"        : "jpg"
+                let mime      = isVideo ? "video/mp4"  : "image/jpeg"
+                let fileName  = "group_\(index).\(ext)"
+                let itemStart = uploadedBytes
+                
+                let (_, downloadURL) = try await storageService.upload(
+                    data: uploadData,
+                    familyId: familyId,
+                    messageId: "\(messageId)_\(index)",
+                    fileName: fileName,
+                    mimeType: mime,
+                    progressHandler: { [weak self] p in
+                        guard let self else { return }
+                        Task { @MainActor in
+                            let base  = Double(itemStart) / Double(max(totalEstimated, 1))
+                            let chunk = Double(uploadData.count) / Double(max(totalEstimated, 1))
+                            self.uploadProgress = base + chunk * p
+                        }
+                    }
+                )
+                
+                downloadURLs.append(downloadURL)
+                typeLabels.append(isVideo ? "video" : "photo")
+                uploadedBytes += uploadData.count
+            }
+            
+            // Aggiorna il messaggio con gli URL caricati
+            msg.mediaGroupURLs  = downloadURLs
+            msg.mediaGroupTypes = typeLabels
+            msg.mediaFileSize   = Int64(uploadedBytes)
+            msg.syncState       = .pendingUpsert
+            try? modelContext.save()
+            
+            let dto = makeDTO(from: msg)
+            try await remoteStore.upsert(dto: dto)
+            msg.syncState = .synced
+            msg.lastSyncError = nil
+            try? modelContext.save()
+            
+        } catch {
+            msg.syncState     = .error
+            msg.lastSyncError = error.localizedDescription
+            try? modelContext.save()
+            errorText = "Invio gruppo fallito: \(error.localizedDescription)"
+        }
+        
+        isUploadingMedia   = false
+        isCompressingMedia = false
+        uploadProgress     = 0
     }
 }

@@ -1,3 +1,13 @@
+//
+//  KBChatMessage.swift
+//  KidBox
+//
+//  MODIFICATO: aggiunto supporto mediaGroup (max 10 foto/video in un singolo messaggio).
+//  Nuovi campi:
+//    - mediaGroupURLsJSON  : JSON array di download URL Firebase Storage
+//    - mediaGroupTypesJSON : JSON array "photo"|"video" per ciascun elemento
+//
+
 import Foundation
 import SwiftData
 
@@ -42,9 +52,18 @@ final class KBChatMessage {
     /// nil per messaggi di testo o messaggi media anteriori a questo campo.
     var mediaFileSize: Int64?
     
-    var reactionsJSON: String?
+    // MARK: - Media Group (nuovo)
     
-    /// JSON serializzato degli UID che hanno letto il messaggio.
+    /// JSON array di download URL — usato solo quando type == .mediaGroup.
+    /// Formato: ["https://...", "https://...", ...]   (max 10 elementi)
+    var mediaGroupURLsJSON: String?
+    
+    /// JSON array parallelo a mediaGroupURLsJSON — "photo" oppure "video" per ogni elemento.
+    var mediaGroupTypesJSON: String?
+    
+    // MARK: - Reactions / Read
+    
+    var reactionsJSON: String?
     var readByJSON: String?
     
     // MARK: - Transcript
@@ -126,6 +145,42 @@ final class KBChatMessage {
         }
     }
     
+    /// Array di download URL per i messaggi di tipo mediaGroup.
+    var mediaGroupURLs: [String] {
+        get {
+            guard let json = mediaGroupURLsJSON,
+                  let data = json.data(using: .utf8),
+                  let arr = try? JSONDecoder().decode([String].self, from: data)
+            else { return [] }
+            return arr
+        }
+        set {
+            guard !newValue.isEmpty,
+                  let data = try? JSONEncoder().encode(newValue),
+                  let json = String(data: data, encoding: .utf8)
+            else { mediaGroupURLsJSON = nil; return }
+            mediaGroupURLsJSON = json
+        }
+    }
+    
+    /// "photo" | "video" per ciascun elemento del mediaGroup, parallelo a mediaGroupURLs.
+    var mediaGroupTypes: [String] {
+        get {
+            guard let json = mediaGroupTypesJSON,
+                  let data = json.data(using: .utf8),
+                  let arr = try? JSONDecoder().decode([String].self, from: data)
+            else { return [] }
+            return arr
+        }
+        set {
+            guard !newValue.isEmpty,
+                  let data = try? JSONEncoder().encode(newValue),
+                  let json = String(data: data, encoding: .utf8)
+            else { mediaGroupTypesJSON = nil; return }
+            mediaGroupTypesJSON = json
+        }
+    }
+    
     var isEdited: Bool { editedAt != nil }
     
     var hasTranscriptText: Bool {
@@ -193,6 +248,8 @@ final class KBChatMessage {
         self.replyToId                = nil
         self.reactionsJSON            = nil
         self.readByJSON               = nil
+        self.mediaGroupURLsJSON       = nil
+        self.mediaGroupTypesJSON      = nil
         self.transcriptText           = transcriptText
         self.transcriptStatusRaw      = transcriptStatus.rawValue
         self.transcriptSourceRaw      = transcriptSource?.rawValue
