@@ -30,7 +30,10 @@ struct ChatView: View {
     @State private var searchText: String = ""
     @State private var isSearchPresented: Bool = false
     @State private var showClearConfirm = false
-    
+    @State private var showMediaGallery = false
+    @State private var galleryGoToMessageId: String? = nil
+    @State private var galleryReplyMessage: KBChatMessage? = nil
+
     private var familyId: String { families.first?.id ?? "" }
     
     var body: some View {
@@ -41,7 +44,9 @@ struct ChatView: View {
                 ChatConversationView(
                     familyId: familyId,
                     searchText: searchText,
-                    showClearConfirm: $showClearConfirm
+                    showClearConfirm: $showClearConfirm,
+                    goToMessageId: $galleryGoToMessageId,
+                    replyFromGallery: $galleryReplyMessage
                 )
             }
         }
@@ -65,7 +70,7 @@ struct ChatView: View {
                         }
                         
                         Button {
-                            // TODO: navigare alla schermata Media, link e documenti
+                            showMediaGallery = true
                         } label: {
                             Label("Media, link e documenti", systemImage: "photo.on.rectangle")
                         }
@@ -89,6 +94,19 @@ struct ChatView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Cerca messaggi"
         )
+        .sheet(isPresented: $showMediaGallery) {
+            ChatMediaGalleryView(
+                familyId: familyId,
+                onGoToMessage: { msgId in
+                    showMediaGallery = false
+                    galleryGoToMessageId = msgId
+                },
+                onReply: { msg in
+                    showMediaGallery = false
+                    galleryReplyMessage = msg
+                }
+            )
+        }
     }
     
     private var emptyNoFamily: some View {
@@ -358,6 +376,8 @@ private struct ChatConversationView: View {
     let familyId: String
     let searchText: String
     @Binding private var showClearConfirm: Bool
+    @Binding private var goToMessageId: String?
+    @Binding private var replyFromGallery: KBChatMessage?
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
@@ -428,10 +448,15 @@ private struct ChatConversationView: View {
     @State private var isSelecting: Bool = false
     @State private var selectedMessageIds: Set<String> = []
     
-    init(familyId: String, searchText: String, showClearConfirm: Binding<Bool>) {
+    init(familyId: String, searchText: String,
+         showClearConfirm: Binding<Bool>,
+         goToMessageId: Binding<String?>,
+         replyFromGallery: Binding<KBChatMessage?>) {
         self.familyId = familyId
         self.searchText = searchText
         self._showClearConfirm = showClearConfirm
+        self._goToMessageId = goToMessageId
+        self._replyFromGallery = replyFromGallery
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
     }
     
@@ -590,6 +615,22 @@ private struct ChatConversationView: View {
         .onChange(of: viewModel.messages.count) { _, _ in
             guard !viewModel.isPaginating else { return }
             dayGroups = buildGroups()
+        }
+        .onChange(of: goToMessageId) { _, msgId in
+            guard let msgId else { return }
+            goToMessageId = nil
+            // Forza la ricerca nella lista: usa searchScrollTarget
+            searchScrollTarget = msgId
+            highlightedMessageId = msgId
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                if highlightedMessageId == msgId { highlightedMessageId = nil }
+            }
+        }
+        // Gestisce "Rispondi" dalla gallery
+        .onChange(of: replyFromGallery) { _, msg in
+            guard let msg else { return }
+            replyFromGallery = nil
+            viewModel.startReply(to: msg)
         }
         .sheet(isPresented: $showCamera) { cameraSheet }
         .sheet(isPresented: $showDocumentPicker) {
