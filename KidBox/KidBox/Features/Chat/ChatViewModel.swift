@@ -643,7 +643,29 @@ final class ChatViewModel: NSObject, ObservableObject {
                 kCGImageSourceShouldCacheImmediately: true
             ]
             guard let cgThumb = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return data }
-            return UIImage(cgImage: cgThumb).jpegData(compressionQuality: 0.75) ?? data
+            
+            // Appiattisci alpha su sfondo bianco → elimina il canale alpha inutile
+            let size = CGSize(width: cgThumb.width, height: cgThumb.height)
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let ctx = CGContext(
+                data: nil,
+                width: cgThumb.width,
+                height: cgThumb.height,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+            ) else { return UIImage(cgImage: cgThumb).jpegData(compressionQuality: 0.75) ?? data }
+            
+            ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1)) // sfondo bianco
+            ctx.fill(CGRect(origin: .zero, size: size))
+            ctx.draw(cgThumb, in: CGRect(origin: .zero, size: size))
+            
+            guard let flatCGImage = ctx.makeImage() else {
+                return UIImage(cgImage: cgThumb).jpegData(compressionQuality: 0.75) ?? data
+            }
+            
+            return UIImage(cgImage: flatCGImage).jpegData(compressionQuality: 0.75) ?? data
         }.value
     }
     
@@ -1231,6 +1253,61 @@ final class ChatViewModel: NSObject, ObservableObject {
                         try? await self.remoteStore.addToDeletedFor(familyId: self.familyId, messageId: messageId, uid: uid)
                     }
                 }
+            }
+        }
+    }
+    
+    /// Rimuove un singolo media da un messaggio mediaGroup.
+    /// Se dopo la rimozione rimane un solo item, converte il messaggio in .photo o .video.
+    /// Se non rimane nessun item, elimina il messaggio completamente.
+    func removeMediaFromGroup(message: KBChatMessage, itemIndex: Int, forEveryone: Bool) {
+        guard let modelContext else { return }
+        var urls  = message.mediaGroupURLs
+        var types = message.mediaGroupTypes
+        guard urls.indices.contains(itemIndex) else { return }
+        
+        urls.remove(at: itemIndex)
+        types.remove(at: itemIndex)
+        
+        if urls.isEmpty {
+            // Nessun media rimasto: elimina il messaggio
+            if forEveryone {
+                deleteMessagesRemotely(ids: [message.id])
+            } else {
+                deleteMessagesLocally(ids: [message.id])
+            }
+            return
+        }
+        
+        // Aggiorna localmente subito
+        message.mediaGroupURLs  = urls
+        message.mediaGroupTypes = types
+        
+        if urls.count == 1 {
+            // Diventa un messaggio singolo
+            message.type    = types[0] == "video" ? .video : .photo
+            message.mediaURL = urls[0]
+            message.mediaGroupURLsJSON  = nil
+            message.mediaGroupTypesJSON = nil
+        }
+        
+        message.syncState = .pendingUpsert
+        try? modelContext.save()
+        reloadLocal()
+        
+        // Sincronizza in remoto
+        Task {
+            do {
+                let dto = makeDTO(from: message)
+                try await remoteStore.upsert(dto: dto)
+                message.syncState = .synced
+                message.lastSyncError = nil
+                try? modelContext.save()
+            } catch {
+                message.syncState = .error
+                message.lastSyncError = error.localizedDescription
+                try? modelContext.save()
+                errorText = "Aggiornamento gruppo fallito: \(error.localizedDescription)"
             }
         }
     }

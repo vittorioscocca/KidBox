@@ -13,6 +13,16 @@ import Combine
 import UniformTypeIdentifiers
 import MapKit
 
+struct GalleryDeleteRequest: Identifiable, Equatable {
+    let id = UUID()
+    let message: KBChatMessage
+    let itemIndex: Int?      // nil se non è mediaGroup
+    let forEveryone: Bool
+    
+    static func == (lhs: GalleryDeleteRequest, rhs: GalleryDeleteRequest) -> Bool {
+        lhs.id == rhs.id
+    }
+}
 // MARK: - ChatView (entry point)
 
 struct ChatView: View {
@@ -33,7 +43,8 @@ struct ChatView: View {
     @State private var showMediaGallery = false
     @State private var galleryGoToMessageId: String? = nil
     @State private var galleryReplyMessage: KBChatMessage? = nil
-
+    @State private var galleryDeleteRequest: GalleryDeleteRequest? = nil
+    
     private var familyId: String { families.first?.id ?? "" }
     
     var body: some View {
@@ -46,7 +57,8 @@ struct ChatView: View {
                     searchText: searchText,
                     showClearConfirm: $showClearConfirm,
                     goToMessageId: $galleryGoToMessageId,
-                    replyFromGallery: $galleryReplyMessage
+                    replyFromGallery: $galleryReplyMessage,
+                    deleteFromGallery: $galleryDeleteRequest
                 )
             }
         }
@@ -81,7 +93,7 @@ struct ChatView: View {
                             Label("Svuota chat", systemImage: "trash")
                         }
                         
-                       
+                        
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -104,6 +116,16 @@ struct ChatView: View {
                 onReply: { msg in
                     showMediaGallery = false
                     galleryReplyMessage = msg
+                },
+                onDelete: { item, forEveryone in
+                    let itemIndex: Int? = item.message.type == .mediaGroup
+                    ? Int(item.id.split(separator: "_").last ?? "")
+                    : nil
+                    galleryDeleteRequest = GalleryDeleteRequest(
+                        message: item.message,
+                        itemIndex: itemIndex,
+                        forEveryone: forEveryone
+                    )
                 }
             )
         }
@@ -378,7 +400,7 @@ private struct ChatConversationView: View {
     @Binding private var showClearConfirm: Bool
     @Binding private var goToMessageId: String?
     @Binding private var replyFromGallery: KBChatMessage?
-    
+    @Binding private var deleteFromGallery: GalleryDeleteRequest?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -407,6 +429,21 @@ private struct ChatConversationView: View {
         : Color(.tertiarySystemBackground)
     }
     
+    private var changeHandlers1: some View {
+        Color.clear
+            .onChange(of: mediaPickerItems) { _, items in handleMediaPickerChange(items) }
+            .onChange(of: searchText) { _, _ in dayGroups = buildGroups() }
+            .onChange(of: viewModel.messages.last?.id) { _, _ in handleMessagesChange() }
+            .onChange(of: viewModel.messages.count) { _, _ in handleMessagesChange() }
+    }
+    
+    private var changeHandlers2: some View {
+        Color.clear
+            .onChange(of: goToMessageId) { _, msgId in handleGalleryGoToMessage(msgId) }
+            .onChange(of: replyFromGallery) { _, msg in handleGalleryReply(msg) }
+            .onChange(of: deleteFromGallery) { _, req in handleGalleryDelete(req) }
+    }
+    
     // Media picker
     @State private var showMediaPicker = false
     @State private var mediaPickerItems: [PhotosPickerItem] = []
@@ -432,9 +469,6 @@ private struct ChatConversationView: View {
     // Reaction picker
     @State private var messageForReaction: KBChatMessage?
     
-    // Clear chat
-   
-    
     // Delete
     @State private var showDeleteConfirm: Bool = false
     @State private var showDeleteBar: Bool = false
@@ -448,16 +482,19 @@ private struct ChatConversationView: View {
     @State private var isSelecting: Bool = false
     @State private var selectedMessageIds: Set<String> = []
     
-    init(familyId: String, searchText: String,
+    init(familyId: String,
+         searchText: String,
          showClearConfirm: Binding<Bool>,
          goToMessageId: Binding<String?>,
-         replyFromGallery: Binding<KBChatMessage?>) {
+         replyFromGallery: Binding<KBChatMessage?>,
+         deleteFromGallery: Binding<GalleryDeleteRequest?>) {
         self.familyId = familyId
         self.searchText = searchText
         self._showClearConfirm = showClearConfirm
         self._goToMessageId = goToMessageId
         self._replyFromGallery = replyFromGallery
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
+        self._deleteFromGallery = deleteFromGallery
     }
     
     // MARK: - Body
@@ -546,10 +583,6 @@ private struct ChatConversationView: View {
             Task { await viewModel.sendVideo(from: url) }
         }
         .task(id: coordinator.pendingShareImagePath) {
-            // Cattura subito il path — azzerare pendingShareImagePath causa
-            // un re-render che ri-esegue questo task con id=nil, cancellando
-            // il task in corso prima che l'invio avvenga.
-            // Soluzione: capture → sleep → nil → send, tutto nella stessa esecuzione.
             guard let filePath = coordinator.pendingShareImagePath else { return }
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
@@ -602,36 +635,8 @@ private struct ChatConversationView: View {
             maxSelectionCount: 10,
             matching: .any(of: [.images, .videos])
         )
-        .onChange(of: mediaPickerItems) { _, items in
-            guard !items.isEmpty else { return }
-            Task { await handlePickedMediaItems(items) }
-            mediaPickerItems = []
-        }
-        .onChange(of: searchText) { _, _ in dayGroups = buildGroups() }
-        .onChange(of: viewModel.messages.last?.id) { _, _ in
-            guard !viewModel.isPaginating else { return }
-            dayGroups = buildGroups()
-        }
-        .onChange(of: viewModel.messages.count) { _, _ in
-            guard !viewModel.isPaginating else { return }
-            dayGroups = buildGroups()
-        }
-        .onChange(of: goToMessageId) { _, msgId in
-            guard let msgId else { return }
-            goToMessageId = nil
-            // Forza la ricerca nella lista: usa searchScrollTarget
-            searchScrollTarget = msgId
-            highlightedMessageId = msgId
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-                if highlightedMessageId == msgId { highlightedMessageId = nil }
-            }
-        }
-        // Gestisce "Rispondi" dalla gallery
-        .onChange(of: replyFromGallery) { _, msg in
-            guard let msg else { return }
-            replyFromGallery = nil
-            viewModel.startReply(to: msg)
-        }
+        .background(changeHandlers1)
+        .background(changeHandlers2)
         .sheet(isPresented: $showCamera) { cameraSheet }
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPicker { url in viewModel.sendDocument(url: url) }
@@ -645,6 +650,53 @@ private struct ChatConversationView: View {
                 onDismiss: { messageForSave = nil }
             )
             .presentationDetents([.medium, .large])
+        }
+    }
+    
+    private func handleMediaPickerChange(_ items: [PhotosPickerItem]) {
+        guard !items.isEmpty else { return }
+        Task { await handlePickedMediaItems(items) }
+        mediaPickerItems = []
+    }
+    
+    private func handleMessagesChange() {
+        guard !viewModel.isPaginating else { return }
+        dayGroups = buildGroups()
+    }
+    
+    private func handleGalleryGoToMessage(_ msgId: String?) {
+        guard let msgId else { return }
+        goToMessageId = nil
+        searchScrollTarget = msgId
+        highlightedMessageId = msgId
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            if highlightedMessageId == msgId { highlightedMessageId = nil }
+        }
+    }
+    
+    private func handleGalleryReply(_ msg: KBChatMessage?) {
+        guard let msg else { return }
+        replyFromGallery = nil
+        viewModel.startReply(to: msg)
+    }
+    
+    private func handleGalleryDelete(_ req: GalleryDeleteRequest?) {
+        guard let req else { return }
+        deleteFromGallery = nil
+        
+        if let index = req.itemIndex, req.message.type == .mediaGroup {
+            // Rimuove solo il singolo media dal gruppo
+            viewModel.removeMediaFromGroup(
+                message: req.message,
+                itemIndex: index,
+                forEveryone: req.forEveryone
+            )
+        } else {
+            if req.forEveryone {
+                viewModel.deleteMessagesRemotely(ids: [req.message.id])
+            } else {
+                viewModel.deleteMessagesLocally(ids: [req.message.id])
+            }
         }
     }
     

@@ -5,14 +5,15 @@
 //  • Si apre come sheet da ChatView
 //  • Tab Media / Link / Doc + barra ricerca per tab
 //  • .photo, .video, .mediaGroup (max 10 item)
-//  • Tap foto/video → fullscreen con TabView paging, swipe-down per chiudere
-//  • Thumbnail video tramite VideoThumbnailView
+//  • Fullscreen come overlay interno alla sheet (evita conflitti sheet-on-sheet)
+//  • Elimina: scelta "per me / per tutti", naviga a successiva/precedente
 //
 
 import SwiftUI
 import SwiftData
 import QuickLook
 import AVKit
+import FirebaseAuth
 
 // MARK: - Tab
 
@@ -46,10 +47,10 @@ struct ChatMediaGridItem: Identifiable {
 struct ChatMediaGalleryView: View {
     
     let familyId: String
-    /// Chiamato quando l'utente tappa "Vai al messaggio" → la chat scrolla a quell'ID
     var onGoToMessage: ((String) -> Void)? = nil
-    /// Chiamato quando l'utente tappa "Rispondi" → la chat avvia la reply
-    var onReply: ((KBChatMessage) -> Void)? = nil
+    var onReply:       ((KBChatMessage) -> Void)? = nil
+    /// Bool = true → elimina per tutti, false → solo per me
+    var onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil
     
     @Environment(\.dismiss)     private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -60,20 +61,24 @@ struct ChatMediaGalleryView: View {
     @State private var searchMedia:          String = ""
     @State private var searchLink:           String = ""
     @State private var searchDoc:            String = ""
-    @State private var fullscreenStartIndex: Int?   = nil
     @State private var previewURL:           URL?   = nil
     @State private var isLoadingPreview:     Bool   = false
     @State private var previewError:         String? = nil
     
+    /// Fullscreen: stato locale, overlay interno alla sheet
+    @State private var fullscreenStartIndex: Int?                 = nil
+    @State private var frozenMediaItems:     [ChatMediaGridItem]? = nil
+    
     @FocusState private var isSearchFocused: Bool
     
-    // DOPO
     init(familyId: String,
          onGoToMessage: ((String) -> Void)? = nil,
-         onReply: ((KBChatMessage) -> Void)? = nil) {
-        self.familyId = familyId
+         onReply:       ((KBChatMessage) -> Void)? = nil,
+         onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil) {
+        self.familyId      = familyId
         self.onGoToMessage = onGoToMessage
-        self.onReply = onReply
+        self.onReply       = onReply
+        self.onDelete      = onDelete
         _allMessages = Query(
             filter: #Predicate<KBChatMessage> {
                 $0.familyId == familyId && $0.isDeleted == false
@@ -171,21 +176,6 @@ struct ChatMediaGalleryView: View {
                     Button("Chiudi") { dismiss() }
                 }
             }
-            // fullScreenCover dentro NavigationStack → dismiss funziona
-            .fullScreenCover(isPresented: Binding(
-                get: { fullscreenStartIndex != nil },
-                set: { if !$0 { fullscreenStartIndex = nil } }
-            )) {
-                if let idx = fullscreenStartIndex {
-                    ChatMediaFullscreenView(
-                        items: allMediaItems,
-                        startIndex: idx,
-                        onDismiss: { fullscreenStartIndex = nil },
-                        onGoToMessage: onGoToMessage,
-                        onReply: onReply
-                    )
-                }
-            }
         }
         // QuickLook doc
         .sheet(isPresented: Binding(
@@ -194,7 +184,6 @@ struct ChatMediaGalleryView: View {
         )) {
             if let url = previewURL { GalleryQLPreview(urls: [url]) }
         }
-        // Spinner download
         .overlay {
             if isLoadingPreview {
                 ZStack {
@@ -203,7 +192,6 @@ struct ChatMediaGalleryView: View {
                 }
             }
         }
-        // Toast errore
         .overlay(alignment: .bottom) {
             if let err = previewError {
                 Text(err)
@@ -220,6 +208,39 @@ struct ChatMediaGalleryView: View {
                     }
             }
         }
+        // ── Fullscreen overlay interno alla sheet ────────────────────────────
+        // Usare overlay invece di fullScreenCover/sheet evita il warning
+        // "only presenting a single sheet is supported"
+        .overlay {
+            if let idx = fullscreenStartIndex, let frozen = frozenMediaItems {
+                ChatMediaFullscreenView(
+                    items: frozen,
+                    startIndex: idx,
+                    onDismiss: {
+                        withAnimation(.easeIn(duration: 0.2)) {
+                            fullscreenStartIndex = nil
+                            frozenMediaItems = nil
+                        }
+                    },
+                    onGoToMessage: { msgId in
+                        fullscreenStartIndex = nil
+                        frozenMediaItems = nil
+                        onGoToMessage?(msgId)
+                    },
+                    onReply: { msg in
+                        fullscreenStartIndex = nil
+                        frozenMediaItems = nil
+                        onReply?(msg)
+                    },
+                    onDelete: { item, forEveryone in
+                        onDelete?(item, forEveryone)
+                    }
+                )
+                .ignoresSafeArea()
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: fullscreenStartIndex != nil)
     }
     
     // MARK: - Segmented header
@@ -336,7 +357,10 @@ struct ChatMediaGalleryView: View {
                     ForEach(filteredMediaItems) { item in
                         MediaThumbCell(item: item) {
                             isSearchFocused = false
-                            if let idx = allMediaItems.firstIndex(where: { $0.id == item.id }) {
+                            // Congela la lista al momento del tap
+                            let snapshot = allMediaItems
+                            if let idx = snapshot.firstIndex(where: { $0.id == item.id }) {
+                                frozenMediaItems     = snapshot
                                 fullscreenStartIndex = idx
                             }
                         }
@@ -485,19 +509,16 @@ private struct MediaThumbCell: View {
         ZStack(alignment: .bottomTrailing) {
             if item.isVideo, let url = URL(string: item.urlString) {
                 VideoThumbnailView(videoURL: url, cacheKey: item.videoCacheKey)
-                    .frame(width: side, height: side)
-                    .clipped()
+                    .frame(width: side, height: side).clipped()
             } else if let url = URL(string: item.urlString) {
                 CachedAsyncImage(url: url, contentMode: .fill)
-                    .frame(width: side, height: side)
-                    .clipped()
+                    .frame(width: side, height: side).clipped()
             } else {
                 Rectangle()
                     .fill(Color.secondary.opacity(0.15))
                     .frame(width: side, height: side)
                     .overlay(Image(systemName: "photo").foregroundStyle(.quaternary))
             }
-            
             if item.isVideo {
                 HStack(spacing: 3) {
                     Image(systemName: "play.fill").font(.system(size: 9, weight: .bold))
@@ -523,52 +544,59 @@ private struct MediaThumbCell: View {
 
 struct ChatMediaFullscreenView: View {
     
-    let items:          [ChatMediaGridItem]
-    let startIndex:     Int
-    let onDismiss:      () -> Void
-    /// Chiamato con l'ID del messaggio → la chat scrolla a quel punto
-    var onGoToMessage:  ((String) -> Void)? = nil
-    /// Chiamato per avviare la reply al messaggio corrente
-    var onReply:        ((KBChatMessage) -> Void)? = nil
+    let items:         [ChatMediaGridItem]
+    let startIndex:    Int
+    let onDismiss:     () -> Void
+    var onGoToMessage: ((String) -> Void)? = nil
+    var onReply:       ((KBChatMessage) -> Void)? = nil
+    var onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil
     
+    @State private var localItems:   [ChatMediaGridItem]
     @State private var currentIndex: Int
     @State private var imageCache:   [String: UIImage] = [:]
     @State private var playerCache:  [String: AVPlayer] = [:]
     @State private var showChrome:   Bool    = true
     @State private var dragOffset:   CGFloat = 0
     
-    // Share
-    @State private var shareItems:   [Any]   = []
-    @State private var showShare:    Bool    = false
-    
-    // Conferma elimina
-    @State private var showDeleteConfirm: Bool = false
+    @State private var shareItems:        [Any]  = []
+    @State private var showShare:         Bool   = false
+    @State private var showDeleteConfirm: Bool   = false
     
     init(items: [ChatMediaGridItem],
          startIndex: Int,
          onDismiss: @escaping () -> Void,
          onGoToMessage: ((String) -> Void)? = nil,
-         onReply: ((KBChatMessage) -> Void)? = nil) {
+         onReply:       ((KBChatMessage) -> Void)? = nil,
+         onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil) {
         self.items         = items
         self.startIndex    = startIndex
         self.onDismiss     = onDismiss
         self.onGoToMessage = onGoToMessage
         self.onReply       = onReply
-        _currentIndex      = State(initialValue: max(0, min(startIndex, items.count - 1)))
+        self.onDelete      = onDelete
+        let safeIndex      = max(0, min(startIndex, items.count - 1))
+        _localItems        = State(initialValue: items)
+        _currentIndex      = State(initialValue: safeIndex)
     }
     
     private var current: ChatMediaGridItem {
-        guard items.indices.contains(currentIndex) else { return items[0] }
-        return items[currentIndex]
+        guard localItems.indices.contains(currentIndex) else { return localItems[0] }
+        return localItems[currentIndex]
+    }
+    
+    private var canDeleteForEveryone: Bool {
+        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return false }
+        let msg = current.message
+        guard msg.senderId == uid else { return false }
+        return Date().timeIntervalSince(msg.createdAt) <= 300
     }
     
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             
-            // ── Pager ────────────────────────────────────────────────────────
             TabView(selection: $currentIndex) {
-                ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                ForEach(Array(localItems.enumerated()), id: \.element.id) { idx, item in
                     FullscreenCell(
                         item:   item,
                         image:  imageCache[item.id],
@@ -585,11 +613,8 @@ struct ChatMediaFullscreenView: View {
             .ignoresSafeArea()
             .offset(y: dragOffset)
             
-            // ── Chrome ───────────────────────────────────────────────────────
             if showChrome {
                 VStack(spacing: 0) {
-                    
-                    // Top bar
                     HStack(alignment: .top) {
                         Button(action: onDismiss) {
                             Image(systemName: "xmark")
@@ -598,8 +623,7 @@ struct ChatMediaFullscreenView: View {
                                 .frame(width: 36, height: 36)
                                 .background(.black.opacity(0.5), in: Circle())
                         }
-                        .padding(.leading, 16)
-                        .padding(.top, 60)
+                        .padding(.leading, 16).padding(.top, 60)
                         
                         Spacer()
                         
@@ -609,20 +633,18 @@ struct ChatMediaFullscreenView: View {
                                 .foregroundStyle(.white).lineLimit(1)
                             Text(current.message.createdAt.formatted(
                                 date: .abbreviated, time: .shortened))
-                            .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.72))
+                            .font(.caption2).foregroundStyle(.white.opacity(0.72))
                         }
                         .padding(.top, 60)
                         
                         Spacer()
                         
-                        Text("\(currentIndex + 1) / \(items.count)")
+                        Text("\(currentIndex + 1) / \(localItems.count)")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.white.opacity(0.85))
                             .padding(.horizontal, 10).padding(.vertical, 5)
                             .background(.black.opacity(0.4), in: Capsule())
-                            .padding(.trailing, 16)
-                            .padding(.top, 60)
+                            .padding(.trailing, 16).padding(.top, 60)
                     }
                     .frame(maxWidth: .infinity)
                     .background(
@@ -633,20 +655,16 @@ struct ChatMediaFullscreenView: View {
                     
                     Spacer()
                     
-                    // ── Bottom area: thumbnail strip + toolbar ────────────────
                     VStack(spacing: 0) {
-                        
-                        // Thumbnail strip
-                        if items.count > 1 {
+                        if localItems.count > 1 {
                             ScrollViewReader { proxy in
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 3) {
-                                        ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                                        ForEach(Array(localItems.enumerated()), id: \.element.id) { idx, item in
                                             thumbStrip(item: item, idx: idx, proxy: proxy)
                                         }
                                     }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 8).padding(.vertical, 6)
                                 }
                                 .onChange(of: currentIndex) { _, newIdx in
                                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -658,23 +676,16 @@ struct ChatMediaFullscreenView: View {
                         
                         Divider().overlay(Color.white.opacity(0.15))
                         
-                        // Toolbar azioni
                         HStack(spacing: 0) {
-                            // Condividi
                             toolbarButton(icon: "square.and.arrow.up", label: "Condividi") {
                                 Task { await prepareShare() }
                             }
-                            // Rispondi
                             toolbarButton(icon: "arrowshape.turn.up.left", label: "Rispondi") {
-                                onReply?(current.message)
-                                onDismiss()
+                                onReply?(current.message); onDismiss()
                             }
-                            // Vai al messaggio
                             toolbarButton(icon: "arrow.up.message", label: "Messaggio") {
-                                onGoToMessage?(current.message.id)
-                                onDismiss()
+                                onGoToMessage?(current.message.id); onDismiss()
                             }
-                            // Elimina
                             toolbarButton(icon: "trash", label: "Elimina", tint: .red) {
                                 showDeleteConfirm = true
                             }
@@ -692,7 +703,6 @@ struct ChatMediaFullscreenView: View {
         }
         .ignoresSafeArea()
         .statusBarHidden(!showChrome)
-        // Swipe down per chiudere
         .gesture(
             DragGesture(minimumDistance: 20, coordinateSpace: .local)
                 .onChanged { v in
@@ -712,27 +722,58 @@ struct ChatMediaFullscreenView: View {
                     }
                 }
         )
-        // Share sheet
         .sheet(isPresented: $showShare) {
-            ActivityViewController(activityItems: shareItems)
-                .ignoresSafeArea()
+            ActivityViewController(activityItems: shareItems).ignoresSafeArea()
         }
-        // Conferma elimina
         .confirmationDialog("Elimina questo media?",
                             isPresented: $showDeleteConfirm,
                             titleVisibility: .visible) {
-            Button("Elimina", role: .destructive) {
-                // Soft-delete del messaggio padre
-                // (il caller può osservare onDismiss + message.id per gestirlo)
-                onDismiss()
+            Button("Elimina per me", role: .destructive) {
+                deleteAndNavigate(forEveryone: false)
+            }
+            if canDeleteForEveryone {
+                Button("Elimina per tutti", role: .destructive) {
+                    deleteAndNavigate(forEveryone: true)
+                }
             }
             Button("Annulla", role: .cancel) {}
         } message: {
-            Text("Il media verrà rimosso dalla chat.")
+            Text(canDeleteForEveryone
+                 ? "Scegli se eliminare il media solo per te o per tutti i membri."
+                 : "Il media verrà rimosso dalla tua chat.")
         }
     }
     
-    // MARK: - Thumbnail strip cell
+    // MARK: - Delete & navigate
+    
+    private func deleteAndNavigate(forEveryone: Bool) {
+        guard localItems.indices.contains(currentIndex) else { return }
+        let itemToDelete = current
+        let removedIndex = currentIndex
+        
+        if localItems.count == 1 {
+            onDelete?(itemToDelete, forEveryone)
+            onDismiss()
+            return
+        }
+        
+        if currentIndex < localItems.count - 1 {
+            withAnimation(.easeInOut(duration: 0.2)) { currentIndex += 1 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                localItems.remove(at: removedIndex)
+                currentIndex = max(0, currentIndex - 1)
+            }
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) { currentIndex -= 1 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                localItems.remove(at: removedIndex)
+            }
+        }
+        
+        onDelete?(itemToDelete, forEveryone)
+    }
+    
+    // MARK: - Thumbnail strip
     
     @ViewBuilder
     private func thumbStrip(item: ChatMediaGridItem,
@@ -778,12 +819,8 @@ struct ChatMediaFullscreenView: View {
                                action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundStyle(tint)
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(tint.opacity(0.85))
+                Image(systemName: icon).font(.system(size: 22)).foregroundStyle(tint)
+                Text(label).font(.caption2).foregroundStyle(tint.opacity(0.85))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -802,10 +839,7 @@ struct ChatMediaFullscreenView: View {
             let dest = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString + ".\(ext)")
             try? FileManager.default.moveItem(at: tmp, to: dest)
-            await MainActor.run {
-                shareItems = [dest]
-                showShare  = true
-            }
+            await MainActor.run { shareItems = [dest]; showShare = true }
         } catch {}
     }
     
@@ -859,7 +893,6 @@ private struct ActivityViewController: UIViewControllerRepresentable {
 // MARK: - FullscreenCell
 
 private struct FullscreenCell: View {
-    
     let item:   ChatMediaGridItem
     let image:  UIImage?
     let player: AVPlayer?
@@ -878,9 +911,7 @@ private struct FullscreenCell: View {
                 }
             } else {
                 if let img = image {
-                    Image(uiImage: img)
-                        .resizable()
-                        .scaledToFit()
+                    Image(uiImage: img).resizable().scaledToFit()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let url = URL(string: item.urlString) {
                     CachedAsyncImage(url: url, contentMode: .fit)
@@ -898,7 +929,6 @@ private struct FullscreenCell: View {
 // MARK: - GalleryLinkRow
 
 private struct GalleryLinkRow: View {
-    
     let message: KBChatMessage
     let url: URL
     
@@ -939,7 +969,6 @@ private struct GalleryLinkRow: View {
 // MARK: - GalleryDocRow
 
 private struct GalleryDocRow: View {
-    
     let message: KBChatMessage
     let onTap:   () -> Void
     
