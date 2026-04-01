@@ -126,8 +126,13 @@ struct ChatView: View {
                         itemIndex: itemIndex,
                         forEveryone: forEveryone
                     )
-                }
+                },
+                onClose: { showMediaGallery = false }
             )
+            .environment(\.modelContext, modelContext)
+#if targetEnvironment(macCatalyst)
+            .frame(minWidth: 640, minHeight: 520)
+#endif
         }
     }
     
@@ -469,9 +474,17 @@ private struct ChatConversationView: View {
     // Reaction picker
     @State private var messageForReaction: KBChatMessage?
     
+    // Clear chat
+    
+    
     // Delete
     @State private var showDeleteConfirm: Bool = false
     @State private var showDeleteBar: Bool = false
+    
+#if targetEnvironment(macCatalyst)
+    // Drag & drop (Mac only)
+    @State private var isDragTargeted: Bool = false
+#endif
     
     // Highlight / search
     @State private var highlightedMessageId: String? = nil
@@ -562,6 +575,29 @@ private struct ChatConversationView: View {
             }
         }
         .background(backgroundColor)
+#if targetEnvironment(macCatalyst)
+        .overlay {
+            if isDragTargeted {
+                ZStack {
+                    Color.accentColor.opacity(0.12).ignoresSafeArea()
+                    VStack(spacing: 12) {
+                        Image(systemName: "arrow.down.doc.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(Color.accentColor)
+                        Text("Rilascia per allegare")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .padding(32)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                }
+            }
+        }
+        .onDrop(of: [.image, .video, .movie, .fileURL, .url, .data], isTargeted: $isDragTargeted) { providers in
+            handleDrop(providers: providers)
+            return true
+        }
+#endif
         .environmentObject(LinkPreviewStore.shared)
         .onAppear {
             BadgeManager.shared.activeSections.insert("chat")
@@ -652,6 +688,88 @@ private struct ChatConversationView: View {
             .presentationDetents([.medium, .large])
         }
     }
+    
+#if targetEnvironment(macCatalyst)
+    // MARK: - Drag & Drop (Mac only)
+    //
+    // Su Mac Catalyst i file droppati da Finder arrivano come fileURL.
+    // NSItemProvider.loadObject(ofClass: URL.self) è il modo più affidabile
+    // per ricevere il path del file, poi distinguiamo per estensione.
+    // loadDataRepresentation per le immagini è un fallback se il file URL non funziona.
+    
+    private func handleDrop(providers: [NSItemProvider]) {
+        for provider in providers {
+            
+            // Strategia primaria: prova sempre a caricare come file URL
+            // (funziona per tutti i tipi droppati da Finder su Mac)
+            if provider.hasItemConformingToTypeIdentifier("public.file-url") ||
+                provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                _ = provider.loadObject(ofClass: URL.self) { url, error in
+                    guard let url, error == nil else { return }
+                    // Richiedi accesso al file (necessario su Mac Catalyst)
+                    let accessing = url.startAccessingSecurityScopedResource()
+                    defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                    
+                    let ext = url.pathExtension.lowercased()
+                    let imageExts = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp", "bmp", "tiff"]
+                    let videoExts = ["mp4", "mov", "m4v", "avi", "mkv"]
+                    
+                    if imageExts.contains(ext) {
+                        guard let data = try? Data(contentsOf: url) else { return }
+                        DispatchQueue.main.async {
+                            checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                                let item = PendingMediaItem(data: data, type: .photo)
+                                if pendingGroupItems.isEmpty {
+                                    viewModel.sendMedia(data: data, type: .photo)
+                                } else if pendingGroupItems.count < 10 {
+                                    withAnimation { pendingGroupItems.append(item) }
+                                }
+                            }
+                        }
+                    } else if videoExts.contains(ext) {
+                        // Per i video copiamo in una directory temporanea accessibile
+                        let tmpURL = FileManager.default.temporaryDirectory
+                            .appendingPathComponent(url.lastPathComponent)
+                        try? FileManager.default.copyItem(at: url, to: tmpURL)
+                        DispatchQueue.main.async {
+                            checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                                Task { await viewModel.sendVideo(from: tmpURL) }
+                            }
+                        }
+                    } else {
+                        // Documento generico — copiamo in temp per sicurezza
+                        let tmpURL = FileManager.default.temporaryDirectory
+                            .appendingPathComponent(url.lastPathComponent)
+                        try? FileManager.default.copyItem(at: url, to: tmpURL)
+                        DispatchQueue.main.async {
+                            checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                                viewModel.sendDocument(url: tmpURL)
+                            }
+                        }
+                    }
+                }
+                continue
+            }
+            
+            // Fallback: immagine raw (es. drag da browser)
+            if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                    guard let data else { return }
+                    DispatchQueue.main.async {
+                        checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                            let item = PendingMediaItem(data: data, type: .photo)
+                            if pendingGroupItems.isEmpty {
+                                viewModel.sendMedia(data: data, type: .photo)
+                            } else if pendingGroupItems.count < 10 {
+                                withAnimation { pendingGroupItems.append(item) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+#endif
     
     private func handleMediaPickerChange(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }

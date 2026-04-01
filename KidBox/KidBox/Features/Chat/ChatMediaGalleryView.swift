@@ -7,6 +7,7 @@
 //  • .photo, .video, .mediaGroup (max 10 item)
 //  • Fullscreen come overlay interno alla sheet (evita conflitti sheet-on-sheet)
 //  • Elimina: scelta "per me / per tutti", naviga a successiva/precedente
+//  • Fix Mac: tasto chiudi usa isPresented binding, griglia usa GeometryReader
 //
 
 import SwiftUI
@@ -51,9 +52,16 @@ struct ChatMediaGalleryView: View {
     var onReply:       ((KBChatMessage) -> Void)? = nil
     /// Bool = true → elimina per tutti, false → solo per me
     var onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil
+    /// Closure di chiusura esplicita — funziona su Mac e iOS senza problemi di dismiss()
+    var onClose:       (() -> Void)? = nil
     
-    @Environment(\.dismiss)     private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme)      private var colorScheme
+    @Environment(\.presentationMode) private var presentationMode
+    
+    private func closeSheet() {
+        onClose?()
+        presentationMode.wrappedValue.dismiss()
+    }
     
     @Query private var allMessages: [KBChatMessage]
     
@@ -74,11 +82,13 @@ struct ChatMediaGalleryView: View {
     init(familyId: String,
          onGoToMessage: ((String) -> Void)? = nil,
          onReply:       ((KBChatMessage) -> Void)? = nil,
-         onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil) {
+         onDelete:      ((ChatMediaGridItem, Bool) -> Void)? = nil,
+         onClose:       (() -> Void)? = nil) {
         self.familyId      = familyId
         self.onGoToMessage = onGoToMessage
         self.onReply       = onReply
         self.onDelete      = onDelete
+        self.onClose       = onClose
         _allMessages = Query(
             filter: #Predicate<KBChatMessage> {
                 $0.familyId == familyId && $0.isDeleted == false
@@ -160,58 +170,72 @@ struct ChatMediaGalleryView: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                segmentedHeader
-                Divider()
-                searchBar
-                Divider()
-                contentArea
-            }
-            .background(pageBackground.ignoresSafeArea())
-            .navigationTitle("Media, link e doc")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Chiudi") { dismiss() }
+        ZStack {
+            // ── Contenuto principale ─────────────────────────────────────
+            Group {
+#if targetEnvironment(macCatalyst)
+                VStack(spacing: 0) {
+                    macHeader
+                    Divider()
+                    segmentedHeader
+                    Divider()
+                    searchBar
+                    Divider()
+                    contentArea
                 }
-            }
-        }
-        // QuickLook doc
-        .sheet(isPresented: Binding(
-            get: { previewURL != nil },
-            set: { if !$0 { previewURL = nil } }
-        )) {
-            if let url = previewURL { GalleryQLPreview(urls: [url]) }
-        }
-        .overlay {
-            if isLoadingPreview {
-                ZStack {
-                    Color.black.opacity(0.28).ignoresSafeArea()
-                    ProgressView().tint(.white).scaleEffect(1.5)
-                }
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if let err = previewError {
-                Text(err)
-                    .font(.caption).foregroundStyle(.white)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(.red.opacity(0.88), in: Capsule())
-                    .padding(.bottom, 28)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .onAppear {
-                        Task {
-                            try? await Task.sleep(nanoseconds: 3_000_000_000)
-                            withAnimation { previewError = nil }
+                .background(pageBackground.ignoresSafeArea())
+#else
+                NavigationStack {
+                    VStack(spacing: 0) {
+                        segmentedHeader
+                        Divider()
+                        searchBar
+                        Divider()
+                        contentArea
+                    }
+                    .background(pageBackground.ignoresSafeArea())
+                    .navigationTitle("Media, link e doc")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Chiudi") { closeSheet() }
                         }
                     }
+                }
+#endif
             }
-        }
-        // ── Fullscreen overlay interno alla sheet ────────────────────────────
-        // Usare overlay invece di fullScreenCover/sheet evita il warning
-        // "only presenting a single sheet is supported"
-        .overlay {
+            .sheet(isPresented: Binding(
+                get: { previewURL != nil },
+                set: { if !$0 { previewURL = nil } }
+            )) {
+                if let url = previewURL { GalleryQLPreview(urls: [url]) }
+            }
+            .overlay {
+                if isLoadingPreview {
+                    ZStack {
+                        Color.black.opacity(0.28).ignoresSafeArea()
+                        ProgressView().tint(.white).scaleEffect(1.5)
+                    }
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if let err = previewError {
+                    Text(err)
+                        .font(.caption).foregroundStyle(.white)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(.red.opacity(0.88), in: Capsule())
+                        .padding(.bottom, 28)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .onAppear {
+                            Task {
+                                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                                withAnimation { previewError = nil }
+                            }
+                        }
+                }
+            }
+            
+            // ── Fullscreen: nello ZStack sopra tutto, ZERO overlay nascosti ──
             if let idx = fullscreenStartIndex, let frozen = frozenMediaItems {
                 ChatMediaFullscreenView(
                     items: frozen,
@@ -237,11 +261,37 @@ struct ChatMediaGalleryView: View {
                     }
                 )
                 .ignoresSafeArea()
+                .zIndex(999)
                 .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: fullscreenStartIndex != nil)
     }
+    
+    // MARK: - Mac header (sostituisce NavigationStack su Mac)
+    
+#if targetEnvironment(macCatalyst)
+    private var macHeader: some View {
+        HStack {
+            Text("Media, link e doc")
+                .font(.headline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .center)
+                .overlay(alignment: .trailing) {
+                    Button {
+                        closeSheet()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 16)
+                }
+        }
+        .padding(.vertical, 12)
+        .background(headerBackground)
+    }
+#endif
     
     // MARK: - Segmented header
     
@@ -357,7 +407,6 @@ struct ChatMediaGalleryView: View {
                     ForEach(filteredMediaItems) { item in
                         MediaThumbCell(item: item) {
                             isSearchFocused = false
-                            // Congela la lista al momento del tap
                             let snapshot = allMediaItems
                             if let idx = snapshot.firstIndex(where: { $0.id == item.id }) {
                                 frozenMediaItems     = snapshot
@@ -503,9 +552,22 @@ private struct MediaThumbCell: View {
     let item:  ChatMediaGridItem
     let onTap: () -> Void
     
-    private var side: CGFloat { (UIScreen.main.bounds.width - 4) / 3 }
-    
+    // Su iOS UIScreen.main.bounds.width è corretto.
+    // Su Mac Catalyst restituisce la larghezza schermo fisico invece della finestra,
+    // quindi usiamo GeometryReader che legge la dimensione reale della cella.
     var body: some View {
+#if targetEnvironment(macCatalyst)
+        GeometryReader { geo in
+            cellContent(side: geo.size.width)
+        }
+        .aspectRatio(1, contentMode: .fit)
+#else
+        cellContent(side: (UIScreen.main.bounds.width - 4) / 3)
+#endif
+    }
+    
+    @ViewBuilder
+    private func cellContent(side: CGFloat) -> some View {
         ZStack(alignment: .bottomTrailing) {
             if item.isVideo, let url = URL(string: item.urlString) {
                 VideoThumbnailView(videoURL: url, cacheKey: item.videoCacheKey)

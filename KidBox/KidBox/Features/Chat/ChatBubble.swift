@@ -49,7 +49,15 @@ struct ChatBubble: View {
     @State private var dragProgress: Double = 0.0
     @State private var playbackRate: Float = 1.0
     
-    private static let screenWidth: CGFloat = UIScreen.main.bounds.width
+    // Su Mac Catalyst UIScreen.main.bounds.width restituisce lo schermo fisico.
+    // Cappamo a 480pt che è una larghezza di finestra chat ragionevole su Mac.
+    private static let screenWidth: CGFloat = {
+#if targetEnvironment(macCatalyst)
+        return min(UIScreen.main.bounds.width, 480)
+#else
+        return UIScreen.main.bounds.width
+#endif
+    }()
     
     // Media QuickLook
     @State private var isDownloadingMedia = false
@@ -1308,7 +1316,13 @@ struct ChatMediaGroupBubble: View {
     
     private let spacing: CGFloat   = 2
     private let maxVisible: Int    = 6
-    private var bubbleWidth: CGFloat { UIScreen.main.bounds.width * 0.72 }
+    private var bubbleWidth: CGFloat {
+#if targetEnvironment(macCatalyst)
+        return min(UIScreen.main.bounds.width, 480) * 0.72
+#else
+        return UIScreen.main.bounds.width * 0.72
+#endif
+    }
     
     // MARK: - Download / preview state
     @State private var downloadingIndex: Int? = nil
