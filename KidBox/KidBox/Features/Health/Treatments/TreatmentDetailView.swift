@@ -25,6 +25,7 @@ struct TreatmentDetailView: View {
     @Query private var children: [KBChild]
     
     @State private var selectedDayOffset  = 0
+    @State private var showEditSheet      = false
     @State private var showExtendSheet    = false
     @State private var showTimeEditor     = false
     @State private var showConfirmDose: ConfirmDoseContext? = nil
@@ -118,6 +119,7 @@ struct TreatmentDetailView: View {
                 timelineRow.padding(.horizontal)
                 doseSlotsList.padding(.horizontal).padding(.top, 8)
                 scheduleInfoCard.padding()
+                notesCard.padding(.horizontal).padding(.bottom, 4)
                 reminderCard.padding(.horizontal).padding(.bottom, 8)
                 TreatmentAttachmentsSection(treatment: treatment).padding(.horizontal).padding(.bottom, 8)
                 dangerZone.padding(.horizontal).padding(.top, 8).padding(.bottom, 40)
@@ -128,7 +130,11 @@ struct TreatmentDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { } label: { Image(systemName: "square.and.arrow.up") }
+                Button {
+                    showEditSheet = true
+                } label: {
+                    Image(systemName: "pencil")
+                }
             }
         }
         .onAppear {
@@ -153,6 +159,14 @@ struct TreatmentDetailView: View {
             else { return }
             let day = (info[TreatmentDoseQuickActionKey.dayOffset] as? NSNumber)?.intValue ?? selectedDayOffset
             selectedDayOffset = day
+        }
+        .sheet(isPresented: $showEditSheet) {
+            PediatricTreatmentEditView(
+                familyId:  treatment.familyId,
+                childId:   treatment.childId,
+                childName: childName,
+                treatmentId: treatment.id
+            )
         }
         .sheet(isPresented: $showExtendSheet) { ExtendTreatmentSheet(treatment: treatment) }
         .sheet(isPresented: $showTimeEditor)  { EditScheduleTimesSheet(treatment: treatment) }
@@ -444,6 +458,28 @@ struct TreatmentDetailView: View {
                 .fill(KBTheme.cardBackground(colorScheme))
                 .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
         )
+    }
+    
+    // MARK: - Notes card
+    
+    @ViewBuilder
+    private var notesCard: some View {
+        if let notes = treatment.notes, !notes.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Note", systemImage: "square.and.pencil")
+                    .font(.subheadline.bold()).foregroundStyle(tint)
+                Text(notes)
+                    .font(.subheadline)
+                    .foregroundStyle(KBTheme.primaryText(colorScheme))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(KBTheme.cardBackground(colorScheme))
+                    .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+            )
+        }
     }
     
     // MARK: - Reminder card

@@ -125,7 +125,7 @@ struct PediatricExamEditView: View {
                         DatePicker("Scadenza", selection: $deadline, displayedComponents: .date)
                         // ── Promemoria ──
                         Toggle(isOn: $reminderOn) {
-                            Label("Promemoria il giorno prima", systemImage: reminderOn ? "bell.fill" : "bell")
+                            Label("Promemoria il giorno dell'esame", systemImage: reminderOn ? "bell.fill" : "bell")
                                 .foregroundStyle(reminderOn ? .orange : .primary)
                         }
                         .tint(.orange)

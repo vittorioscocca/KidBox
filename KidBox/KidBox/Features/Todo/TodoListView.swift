@@ -32,8 +32,7 @@ struct TodoListView: View {
     private let childId: String
     private let listId: String
     
-    @State private var showEditSheet = false
-    @State private var editingTodoId: String? = nil
+    @State private var editingTarget: TodoEditTarget? = nil
     @State private var didStartRealtime = false
     
     @StateObject private var highlightStore = TodoHighlightStore.shared
@@ -105,23 +104,23 @@ struct TodoListView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap + addTodo listId=\(listId)")
-                        editingTodoId = nil
-                        showEditSheet = true
+                        editingTarget = TodoEditTarget(id: UUID().uuidString, todoId: nil)
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
             }
-            .sheet(isPresented: $showEditSheet) {
+            .sheet(item: $editingTarget) { target in
                 TodoEditView(
                     familyId: familyId,
                     childId: childId,
                     listId: listId,
                     listName: listName,
-                    todoIdToEdit: editingTodoId
+                    todoIdToEdit: target.todoId
                 )
                 .onAppear {
-                    KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] TodoEditView appeared todoIdToEdit=\(editingTodoId ?? "nil") listId=\(listId)")
+                    let idStr = target.todoId ?? "nil"
+                    KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] TodoEditView appeared todoIdToEdit=\(idStr) listId=\(listId)")
                 }
                 .onDisappear {
                     KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] TodoEditView disappeared listId=\(listId)")
@@ -306,8 +305,7 @@ struct TodoListView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] tap edit todoId=\(todo.id) listId=\(listId)")
-            editingTodoId = todo.id
-            showEditSheet = true
+            editingTarget = TodoEditTarget(id: todo.id, todoId: todo.id)
         }
     }
     
@@ -401,5 +399,18 @@ struct TodoListView: View {
             let postIds = visibleTodos.prefix(10).map(\.id).joined(separator: ",")
             KBLog.todo.kbDebug("[TodoListView][\(viewTrace)] deleteTodos POST visibleIds=[\(postIds)] visibleCount=\(visibleTodos.count)")
         }
+    }
+    
+    // MARK: - TodoEditTarget
+    
+    /// Wrapper Identifiable usato da .sheet(item:) per garantire stabilità
+    /// del valore anche quando SwiftUI ricrea TodoListView durante il layout.
+    /// Senza questo, @State var editingTodoId veniva azzerato prima che la
+    /// sheet completasse il suo onAppear, causando la form vuota.
+    struct TodoEditTarget: Identifiable {
+        /// ID univoco della presentazione (stabile per tutta la vita della sheet)
+        let id: String
+        /// nil = nuovo todo, non-nil = edit di un todo esistente
+        let todoId: String?
     }
 }

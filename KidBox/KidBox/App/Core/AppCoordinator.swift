@@ -727,6 +727,49 @@ final class AppCoordinator: ObservableObject {
         }
     }
     
+    // MARK: - Open Todo from Push
+    
+    /// Apre direttamente il todo che ha scatenato il promemoria.
+    /// Path: todo → todoList (con highlight sul todo specifico)
+    @MainActor
+    func openTodoFromPush(familyId: String, childId: String, listId: String, todoId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openTodoFromPush familyId=\(familyId) childId=\(childId) listId=\(listId) todoId=\(todoId)")
+        
+        Task { @MainActor in
+            // Aspetta che il todo sia disponibile in SwiftData (max 4 tentativi × 500ms)
+            let maxAttempts = 4
+            var found = false
+            for attempt in 1...maxAttempts {
+                let tid = todoId
+                let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == tid })
+                if (try? modelContext.fetch(desc).first) != nil {
+                    found = true
+                    KBLog.navigation.kbDebug("openTodoFromPush: todo found attempt=\(attempt)")
+                    break
+                }
+                KBLog.navigation.kbDebug("openTodoFromPush: todo not found yet attempt=\(attempt)/\(maxAttempts)")
+                if attempt < maxAttempts {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+            }
+            
+            // Imposta l'highlight PRIMA di navigare, così TodoListView lo trova in onAppear
+            TodoHighlightStore.shared.set(todoId)
+            KBLog.navigation.kbInfo("[openTodoFromPush] TodoHighlightStore set todoId=\(todoId) found=\(found)")
+            
+            path.removeAll()
+            path.append(.todo)
+            path.append(.todoList(familyId: familyId, childId: childId, listId: listId))
+            KBLog.navigation.kbInfo("[openTodoFromPush] path rebuilt count=\(path.count) routes=\(path.map { String(describing: $0) }.joined(separator: " → "))")
+            
+            if !found {
+                KBLog.navigation.kbError("openTodoFromPush: todo not found after retries, navigating anyway todoId=\(todoId)")
+            } else {
+                KBLog.navigation.kbInfo("openTodoFromPush: navigating to todoList and highlighting todoId=\(todoId)")
+            }
+        }
+    }
+    
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
         path.removeAll()

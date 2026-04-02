@@ -253,17 +253,38 @@ struct TodoEditView: View {
     
     @MainActor
     private func hydrateIfEditing() {
-        guard let t = editingTodo else { return }
-        
-        title = t.title
-        notes = t.notes ?? ""
-        dueDate = t.dueAt
-        hasDate = t.dueAt != nil
-        hasTime = false // se vuoi gestirlo “vero” possiamo salvarlo, per ora semplice
-        isUrgent = (t.priorityRaw ?? 0) == 1
-        assignedTo = t.assignedTo
-        wantsReminder = (t.dueAt != nil) ? t.reminderEnabled : false
-        
+        // 1⃣ Prova dalla @Query (già in memoria — caso normale)
+        if let t = editingTodo {
+            populate(from: t)
+            return
+        }
+        // 2⃣ Fallback: fetch sincrono diretto dal modelContext.
+        //    Necessario quando la sheet viene presentata prima che la @Query
+        //    abbia completato il suo primo fetch (race condition SwiftUI).
+        //    Senza questo, la form risulta vuota alla prima apertura.
+        guard let tid = todoIdToEdit else { return }
+        let desc = FetchDescriptor<KBTodoItem>(
+            predicate: #Predicate { $0.id == tid }
+        )
+        guard let t = try? modelContext.fetch(desc).first else {
+            KBLog.todo.kbError("TodoEditView hydrateIfEditing: todo not found in modelContext tid=\(tid)")
+            return
+        }
+        KBLog.todo.kbDebug("TodoEditView hydrateIfEditing: hydrated via sync fetch tid=\(tid)")
+        populate(from: t)
+    }
+    
+    /// Popola il form state da un `KBTodoItem` già risolto.
+    @MainActor
+    private func populate(from t: KBTodoItem) {
+        title         = t.title
+        notes         = t.notes ?? ""
+        dueDate       = t.dueAt
+        hasDate       = t.dueAt != nil
+        hasTime       = false
+        isUrgent      = (t.priorityRaw ?? 0) == 1
+        assignedTo    = t.assignedTo
+        wantsReminder = (t.dueAt != nil) && t.reminderEnabled
     }
     
     // MARK: - Save
@@ -290,9 +311,12 @@ struct TodoEditView: View {
         func scheduleReminder(_ todo: KBTodoItem, due: Date) async {
             do {
                 let rid = try await TodoReminderService.schedule(
-                    todoId: todo.id,
-                    title: todo.title,
-                    dueAt: due
+                    todoId:   todo.id,
+                    listId:   todo.listId ?? listId,  // listId dal form se non ancora salvato
+                    familyId: familyId,
+                    childId:  childId,
+                    title:    todo.title,
+                    dueAt:    due
                 )
                 todo.reminderEnabled = true
                 todo.reminderId = rid

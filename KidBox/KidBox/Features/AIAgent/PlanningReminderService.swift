@@ -4,36 +4,11 @@
 //
 //  Created by vscocca on 24/03/26.
 //
-
-//
-//  PlanningReminderService.swift
-//  KidBox
-//
-//  Layer unificato che l'agente AI di pianificazione usa per schedulare
-//  notifiche locali. Astrae i quattro service esistenti
-//  (TodoReminderService, TreatmentNotificationManager,
-//  KBExamReminderService, KBVisitReminderService) in un'unica API.
-//
-//  FLUSSI SUPPORTATI:
-//
-//  1. Reminder su to-do esistente
-//     → TodoReminderService.schedule(todoId:title:dueAt:)
-//     → salva reminderEnabled + reminderId su KBTodoItem
-//
-//  2. Reminder su visita di controllo esistente (nextVisitDate)
-//     → KBVisitReminderService.scheduleNextVisitReminder(...)
-//     → salva nextVisitReminderOn su KBMedicalVisit
-//
-//  3. Reminder su esame prescritto con deadline
-//     → KBExamReminderService.schedule(...)
-//     → nessun flag (esame è un value type dentro la visita)
-//
-//  4. Reminder "libero" suggerito dall'agente (nessun oggetto SwiftData)
-//     → crea un KBTodoItem con dueAt + chiama TodoReminderService
-//     → persiste e sincronizza il to-do
-//
-//  5. Reminder su cura attiva (attiva/disattiva i reminder esistenti)
-//     → TreatmentNotificationManager.schedule(treatment:childName:)
+//  FIX (02/04/26):
+//  - TodoReminderService.schedule ora richiede listId, familyId, childId
+//    → aggiornate le chiamate nei case existingTodo e freeText.
+//  - prescribedExam: rimossa logica "giorno prima" — KBExamReminderService
+//    ora schedula nella data dell'esame (allineato al fix del 02/04/26).
 //
 
 import Foundation
@@ -132,11 +107,11 @@ enum PlanningReminderService {
             // ── 5. Reminder libero (crea to-do) ──────────────────────────────
         case .freeText(let title, let dueAt, let familyId, let childId, let listId):
             return await scheduleFreeText(
-                title:    title,
-                dueAt:    dueAt,
-                familyId: familyId,
-                childId:  childId,
-                listId:   listId,
+                title:        title,
+                dueAt:        dueAt,
+                familyId:     familyId,
+                childId:      childId,
+                listId:       listId,
                 modelContext: modelContext
             )
         }
@@ -172,18 +147,22 @@ enum PlanningReminderService {
         }
         
         do {
+            // FIX: aggiornata firma con listId, familyId, childId
             let reminderId = try await TodoReminderService.schedule(
-                todoId: todo.id,
-                title:  todo.title,
-                dueAt:  dueAt
+                todoId:   todo.id,
+                listId:   todo.listId ?? "",
+                familyId: todo.familyId,
+                childId:  todo.childId,
+                title:    todo.title,
+                dueAt:    dueAt
             )
             
-            todo.dueAt          = dueAt
+            todo.dueAt           = dueAt
             todo.reminderEnabled = true
-            todo.reminderId     = reminderId
-            todo.updatedAt      = Date()
-            todo.updatedBy      = Auth.auth().currentUser?.uid ?? "ai-agent"
-            todo.syncState      = .pendingUpsert
+            todo.reminderId      = reminderId
+            todo.updatedAt       = Date()
+            todo.updatedBy       = Auth.auth().currentUser?.uid ?? "ai-agent"
+            todo.syncState       = .pendingUpsert
             
             try? modelContext.save()
             SyncCenter.shared.enqueueTodoUpsert(todoId: todo.id, familyId: todo.familyId, modelContext: modelContext)
@@ -246,21 +225,21 @@ enum PlanningReminderService {
         deadline:  Date
     ) -> PlanningReminderResult {
         
-        // Schedula il giorno prima della deadline
-        let reminderDate = Calendar.current.date(byAdding: .day, value: -1, to: deadline) ?? deadline
-        
+        // FIX: schedula nella data della deadline (non più il giorno prima).
+        // KBExamReminderService ora gestisce data + orario scelto dall'utente
+        // o 08:00 di default — allineato al fix del 02/04/26.
         KBExamReminderService.shared.schedule(
             examId:    examId,
             examName:  examName,
             childName: childName,
             familyId:  familyId,
             childId:   childId,
-            date:      reminderDate
+            date:      deadline
         ) { success in
             KBLog.ai.kbInfo("PlanningReminderService: exam reminder result=\(success) examId=\(examId)")
         }
         
-        return .scheduled(description: "Promemoria esame \"\(examName)\" il \(formatDate(reminderDate))")
+        return .scheduled(description: "Promemoria esame \"\(examName)\" il \(formatDate(deadline))")
     }
     
     // MARK: - Case 4: treatment
@@ -317,18 +296,22 @@ enum PlanningReminderService {
             updatedAt: now,
             isDeleted: false
         )
-        todo.createdBy    = uid
-        todo.priorityRaw  = 0
-        todo.syncState    = .pendingUpsert
+        todo.createdBy   = uid
+        todo.priorityRaw = 0
+        todo.syncState   = .pendingUpsert
         
         modelContext.insert(todo)
         
         // Schedula il reminder
+        // FIX: aggiornata firma con listId, familyId, childId
         do {
             let reminderId = try await TodoReminderService.schedule(
-                todoId: todo.id,
-                title:  title,
-                dueAt:  dueAt
+                todoId:   todo.id,
+                listId:   listId ?? "",
+                familyId: familyId,
+                childId:  childId,
+                title:    title,
+                dueAt:    dueAt
             )
             todo.reminderEnabled = true
             todo.reminderId      = reminderId
@@ -362,18 +345,18 @@ enum PlanningReminderService {
     // MARK: - Formatting helpers
     
     private static func formatDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
-        f.dateStyle = .long
-        f.timeStyle = .none
+        let f        = DateFormatter()
+        f.locale     = Locale(identifier: "it_IT")
+        f.dateStyle  = .long
+        f.timeStyle  = .none
         return f.string(from: date)
     }
     
     private static func formatDateTime(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
-        f.dateStyle = .medium
-        f.timeStyle = .short
+        let f        = DateFormatter()
+        f.locale     = Locale(identifier: "it_IT")
+        f.dateStyle  = .medium
+        f.timeStyle  = .short
         return f.string(from: date)
     }
 }
@@ -386,8 +369,8 @@ enum PlanningReminderError: LocalizedError {
     
     var errorDescription: String? {
         switch self {
-        case .missingDate:    return "Nessuna data disponibile per il promemoria."
-        case .notAuthorized:  return "Notifiche non autorizzate. Vai in Impostazioni per abilitarle."
+        case .missingDate:   return "Nessuna data disponibile per il promemoria."
+        case .notAuthorized: return "Notifiche non autorizzate. Vai in Impostazioni per abilitarle."
         }
     }
 }

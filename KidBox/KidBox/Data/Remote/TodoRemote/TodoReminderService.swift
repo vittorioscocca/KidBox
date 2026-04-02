@@ -32,7 +32,14 @@ enum TodoReminderService {
         }
     }
     
-    static func schedule(todoId: String, title: String, dueAt: Date) async throws -> String {
+    static func schedule(
+        todoId:   String,
+        listId:   String,
+        familyId: String,
+        childId:  String,
+        title:    String,
+        dueAt:    Date
+    ) async throws -> String {
         let allowed = await ensurePermission()
         guard allowed else {
             throw NSError(domain: "KidBox", code: 401, userInfo: [NSLocalizedDescriptionKey: "Notifiche non autorizzate"])
@@ -40,15 +47,24 @@ enum TodoReminderService {
         
         let id = "todo.reminder.\(todoId)"   // stabile: 1 notifica per todo
         let content = UNMutableNotificationContent()
-        content.title = "Promemoria"
-        content.body = title
-        content.sound = .default
-        content.userInfo = ["todoId": todoId]
+        content.title = "⏰ Promemoria"
+        content.body  = title
+        content.sound = UNNotificationSound.default
+        // ── Payload completo per il deep link ──────────────────────────────
+        // NotificationManager.handleNotificationUserInfo() usa questi campi
+        // per costruire il DeepLink.todo e navigare direttamente al todo.
+        content.userInfo = [
+            "type":     "todo_reminder",
+            "todoId":   todoId,
+            "listId":   listId,
+            "familyId": familyId,
+            "childId":  childId
+        ]
+        // ──────────────────────────────────────────────────────────────────
         
-        let comps = Calendar.current.dateComponents([.year,.month,.day,.hour,.minute], from: dueAt)
+        let comps   = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: dueAt)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        
-        let req = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        let req     = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         try await UNUserNotificationCenter.current().add(req)
         
         KBLog.todo.kbInfo("[Reminder] scheduled id=\(id) dueAt=\(dueAt)")

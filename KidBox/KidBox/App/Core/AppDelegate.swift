@@ -231,6 +231,9 @@ final class AppDelegate: NSObject,
         // ──────────────────────────────────────────────────────────────────
         
         // ── Tap normale sulla notifica → deep link ─────────────────────────
+        let notifType = userInfo["type"] as? String ?? "unknown"
+        let notifKeys = userInfo.keys.map { "\($0)" }.sorted().joined(separator: ",")
+        KBLog.auth.kbInfo("[AppDelegate] didReceive tap: notifId=\(response.notification.request.identifier) type=\(notifType) keys=[\(notifKeys)]")
         await MainActor.run {
             NotificationManager.shared.handleNotificationUserInfo(userInfo)
         }
@@ -244,12 +247,12 @@ final class AppDelegate: NSObject,
     ) async -> UNNotificationPresentationOptions {
         let type = notification.request.content.userInfo["type"] as? String
         switch type {
-        case "visit_reminder", "treatment_reminder":
+        case "visit_reminder", "treatment_reminder", "todo_reminder":
             // Mostra banner + suono anche con l'app aperta in foreground
             KBLog.auth.kbDebug("Notification in foreground: \(type ?? "") → show banner")
             return [.banner, .sound, .badge]
         default:
-            KBLog.auth.kbDebug("Notification received in foreground (suppressed)")
+            KBLog.auth.kbDebug("Notification received in foreground (suppressed) type=\(type ?? "nil")")
             return []
         }
     }

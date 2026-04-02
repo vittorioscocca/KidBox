@@ -99,7 +99,7 @@ struct KidBoxApp: App {
                 // MARK: Push deep link consumption
                     .onReceive(notifications.$pendingDeepLink) { link in
                         guard let link else { return }
-                        KBLog.auth.kbInfo("Pending deep link received")
+                        KBLog.auth.kbInfo("[KidBoxApp] Pending deep link received: \(String(describing: link))")
                         switch link {
                             
                         case .document(let familyId, let docId):
@@ -134,14 +134,20 @@ struct KidBoxApp: App {
                             coordinator.navigate(to: .familyLocation(familyId: familyId))
                             
                         case .todo(familyId: let familyId, childId: let childId, listId: let listId, todoId: let todoId):
-                            KBLog.navigation.kbInfo("[DeepLink] todo -> navigate todoList listId=\(listId) todoId=\(todoId)")
+                            KBLog.navigation.kbInfo("[DeepLink] todo -> openTodoFromPush listId=\(listId) todoId=\(todoId)")
+                            coordinator.setActiveFamily(familyId)
                             // ✅ Reset badge todo
                             Task { @MainActor in
                                 BadgeManager.shared.clearTodos()
                                 await CountersService.shared.reset(familyId: familyId, field: .todos)
                             }
-                            TodoHighlightStore.shared.set(todoId)
-                            coordinator.navigate(to: .todoList(familyId: familyId, childId: childId, listId: listId))
+                            coordinator.openTodoFromPush(
+                                familyId:    familyId,
+                                childId:     childId,
+                                listId:      listId,
+                                todoId:      todoId,
+                                modelContext: modelContainer.mainContext
+                            )
                             NotificationManager.shared.consumeDeepLink()
                             
                         case .groceryItem(let familyId, _):
@@ -262,12 +268,31 @@ struct KidBoxApp: App {
                 SyncCenter.shared.startAutoFlush(modelContext: context)
                 SyncCenter.shared.flushGlobal(modelContext: context)
                 BadgeManager.shared.refreshAppBadge()
-                // ── Verifica entitlement StoreKit ────────────────────────
-                // Gestisce scadenze e downgrade automatici ogni volta che
-                // l'app torna in foreground. Se il piano è scaduto → Free.
-                // Se rinnovato → aggiorna la quota. I dati non vengono mai
-                // cancellati: cambia solo la quota del gate.
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
+                // ── Rischedula notifiche cure (finestra scorrevole) ──────────────
+                // Avanza la finestra di 7 giorni se le notifiche pendenti sono poche.
+                Task {
+                    let descriptor = FetchDescriptor<KBTreatment>(
+                        predicate: #Predicate {
+                            $0.reminderEnabled == true &&
+                            $0.isActive        == true &&
+                            $0.isDeleted       == false
+                        }
+                    )
+                    guard let treatments = try? context.fetch(descriptor) else { return }
+                    for treatment in treatments {
+                        let cid = treatment.childId
+                        let childDesc = FetchDescriptor<KBChild>(
+                            predicate: #Predicate { $0.id == cid }
+                        )
+                        let childName = (try? context.fetch(childDesc).first?.name) ?? ""
+                        TreatmentNotificationManager.rescheduleIfNeeded(
+                            treatment: treatment,
+                            childName: childName
+                        )
+                    }
+                    KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
+                }
             case .inactive:
                 KBLog.sync.kbDebug("ScenePhase inactive")
             case .background:

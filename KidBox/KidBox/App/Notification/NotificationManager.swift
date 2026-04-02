@@ -98,7 +98,7 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .familyLocation(familyId: familyId)
             KBLog.auth.kbInfo("DeepLink set for familyLocation familyId=\(familyId)")
             
-        } else if type == "todo_assigned" || type == "todo_reassigned" || type == "todo_due_changed" {
+        } else if type == "todo_reminder" || type == "todo_assigned" || type == "todo_reassigned" || type == "todo_due_changed" {
             guard
                 let familyId = userInfo["familyId"] as? String,
                 let childId  = userInfo["childId"]  as? String,
@@ -643,3 +643,4 @@ extension NotificationManager {
         }
     }
 }
+

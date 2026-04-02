@@ -80,30 +80,49 @@ struct PediatricTreatmentEditView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                progressBar
-                    .background(KBTheme.background(colorScheme))
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        switch currentStep {
-                        case 0:  step0_drug
-                        case 1:  step1_dose
-                        case 2:  step2_schedule
-                        default: step3_confirm
+                // In edit mode: form diretto senza wizard a step
+                // In create mode: wizard a step
+                if isEditing {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            editForm
                         }
+                        .padding()
                     }
-                    .padding()
-                }
-                .background(KBTheme.background(colorScheme))
-                
-                bottomBar
                     .background(KBTheme.background(colorScheme))
+                } else {
+                    progressBar
+                        .background(KBTheme.background(colorScheme))
+                    
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            switch currentStep {
+                            case 0:  step0_drug
+                            case 1:  step1_dose
+                            case 2:  step2_schedule
+                            default: step3_confirm
+                            }
+                        }
+                        .padding()
+                    }
+                    .background(KBTheme.background(colorScheme))
+                    
+                    bottomBar
+                        .background(KBTheme.background(colorScheme))
+                }
             }
             .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle(isEditing ? "Modifica Cura" : "Nuova Cura")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
+                if isEditing {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Salva") { save() }
+                            .font(.headline)
+                            .foregroundStyle(KBTheme.tint)
+                    }
+                }
             }
             .onAppear {
                 loadIfEditing()
@@ -150,6 +169,133 @@ struct PediatricTreatmentEditView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
+    }
+    
+    // MARK: - Edit Form (modalità modifica — form diretto, no wizard)
+    
+    private var editForm: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            
+            // ── Farmaco ──────────────────────────────────────────────────────
+            styledGroupBox {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Farmaco", systemImage: "pills.fill")
+                        .font(.subheadline.bold()).foregroundStyle(KBTheme.tint)
+                    TextField("Nome farmaco", text: $drugName)
+                        .padding(10)
+                        .background(KBTheme.inputBackground(colorScheme))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    TextField("Principio attivo (opzionale)", text: $activeIngredient)
+                        .padding(10)
+                        .background(KBTheme.inputBackground(colorScheme))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            
+            // ── Dosaggio ─────────────────────────────────────────────────────
+            styledGroupBox {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Dosaggio", systemImage: "drop.fill")
+                        .font(.subheadline.bold()).foregroundStyle(.blue)
+                    HStack(spacing: 8) {
+                        TextField("0", value: $dosageValue, format: .number)
+                            .keyboardType(.decimalPad)
+                            .frame(width: 80)
+                            .padding(10)
+                            .background(KBTheme.inputBackground(colorScheme))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        Picker("Unità", selection: $dosageUnit) {
+                            ForEach(units, id: \.self) { Text($0).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+            }
+            
+            // ── Durata ───────────────────────────────────────────────────────
+            styledGroupBox {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Durata", systemImage: "calendar")
+                        .font(.subheadline.bold()).foregroundStyle(.orange)
+                    Toggle("Cura a lungo termine", isOn: $isLongTerm)
+                    if !isLongTerm {
+                        HStack {
+                            Button { if durationDays > 1 { durationDays -= 1 } } label: {
+                                Image(systemName: "minus.circle.fill").font(.title2).foregroundStyle(tint)
+                            }
+                            Text("\(durationDays)")
+                                .font(.title2.bold()).foregroundStyle(tint).frame(width: 40)
+                            Button { durationDays += 1 } label: {
+                                Image(systemName: "plus.circle.fill").font(.title2).foregroundStyle(tint)
+                            }
+                            Text("giorni").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            
+            // ── Frequenza ────────────────────────────────────────────────────
+            styledGroupBox {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Frequenza", systemImage: "clock")
+                        .font(.subheadline.bold()).foregroundStyle(tint)
+                    ForEach(freqOptions, id: \.0) { (freq, label, sub) in
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(dailyFrequency == freq ? tint : KBTheme.inputBackground(colorScheme))
+                                    .frame(width: 30, height: 30)
+                                Text("\(freq)x")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(dailyFrequency == freq ? .white : .secondary)
+                            }
+                            VStack(alignment: .leading) {
+                                Text(label).font(.subheadline)
+                                Text(sub).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if dailyFrequency == freq {
+                                Image(systemName: "checkmark").foregroundStyle(tint)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            dailyFrequency = freq
+                            times = defaultTimes
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            
+            // ── Orari ────────────────────────────────────────────────────────
+            styledGroupBox {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Orari somministrazione", systemImage: "clock.badge.checkmark")
+                        .font(.subheadline.bold()).foregroundStyle(tint)
+                    ForEach(times.indices, id: \.self) { i in
+                        let label = ["Mattina", "Pranzo", "Sera", "Notte"][safe: i] ?? "Dose \(i+1)"
+                        HStack {
+                            Text(label).foregroundStyle(.secondary)
+                            Spacer()
+                            TimePickerField(timeString: $times[i])
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            
+            // ── Data inizio ──────────────────────────────────────────────────
+            styledGroupBox {
+                DatePicker("Data inizio", selection: $startDate, displayedComponents: .date)
+            }
+            
+            // ── Note ─────────────────────────────────────────────────────────
+            GroupBox("Note") {
+                TextField("Note aggiuntive (opzionale)", text: $notes, axis: .vertical)
+                    .lineLimit(2...5)
+            }
+        }
     }
     
     // MARK: - Step 0 — Farmaco
