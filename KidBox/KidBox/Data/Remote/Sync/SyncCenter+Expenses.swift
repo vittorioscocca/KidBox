@@ -95,7 +95,7 @@ extension SyncCenter {
     
     // MARK: - Apply inbound (LWW)
     
-    private func applyExpensesInbound(changes: [ExpenseRemoteChange], modelContext: ModelContext) {
+    func applyExpensesInbound(changes: [ExpenseRemoteChange], modelContext: ModelContext) {
         KBLog.sync.kbDebug("🔄 [expenses][inbound] applyExpensesInbound START changes=\(changes.count)")
         
         guard !isWipingLocalData else {
@@ -122,7 +122,7 @@ extension SyncCenter {
                     
                     if let local {
                         // Anti-resurrect
-                        if local.isDeleted && local.syncState == .pendingUpsert {
+                        if local.syncStateRaw == KBSyncState.pendingDelete.rawValue {
                             KBLog.sync.kbDebug("🛡️ [expenses][inbound] anti-resurrect SKIP id=\(eid)")
                             skippedCount += 1
                             continue

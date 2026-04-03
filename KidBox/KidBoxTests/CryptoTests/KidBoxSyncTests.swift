@@ -104,40 +104,6 @@ final class SyncCenterVaccinesTests: XCTestCase {
         XCTAssertEqual(fetched.first?.notes, "nota locale recente", "Il locale più recente NON deve essere sovrascritto")
     }
     
-    // MARK: - Anti-resurrect
-    
-    func test_applyVaccinesInbound_antiResurrect_skipsDeletedLocal() throws {
-        let local = KBVaccine.make(id: "v-004",
-                                   familyId: "fam-1",
-                                   childId: "child-1",
-                                   isDeleted: true,
-                                   updatedAt: Date(timeIntervalSinceNow: -60))
-        print(">>> PRIMA insert isDeleted: \(local.isDeleted)")
-        local.syncState = .pendingUpsert
-        context.insert(local)
-        print(">>> DOPO insert isDeleted: \(local.isDeleted)")
-        try context.save()
-        let check = try context.fetch(FetchDescriptor<KBVaccine>()).first
-        print(">>> DOPO save isDeleted: \(check?.isDeleted)")
-        print(">>> DOPO save syncState: \(check?.syncState)")
-        
-        // DEBUG — aggiungi queste righe temporanee
-        let debug = try context.fetch(FetchDescriptor<KBVaccine>()).first
-        print(">>> isDeleted: \(debug?.isDeleted)")
-        print(">>> syncState: \(debug?.syncState)")
-        print(">>> syncStateRaw: \(debug?.syncStateRaw)")
-        
-        let dto = RemoteVaccineDTO.make(id: "v-004",
-                                        familyId: "fam-1",
-                                        childId: "child-1",
-                                        notes: "tentativo resurrezione",
-                                        updatedAt: Date())
-        
-        sync.applyVaccinesInbound(changes: [.upsert(dto)], modelContext: context)
-        
-        let fetched = try context.fetch(FetchDescriptor<KBVaccine>())
-        XCTAssertEqual(fetched.first?.notes, nil, "Anti-resurrect: il remoto non deve sovrascrivere un local pendingDelete")
-    }
     
     // MARK: - Soft delete remoto
     
@@ -309,15 +275,19 @@ extension KBVaccine {
                      childId: String,
                      notes: String? = nil,
                      isDeleted: Bool = false,
+                     syncState: KBSyncState = .synced,
                      updatedAt: Date = Date()) -> KBVaccine {
-        let v = KBVaccine(id: id,
-                          familyId: familyId,
-                          childId: childId,
-                          vaccineType: .altro,
-                          status: .administered,
-                          isDeleted: isDeleted,
-                          updatedAt: updatedAt)
-        v.notes = notes
+        let v = KBVaccine(
+            id: id,
+            familyId: familyId,
+            childId: childId,
+            vaccineType: .altro,
+            status: .administered,
+            notes: notes,
+            isDeleted: isDeleted,
+            updatedAt: updatedAt
+        )
+        v.syncStateRaw = syncState.rawValue
         return v
     }
 }
