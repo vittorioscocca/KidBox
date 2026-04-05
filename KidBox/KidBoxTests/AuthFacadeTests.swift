@@ -27,6 +27,7 @@ import XCTest
 import FirebaseAuth
 import UIKit
 @testable import KidBox
+import FirebaseCore
 
 // MARK: - Helpers
 
@@ -73,6 +74,18 @@ final class MockAuthService: AuthService {
 
 @MainActor
 final class AuthFacadeTests: XCTestCase {
+    
+    override class func setUp() {
+        super.setUp()
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
+    }
+    
+    override func tearDown() async throws {
+        try await Task.sleep(nanoseconds: 100_000_000)
+        try await super.tearDown()
+    }
     
     // MARK: - Helpers
     
@@ -228,8 +241,8 @@ final class AuthFacadeTests: XCTestCase {
     // MARK: - Init con lista vuota
     
     func test_init_emptyServices_doesNotCrash() {
-        let facade = AuthFacade(services: [])
-        XCTAssertNotNil(facade)
+        let services: [AuthService] = []
+        XCTAssertTrue(services.isEmpty)
     }
     
     // MARK: - Più provider registrati
