@@ -23,6 +23,15 @@ struct FamilyLocationView: View {
     /// ad ogni aggiornamento di coordinate — solo quando arriva un ID nuovo.
     @State private var fittedUserIds: Set<String> = []
     
+    /// ID del familiare che stiamo seguendo (nil = nessuno, modalità libera)
+    @State private var followingUserId: String? = nil
+    
+    /// Altezza reale della bottom card, misurata a runtime tramite GeometryReader
+    @State private var bottomCardHeight: CGFloat = 220
+    
+    /// Impedisce che il fit iniziale venga ripetuto ad ogni aggiornamento di coordinate
+    @State private var hasPerformedInitialFit = false
+    
     @State private var showShareAlert = false
     @State private var showDurationSheet = false
     @State private var selectedHours = 2
@@ -43,8 +52,12 @@ struct FamilyLocationView: View {
                         AvatarMarker(
                             name: user.name,
                             avatarData: avatarDataFor(uid: user.id),
-                            avatarURL: user.avatarURL
+                            avatarURL: user.avatarURL,
+                            isFollowed: followingUserId == user.id
                         )
+                        .onTapGesture {
+                            centerOn(user: user)
+                        }
                     }
                 }
             }
@@ -52,9 +65,64 @@ struct FamilyLocationView: View {
                 MapCompass()
             }
             .ignoresSafeArea()
-            // FIX: adatta la camera solo quando appare un ID nuovo
+            // Quando l'utente muove manualmente la mappa, interrompi il follow
+            .onMapCameraChange(frequency: .onEnd) { _ in
+                // Non interrompere il follow se il movimento è stato causato da noi
+                // (non c'è un modo nativo di distinguerlo, usiamo un approccio gesture-based
+                //  tramite simultaneousGesture — vedi sotto)
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { _ in
+                        // L'utente sta trascinando la mappa manualmente → esci dal follow
+                        if followingUserId != nil {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                followingUserId = nil
+                            }
+                        }
+                    }
+            )
+            // Aggiorna camera quando cambiano gli utenti condivisi
             .onChange(of: viewModel.sharedUsers) { _, users in
+                // Se stiamo seguendo qualcuno, mantieni il follow
+                if let followId = followingUserId,
+                   let followed = users.first(where: { $0.id == followId }) {
+                    centerCamera(on: followed.coordinate, animated: true)
+                    return
+                }
+                
+                // Prima apertura con familiari già presenti:
+                // centra subito su di loro, escludendo la posizione dell'utente
+                // corrente se non sta condividendo (altrimenti la camera resterebbe
+                // a metà strada tra lui e il familiare)
+                if !hasPerformedInitialFit {
+                    hasPerformedInitialFit = true
+                    let myUid = Auth.auth().currentUser?.uid ?? ""
+                    let isSharing = users.contains { $0.id == myUid }
+                    let others = users.filter { $0.id != myUid }
+                    
+                    guard !others.isEmpty else { return }
+                    
+                    if others.count == 1 && !isSharing {
+                        // Un solo familiare e io non condivido → vai diretto su di lui
+                        centerCamera(on: others[0].coordinate, animated: true)
+                    } else {
+                        // Più familiari, oppure condivido anch'io → fit che include tutti
+                        fitCamera(users: users, includeMyLocation: isSharing)
+                    }
+                    return
+                }
+                
+                // Aggiornamenti successivi: fit solo se arriva un ID nuovo
                 fitCameraIfNeeded(users: users)
+            }
+            
+            // MARK: - Overlay bottoni riposizionamento
+            // Posizionati in basso a destra, sopra la bottom card misurata a runtime
+            .overlay(alignment: .bottomTrailing) {
+                recentringButtons
+                    .padding(.trailing, 16)
+                    .padding(.bottom, bottomCardHeight + 16)
             }
             
             FindMyBottomCard(
@@ -70,6 +138,19 @@ struct FamilyLocationView: View {
                     } else {
                         Task { await viewModel.stopSharing() }
                     }
+                },
+                onTapMyLocation: {
+                    followingUserId = nil
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        cameraPosition = .userLocation(fallback: .automatic)
+                    }
+                }
+            )
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear { bottomCardHeight = geo.size.height }
+                        .onChange(of: geo.size.height) { _, h in bottomCardHeight = h }
                 }
             )
         }
@@ -107,21 +188,93 @@ struct FamilyLocationView: View {
         }
     }
     
-    // MARK: - Camera fit
+    // MARK: - Bottoni overlay
+    
+    @ViewBuilder
+    private var recentringButtons: some View {
+        let myUid = Auth.auth().currentUser?.uid ?? ""
+        let others = viewModel.sharedUsers.filter { $0.id != myUid }
+        
+        // Bottoni "Segui [nome]" — visibili solo se il familiare sta condividendo
+        // (others contiene già solo chi è in sharedUsers, quindi solo chi condivide)
+        VStack(spacing: 10) {
+            ForEach(others) { user in
+                Button {
+                    if followingUserId == user.id {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            followingUserId = nil
+                        }
+                    } else {
+                        centerOn(user: user)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: followingUserId == user.id ? "location.fill" : "location")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(user.name.components(separatedBy: " ").first ?? user.name)
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        followingUserId == user.id
+                        ? Color.orange
+                        : Color(.systemBackground).opacity(0.92)
+                    )
+                    .foregroundStyle(followingUserId == user.id ? .white : .primary)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                }
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: others.count)
+        .animation(.easeInOut(duration: 0.25), value: followingUserId)
+    }
+    
+    // MARK: - Camera helpers
+    
+    /// Centra la camera su un familiare e avvia il follow
+    private func centerOn(user: SharedUserLocation) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            followingUserId = user.id
+        }
+        centerCamera(on: user.coordinate, animated: true)
+    }
+    
+    private func centerCamera(on coordinate: CLLocationCoordinate2D, animated: Bool) {
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            latitudinalMeters: 800,
+            longitudinalMeters: 800
+        )
+        if animated {
+            withAnimation(.easeInOut(duration: 0.6)) {
+                cameraPosition = .region(region)
+            }
+        } else {
+            cameraPosition = .region(region)
+        }
+    }
     
     private func fitCameraIfNeeded(users: [SharedUserLocation]) {
         let currentIds = Set(users.map { $0.id })
         // Esci se non ci sono ID nuovi rispetto all'ultimo fit
         guard !currentIds.subtracting(fittedUserIds).isEmpty else { return }
         fittedUserIds = currentIds
-        
         guard !users.isEmpty else { return }
-        
-        // Coordinate remote + posizione device locale (se disponibile)
+        fitCamera(users: users, includeMyLocation: true)
+    }
+    
+    /// Adatta la camera per mostrare tutti gli utenti indicati.
+    /// `includeMyLocation` = true aggiunge anche la posizione GPS del device corrente.
+    private func fitCamera(users: [SharedUserLocation], includeMyLocation: Bool) {
         var coordinates: [CLLocationCoordinate2D] = users.map { $0.coordinate }
-        if let myCoord = CLLocationManager().location?.coordinate {
+        if includeMyLocation, let myCoord = CLLocationManager().location?.coordinate {
             coordinates.append(myCoord)
         }
+        
+        guard !coordinates.isEmpty else { return }
         
         if coordinates.count == 1 {
             withAnimation(.easeInOut(duration: 0.6)) {
@@ -258,6 +411,8 @@ struct FindMyBottomCard: View {
     let hasAnySharedPositions: Bool
     let deviceName: String
     let onToggleChanged: (Bool) -> Void
+    /// Tap sulla card "La mia posizione" → centra mappa su di me
+    var onTapMyLocation: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 14) {
@@ -284,19 +439,29 @@ struct FindMyBottomCard: View {
             }
             
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    // Icona barrata se non condivide, blu se condivide
-                    Image(systemName: isSharing ? "location.fill" : "location.slash")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(isSharing ? .blue : .secondary)
-                        .frame(width: 28, height: 28)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .animation(.easeInOut(duration: 0.3), value: isSharing)
-                    Text("La mia posizione")
-                        .font(.system(size: 18, weight: .semibold))
-                    Spacer()
+                // Header riga "La mia posizione" — tappabile per centrare su di me
+                Button {
+                    onTapMyLocation?()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: isSharing ? "location.fill" : "location.slash")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(isSharing ? .blue : .secondary)
+                            .frame(width: 28, height: 28)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .animation(.easeInOut(duration: 0.3), value: isSharing)
+                        Text("La mia posizione")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        // Chevron visivo per indicare che è tappabile
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
                 
                 Divider().opacity(0.5)
                 
@@ -360,6 +525,7 @@ private struct AvatarMarker: View {
     let name: String
     let avatarData: Data?
     let avatarURL: String?
+    var isFollowed: Bool = false
     
     @State private var remoteImage: UIImage? = nil
     
@@ -368,7 +534,14 @@ private struct AvatarMarker: View {
             avatarImage
                 .frame(width: 40, height: 40)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(.quaternary, lineWidth: 1))
+                .overlay(
+                    Circle().stroke(
+                        isFollowed ? Color.orange : Color(.quaternaryLabel),
+                        lineWidth: isFollowed ? 3 : 1
+                    )
+                )
+                .scaleEffect(isFollowed ? 1.15 : 1.0)
+                .animation(.spring(response: 0.3), value: isFollowed)
             
             Text(name)
                 .font(.caption)

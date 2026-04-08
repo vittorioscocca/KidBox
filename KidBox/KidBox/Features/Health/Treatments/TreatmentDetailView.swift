@@ -626,6 +626,15 @@ struct TreatmentDetailView: View {
             SyncCenter.shared.enqueueDoseLogUpsert(logId: newLog.id, familyId: treatment.familyId, modelContext: modelContext)
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        
+        // Cancella la notifica pendente (e quella già consegnata) per questo slot.
+        // Gestisce il caso in cui la dose viene registrata prima dell'orario programmato.
+        let dayOffset = ctx.dayNumber - 1
+        TreatmentNotificationManager.cancelSlot(
+            treatmentId: treatment.id,
+            dayOffset:   dayOffset,
+            slotIndex:   ctx.slotIndex
+        )
     }
     
     private func skipDose(slot: SlotViewModel) {

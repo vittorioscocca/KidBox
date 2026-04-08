@@ -132,6 +132,18 @@ enum TreatmentNotificationManager {
         }
     }
     
+    /// Rimuove la notifica pendente (e quella già consegnata) per uno slot specifico.
+    /// Da chiamare quando si registra una dose — anche in anticipo rispetto all'orario.
+    static func cancelSlot(treatmentId: String, dayOffset: Int, slotIndex: Int) {
+        let reqId = notificationId(for: treatmentId, dayOffset: dayOffset, slotIndex: slotIndex)
+        let center = UNUserNotificationCenter.current()
+        // Rimuove se non ancora scattata
+        center.removePendingNotificationRequests(withIdentifiers: [reqId])
+        // Rimuove se già mostrata nel notification center
+        center.removeDeliveredNotifications(withIdentifiers: [reqId])
+        log.info("cancelSlot: removed id=\(reqId)")
+    }
+    
     // MARK: - Privato: pianifica una singola finestra
     
     private static func scheduleWindow(
@@ -198,9 +210,9 @@ enum TreatmentNotificationManager {
         }
         
         // ── Sentinella ────────────────────────────────────────────────────────
-        // L'ultimo slot schedula una notifica silenziosa che, quando scatta,
-        // triggera rescheduleIfNeeded() dal delegate dell'app.
-        // È utile anche quando la cura è lunga e l'utente non apre l'app per giorni.
+        // Notifica silenziosa che, quando scatta, triggera rescheduleIfNeeded()
+        // dal delegate. Deve avere contenuto non vuoto per essere consegnata
+        // in modo affidabile da iOS (anche in DND / Low Power Mode).
         if let last = lastRequest,
            let lastTrigger = last.trigger as? UNCalendarNotificationTrigger,
            let lastFire    = cal.date(from: lastTrigger.dateComponents) {
@@ -210,8 +222,15 @@ enum TreatmentNotificationManager {
             guard sentinelFire > Date() else { return }
             
             let sentinelContent                = UNMutableNotificationContent()
-            sentinelContent.title              = ""   // silenziosa
-            sentinelContent.body               = ""
+            // Titolo e body non vuoti: iOS garantisce la consegna anche in background.
+            // La categoria "silent" può essere configurata per non mostrare banner.
+            // Se non vuoi che l'utente la veda, usa interruptionLevel = .passive
+            sentinelContent.title              = " "   // spazio — non vuoto ma invisibile
+            sentinelContent.body               = " "
+            sentinelContent.sound              = nil   // nessun suono
+            if #available(iOS 15.0, *) {
+                sentinelContent.interruptionLevel = .passive  // nessun banner, nessun suono
+            }
             sentinelContent.userInfo           = [
                 "type":        "treatment_reschedule_sentinel",
                 "treatmentId": treatment.id,
