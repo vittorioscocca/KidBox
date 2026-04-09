@@ -153,27 +153,6 @@ struct StorageUsageView: View {
                 Text("Gli acquisti vengono verificati tramite il tuo ID Apple. Il piano si applica all'intera famiglia.")
                     .font(.caption)
             }
-            
-            // ── Init storage (debug/admin) ───────────────────────────────────
-            Section {
-                Button("Ricalcola storage") {
-                    let fid = familyId
-                    Task {
-                        do {
-                            let functions = Functions.functions(region: "europe-west1")
-                            let result = try await functions.httpsCallable("initStorageUsage")
-                                .call(["familyId": fid])
-                            print("✅ initStorageUsage:", result.data)
-                            vm.load(modelContext: modelContext, familyId: fid)
-                        } catch {
-                            print("❌ initStorageUsage error:", error)
-                        }
-                    }
-                }
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .listRowBackground(cardBackground)
-            }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
@@ -198,7 +177,16 @@ struct StorageUsageView: View {
         }
         .refreshable {
             guard !familyId.isEmpty else { return }
-            vm.load(modelContext: modelContext, familyId: familyId)
+            let fid = familyId
+            do {
+                let functions = Functions.functions(region: "europe-west1")
+                let result = try await functions.httpsCallable("initStorageUsage")
+                    .call(["familyId": fid])
+                print("✅ initStorageUsage:", result.data)
+            } catch {
+                print("❌ initStorageUsage error:", error)
+            }
+            vm.load(modelContext: modelContext, familyId: fid)
             await subscriptionManager.loadPlan()
         }
         // Apre lo sheet Apple di gestione abbonamenti.
@@ -329,63 +317,73 @@ struct StorageUsageView: View {
         let isCurrent = subscriptionManager.currentPlan == plan
         let product   = subscriptionManager.storeProduct(for: plan)
         
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(plan.displayName).font(.subheadline.bold())
-                    if isCurrent {
-                        Text("Piano attuale")
-                            .font(.caption2.bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Capsule().fill(tint))
-                    } else if !plan.badge.isEmpty {
-                        Text(plan.badge)
-                            .font(.caption2.bold())
-                            .foregroundStyle(planColor(plan))
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Capsule().fill(planColor(plan).opacity(0.12)))
+        let nonOwnerPaidRow = !subscriptionManager.isFamilyOwner && !isCurrent && product != nil
+        
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(plan.displayName).font(.subheadline.bold())
+                        if isCurrent {
+                            Text("Piano attuale")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Capsule().fill(tint))
+                        } else if !plan.badge.isEmpty {
+                            Text(plan.badge)
+                                .font(.caption2.bold())
+                                .foregroundStyle(planColor(plan))
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Capsule().fill(planColor(plan).opacity(0.12)))
+                        }
+                    }
+                    HStack(spacing: 8) {
+                        Label(plan.storageLabel + " storage", systemImage: "internaldrive")
+                            .font(.caption).foregroundStyle(.secondary)
+                        if plan.includesAI {
+                            Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
+                                .font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Label("Senza AI", systemImage: "sparkles")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
-                HStack(spacing: 8) {
-                    Label(plan.storageLabel + " storage", systemImage: "internaldrive")
-                        .font(.caption).foregroundStyle(.secondary)
-                    if plan.includesAI {
-                        Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
-                            .font(.caption).foregroundStyle(.secondary)
-                    } else {
-                        Label("Senza AI", systemImage: "sparkles")
-                            .font(.caption).foregroundStyle(.secondary)
+                
+                Spacer(minLength: 8)
+                
+                if isCurrent {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(planColor(plan))
+                        .font(.title3)
+                } else if let product {
+                    if subscriptionManager.isFamilyOwner {
+                        Button {
+                            Task { await subscriptionManager.purchase(plan) }
+                        } label: {
+                            if subscriptionManager.isPurchasing {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Text(product.displayPrice + "/mese")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12).padding(.vertical, 6)
+                                    .background(Capsule().fill(planColor(plan)))
+                            }
+                        }
+                        .disabled(subscriptionManager.isPurchasing)
+                        .buttonStyle(.plain)
                     }
+                } else {
+                    Text(plan.monthlyPrice)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
             
-            Spacer()
-            
-            if isCurrent {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(planColor(plan))
-                    .font(.title3)
-            } else if let product {
-                Button {
-                    Task { await subscriptionManager.purchase(plan) }
-                } label: {
-                    if subscriptionManager.isPurchasing {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Text(product.displayPrice + "/mese")
-                            .font(.caption.bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Capsule().fill(planColor(plan)))
-                    }
-                }
-                .disabled(subscriptionManager.isPurchasing)
-                .buttonStyle(.plain)
-            } else {
-                Text(plan.monthlyPrice)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            if nonOwnerPaidRow {
+                NonOwnerUpgradeNotice()
             }
         }
         .padding(.vertical, 4)
@@ -435,32 +433,40 @@ struct StorageUsageView: View {
     // MARK: - Upgrade banner
     
     private var upgradeBanner: some View {
-        HStack(spacing: 12) {
-            Image(systemName: vm.isOverLimit ? "exclamationmark.triangle.fill" : "bell.badge.fill")
-                .font(.title3)
-                .foregroundStyle(vm.isOverLimit ? .red : .orange)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(vm.isOverLimit ? "Spazio esaurito" : "Spazio quasi esaurito")
-                    .font(.subheadline.bold())
-                Text(vm.isOverLimit
-                     ? "Gli upload sono bloccati. Passa a Pro per 5 GB."
-                     : "Hai usato l'80% dello spazio. Passa a Pro per continuare.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image(systemName: vm.isOverLimit ? "exclamationmark.triangle.fill" : "bell.badge.fill")
+                    .font(.title3)
+                    .foregroundStyle(vm.isOverLimit ? .red : .orange)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(vm.isOverLimit ? "Spazio esaurito" : "Spazio quasi esaurito")
+                        .font(.subheadline.bold())
+                    Text(vm.isOverLimit
+                         ? "Gli upload sono bloccati. Passa a Pro per 5 GB."
+                         : "Hai usato l'80% dello spazio. Passa a Pro per continuare.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                if subscriptionManager.isFamilyOwner {
+                    Button("Upgrade") {
+                        Task { await subscriptionManager.purchase(.pro) }
+                    }
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(vm.isOverLimit ? Color.red : Color.orange))
+                    .disabled(subscriptionManager.isPurchasing)
+                }
             }
             
-            Spacer()
-            
-            Button("Upgrade") {
-                Task { await subscriptionManager.purchase(.pro) }
+            if !subscriptionManager.isFamilyOwner {
+                NonOwnerUpgradeNotice()
             }
-            .font(.caption.bold())
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(vm.isOverLimit ? Color.red : Color.orange))
-            .disabled(subscriptionManager.isPurchasing)
         }
         .padding(14)
         .background(

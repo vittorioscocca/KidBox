@@ -297,15 +297,20 @@ struct PlanningAIChatView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
-            Button {
-                showUpgrade = true
-            } label: {
-                Text("Scopri i piani")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-                    .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+            if KBSubscriptionManager.shared.isFamilyOwner {
+                Button {
+                    showUpgrade = true
+                } label: {
+                    Text("Scopri i piani")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 12)
+                        .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+                }
+            } else {
+                NonOwnerUpgradeNotice()
+                    .padding(.horizontal, 16)
             }
             Spacer()
         }

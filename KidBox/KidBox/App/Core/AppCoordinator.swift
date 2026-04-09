@@ -216,6 +216,7 @@ final class AppCoordinator: ObservableObject {
                     if isEmailProvider && !user.isEmailVerified {
                         KBLog.auth.info("Email not verified for uid=\(user.uid) — signing out")
                         try? Auth.auth().signOut()
+                        KBSubscriptionManager.shared.resetOnSignOut()
                         self.isAuthenticated = false
                         self.uid = nil
                         return
@@ -266,6 +267,7 @@ final class AppCoordinator: ObservableObject {
                         let hasFamily = ((try? modelContext.fetch(familyDescriptor)) ?? []).isEmpty == false
                         if hasFamily {
                             // Utente esistente aggiornato all'app con onboarding → skip
+                            await KBSubscriptionManager.shared.loadPlan()
                             self.completeOnboarding()
                             KBLog.navigation.kbInfo("Onboarding skipped: existing user with family")
                         }
@@ -803,6 +805,7 @@ final class AppCoordinator: ObservableObject {
         do {
             try Auth.auth().signOut()
             KBLog.auth.kbInfo("Firebase sign-out OK")
+            KBSubscriptionManager.shared.resetOnSignOut()
             setActiveFamily(nil)
             resetToRoot()
         } catch {

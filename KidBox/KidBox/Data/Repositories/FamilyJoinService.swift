@@ -269,6 +269,8 @@ final class FamilyJoinService {
             await FamilyBootstrapService(modelContext: self.modelContext).bootstrapIfNeeded()
         }
         
+        await KBSubscriptionManager.shared.loadPlan()
+        
         KBLog.sync.kbInfo("joinFamily completed familyId=\(familyId)")
     }
     

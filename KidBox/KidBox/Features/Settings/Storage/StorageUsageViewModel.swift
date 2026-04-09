@@ -64,18 +64,14 @@ final class StorageUsageViewModel: ObservableObject {
     // ── Prefetch silenzioso all'avvio ─────────────────────────────────────────
     //
     // Chiamato da AppCoordinator subito dopo il login/bootstrap.
-    // Popola KBStorageGate.cachedUsedBytes e KBSubscriptionManager.currentPlan
-    // senza toccare la UI. In questo modo il gate è operativo prima che
-    // l'utente apra qualsiasi view di upload.
+    // Popola KBStorageGate.cachedUsedBytes e la quota in App Group usando
+    // `currentPlan` già impostato dal flusso principale (non chiama loadPlan).
     //
     static func prefetchForGate(familyId: String) async {
         guard !familyId.isEmpty else { return }
         KBLog.app.kbInfo("StorageUsageViewModel.prefetchForGate familyId=\(familyId)")
         
-        // 1. Piano abbonamento (necessario per la quota corretta)
-        await KBSubscriptionManager.shared.loadPlan()
-        
-        // 2. Bytes usati da Firebase
+        // Bytes usati da Firebase
         do {
             let functions = Functions.functions(region: "europe-west1")
             let result = try await functions.httpsCallable("getStorageUsage")

@@ -53,6 +53,7 @@ final class AccountDeletionService {
         
         // 🔹 4️⃣ Sign out locale
         try Auth.auth().signOut()
+        KBSubscriptionManager.shared.resetOnSignOut()
         
         KBLog.auth.kbInfo("deleteMyAccount completed")
     }

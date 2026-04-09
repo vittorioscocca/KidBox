@@ -147,15 +147,19 @@ struct AISettingsView: View {
                             .tint(usage.isNearLimit ? .orange : .blue)
                             
                             if usage.isNearLimit && plan != .max {
-                                Button {
-                                    showUpgrade = true
-                                } label: {
-                                    Label("Passa a \(plan == .free ? "Pro" : "Max") per più messaggi",
-                                          systemImage: "arrow.up.circle")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.orange)
+                                if subscriptionManager.isFamilyOwner {
+                                    Button {
+                                        showUpgrade = true
+                                    } label: {
+                                        Label("Passa a \(plan == .free ? "Pro" : "Max") per più messaggi",
+                                              systemImage: "arrow.up.circle")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.orange)
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    NonOwnerUpgradeNotice()
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.vertical, 2)
@@ -294,46 +298,52 @@ struct AISettingsView: View {
     // MARK: - Piano corrente card
     
     private var currentPlanCard: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(planColor(plan).opacity(0.15))
-                    .frame(width: 48, height: 48)
-                Image(systemName: planIcon(plan))
-                    .font(.title3)
-                    .foregroundStyle(planColor(plan))
-            }
-            
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Piano \(plan.displayName)")
-                    .font(.headline)
-                HStack(spacing: 8) {
-                    if plan.includesAI {
-                        Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
-                            .font(.caption).foregroundStyle(.secondary)
-                    } else {
-                        Label("AI non inclusa", systemImage: "sparkles.slash")
-                            .font(.caption).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(planColor(plan).opacity(0.15))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: planIcon(plan))
+                        .font(.title3)
+                        .foregroundStyle(planColor(plan))
+                }
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Piano \(plan.displayName)")
+                        .font(.headline)
+                    HStack(spacing: 8) {
+                        if plan.includesAI {
+                            Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
+                                .font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Label("AI non inclusa", systemImage: "sparkles.slash")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
-            }
-            
-            Spacer()
-            
-            if subscriptionManager.isCancelledButActive {
-                Button("Gestisci") {
-                    showManageSubscriptions = true
-                }
-                .font(.caption.bold())
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(Capsule().fill(Color.orange))
-            } else if plan != .max {
-                Button("Upgrade") { showUpgrade = true }
+                
+                Spacer()
+                
+                if subscriptionManager.isCancelledButActive {
+                    Button("Gestisci") {
+                        showManageSubscriptions = true
+                    }
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Capsule().fill(planColor(.pro)))
+                    .background(Capsule().fill(Color.orange))
+                } else if plan != .max, subscriptionManager.isFamilyOwner {
+                    Button("Upgrade") { showUpgrade = true }
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Capsule().fill(planColor(.pro)))
+                }
+            }
+            
+            if !subscriptionManager.isCancelledButActive, plan != .max, !subscriptionManager.isFamilyOwner {
+                NonOwnerUpgradeNotice()
             }
         }
         .padding(14)
@@ -399,16 +409,20 @@ struct AISettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button {
-                showUpgrade = true
-            } label: {
-                Text("Scopri i piani")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24).padding(.vertical, 10)
-                    .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+            if subscriptionManager.isFamilyOwner {
+                Button {
+                    showUpgrade = true
+                } label: {
+                    Text("Scopri i piani")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24).padding(.vertical, 10)
+                        .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+                }
+                .buttonStyle(.plain)
+            } else {
+                NonOwnerUpgradeNotice()
             }
-            .buttonStyle(.plain)
         }
         .padding(20)
         .frame(maxWidth: .infinity)
@@ -586,31 +600,35 @@ struct UpgradeSheetView: View {
             
             // Bottone acquisto — solo testo, niente legalFooter dentro
             if !isCurrent || isCancelled {
-                Button {
-                    Task { await subscriptionManager.purchase(plan) }
-                } label: {
-                    HStack {
-                        if subscriptionManager.isPurchasing {
-                            ProgressView().controlSize(.small).tint(.white)
-                            Text("Acquisto in corso…")
-                        } else {
-                            let priceStr = product?.displayPrice ?? plan.monthlyPrice
-                            Text(isCancelled
-                                 ? "Riattiva · \(priceStr)/mese"
-                                 : "Abbonati · \(priceStr)/mese")
+                if subscriptionManager.isFamilyOwner {
+                    Button {
+                        Task { await subscriptionManager.purchase(plan) }
+                    } label: {
+                        HStack {
+                            if subscriptionManager.isPurchasing {
+                                ProgressView().controlSize(.small).tint(.white)
+                                Text("Acquisto in corso…")
+                            } else {
+                                let priceStr = product?.displayPrice ?? plan.monthlyPrice
+                                Text(isCancelled
+                                     ? "Riattiva · \(priceStr)/mese"
+                                     : "Abbonati · \(priceStr)/mese")
+                            }
                         }
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(isCancelled ? Color.orange : color)
+                        )
                     }
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(isCancelled ? Color.orange : color)
-                    )
+                    .disabled(subscriptionManager.isPurchasing)
+                    .buttonStyle(.plain)
+                } else {
+                    NonOwnerUpgradeNotice()
                 }
-                .disabled(subscriptionManager.isPurchasing)
-                .buttonStyle(.plain)
             }
         }
         .padding(18)

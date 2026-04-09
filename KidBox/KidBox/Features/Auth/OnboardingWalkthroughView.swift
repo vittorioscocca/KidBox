@@ -2,13 +2,14 @@
 //  OnboardingWalkthroughView.swift
 //  KidBox
 //
-//  Walkthrough di benvenuto: 5 schermate animate.
+//  Walkthrough di benvenuto: 5–6 schermate animate.
 //
 //  Pagina 0 — Benvenuto
 //  Pagina 1 — Foto condivise
 //  Pagina 2 — Salute e spese
-//  Pagina 3 — Crea famiglia (nome + primo figlio) → chiama FamilyCreationService
-//  Pagina 4 — Invita partner (QR generato da InviteCodeViewModel)
+//  Pagina 3 — Scelta percorso: crea famiglia vs entra con codice/QR
+//  Pagina 4 — Crea famiglia (percorso .create) oppure Join (percorso .join)
+//  Pagina 5 — Invita partner (solo percorso .create; QR da InviteCodeViewModel)
 //
 //  Integrazione in RootGateView:
 //    } else if !coordinator.hasSeenOnboarding {
@@ -40,6 +41,11 @@ private struct OnboardingPage: Identifiable {
 
 struct OnboardingWalkthroughView: View {
     
+    private enum FamilyOnboardingPath: Equatable {
+        case create
+        case join
+    }
+    
     let onFinish: () -> Void
     
     private let infoPages: [OnboardingPage] = [
@@ -69,9 +75,6 @@ struct OnboardingWalkthroughView: View {
         )
     ]
     
-    // Pagine totali: 0-2 info, 3 crea famiglia, 4 invita partner
-    private let totalPages = 5
-    
     // MARK: State
     
     @State private var currentPage     = 0
@@ -83,8 +86,10 @@ struct OnboardingWalkthroughView: View {
     @State private var ctaScale:       CGFloat = 0.92
     @State private var isTransitioning = false
     
-    // Famiglia creata nella pagina 3, usata dalla pagina 4
+    // Famiglia creata nel flusso "crea", usata dalla pagina invito
     @State private var createdFamilyId: String? = nil
+    
+    @State private var familyPath: FamilyOnboardingPath? = nil
     
     @Environment(\.colorScheme)  private var colorScheme
     @Environment(\.modelContext) private var modelContext
@@ -103,10 +108,16 @@ struct OnboardingWalkthroughView: View {
         : .white
     }
     
-    private var isInfoPage:    Bool { currentPage < 3 }
-    private var isCreatePage:  Bool { currentPage == 3 }
-    private var isInvitePage:  Bool { currentPage == 4 }
-    private var isLastPage:    Bool { currentPage == totalPages - 1 }
+    private var totalPages: Int {
+        familyPath == .join ? 5 : 6
+    }
+    
+    private var isInfoPage: Bool { currentPage < 3 }
+    private var isPathPickerPage: Bool { currentPage == 3 }
+    private var isCreatePage: Bool { currentPage == 4 && familyPath == .create }
+    private var isJoinPage: Bool { currentPage == 4 && familyPath == .join }
+    private var isInvitePage: Bool { currentPage == 5 && familyPath == .create }
+    private var isLastPage: Bool { currentPage == totalPages - 1 }
     
     private var infoPage: OnboardingPage { infoPages[min(currentPage, infoPages.count - 1)] }
     
@@ -116,6 +127,12 @@ struct OnboardingWalkthroughView: View {
         case 1: return Color(red: 0.50, green: 0.35, blue: 0.80)
         case 2: return Color(red: 0.20, green: 0.55, blue: 0.38)
         case 3: return Color(red: 0.95, green: 0.38, blue: 0.10)
+        case 4:
+            if familyPath == .join {
+                return Color(red: 0.55, green: 0.35, blue: 0.9)
+            }
+            return Color(red: 0.95, green: 0.38, blue: 0.10)
+        case 5: return Color(red: 0.95, green: 0.38, blue: 0.10)
         default: return Color(red: 0.95, green: 0.38, blue: 0.10)
         }
     }
@@ -125,6 +142,12 @@ struct OnboardingWalkthroughView: View {
         case 1: return Color(red: 0.60, green: 0.45, blue: 0.85)
         case 2: return Color(red: 0.30, green: 0.65, blue: 0.45)
         case 3: return Color(red: 1.00, green: 0.75, blue: 0.25)
+        case 4:
+            if familyPath == .join {
+                return Color(red: 0.60, green: 0.45, blue: 0.85)
+            }
+            return Color(red: 1.00, green: 0.75, blue: 0.25)
+        case 5: return Color(red: 1.00, green: 0.75, blue: 0.25)
         default: return Color(red: 1.00, green: 0.75, blue: 0.25)
         }
     }
@@ -152,7 +175,29 @@ struct OnboardingWalkthroughView: View {
                 
                 // Contenuto principale
                 Group {
-                    if isCreatePage {
+                    if isInfoPage {
+                        // Pagine info 0-2
+                        iconCard
+                            .scaleEffect(iconScale)
+                            .opacity(iconOpacity)
+                        
+                        Spacer().frame(height: 48)
+                        
+                        textBlock
+                            .opacity(textOpacity)
+                            .offset(y: textOffset)
+                        
+                    } else if isPathPickerPage {
+                        FamilyPathPickerCard(
+                            cardBackground: cardBackground,
+                            accentColor:    currentAccent,
+                            selectedPath:   $familyPath
+                        )
+                        .padding(.horizontal, 24)
+                        .opacity(textOpacity)
+                        .offset(y: textOffset)
+                        
+                    } else if isCreatePage {
                         CreateFamilyCard(
                             cardBackground: cardBackground,
                             accentColor:    currentAccent,
@@ -161,6 +206,27 @@ struct OnboardingWalkthroughView: View {
                             onFamilyCreated: { familyId in
                                 createdFamilyId = familyId
                                 coordinator.setActiveFamily(familyId)
+                            }
+                        )
+                        .padding(.horizontal, 24)
+                        .opacity(textOpacity)
+                        .offset(y: textOffset)
+                        
+                    } else if isJoinPage {
+                        JoinFamilyOnboardingCard(
+                            cardBackground: cardBackground,
+                            accentColor:    currentAccent,
+                            modelContext:   modelContext,
+                            coordinator:    coordinator,
+                            onJoined: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    bgOpacity = 0
+                                    textOpacity = 0
+                                    iconOpacity = 0
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    onFinish()
+                                }
                             }
                         )
                         .padding(.horizontal, 24)
@@ -177,18 +243,6 @@ struct OnboardingWalkthroughView: View {
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
                         .offset(y: textOffset)
-                        
-                    } else {
-                        // Pagine info 0-2
-                        iconCard
-                            .scaleEffect(iconScale)
-                            .opacity(iconOpacity)
-                        
-                        Spacer().frame(height: 48)
-                        
-                        textBlock
-                            .opacity(textOpacity)
-                            .offset(y: textOffset)
                     }
                 }
                 
@@ -197,10 +251,17 @@ struct OnboardingWalkthroughView: View {
                 pageIndicators
                     .padding(.bottom, 32)
                 
-                ctaButton
-                    .scaleEffect(ctaScale)
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 52)
+                if isJoinPage {
+                    Spacer()
+                        .frame(height: 56)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 52)
+                } else {
+                    ctaButton
+                        .scaleEffect(ctaScale)
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 52)
+                }
             }
         }
         .onAppear { animateIn() }
@@ -282,20 +343,32 @@ struct OnboardingWalkthroughView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
-                LinearGradient(colors: [currentIconColor, currentAccent],
-                               startPoint: .leading, endPoint: .trailing),
+                LinearGradient(
+                    colors: isCTADisabled
+                    ? [Color.secondary.opacity(0.35), Color.secondary.opacity(0.35)]
+                    : [currentIconColor, currentAccent],
+                    startPoint: .leading, endPoint: .trailing
+                ),
                 in: Capsule()
             )
-            .shadow(color: currentAccent.opacity(0.4), radius: 16, x: 0, y: 8)
+            .shadow(color: currentAccent.opacity(isCTADisabled ? 0 : 0.4), radius: 16, x: 0, y: 8)
         }
         .buttonStyle(.plain)
+        .disabled(isCTADisabled)
+        .opacity(currentPage == 3 && familyPath == nil ? 0.45 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+    }
+    
+    private var isCTADisabled: Bool {
+        if currentPage == 3 && familyPath == nil { return true }
+        return false
     }
     
     private var ctaLabel: String {
         switch currentPage {
-        case 3: return createdFamilyId != nil ? "Continua" : "Continua"
-        case 4: return "Inizia"
+        case 3: return "Continua"
+        case 4: return familyPath == .join ? "Inizia" : "Continua"
+        case 5: return "Inizia"
         default: return "Continua"
         }
     }
@@ -341,6 +414,250 @@ struct OnboardingWalkthroughView: View {
         }
         withAnimation(.easeOut(duration: 0.4).delay(0.2)) { bgOpacity = 1.0 }
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.4)) { ctaScale = 1.0 }
+    }
+    
+    // MARK: - Path picker (pagina 3)
+    
+    private struct FamilyPathPickerCard: View {
+        let cardBackground: Color
+        let accentColor: Color
+        @Binding var selectedPath: FamilyOnboardingPath?
+        
+        var body: some View {
+            VStack(spacing: 16) {
+                Text("Come vuoi iniziare?")
+                    .font(.title2.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                pathOption(
+                    path: .create,
+                    icon: "house.fill",
+                    color: Color(red: 0.95, green: 0.38, blue: 0.10),
+                    title: "Crea la tua famiglia",
+                    subtitle: "Sarai il creatore e potrai invitare il tuo partner."
+                )
+                
+                pathOption(
+                    path: .join,
+                    icon: "qrcode.viewfinder",
+                    color: Color(red: 0.55, green: 0.35, blue: 0.9),
+                    title: "Entra in una famiglia",
+                    subtitle: "Hai un codice QR o un codice testuale? Usalo per unirti."
+                )
+            }
+            .padding(24)
+            .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 10)
+        }
+        
+        @ViewBuilder
+        private func pathOption(
+            path: FamilyOnboardingPath,
+            icon: String,
+            color: Color,
+            title: String,
+            subtitle: String
+        ) -> some View {
+            let isSelected = selectedPath == path
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(isSelected ? 0.2 : 0.1))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: icon)
+                        .font(.title3)
+                        .foregroundStyle(color)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.headline)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? color : Color.secondary.opacity(0.4))
+                    .font(.title3)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? color.opacity(0.07) : Color.secondary.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? color : Color.clear, lineWidth: 1.5)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3)) { selectedPath = path }
+            }
+        }
+    }
+    
+    // MARK: - Join famiglia (pagina 4, percorso .join)
+    
+    private struct JoinFamilyOnboardingCard: View {
+        let cardBackground: Color
+        let accentColor: Color
+        let coordinator: AppCoordinator
+        let onJoined: () -> Void
+        
+        @StateObject private var vm: JoinFamilyViewModel
+        @State private var showScanner = false
+        
+        private var joinTint: Color { Color(red: 0.60, green: 0.45, blue: 0.85) }
+        
+        init(
+            cardBackground: Color,
+            accentColor: Color,
+            modelContext: ModelContext,
+            coordinator: AppCoordinator,
+            onJoined: @escaping () -> Void
+        ) {
+            self.cardBackground = cardBackground
+            self.accentColor = accentColor
+            self.coordinator = coordinator
+            self.onJoined = onJoined
+            _vm = StateObject(wrappedValue: JoinFamilyViewModel(
+                service: FamilyJoinService(
+                    inviteRemote: InviteRemoteStore(),
+                    readRemote: FamilyReadRemoteStore(),
+                    modelContext: modelContext
+                ),
+                coordinator: coordinator
+            ))
+        }
+        
+        var body: some View {
+            VStack(spacing: 20) {
+                Text("Entra nella famiglia")
+                    .font(.title2.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                TextField("Codice invito", text: $vm.code)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .disabled(vm.didJoin)
+                    .padding(14)
+                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                
+                Button {
+                    showScanner = true
+                } label: {
+                    Label("Scansiona QR", systemImage: "qrcode.viewfinder")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(accentColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(14)
+                        .background(accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(vm.didJoin)
+                
+                if let error = vm.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                if vm.didJoin {
+                    Label("Famiglia aggiunta!", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.subheadline.bold())
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Button {
+                        Task { await vm.join() }
+                    } label: {
+                        Group {
+                            if vm.isBusy {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Entra")
+                                    .font(.subheadline.bold())
+                            }
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(14)
+                        .background(
+                            LinearGradient(
+                                colors: canSubmitJoin
+                                ? [joinTint, accentColor]
+                                : [Color.secondary.opacity(0.35), Color.secondary.opacity(0.35)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSubmitJoin)
+                }
+            }
+            .padding(24)
+            .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 10)
+            .sheet(isPresented: $showScanner) {
+                OnboardingQRScannerSheet(
+                    onDetected: { raw in
+                        Task {
+                            do {
+                                try await JoinWrapService().join(usingQRPayload: raw)
+                                guard let code = JoinPayloadParser.extractCode(from: raw) else {
+                                    showScanner = false
+                                    vm.errorMessage = "QR valido ma senza codice invito."
+                                    return
+                                }
+                                vm.code = code
+                                showScanner = false
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                await vm.join()
+                            } catch {
+                                showScanner = false
+                                vm.errorMessage = error.localizedDescription
+                            }
+                        }
+                    },
+                    onClose: { showScanner = false }
+                )
+            }
+            .onChange(of: vm.didJoin) { _, joined in
+                if joined { onJoined() }
+            }
+        }
+        
+        private var canSubmitJoin: Bool {
+            !vm.isBusy
+            && !vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !vm.didJoin
+        }
+    }
+}
+
+// MARK: - Onboarding QR scanner (stesso flusso di JoinFamilyView)
+
+private struct OnboardingQRScannerSheet: View {
+    var onDetected: (String) -> Void
+    var onClose: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                QRCodeScannerView(onCode: onDetected)
+                    .ignoresSafeArea()
+                
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(.white.opacity(0.9), lineWidth: 3)
+                    .frame(width: 260, height: 260)
+            }
+            .navigationTitle("Scansiona QR")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Chiudi") { onClose() }
+                }
+            }
+        }
     }
 }
 

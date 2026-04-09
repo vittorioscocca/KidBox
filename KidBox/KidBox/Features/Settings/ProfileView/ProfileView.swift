@@ -155,7 +155,7 @@ struct ProfileView: View {
             loadAuthInfo()
             loadLocalProfile()
             Task { await loadRemoteUserProfile() }
-            Task { await subscriptionManager.loadPlan() }
+            Task { await subscriptionManager.refreshCurrentEntitlement() }
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()
@@ -491,44 +491,50 @@ struct ProfileView: View {
             
             Divider().padding(.horizontal, 16)
             
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(subscriptionPlanColor.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: subscriptionPlanIcon)
-                        .font(.system(size: 18))
-                        .foregroundStyle(subscriptionPlanColor)
-                }
-                
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Piano \(subscriptionManager.currentPlan.displayName)")
-                        .font(.system(size: 15, weight: .semibold))
-                    HStack(spacing: 4) {
-                        Text(subscriptionManager.currentPlan.storageLabel + " storage")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if subscriptionManager.currentPlan.includesAI {
-                            Text("·").foregroundStyle(.secondary)
-                            Text("\(subscriptionManager.currentPlan.aiDailyLimit) msg AI/giorno")
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(subscriptionPlanColor.opacity(0.15))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: subscriptionPlanIcon)
+                            .font(.system(size: 18))
+                            .foregroundStyle(subscriptionPlanColor)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Piano \(subscriptionManager.currentPlan.displayName)")
+                            .font(.system(size: 15, weight: .semibold))
+                        HStack(spacing: 4) {
+                            Text(subscriptionManager.currentPlan.storageLabel + " storage")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                            if subscriptionManager.currentPlan.includesAI {
+                                Text("·").foregroundStyle(.secondary)
+                                Text("\(subscriptionManager.currentPlan.aiDailyLimit) msg AI/giorno")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                    }
+                    
+                    Spacer()
+                    
+                    if subscriptionManager.currentPlan != .max, subscriptionManager.isFamilyOwner {
+                        Button { showUpgradeSheet = true } label: {
+                            Text("Upgrade")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 
-                Spacer()
-                
-                if subscriptionManager.currentPlan != .max {
-                    Button { showUpgradeSheet = true } label: {
-                        Text("Upgrade")
-                            .font(.caption.bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
-                    }
-                    .buttonStyle(.plain)
+                if subscriptionManager.currentPlan != .max, !subscriptionManager.isFamilyOwner {
+                    NonOwnerUpgradeNotice()
                 }
             }
             .padding(.horizontal, 16)

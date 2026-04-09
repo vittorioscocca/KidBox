@@ -724,7 +724,7 @@ private struct HomeCardGrid: View {
                     KBLog.navigation.debug("Home: tap AskExpert")
                     if aiAvailable {
                         onNavigate(.askExpert)
-                    } else {
+                    } else if subscriptionManager.isFamilyOwner {
                         showUpgrade = true
                     }
                 }

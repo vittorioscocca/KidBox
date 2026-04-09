@@ -109,6 +109,10 @@ final class KBSubscriptionManager: ObservableObject {
     /// Data di scadenza dell'abbonamento corrente (nil se Free o non disponibile)
     @Published private(set) var subscriptionExpirationDate: Date? = nil
     
+    /// `true` finché `loadPlan()` non ha determinato il ruolo (evita flash UI da non-owner).
+    /// Solo l'owner famiglia può acquistare/riscattare piani Pro/Max.
+    @Published private(set) var isFamilyOwner: Bool = true
+    
     /// true = abbonamento attivo ma cancellato (non si rinnoverà)
     var isCancelledButActive: Bool {
         currentPlan != .free && !subscriptionWillRenew && subscriptionExpirationDate != nil
@@ -132,24 +136,16 @@ final class KBSubscriptionManager: ObservableObject {
     
     // MARK: - Load plan from Firestore
     
-    func loadPlan() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        isLoading = true
-        defer { isLoading = false }
-        
-        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
-            .string(forKey: "activeFamilyId") ?? ""
-        
+    /// Aggiorna solo `currentPlan` da Firestore (famiglia + fallback utente). Non modifica `isFamilyOwner`.
+    private func syncPlanFromFirestore(uid: String, familyId: String) async {
         do {
             var plan = "free"
             
-            // 1. Piano famiglia — fonte di verità
             if !familyId.isEmpty {
                 let familySnap = try await db.collection("families").document(familyId).getDocument()
                 plan = familySnap.data()?["plan"] as? String ?? "free"
             }
             
-            // 2. Fallback piano utente (retrocompatibilità primo avvio)
             if plan == "free" {
                 let userSnap = try await db.collection("users").document(uid).getDocument()
                 plan = userSnap.data()?["plan"] as? String ?? "free"
@@ -162,8 +158,49 @@ final class KBSubscriptionManager: ObservableObject {
         }
     }
     
+    func loadPlan() async {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            isFamilyOwner = false
+            return
+        }
+        isLoading = true
+        defer { isLoading = false }
+        
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        
+        if familyId.isEmpty {
+            isFamilyOwner = true
+        } else {
+            let memberSnap = try? await db
+                .collection("families").document(familyId)
+                .collection("members").document(uid)
+                .getDocument()
+            let role = memberSnap?.data()?["role"] as? String ?? "owner"
+            
+            if role == "owner" {
+                isFamilyOwner = true
+            } else {
+                // Doppio check su ownerUid della famiglia
+                let familyMemberSnap = try? await db
+                    .collection("families").document(familyId)
+                    .getDocument()
+                let ownerUid = familyMemberSnap?.data()?["ownerUid"] as? String ?? ""
+                isFamilyOwner = (ownerUid == uid)
+            }
+            KBLog.app.kbDebug("SubscriptionManager: role=\(role) isFamilyOwner=\(isFamilyOwner) uid=\(uid) familyId=\(familyId)")
+        }
+        
+        await syncPlanFromFirestore(uid: uid, familyId: familyId)
+    }
+    
     func clearPurchaseError() {
         purchaseError = nil
+    }
+    
+    /// Chiamare al logout: azzera il ruolo famiglia fino al prossimo `loadPlan()`.
+    func resetOnSignOut() {
+        isFamilyOwner = false
     }
     
     // MARK: - Load StoreKit products
@@ -360,7 +397,7 @@ final class KBSubscriptionManager: ObservableObject {
     /// FIX 2: currentPlan viene aggiornato SUBITO da StoreKit, prima dell'aggiornamento Firestore,
     ///         così la UI riflette lo stato reale senza attendere la Cloud Function.
     func refreshCurrentEntitlement() async {
-        guard Auth.auth().currentUser != nil else { return }
+        guard let uid = Auth.auth().currentUser?.uid else { return }
         KBLog.app.kbInfo("SubscriptionManager: refreshCurrentEntitlement")
         
         var activePlan: KBPlan?         = nil
@@ -473,10 +510,11 @@ final class KBSubscriptionManager: ObservableObject {
             guard planDidChange else { return }
             await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
         } else {
-            // Non siamo il compratore: carichiamo il piano dalla fonte di verità cloud
-            // solo se la UI locale non corrisponde già a quanto c'è su Firestore
+            // Non siamo il compratore: allinea il piano da Firestore senza rileggere il ruolo membro.
             if planDidChange {
-                await loadPlan()
+                let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                    .string(forKey: "activeFamilyId") ?? ""
+                await syncPlanFromFirestore(uid: uid, familyId: familyId)
             }
         }
     }
