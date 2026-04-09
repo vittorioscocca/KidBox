@@ -157,7 +157,7 @@ extension KBChatMessage {
             return KBSaveClassifier.shared.classify(
                 mediaURL: url, mimeHint: .generic(fileName: self.text ?? "documento"))
             
-        case .audio, .location, .mediaGroup:
+        case .audio, .location, .mediaGroup, .contact:
             return .empty
         
         }
@@ -206,7 +206,7 @@ extension KBChatMessage {
             guard let url = mediaURL else { return [] }
             return [.document(mediaURL: url, fileName: self.text ?? "documento")]
             
-        case .audio, .location, .mediaGroup:
+        case .audio, .location, .mediaGroup, .contact:
             return []
         }
     }

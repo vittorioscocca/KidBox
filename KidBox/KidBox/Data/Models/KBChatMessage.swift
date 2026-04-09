@@ -61,6 +61,11 @@ final class KBChatMessage {
     /// JSON array parallelo a mediaGroupURLsJSON — "photo" oppure "video" per ogni elemento.
     var mediaGroupTypesJSON: String?
     
+    // MARK: - Contact payload
+    
+    /// JSON codificato di [ContactPayload], usato quando `type == .contact`.
+    var contactPayloadJSON: String?
+    
     // MARK: - Reactions / Read
     
     var reactionsJSON: String?
@@ -183,6 +188,26 @@ final class KBChatMessage {
     
     var isEdited: Bool { editedAt != nil }
     
+    var contactPayload: ContactPayload? {
+        get {
+            guard let json = contactPayloadJSON,
+                  let data = json.data(using: .utf8),
+                  let payload = try? JSONDecoder().decode(ContactPayload.self, from: data)
+            else { return nil }
+            return payload
+        }
+        set {
+            guard let newValue,
+                  let data = try? JSONEncoder().encode(newValue),
+                  let json = String(data: data, encoding: .utf8)
+            else {
+                contactPayloadJSON = nil
+                return
+            }
+            contactPayloadJSON = json
+        }
+    }
+    
     var hasTranscriptText: Bool {
         guard let transcriptText else { return false }
         return !transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -250,6 +275,7 @@ final class KBChatMessage {
         self.readByJSON               = nil
         self.mediaGroupURLsJSON       = nil
         self.mediaGroupTypesJSON      = nil
+        self.contactPayloadJSON       = nil
         self.transcriptText           = transcriptText
         self.transcriptStatusRaw      = transcriptStatus.rawValue
         self.transcriptSourceRaw      = transcriptSource?.rawValue

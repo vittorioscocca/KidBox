@@ -158,6 +158,7 @@ final class ChatStorageService {
         case .text:     return ("file.bin",   "application/octet-stream")
         case .location: return ("location.json", "application/json")
         case .mediaGroup:return ("photo.jpg",  "image/jpeg")
+        case .contact:  return ("contact.json", "application/json")
         }
     }
 }

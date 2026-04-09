@@ -18,4 +18,5 @@ enum KBChatMessageType: String, Codable, Equatable {
     case document
     case location
     case mediaGroup
+    case contact
 }

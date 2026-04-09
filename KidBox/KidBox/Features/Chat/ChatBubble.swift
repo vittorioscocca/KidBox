@@ -64,6 +64,7 @@ struct ChatBubble: View {
     @State private var downloadedMediaURL: URL?
     @State private var showMediaQuickLook = false
     @State private var mediaDownloadError: String?
+    @State private var showContactDetail = false
     
     // Swipe-to-reply
     @State private var swipeX: CGFloat = 0
@@ -149,7 +150,7 @@ struct ChatBubble: View {
     }
     
     private var shouldConstrainToMaxWidth: Bool {
-        (message.replyToId != nil) || hasLinkPreview
+        (message.replyToId != nil) || hasLinkPreview || message.type == .contact
     }
     
     var body: some View {
@@ -401,6 +402,8 @@ struct ChatBubble: View {
                 isOwn: isOwn,
                 timeAndChecksOverlay: AnyView(timeAndChecksOverlayOnMedia)
             )
+        case .contact:
+            contactContent
         }
     }
     
@@ -517,6 +520,11 @@ struct ChatBubble: View {
                     HStack(spacing: 6) {
                         Image(systemName: "photo.on.rectangle").font(.caption2)
                         Text(mediaGroupReplyLabel(for: repliedTo))
+                    }
+                case .contact:
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.crop.circle").font(.caption2)
+                        Text(repliedTo.contactPayload?.fullName ?? repliedTo.text ?? "Contatto")
                     }
                 }
             }
@@ -879,6 +887,29 @@ struct ChatBubble: View {
         if name.hasSuffix(".zip") || name.hasSuffix(".rar") { return "archivebox.fill" }
         if name.hasSuffix(".mp3") || name.hasSuffix(".m4a") { return "music.note" }
         return "doc.fill"
+    }
+    
+    private var contactContent: some View {
+        Group {
+            if let payload = message.contactPayload {
+                ContactBubbleView(
+                    payload: payload,
+                    isOwn: isOwn,
+                    onView: { showContactDetail = true },
+                    timeAndChecks: AnyView(timeAndChecks),
+                )
+                .sheet(isPresented: $showContactDetail) {
+                    ContactDetailView(payload: payload)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Contatto")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(isOwn ? .white : .primary)
+                    timeAndChecks
+                }
+            }
+        }
     }
     
     private func videoCacheKey(urlString: String) -> String {

@@ -38,6 +38,7 @@ struct RemoteChatMessageDTO {
     // NUOVO ↓
     let mediaGroupURLsJSON: String?
     let mediaGroupTypesJSON: String?
+    let contactPayloadJSON: String?
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -101,6 +102,7 @@ final class ChatRemoteStore {
         // NUOVO ↓
         if let grpURLs  = dto.mediaGroupURLsJSON       { data["mediaGroupURLsJSON"]  = grpURLs }
         if let grpTypes = dto.mediaGroupTypesJSON      { data["mediaGroupTypesJSON"] = grpTypes }
+        if let contactPayloadJSON = dto.contactPayloadJSON { data["contactPayloadJSON"] = contactPayloadJSON }
         
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
@@ -278,7 +280,8 @@ final class ChatRemoteStore {
                 mediaFileSize:        data["mediaFileSize"]        as? Int64,
                 // NUOVO ↓
                 mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]   as? String,
-                mediaGroupTypesJSON:  data["mediaGroupTypesJSON"]  as? String
+                mediaGroupTypesJSON:  data["mediaGroupTypesJSON"]  as? String,
+                contactPayloadJSON:   data["contactPayloadJSON"]   as? String
             )
         }
         
@@ -362,7 +365,8 @@ final class ChatRemoteStore {
                             mediaFileSize:        data["mediaFileSize"] as? Int64,
                             // NUOVO ↓
                             mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]  as? String,
-                            mediaGroupTypesJSON:  data["mediaGroupTypesJSON"] as? String
+                            mediaGroupTypesJSON:  data["mediaGroupTypesJSON"] as? String,
+                            contactPayloadJSON:   data["contactPayloadJSON"]  as? String
                         )
                         return .upsert(dto)
                     }

@@ -20,6 +20,7 @@ struct ChatInputBar: View {
     let onMediaTap: () -> Void
     let onCameraTap: () -> Void
     let onDocumentTap: () -> Void
+    let onContactTap: () -> Void
     let onTextChange: () -> Void
     let onLocationTap: () -> Void
     
@@ -82,6 +83,9 @@ private extension ChatInputBar {
                 }
                 Button { onDocumentTap() } label: {
                     Label("Documento", systemImage: "doc")
+                }
+                Button { onContactTap() } label: {
+                    Label("Contatto", systemImage: "person.crop.circle")
                 }
                 Button { onLocationTap() } label: {
                     Label("Invia posizione", systemImage: "location.fill")

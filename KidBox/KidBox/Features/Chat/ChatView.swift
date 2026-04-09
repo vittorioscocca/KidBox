@@ -23,6 +23,11 @@ struct GalleryDeleteRequest: Identifiable, Equatable {
         lhs.id == rhs.id
     }
 }
+
+private struct SelectedContactDraft: Identifiable {
+    let id = UUID()
+    let payload: ContactPayload
+}
 // MARK: - ChatView (entry point)
 
 struct ChatView: View {
@@ -469,6 +474,8 @@ private struct ChatConversationView: View {
     @State private var showDocumentPicker    = false
     @State private var showDocSourceDialog   = false
     @State private var showKidBoxDocPicker   = false
+    @State private var showContactPicker     = false
+    @State private var selectedContactDraft: SelectedContactDraft?
     
     // Storage upgrade
     @State private var showStorageUpgrade = false
@@ -709,6 +716,29 @@ private struct ChatConversationView: View {
             KidBoxDocumentPickerSheet(familyId: familyId) { url in
                 viewModel.sendDocument(url: url)
             }
+        }
+        .sheet(isPresented: $showContactPicker) {
+            ContactPickerRepresentable(
+                onPick: { payload in
+                    showContactPicker = false
+                    selectedContactDraft = SelectedContactDraft(payload: payload)
+                },
+                onCancel: { showContactPicker = false }
+            )
+            .ignoresSafeArea()
+        }
+        .sheet(item: $selectedContactDraft) { draft in
+            ContactPreviewSheet(
+                payload: draft.payload,
+                onSend: {
+                    viewModel.sendContact(draft.payload)
+                    selectedContactDraft = nil
+                },
+                onCancel: {
+                    selectedContactDraft = nil
+                }
+            )
+            .presentationDetents([.medium])
         }
         .storageUpgradeSheet($showStorageUpgrade)
         .sheet(item: $messageForSave) { msg in
@@ -1494,6 +1524,12 @@ private struct ChatConversationView: View {
                 Text(viewModel.replyingPreviewText)
                     .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
+        case .contact:
+            HStack(spacing: 8) {
+                replyContactThumb
+                Text(viewModel.replyingPreviewText)
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
         case .location:
             HStack(spacing: 8) {
                 if let lat = viewModel.replyingPreviewLatitude,
@@ -1509,6 +1545,27 @@ private struct ChatConversationView: View {
                 Text("Posizione condivisa")
                     .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private var replyContactThumb: some View {
+        if let data = viewModel.replyingPreviewContactPayload?.avatarData,
+           let image = UIImage(data: data) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 36, height: 36)
+                .clipShape(Circle())
+        } else {
+            Circle()
+                .fill(pillBackground)
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                )
         }
     }
     
@@ -1610,6 +1667,7 @@ private struct ChatConversationView: View {
                     showDocSourceDialog = true
                 }
             },
+            onContactTap: { showContactPicker = true },
             onTextChange: { viewModel.userIsTyping() },
             onLocationTap: { showLocationSheet = true }
         )

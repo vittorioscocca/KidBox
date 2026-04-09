@@ -73,6 +73,7 @@ final class ChatViewModel: NSObject, ObservableObject {
     @Published var replyingPreviewKind: KBChatMessageType? = nil
     @Published var replyingPreviewMediaURL: String? = nil
     @Published var replyingPreviewAudioDuration: Int? = nil
+    @Published var replyingPreviewContactPayload: ContactPayload? = nil
     
     var isReplying: Bool { replyingToMessageId != nil }
     var isEditing:  Bool { editingMessageId != nil }
@@ -403,6 +404,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             existing.mediaURL      = dto.mediaURL
             if let grpURLs  = dto.mediaGroupURLsJSON  { existing.mediaGroupURLsJSON  = grpURLs }
             if let grpTypes = dto.mediaGroupTypesJSON { existing.mediaGroupTypesJSON = grpTypes }
+            if let payload = dto.contactPayloadJSON { existing.contactPayloadJSON = payload }
             existing.reactionsJSON = dto.reactionsJSON
             existing.readBy        = Array(Set(existing.readBy + dto.readBy))
             // isDeletedForEveryone is signalled by dto.isDeleted (softDelete sets this on Firestore).
@@ -439,6 +441,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             )
             msg.mediaGroupURLsJSON  = dto.mediaGroupURLsJSON
             msg.mediaGroupTypesJSON = dto.mediaGroupTypesJSON
+            msg.contactPayloadJSON  = dto.contactPayloadJSON
             msg.replyToId = dto.replyToId;
             msg.reactionsJSON = dto.reactionsJSON
             msg.readByJSON = dto.readByJSON;
@@ -516,6 +519,7 @@ final class ChatViewModel: NSObject, ObservableObject {
         let name = message.senderName.trimmingCharacters(in: .whitespacesAndNewlines)
         replyingPreviewName = name.isEmpty ? "Utente" : name
         replyingPreviewKind = message.type; replyingPreviewMediaURL = message.mediaURL
+        replyingPreviewContactPayload = nil
         replyingPreviewAudioDuration = message.mediaDurationSeconds
         switch message.type {
         case .text:
@@ -543,12 +547,17 @@ final class ChatViewModel: NSObject, ObservableObject {
                 label = "📷 \(total) \(total == 1 ? "foto" : "foto")"
             }
             replyingPreviewText = label
+        case .contact:
+            let contactName = message.contactPayload?.fullName ?? (message.text ?? "Contatto")
+            replyingPreviewText = "👤 \(contactName)"
+            replyingPreviewContactPayload = message.contactPayload
         }
     }
     
     func cancelReply() {
         replyingToMessageId = nil; replyingPreviewName = ""; replyingPreviewText = ""
         replyingPreviewKind = nil; replyingPreviewMediaURL = nil; replyingPreviewAudioDuration = nil
+        replyingPreviewContactPayload = nil
         replyingPreviewLatitude = nil; replyingPreviewLongitude = nil
     }
     
@@ -1386,6 +1395,51 @@ final class ChatViewModel: NSObject, ObservableObject {
         }
     }
     
+    // MARK: - Send contact
+    
+    func sendContact(_ payload: ContactPayload) {
+        guard let modelContext, !familyId.isEmpty, let uid = Auth.auth().currentUser?.uid else { return }
+        let senderName = senderDisplayName()
+        let messageId = UUID().uuidString
+        let now = Date()
+        isSending = true
+        let msg = KBChatMessage(
+            id: messageId,
+            familyId: familyId,
+            senderId: uid,
+            senderName: senderName,
+            type: .contact,
+            text: payload.fullName,
+            createdAt: now,
+        )
+        msg.contactPayload = payload
+        msg.syncState = .pendingUpsert
+        modelContext.insert(msg)
+        try? modelContext.save()
+        reloadLocal()
+        
+        Task {
+            let dto = makeDTO(from: msg)
+            do {
+                try await remoteStore.upsert(dto: dto)
+                await MainActor.run {
+                    msg.syncState = .synced
+                    msg.lastSyncError = nil
+                    try? modelContext.save()
+                    self.isSending = false
+                }
+            } catch {
+                await MainActor.run {
+                    msg.syncState = .error
+                    msg.lastSyncError = error.localizedDescription
+                    try? modelContext.save()
+                    self.errorText = "Invio contatto fallito: \(error.localizedDescription)"
+                    self.isSending = false
+                }
+            }
+        }
+    }
+    
     // MARK: - Transcript
     
     @MainActor
@@ -1536,7 +1590,8 @@ final class ChatViewModel: NSObject, ObservableObject {
             latitude: msg.latitude, longitude: msg.longitude,
             mediaFileSize: msg.mediaFileSize,
             mediaGroupURLsJSON:  msg.mediaGroupURLsJSON,
-            mediaGroupTypesJSON: msg.mediaGroupTypesJSON
+            mediaGroupTypesJSON: msg.mediaGroupTypesJSON,
+            contactPayloadJSON:  msg.contactPayloadJSON
         )
     }
     
@@ -1581,7 +1636,7 @@ final class ChatViewModel: NSObject, ObservableObject {
                 // I messaggi media (foto/video/audio) con mediaURL nil
                 // hanno fallito anche l'upload su Storage — non possiamo
                 // ritentare solo Firestore, saltiamo per ora.
-                if msg.type != .text && msg.type != .location && msg.mediaURL == nil {
+                if msg.type != .text && msg.type != .location && msg.type != .contact && msg.mediaURL == nil {
                     KBLog.sync.kbDebug("ChatVM retry skip — mediaURL nil msgId=\(msg.id)")
                     continue
                 }
