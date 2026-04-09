@@ -40,6 +40,7 @@ struct AddEditExpenseView: View {
     @State private var showImporter                = false
     @State private var showGallery                 = false
     @State private var showCamera                  = false
+    @State private var showKidBoxPicker            = false
     
     // Validation
     @State private var showValidationError         = false
@@ -166,10 +167,17 @@ struct AddEditExpenseView: View {
                     onDocument: {
                         showSourcePicker = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
+                    },
+                    onKidBoxDocument: {
+                        showSourcePicker = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true }
                     }
                 )
-                .presentationDetents([.height(250)])
-                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showKidBoxPicker) {
+                KidBoxDocumentPickerSheet(familyId: vm.familyId) { url in
+                    pendingURLs.append(url)
+                }
             }
             // ── Galleria ──────────────────────────────────────────────────────────
             .sheet(isPresented: $showGallery) {

@@ -49,6 +49,7 @@ struct PediatricExamEditView: View {
     @State private var showGallery         = false
     @State private var showCamera          = false
     @State private var showImporter        = false
+    @State private var showKidBoxPicker    = false
     @State private var previewURL: URL?    = nil
     @State private var showKeyAlert        = false
     @State private var showStorageUpgrade  = false
@@ -249,10 +250,17 @@ struct PediatricExamEditView: View {
                 onDocument: {
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
+                },
+                onKidBoxDocument: {
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true }
                 }
             )
-            .presentationDetents([.height(250)])
-            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(familyId: familyId) { url in
+                pendingURLs.append(url)
+            }
         }
         .sheet(isPresented: $showGallery) {
             ImagePickerView(sourceType: .photoLibrary) { image in

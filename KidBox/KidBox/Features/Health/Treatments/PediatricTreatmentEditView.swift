@@ -51,6 +51,7 @@ struct PediatricTreatmentEditView: View {
     @State private var showAttachmentImporter = false
     @State private var showAttachmentGallery  = false
     @State private var showAttachmentCamera   = false
+    @State private var showKidBoxPicker       = false
     @State private var showStorageUpgrade     = false
     
     private let tint        = KBTheme.tint
@@ -135,10 +136,14 @@ struct PediatricTreatmentEditView: View {
                 AttachmentSourcePickerSheet(
                     onCamera:   { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentCamera   = true } },
                     onGallery:  { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentGallery  = true } },
-                    onDocument: { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentImporter = true } }
+                    onDocument: { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentImporter = true } },
+                    onKidBoxDocument: { showAttachmentDialog = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true } }
                 )
-                .presentationDetents([.height(220)])
-                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showKidBoxPicker) {
+                KidBoxDocumentPickerSheet(familyId: familyId) { url in
+                    pendingAttachmentURLs.append(url)
+                }
             }
             .fileImporter(isPresented: $showAttachmentImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
                 if let urls = try? result.get() { pendingAttachmentURLs.append(contentsOf: urls) }

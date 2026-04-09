@@ -455,87 +455,6 @@ final class TreatmentAttachmentService {
     }
 }
 
-// MARK: - AttachmentSourcePickerSheet
-
-struct AttachmentSourcePickerSheet: View {
-    var tint: Color = Color(red: 0.6, green: 0.45, blue: 0.85)
-    let onCamera:   () -> Void
-    let onGallery:  () -> Void
-    let onDocument: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            Capsule()
-                .fill(Color(.systemGray4))
-                .frame(width: 36, height: 4)
-                .padding(.top, 12)
-                .padding(.bottom, 16)
-            
-            Text("Aggiungi allegato")
-                .font(.subheadline.bold())
-                .padding(.bottom, 16)
-            
-            Divider()
-            
-            Button {
-                onCamera()
-            } label: {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle().fill(tint.opacity(0.1)).frame(width: 36, height: 36)
-                        Image(systemName: "camera.fill").foregroundStyle(tint)
-                    }
-                    Text("Scatta foto").font(.subheadline)
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.plain)
-            
-            Divider().padding(.leading, 70)
-            
-            Button {
-                onGallery()
-            } label: {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle().fill(tint.opacity(0.1)).frame(width: 36, height: 36)
-                        Image(systemName: "photo.fill.on.rectangle.fill").foregroundStyle(tint)
-                    }
-                    Text("Libreria foto").font(.subheadline)
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.plain)
-            
-            Divider().padding(.leading, 70)
-            
-            Button {
-                onDocument()
-            } label: {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle().fill(tint.opacity(0.1)).frame(width: 36, height: 36)
-                        Image(systemName: "doc.fill").foregroundStyle(tint)
-                    }
-                    Text("Documento / File").font(.subheadline)
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.plain)
-            
-            Spacer()
-        }
-        .foregroundStyle(.primary)
-        .background(Color(.systemBackground))
-    }
-}
-
 // MARK: - TreatmentAttachmentPicker (Wizard step 3)
 
 struct TreatmentAttachmentPicker: View {
@@ -649,6 +568,7 @@ struct TreatmentAttachmentsSection: View {
     let treatment: KBTreatment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     
     @Query private var attachments: [KBDocument]
     
@@ -657,6 +577,7 @@ struct TreatmentAttachmentsSection: View {
     @State private var showImporter       = false
     @State private var showGallery        = false
     @State private var showCamera         = false
+    @State private var showKidBoxPicker   = false
     @State private var previewURL:   URL? = nil
     @State private var showKeyAlert       = false
     @State private var showStorageUpgrade = false
@@ -664,6 +585,12 @@ struct TreatmentAttachmentsSection: View {
     
     private let tint    = KBTheme.tint
     private let service = TreatmentAttachmentService.shared
+    
+    private var effectiveFamilyId: String {
+        let local = treatment.familyId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !local.isEmpty { return local }
+        return families.first?.id ?? ""
+    }
     
     init(treatment: KBTreatment) {
         self.treatment = treatment
@@ -745,10 +672,17 @@ struct TreatmentAttachmentsSection: View {
                 onDocument: {
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
+                },
+                onKidBoxDocument: {
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true }
                 }
             )
-            .presentationDetents([.height(250)])
-            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(familyId: effectiveFamilyId) { url in
+                emitUpload(urls: [url])
+            }
         }
         .sheet(isPresented: $showGallery) {
             ImagePickerView(sourceType: .photoLibrary) { image in

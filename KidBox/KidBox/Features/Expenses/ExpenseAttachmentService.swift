@@ -590,6 +590,7 @@ struct ExpenseAttachmentsSection: View {
     @State private var showImporter    = false
     @State private var showGallery     = false
     @State private var showCamera      = false
+    @State private var showKidBoxPicker = false
     @State private var previewURL: URL? = nil
     @State private var showKeyAlert    = false
     @State private var showStorageUpgrade = false
@@ -689,10 +690,18 @@ struct ExpenseAttachmentsSection: View {
                     KBLog.ui.kbInfo("Attachment source: document importer expenseId=\(expense.id)")
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
+                },
+                onKidBoxDocument: {
+                    KBLog.ui.kbInfo("Attachment source: kidbox documents expenseId=\(expense.id)")
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true }
                 }
             )
-            .presentationDetents([.height(250)])
-            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(familyId: expense.familyId) { url in
+                emitUpload(urls: [url])
+            }
         }
         // Gallery
         .sheet(isPresented: $showGallery) {

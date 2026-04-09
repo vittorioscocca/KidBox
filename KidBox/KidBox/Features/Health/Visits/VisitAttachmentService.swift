@@ -389,6 +389,7 @@ struct VisitAttachmentsSection: View {
     @State private var showImporter = false
     @State private var showGallery = false
     @State private var showCamera = false
+    @State private var showKidBoxPicker = false
     @State private var previewURL: URL? = nil
     @State private var showKeyAlert = false
     @State private var showStorageUpgrade = false
@@ -485,10 +486,18 @@ struct VisitAttachmentsSection: View {
                     KBLog.ui.kbInfo("Attachment source selected: document importer visitId=\(visit.id)")
                     showSourcePicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showImporter = true }
+                },
+                onKidBoxDocument: {
+                    KBLog.ui.kbInfo("Attachment source selected: kidbox documents visitId=\(visit.id)")
+                    showSourcePicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true }
                 }
             )
-            .presentationDetents([.height(250)])
-            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(familyId: visit.familyId) { url in
+                emitUpload(urls: [url])
+            }
         }
         .sheet(isPresented: $showGallery) {
             ImagePickerView(sourceType: .photoLibrary) { image in

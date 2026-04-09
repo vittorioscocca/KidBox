@@ -64,6 +64,7 @@ struct PediatricVisitEditView: View {
     @State private var showAttachmentGallery  = false
     @State private var showAttachmentCamera   = false
     @State private var showAttachmentImporter = false
+    @State private var showKidBoxPicker       = false
     
     // ── Step 5: Riepilogo ──
     @State private var hasNextVisit      = false
@@ -715,10 +716,17 @@ struct PediatricVisitEditView: View {
                 onDocument: {
                     showAttachmentPicker = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showAttachmentImporter = true }
+                },
+                onKidBoxDocument: {
+                    showAttachmentPicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showKidBoxPicker = true }
                 }
             )
-            .presentationDetents([.height(250)])
-            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showKidBoxPicker) {
+            KidBoxDocumentPickerSheet(familyId: familyId) { url in
+                pendingAttachmentURLs.append(url)
+            }
         }
         .sheet(isPresented: $showAttachmentGallery) {
             ImagePickerView(sourceType: .photoLibrary) { image in

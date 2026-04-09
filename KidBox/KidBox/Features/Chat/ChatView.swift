@@ -466,7 +466,9 @@ private struct ChatConversationView: View {
     @State private var cameraVideoURL: URL?
     
     // Document picker
-    @State private var showDocumentPicker = false
+    @State private var showDocumentPicker    = false
+    @State private var showDocSourceDialog   = false
+    @State private var showKidBoxDocPicker   = false
     
     // Storage upgrade
     @State private var showStorageUpgrade = false
@@ -685,6 +687,28 @@ private struct ChatConversationView: View {
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPicker { url in viewModel.sendDocument(url: url) }
                 .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showDocSourceDialog) {
+            ChatDocumentSourcePickerSheet(
+                tint: KBTheme.bubbleTint,
+                onPhoneDocument: {
+                    showDocSourceDialog = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showDocumentPicker = true
+                    }
+                },
+                onKidBoxDocument: {
+                    showDocSourceDialog = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        showKidBoxDocPicker = true
+                    }
+                }
+            )
+        }
+        .sheet(isPresented: $showKidBoxDocPicker) {
+            KidBoxDocumentPickerSheet(familyId: familyId) { url in
+                viewModel.sendDocument(url: url)
+            }
         }
         .storageUpgradeSheet($showStorageUpgrade)
         .sheet(item: $messageForSave) { msg in
@@ -1583,7 +1607,7 @@ private struct ChatConversationView: View {
             },
             onDocumentTap: {
                 checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
-                    showDocumentPicker = true
+                    showDocSourceDialog = true
                 }
             },
             onTextChange: { viewModel.userIsTyping() },
@@ -1731,6 +1755,71 @@ private struct ChatConversationView: View {
                 cameraImage = nil
                 cameraVideoURL = nil
             }
+    }
+}
+
+// MARK: - Chat document source sheet (2 options)
+
+private struct ChatDocumentSourcePickerSheet: View {
+    let tint: Color
+    let onPhoneDocument: () -> Void
+    let onKidBoxDocument: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color(.systemGray4))
+                .frame(width: 36, height: 4)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
+            
+            Text("Aggiungi allegato")
+                .font(.subheadline.bold())
+                .padding(.bottom, 16)
+            
+            Divider()
+            
+            sourceRow(
+                icon: "doc.fill",
+                label: "File del telefono",
+                action: onPhoneDocument,
+            )
+            
+            Divider().padding(.leading, 64)
+            
+            sourceRow(
+                icon: "folder.fill.badge.person.crop",
+                label: "Da KidBox Documenti",
+                action: onKidBoxDocument,
+            )
+        }
+        .presentationDetents([.height(194)])
+        .presentationDragIndicator(.visible)
+    }
+    
+    @ViewBuilder
+    private func sourceRow(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(tint.opacity(0.1))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .foregroundStyle(tint)
+                }
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 }
 
