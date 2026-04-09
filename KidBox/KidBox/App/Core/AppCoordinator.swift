@@ -73,6 +73,10 @@ final class AppCoordinator: ObservableObject {
     /// Nome originale del file documento condiviso.
     @Published var pendingShareDocumentTitle: String? = nil
     
+    /// URL temporaneo decriptato di un documento da inviare in chat.
+    /// Impostato da DocumentFolderViewModel.sendToChat, consumato da ChatView.
+    @Published var pendingChatDocumentURL: URL? = nil
+    
     // MARK: - Appearance
     
     /// Preferenza tema dell'app (Chiaro / Scuro / Sistema).

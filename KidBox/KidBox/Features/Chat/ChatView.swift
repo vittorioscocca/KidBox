@@ -618,6 +618,14 @@ private struct ChatConversationView: View {
             let url = URL(fileURLWithPath: path)
             Task { await viewModel.sendVideo(from: url) }
         }
+        .task(id: coordinator.pendingChatDocumentURL) {
+            guard let url = coordinator.pendingChatDocumentURL else { return }
+            // Piccolo delay per assicurarsi che ChatView sia mounted
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            coordinator.pendingChatDocumentURL = nil
+            viewModel.sendDocument(url: url)
+        }
         .task(id: coordinator.pendingShareImagePath) {
             guard let filePath = coordinator.pendingShareImagePath else { return }
             try? await Task.sleep(for: .milliseconds(800))

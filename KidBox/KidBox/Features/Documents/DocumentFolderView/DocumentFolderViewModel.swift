@@ -86,7 +86,7 @@ final class DocumentFolderViewModel: ObservableObject {
     private let storageService = DocumentStorageService()
     
     // MARK: - SwiftData
-    private var modelContext: ModelContext?
+    var modelContext: ModelContext?
     
     enum NameSortOrder {
         case asc

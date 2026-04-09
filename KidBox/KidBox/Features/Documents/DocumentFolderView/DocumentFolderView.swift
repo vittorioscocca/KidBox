@@ -1,4 +1,3 @@
-
 //
 //  DocumentFolderView.swift
 //  KidBox
@@ -38,6 +37,7 @@ struct DocumentFolderView: View {
     // MARK: - Env
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var coordinator: AppCoordinator
     
     // MARK: - Dynamic theme (same as LoginView / HomeView / ProfileView / ChatView)
     var backgroundColor: Color {
@@ -71,6 +71,9 @@ struct DocumentFolderView: View {
     @State var newFolderName: String = ""
     @State private var showDeleteSelectedConfirm = false
     @State private var showStorageUpgrade = false
+    @State private var showMergePDFSheet = false
+    @State private var shareURLsPayload: ShareURLsPayload?
+    @State private var isSendingToChat = false
     
     // Importer
     @State var showImporter = false
@@ -151,8 +154,13 @@ struct DocumentFolderView: View {
             } else {
                 content
             }
+            
+            // Bottom bar azioni selezione (animata)
+            selectionBottomBar
         }
         .background(backgroundColor)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isSelecting)
+        .animation(.easeInOut(duration: 0.15), value: viewModel.canMergeSelectedAsPDF)
     }
     
     // MARK: - Header
@@ -565,6 +573,25 @@ struct DocumentFolderView: View {
             Label("Duplica", systemImage: "plus.square.on.square")
         }
         Divider()
+        // ── Invia in chat ────────────────────────────────────────────────
+        Button {
+            Task {
+                await viewModel.sendToChat(doc: doc, modelContext: modelContext, coordinator: coordinator)
+            }
+        } label: {
+            Label("Invia in chat", systemImage: "bubble.left.and.text.bubble.right.fill")
+        }
+        // ── Condividi ────────────────────────────────────────────────────
+        Button {
+            Task {
+                let urls = await viewModel.prepareShareURLs(docs: [doc], modelContext: modelContext)
+                guard !urls.isEmpty else { return }
+                shareURLsPayload = ShareURLsPayload(urls: urls)
+            }
+        } label: {
+            Label("Condividi", systemImage: "square.and.arrow.up")
+        }
+        Divider()
         Button(role: .destructive) { viewModel.deleteDocument(doc) } label: {
             Label("Elimina documento", systemImage: "trash")
         }
@@ -679,20 +706,7 @@ private extension DocumentFolderView {
                 Text(viewModel.isSelecting ? "Annulla" : "Seleziona")
             }
             
-            // Elimina selezionati
-            if viewModel.isSelecting && !viewModel.selectedItems.isEmpty {
-                Button(role: .destructive) { showDeleteSelectedConfirm = true } label: {
-                    Image(systemName: "trash")
-                }
-                .accessibilityLabel("Elimina selezionati")
-                
-                Button { viewModel.beginMoveSelectedItems() } label: {
-                    Image(systemName: "folder")
-                }
-                .accessibilityLabel("Sposta selezionati")
-            }
-            
-            // Menu +
+            // Menu + (disabilitato durante selezione)
             Menu {
                 Button { showNewFolderAlert = true } label: {
                     Label("Nuova cartella", systemImage: "folder.badge.plus")
@@ -753,6 +767,130 @@ private extension DocumentFolderView {
                 guard let img = cameraImage else { return }
                 Task { await uploadCameraImage(img) }
             }
+    }
+    
+    // MARK: - Selection bottom bar
+    
+    /// Barra azioni contestuali che appare in fondo quando la modalità selezione è attiva.
+    /// Stesso pattern di Health/Visits, Health/Exams, ecc.
+    @ViewBuilder
+    var selectionBottomBar: some View {
+        if viewModel.isSelecting {
+            VStack(spacing: 0) {
+                Divider()
+                HStack(spacing: 0) {
+                    
+                    // ── Seleziona tutto / Deseleziona ────────────────────
+                    let allCount = viewModel.folders.count + viewModel.docs.count
+                    let allSelected = viewModel.selectedItems.count == allCount && allCount > 0
+                    Button {
+                        if allSelected {
+                            viewModel.exitSelectionMode()
+                            viewModel.enterSelectionMode()   // azzera selezione
+                        } else {
+                            // Seleziona tutto
+                            for f in viewModel.folders { viewModel.toggleSelection(.folder(f.id)) }
+                            for d in viewModel.docs    { viewModel.toggleSelection(.doc(d.id)) }
+                        }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: allSelected ? "checkmark.circle.fill" : "circle.grid.3x3")
+                                .font(.title3)
+                            Text(allSelected ? "Deseleziona" : "Tutte")
+                                .font(.caption2)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    }
+                    .foregroundStyle(.orange).buttonStyle(.plain)
+                    
+                    let hasSelection = !viewModel.selectedItems.isEmpty
+                    
+                    Divider().frame(height: 40)
+                    
+                    // ── Sposta ───────────────────────────────────────────
+                    Button { viewModel.beginMoveSelectedItems() } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "folder").font(.title3)
+                            Text("Sposta").font(.caption2)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    }
+                    .foregroundStyle(hasSelection ? .orange : .secondary)
+                    .disabled(!hasSelection).buttonStyle(.plain)
+                    
+                    Divider().frame(height: 40)
+                    
+                    // ── Unisci PDF (solo se tutti i selezionati sono PDF) ─
+                    if viewModel.canMergeSelectedAsPDF {
+                        Button { showMergePDFSheet = true } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "doc.on.doc.fill").font(.title3)
+                                Text("Unisci").font(.caption2)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        }
+                        .foregroundStyle(.orange).buttonStyle(.plain)
+                        
+                        Divider().frame(height: 40)
+                    }
+                    
+                    // ── Condividi ────────────────────────────────────────
+                    Button {
+                        Task {
+                            let urls = await viewModel.prepareShareURLs(modelContext: modelContext)
+                            guard !urls.isEmpty else { return }
+                            shareURLsPayload = ShareURLsPayload(urls: urls)
+                        }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "square.and.arrow.up").font(.title3)
+                            Text("Condividi").font(.caption2)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    }
+                    .foregroundStyle(viewModel.canShareSelectedDocs ? .orange : .secondary)
+                    .disabled(!viewModel.canShareSelectedDocs).buttonStyle(.plain)
+                    
+                    Divider().frame(height: 40)
+                    
+                    // ── Invia in chat (solo 1 doc selezionato) ───────────
+                    if viewModel.selectedShareableDocs.count == 1,
+                       let singleDoc = viewModel.selectedShareableDocs.first {
+                        Button {
+                            Task {
+                                await viewModel.sendToChat(
+                                    doc: singleDoc,
+                                    modelContext: modelContext,
+                                    coordinator: coordinator
+                                )
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "bubble.left.and.text.bubble.right.fill").font(.title3)
+                                Text("In chat").font(.caption2)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        }
+                        .foregroundStyle(.orange).buttonStyle(.plain)
+                        
+                        Divider().frame(height: 40)
+                    }
+                    
+                    // ── Elimina ──────────────────────────────────────────
+                    Button { showDeleteSelectedConfirm = true } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "trash").font(.title3)
+                            Text("Elimina").font(.caption2)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    }
+                    .foregroundStyle(hasSelection ? .red : .secondary)
+                    .disabled(!hasSelection).buttonStyle(.plain)
+                }
+                .background(backgroundColor)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
     }
     
     @ViewBuilder
@@ -852,8 +990,6 @@ private extension DocumentFolderView {
                         Task { await view.uploadFromAppGroup(path: path, title: title) }
                     }
                 }
-            // Gestisce il caso in cui la view fosse già visibile quando
-            // l'app torna in foreground dopo lo share (onAppear non si ri-triggera)
                 .onReceive(coordinator.$pendingShareDocumentPath.compactMap { $0 }) { path in
                     coordinator.pendingShareDocumentPath = nil
                     let title = coordinator.pendingShareDocumentTitle
@@ -927,6 +1063,16 @@ private extension DocumentFolderView {
                             view.viewModel.resolvePendingOperation(destinationId: destId)
                         }
                     )
+                }
+            // Unisci PDF ── usa view.$ per accedere allo @State dell'outer view
+                .sheet(isPresented: view.$showMergePDFSheet) {
+                    MergePDFSheet(docs: view.viewModel.selectedPDFDocs) { orderedDocs, title in
+                        await view.viewModel.mergePDFs(orderedDocs: orderedDocs, title: title, modelContext: view.modelContext)
+                    }
+                }
+            // Condividi documenti verso l'esterno
+                .sheet(item: view.$shareURLsPayload) { payload in
+                    ActivitySheet(items: payload.urls)
                 }
             // Photo library
                 .photosPicker(
