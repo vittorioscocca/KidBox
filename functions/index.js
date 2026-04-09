@@ -330,12 +330,16 @@ exports.notifyNewChatMessage = onDocumentCreated(
         if (tokens.length === 0) continue;
 
         const badge = await incrementCounterAndGetBadge({familyId, uid, field: "chat"});
+        const data = {type: "new_chat_message", familyId, messageId, senderId: senderUid, msgType};
+        if (typeof msgData.textEnc === "string" && msgData.textEnc.length > 0) {
+          data.textEnc = msgData.textEnc;
+        }
 
         messagesToSend.push({
           tokens,
           notification: {title: senderName, body},
-          data: {type: "new_chat_message", familyId, messageId, senderId: senderUid, msgType},
-          apns: {payload: {aps: {sound: "default", badge}}},
+          data,
+          apns: {payload: {aps: {sound: "default", badge, "mutableContent": 1}}},
         });
       }
 

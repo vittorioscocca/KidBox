@@ -21,6 +21,7 @@ struct RemoteChatMessageDTO {
     let senderName: String
     let typeRaw: String
     let text: String?
+    let textEnc: String?
     let mediaStoragePath: String?
     let mediaURL: String?
     let mediaDurationSeconds: Int?
@@ -89,7 +90,15 @@ final class ChatRemoteStore {
             "createdAt":  FieldValue.serverTimestamp()
         ]
         
-        if let text = dto.text                         { data["text"] = text }
+        if let textEnc = dto.textEnc                  { data["textEnc"] = textEnc }
+        if let text = dto.text {
+            if let enc = try? NoteCryptoService.encryptString(text, familyId: dto.familyId, userId: uid) {
+                data["textEnc"] = enc
+            } else {
+                data["text"] = text // fallback se encrypt fallisce
+            }
+        }
+        data["text"] = FieldValue.delete()
         if let path = dto.mediaStoragePath             { data["mediaStoragePath"] = path }
         if let url  = dto.mediaURL                     { data["mediaURL"] = url }
         if let dur  = dto.mediaDurationSeconds         { data["mediaDurationSeconds"] = dur }
@@ -153,7 +162,7 @@ final class ChatRemoteStore {
     }
     
     func updateMessageText(familyId: String, messageId: String, text: String) async throws {
-        guard Auth.auth().currentUser != nil else {
+        guard let uid = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "KidBox", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
@@ -163,12 +172,18 @@ final class ChatRemoteStore {
             .collection("chatMessages")
             .document(messageId)
         
-        try await ref.setData([
-            "text": text,
-            "isEdited": true,
-            "editedAt": FieldValue.serverTimestamp(),
-            "updatedAt": FieldValue.serverTimestamp()
-        ], merge: true)
+        var data: [String: Any] = [
+            "isEdited":  true,
+            "editedAt":  FieldValue.serverTimestamp(),
+            "updatedAt": FieldValue.serverTimestamp(),
+            "text":      FieldValue.delete()
+        ]
+        if let enc = try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid) {
+            data["textEnc"] = enc
+        } else {
+            data["text"] = text // fallback
+        }
+        try await ref.setData(data, merge: true)
     }
     
     func addToDeletedFor(familyId: String, messageId: String, uid: String) async throws {
@@ -264,6 +279,7 @@ final class ChatRemoteStore {
                 senderName:           data["senderName"]           as? String ?? "",
                 typeRaw:              data["type"]                 as? String ?? "text",
                 text:                 data["text"]                 as? String,
+                textEnc:              data["textEnc"]              as? String,
                 mediaStoragePath:     data["mediaStoragePath"]     as? String,
                 mediaURL:             data["mediaURL"]             as? String,
                 mediaDurationSeconds: data["mediaDurationSeconds"] as? Int,
@@ -349,6 +365,7 @@ final class ChatRemoteStore {
                             senderName:           data["senderName"] as? String ?? "",
                             typeRaw:              data["type"]       as? String ?? "text",
                             text:                 data["text"]       as? String,
+                            textEnc:              data["textEnc"]    as? String,
                             mediaStoragePath:     data["mediaStoragePath"]     as? String,
                             mediaURL:             data["mediaURL"]             as? String,
                             mediaDurationSeconds: data["mediaDurationSeconds"] as? Int,

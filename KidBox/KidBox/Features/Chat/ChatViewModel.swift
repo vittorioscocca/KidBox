@@ -394,12 +394,20 @@ final class ChatViewModel: NSObject, ObservableObject {
     private func applyUpsert(dto: RemoteChatMessageDTO, modelContext: ModelContext) {
         let mid          = dto.id
         let myUID        = Auth.auth().currentUser?.uid ?? ""
+        let resolvedText: String?
+        if let enc = dto.textEnc, !enc.isEmpty, !myUID.isEmpty {
+            resolvedText = try? NoteCryptoService.decryptString(
+                enc, familyId: dto.familyId, userId: myUID
+            )
+        } else {
+            resolvedText = dto.text // fallback legacy plaintext
+        }
         let deletedForMe = !myUID.isEmpty && dto.deletedFor.contains(myUID)
         let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
         if let existing = try? modelContext.fetch(desc).first {
             let localBefore        = existing.isDeleted
             existing.senderName    = dto.senderName
-            existing.text          = dto.text
+            existing.text          = resolvedText
             existing.editedAt      = dto.editedAt
             existing.mediaURL      = dto.mediaURL
             if let grpURLs  = dto.mediaGroupURLsJSON  { existing.mediaGroupURLsJSON  = grpURLs }
@@ -430,7 +438,7 @@ final class ChatViewModel: NSObject, ObservableObject {
                 senderId: dto.senderId,
                 senderName: dto.senderName,
                 type: KBChatMessageType(rawValue: dto.typeRaw) ?? .text,
-                text: dto.text,
+                text: resolvedText,
                 mediaStoragePath: dto.mediaStoragePath,
                 mediaURL: dto.mediaURL,
                 mediaDurationSeconds: dto.mediaDurationSeconds,
@@ -1581,7 +1589,7 @@ final class ChatViewModel: NSObject, ObservableObject {
     private func makeDTO(from msg: KBChatMessage) -> RemoteChatMessageDTO {
         RemoteChatMessageDTO(
             id: msg.id, familyId: msg.familyId, senderId: msg.senderId, senderName: msg.senderName,
-            typeRaw: msg.typeRaw, text: msg.text, mediaStoragePath: msg.mediaStoragePath,
+            typeRaw: msg.typeRaw, text: msg.text, textEnc: nil, mediaStoragePath: msg.mediaStoragePath,
             mediaURL: msg.mediaURL, mediaDurationSeconds: msg.mediaDurationSeconds,
             mediaThumbnailURL: msg.mediaThumbnailURL, replyToId: msg.replyToId,
             reactionsJSON: msg.reactionsJSON, readByJSON: nil,

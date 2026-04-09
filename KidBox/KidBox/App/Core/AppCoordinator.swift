@@ -246,6 +246,12 @@ final class AppCoordinator: ObservableObject {
                     
                     let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
                     sharedDefaults?.set(user.uid, forKey: "currentUserUID")
+                    // Salva il Firebase ID token per la NotificationServiceExtension
+                    user.getIDToken { token, error in
+                        guard let token, error == nil else { return }
+                        UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                            .set(token, forKey: "firebaseIDToken")
+                    }
                     sharedDefaults?.set(
                         user.displayName ?? user.email ?? "Utente",
                         forKey: "currentUserDisplayName"

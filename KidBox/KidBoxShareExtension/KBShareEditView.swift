@@ -975,8 +975,15 @@ struct KBShareEditView: View {
                 data: data, familyId: familyId, messageId: messageId,
                 fileName: fileName, mimeType: mimeType
             )
+            let text = typeRaw == "document" ? url.lastPathComponent : ""
+            let uid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "currentUserUID") ?? ""
+            let encryptedText = !uid.isEmpty && typeRaw == "document"
+                ? (try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid))
+                : nil
             let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: typeRaw,
-                              text: typeRaw == "document" ? url.lastPathComponent : nil,
+                              text: encryptedText != nil ? nil : (typeRaw == "document" ? text : nil),
+                              textEnc: encryptedText,
                               mediaStoragePath: storagePath, mediaURL: downloadURL)
             try await remote.upsert(dto: dto)
             return .completedInExtension
@@ -992,8 +999,16 @@ struct KBShareEditView: View {
                     data: data, familyId: familyId, messageId: messageId,
                     fileName: fileName, mimeType: "application/octet-stream"
                 )
+                let text = fileName
+                let uid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                    .string(forKey: "currentUserUID") ?? ""
+                let encryptedText = !uid.isEmpty
+                    ? (try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid))
+                    : nil
                 let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "document",
-                                  text: fileName, mediaStoragePath: storagePath, mediaURL: downloadURL)
+                                  text: encryptedText != nil ? nil : text,
+                                  textEnc: encryptedText,
+                                  mediaStoragePath: storagePath, mediaURL: downloadURL)
                 try await remote.upsert(dto: dto)
                 return .completedInExtension
                 
@@ -1014,7 +1029,18 @@ struct KBShareEditView: View {
             } else {
                 let text = editedText.isEmpty ? u : editedText
                 log("sendDirectToChat sending url=\(u)")
-                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "text", text: text)
+                let uid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                    .string(forKey: "currentUserUID") ?? ""
+                let encryptedText = !uid.isEmpty
+                    ? (try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid))
+                    : nil
+                let dto = makeDTO(
+                    messageId: messageId,
+                    familyId: familyId,
+                    typeRaw: "text",
+                    text: encryptedText != nil ? nil : text,
+                    textEnc: encryptedText
+                )
                 try await remote.upsert(dto: dto)
                 return .completedInExtension
             }
@@ -1022,7 +1048,18 @@ struct KBShareEditView: View {
         case .text(let t):
             let text = editedText.isEmpty ? t : editedText
             log("sendDirectToChat sending text=\(text.prefix(50))")
-            let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "text", text: text)
+            let uid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "currentUserUID") ?? ""
+            let encryptedText = !uid.isEmpty
+                ? (try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid))
+                : nil
+            let dto = makeDTO(
+                messageId: messageId,
+                familyId: familyId,
+                typeRaw: "text",
+                text: encryptedText != nil ? nil : text,
+                textEnc: encryptedText
+            )
             try await remote.upsert(dto: dto)
             return .completedInExtension
             
@@ -1077,7 +1114,7 @@ struct KBShareEditView: View {
     
     private func makeDTO(
         messageId: String, familyId: String, typeRaw: String,
-        text: String? = nil, mediaStoragePath: String? = nil, mediaURL: String? = nil
+        text: String? = nil, textEnc: String? = nil, mediaStoragePath: String? = nil, mediaURL: String? = nil
     ) -> RemoteChatMessageDTO {
         let defaults   = UserDefaults(suiteName: appGroupId)
         let senderName = defaults?.string(forKey: "currentUserDisplayName") ?? "Utente"
@@ -1090,6 +1127,7 @@ struct KBShareEditView: View {
             senderName: senderName,
             typeRaw: typeRaw,
             text: text,
+            textEnc: textEnc,
             mediaStoragePath: mediaStoragePath,
             mediaURL: mediaURL,
             mediaDurationSeconds: nil,
