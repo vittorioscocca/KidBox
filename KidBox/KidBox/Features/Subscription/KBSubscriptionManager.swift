@@ -191,7 +191,13 @@ final class KBSubscriptionManager: ObservableObject {
             KBLog.app.kbDebug("SubscriptionManager: role=\(role) isFamilyOwner=\(isFamilyOwner) uid=\(uid) familyId=\(familyId)")
         }
         
+        // Leggi Firestore come punto di partenza rapido...
         await syncPlanFromFirestore(uid: uid, familyId: familyId)
+        
+        // FIX 2: ...poi verifica subito StoreKit per correggere eventuali dati stale.
+        // Se l'abbonamento è scaduto/cancellato, refreshCurrentEntitlement() aggiorna
+        // currentPlan e, se siamo l'owner, riscrive "free" su Firestore in modo atomico.
+        await refreshCurrentEntitlement()
     }
     
     func clearPurchaseError() {
@@ -497,20 +503,19 @@ final class KBSubscriptionManager: ObservableObject {
         }
         
         // ── Scrittura Firestore ───────────────────────────────────────────────────
-        // REGOLA: solo chi ha trovato una transazione StoreKit attiva (activePlan != nil)
-        // può scrivere il piano su Firestore. Questo impedisce che il device di un
-        // membro della famiglia (es. B) che non ha comprato nulla sovrascriva il piano
-        // pagato da A con "free".
+        // FIX 1: solo l'owner scrive su Firestore — sia quando ha un abbonamento attivo
+        // che quando è scaduto/cancellato (activePlan == nil → scrive "free").
+        // I membri leggono sempre e solo da Firestore tramite syncPlanFromFirestore().
         //
-        // Se activePlan == nil significa che su questo device/account Apple non esiste
-        // nessuna transazione valida → non siamo il compratore → leggiamo solo da
-        // Firestore senza toccarla.
-        if activePlan != nil {
-            // Siamo il compratore (o stesso Apple ID): aggiorniamo Firestore
+        // PRIMA: la scrittura era condizionata a (activePlan != nil), il che bloccava
+        // il downgrade a "free" su Firestore quando l'abbonamento scadeva, lasciando
+        // Firestore stale con "pro" e facendo rientrare l'utente come Pro al riavvio.
+        if isFamilyOwner {
+            // Siamo l'owner: scriviamo sempre il piano reale (attivo o "free")
             guard planDidChange else { return }
             await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
         } else {
-            // Non siamo il compratore: allinea il piano da Firestore senza rileggere il ruolo membro.
+            // Siamo un membro: non scriviamo mai, allineiamo da Firestore
             if planDidChange {
                 let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
                     .string(forKey: "activeFamilyId") ?? ""
