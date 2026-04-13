@@ -21,6 +21,23 @@ struct RootGateView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     
+    /// Usato per ingresso diretto in Home dopo join: DB ha una famiglia e coincide con `activeFamilyId`.
+    @Query(sort: \KBFamily.updatedAt, order: .reverse)
+    private var families: [KBFamily]
+    
+    /// `activeFamilyId` valorizzato **e** `KBFamily` corrispondente già in SwiftData (post-join / QR).
+    private var pinnedFamilyReadyInStore: Bool {
+        guard let fid = coordinator.activeFamilyId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !fid.isEmpty else { return false }
+        return families.contains { $0.id == fid }
+    }
+    
+    /// Mostra la Home se onboarding completato **oppure** c’è una famiglia attiva coerente nel DB (nessuna lista selezione dopo join).
+    private var shouldShowHome: Bool {
+        if coordinator.hasSeenOnboarding { return true }
+        return pinnedFamilyReadyInStore
+    }
+    
     var body: some View {
         Group {
             if coordinator.isCheckingAuth {
@@ -30,12 +47,12 @@ struct RootGateView: View {
                     .ignoresSafeArea()
             } else if !coordinator.isAuthenticated {
                 LoginView()
-            } else if !coordinator.hasSeenOnboarding {
+            } else if shouldShowHome {
+                HomeView()
+            } else {
                 OnboardingWalkthroughView {
                     coordinator.completeOnboarding()
                 }
-            } else {
-                HomeView()
             }
         }
         .onAppear {
@@ -43,6 +60,16 @@ struct RootGateView: View {
         }
         .onChange(of: coordinator.isAuthenticated) { _, newValue in
             KBLog.navigation.kbInfo("Auth state changed: \(newValue)")
+        }
+        /// Quando SwiftData riceve la famiglia dopo join ma `hasSeenOnboarding` è ancora false, completa l’onboarding così non si resta bloccati sul walkthrough.
+        .task(id: families.map(\.id).joined(separator: "|")) {
+            guard !coordinator.hasSeenOnboarding,
+                  pinnedFamilyReadyInStore else { return }
+            coordinator.completeOnboarding()
+            KBLog.navigation.kbInfo("RootGateView: completeOnboarding after joined family present in store")
+        }
+        .onChange(of: coordinator.activeFamilyId) { _, newId in
+            KBLog.navigation.kbDebug("RootGateView: activeFamilyId=\(newId ?? "nil") pinnedReady=\(pinnedFamilyReadyInStore)")
         }
         .task {
             KBLog.navigation.kbDebug("Starting session listener")

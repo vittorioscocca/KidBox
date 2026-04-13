@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 import SwiftData
 
 /// Service responsible for removing the current user from a family and wiping local family data.
@@ -111,11 +112,59 @@ final class FamilyLeaveService {
         
         KBLog.sync.kbInfo("leaveFamily completed familyId=\(familyId)")
     }
+
+    // Trasferisce ownership a newOwnerUid poi fa leave del caller
+    func transferOwnershipAndLeave(familyId: String, newOwnerUid: String) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "KidBox", code: -1)
+        }
+        let batch = db.batch()
+        let familyRef = db.collection("families").document(familyId)
+        batch.updateData([
+            "ownerUid": newOwnerUid,
+            "updatedBy": uid,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], forDocument: familyRef)
+        batch.updateData([
+            "role": "owner",
+            "updatedBy": uid,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], forDocument: familyRef.collection("members").document(newOwnerUid))
+        batch.updateData([
+            "role": "member",
+            "updatedBy": uid,
+            "updatedAt": FieldValue.serverTimestamp()
+        ], forDocument: familyRef.collection("members").document(uid))
+        try await batch.commit()
+        try await leaveFamily(familyId: familyId)
+    }
+
+    // Elimina la famiglia completamente
+    func deleteFamily(familyId: String) async throws {
+        KBLog.sync.kbInfo("deleteFamily started familyId=\(familyId)")
+
+        // 1) Call Cloud Function (best effort, non-blocking)
+        Task {
+            do {
+                let functions = Functions.functions(region: "europe-west1")
+                _ = try await functions.httpsCallable("deleteFamily").call(["familyId": familyId])
+                KBLog.sync.kbInfo("deleteFamily CF OK familyId=\(familyId)")
+            } catch {
+                KBLog.sync.kbError("deleteFamily CF failed (non-fatal): \(error.localizedDescription)")
+            }
+        }
+
+        // 2) Local wipe immediately, don't wait for CF
+        try wipeFamilyLocalOnly(familyId: familyId)
+
+        KBLog.sync.kbInfo("deleteFamily completed familyId=\(familyId)")
+    }
     
-    @MainActor
+    /// Pulisce **solo** SwiftData e ferma i listener. Nessuna chiamata di rete (né Cloud Function).
+    /// Per eliminare la famiglia sul server usare `deleteFamily(familyId:)`.
     func wipeFamilyLocalOnly(familyId: String) throws {
-        KBLog.sync.kbInfo("wipeFamilyLocalOnly started familyId=\(familyId)")
-        
+        KBLog.sync.kbInfo("wipeFamilyLocalOnly started familyId=\(familyId) (local only, no server)")
+
         SyncCenter.shared.beginLocalWipe()
         
         SyncCenter.shared.stopMembersRealtime()

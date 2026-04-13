@@ -110,6 +110,10 @@ final class AppCoordinator: ObservableObject {
     
     private static let activeFamilyIdKey = "KidBox.activeFamilyId"
     
+    /// Incrementato in `resetToRoot()` quando c’è una famiglia attiva, così `RootHostView` può
+    /// forzare il riavvio dei listener / il ricalcolo senza restare agganciati a una sessione precedente.
+    @Published private(set) var rootDataRefreshToken: UInt64 = 0
+    
     // MARK: - Private
     
     /// Firebase Auth listener handle. Non-nil when the session listener is active.
@@ -175,11 +179,31 @@ final class AppCoordinator: ObservableObject {
     /// Sets the active family explicitly (e.g. after join or user-initiated family switch).
     ///
     /// - Parameter familyId: The family to make active. Pass `nil` to clear.
-    func setActiveFamily(_ familyId: String?) {
-        guard activeFamilyId != familyId else {
+    /// - Parameter force: Se `true`, riapplica persistenza e notifica le view anche quando
+    ///   `familyId` è già uguale a `activeFamilyId` (es. dopo join + bootstrap) così
+    ///   `RootHostView` e i listener si riallineano invece di fare no-op.
+    ///
+    /// Cambi di `familyId` (switch famiglia) aggiornano sempre UserDefaults e App Group; stesso id con
+    /// `force: true` riesegue la persistenza e `objectWillChange` per risvegliare la UI.
+    func setActiveFamily(_ familyId: String?, force: Bool = false) {
+        if !force && activeFamilyId == familyId {
             KBLog.sync.kbDebug("setActiveFamily no-op familyId=\(familyId ?? "nil")")
             return
         }
+        
+        if force, activeFamilyId == familyId {
+            KBLog.sync.kbInfo("setActiveFamily force refresh familyId=\(familyId ?? "nil")")
+            if let id = familyId {
+                UserDefaults.standard.set(id, forKey: Self.activeFamilyIdKey)
+                UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.set(id, forKey: "activeFamilyId")
+            } else {
+                UserDefaults.standard.removeObject(forKey: Self.activeFamilyIdKey)
+                UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.removeObject(forKey: "activeFamilyId")
+            }
+            objectWillChange.send()
+            return
+        }
+        
         KBLog.sync.kbInfo("setActiveFamily familyId=\(familyId ?? "nil")")
         activeFamilyId = familyId
         let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
@@ -785,6 +809,15 @@ final class AppCoordinator: ObservableObject {
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
         path.removeAll()
+        // `activeFamilyId` non viene azzerato qui: resta in UserDefaults / App Group
+        // così dopo join + resetToRoot() la root vede ancora la famiglia attiva.
+        if let id = activeFamilyId {
+            UserDefaults.standard.set(id, forKey: Self.activeFamilyIdKey)
+            UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.set(id, forKey: "activeFamilyId")
+            rootDataRefreshToken &+= 1
+            objectWillChange.send()
+            KBLog.navigation.kbDebug("resetToRoot: reasserted activeFamilyId=\(id) refreshToken=\(rootDataRefreshToken)")
+        }
         KBLog.navigation.kbDebug("Path cleared")
     }
     

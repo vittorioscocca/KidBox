@@ -499,6 +499,38 @@ final class SyncCenter: ObservableObject {
     
     private var flushTask: Task<Void, Never>?
     
+    /// Elimina tutte le `KBSyncOp` la cui `familyId` ≠ `retainingFamilyId`.
+    ///
+    /// Da chiamare all’inizio di un join verso una nuova famiglia, così `flushGlobal` non tenta
+    /// scritture (es. `doseLog`) su path Firestore della vecchia famiglia → **Permission Denied**.
+    /// Annulla anche un `flushGlobal` in corso prima di ripulire l’outbox.
+    func removePendingSyncOperations(retainingFamilyId: String, modelContext: ModelContext) {
+        let retained = retainingFamilyId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !retained.isEmpty else {
+            KBLog.sync.kbDebug("removePendingSyncOperations: empty retainingFamilyId — skip")
+            return
+        }
+        flushTask?.cancel()
+        flushTask = nil
+        do {
+            let desc = FetchDescriptor<KBSyncOp>()
+            let all = try modelContext.fetch(desc)
+            var removed = 0
+            for op in all where op.familyId != retained {
+                modelContext.delete(op)
+                removed += 1
+            }
+            if removed > 0 {
+                try modelContext.save()
+                KBLog.sync.kbInfo("removePendingSyncOperations removed=\(removed) retainingFamilyId=\(retained)")
+            } else {
+                KBLog.sync.kbDebug("removePendingSyncOperations: nothing to remove retainingFamilyId=\(retained)")
+            }
+        } catch {
+            KBLog.sync.kbError("removePendingSyncOperations failed: \(error.localizedDescription)")
+        }
+    }
+    
     /// Immediately flushes all pending outbox operations (best-effort).
     ///
     /// Behavior (unchanged):

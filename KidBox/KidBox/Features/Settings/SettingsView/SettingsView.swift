@@ -27,6 +27,14 @@ struct SettingsView: View {
         : Color(.systemBackground)
     }
     
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    }
+    
+    private var appBuild: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+    }
+    
     var body: some View {
         List {
             NavigationLink {
@@ -116,6 +124,22 @@ struct SettingsView: View {
             .listRowBackground(cardBackground)
         }
         .scrollContentBackground(.hidden)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 6) {
+                Text("Versione \(appVersion)")
+                Text("Build \(appBuild)")
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 12)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+            .background(backgroundColor)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Versione \(appVersion), build \(appBuild)")
+        }
         .background(backgroundColor)
         .navigationTitle("Impostazioni")
         .tint(.primary)

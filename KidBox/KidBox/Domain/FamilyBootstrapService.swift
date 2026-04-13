@@ -55,11 +55,10 @@ final class FamilyBootstrapService {
     
     /// If the current user has at least one membership, downloads the family data and upserts locally.
     ///
-    /// Behavior (unchanged):
-    /// - Uses the first membership only (MVP).
-    /// - Fetches remote family/children/routines/todos/events.
-    /// - Upserts locally and saves.
-    func bootstrapIfNeeded() async {
+    /// - Parameter priorityFamilyId: Se presente e incluso nelle membership dell'utente, quella famiglia
+    ///   viene caricata al posto della prima in elenco (es. subito dopo join da QR).
+    /// - Note: Se `priorityFamilyId` non compare nelle membership, si usa la prima membership come prima.
+    func bootstrapIfNeeded(priorityFamilyId: String? = nil) async {
         let trace = Self.trace("boot:")
         let t0 = Self.now()
         
@@ -77,13 +76,27 @@ final class FamilyBootstrapService {
             let list = try await memberships.fetchMembershipsForCurrentUser()
             KBLog.sync.kbInfo("[\(trace)] memberships fetched count=\(list.count) ms=\(Self.msSince(tMem))")
             
-            guard let first = list.first else {
+            guard !list.isEmpty else {
                 KBLog.sync.kbInfo("[\(trace)] Bootstrap: no memberships (uid present) ms=\(Self.msSince(t0))")
                 return
             }
             
-            let familyId = first.familyId
-            KBLog.sync.kbInfo("[\(trace)] Bootstrap: using first membership familyId=\(familyId)")
+            let familyId: String
+            let trimmed = priorityFamilyId?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let priorityNonEmpty: String? = trimmed.isEmpty ? nil : trimmed
+            if let p = priorityNonEmpty,
+               list.contains(where: { $0.familyId == p }) {
+                familyId = p
+                KBLog.sync.kbInfo("Bootstrap: using priority familyId=\(familyId)")
+            } else {
+                familyId = list[0].familyId
+                if priorityNonEmpty != nil {
+                    KBLog.sync.kbInfo("[\(trace)] Bootstrap: priority not in memberships; using first familyId=\(familyId)")
+                } else {
+                    KBLog.sync.kbInfo("[\(trace)] Bootstrap: using first membership familyId=\(familyId)")
+                }
+            }
             
             // Fetch remote state (timed)
             KBLog.sync.kbInfo("[\(trace)] Bootstrap: fetching remote family bundle familyId=\(familyId)")

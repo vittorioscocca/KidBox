@@ -58,6 +58,8 @@ final class KBDoseLog {
     }
 }
 
+extension KBDoseLog: HasFamilyId {}
+
 extension KBDoseLog {
     var syncState: KBSyncState {
         get { KBSyncState(rawValue: syncStatus) ?? .synced }

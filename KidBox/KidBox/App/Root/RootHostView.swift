@@ -104,6 +104,13 @@ struct RootHostView: View {
             KBLog.sync.kbInfo("coordinator.activeFamilyId changed old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
             startFamilyRealtimeIfPossible()
         }
+        // Dopo join: `resetToRoot()` mantiene lo stesso `activeFamilyId` ma azzera lo stack;
+        // forza un nuovo ciclo listener così non restiamo agganciati a dati/sessione vecchi.
+        .onChange(of: coordinator.rootDataRefreshToken) { _, _ in
+            KBLog.sync.kbInfo("RootHostView: rootDataRefreshToken — forcing realtime rebind")
+            startedFamilyId = nil
+            startFamilyRealtimeIfPossible()
+        }
         // React to SwiftData families list changes (covers first-run fallback).
         .onChange(of: families.first?.id) { oldValue, newValue in
             // Only relevant when no explicit active family is pinned.

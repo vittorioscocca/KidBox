@@ -46,7 +46,8 @@ final class FamilyJoinService {
     ///
     /// Behavior:
     /// 1) Normalize code, ensure authenticated.
-    /// 2) Resolve invite -> familyId.
+    /// 2) Resolve invite -> familyId; rimuovi `KBSyncOp` non appartenenti alla nuova famiglia e,
+    ///    se si cambia famiglia, wipe locale di routine/todo/event/doseLog della famiglia precedente.
     /// 3) One-shot refresh of family doc fields (name + hero) in a detached Task.
     /// 4) Add member on server.
     /// 5) Fetch minimal family bundle from server.
@@ -90,6 +91,22 @@ final class FamilyJoinService {
         KBLog.sync.kbDebug("Resolving invite code")
         let familyId = try await inviteRemote.resolveInvite(code: code)
         KBLog.sync.kbInfo("Invite resolved familyId=\(familyId)")
+        
+        // ─ Outbox + dati locali “stale” della vecchia famiglia ─────────────────
+        // Evita che flushGlobal (dopo il join) processi ancora KBSyncOp (es. doseLog) con
+        // familyId precedente → Permission Denied su Firestore.
+        let previousActiveFamilyId = coordinator.activeFamilyId
+        SyncCenter.shared.removePendingSyncOperations(retainingFamilyId: familyId, modelContext: modelContext)
+        if let prev = previousActiveFamilyId,
+           !prev.isEmpty,
+           prev != familyId {
+            KBLog.sync.kbInfo("Join: wiping local routine/todo/event/doseLog for previous familyId=\(prev)")
+            do {
+                try LocalDataWiper.wipeJoinStaleData(familyId: prev, context: modelContext)
+            } catch {
+                KBLog.sync.kbError("Join: wipeJoinStaleData failed (continuing join): \(error.localizedDescription)")
+            }
+        }
         
         // ─────────────────────────────────────────────────────────────────────
         // PIN SUBITO — prima di qualsiasi Task detached o save su SwiftData.
@@ -261,15 +278,21 @@ final class FamilyJoinService {
         KBLog.sync.kbDebug("Starting members realtime after join familyId=\(familyId)")
         SyncCenter.shared.startMembersRealtime(familyId: familyId, modelContext: modelContext)
         
-        // 9) Bootstrap remaining memberships — fire-and-forget.
-        //    Non usiamo await per non bloccare il ritorno al chiamante.
-        //    bootstrapIfNeeded NON tocca activeFamilyId (già pinnato sopra).
-        KBLog.sync.kbDebug("Bootstrap after join requested (fire-and-forget, will NOT change active family)")
-        Task { @MainActor in
-            await FamilyBootstrapService(modelContext: self.modelContext).bootstrapIfNeeded()
-        }
+        // 9) Bootstrap membership rimanenti — await così SwiftData + coordinator sono allineati
+        //    prima di resetToRoot / ricostruzione UI.
+        KBLog.sync.kbDebug("Bootstrap after join (await) familyId=\(familyId)")
+        await FamilyBootstrapService(modelContext: self.modelContext)
+            .bootstrapIfNeeded(priorityFamilyId: familyId)
+        
+        // Re-pin esplicito: dopo persistenza bootstrap, forza activeFamilyId così RootGateView /
+        // RootHostView vedono la famiglia attiva senza race sulla query `families`.
+        KBLog.sync.kbInfo("Re-pin active family after bootstrap familyId=\(familyId)")
+        coordinator.setActiveFamily(familyId, force: true)
         
         await KBSubscriptionManager.shared.loadPlan()
+        
+        // Stabilizza relazioni KBFamily ↔ KBChild prima che la UI valuti la root.
+        try? await Task.sleep(nanoseconds: 500_000_000)
         
         KBLog.sync.kbInfo("joinFamily completed familyId=\(familyId)")
     }

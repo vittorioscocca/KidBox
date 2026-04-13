@@ -1,3 +1,4 @@
+
 //
 //  FamilySettingsView.swift
 //  KidBox
@@ -31,6 +32,11 @@ struct FamilySettingsView: View {
     @Query private var allChildren: [KBChild]
     
     @State private var showLeaveFamilyConfirm = false
+    @State private var showOwnerLeaveOptions = false
+    @State private var showOwnerAloneDeleteConfirm = false
+    @State private var showDeleteFamilyConfirm = false
+    @State private var showTransferSheet = false
+    @State private var selectedNewOwner: KBFamilyMember?
     @State private var leaveError: String?
     @State private var memberToRevoke: KBFamilyMember?
     @State private var showRevokeConfirm = false
@@ -76,6 +82,9 @@ struct FamilySettingsView: View {
     }
     
     private var canLeave: Bool { activeMembers.count >= 2 }
+    private var otherMembers: [KBFamilyMember] {
+        activeMembers.filter { $0.userId != currentUid }
+    }
     
     var body: some View {
         ZStack {
@@ -89,7 +98,7 @@ struct FamilySettingsView: View {
                         familySummaryCard
                         familyMembersCard
                         actionsWithFamily
-                        if canLeave { dangerZone }
+                        dangerZone
                     } else {
                         emptyStateCard
                         actionsWithoutFamily
@@ -113,30 +122,80 @@ struct FamilySettingsView: View {
             guard let fid = family?.id, fid == revokedFamilyId else { return }
             KBLog.sync.info("FamilySettingsView: currentUserRevoked received familyId=\(revokedFamilyId, privacy: .public)")
             Task { @MainActor in
+                let service = FamilyLeaveService(modelContext: modelContext)
                 do {
-                    let service = FamilyLeaveService(modelContext: modelContext)
-                    try await service.leaveFamily(familyId: revokedFamilyId)
+                    try service.wipeFamilyLocalOnly(familyId: revokedFamilyId)
                 } catch {
-                    KBLog.sync.error("FamilySettingsView: post-revoke wipe failed: \(error.localizedDescription, privacy: .public)")
+                    KBLog.sync.error("FamilySettingsView: post-revoke local wipe failed: \(error.localizedDescription, privacy: .public)")
                 }
                 coordinator.setActiveFamily(nil)
                 coordinator.resetToRoot()
             }
         }
+        // MARK: - Alerts
         .alert("Uscire dalla famiglia?", isPresented: $showLeaveFamilyConfirm) {
             Button("Annulla", role: .cancel) { }
             Button("Esci", role: .destructive) {
-                Task { @MainActor in
-                    await leaveFamily()
-                }
+                Task { @MainActor in await leaveFamily() }
             }
         } message: {
-            Text(
-                """
-                Verrai rimosso dalla famiglia e tutti i dati \
-                associati verranno eliminati da questo dispositivo.
-                """
-            )
+            Text("Verrai rimosso dalla famiglia e tutti i dati associati verranno eliminati da questo dispositivo.")
+        }
+        .alert("Non puoi uscire ora", isPresented: $showOwnerAloneDeleteConfirm) {
+            Button("Annulla", role: .cancel) { }
+            Button("Elimina famiglia", role: .destructive) {
+                Task { @MainActor in await deleteFamily() }
+            }
+        } message: {
+            Text("Sei l'unico membro. Per uscire devi eliminare la famiglia.")
+        }
+        .alert("Eliminare la famiglia?", isPresented: $showDeleteFamilyConfirm) {
+            Button("Annulla", role: .cancel) { }
+            Button("Elimina famiglia", role: .destructive) {
+                Task { @MainActor in await deleteFamily() }
+            }
+        } message: {
+            Text("Questa azione elimina la famiglia per tutti i membri.")
+        }
+        .alert("Sei il creatore della famiglia", isPresented: $showOwnerLeaveOptions) {
+            Button("Trasferisci ownership") {
+                showOwnerLeaveOptions = false
+                showTransferSheet = true
+            }
+            Button("Elimina famiglia", role: .destructive) {
+                showOwnerLeaveOptions = false
+                Task { @MainActor in await deleteFamily() }
+            }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("Prima di uscire puoi trasferire la ownership a un altro membro oppure eliminare la famiglia.")
+        }
+        .sheet(isPresented: $showTransferSheet) {
+            NavigationStack {
+                List(otherMembers) { member in
+                    Button {
+                        selectedNewOwner = member
+                        showTransferSheet = false
+                        Task { @MainActor in
+                            await transferOwnershipAndLeave(newOwnerUid: member.userId)
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(displayLabel(for: member))
+                                .foregroundStyle(.primary)
+                            Text(member.email?.trimmedNonEmpty ?? member.userId)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .navigationTitle("Nuovo owner")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Annulla") { showTransferSheet = false }
+                    }
+                }
+            }
         }
         .alert("Errore", isPresented: Binding(
             get: { leaveError != nil },
@@ -309,7 +368,13 @@ struct FamilySettingsView: View {
             action: {
                 guard let fid = family?.id else { return }
                 KBLog.navigation.info("FamilySettingsView: tap leave familyId=\(fid, privacy: .public)")
-                showLeaveFamilyConfirm = true
+                if !isOwner {
+                    showLeaveFamilyConfirm = true
+                } else if otherMembers.isEmpty {
+                    showOwnerAloneDeleteConfirm = true
+                } else {
+                    showOwnerLeaveOptions = true
+                }
             }
         )
     }
@@ -363,6 +428,31 @@ struct FamilySettingsView: View {
             coordinator.resetToRoot()
         } catch {
             KBLog.sync.error("FamilySettingsView: leave FAILED familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            leaveError = error.localizedDescription
+        }
+    }
+    
+    @MainActor
+    private func transferOwnershipAndLeave(newOwnerUid: String) async {
+        guard let familyId = family?.id else { return }
+        do {
+            let service = FamilyLeaveService(modelContext: modelContext)
+            try await service.transferOwnershipAndLeave(familyId: familyId, newOwnerUid: newOwnerUid)
+            coordinator.resetToRoot()
+        } catch {
+            leaveError = error.localizedDescription
+        }
+    }
+    
+    @MainActor
+    private func deleteFamily() async {
+        guard let familyId = family?.id else { return }
+        do {
+            let service = FamilyLeaveService(modelContext: modelContext)
+            try await service.deleteFamily(familyId: familyId)
+            coordinator.setActiveFamily(nil)
+            coordinator.resetToRoot()
+        } catch {
             leaveError = error.localizedDescription
         }
     }

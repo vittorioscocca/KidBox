@@ -83,6 +83,29 @@ enum LocalDataWiper {
         items.forEach { context.delete($0) }
     }
     
+    /// Durante un **join** verso una nuova famiglia: elimina solo i dati locali della vecchia
+    /// `familyId` che possono generare sync outbound (routine, todo, event, dose log) verso
+    /// Firestore dove l’utente non ha più permessi.
+    ///
+    /// Non elimina `KBFamily` / children / documenti: il join re-idrata il bundle dalla nuova famiglia.
+    @MainActor
+    static func wipeJoinStaleData(familyId: String, context: ModelContext) throws {
+        let fid = familyId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fid.isEmpty else { return }
+        do {
+            try delete(KBRoutine.self, familyId: fid, context: context)
+            try delete(KBRoutineCheck.self, familyId: fid, context: context)
+            try delete(KBTodoItem.self, familyId: fid, context: context)
+            try delete(KBEvent.self, familyId: fid, context: context)
+            try delete(KBDoseLog.self, familyId: fid, context: context)
+            try context.save()
+            KBLog.persistence.info("wipeJoinStaleData completed familyId=\(fid, privacy: .public)")
+        } catch {
+            KBLog.persistence.error("wipeJoinStaleData failed familyId=\(fid, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+    }
+    
     /// Wipe totale di TUTTO il DB locale (dev/debug/reset).
     @MainActor
     static func wipeAll(context: ModelContext) throws {

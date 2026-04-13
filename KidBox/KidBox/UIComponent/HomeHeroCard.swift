@@ -33,9 +33,16 @@ struct HomeHeroCard: View {
             ZStack(alignment: .topLeading) {
                 
                 if let ui = loader.image {
-                    Image(uiImage: ui).resizable().scaledToFill()
-                        .frame(height: 300)
-                        .clipped()
+                    GeometryReader { geo in
+                        Image(uiImage: ui)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: 300)
+                            .clipped()
+                            .allowsHitTesting(false)
+                    }
+                    .frame(height: 300)
+                    .clipped()
                 } else {
                     placeholder
                 }
@@ -117,6 +124,8 @@ struct HomeHeroCard: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity)
+            .clipped()
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .task(id: photoURL?.absoluteString) {
                 loader.load(url: photoURL)

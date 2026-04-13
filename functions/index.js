@@ -339,7 +339,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
           tokens,
           notification: {title: senderName, body},
           data,
-          apns: {payload: {aps: {sound: "default", badge, "mutableContent": 1}}},
+          apns: {payload: {aps: {sound: "default", badge}}},
         });
       }
 
@@ -1735,6 +1735,50 @@ exports.deleteAccount = onCall(
 
       logger.info("deleteAccount completed", {uid, families: familyIds.length});
       return {ok: true, familiesProcessed: familyIds.length};
+    },
+);
+
+exports.deleteFamily = onCall(
+    {region: "europe-west1", invoker: "public"},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Not authenticated");
+
+      const familyId = request.data?.familyId;
+      if (!familyId) throw new HttpsError("invalid-argument", "familyId is required");
+
+      const db = admin.firestore();
+      logger.info("deleteFamily started", {uid, familyId});
+
+      // Verify family exists
+      const familySnap = await db.collection("families").doc(familyId).get();
+      if (!familySnap.exists) {
+        logger.warn("deleteFamily: family not found", {uid, familyId});
+        return {ok: true, skipped: true};
+      }
+
+      // Anche se isDeleted=true, completa la pulizia (membership + subcollections)
+      logger.info("deleteFamily: proceeding with cleanup", {uid, familyId});
+
+      const memberCount = await countActiveMembers(familyId);
+      if (memberCount > 1) {
+        logger.error("TENTATIVO DI CANCELLAZIONE ILLEGALE", {familyId, memberCount, callerUid: uid});
+        throw new HttpsError(
+            "failed-precondition",
+            "La famiglia ha ancora altri membri attivi. Rimuovili prima di eliminare la famiglia.",
+        );
+      }
+
+      // Delete everything server-side
+      await deleteFamilyCompletely(familyId);
+
+      // Remove membership index for caller (best effort)
+      await db.collection("users").doc(uid)
+          .collection("memberships").doc(familyId)
+          .delete().catch(() => {});
+
+      logger.info("deleteFamily completed", {uid, familyId});
+      return {ok: true};
     },
 );
 
