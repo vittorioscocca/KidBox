@@ -52,6 +52,7 @@ struct RootGateView: View {
             } else {
                 OnboardingWalkthroughView {
                     coordinator.completeOnboarding()
+                    coordinator.resetToRoot()
                 }
             }
         }

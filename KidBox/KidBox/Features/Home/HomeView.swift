@@ -71,6 +71,16 @@ struct HomeView: View {
     private var hasFamily: Bool { activeFamily != nil }
     private var activeFamilyId: String { activeFamily?.id ?? "" }
     
+    /// `@Query` può essere vuota un attimo dopo il login; `AvatarRemoteStore` senza `familyId`
+    /// non prova il path famiglia dopo un 404 su `users/.../avatar.jpg`.
+    private var effectiveFamilyIdForAvatar: String {
+        if !activeFamilyId.isEmpty { return activeFamilyId }
+        let g = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId") ?? ""
+        if !g.isEmpty { return g }
+        if let c = coordinator.activeFamilyId, !c.isEmpty { return c }
+        return ""
+    }
+    
     /// Members count for the active family (excludes soft-deleted members).
     private var activeMembersCount: Int {
         guard !activeFamilyId.isEmpty else { return 0 }
@@ -199,7 +209,7 @@ struct HomeView: View {
             Task { await prepareHeroCrop(item: newItem) }
             Task { await bootstrapMyAvatarIfNeeded() }
         }
-        .task {
+        .task(id: effectiveFamilyIdForAvatar) {
             await bootstrapMyAvatarIfNeeded()
         }
         
@@ -238,28 +248,24 @@ struct HomeView: View {
     
     @MainActor
     private func bootstrapMyAvatarIfNeeded() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        if let avatarData = myProfile?.avatarData, !avatarData.isEmpty { return }
         
+        let fid = effectiveFamilyIdForAvatar
+        let familyIdOrNil: String? = fid.isEmpty ? nil : fid
         
-        Task {
-            guard let uid = Auth.auth().currentUser?.uid else { return }
-            if let avatarData = myProfile?.avatarData, !avatarData.isEmpty { return }
-            
-            let familyIdOrNil: String? = activeFamilyId.isEmpty ? nil : activeFamilyId
-            
-            do {
-                let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyIdOrNil)
-                let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
-                let existing = try? modelContext.fetch(desc).first
-                let profile = existing ?? KBUserProfile(uid: uid)
-                await MainActor.run {
-                    profile.avatarData = data
-                    profile.updatedAt = Date()
-                    try? modelContext.save()
-                }
-                KBLog.app.debug("Profile: avatar downloaded bytes=\(data.count, privacy: .public)")
-            } catch {
-                KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
-            }
+        do {
+            let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyIdOrNil)
+            let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+            let existing = try? modelContext.fetch(desc).first
+            let profile = existing ?? KBUserProfile(uid: uid)
+            if existing == nil { modelContext.insert(profile) }
+            profile.avatarData = data
+            profile.updatedAt = Date()
+            try? modelContext.save()
+            KBLog.app.debug("Profile: avatar downloaded bytes=\(data.count, privacy: .public)")
+        } catch {
+            KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     

@@ -136,6 +136,10 @@ final class FamilyJoinService {
                 let remoteName = data["name"] as? String ?? ""
                 let remoteUpdatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? .distantPast
                 let remoteUpdatedBy = data["updatedBy"] as? String
+                let remoteOwnerUid = (
+                    (data["ownerUid"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    ?? (data["createdBy"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                )?.nilIfEmpty
                 
                 let remoteHeroURL = data["heroPhotoURL"] as? String
                 let remoteHeroUpdatedAt = (data["heroPhotoUpdatedAt"] as? Timestamp)?.dateValue()
@@ -147,7 +151,7 @@ final class FamilyJoinService {
                     let created = KBFamily(
                         id: fid,
                         name: remoteName,
-                        createdBy: remoteUpdatedBy ?? "remote",
+                        createdBy: remoteOwnerUid ?? "remote",
                         updatedBy: remoteUpdatedBy ?? "remote",
                         createdAt: now,
                         updatedAt: remoteUpdatedAt
@@ -161,6 +165,9 @@ final class FamilyJoinService {
                     fam.name = remoteName
                     fam.updatedAt = remoteUpdatedAt
                     fam.updatedBy = remoteUpdatedBy ?? fam.updatedBy
+                    if let owner = remoteOwnerUid, !owner.isEmpty {
+                        fam.createdBy = owner
+                    }
                     KBLog.sync.kbDebug("Family one-shot refresh: applied name/meta familyId=\(fid)")
                 }
                 
@@ -201,6 +208,9 @@ final class FamilyJoinService {
         if let existingFamily {
             family = existingFamily
             family.name = remoteFamily.name
+            if !remoteFamily.ownerUid.isEmpty {
+                family.createdBy = remoteFamily.ownerUid
+            }
             family.updatedBy = uid
             family.updatedAt = Date()
             KBLog.sync.kbDebug("Local family updated familyId=\(familyId)")

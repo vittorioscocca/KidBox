@@ -72,7 +72,16 @@ struct FamilySettingsView: View {
     }
     
     private var currentUid: String { Auth.auth().currentUser?.uid ?? "" }
-    private var isOwner: Bool { family?.createdBy == currentUid }
+    private var isOwner: Bool {
+        guard let fid = family?.id else { return false }
+        let ownerFromMembers = members.contains {
+            $0.familyId == fid &&
+            !$0.isDeleted &&
+            $0.userId == currentUid &&
+            $0.role.lowercased() == "owner"
+        }
+        return ownerFromMembers || (family?.createdBy == currentUid)
+    }
     
     private var activeMembers: [KBFamilyMember] {
         guard let fid = family?.id else { return [] }
@@ -368,10 +377,10 @@ struct FamilySettingsView: View {
             action: {
                 guard let fid = family?.id else { return }
                 KBLog.navigation.info("FamilySettingsView: tap leave familyId=\(fid, privacy: .public)")
-                if !isOwner {
-                    showLeaveFamilyConfirm = true
-                } else if otherMembers.isEmpty {
+                if activeMembers.count <= 1 {
                     showOwnerAloneDeleteConfirm = true
+                } else if !isOwner {
+                    showLeaveFamilyConfirm = true
                 } else {
                     showOwnerLeaveOptions = true
                 }
@@ -428,7 +437,12 @@ struct FamilySettingsView: View {
             coordinator.resetToRoot()
         } catch {
             KBLog.sync.error("FamilySettingsView: leave FAILED familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
-            leaveError = error.localizedDescription
+            let message = error.localizedDescription.lowercased()
+            if message.contains("unico membro") {
+                showOwnerAloneDeleteConfirm = true
+            } else {
+                leaveError = error.localizedDescription
+            }
         }
     }
     

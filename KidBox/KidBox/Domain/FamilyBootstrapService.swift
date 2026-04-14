@@ -209,6 +209,9 @@ childId.empty=\(childEmptyCount)
             localFamily = existingFamily
             // Do not log family.name (PII)
             localFamily.name = family.name
+            if !family.ownerUid.isEmpty {
+                localFamily.createdBy = family.ownerUid
+            }
             localFamily.updatedBy = uid
             localFamily.updatedAt = Date()
             KBLog.sync.kbDebug("[\(trace)] upsertAll Family UPDATE existing familyId=\(fid)")

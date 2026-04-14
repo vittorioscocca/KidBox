@@ -155,7 +155,7 @@ struct ProfileView: View {
             loadAuthInfo()
             loadLocalProfile()
             Task { await loadRemoteUserProfile() }
-            Task { await subscriptionManager.refreshCurrentEntitlement() }
+            Task { await subscriptionManager.loadPlan() }
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()

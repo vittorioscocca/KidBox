@@ -291,7 +291,6 @@ final class AppCoordinator: ObservableObject {
                         let hasFamily = ((try? modelContext.fetch(familyDescriptor)) ?? []).isEmpty == false
                         if hasFamily {
                             // Utente esistente aggiornato all'app con onboarding → skip
-                            await KBSubscriptionManager.shared.loadPlan()
                             self.completeOnboarding()
                             KBLog.navigation.kbInfo("Onboarding skipped: existing user with family")
                         }
@@ -314,6 +313,16 @@ final class AppCoordinator: ObservableObject {
                             KBLog.sync.kbInfo("No activeFamilyId after bootstrap — will fall back to families.first in RootHostView")
                         }
                     }
+                    
+                    // Nome/cognome e display name “veri” stanno su Firestore `users/{uid}`.
+                    // `upsertUserProfile` usa solo Auth: senza questo merge, Todo / Family settings / ecc.
+                    // restano con etichette sbagliate finché non apri Profilo.
+                    await UserProfileRemoteSync.mergeFirestoreUserIntoLocal(uid: user.uid, modelContext: modelContext)
+                    
+                    // Dopo logout `resetOnSignOut()` mette `isFamilyOwner = false`.
+                    // `refreshCurrentEntitlement()` non ripristina il ruolo: serve `loadPlan()`
+                    // dopo che `activeFamilyId` è in App Group (non solo al primo skip onboarding).
+                    await KBSubscriptionManager.shared.loadPlan()
                     
                 } else {
                     self.isAuthenticated = false

@@ -62,6 +62,10 @@ extension SyncCenter {
                 ?? .distantPast
                 
                 let remoteUpdatedBy = data["updatedBy"] as? String
+                let remoteOwnerUid = (
+                    (data["ownerUid"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    ?? (data["createdBy"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                )?.nilIfEmpty
                 
                 // Hero fields (URL + crop)
                 let remoteHeroURL = data["heroPhotoURL"] as? String
@@ -83,7 +87,7 @@ extension SyncCenter {
                             let created = KBFamily(
                                 id: fid,
                                 name: remoteName,
-                                createdBy: remoteUpdatedBy ?? "remote",
+                                createdBy: remoteOwnerUid ?? "remote",
                                 updatedBy: remoteUpdatedBy ?? "remote",
                                 createdAt: now,
                                 updatedAt: remoteUpdatedAt
@@ -98,6 +102,9 @@ extension SyncCenter {
                             fam.name = remoteName
                             fam.updatedAt = remoteUpdatedAt
                             fam.updatedBy = remoteUpdatedBy ?? fam.updatedBy
+                            if let owner = remoteOwnerUid {
+                                fam.createdBy = owner
+                            }
                         }
                         
                         // LWW: hero (fallback on updatedAt if heroPhotoUpdatedAt is missing)
