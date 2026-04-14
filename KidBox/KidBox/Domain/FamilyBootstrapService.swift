@@ -7,6 +7,7 @@
 
 import SwiftData
 import FirebaseAuth
+import FirebaseFirestore
 import OSLog
 
 /// Bootstraps the local SwiftData store from the server when the user is authenticated.
@@ -73,50 +74,89 @@ final class FamilyBootstrapService {
             KBLog.sync.kbInfo("[\(trace)] Fetching memberships for current user")
             
             let tMem = Self.now()
-            let list = try await memberships.fetchMembershipsForCurrentUser()
-            KBLog.sync.kbInfo("[\(trace)] memberships fetched count=\(list.count) ms=\(Self.msSince(tMem))")
+            let list = try await fetchMembershipsWithRetry(trace: trace)
+            KBLog.sync.kbInfo("[\(trace)] memberships resolved count=\(list.count) ms=\(Self.msSince(tMem))")
             
             guard !list.isEmpty else {
                 KBLog.sync.kbInfo("[\(trace)] Bootstrap: no memberships (uid present) ms=\(Self.msSince(t0))")
                 return
             }
-            
-            let familyId: String
+
             let trimmed = priorityFamilyId?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let priorityNonEmpty: String? = trimmed.isEmpty ? nil : trimmed
-            if let p = priorityNonEmpty,
-               list.contains(where: { $0.familyId == p }) {
-                familyId = p
-                KBLog.sync.kbInfo("Bootstrap: using priority familyId=\(familyId)")
+            var orderedFamilyIds = list.map(\.familyId)
+            if let p = priorityNonEmpty, let idx = orderedFamilyIds.firstIndex(of: p) {
+                orderedFamilyIds.remove(at: idx)
+                orderedFamilyIds.insert(p, at: 0)
+            }
+            orderedFamilyIds = Array(NSOrderedSet(array: orderedFamilyIds)) as? [String] ?? orderedFamilyIds
+            
+            if let p = priorityNonEmpty {
+                KBLog.sync.kbInfo("[\(trace)] Bootstrap: priorityFamilyId=\(p) orderedCandidates=\(orderedFamilyIds.count)")
             } else {
-                familyId = list[0].familyId
-                if priorityNonEmpty != nil {
-                    KBLog.sync.kbInfo("[\(trace)] Bootstrap: priority not in memberships; using first familyId=\(familyId)")
-                } else {
-                    KBLog.sync.kbInfo("[\(trace)] Bootstrap: using first membership familyId=\(familyId)")
+                KBLog.sync.kbInfo("[\(trace)] Bootstrap: ordered candidates count=\(orderedFamilyIds.count)")
+            }
+            
+            var chosenFamilyId: String?
+            var remoteFamily: RemoteFamilyRead?
+            var remoteChildren: [RemoteChildRead] = []
+            var remoteRoutines: [RemoteRoutineRead] = []
+            var remoteTodos: [RemoteTodoRead] = []
+            var remoteEvents: [RemoteEventRead] = []
+            var lastError: Error?
+            
+            for (idx, candidateFamilyId) in orderedFamilyIds.enumerated() {
+                KBLog.sync.kbInfo("[\(trace)] Bootstrap: try candidate \(idx + 1)/\(orderedFamilyIds.count) familyId=\(candidateFamilyId)")
+                do {
+                    // Fetch remote state (timed) for this candidate
+                    let tFam = Self.now()
+                    let fam = try await readRemote.fetchFamily(familyId: candidateFamilyId)
+                    KBLog.sync.kbInfo("[\(trace)] fetchFamily OK familyId=\(candidateFamilyId) ms=\(Self.msSince(tFam))")
+                    
+                    let tChildren = Self.now()
+                    let children = try await readRemote.fetchChildren(familyId: candidateFamilyId)
+                    KBLog.sync.kbInfo("[\(trace)] fetchChildren OK count=\(children.count) ms=\(Self.msSince(tChildren))")
+                    
+                    let tRoutines = Self.now()
+                    let routines = try await readRemote.fetchRoutines(familyId: candidateFamilyId)
+                    KBLog.sync.kbInfo("[\(trace)] fetchRoutines OK count=\(routines.count) ms=\(Self.msSince(tRoutines))")
+                    
+                    let tTodos = Self.now()
+                    let todos = try await readRemote.fetchTodos(familyId: candidateFamilyId)
+                    KBLog.sync.kbInfo("[\(trace)] fetchTodos OK count=\(todos.count) ms=\(Self.msSince(tTodos))")
+                    
+                    let tEvents = Self.now()
+                    let events = try await readRemote.fetchEvents(familyId: candidateFamilyId)
+                    KBLog.sync.kbInfo("[\(trace)] fetchEvents OK count=\(events.count) ms=\(Self.msSince(tEvents))")
+                    
+                    chosenFamilyId = candidateFamilyId
+                    remoteFamily = fam
+                    remoteChildren = children
+                    remoteRoutines = routines
+                    remoteTodos = todos
+                    remoteEvents = events
+                    KBLog.sync.kbInfo("[\(trace)] Bootstrap: chosen accessible familyId=\(candidateFamilyId)")
+                    break
+                } catch {
+                    lastError = error
+                    if Self.isPermissionDenied(error) {
+                        KBLog.sync.kbInfo("[\(trace)] Bootstrap: skip candidate familyId=\(candidateFamilyId) reason=PERMISSION_DENIED")
+                        continue
+                    } else {
+                        KBLog.sync.kbError("[\(trace)] Bootstrap: candidate failed familyId=\(candidateFamilyId) err=\(error.localizedDescription)")
+                        continue
+                    }
                 }
             }
             
-            // Fetch remote state (timed)
-            KBLog.sync.kbInfo("[\(trace)] Bootstrap: fetching remote family bundle familyId=\(familyId)")
-            
-            let tFam = Self.now()
-            let remoteFamily = try await readRemote.fetchFamily(familyId: familyId)
-            KBLog.sync.kbInfo("[\(trace)] fetchFamily OK familyId=\(familyId) ms=\(Self.msSince(tFam))")
-            
-            let tChildren = Self.now()
-            let remoteChildren = try await readRemote.fetchChildren(familyId: familyId)
-            KBLog.sync.kbInfo("[\(trace)] fetchChildren OK count=\(remoteChildren.count) ms=\(Self.msSince(tChildren))")
-            
-            let tRoutines = Self.now()
-            let remoteRoutines = try await readRemote.fetchRoutines(familyId: familyId)
-            KBLog.sync.kbInfo("[\(trace)] fetchRoutines OK count=\(remoteRoutines.count) ms=\(Self.msSince(tRoutines))")
-            
-            let tTodos = Self.now()
-            let remoteTodos = try await readRemote.fetchTodos(familyId: familyId)
-            KBLog.sync.kbInfo("[\(trace)] fetchTodos OK count=\(remoteTodos.count) ms=\(Self.msSince(tTodos))")
-            // subito dopo: let remoteTodos    = try await readRemote.fetchTodos(familyId: familyId)
+            guard let familyId = chosenFamilyId, let remoteFamily else {
+                if let lastError {
+                    throw lastError
+                }
+                KBLog.sync.kbInfo("[\(trace)] Bootstrap: no accessible family among memberships")
+                return
+            }
             
             let delCount = remoteTodos.filter { $0.isDeleted }.count
             let listNilCount = remoteTodos.filter { $0.listId == nil }.count
@@ -146,10 +186,6 @@ childId.empty=\(childEmptyCount)
             if !suspicious.isEmpty {
                 KBLog.sync.kbDebug("[\(trace)] Bootstrap Todos suspicious sample: \(suspicious)")
             }
-            let tEvents = Self.now()
-            let remoteEvents = try await readRemote.fetchEvents(familyId: familyId)
-            KBLog.sync.kbInfo("[\(trace)] fetchEvents OK count=\(remoteEvents.count) ms=\(Self.msSince(tEvents))")
-            
             KBLog.sync.kbDebug("""
             [\(trace)] Bootstrap: remote fetched
             children=\(remoteChildren.count) routines=\(remoteRoutines.count) todos=\(remoteTodos.count) events=\(remoteEvents.count)
@@ -179,6 +215,37 @@ childId.empty=\(childEmptyCount)
         } catch {
             KBLog.sync.kbError("[\(trace)] Bootstrap failed err=\(error.localizedDescription) totalMs=\(Self.msSince(t0))")
         }
+    }
+
+    /// Dopo login può esserci una finestra in cui `users/{uid}/memberships` è ancora vuota.
+    /// Esegue retry con backoff breve prima di concludere "nessuna famiglia".
+    private func fetchMembershipsWithRetry(trace: String) async throws -> [RemoteMembershipRead] {
+        // 1 tentativo immediato + retry progressivi (~8.6s totali)
+        let delaysMs: [UInt64] = [0, 250, 500, 900, 1400, 2200, 3300]
+        var lastError: Error?
+        
+        for (index, delayMs) in delaysMs.enumerated() {
+            if delayMs > 0 {
+                try? await Task.sleep(nanoseconds: delayMs * 1_000_000)
+            }
+            
+            do {
+                let list = try await memberships.fetchMembershipsForCurrentUser()
+                KBLog.sync.kbDebug("[\(trace)] memberships attempt=\(index + 1)/\(delaysMs.count) count=\(list.count)")
+                if !list.isEmpty {
+                    return list
+                }
+            } catch {
+                lastError = error
+                KBLog.sync.kbError("[\(trace)] memberships attempt=\(index + 1)/\(delaysMs.count) failed err=\(error.localizedDescription)")
+            }
+        }
+        
+        if let lastError {
+            throw lastError
+        }
+        
+        return []
     }
     
     // MARK: - Upsert helpers
@@ -513,4 +580,10 @@ private extension FamilyBootstrapService {
     static func trace(_ prefix: String) -> String { "\(prefix)\(String(UUID().uuidString.prefix(8)))" }
     static func now() -> CFAbsoluteTime { CFAbsoluteTimeGetCurrent() }
     static func msSince(_ start: CFAbsoluteTime) -> Int { Int((CFAbsoluteTimeGetCurrent() - start) * 1000.0) }
+    
+    static func isPermissionDenied(_ error: Error) -> Bool {
+        let ns = error as NSError
+        return ns.domain == FirestoreErrorDomain &&
+            ns.code == FirestoreErrorCode.permissionDenied.rawValue
+    }
 }
