@@ -63,6 +63,7 @@ final class NotificationManager: NSObject, ObservableObject {
         case treatmentReminder(familyId: String, childId: String, treatmentId: String)
         case examReminder(familyId: String, childId: String, examId: String)
         case expense(familyId: String, expenseId: String)
+        case walletTicket(familyId: String, ticketId: String)
         /// Apre PlanningAIChatView — usato dalla sintesi settimanale AI
         case askExpert
     }
@@ -194,6 +195,17 @@ final class NotificationManager: NSObject, ObservableObject {
         } else if type == "weekly_summary" {
             pendingDeepLink = .askExpert
             KBLog.auth.kbInfo("DeepLink set for weeklySummary → askExpert")
+
+        } else if type == "new_wallet_ticket" || type == "wallet_ticket_reminder" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let ticketId = userInfo["ticketId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid wallet ticket payload (missing ids)")
+                return
+            }
+            pendingDeepLink = .walletTicket(familyId: familyId, ticketId: ticketId)
+            KBLog.auth.kbInfo("DeepLink set for walletTicket familyId=\(familyId) ticketId=\(ticketId)")
         }
     }
     
@@ -333,7 +345,66 @@ final class NotificationManager: NSObject, ObservableObject {
             try await enablePushNotificationsForCurrentUser()
         }
     }
-    
+
+    // MARK: - Wallet notification preferences
+
+    /// "Nuovo biglietto Wallet aggiunto": push triggerata dalla CF
+    /// `notifyNewWalletTicket`. Default ON.
+    func fetchNotifyOnNewWalletTicketPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnNewWalletTicket"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+
+    func setNotifyOnNewWalletTicket(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewWalletTicket": enabled]
+        ], merge: true)
+
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+
+    /// Promemoria Wallet (T-24h, T-2h, ecc.) — sia push (CF schedulata
+    /// `notifyUpcomingWalletTickets`) sia notifiche locali schedulate da
+    /// `WalletReminderService`. Default ON.
+    func fetchNotifyOnWalletReminderPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnWalletReminder"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+
+    func setNotifyOnWalletReminder(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnWalletReminder": enabled]
+        ], merge: true)
+
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+
     // MARK: - Existing preferences (unchanged)
     
     /// Clears current deep link after navigation is handled.

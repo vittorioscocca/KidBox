@@ -42,6 +42,41 @@ async function updateStorageBytes(familyId, delta, section = null) {
 }
 
 /**
+ * Returns wallet ticket PDF size in bytes (>= 0).
+ * @param {object|null} data
+ * @return {number}
+ */
+function walletPdfBytes(data) {
+  const raw = data?.pdfStorageBytes;
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) return 0;
+  return Math.round(raw);
+}
+
+/**
+ * Resolves wallet PDF size, with fallback to Storage metadata for legacy docs.
+ * @param {string} familyId
+ * @param {string} ticketId
+ * @param {object|null} data
+ * @return {Promise<number>}
+ */
+async function resolveWalletPdfBytes(familyId, ticketId, data) {
+  const explicit = walletPdfBytes(data);
+  if (explicit > 0) return explicit;
+
+  const path = `families/${familyId}/wallet/${ticketId}/ticket.pdf.kbenc`;
+  try {
+    const bucket = admin.storage().bucket(STORAGE_BUCKET);
+    const [meta] = await bucket.file(path).getMetadata();
+    const size = Number(meta?.size || 0);
+    if (!Number.isFinite(size) || size <= 0) return 0;
+    return Math.round(size);
+  } catch (e) {
+    logger.warn("resolveWalletPdfBytes: metadata lookup failed", {familyId, ticketId, path, err: e.message});
+    return 0;
+  }
+}
+
+/**
  * Sums notification counters from the given data.
  * @param {object} data - The counter data object.
  * @return {object}
@@ -55,9 +90,10 @@ function sumCounters(data) {
   const notes = data?.notes || 0;
   const calendar = data?.calendar || 0;
   const expenses = data?.expenses || 0;
+  const wallet = data?.wallet || 0;
 
-  const total = chat + documents + location + todos + shopping + notes + calendar + expenses;
-  return {chat, documents, location, todos, shopping, notes, calendar, expenses, total};
+  const total = chat + documents + location + todos + shopping + notes + calendar + expenses + wallet;
+  return {chat, documents, location, todos, shopping, notes, calendar, expenses, wallet, total};
 }
 
 /**
@@ -89,10 +125,11 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
       notes: counters.notes + (field === "notes" ? 1 : 0),
       calendar: counters.calendar + (field === "calendar" ? 1 : 0),
       expenses: counters.expenses + (field === "expenses" ? 1 : 0),
+      wallet: counters.wallet + (field === "wallet" ? 1 : 0),
     };
 
     let badge = Math.floor(
-        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes + next.calendar + next.expenses,
+        next.chat + next.documents + next.location + next.todos + next.shopping + next.notes + next.calendar + next.expenses + next.wallet,
     );
 
     if (!Number.isFinite(badge) || badge < 0) badge = 0;
@@ -1358,6 +1395,7 @@ exports.getStorageUsage = onCall(
         quotaBytes: 200 * 1024 * 1024,
         sections: {
           documents: Math.max(0, Math.round(rawSections.documents || 0)),
+          wallet: Math.max(0, Math.round(rawSections.wallet || 0)),
           chat: Math.max(0, Math.round(rawSections.chat || 0)),
           photos: Math.max(0, Math.round(rawSections.photos || 0)),
           salute: Math.max(0, Math.round(rawSections.salute || 0)),
@@ -1375,6 +1413,7 @@ exports.getStorageUsage = onCall(
 //
 // Conteggio per sezione:
 // • documents → fileSize reale da KBDocument
+// • wallet    → pdfStorageBytes reale da walletTickets (PDF cifrato su Storage)
 // • chat      → mediaFileSize reale per ogni messaggio con media;
 //               fallback 512KB per messaggi senza il campo (retrocompatibilità)
 //               I messaggi di testo NON occupano Firebase Storage.
@@ -1419,6 +1458,18 @@ exports.initStorageUsage = onCall(
         const size = d.get("fileSize");
         if (typeof size === "number" && size > 0) docBytes += size;
       });
+
+      // ── 1b. Wallet (pdfStorageBytes reale) ────────────────────────────────
+      const walletSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("walletTickets")
+          .where("isDeleted", "==", false)
+          .get();
+
+      let walletBytes = 0;
+      for (const d of walletSnap.docs) {
+        walletBytes += await resolveWalletPdfBytes(familyId, d.id, d.data());
+      }
 
       // ── 2. Chat media (mediaFileSize reale, fallback 512KB) ────────────────
       const chatSnap = await admin.firestore()
@@ -1471,12 +1522,13 @@ exports.initStorageUsage = onCall(
       const expensesBytes = 0;
 
       // ── Totale ────────────────────────────────────────────────────────────
-      const totalBytes = docBytes + chatBytes + photoBytes + saluteBytes + expensesBytes;
+      const totalBytes = docBytes + walletBytes + chatBytes + photoBytes + saluteBytes + expensesBytes;
 
       await storageStatsRef(familyId).set({
         usedBytes: totalBytes,
         sections: {
           documents: docBytes,
+          wallet: walletBytes,
           chat: chatBytes,
           photos: photoBytes,
           salute: saluteBytes,
@@ -1487,10 +1539,20 @@ exports.initStorageUsage = onCall(
         initializedBy: uid,
       }, {merge: false});
 
-      logger.info("initStorageUsage: completed", {familyId, docBytes, chatBytes, photoBytes, saluteBytes, expensesBytes, totalBytes});
+      logger.info("initStorageUsage: completed", {
+        familyId,
+        docBytes,
+        walletBytes,
+        chatBytes,
+        photoBytes,
+        saluteBytes,
+        expensesBytes,
+        totalBytes,
+      });
 
       return {
         docBytes,
+        walletBytes,
         chatBytes,
         photoBytes,
         saluteBytes,
@@ -1530,8 +1592,9 @@ exports.initStorageUsageAdmin = onCall(
       for (const familyDoc of familiesSnap.docs) {
         const familyId = familyDoc.id;
 
-        const [docsSnap, chatSnap, photosSnap, visitsSnap] = await Promise.all([
+        const [docsSnap, walletSnap, chatSnap, photosSnap, visitsSnap] = await Promise.all([
           db.collection("families").doc(familyId).collection("documents").where("isDeleted", "==", false).get(),
+          db.collection("families").doc(familyId).collection("walletTickets").where("isDeleted", "==", false).get(),
           db.collection("families").doc(familyId).collection("chatMessages").where("isDeleted", "==", false).get(),
           db.collection("families").doc(familyId).collection("photos").where("isDeleted", "==", false).get(),
           db.collection("families").doc(familyId).collection("medicalVisits").where("isDeleted", "==", false).get(),
@@ -1542,6 +1605,11 @@ exports.initStorageUsageAdmin = onCall(
           const size = d.get("fileSize");
           if (typeof size === "number" && size > 0) docBytes += size;
         });
+
+        let walletBytes = 0;
+        for (const d of walletSnap.docs) {
+          walletBytes += await resolveWalletPdfBytes(familyId, d.id, d.data());
+        }
 
         let chatBytes = 0;
         chatSnap.forEach((d) => {
@@ -1567,12 +1635,19 @@ exports.initStorageUsageAdmin = onCall(
           }
         });
 
-        const totalBytes = docBytes + chatBytes + photoBytes + saluteBytes;
+        const totalBytes = docBytes + walletBytes + chatBytes + photoBytes + saluteBytes;
         grandTotalBytes += totalBytes;
 
         await storageStatsRef(familyId).set({
           usedBytes: totalBytes,
-          sections: {documents: docBytes, chat: chatBytes, photos: photoBytes, salute: saluteBytes, expenses: 0},
+          sections: {
+            documents: docBytes,
+            wallet: walletBytes,
+            chat: chatBytes,
+            photos: photoBytes,
+            salute: saluteBytes,
+            expenses: 0,
+          },
           lastUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
           initializedAt: admin.firestore.FieldValue.serverTimestamp(),
           initializedBy: uid,
@@ -1806,6 +1881,7 @@ exports.garbageCollectDeleted = onSchedule(
       let totalDocsDeleted = 0;
       let totalChatDeleted = 0;
       let totalPhotosDeleted = 0;
+      let totalWalletDeleted = 0;
 
       for (const familyDoc of familiesSnap.docs) {
         const familyId = familyDoc.id;
@@ -1889,13 +1965,338 @@ exports.garbageCollectDeleted = onSchedule(
           await photo.ref.delete();
           totalPhotosDeleted++;
         }
+
+        // ── 4. Wallet tickets soft-deleted ─────────────────────────────────────
+        // Cleanup del PDF cifrato su Storage (path:
+        // families/{familyId}/wallet/{ticketId}/ticket.pdf.kbenc) e del doc Firestore.
+        const walletSnap = await db.collection("families").doc(familyId)
+            .collection("walletTickets")
+            .where("isDeleted", "==", true)
+            .get();
+
+        logger.info("GC: walletTickets to delete", {familyId, count: walletSnap.size});
+
+        for (const ticket of walletSnap.docs) {
+          const ticketId = ticket.id;
+          const pdfPath = `families/${familyId}/wallet/${ticketId}/ticket.pdf.kbenc`;
+
+          try {
+            await bucket.file(pdfPath).delete();
+            logger.info("GC: deleted wallet PDF blob", {familyId, ticketId, pdfPath});
+          } catch (e) {
+            if (e.code !== 404) logger.warn("GC: wallet PDF delete failed", {familyId, ticketId, pdfPath, err: e.message});
+          }
+
+          await ticket.ref.delete();
+          totalWalletDeleted++;
+        }
       }
 
       logger.info("garbageCollectDeleted: complete", {
         totalDocsDeleted,
         totalChatDeleted,
         totalPhotosDeleted,
+        totalWalletDeleted,
         families: familiesSnap.size,
       });
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WALLET
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Tracking storage wallet (PDF cifrati):
+// - create/restore ticket   -> +pdfStorageBytes
+// - soft/hard delete ticket -> -pdfStorageBytes
+// - update ticket live      -> delta(after-before)
+exports.onWalletTicketStorageChanged = onDocumentWritten(
+    {
+      document: "families/{familyId}/walletTickets/{ticketId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const ticketId = event.params.ticketId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      const beforeLive = !!before && before.isDeleted !== true;
+      const afterLive = !!after && after.isDeleted !== true;
+      const beforeBytes = beforeLive ? await resolveWalletPdfBytes(familyId, ticketId, before) : 0;
+      const afterBytes = afterLive ? await resolveWalletPdfBytes(familyId, ticketId, after) : 0;
+
+      let delta = 0;
+      if (!beforeLive && afterLive) {
+        delta = afterBytes;
+      } else if (beforeLive && !afterLive) {
+        delta = -beforeBytes;
+      } else if (beforeLive && afterLive) {
+        delta = afterBytes - beforeBytes;
+      }
+
+      if (delta === 0) return;
+
+      if (afterLive && after && walletPdfBytes(after) === 0 && afterBytes > 0) {
+        await event.data.after.ref.set({pdfStorageBytes: afterBytes}, {merge: true});
+      }
+
+      logger.info("onWalletTicketStorageChanged: tracking delta", {
+        familyId,
+        ticketId,
+        delta,
+        beforeBytes,
+        afterBytes,
+      });
+      await updateStorageBytes(familyId, delta, "wallet");
+    },
+);
+
+/**
+ * Returns a short, human-readable label for a wallet ticket kind.
+ * Keep in sync with iOS `KBWalletTicketKind.displayName`.
+ * @param {string|null|undefined} kindRaw
+ * @return {string}
+ */
+function walletKindLabel(kindRaw) {
+  switch ((kindRaw || "").toLowerCase()) {
+    case "train": return "Treno";
+    case "flight": return "Volo";
+    case "ferry": return "Traghetto";
+    case "bus": return "Autobus";
+    case "concert": return "Concerto";
+    case "cinema": return "Cinema";
+    case "parking": return "Parcheggio";
+    case "museum": return "Museo";
+    default: return "Biglietto";
+  }
+}
+
+/**
+ * Formats a Date as "dd/MM HH:mm" in Europe/Rome.
+ * @param {Date} date
+ * @return {string}
+ */
+function formatWalletDate(date) {
+  try {
+    return new Intl.DateTimeFormat("it-IT", {
+      day: "2-digit", month: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "Europe/Rome",
+    }).format(date);
+  } catch (_) {
+    return date.toISOString();
+  }
+}
+
+// Notifica i membri della famiglia all'aggiunta di un nuovo biglietto wallet.
+// I campi testuali (title, location, ecc.) sono cifrati end-to-end lato client,
+// quindi il body usa solo metadati plaintext (kind, eventDate, createdByName).
+exports.notifyNewWalletTicket = onDocumentCreated(
+    {
+      document: "families/{familyId}/walletTickets/{ticketId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const ticketId = event.params.ticketId;
+
+      const ticketData = event.data ? event.data.data() : null;
+      if (!ticketData) {
+        logger.warn("notifyNewWalletTicket: missing ticket data"); return;
+      }
+      if (ticketData.isDeleted) {
+        logger.info("notifyNewWalletTicket: isDeleted=true, skip", {familyId, ticketId}); return;
+      }
+
+      const creatorUid = ticketData.createdBy || ticketData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewWalletTicket: missing creatorUid", {familyId, ticketId}); return;
+      }
+
+      logger.info("notifyNewWalletTicket triggered", {familyId, ticketId, creatorUid});
+
+      const membersSnap = await admin.firestore()
+          .collection("families").doc(familyId).collection("members").get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewWalletTicket: members subcollection is empty", {familyId}); return;
+      }
+
+      const memberUids = membersSnap.docs.map((d) => d.id).filter((uid) => uid && uid !== creatorUid);
+      if (memberUids.length === 0) {
+        logger.info("notifyNewWalletTicket: no targets (only creator)", {familyId}); return;
+      }
+
+      const creatorName = (ticketData.createdByName || "").trim();
+      const kindLabel = walletKindLabel(ticketData.kind);
+      const emitter = (ticketData.emitter || "").toString().trim();
+      // "Trenitalia · Treno" se emitter presente, altrimenti "Treno"
+      const kindWithEmitter = emitter ? `${emitter} · ${kindLabel}` : kindLabel;
+      const eventDate = ticketData.eventDate?.toDate ? ticketData.eventDate.toDate() : null;
+
+      const title = "🎟️ Nuovo biglietto nel Wallet";
+      const bodyPrefix = creatorName ? `${creatorName} · ${kindWithEmitter}` : kindWithEmitter;
+      const body = eventDate ? `${bodyPrefix} — ${formatWalletDate(eventDate)}` : bodyPrefix;
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewWalletTicket");
+        if (tokens.length === 0) {
+          logger.info("notifyNewWalletTicket: user opted out or no tokens", {uid}); continue;
+        }
+
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "wallet"});
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {type: "new_wallet_ticket", familyId, ticketId},
+          apns: {payload: {aps: {badge, sound: "default"}}},
+          android: {notification: {sound: "default"}},
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewWalletTicket: no per-user notifications to send", {familyId}); return;
+      }
+
+      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
+      let totalSuccess = 0; let totalFailure = 0;
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+      logger.info("notifyNewWalletTicket: send result", {familyId, ticketId, successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
+    },
+);
+
+// Scheduler orario: invia promemoria per biglietti wallet imminenti.
+// Finestre: T-24h (23h30–24h30) e T-2h (1h30–2h30). Usa i flag
+// `reminded24h` / `reminded2h` sul doc per evitare duplicati (idempotenza
+// garantita a livello di documento, indipendentemente dal numero di membri).
+exports.notifyUpcomingWalletTickets = onSchedule(
+    {
+      schedule: "every 60 minutes",
+      region: "europe-west1",
+      timeZone: "Europe/Rome",
+    },
+    async () => {
+      const db = admin.firestore();
+      const now = new Date();
+      const nowTs = admin.firestore.Timestamp.fromDate(now);
+
+      // Finestra massima: i prossimi 25 ore (copre 24h +30min).
+      const upperBound = admin.firestore.Timestamp.fromDate(
+          new Date(now.getTime() + 25 * 60 * 60 * 1000),
+      );
+
+      logger.info("notifyUpcomingWalletTickets: start", {now: now.toISOString()});
+
+      const snap = await db.collectionGroup("walletTickets")
+          .where("isDeleted", "==", false)
+          .where("eventDate", ">=", nowTs)
+          .where("eventDate", "<=", upperBound)
+          .get();
+
+      if (snap.empty) {
+        logger.info("notifyUpcomingWalletTickets: no upcoming tickets");
+        return;
+      }
+
+      logger.info("notifyUpcomingWalletTickets: scanning", {count: snap.size});
+
+      let total24h = 0; let total2h = 0;
+
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        const ref = doc.ref;
+
+        // Parent path: families/{familyId}/walletTickets/{ticketId}
+        const pathParts = ref.path.split("/");
+        const familyId = pathParts[1];
+        const ticketId = doc.id;
+
+        const eventDate = data.eventDate?.toDate?.();
+        if (!eventDate) continue;
+
+        const diffMs = eventDate.getTime() - now.getTime();
+        const diffH = diffMs / (60 * 60 * 1000);
+
+        let windowType = null;
+        if (diffH >= 23.5 && diffH <= 24.5 && !data.reminded24h) {
+          windowType = "24h";
+        } else if (diffH >= 1.5 && diffH <= 2.5 && !data.reminded2h) {
+          windowType = "2h";
+        } else {
+          continue;
+        }
+
+        const kindLabel = walletKindLabel(data.kind);
+        const emitter = (data.emitter || "").toString().trim();
+        const kindWithEmitter = emitter ? `${emitter} · ${kindLabel}` : kindLabel;
+        const title = windowType === "24h" ?
+          "⏰ Biglietto domani" :
+          "⏰ Biglietto tra 2 ore";
+        const body = `${kindWithEmitter} — ${formatWalletDate(eventDate)}`;
+
+        const membersSnap = await db.collection("families").doc(familyId).collection("members").get();
+        if (membersSnap.empty) {
+          logger.warn("notifyUpcomingWalletTickets: no members", {familyId, ticketId}); continue;
+        }
+
+        const memberUids = membersSnap.docs.map((d) => d.id).filter(Boolean);
+        if (memberUids.length === 0) continue;
+
+        const messagesToSend = [];
+        for (const uid of memberUids) {
+          const tokens = await getUserTokensIfEnabled(uid, "notifyOnWalletReminder");
+          if (tokens.length === 0) continue;
+
+          // NOTA: niente incrementCounterAndGetBadge qui — un reminder non è
+          // un nuovo elemento in app, quindi il contatore wallet non cresce.
+          // Il badge sistema verrà rinfrescato dal client all'apertura.
+          messagesToSend.push({
+            tokens,
+            notification: {title, body},
+            data: {type: "wallet_ticket_reminder", familyId, ticketId, window: windowType},
+            apns: {payload: {aps: {sound: "default"}}},
+            android: {notification: {sound: "default"}},
+          });
+        }
+
+        if (messagesToSend.length > 0) {
+          const results = await Promise.allSettled(
+              messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)),
+          );
+          let ok = 0; let ko = 0;
+          results.forEach((r) => {
+            if (r.status === "fulfilled") {
+              ok += r.value.successCount; ko += r.value.failureCount;
+            } else {
+              ko += 1;
+            }
+          });
+          logger.info("notifyUpcomingWalletTickets: sent", {familyId, ticketId, window: windowType, ok, ko, targets: messagesToSend.length});
+        }
+
+        // Idempotenza: flag il doc come promemoria inviato per questa finestra.
+        const flagField = windowType === "24h" ? "reminded24h" : "reminded2h";
+        try {
+          await ref.set({
+            [flagField]: true,
+            [`${flagField}At`]: admin.firestore.FieldValue.serverTimestamp(),
+          }, {merge: true});
+        } catch (e) {
+          logger.warn("notifyUpcomingWalletTickets: flag write failed", {familyId, ticketId, window: windowType, err: e.message});
+        }
+
+        if (windowType === "24h") total24h++; else total2h++;
+      }
+
+      logger.info("notifyUpcomingWalletTickets: complete", {total24h, total2h});
     },
 );

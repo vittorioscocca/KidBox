@@ -26,6 +26,7 @@ final class BadgeManager: ObservableObject {
     @Published var notes: Int = 0      // ← NEW
     @Published var calendar: Int = 0
     @Published var expenses: Int = 0   // ← NEW
+    @Published var wallet: Int = 0     // ← NEW (biglietti Wallet non letti / in arrivo)
     
     private var listener: ListenerRegistration?
     
@@ -60,6 +61,7 @@ final class BadgeManager: ObservableObject {
                 let notesCount    = data["notes"]     as? Int ?? 0
                 let calendarCount = data["calendar"]  as? Int ?? 0
                 let expensesCount = data["expenses"]  as? Int ?? 0
+                let walletCount   = data["wallet"]    as? Int ?? 0
                 
                 Task {
                     await MainActor.run {
@@ -71,6 +73,7 @@ final class BadgeManager: ObservableObject {
                         if !self.activeSections.contains("notes")     { self.notes     = notesCount }
                         if !self.activeSections.contains("calendar")  { self.calendar  = calendarCount }
                         if !self.activeSections.contains("expenses")  { self.expenses  = expensesCount }
+                        if !self.activeSections.contains("wallet")    { self.wallet    = walletCount }
                         self.refreshAppBadge()
                     }
                 }
@@ -83,7 +86,7 @@ final class BadgeManager: ObservableObject {
     }
     
     func refreshAppBadge() {
-        let total = chat + documents + location + todos + shopping + notes + calendar + expenses
+        let total = chat + documents + location + todos + shopping + notes + calendar + expenses + wallet
         UNUserNotificationCenter.current().setBadgeCount(total) { error in
             if let error {
                 print("Failed to set badge count:", error)
@@ -99,4 +102,5 @@ final class BadgeManager: ObservableObject {
     @MainActor func clearNotes()     { self.notes     = 0 }
     @MainActor func clearCalendar()  { self.calendar  = 0 }
     @MainActor func clearExpenses()  { self.expenses  = 0 }
+    @MainActor func clearWallet()    { self.wallet    = 0 }
 }

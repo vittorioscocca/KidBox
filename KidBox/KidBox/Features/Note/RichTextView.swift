@@ -59,12 +59,16 @@ struct RichTextView: UIViewRepresentable {
             context.coordinator.handlePastePlainText(pasted, in: tv)
         }
         
-        if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont) {
+        if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont),
+           attr.length > 0 {
             tv.attributedText = attr
         } else if !placeholder.isEmpty {
             tv.text      = placeholder
             tv.textColor = .secondaryLabel
             tv.font      = baseFont
+            // Segnala al Coordinator che il testo attuale è il placeholder,
+            // così `textViewDidBeginEditing` lo ripulirà al primo focus.
+            context.coordinator.isShowingPlaceholder = true
         }
         
         // ✅ Accessory view: NON usare translatesAutoresizingMaskIntoConstraints=false
@@ -97,11 +101,30 @@ struct RichTextView: UIViewRepresentable {
             DispatchQueue.main.async { uiView.becomeFirstResponder() }
         }
         
+        // Se stiamo mostrando il placeholder e il binding è ancora vuoto, NON
+        // sovrascrivere il textStorage: altrimenti cancelleremmo il placeholder
+        // visibile e lasceremmo l'editor apparentemente "morto".
+        if context.coordinator.isShowingPlaceholder,
+           html.isEmpty {
+            return
+        }
+        
         let currentHTML = uiView.attributedText.toHTML() ?? ""
         guard currentHTML != html else { return }
-        if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont) {
+        if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont),
+           attr.length > 0 {
+            // ⚠️ Importante: siamo in stato "placeholder" solo se il textStorage
+            //     contiene il placeholder. Ora stiamo per sovrascrivere con il
+            //     contenuto reale: resettiamo il flag, altrimenti il prossimo
+            //     `textViewDidBeginEditing` cancellerebbe il testo appena
+            //     caricato con `textView.text = ""`.
+            context.coordinator.isShowingPlaceholder = false
             uiView.attributedText = attr
         }
+        // Se il binding è vuoto / non parsabile e il textView non è first
+        // responder, lascia che sia `textViewDidEndEditing` (o il prossimo
+        // makeUIView) a installare il placeholder. Non lo installiamo qui per
+        // non sostituire il contenuto mentre l'utente sta ancora digitando.
     }
     
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -112,7 +135,12 @@ struct RichTextView: UIViewRepresentable {
         let parent: RichTextView
         var isProgrammaticUpdate = false
         var lastFocusTrigger: UUID? = nil
-        private var isShowingPlaceholder = false
+        // ℹ️ Visibile dal `RichTextView` così che `makeUIView` possa marcare lo
+        //    stato "placeholder attivo" al primo setup (altrimenti
+        //    `textViewDidBeginEditing` non pulisce il testo placeholder e la
+        //    checklist inserita tramite toolbar finisce davanti al placeholder
+        //    invisibilmente in secondaryLabel).
+        var isShowingPlaceholder = false
         
         init(_ parent: RichTextView) { self.parent = parent }
         
@@ -184,7 +212,7 @@ struct RichTextView: UIViewRepresentable {
                     clearCurrentLine(tv, paraRange: para); return false
                 }
                 insertAttributedContinuation(tv, prefix: NSAttributedString(string: "○ ", attributes: [
-                    .font: UIFont.systemFont(ofSize: 20),
+                    .font: UIFont.systemFont(ofSize: CHECKLIST_CIRCLE_FONT_SIZE),
                     .foregroundColor: UIColor.secondaryLabel
                 ]), paragraphRange: para)
                 return false
@@ -517,7 +545,36 @@ extension NSAttributedString {
                                  range: range)
             }
         }
-        
+
+        // 5) Re-styling delle righe checklist: il font grande del cerchio ○/◉
+        //    non viene salvato nell'HTML (vedi `toHTML()`), quindi lo rimettiamo
+        //    qui al load, insieme al colore giusto e al paragraphStyle con
+        //    indent wrapped corretto.
+        let ns = raw.string as NSString
+        var idx = 0
+        while idx < ns.length {
+            let para = ns.paragraphRange(for: NSRange(location: idx, length: 0))
+            guard para.length > 0 else { break }
+            let firstChar = ns.substring(with: NSRange(location: para.location, length: 1))
+            if firstChar == "○" || firstChar == "◉" {
+                let circleRange = NSRange(location: para.location, length: 1)
+                raw.addAttribute(.font,
+                                 value: UIFont.systemFont(ofSize: CHECKLIST_CIRCLE_FONT_SIZE),
+                                 range: circleRange)
+                raw.addAttribute(.foregroundColor,
+                                 value: firstChar == "◉" ? UIColor.systemGreen
+                                                         : UIColor.secondaryLabel,
+                                 range: circleRange)
+
+                let ps = NSMutableParagraphStyle()
+                applyChecklistParagraphStyle(ps)
+                raw.addAttribute(.paragraphStyle, value: ps, range: para)
+            }
+            let next = para.location + para.length
+            if next <= idx { break }
+            idx = next
+        }
+
         return raw
     }
     
@@ -532,12 +589,42 @@ extension NSAttributedString {
     }
     
     func toHTML() -> String? {
+        // ⚠️ Strategia simmetrica ad Android: il font grande del cerchio
+        //     checklist NON viene serializzato nell'HTML (tanto il sanitizer
+        //     cross-platform rimuove `<head><style>` e le `class="…"` con cui
+        //     `NSAttributedString.data(...)` esprime il font-size, quindi
+        //     finirebbe perso comunque). Al load, `fromHTML` riapplica il
+        //     `CHECKLIST_CIRCLE_FONT_SIZE` a ogni `○`/`◉` di inizio riga.
+        let cleaned = NSMutableAttributedString(attributedString: self)
+        if cleaned.length > 0 {
+            let ns = cleaned.string as NSString
+            var idx = 0
+            while idx < ns.length {
+                let para = ns.paragraphRange(for: NSRange(location: idx, length: 0))
+                if para.length > 0 {
+                    let first = ns.substring(with: NSRange(location: para.location, length: 1))
+                    if first == "○" || first == "◉" {
+                        cleaned.removeAttribute(.font,
+                                                range: NSRange(location: para.location, length: 1))
+                    }
+                }
+                let next = para.location + para.length
+                if next <= idx { break }
+                idx = next
+            }
+        }
+
         let options: [NSAttributedString.DocumentAttributeKey: Any] = [
             .documentType: NSAttributedString.DocumentType.html,
             .characterEncoding: String.Encoding.utf8.rawValue
         ]
-        guard let data = try? data(from: NSRange(location: 0, length: length),
-                                   documentAttributes: options) else { return nil }
-        return String(data: data, encoding: .utf8)
+        guard let data = try? cleaned.data(from: NSRange(location: 0, length: cleaned.length),
+                                           documentAttributes: options),
+              let raw = String(data: data, encoding: .utf8) else { return nil }
+        // Rendi l'HTML cross-platform: rimuovi <head>/<style>/class="..."
+        // così che Android (HtmlCompat.fromHtml) possa renderizzarlo senza
+        // mostrare il CSS come testo. I tag base (b/i/u/p/br/ul/li/span style…)
+        // rimangono, così il rendering è equivalente anche su iOS.
+        return NoteHtmlSanitizer.sanitizeCrossPlatform(raw)
     }
 }

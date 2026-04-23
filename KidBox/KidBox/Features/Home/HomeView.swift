@@ -408,6 +408,7 @@ enum HomeDestination {
     case notes(familyId: String), todo, calendar(familyId: String), care
     case chat, document
     case expenses(familyId: String)
+    case wallet(familyId: String)
     case familyLocation(familyId: String), familyPhotos(familyId: String), familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
     case pediatric(familyId: String, childId: String)
@@ -422,6 +423,7 @@ enum HomeDestination {
         case .chat:                          return .chat
         case .document:                      return .document
         case .expenses(let familyId):        return .expensesHome(familyId: familyId)
+        case .wallet(let familyId):          return .walletHome(familyId: familyId)
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
         case .familyPhotos(let familyId):    return .familyPhotos(familyId: familyId)
         case .familySettings:                return .familySettings
@@ -497,6 +499,7 @@ private enum HomeCardID: String, CaseIterable, Codable {
     case chat
     case documents
     case expenses
+    case wallet
     case location
     case photos
     case family
@@ -680,6 +683,24 @@ private struct HomeCardGrid: View {
                 }
             }
             
+        case .wallet:
+            HomeCardView(title: "Wallet", subtitle: "Biglietti e prenotazioni", systemImage: "ticket.fill", tint: .indigo) {
+                KBLog.navigation.debug("Home: tap Wallet")
+                FABUsageTracker.shared.record("wallet")
+                Task {
+                    BadgeManager.shared.clearWallet()
+                    await CountersService.shared.reset(familyId: familyId, field: .wallet)
+                }
+                onNavigate(.wallet(familyId: familyId))
+            }
+            .overlay(alignment: .topTrailing) {
+                if badge.wallet > 0 {
+                    BadgeView(count: badge.wallet)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            }
+
         case .location:
             ZStack {
                 HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
@@ -755,7 +776,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .location, .photos, .family, .expert]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .location, .photos, .family, .expert]
     }
     
     private func loadOrder() -> [HomeCardID]? {

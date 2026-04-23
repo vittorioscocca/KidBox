@@ -235,6 +235,20 @@ struct KidBoxApp: App {
                             KBLog.navigation.kbInfo("Deep link -> open planning AI chat (weekly summary)")
                             coordinator.navigate(to: .askExpert)
                             NotificationManager.shared.consumeDeepLink()
+
+                        case .walletTicket(let familyId, let ticketId):
+                            KBLog.navigation.kbInfo("Deep link -> open wallet ticket ticketId=\(ticketId)")
+                            coordinator.setActiveFamily(familyId)
+                            Task { @MainActor in
+                                BadgeManager.shared.clearWallet()
+                                await CountersService.shared.reset(familyId: familyId, field: .wallet)
+                            }
+                            coordinator.openWalletTicketFromPush(
+                                familyId: familyId,
+                                ticketId: ticketId,
+                                modelContext: modelContainer.mainContext
+                            )
+                            NotificationManager.shared.consumeDeepLink()
                         }
                         notifications.consumeDeepLink()
                         KBLog.auth.kbDebug("Deep link consumed")
@@ -269,6 +283,13 @@ struct KidBoxApp: App {
                 SyncCenter.shared.flushGlobal(modelContext: context)
                 BadgeManager.shared.refreshAppBadge()
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
+
+                // Safety net: se la Share Extension ha salvato un "pendingShare"
+                // nell'App Group ma il deep link kidbox://share non è stato
+                // consegnato (può succedere: UIApplication.open dal responder
+                // chain può fallire silenziosamente), drenalo qui comunque.
+                // handleIncomingShare è idempotente: no-op se la chiave è vuota.
+                coordinator.handleIncomingShare(modelContext: context)
                 // ── Rischedula notifiche cure (finestra scorrevole) ──────────────
                 // Avanza la finestra di 7 giorni se le notifiche pendenti sono poche.
                 Task {

@@ -161,7 +161,7 @@ final class StorageUsageViewModel: ObservableObject {
     private static let storageOnlySections: Set<String> = ["chat", "photos"]
     
     private func mergedSections(remote: [KBStorageSection], local: [KBStorageSection]) -> [KBStorageSection] {
-        let allIds = ["photos", "documents", "chat", "salute", "expenses", "notes", "calendar", "todo"]
+        let allIds = ["photos", "documents", "wallet", "chat", "salute", "expenses", "notes", "calendar", "todo"]
         
         // Nota: buildSections filtra già { bytes > 0 }, quindi sezioni con 0 su Firebase
         // non sono nel remoteMap. Per questo usiamo la raw map da tutti gli id.
@@ -215,6 +215,7 @@ final class StorageUsageViewModel: ObservableObject {
         return [
             KBStorageSection(id: "photos",    name: "Foto e video",  icon: "photo.on.rectangle.angled",         color: "FF6B9D", bytes: bytes("photos"),    recordCount: 0),
             KBStorageSection(id: "documents", name: "Documenti",     icon: "doc.fill",                          color: "5B8FDE", bytes: bytes("documents"), recordCount: 0),
+            KBStorageSection(id: "wallet",    name: "Wallet",        icon: "wallet.pass.fill",                 color: "3E7BFA", bytes: bytes("wallet"),    recordCount: 0),
             KBStorageSection(id: "chat",      name: "Chat",           icon: "bubble.left.and.bubble.right.fill", color: "34C759", bytes: bytes("chat"),      recordCount: 0),
             KBStorageSection(id: "salute",    name: "Salute",         icon: "stethoscope",                       color: "FF6B6B", bytes: bytes("salute"),    recordCount: 0),
             KBStorageSection(id: "expenses",  name: "Spese",          icon: "eurosign.circle.fill",              color: "FF9500", bytes: bytes("expenses"),  recordCount: 0),
@@ -234,6 +235,8 @@ final class StorageUsageViewModel: ObservableObject {
     // documents → fileSize reale da KBDocument. Le spese con attachedDocumentId puntano
     //             a KBDocument → già contate qui, nessun doppio conteggio.
     //
+    // wallet    → byte reali del PDF cifrato (`KBWalletTicket.pdfStorageBytes`).
+    //
     // photos    → fileSize reale da KBFamilyPhoto (album condiviso).
     //
     // salute    → solo KBMedicalVisit.photoURLs (foto allegate alla visita).
@@ -250,6 +253,14 @@ final class StorageUsageViewModel: ObservableObject {
         // Documenti (fileSize reale)
         let docCount     = fetchCount(modelContext: modelContext, predicate: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false })
         let docFileBytes = fetchSum(modelContext: modelContext,   predicate: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false }, value: { $0.fileSize })
+
+        // Wallet (PDF cifrati su Storage, bytes reali quando disponibili)
+        let walletCount = fetchCount(modelContext: modelContext, predicate: #Predicate<KBWalletTicket> {
+            $0.familyId == fid && $0.isDeleted == false && $0.pdfStorageURL != nil
+        })
+        let walletBytes = fetchSum(modelContext: modelContext, predicate: #Predicate<KBWalletTicket> {
+            $0.familyId == fid && $0.isDeleted == false
+        }, value: { $0.pdfStorageBytes ?? 0 })
         
         // Chat: NON calcoliamo i bytes localmente — fonte di verità = Firebase.
         // Calcoliamo solo il recordCount per il contatore visuale nella UI.
@@ -291,6 +302,8 @@ final class StorageUsageViewModel: ObservableObject {
             KBStorageSection(id: "photos",    name: "Foto e video",   icon: "photo.on.rectangle.angled",         color: "FF6B9D", bytes: 0,              recordCount: photoCount),
             // documenti: fileSize reale locale (allineato con Firebase)
             KBStorageSection(id: "documents", name: "Documenti",      icon: "doc.fill",                          color: "5B8FDE", bytes: docFileBytes,   recordCount: docCount),
+            // wallet: byte reali del PDF cifrato (se presenti)
+            KBStorageSection(id: "wallet",    name: "Wallet",         icon: "wallet.pass.fill",                 color: "3E7BFA", bytes: walletBytes,    recordCount: walletCount),
             // salute: stima locale (Firebase non traccia ancora le foto visite)
             KBStorageSection(id: "salute",    name: "Salute",          icon: "stethoscope",                       color: "FF6B6B", bytes: visitPhotoBytes, recordCount: visitCount + examCount + treatmentCount + vaccineCount),
             // le seguenti: overhead Firestore
@@ -311,6 +324,11 @@ final class StorageUsageViewModel: ObservableObject {
         let docBytes: Int64 = fetchSum(modelContext: modelContext,
                                        predicate: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false },
                                        value: { $0.fileSize })
+
+        // Wallet (PDF cifrati)
+        let walletBytes: Int64 = fetchSum(modelContext: modelContext,
+                                          predicate: #Predicate<KBWalletTicket> { $0.familyId == fid && $0.isDeleted == false },
+                                          value: { $0.pdfStorageBytes ?? 0 })
         
         // Chat media (fileSize reale o fallback 512KB per messaggi vecchi)
         let chatMessages = fetchAll(modelContext: modelContext, predicate: #Predicate<KBChatMessage> {
@@ -337,7 +355,7 @@ final class StorageUsageViewModel: ObservableObject {
         let todoCount = fetchCount(modelContext: modelContext, predicate: #Predicate<KBTodoItem>      { $0.familyId == fid && $0.isDeleted == false })
         let expCount  = fetchCount(modelContext: modelContext, predicate: #Predicate<KBExpense>       { $0.familyId == fid && $0.isDeleted == false })
         
-        return docBytes + chatBytes + photoBytes + visitPhotoBytes
+        return docBytes + walletBytes + chatBytes + photoBytes + visitPhotoBytes
         + Int64(noteCount) * 3 * 1024
         + Int64(calCount)  * 1024
         + Int64(todoCount) * 1024

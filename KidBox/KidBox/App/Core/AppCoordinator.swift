@@ -72,6 +72,12 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareDocumentPath: String? = nil
     /// Nome originale del file documento condiviso.
     @Published var pendingShareDocumentTitle: String? = nil
+
+    /// Path locale (App Group) di un PDF condiviso verso il Wallet.
+    /// Consumato da `WalletHomeView` per pre-aprire la sheet di import.
+    @Published var pendingShareWalletPDFPath: String? = nil
+    /// Titolo o filename suggerito per il ticket Wallet importato dalla share extension.
+    @Published var pendingShareWalletTitle: String? = nil
     
     /// URL temporaneo decriptato di un documento da inviare in chat.
     /// Impostato da DocumentFolderViewModel.sendToChat, consumato da ChatView.
@@ -464,6 +470,10 @@ final class AppCoordinator: ObservableObject {
             ExpensesHomeView(familyId: familyId)
         case .expenseDetail(familyId: let familyId, expenseId: let expenseId):
             ExpenseDetailView(familyId: familyId, expenseId: expenseId)
+        case .walletHome(familyId: let familyId):
+            WalletHomeView(familyId: familyId)
+        case .walletTicketDetail(familyId: let familyId, ticketId: let ticketId):
+            WalletTicketDetailView(familyId: familyId, ticketId: ticketId)
         case .askExpert:
             PlanningAIChatView()
         }
@@ -569,6 +579,31 @@ final class AppCoordinator: ObservableObject {
             if !alreadyInStack { navigate(to: .documentsHome) }
             KBLog.sync.kbInfo("handleIncomingShare document: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
             
+        case "wallet":
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "activeFamilyId"), !fid.isEmpty {
+                KBLog.sync.kbInfo("handleIncomingShare wallet: activeFamilyId nil, fallback AppGroup fid=\(fid)")
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare wallet: activeFamilyId nil — abort")
+                return
+            }
+            guard !filePath.isEmpty else {
+                KBLog.sync.kbError("handleIncomingShare wallet: filePath empty — abort")
+                return
+            }
+            pendingShareWalletPDFPath = filePath
+            pendingShareWalletTitle = title.isEmpty ? (data["sharedFileName"] ?? "") : title
+            let alreadyInStack = path.contains {
+                if case .walletHome(let fid) = $0 { return fid == familyId }
+                return false
+            }
+            if !alreadyInStack { navigate(to: .walletHome(familyId: familyId)) }
+            KBLog.sync.kbInfo("handleIncomingShare wallet: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
+
         case "encryptedMedia":
             let familyId: String
             if let fid = activeFamilyId {
@@ -668,6 +703,32 @@ final class AppCoordinator: ObservableObject {
         }
     }
     
+    // MARK: - Open Wallet ticket from Push
+
+    /// Apre direttamente il biglietto Wallet che ha scatenato la notifica.
+    /// Path: walletHome → walletTicketDetail.
+    @MainActor
+    func openWalletTicketFromPush(familyId: String, ticketId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openWalletTicketFromPush familyId=\(familyId) ticketId=\(ticketId)")
+
+        Task { @MainActor in
+            await SyncCenter.shared.fetchWalletTicketsOnce(familyId: familyId, modelContext: modelContext)
+
+            let tid = ticketId
+            let desc = FetchDescriptor<KBWalletTicket>(predicate: #Predicate { $0.id == tid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+
+            path.removeAll()
+            path.append(.walletHome(familyId: familyId))
+            if found {
+                path.append(.walletTicketDetail(familyId: familyId, ticketId: ticketId))
+                KBLog.navigation.kbInfo("openWalletTicketFromPush: navigating to walletTicketDetail")
+            } else {
+                KBLog.navigation.kbError("openWalletTicketFromPush: ticket not found after fetch, fallback to walletHome")
+            }
+        }
+    }
+
     @MainActor
     func openNoteFromPush(familyId: String, noteId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")

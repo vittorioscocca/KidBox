@@ -78,6 +78,10 @@ extension KBSharePayload {
         if isVideo || isPhoto {
             return [.chat, .encryptedMedia]
         }
+        if ext == "pdf" {
+            // I PDF tipicamente sono biglietti / ricevute → mostriamo anche Wallet.
+            return [.chat, .document, .wallet]
+        }
         return [.chat, .document]
     }
     
@@ -153,6 +157,7 @@ extension KBShareDestination {
         case .event:            return "Evento"
         case .note:             return "Note"
         case .encryptedMedia:   return "Foto e video"
+        case .wallet:           return "Wallet"
         }
     }
     
@@ -165,6 +170,7 @@ extension KBShareDestination {
         case .event:            return "calendar"
         case .note:             return "note.text"
         case .encryptedMedia:   return "photo.stack.fill"
+        case .wallet:           return "ticket.fill"
         }
     }
     
@@ -177,6 +183,7 @@ extension KBShareDestination {
         case .event:            return .red
         case .note:             return .yellow
         case .encryptedMedia:   return .cyan
+        case .wallet:           return .indigo
         }
     }
     

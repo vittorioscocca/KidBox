@@ -19,6 +19,34 @@ enum RichTextCommand {
     case indentMore, indentLess
 }
 
+// MARK: - Shared constants
+
+/// Font size dei glifi checklist ○/◉. 26pt per avere cerchi ben visibili
+/// (~1.5× il corpo 17pt di default) senza dilatare troppo la line height.
+let CHECKLIST_CIRCLE_FONT_SIZE: CGFloat = 26
+
+/// Indent testo della checklist: il cerchio parte dal margine sinistro, il testo
+/// (e le righe wrapped) partono da `CHECKLIST_TEXT_INDENT`. Deve essere ≥ larghezza
+/// del glifo "○ " a `CHECKLIST_CIRCLE_FONT_SIZE`, altrimenti il testo si sovrappone.
+let CHECKLIST_TEXT_INDENT: CGFloat = 34
+
+/// Applica al `NSMutableParagraphStyle` la geometria compatta per una riga
+/// checklist: indent del testo wrapped, interlinea 1.0 (così il cerchio grande
+/// non dilata la riga) e spacing minimo tra voci consecutive.
+func applyChecklistParagraphStyle(_ ps: NSMutableParagraphStyle) {
+    let indent = CHECKLIST_TEXT_INDENT
+    ps.firstLineHeadIndent = 0
+    ps.headIndent          = indent
+    ps.tabStops            = [NSTextTab(textAlignment: .left, location: indent)]
+    ps.defaultTabInterval  = indent
+    // Interlinea compatta: il cerchio ○ è 26pt, se lasciamo
+    // `lineHeightMultiple=1.35` (default del body) la riga checklist risulta
+    // 26×1.35 ≈ 35pt e le voci della lista appaiono distanti.
+    ps.lineHeightMultiple  = 1.0
+    ps.paragraphSpacing    = 2
+    ps.paragraphSpacingBefore = 0
+}
+
 // MARK: - Formatter
 
 final class RichTextFormatter {
@@ -190,10 +218,29 @@ final class RichTextFormatter {
     
     private static func toggleExclusiveList(_ kind: ListKind, in tv: UITextView) {
         let full = tv.attributedText ?? NSAttributedString()
+
+        // ✅ Fast-path: nota completamente vuota (o placeholder già pulito).
+        //    Inserisci subito il marker al caret — come fa Android — così
+        //    l'utente vede la lista attivata anche prima di scrivere qualcosa.
+        if full.length == 0 {
+            insertListMarkerIntoEmptyEditor(tv, kind: kind)
+            return
+        }
+
         let ms   = NSMutableAttributedString(attributedString: full)
         let sel  = tv.selectedRange
         let ns   = ms.string as NSString
         let fullLen = ns.length
+
+        // ✅ Se il cursore è su una "riga fantasma" in fondo (es. dopo l'ultimo
+        //    `\n`), `paragraphRange` riporterebbe il paragrafo precedente e la
+        //    checklist finirebbe lì. Usiamo invece il fast-path che inserisce
+        //    il marker al caret, creando una nuova riga lista.
+        if sel.length == 0, sel.location == fullLen, fullLen > 0,
+           ns.character(at: fullLen - 1) == unichar(("\n" as Character).asciiValue ?? 10) {
+            insertListMarkerIntoEmptyEditor(tv, kind: kind)
+            return
+        }
         
         // Effective range = selection or current paragraph
         let effective: NSRange = {
@@ -209,7 +256,14 @@ final class RichTextFormatter {
         
         // Collect paragraph ranges once
         let paragraphs = collectParagraphs(ns: ns, effective: effective, fullLen: fullLen)
-        guard !paragraphs.isEmpty else { return }
+
+        // ✅ Se l'utente è su una riga vuota alla fine del documento (tipico: ha premuto
+        //    Return e poi checklist), `paragraphs` può essere vuoto perché il paragrafo
+        //    ha length 0. Inseriamo comunque il marker al caret.
+        guard !paragraphs.isEmpty else {
+            insertListMarkerIntoEmptyEditor(tv, kind: kind)
+            return
+        }
         
         // Detect current list kind of first paragraph
         let firstLine = ns.substring(with: paragraphs[0]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -222,21 +276,22 @@ final class RichTextFormatter {
         for (i, prOriginal) in paragraphs.reversed().enumerated() {
             let curNS  = ms.string as NSString
             let curLen = curNS.length
-            guard curLen > 0 else { break }
+            guard curLen >= 0 else { break }
             
-            let prLoc = max(0, min(prOriginal.location, curLen))
+            let prLoc = max(0, min(prOriginal.location, max(0, curLen)))
             let prEnd = min(prLoc + prOriginal.length, curLen)
             let prLen = max(0, prEnd - prLoc)
-            guard prLen > 0 else { continue }
             let pr = NSRange(location: prLoc, length: prLen)
             
-            var lineStr = curNS.substring(with: pr)
+            var lineStr = prLen > 0 ? curNS.substring(with: pr) : ""
             let hasNL   = lineStr.hasSuffix("\n")
             if hasNL { lineStr.removeLast() }
             let lineLen = max(0, pr.length - (hasNL ? 1 : 0))
-            guard lineLen > 0 else { continue }
+            // ℹ️ Non saltare le righe vuote (lineLen == 0): l'utente vuole
+            //     "creare" una checklist anche su una riga vuota — come Android.
+            //     Ci limitiamo a non estrarre una sottostringa inesistente.
             let lineRange = NSRange(location: pr.location, length: lineLen)
-            let str       = curNS.substring(with: lineRange)
+            let str       = lineLen > 0 ? curNS.substring(with: lineRange) : ""
             
             let styleIdx  = min(max(0, pr.location), ms.length - 1)
             let ps        = mutablePS(ms, at: styleIdx)
@@ -288,16 +343,7 @@ final class RichTextFormatter {
                     ps.defaultTabInterval = indent
                     
                 case .checklist:
-                    // ✅ Fix indentazione:
-                    //    firstLineHeadIndent = 0  → il cerchio ○ parte dal margine sinistro
-                    //    headIndent = 28          → le righe wrapped si allineano sotto
-                    //                               il testo (dopo "○ " che occupa ~28pt)
-                    //    tabStop a 28             → il cursore dopo ○<tab/space> salta al testo
-                    let textIndent: CGFloat = 28
-                    ps.firstLineHeadIndent = 0
-                    ps.headIndent          = textIndent
-                    ps.tabStops            = [NSTextTab(textAlignment: .left, location: textIndent)]
-                    ps.defaultTabInterval  = textIndent
+                    applyChecklistParagraphStyle(ps)
                 }
             }
             
@@ -314,6 +360,83 @@ final class RichTextFormatter {
         tv.selectedRange = NSRange(location: max(0, min(sel.location, ms.length)), length: 0)
     }
     
+    // MARK: - Empty-editor fast path
+    //
+    // Quando il documento è vuoto (o il paragrafo corrente ha length 0, come
+    // succede dopo un Return a fine nota), il flusso normale di
+    // `toggleExclusiveList` non ha nulla su cui operare: `collectParagraphs`
+    // restituisce `[]` e veniva fuori un no-op. Qui inseriamo direttamente il
+    // marker al caret con il paragraphStyle corretto e i typingAttributes
+    // giusti per il testo che l'utente digiterà subito dopo.
+
+    private static func insertListMarkerIntoEmptyEditor(_ tv: UITextView, kind: ListKind) {
+        let ms  = NSMutableAttributedString(attributedString: tv.attributedText ?? NSAttributedString())
+        let sel = tv.selectedRange
+        let caret = max(0, min(sel.location, ms.length))
+
+        let ps = NSMutableParagraphStyle()
+        switch kind {
+        case .bullet:
+            let indent: CGFloat = 22
+            ps.firstLineHeadIndent = indent
+            ps.headIndent          = indent
+            ps.tabStops            = [NSTextTab(textAlignment: .left, location: indent)]
+            ps.defaultTabInterval  = indent
+        case .number:
+            let indent: CGFloat = 30
+            ps.firstLineHeadIndent = indent
+            ps.headIndent          = indent
+            ps.tabStops            = [NSTextTab(textAlignment: .left, location: indent)]
+            ps.defaultTabInterval  = indent
+        case .checklist:
+            applyChecklistParagraphStyle(ps)
+        }
+
+        let (plain, attributed) = buildPrefix(kind: kind, number: 1, ms: ms, at: caret)
+
+        let insertion: NSAttributedString
+        switch kind {
+        case .checklist:
+            // Il cerchio è il prefisso "○ " come NSAttributedString (font 24pt
+            // sul glifo). Il paragraphStyle va applicato sull'intera riga.
+            let composed = NSMutableAttributedString()
+            if let attr = attributed { composed.append(attr) }
+            let lineRange = NSRange(location: 0, length: composed.length)
+            if lineRange.length > 0 {
+                composed.addAttribute(.paragraphStyle, value: ps, range: lineRange)
+            }
+            insertion = composed
+        case .bullet, .number:
+            let baseFont = (tv.typingAttributes[.font] as? UIFont)
+                ?? UIFont.preferredFont(forTextStyle: .body)
+            insertion = NSAttributedString(string: plain, attributes: [
+                .font:            baseFont,
+                .foregroundColor: UIColor.richTextPrimary,
+                .paragraphStyle:  ps
+            ])
+        }
+
+        ms.insert(insertion, at: caret)
+        tv.textStorage.setAttributedString(ms)
+        tv.selectedRange = NSRange(location: caret + insertion.length, length: 0)
+
+        // Typing attributes per il testo che l'utente scriverà adesso:
+        //  - font "normale" (non il 24pt del cerchio checklist)
+        //  - paragraphStyle corretto per mantenere l'indent wrapped
+        //  - colore testo primario
+        let bodyFont = (tv.typingAttributes[.font] as? UIFont)
+            ?? UIFont.preferredFont(forTextStyle: .body)
+        tv.typingAttributes = [
+            .font:            bodyFont,
+            .foregroundColor: UIColor.richTextPrimary,
+            .paragraphStyle:  ps
+        ]
+
+        // Forza il delegate a pubblicare lo stato aggiornato (così la toolbar
+        // si aggiorna e il binding SwiftUI `html` vede il nuovo contenuto).
+        tv.delegate?.textViewDidChange?(tv)
+    }
+
     // MARK: - Checklist tap: ○ → ◉ (tappando il cerchio)
     
     @discardableResult
@@ -322,7 +445,11 @@ final class RichTextFormatter {
         let tc  = tv.textContainer
         let ins = tv.textContainerInset
         let adj = CGPoint(x: point.x - ins.left, y: point.y - ins.top)
-        
+        // Salviamo il cursore attuale per ripristinarlo: `setAttributedString`
+        // resetta sempre la selezione (tipicamente a 0), e l'utente vede il
+        // caret "saltare" accanto al cerchio appena tappato.
+        let previousSelection = tv.selectedRange
+
         // ✅ Pre-filtro veloce: il cerchio non può stare oltre 40pt dal margine sinistro
         guard adj.x < 40 else { return false }
         
@@ -362,7 +489,7 @@ final class RichTextFormatter {
         // Sostituisci il cerchio mantenendo il font grande
         ms.replaceCharacters(in: NSRange(location: start, length: 1), with: newCircle)
         ms.addAttributes([
-            .font: UIFont.systemFont(ofSize: 20),
+            .font: UIFont.systemFont(ofSize: CHECKLIST_CIRCLE_FONT_SIZE),
             .foregroundColor: willCheck ? UIColor.systemGreen : UIColor.secondaryLabel
         ], range: NSRange(location: start, length: 1))
         
@@ -393,6 +520,12 @@ final class RichTextFormatter {
         }
         
         tv.textStorage.setAttributedString(ms)
+        // Ripristina il cursore dove era prima del tap: il tap sul cerchio
+        // non deve muovere la selezione né far "lampeggiare" il caret
+        // accanto al glifo appena cambiato.
+        let clampedLoc = max(0, min(previousSelection.location, ms.length))
+        let clampedLen = max(0, min(previousSelection.length, ms.length - clampedLoc))
+        tv.selectedRange = NSRange(location: clampedLoc, length: clampedLen)
         return true
     }
     
@@ -490,7 +623,7 @@ final class RichTextFormatter {
             return ("\(number). ", nil)
         case .checklist:
             let attr = NSAttributedString(string: "○ ", attributes: [
-                .font: UIFont.systemFont(ofSize: 20),
+                .font: UIFont.systemFont(ofSize: CHECKLIST_CIRCLE_FONT_SIZE),
                 .foregroundColor: UIColor.secondaryLabel
             ])
             return ("", attr)

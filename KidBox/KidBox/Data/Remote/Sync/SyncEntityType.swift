@@ -22,4 +22,5 @@ enum SyncEntityType: String {
     case medicalExam
     case calendarEvent
     case expense
+    case walletTicket
 }

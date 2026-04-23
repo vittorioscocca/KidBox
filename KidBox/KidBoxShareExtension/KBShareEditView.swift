@@ -499,6 +499,7 @@ struct KBShareEditView: View {
         case .document:       return "Apri KidBox per completare il salvataggio del documento."
         case .note:           return "Apri KidBox per completare la nota."
         case .encryptedMedia: return "Apri KidBox per completare il salvataggio in Foto e video."
+        case .wallet:         return "Apri KidBox per completare l'import nel Wallet."
         }
     }
     
@@ -679,6 +680,15 @@ struct KBShareEditView: View {
             }
             .padding(14)
             .background(Color.cyan.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+
+        case .wallet:
+            HStack(spacing: 12) {
+                Image(systemName: "ticket.fill").foregroundStyle(.indigo)
+                Text("Il PDF verrà importato nel Wallet di KidBox.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color.indigo.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         }
     }
     
@@ -693,6 +703,7 @@ struct KBShareEditView: View {
         case .event:            return "Crea evento"
         case .note:             return "Crea nota"
         case .encryptedMedia:   return "Salva in Foto e video"
+        case .wallet:           return "Salva nel Wallet"
         }
     }
     
@@ -873,6 +884,13 @@ struct KBShareEditView: View {
                 saveToAppGroup()
                 result = .deferredToMainApp(
                     urlString: "kidbox://share?destination=encryptedMedia",
+                    showBanner: false
+                )
+
+            case .wallet:
+                saveToAppGroup()
+                result = .deferredToMainApp(
+                    urlString: "kidbox://share?destination=wallet",
                     showBanner: false
                 )
             }

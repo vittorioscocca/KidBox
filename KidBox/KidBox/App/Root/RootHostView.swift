@@ -198,6 +198,8 @@ struct RootHostView: View {
                 SyncCenter.shared.stopMembersRealtime()
                 SyncCenter.shared.stopDocumentsRealtime()
                 SyncCenter.shared.stopTreatmentsRealtime()
+                SyncCenter.shared.stopExpensesRealtime()
+                SyncCenter.shared.stopWalletRealtime()
                 startedFamilyId = nil
                 KBLog.sync.kbDebug("Realtime listeners stopped and startedFamilyId cleared")
             } else {
@@ -227,6 +229,8 @@ struct RootHostView: View {
             SyncCenter.shared.stopMembersRealtime()
             SyncCenter.shared.stopDocumentsRealtime()
             SyncCenter.shared.stopTreatmentsRealtime()
+            SyncCenter.shared.stopExpensesRealtime()
+            SyncCenter.shared.stopWalletRealtime()
         } else {
             KBLog.sync.kbInfo("Starting realtime listeners for familyId=\(familyId)")
         }
@@ -274,6 +278,11 @@ struct RootHostView: View {
             familyId: familyId,
             modelContext: modelContext
         )
-        
+
+        KBLog.sync.kbDebug("startWalletRealtime familyId=\(familyId)")
+        SyncCenter.shared.startWalletRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
     }
 }

@@ -60,7 +60,8 @@ enum ModelContainerProvider {
             KBFamilyPhoto.self,
             KBPhotoAlbum.self,
             KBExpenseCategory.self,
-            KBExpense.self
+            KBExpense.self,
+            KBWalletTicket.self
         ])
         
         let configuration = ModelConfiguration(

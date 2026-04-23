@@ -57,6 +57,9 @@ final class SyncCenter: ObservableObject {
     let calendarRemote = CalendarRemoteStore()
     var expenseListener: ListenerRegistration?
     let expenseRemote = ExpenseRemoteStore()
+    var walletListener: ListenerRegistration?
+    let walletRemote = WalletRemoteStore()
+    let walletPDFStore = WalletPDFStore()
     
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
@@ -129,6 +132,7 @@ final class SyncCenter: ObservableObject {
         stopCalendarRealtime()
         stopPhotosRealtime()
         stopExpensesRealtime()
+        stopWalletRealtime()
         
         Self._currentUserRevoked.send(familyId)
     }
@@ -767,6 +771,9 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.expense.rawValue:
                 try await processExpense(op: op, modelContext: modelContext)
+                
+            case SyncEntityType.walletTicket.rawValue:
+                try await processWalletTicket(op: op, modelContext: modelContext)
                 
                 // MARK: - Photos (SyncCenter+Photos.swift)
             case "photo", "photoAlbum":

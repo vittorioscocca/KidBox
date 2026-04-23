@@ -97,7 +97,7 @@ struct NoteDetailView: View {
             } else {
                 // Nessuna modifica locale: aggiorna l'UI con il remoto
                 titleText = n.title
-                bodyHTML  = n.body
+                bodyHTML  = n.body.normalizedKidBoxChecklistGlyphs()
                 note      = n
             }
         }
@@ -139,7 +139,7 @@ struct NoteDetailView: View {
         if let existing = queriedNotes.first {
             note      = existing
             titleText = existing.title
-            bodyHTML  = existing.body
+            bodyHTML  = existing.body.normalizedKidBoxChecklistGlyphs()
             isDirty   = false
             return
         }
@@ -233,5 +233,12 @@ private extension String {
         ]
         return (try? NSAttributedString(data: data, options: options,
                                         documentAttributes: nil))?.string ?? self
+    }
+    
+    /// Allinea i marker checklist vecchi (Android ☐/☑) a quelli usati su iOS (○/◉).
+    func normalizedKidBoxChecklistGlyphs() -> String {
+        self
+            .replacingOccurrences(of: "☐ ", with: "○ ")
+            .replacingOccurrences(of: "☑ ", with: "◉ ")
     }
 }

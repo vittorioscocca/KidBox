@@ -118,7 +118,35 @@ struct NotificationSettingsView: View {
             .disabled(vm.isLoading)
             .accessibilityHint("Ricevi una notifica quando un membro registra una nuova spesa di famiglia.")
             .listRowBackground(cardBackground)
-            
+
+            Toggle(
+                "Notifiche nuovo biglietto Wallet",
+                isOn: Binding(
+                    get: { vm.notifyOnNewWalletTicket },
+                    set: { newValue in
+                        KBLog.settings.info("Toggle notifyOnNewWalletTicket set=\(newValue, privacy: .public)")
+                        vm.toggleNotifyOnNewWalletTicket(newValue)
+                    }
+                )
+            )
+            .disabled(vm.isLoading)
+            .accessibilityHint("Ricevi una notifica quando un membro aggiunge un nuovo biglietto al Wallet.")
+            .listRowBackground(cardBackground)
+
+            Toggle(
+                "Promemoria biglietti Wallet",
+                isOn: Binding(
+                    get: { vm.notifyOnWalletReminder },
+                    set: { newValue in
+                        KBLog.settings.info("Toggle notifyOnWalletReminder set=\(newValue, privacy: .public)")
+                        vm.toggleNotifyOnWalletReminder(newValue)
+                    }
+                )
+            )
+            .disabled(vm.isLoading)
+            .accessibilityHint("Ricevi promemoria locali e push prima della partenza/evento (es. 24h e 2h prima).")
+            .listRowBackground(cardBackground)
+
             if let t = vm.infoText {
                 Text(t)
                     .font(.footnote)
