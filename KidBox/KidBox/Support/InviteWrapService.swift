@@ -54,15 +54,24 @@ struct InviteWrapService {
         // 1) Ensure family master key in Keychain (random 32 bytes)
         let familyKey: SymmetricKey
         do {
-            if let existing = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local") {
+            if let existing = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: uid) {
                 familyKey = existing
             } else {
-                let raw = InviteCrypto.randomBytes(32)
-                let created = SymmetricKey(data: raw)
-                try FamilyKeychainStore.saveFamilyKey(created, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
-                familyKey = created
-                KBLog.security.info("Family master key created for familyId=\(familyId, privacy: .public)")
+                // Try recovering from Firestore escrow before generating a new key
+                if let recovered = await FamilyKeyEscrowService.recover(familyId: familyId, userId: uid) {
+                    try FamilyKeychainStore.saveFamilyKey(recovered, familyId: familyId, userId: uid)
+                    familyKey = recovered
+                    KBLog.security.info("Family master key recovered from escrow for familyId=\(familyId, privacy: .public)")
+                } else {
+                    let raw = InviteCrypto.randomBytes(32)
+                    let created = SymmetricKey(data: raw)
+                    try FamilyKeychainStore.saveFamilyKey(created, familyId: familyId, userId: uid)
+                    familyKey = created
+                    KBLog.security.info("Family master key created for familyId=\(familyId, privacy: .public)")
+                }
             }
+            // Always ensure an up-to-date escrow backup exists for this user
+            await FamilyKeyEscrowService.backup(key: familyKey, familyId: familyId, userId: uid)
         } catch {
             KBLog.security.error("Family master key ensure failed: \(error.localizedDescription, privacy: .public)")
             throw error

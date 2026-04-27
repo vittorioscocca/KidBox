@@ -396,9 +396,11 @@ final class ChatViewModel: NSObject, ObservableObject {
         let myUID        = Auth.auth().currentUser?.uid ?? ""
         let resolvedText: String?
         if let enc = dto.textEnc, !enc.isEmpty, !myUID.isEmpty {
-            resolvedText = try? NoteCryptoService.decryptString(
+            // Try on-device decryption; if it fails fall back to the plain-text field so we
+            // never erase already-displayed text because of a transient key-unavailability.
+            resolvedText = (try? NoteCryptoService.decryptString(
                 enc, familyId: dto.familyId, userId: myUID
-            )
+            )) ?? dto.text
         } else {
             resolvedText = dto.text // fallback legacy plaintext
         }
@@ -407,7 +409,9 @@ final class ChatViewModel: NSObject, ObservableObject {
         if let existing = try? modelContext.fetch(desc).first {
             let localBefore        = existing.isDeleted
             existing.senderName    = dto.senderName
-            existing.text          = resolvedText
+            // Only update text when we actually have a resolved value — never overwrite a
+            // visible message with nil just because decryption or the DTO had no text field.
+            if let resolved = resolvedText { existing.text = resolved }
             existing.editedAt      = dto.editedAt
             existing.mediaURL      = dto.mediaURL
             if let grpURLs  = dto.mediaGroupURLsJSON  { existing.mediaGroupURLsJSON  = grpURLs }

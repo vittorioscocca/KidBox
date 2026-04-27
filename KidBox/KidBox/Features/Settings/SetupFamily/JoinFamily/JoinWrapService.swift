@@ -164,11 +164,14 @@ struct JoinWrapService {
         do {
             let wrapKey = InviteCrypto.deriveWrapKey(secret: secret, salt: salt, familyId: familyId)
             let familyKey = try InviteCrypto.unwrapFamilyKey(cipher: cipher, nonce: nonce, tag: tag, wrapKey: wrapKey)
-            
-            // save in Keychain
-            try FamilyKeychainStore.saveFamilyKey(familyKey, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
+
+            // Save in Keychain
+            try FamilyKeychainStore.saveFamilyKey(familyKey, familyId: familyId, userId: uid)
             KBLog.sync.info("JoinWrapService master key saved familyId=\(familyId, privacy: .public)")
-            
+
+            // Backup to Firestore escrow so the key survives account switches / reinstalls
+            await FamilyKeyEscrowService.backup(key: familyKey, familyId: familyId, userId: uid)
+
         } catch {
             KBLog.sync.error("JoinWrapService unwrap/save failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
             throw error
