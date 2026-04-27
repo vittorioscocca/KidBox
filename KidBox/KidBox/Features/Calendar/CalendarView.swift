@@ -53,9 +53,11 @@ struct CalendarView: View {
     }
     
     private var datesWithEvents: Set<DateComponents> {
-        Set(events.map {
-            Calendar.current.dateComponents([.year, .month, .day], from: $0.startDate)
-        })
+        Set(
+            events.flatMap { event in
+                calendarDayComponentsCoveredByEvent(event)
+            }
+        )
     }
     
     @State private var selectedDate = Date()
@@ -386,7 +388,7 @@ private struct MonthDetailView: View {
     @State private var displayedMonth = Date()
     
     private var eventsOnSelectedDate: [KBCalendarEvent] {
-        events.filter { Calendar.current.isDate($0.startDate, inSameDayAs: selectedDate) }
+        events.filter { eventOccursOnDay($0, day: selectedDate) }
     }
     
     // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
@@ -531,6 +533,31 @@ fileprivate var localizedCalendar: Calendar = {
     cal.firstWeekday = 2   // lunedì
     return cal
 }()
+
+fileprivate func calendarDayComponentsCoveredByEvent(_ event: KBCalendarEvent) -> [DateComponents] {
+    let calendar = Calendar.current
+    let startDay = calendar.startOfDay(for: min(event.startDate, event.endDate))
+    let endDay = calendar.startOfDay(for: max(event.startDate, event.endDate))
+
+    var result: [DateComponents] = []
+    var cursor = startDay
+    while cursor <= endDay {
+        result.append(calendar.dateComponents([.year, .month, .day], from: cursor))
+        guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+        cursor = next
+    }
+    return result
+}
+
+fileprivate func eventOccursOnDay(_ event: KBCalendarEvent, day: Date) -> Bool {
+    let calendar = Calendar.current
+    let dayStart = calendar.startOfDay(for: day)
+    guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return false }
+
+    let eventStart = min(event.startDate, event.endDate)
+    let eventEnd = max(event.startDate, event.endDate)
+    return eventStart < dayEnd && eventEnd >= dayStart
+}
 
 fileprivate func calendarDays(for month: Date) -> [Date?] {
     let cal   = localizedCalendar

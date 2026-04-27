@@ -6,6 +6,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import UIKit
 
 struct NoteDetailView: View {
     let familyId: String
@@ -114,7 +115,6 @@ struct NoteDetailView: View {
                     Button { saveAndDismiss() } label: {
                         Image(systemName: "checkmark").font(.headline)
                     }
-                    .disabled(!isDirty)
                 }
             }
         }
@@ -180,7 +180,7 @@ struct NoteDetailView: View {
     
     private func saveAndDismiss() {
         commitSave()
-        dismiss()
+        hideKeyboard()
     }
     
     // MARK: - Save
@@ -209,6 +209,10 @@ struct NoteDetailView: View {
         isDirty            = false
         pendingRemoteTitle = nil
         pendingRemoteBody  = nil
+    }
+
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

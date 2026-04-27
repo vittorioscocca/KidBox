@@ -47,6 +47,20 @@ final class NotificationManager: NSObject, ObservableObject {
     // MARK: - Private
     
     private let db = Firestore.firestore()
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
+    private var observedUid: String?
+
+    override init() {
+        super.init()
+        observedUid = Auth.auth().currentUser?.uid
+        startAuthStateObserver()
+    }
+
+    deinit {
+        if let handle = authStateHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
     
     // MARK: - Deep Link
     
@@ -66,6 +80,57 @@ final class NotificationManager: NSObject, ObservableObject {
         case walletTicket(familyId: String, ticketId: String)
         /// Apre PlanningAIChatView — usato dalla sintesi settimanale AI
         case askExpert
+    }
+
+    // MARK: - Auth / FCM token ownership
+
+    /// Keeps FCM token ownership aligned with the currently authenticated user.
+    /// Without this, after account switch the same iOS device token can remain
+    /// stored under the previous user and still receive pushes for old families.
+    private func startAuthStateObserver() {
+        authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let self else { return }
+            let newUid = user?.uid
+            Task { @MainActor in
+                await self.handleAuthUserChange(newUid: newUid)
+            }
+        }
+    }
+
+    private func handleAuthUserChange(newUid: String?) async {
+        let oldUid = observedUid
+        guard oldUid != newUid else { return }
+        observedUid = newUid
+
+        KBLog.auth.kbInfo("NotificationManager auth change oldUid=\(oldUid ?? "nil") newUid=\(newUid ?? "nil")")
+
+        let currentToken = Messaging.messaging().fcmToken
+        if let oldUid, let token = currentToken, !token.isEmpty {
+            do {
+                try await removeFCMToken(token, forUid: oldUid)
+                KBLog.auth.kbInfo("Removed current FCM token from previous user")
+            } catch {
+                KBLog.auth.kbError("Failed removing old user FCM token: \(error.localizedDescription)")
+            }
+        }
+
+        // Force token rotation on account switch/logout so old-account delivery stops.
+        do {
+            try await deleteCurrentFCMToken()
+            KBLog.auth.kbInfo("FCM token deleted for account switch")
+        } catch {
+            KBLog.auth.kbError("FCM token deletion failed on account switch: \(error.localizedDescription)")
+        }
+
+        guard newUid != nil else { return }
+
+        do {
+            let freshToken = try await requestFCMToken()
+            try await persistFCMToken(freshToken)
+            KBLog.auth.kbInfo("Fresh FCM token persisted for new user")
+        } catch {
+            KBLog.auth.kbError("Failed to persist fresh FCM token for new user: \(error.localizedDescription)")
+        }
     }
     
     // MARK: - Deep Link Handling
@@ -623,6 +688,40 @@ final class NotificationManager: NSObject, ObservableObject {
     private func persistFCMTokenIfAvailable() async throws {
         if let token = Messaging.messaging().fcmToken, !token.isEmpty {
             try await persistFCMToken(token)
+        }
+    }
+
+    private func removeFCMToken(_ token: String, forUid uid: String) async throws {
+        let ref = db.collection("users").document(uid)
+            .collection("fcmTokens").document(token)
+        try await ref.delete()
+    }
+
+    private func requestFCMToken() async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            Messaging.messaging().token { token, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let token, !token.isEmpty else {
+                    continuation.resume(throwing: NSError(domain: "KidBox", code: 2))
+                    return
+                }
+                continuation.resume(returning: token)
+            }
+        }
+    }
+
+    private func deleteCurrentFCMToken() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            Messaging.messaging().deleteToken { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
         }
     }
 }
