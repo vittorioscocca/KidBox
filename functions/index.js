@@ -367,7 +367,15 @@ exports.notifyNewChatMessage = onDocumentCreated(
         if (tokens.length === 0) continue;
 
         const badge = await incrementCounterAndGetBadge({familyId, uid, field: "chat"});
-        const data = {type: "new_chat_message", familyId, messageId, senderId: senderUid, msgType};
+        const data = {
+          type: "new_chat_message",
+          familyId,
+          messageId,
+          senderId: senderUid,
+          senderName,
+          msgType,
+          fallbackBody: body, // used by the iOS extension if decryption fails
+        };
         if (typeof msgData.textEnc === "string" && msgData.textEnc.length > 0) {
           data.textEnc = msgData.textEnc;
         }
@@ -376,7 +384,21 @@ exports.notifyNewChatMessage = onDocumentCreated(
           tokens,
           notification: {title: senderName, body},
           data,
-          apns: {payload: {aps: {sound: "default", badge}}},
+          apns: {
+            payload: {
+              aps: {
+                // mutable-content tells iOS to invoke the Notification Service Extension
+                // so it can decrypt textEnc client-side before the notification is displayed.
+                "mutable-content": 1,
+                alert: {title: senderName, body},
+                sound: "default",
+                badge,
+              },
+            },
+          },
+          android: {
+            notification: {sound: "default"},
+          },
         });
       }
 
