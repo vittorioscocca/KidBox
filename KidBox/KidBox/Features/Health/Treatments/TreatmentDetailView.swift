@@ -720,6 +720,15 @@ struct ConfirmDoseContext: Identifiable {
     let dosageUnit:    String
 }
 
+private enum ConfirmDoseItalianFormatters {
+    static let preview: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "it_IT")
+        f.dateFormat = "d MMMM yyyy 'alle' HH:mm"
+        return f
+    }()
+}
+
 // MARK: - Confirm Dose Sheet
 
 struct ConfirmDoseSheet: View {
@@ -733,6 +742,8 @@ struct ConfirmDoseSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedDate   = Date()
     @State private var selectedOffset: TimeInterval? = nil
+    @State private var showDatePickerSheet = false
+    @State private var showTimePickerSheet = false
     
     private let tint  = KBTheme.tint
     private let green = KBTheme.green
@@ -788,22 +799,50 @@ struct ConfirmDoseSheet: View {
                     .padding(.horizontal)
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("SELEZIONA DATA E ORA").font(.caption.bold()).foregroundStyle(.secondary)
-                        DatePicker("", selection: $selectedDate, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.graphical)
-                            .tint(tint)
-                            .onChange(of: selectedDate) { _, _ in selectedOffset = nil }
-                            .padding(8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(KBTheme.cardBackground(colorScheme))
-                                    .shadow(color: KBTheme.shadow(colorScheme), radius: 4)
-                            )
+                        Text("DATA E ORA").font(.caption.bold()).foregroundStyle(.secondary)
+                        HStack(spacing: 10) {
+                            Button {
+                                selectedOffset = nil
+                                showDatePickerSheet = true
+                            } label: {
+                                Text("Data")
+                                    .font(.subheadline.bold())
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(KBTheme.cardBackground(colorScheme))
+                                            .shadow(color: KBTheme.shadow(colorScheme), radius: 4)
+                                    )
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.35), lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Button {
+                                selectedOffset = nil
+                                showTimePickerSheet = true
+                            } label: {
+                                Text("Ora")
+                                    .font(.subheadline.bold())
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(KBTheme.cardBackground(colorScheme))
+                                            .shadow(color: KBTheme.shadow(colorScheme), radius: 4)
+                                    )
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.35), lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        Text(ConfirmDoseItalianFormatters.preview.string(from: selectedDate))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal)
                     
                     Button {
-                        onConfirm(selectedDate)
+                        onConfirm(min(selectedDate, Date()))
                         dismiss()
                     } label: {
                         Label("Conferma dose", systemImage: "checkmark.circle.fill")
@@ -815,6 +854,7 @@ struct ConfirmDoseSheet: View {
                     .padding(.horizontal).padding(.bottom, 16)
                 }
             }
+            .environment(\.locale, Locale(identifier: "it_IT"))
             .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Conferma dose")
             .navigationBarTitleDisplayMode(.inline)
@@ -823,6 +863,71 @@ struct ConfirmDoseSheet: View {
             }
         }
         .presentationDetents([.large])
+        .sheet(isPresented: $showDatePickerSheet) {
+            NavigationStack {
+                ScrollView {
+                    DatePicker(
+                        "",
+                        selection: $selectedDate,
+                        in: ...Date(),
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .environment(\.locale, Locale(identifier: "it_IT"))
+                    .tint(tint)
+                    .padding()
+                }
+                .background(KBTheme.background(colorScheme).ignoresSafeArea())
+                .navigationTitle("Scegli data")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Annulla") { showDatePickerSheet = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("OK") {
+                            selectedDate = min(selectedDate, Date())
+                            showDatePickerSheet = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showTimePickerSheet) {
+            NavigationStack {
+                VStack(spacing: 16) {
+                    DatePicker(
+                        "",
+                        selection: $selectedDate,
+                        in: ...Date(),
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .environment(\.locale, Locale(identifier: "it_IT"))
+                    .tint(tint)
+                    Spacer(minLength: 0)
+                }
+                .padding()
+                .background(KBTheme.background(colorScheme).ignoresSafeArea())
+                .navigationTitle("Scegli ora")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Annulla") { showTimePickerSheet = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("OK") {
+                            selectedDate = min(selectedDate, Date())
+                            showTimePickerSheet = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+        }
     }
 }
 
