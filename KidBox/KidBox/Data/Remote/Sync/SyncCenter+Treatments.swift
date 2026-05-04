@@ -140,11 +140,12 @@ extension SyncCenter {
                             createdAt:       dto.createdAt ?? Date(),
                             updatedAt:       remoteStamp,
                             updatedBy:       dto.updatedBy,
-                            createdBy:       dto.createdBy ?? dto.updatedBy
+                            createdBy:       dto.createdBy ?? dto.updatedBy,
+                            prescribingVisitId: dto.prescribingVisitId
                         )
                         t.id         = dto.id
                         t.isDeleted  = false
-                        t.syncState  = .synced
+                        t.syncState  = KBSyncState.synced
                         modelContext.insert(t)
                         KBLog.sync.kbDebug("applyTreatmentsInbound: created treatmentId=\(tid)")
                     }
@@ -181,6 +182,7 @@ extension SyncCenter {
         local.isActive         = dto.isActive
         local.isDeleted        = dto.isDeleted
         local.notes            = dto.notes
+        local.prescribingVisitId = dto.prescribingVisitId
         if isPediatricHealthSubject(childId: dto.childId, familyId: dto.familyId, modelContext: modelContext) {
             local.reminderEnabled = dto.reminderEnabled
         }
@@ -332,6 +334,7 @@ extension SyncCenter {
                 id:               t.id,
                 familyId:         t.familyId,
                 childId:          t.childId,
+                prescribingVisitId: t.prescribingVisitId,
                 drugName:         t.drugName,
                 activeIngredient: t.activeIngredient,
                 dosageValue:      t.dosageValue,

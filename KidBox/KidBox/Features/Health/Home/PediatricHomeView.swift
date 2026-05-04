@@ -213,7 +213,8 @@ struct PediatricHomeView: View {
                         title: "Vaccini",
                         subtitle: "\(allVaccines.count) registrati",
                         systemImage: "syringe.fill",
-                        tint: Color(red: 0.95, green: 0.55, blue: 0.45)
+                        tint: Color(red: 0.95, green: 0.55, blue: 0.45),
+                        badge: allVaccines.isEmpty ? nil : allVaccines.count
                     ) {
                         coordinator.navigate(to: .pediatricVaccines(familyId: familyId, childId: childId))
                     }
@@ -221,7 +222,8 @@ struct PediatricHomeView: View {
                         title: "Visite",
                         subtitle: "\(allVisits.count) registrate",
                         systemImage: "stethoscope",
-                        tint: Color(red: 0.35, green: 0.6, blue: 0.85)
+                        tint: Color(red: 0.35, green: 0.6, blue: 0.85),
+                        badge: allVisits.isEmpty ? nil : allVisits.count
                     ) {
                         coordinator.navigate(to: .pediatricVisits(familyId: familyId, childId: childId))
                     }

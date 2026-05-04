@@ -41,7 +41,9 @@ final class KBTreatment {
     var syncStatus: Int             // stored: KBSyncState.rawValue
     var lastSyncError: String?
     var syncStateRaw: Int
-   
+    
+    /// Visita che ha prescritto la cura (collegamento da modulo visita).
+    var prescribingVisitId: String?
     
     var syncState: KBSyncState {
         get { KBSyncState(rawValue: syncStateRaw) ?? .synced }
@@ -71,7 +73,8 @@ final class KBTreatment {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         updatedBy: String? = nil,
-        createdBy: String? = nil
+        createdBy: String? = nil,
+        prescribingVisitId: String? = nil
     ) {
         self.id               = id
         self.familyId         = familyId
@@ -97,6 +100,7 @@ final class KBTreatment {
         self.syncStatus       = KBSyncState.synced.rawValue
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil
+        self.prescribingVisitId = prescribingVisitId
     }
 }
 

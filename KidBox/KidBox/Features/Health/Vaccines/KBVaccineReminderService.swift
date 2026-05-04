@@ -36,7 +36,7 @@ final class KBVaccineReminderService {
 
     func sync(vaccine: KBVaccine, childName: String) async {
         cancel(vaccineId: vaccine.id)
-        guard vaccine.reminderOn,
+        guard vaccine.reminderOn == true,
               vaccine.status == .planned,
               let next = vaccine.nextDoseDate,
               next > Date()

@@ -220,7 +220,7 @@ extension SyncCenter {
                 administeredBy:        v.administeredBy,
                 administrationSiteRaw: v.administrationSiteRaw,
                 notes:                 v.notes,
-                reminderOn:            v.reminderOn,
+                reminderOn:            v.reminderOn ?? false,
                 nextDoseDate:           v.nextDoseDate,
                 isDeleted:             v.isDeleted,
                 createdAt:             v.createdAt,

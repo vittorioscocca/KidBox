@@ -914,6 +914,17 @@ struct PediatricVisitEditView: View {
             }
         }
         
+        func linkTreatmentsToVisit(_ vid: String) {
+            for tid in linkedTreatmentIds {
+                let desc = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.id == tid })
+                if let t = try? modelContext.fetch(desc).first, t.prescribingVisitId == nil {
+                    t.prescribingVisitId = vid
+                    t.updatedAt = now; t.updatedBy = uid; t.syncState = .pendingUpsert
+                    SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: t.id, familyId: familyId, modelContext: modelContext)
+                }
+            }
+        }
+        
         // ── Modifica visita esistente ──
         if let vid = visitId {
             let desc = FetchDescriptor<KBMedicalVisit>(predicate: #Predicate { $0.id == vid })
@@ -935,6 +946,7 @@ struct PediatricVisitEditView: View {
             v.nextVisitReminderOn = hasNextVisit && nextVisitReminder
             v.updatedAt          = now; v.updatedBy = uid; v.syncState = .pendingUpsert
             linkExamsToVisit(vid)
+            linkTreatmentsToVisit(vid)
             try? modelContext.save()
             SyncCenter.shared.enqueueVisitUpsert(visitId: v.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
@@ -993,6 +1005,7 @@ struct PediatricVisitEditView: View {
         )
         modelContext.insert(visit)
         linkExamsToVisit(visit.id)
+        linkTreatmentsToVisit(visit.id)
         try? modelContext.save()
         SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)

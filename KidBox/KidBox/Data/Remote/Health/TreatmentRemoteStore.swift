@@ -15,6 +15,7 @@ struct RemoteTreatmentDTO {
     let id:              String
     let familyId:        String
     let childId:         String
+    let prescribingVisitId: String?
     let drugName:        String
     let activeIngredient: String?
     let dosageValue:     Double
@@ -119,6 +120,11 @@ final class TreatmentRemoteStore {
         if let n  = dto.notes            { data["notes"] = n }
         if let cb = dto.createdBy        { data["createdBy"] = cb }
         if let ca = dto.createdAt        { data["createdAt"] = Timestamp(date: ca) }
+        if let pv = dto.prescribingVisitId, !pv.isEmpty {
+            data["prescribingVisitId"] = pv
+        } else {
+            data["prescribingVisitId"] = FieldValue.delete()
+        }
         
         try await db.collection("families")
             .document(dto.familyId)
@@ -257,6 +263,7 @@ final class TreatmentRemoteStore {
             id:               doc.documentID,
             familyId:         familyId,
             childId:          childId,
+            prescribingVisitId: data["prescribingVisitId"] as? String,
             drugName:         drugName,
             activeIngredient: data["activeIngredient"] as? String,
             dosageValue:      data["dosageValue"]  as? Double ?? 0,

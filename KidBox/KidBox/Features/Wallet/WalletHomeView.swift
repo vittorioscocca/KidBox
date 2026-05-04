@@ -16,6 +16,7 @@ struct WalletHomeView: View {
     let familyId: String
 
     @EnvironmentObject private var coordinator: AppCoordinator
+    @Environment(\.colorScheme) private var colorScheme
     @Query private var tickets: [KBWalletTicket]
 
     @State private var showAddSheet = false
@@ -52,6 +53,7 @@ struct WalletHomeView: View {
                 cardStack
             }
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Wallet")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

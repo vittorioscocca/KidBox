@@ -631,7 +631,7 @@ private struct HomeCardGrid: View {
             }
             
         case .care:
-            HomeCardView(title: "Salute", subtitle: "Health tracker", systemImage: "cross.case", tint: .red) {
+            HomeCardView(title: "Salute", subtitle: "Health tracker", systemImage: "heart.fill", tint: .red) {
                 KBLog.navigation.debug("Home: tap Care")
                 FABUsageTracker.shared.record("health")
                 onNavigate(.pediatric(familyId: familyId, childId: ""))

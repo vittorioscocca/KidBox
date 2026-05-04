@@ -15,6 +15,7 @@ struct WalletTicketDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     @Query private var tickets: [KBWalletTicket]
     @State private var isLoadingPDF = false
@@ -55,10 +56,10 @@ struct WalletTicketDetailView: View {
                                 .frame(maxWidth: .infinity)
                             }
                             .padding(16)
-                            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(KBTheme.cardBackground(colorScheme), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                                    .stroke(KBTheme.separator(colorScheme).opacity(0.3), lineWidth: 0.5)
                             )
                         }
 
@@ -68,7 +69,7 @@ struct WalletTicketDetailView: View {
                     }
                     .padding(16)
                 }
-                .background(Color(.systemGroupedBackground).ignoresSafeArea())
+                .background(KBTheme.background(colorScheme).ignoresSafeArea())
             } else {
                 ContentUnavailableView(
                     "Biglietto non trovato",
@@ -137,10 +138,10 @@ struct WalletTicketDetailView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(KBTheme.cardBackground(colorScheme), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                    .stroke(KBTheme.separator(colorScheme).opacity(0.3), lineWidth: 0.5)
             )
         }
     }

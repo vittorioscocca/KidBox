@@ -18,6 +18,7 @@ struct TreatmentDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var coordinator: AppCoordinator
     
     @Bindable var treatment: KBTreatment
     
@@ -150,6 +151,9 @@ struct TreatmentDetailView: View {
                 scheduleInfoCard.padding()
                 notesCard.padding(.horizontal).padding(.bottom, 4)
                 reminderCard.padding(.horizontal).padding(.bottom, 8)
+                if treatment.prescribingVisitId != nil {
+                    treatmentPrescribingVisitCard.padding(.horizontal).padding(.bottom, 8)
+                }
                 TreatmentAttachmentsSection(treatment: treatment).padding(.horizontal).padding(.bottom, 8)
                 dangerZone.padding(.horizontal).padding(.top, 8).padding(.bottom, 40)
             }
@@ -600,6 +604,21 @@ struct TreatmentDetailView: View {
         )
     }
     
+    // MARK: - Visita prescrittrice
+    
+    @ViewBuilder
+    private var treatmentPrescribingVisitCard: some View {
+        if let vid = treatment.prescribingVisitId {
+            TreatmentPrescribingVisitNavRow(
+                visitId: vid,
+                familyId: treatment.familyId,
+                childId: treatment.childId,
+                tint: tint,
+                colorScheme: colorScheme,
+            )
+        }
+    }
+    
     // MARK: - Danger zone
     
     private var dangerZone: some View {
@@ -1020,6 +1039,64 @@ struct ConfirmDoseSheet: View {
             }
             .presentationDetents([.medium])
         }
+    }
+}
+
+// MARK: - Visita prescrittrice (dettaglio cura)
+
+private struct TreatmentPrescribingVisitNavRow: View {
+    let visitId: String
+    let familyId: String
+    let childId: String
+    let tint: Color
+    let colorScheme: ColorScheme
+    
+    @EnvironmentObject private var coordinator: AppCoordinator
+    @Query private var visits: [KBMedicalVisit]
+    private var visit: KBMedicalVisit? { visits.first }
+    
+    init(visitId: String, familyId: String, childId: String, tint: Color, colorScheme: ColorScheme) {
+        self.visitId = visitId
+        self.familyId = familyId
+        self.childId = childId
+        self.tint = tint
+        self.colorScheme = colorScheme
+        let vid = visitId
+        _visits = Query(filter: #Predicate<KBMedicalVisit> { $0.id == vid })
+    }
+    
+    var body: some View {
+        Button {
+            coordinator.navigate(to: .pediatricVisitDetail(familyId: familyId, childId: childId, visitId: visitId))
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(tint.opacity(0.12)).frame(width: 44, height: 44)
+                    Image(systemName: "stethoscope").foregroundStyle(tint)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Visita prescrittrice")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text(visit.flatMap { $0.reason.isEmpty ? nil : $0.reason } ?? "Visita")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
+                    if let date = visit?.date {
+                        Text(date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption).foregroundStyle(.tertiary)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(KBTheme.cardBackground(colorScheme))
+                    .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

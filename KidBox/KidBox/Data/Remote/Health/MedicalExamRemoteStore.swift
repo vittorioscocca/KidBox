@@ -82,8 +82,12 @@ final class MedicalExamRemoteStore {
     
     static func parseDTO(doc: QueryDocumentSnapshot) -> KBMedicalExamDTO? {
         let d = doc.data()
+        // `id` nel payload: Android storico / client che non duplicavano l'id nel body usavano solo documentId.
+        let id: String = {
+            if let s = d["id"] as? String, !s.isEmpty { return s }
+            return doc.documentID
+        }()
         guard
-            let id       = d["id"]       as? String,
             let familyId = d["familyId"] as? String,
             let childId  = d["childId"]  as? String,
             let name     = d["name"]     as? String

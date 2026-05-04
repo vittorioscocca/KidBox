@@ -995,35 +995,64 @@ function aiTodayKey() {
   return new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"});
 }
 
-/**
- * Reads the family's plan from Firestore and returns the daily message limit.
- * Piano per famiglia: Pro = 30 msg/giorno, Max = 100 msg/giorno.
- * Legge prima da families/{familyId}.plan (fonte di verità),
- * fallback a users/{uid}.plan per retrocompatibilità.
- * @param {string} uid
- * @param {string|null} familyId
- * @return {Promise<number>}
- */
-async function resolveAIDailyLimit(uid, familyId = null) {
-  try {
-    let plan = "free";
+const KB = 1024;
 
-    // 1. Fonte di verità: piano famiglia
+/**
+ * Piano effettivo per quote (AI giornaliero, storage): allineato a iOS KBSubscriptionManager.
+ * Preferisce families/{familyId}.planOverride se "pro" | "max", altrimenti families.plan,
+ * altrimenti users/{uid}.plan.
+ * @param {string|null|undefined} uid
+ * @param {string|null|undefined} familyId
+ * @return {Promise<string>}
+ */
+async function resolveFamilyPlanForQuotas(uid, familyId) {
+  let plan = "free";
+  try {
     if (familyId) {
       const familySnap = await admin.firestore().collection("families").doc(familyId).get();
       if (familySnap.exists) {
-        plan = familySnap.data().plan || "free";
+        const d = familySnap.data() || {};
+        const ov = d.planOverride;
+        if (ov === "pro" || ov === "max") {
+          plan = ov;
+        } else {
+          plan = d.plan || "free";
+        }
       }
     }
-
-    // 2. Fallback: piano utente (retrocompatibilità)
-    if (plan === "free") {
+    if (plan === "free" && uid) {
       const userSnap = await admin.firestore().collection("users").doc(uid).get();
       if (userSnap.exists) {
         plan = userSnap.data().plan || "free";
       }
     }
+    return plan;
+  } catch (e) {
+    logger.warn("resolveFamilyPlanForQuotas failed", {uid, familyId, error: e.message});
+    return "free";
+  }
+}
 
+/** Quota storage in byte (stessi valori dell'app iOS KBPlan.storageQuota). */
+function storageQuotaBytesForPlan(plan) {
+  switch (plan) {
+    case "max": return 20 * KB * KB * KB;
+    case "pro": return 5 * KB * KB * KB;
+    case "free":
+    default: return 200 * KB * KB;
+  }
+}
+
+/**
+ * Limite messaggi AI al giorno per famiglia (Pro = 30, Max = 100, Free = 0).
+ * Usa [resolveFamilyPlanForQuotas] così rispetta planOverride da console admin.
+ * @param {string|null|undefined} uid
+ * @param {string|null|undefined} familyId
+ * @return {Promise<number>}
+ */
+async function resolveAIDailyLimit(uid, familyId = null) {
+  try {
+    const plan = await resolveFamilyPlanForQuotas(uid, familyId);
     switch (plan) {
       case "pro": return 30;
       case "max": return 100;
@@ -1410,11 +1439,13 @@ exports.getStorageUsage = onCall(
       const usedBytes = Math.max(0, Math.round(data.usedBytes || 0));
       const rawSections = data.sections || {};
 
-      logger.info("getStorageUsage", {uid, familyId, usedBytes});
+      const plan = await resolveFamilyPlanForQuotas(uid, familyId);
+      const quotaBytes = storageQuotaBytesForPlan(plan);
+      logger.info("getStorageUsage", {uid, familyId, usedBytes, plan, quotaBytes});
 
       return {
         usedBytes,
-        quotaBytes: 200 * 1024 * 1024,
+        quotaBytes,
         sections: {
           documents: Math.max(0, Math.round(rawSections.documents || 0)),
           wallet: Math.max(0, Math.round(rawSections.wallet || 0)),
@@ -1561,8 +1592,13 @@ exports.initStorageUsage = onCall(
         initializedBy: uid,
       }, {merge: false});
 
+      const plan = await resolveFamilyPlanForQuotas(uid, familyId);
+      const quotaBytes = storageQuotaBytesForPlan(plan);
+
       logger.info("initStorageUsage: completed", {
         familyId,
+        plan,
+        quotaBytes,
         docBytes,
         walletBytes,
         chatBytes,
@@ -1580,7 +1616,7 @@ exports.initStorageUsage = onCall(
         saluteBytes,
         expensesBytes,
         totalBytes,
-        quotaBytes: 200 * kb * kb,
+        quotaBytes,
       };
     },
 );
@@ -1886,7 +1922,7 @@ exports.setFamilyPlanOverride = onCall(
       if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
 
       // Lista UID amministratori autorizzati — sostituisci con il tuo UID (Firebase → Authentication)
-      const ADMIN_UIDS = ["efw85HN41nb1rmslevC3wkFpVUo1"];
+      const ADMIN_UIDS = ["SOSTITUISCI_CON_TUO_UID"];
       if (!ADMIN_UIDS.includes(callerUid)) {
         throw new HttpsError("permission-denied", "Non autorizzato.");
       }

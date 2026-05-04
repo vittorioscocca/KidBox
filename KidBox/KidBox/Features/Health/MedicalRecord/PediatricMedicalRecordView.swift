@@ -6,6 +6,7 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import Contacts
 
 // MARK: - Scheda Medica
 
@@ -28,6 +29,8 @@ struct PediatricMedicalRecordView: View {
     @State private var contacts: [KBEmergencyContact] = []
     @State private var showAddContact = false
     @State private var editingContact: KBEmergencyContact? = nil
+    @State private var showContactPicker = false
+    @State private var showContactsPermissionAlert = false
     
     private let bloodGroups = ["Non specificato", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
     
@@ -71,7 +74,7 @@ struct PediatricMedicalRecordView: View {
                 }
                 
                 Button {
-                    showAddContact = true
+                    pickEmergencyContactFromAddressBook()
                 } label: {
                     Label("Aggiungi contatto", systemImage: "plus.circle.fill")
                 }
@@ -108,6 +111,27 @@ struct PediatricMedicalRecordView: View {
             EmergencyContactFormView(contact: nil) { newContact in
                 contacts.append(newContact)
             }
+        }
+        .sheet(isPresented: $showContactPicker) {
+            ContactPickerRepresentable(
+                onPick: { payload in
+                    let contact = KBEmergencyContact(
+                        name: payload.fullName,
+                        relation: "",
+                        phone: payload.primaryPhone ?? ""
+                    )
+                    contacts.append(contact)
+                    showContactPicker = false
+                },
+                onCancel: {
+                    showContactPicker = false
+                }
+            )
+        }
+        .alert("Accesso ai contatti negato", isPresented: $showContactsPermissionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Per selezionare un contatto, abilita l'accesso ai contatti nelle impostazioni.")
         }
         // Sheet: modifica contatto
         .sheet(item: $editingContact) { contact in
@@ -181,6 +205,26 @@ struct PediatricMedicalRecordView: View {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         isSaving = false
+    }
+
+    private func pickEmergencyContactFromAddressBook() {
+        let store = CNContactStore()
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized:
+            showContactPicker = true
+        case .notDetermined:
+            store.requestAccess(for: .contacts) { granted, _ in
+                DispatchQueue.main.async {
+                    if granted {
+                        showContactPicker = true
+                    } else {
+                        showContactsPermissionAlert = true
+                    }
+                }
+            }
+        default:
+            showContactsPermissionAlert = true
+        }
     }
 }
 

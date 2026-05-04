@@ -71,7 +71,8 @@ final class KBVaccine {
     var notes: String?
     
     /// Promemoria locale (notifica) solo quando `status == .planned`.
-    var reminderOn: Bool
+    /// Opzionale per migrazione SwiftData: i record senza colonna storica restano `nil` (= spento).
+    var reminderOn: Bool?
     /// Data prevista del richiamo (usata per il promemoria «giorno prima»).
     var nextDoseDate: Date?
     
@@ -117,7 +118,7 @@ final class KBVaccine {
         administeredBy: String? = nil,
         administrationSiteRaw: String? = nil,
         notes: String? = nil,
-        reminderOn: Bool = false,
+        reminderOn: Bool? = false,
         nextDoseDate: Date? = nil,
         isDeleted: Bool = false,
         createdAt: Date = Date(),

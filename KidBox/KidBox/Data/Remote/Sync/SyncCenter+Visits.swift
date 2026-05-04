@@ -97,10 +97,14 @@ extension SyncCenter {
                         v.id                      = dto.id
                         v.doctorSpecializationRaw = dto.doctorSpecializationRaw
                         v.linkedTreatmentIds      = dto.linkedTreatmentIds
+                        v.linkedExamIds           = dto.linkedExamIds
                         v.therapyTypesRaw         = dto.therapyTypesRaw
                         v.travelDetailsData       = dto.travelDetailsData
                         v.asNeededDrugsData       = dto.asNeededDrugsData
                         v.prescribedExamsData     = dto.prescribedExamsData
+                        v.visitStatusRaw          = dto.visitStatusRaw
+                        v.reminderOn              = dto.reminderOn
+                        v.nextVisitReminderOn     = dto.nextVisitReminderOn
                         v.isDeleted               = false
                         v.syncState               = .synced
                         modelContext.insert(v)
@@ -132,6 +136,7 @@ extension SyncCenter {
         local.diagnosis               = dto.diagnosis
         local.recommendations         = dto.recommendations
         local.linkedTreatmentIds      = dto.linkedTreatmentIds
+        local.linkedExamIds           = dto.linkedExamIds
         local.asNeededDrugsData       = dto.asNeededDrugsData
         local.therapyTypesRaw         = dto.therapyTypesRaw
         local.prescribedExamsData     = dto.prescribedExamsData
@@ -139,6 +144,9 @@ extension SyncCenter {
         local.notes                   = dto.notes
         local.nextVisitDate           = dto.nextVisitDate
         local.nextVisitReason         = dto.nextVisitReason
+        local.visitStatusRaw          = dto.visitStatusRaw
+        local.reminderOn              = dto.reminderOn
+        local.nextVisitReminderOn     = dto.nextVisitReminderOn
         local.isDeleted               = dto.isDeleted
         local.updatedAt               = dto.updatedAt ?? local.updatedAt
         local.updatedBy               = dto.updatedBy
@@ -186,7 +194,7 @@ extension SyncCenter {
                 diagnosis:               v.diagnosis,
                 recommendations:         v.recommendations,
                 linkedTreatmentIds:      v.linkedTreatmentIds,
-                linkedExamIds:           v.linkedExamIds ,
+                linkedExamIds:           v.linkedExamIds,
                 asNeededDrugsData:       v.asNeededDrugsData,
                 therapyTypesRaw:         v.therapyTypesRaw,
                 prescribedExamsData:     v.prescribedExamsData,
@@ -194,6 +202,9 @@ extension SyncCenter {
                 notes:                   v.notes,
                 nextVisitDate:           v.nextVisitDate,
                 nextVisitReason:         v.nextVisitReason,
+                visitStatusRaw:          v.visitStatusRaw,
+                reminderOn:              v.reminderOn,
+                nextVisitReminderOn:     v.nextVisitReminderOn,
                 isDeleted:               v.isDeleted,
                 createdBy:               v.createdBy,
                 updatedBy:               v.updatedBy ?? "local",

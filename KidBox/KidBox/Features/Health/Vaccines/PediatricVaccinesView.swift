@@ -903,7 +903,7 @@ struct PediatricVaccineEditView: View {
         administeredBy = v.administeredBy ?? ""
         adminSite      = v.administrationSiteRaw ?? ""
         notes          = v.notes ?? ""
-        reminderOn     = v.reminderOn
+        reminderOn     = v.reminderOn ?? false
         if let nd = v.nextDoseDate { nextDoseDate = nd }
     }
     
