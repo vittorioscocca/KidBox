@@ -13,6 +13,10 @@ import OSLog
 
 extension SyncCenter {
     
+    /// Tolleranza LWW tra `updatedAt` Firestore (risoluzione tipicamente al ms) e `Date` SwiftData
+    /// (sotto‑ms): senza slack, un aggiornamento Android può risultare “più vecchio” del locale e venire scartato.
+    private static let childMergeTimestampSlack: TimeInterval = 0.05
+    
     // MARK: - Realtime (Inbound) Children
     
     /// Shared listener for children realtime updates.
@@ -110,7 +114,6 @@ extension SyncCenter {
             
             for diff in documentChanges {
                 let doc = diff.document
-                let data = doc.data()
                 let cid = doc.documentID
                 
                 // Firestore removed => hard delete local
@@ -125,6 +128,7 @@ extension SyncCenter {
                     continue
                 }
                 
+                let data = doc.data()
                 let remoteName = data["name"] as? String ?? ""
                 let remoteBirthDate = (data["birthDate"] as? Timestamp)?.dateValue()
                 let remoteUpdatedAt = (data["updatedAt"] as? Timestamp)?.dateValue()
@@ -132,6 +136,10 @@ extension SyncCenter {
                 let remoteCreatedAt = (data["createdAt"] as? Timestamp)?.dateValue()
                 let remoteCreatedBy = data["createdBy"] as? String
                 let remoteIsDeleted = data["isDeleted"] as? Bool ?? false
+                let hasWeightKey = data["weightKg"] != nil
+                let hasHeightKey = data["heightCm"] != nil
+                let remoteWeightKg = hasWeightKey ? Self.metricDouble(fromFirestore: data["weightKg"]) : nil
+                let remoteHeightCm = hasHeightKey ? Self.metricDouble(fromFirestore: data["heightCm"]) : nil
                 
                 // 2) fetch child by id (do not rely on fam.children)
                 let childId = cid
@@ -151,11 +159,12 @@ extension SyncCenter {
                 if let localChild {
                     var didMutate = false
                     
-                    // LWW
+                    // LWW (con slack: evita scarto aggiornamenti cross-device per arrotondamento timestamp)
                     let localStamp = (localChild.updatedAt ?? localChild.createdAt)
                     let remoteStamp = (remoteUpdatedAt ?? remoteCreatedAt ?? .distantPast)
+                    let acceptRemote = remoteStamp >= localStamp.addingTimeInterval(-Self.childMergeTimestampSlack)
                     
-                    if remoteStamp >= localStamp {
+                    if acceptRemote {
                         if localChild.familyId != familyId {
                             localChild.familyId = familyId
                             didMutate = true
@@ -191,6 +200,15 @@ extension SyncCenter {
                             localChild.updatedBy = rub
                             didMutate = true
                         }
+                        
+                        if hasWeightKey, localChild.weightKg != remoteWeightKg {
+                            localChild.weightKg = remoteWeightKg
+                            didMutate = true
+                        }
+                        if hasHeightKey, localChild.heightCm != remoteHeightCm {
+                            localChild.heightCm = remoteHeightCm
+                            didMutate = true
+                        }
                     }
                     
                     // ensure relationship pointer only (do not touch fam.children)
@@ -214,6 +232,8 @@ extension SyncCenter {
                         familyId: familyId,
                         name: remoteName,
                         birthDate: remoteBirthDate,
+                        weightKg: hasWeightKey ? remoteWeightKg : nil,
+                        heightCm: hasHeightKey ? remoteHeightCm : nil,
                         createdBy: remoteCreatedBy ?? remoteUpdatedBy ?? "remote",
                         createdAt: createdAt,
                         updatedBy: remoteUpdatedBy,
@@ -238,5 +258,15 @@ extension SyncCenter {
         } catch {
             KBLog.sync.kbError("Children inbound apply failed: \(error.localizedDescription)")
         }
+    }
+    
+    /// Legge un numero metrico da Firestore (`Double`, `Int`, `NSNumber`, `null`).
+    private static func metricDouble(fromFirestore value: Any?) -> Double? {
+        guard let value else { return nil }
+        if value is NSNull { return nil }
+        if let d = value as? Double { return d }
+        if let n = value as? NSNumber { return n.doubleValue }
+        if let i = value as? Int { return Double(i) }
+        return nil
     }
 }

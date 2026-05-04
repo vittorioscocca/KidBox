@@ -154,8 +154,6 @@ enum TreatmentNotificationManager {
     ) {
         let center = UNUserNotificationCenter.current()
         let cal    = Calendar.current
-        let labels = ["Mattina", "Pranzo", "Sera", "Notte"]
-        
         // Fine della finestra = min(windowStart + windowDays, careEnd)
         var windowEndCandidate = cal.date(byAdding: .day, value: windowDays - 1, to: windowStart)!
         if let end = careEnd {
@@ -183,7 +181,8 @@ enum TreatmentNotificationManager {
                 
                 let content                    = UNMutableNotificationContent()
                 content.title                  = "💊 \(treatment.drugName)"
-                content.body                   = "\(slotIdx < labels.count ? labels[slotIdx] : "Dose") · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit) per \(childName)"
+                let fascia = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
+                content.body                   = "\(fascia) · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit) per \(childName)"
                 content.sound                  = .default
                 content.categoryIdentifier     = TreatmentNotificationCategory.identifier
                 content.userInfo               = [

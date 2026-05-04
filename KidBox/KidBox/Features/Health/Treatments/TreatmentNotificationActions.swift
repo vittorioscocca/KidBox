@@ -197,49 +197,53 @@ enum TreatmentDoseActionHandler {
             return
         }
         
-        let logDesc = FetchDescriptor<KBDoseLog>(
+        let dayNumber = dayOffset + 1
+        let stable = KBDoseLog.stableDocumentId(treatmentId: treatmentId, dayNumber: dayNumber, slotIndex: slotIndex)
+        let slotDesc = FetchDescriptor<KBDoseLog>(
             predicate: #Predicate {
                 $0.treatmentId == treatmentId &&
-                $0.dayNumber   == dayOffset + 1 &&
-                $0.slotIndex   == slotIndex
+                $0.dayNumber == dayNumber &&
+                $0.slotIndex == slotIndex
             }
         )
-        
-        let existingLog = try? modelContext.fetch(logDesc).first
-        
-        if let existing = existingLog {
-            existing.taken     = taken
-            existing.takenAt   = taken ? now : nil
-            existing.updatedAt = now
-            existing.updatedBy = uid
-            existing.syncState = .pendingUpsert
+        let sameSlot = (try? modelContext.fetch(slotDesc)) ?? []
+        let stableRow = sameSlot.first { $0.id == stable }
+        for row in sameSlot where row.id != stable {
+            SyncCenter.shared.enqueueDoseLogDelete(logId: row.id, familyId: familyId, modelContext: modelContext)
+            modelContext.delete(row)
+        }
+        if let row = stableRow {
+            row.taken = taken
+            row.takenAt = taken ? now : nil
+            row.updatedAt = now
+            row.updatedBy = uid
+            row.syncState = .pendingUpsert
         } else {
             let scheduledTime = treatment.scheduleTimes[safe: slotIndex] ?? "00:00"
             let newLog = KBDoseLog(
-                familyId:      familyId,
-                childId:       treatment.childId,
-                treatmentId:   treatmentId,
-                dayNumber:     dayOffset + 1,
-                slotIndex:     slotIndex,
+                id: stable,
+                familyId: familyId,
+                childId: treatment.childId,
+                treatmentId: treatmentId,
+                dayNumber: dayNumber,
+                slotIndex: slotIndex,
                 scheduledTime: scheduledTime,
-                takenAt:       taken ? now : nil,
-                taken:         taken,
-                updatedAt:     now,
-                updatedBy:     uid
+                takenAt: taken ? now : nil,
+                taken: taken,
+                updatedAt: now,
+                updatedBy: uid
             )
+            newLog.syncState = .pendingUpsert
             modelContext.insert(newLog)
         }
         
         do {
             try modelContext.save()
-            let saved = (try? modelContext.fetch(logDesc))?.first ?? existingLog
-            if let logId = saved?.id {
-                SyncCenter.shared.enqueueDoseLogUpsert(
-                    logId:        logId,
-                    familyId:     familyId,
-                    modelContext: modelContext
-                )
-            }
+            SyncCenter.shared.enqueueDoseLogUpsert(
+                logId: stable,
+                familyId: familyId,
+                modelContext: modelContext
+            )
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             log.info("TreatmentDoseActionHandler: saved taken=\(taken) treatmentId=\(treatmentId) day=\(dayOffset) slot=\(slotIndex)")
         } catch {

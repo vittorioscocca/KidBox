@@ -188,6 +188,9 @@ struct RootHostView: View {
     /// - If there is no resolved active family, stop listeners (if any) and reset `startedFamilyId`.
     /// - If resolved family equals `startedFamilyId`, do nothing.
     /// - If resolved family differs, stop previous listeners, then start new ones.
+    ///
+    /// Includes `startChildrenRealtime` so SwiftData child fields (e.g. weight/height) stay in sync
+    /// from Firestore without opening Family settings.
     private func startFamilyRealtimeIfPossible() {
         let familyId = resolvedActiveFamilyId
         
@@ -196,6 +199,7 @@ struct RootHostView: View {
                 KBLog.sync.kbInfo("No active family. Stopping realtime listeners (previous=\(startedFamilyId ?? "nil"))")
                 SyncCenter.shared.stopFamilyBundleRealtime()
                 SyncCenter.shared.stopMembersRealtime()
+                SyncCenter.shared.stopChildrenRealtime()
                 SyncCenter.shared.stopDocumentsRealtime()
                 SyncCenter.shared.stopTreatmentsRealtime()
                 SyncCenter.shared.stopExpensesRealtime()
@@ -227,6 +231,7 @@ struct RootHostView: View {
             KBLog.sync.kbInfo("Switching realtime listeners from=\(startedFamilyId ?? "nil") to=\(familyId)")
             SyncCenter.shared.stopFamilyBundleRealtime()
             SyncCenter.shared.stopMembersRealtime()
+            SyncCenter.shared.stopChildrenRealtime()
             SyncCenter.shared.stopDocumentsRealtime()
             SyncCenter.shared.stopTreatmentsRealtime()
             SyncCenter.shared.stopExpensesRealtime()
@@ -245,6 +250,12 @@ struct RootHostView: View {
         
         KBLog.sync.kbDebug("startMembersRealtime familyId=\(familyId)")
         SyncCenter.shared.startMembersRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        KBLog.sync.kbDebug("startChildrenRealtime familyId=\(familyId)")
+        SyncCenter.shared.startChildrenRealtime(
             familyId: familyId,
             modelContext: modelContext
         )

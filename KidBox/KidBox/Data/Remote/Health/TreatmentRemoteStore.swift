@@ -91,7 +91,8 @@ final class TreatmentRemoteStore {
             }
     }
     
-    func upsertTreatment(_ dto: RemoteTreatmentDTO) async throws {
+    /// - Parameter syncReminderEnabledToRemote: `true` solo per cure del **bambino** (`childId` = profilo pediatrico). Per i membri adulti il promemoria resta solo sul dispositivo (campo rimosso da Firestore).
+    func upsertTreatment(_ dto: RemoteTreatmentDTO, syncReminderEnabledToRemote: Bool) async throws {
         var data: [String: Any] = [
             "familyId":         dto.familyId,
             "childId":          dto.childId,
@@ -105,10 +106,14 @@ final class TreatmentRemoteStore {
             "scheduleTimes":    dto.scheduleTimes,
             "isActive":         dto.isActive,
             "isDeleted":        dto.isDeleted,
-            "reminderEnabled":  dto.reminderEnabled,
             "updatedBy":        dto.updatedBy,
             "updatedAt":        Timestamp(date: dto.updatedAt ?? Date()),
         ]
+        if syncReminderEnabledToRemote {
+            data["reminderEnabled"] = dto.reminderEnabled
+        } else {
+            data["reminderEnabled"] = FieldValue.delete()
+        }
         if let ai = dto.activeIngredient { data["activeIngredient"] = ai }
         if let ed = dto.endDate          { data["endDate"] = Timestamp(date: ed) }
         if let n  = dto.notes            { data["notes"] = n }
@@ -149,7 +154,7 @@ final class TreatmentRemoteStore {
             .collection("doseLogs")
             .whereField("childId",     isEqualTo: childId)
             .whereField("treatmentId", isEqualTo: treatmentId)
-            .addSnapshotListener { snap, err in
+            .addSnapshotListener(includeMetadataChanges: true) { snap, err in
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [DoseLogRemoteChange] = snap.documentChanges.compactMap { diff in
@@ -170,7 +175,7 @@ final class TreatmentRemoteStore {
         db.collection("families")
             .document(familyId)
             .collection("doseLogs")
-            .addSnapshotListener { snap, err in
+            .addSnapshotListener(includeMetadataChanges: true) { snap, err in
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [DoseLogRemoteChange] = snap.documentChanges.compactMap { diff in
@@ -218,6 +223,26 @@ final class TreatmentRemoteStore {
     
     // MARK: - Decode helpers
     
+    /// Firestore può restituire interi come `Int64` / `NSNumber`: `as? Int` fallisce e il documento viene scartato (sync dose Android → iOS).
+    private static func firestoreInt(_ value: Any?) -> Int? {
+        switch value {
+        case let i as Int: return i
+        case let i as Int32: return Int(i)
+        case let i as Int64: return Int(i)
+        case let d as Double: return Int(d)
+        case let n as NSNumber: return n.intValue
+        default: return nil
+        }
+    }
+    
+    private static func firestoreBool(_ value: Any?, default def: Bool = false) -> Bool {
+        switch value {
+        case let b as Bool: return b
+        case let n as NSNumber: return n.boolValue
+        default: return def
+        }
+    }
+    
     private static func decodeTreatment(_ doc: QueryDocumentSnapshot, familyId: String) -> RemoteTreatmentDTO? {
         let data = doc.data()
         guard
@@ -256,11 +281,11 @@ final class TreatmentRemoteStore {
     private static func decodeDoseLog(_ doc: QueryDocumentSnapshot, familyId: String) -> RemoteDoseLogDTO? {
         let data = doc.data()
         guard
-            let childId       = data["childId"]       as? String,
-            let treatmentId   = data["treatmentId"]   as? String,
-            let dayNumber     = data["dayNumber"]      as? Int,
-            let slotIndex     = data["slotIndex"]      as? Int,
-            let scheduledTime = data["scheduledTime"]  as? String
+            let childId = data["childId"] as? String,
+            let treatmentId = data["treatmentId"] as? String,
+            let dayNumber = firestoreInt(data["dayNumber"]),
+            let slotIndex = firestoreInt(data["slotIndex"]),
+            let scheduledTime = data["scheduledTime"] as? String
         else { return nil }
         
         return RemoteDoseLogDTO(
@@ -271,12 +296,12 @@ final class TreatmentRemoteStore {
             dayNumber:     dayNumber,
             slotIndex:     slotIndex,
             scheduledTime: scheduledTime,
-            takenAt:       (data["takenAt"]   as? Timestamp)?.dateValue(),
-            taken:         data["taken"]       as? Bool   ?? false,
-            isDeleted:     data["isDeleted"]   as? Bool   ?? false,
-            updatedBy:     data["updatedBy"]   as? String,
-            createdAt:     (data["createdAt"]  as? Timestamp)?.dateValue(),
-            updatedAt:     (data["updatedAt"]  as? Timestamp)?.dateValue()
+            takenAt:       (data["takenAt"] as? Timestamp)?.dateValue(),
+            taken:         firestoreBool(data["taken"], default: false),
+            isDeleted:     firestoreBool(data["isDeleted"], default: false),
+            updatedBy:     data["updatedBy"] as? String,
+            createdAt:     (data["createdAt"] as? Timestamp)?.dateValue(),
+            updatedAt:     (data["updatedAt"] as? Timestamp)?.dateValue()
         )
     }
 }

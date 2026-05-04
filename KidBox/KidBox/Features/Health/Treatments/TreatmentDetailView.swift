@@ -36,13 +36,21 @@ struct TreatmentDetailView: View {
     private let tint  = KBTheme.tint
     private let green = KBTheme.green
     
+    /// Mese abbreviato in italiano (come Android), indipendentemente dalla lingua di sistema.
+    private static let timelineMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "it_IT")
+        f.dateFormat = "MMM"
+        return f
+    }()
+    
     init(treatment: KBTreatment) {
         self.treatment = treatment
         let tid = treatment.id
         let fid = treatment.familyId
         let cid = treatment.childId
         _doseLogs = Query(filter: #Predicate<KBDoseLog> {
-            $0.treatmentId == tid && $0.familyId == fid && $0.childId == cid
+            $0.treatmentId == tid && $0.familyId == fid && $0.childId == cid && $0.isDeleted == false
         })
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
     }
@@ -86,19 +94,40 @@ struct TreatmentDetailView: View {
         return max(0, min(days, totalDays - 1))
     }
     
+    /// Giorno della timeline (offset da inizio cura) con data di calendario successiva a oggi.
+    private func isFutureDayOffset(_ offset: Int) -> Bool {
+        let cal = Calendar.current
+        let dayStart = cal.startOfDay(for: dateForOffset(offset))
+        let todayStart = cal.startOfDay(for: Date())
+        return dayStart > todayStart
+    }
+    
+    private var isSelectedDayFuture: Bool { isFutureDayOffset(selectedDayOffset) }
+    
     private var slotsForSelectedDay: [SlotViewModel] {
         let dayNumber = selectedDayOffset + 1
-        return treatment.scheduleTimes.enumerated().map { (slotIdx, timeStr) in
-            let log = doseLogs.first { $0.dayNumber == dayNumber && $0.slotIndex == slotIdx }
+        let times = treatment.scheduleTimes
+        return TreatmentSchedulePeriod.sortedSlotIndices(times: times).map { slotIdx in
+            let timeStr = times[slotIdx]
+            let log = doseLogs.first { $0.dayNumber == dayNumber && $0.slotIndex == slotIdx && !$0.isDeleted }
+            let sched = schedulePeriodForTime(timeStr, slotIndexFallback: slotIdx)
+            let label = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
+            let chipPeriod: TreatmentSchedulePeriod? = {
+                if log?.taken == true, let at = log?.takenAt {
+                    return TreatmentSchedulePeriod.from(date: at)
+                }
+                return sched
+            }()
             return SlotViewModel(
                 dayNumber: dayNumber,
                 slotIndex: slotIdx,
                 scheduledTime: timeStr,
-                slotLabel: ["Mattina","Pranzo","Sera","Notte"][safe: slotIdx] ?? "Dose \(slotIdx+1)",
-                taken:     log?.taken ?? false,
+                periodLabel: label,
+                periodForChip: chipPeriod,
+                taken: log?.taken ?? false,
                 isSkipped: log != nil && (log?.taken == false),
-                takenAt:   log?.takenAt,
-                logId:     log?.id
+                takenAt: log?.takenAt,
+                logId: log?.id
             )
         }
     }
@@ -273,6 +302,7 @@ struct TreatmentDetailView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -313,7 +343,7 @@ struct TreatmentDetailView: View {
                             Text(date.formatted(.dateTime.day()))
                                 .font(.caption.bold())
                                 .foregroundStyle(isSelected ? .white : (isToday ? tint : .primary))
-                            Text(date.formatted(.dateTime.month(.abbreviated)))
+                            Text(Self.timelineMonthFormatter.string(from: date))
                                 .font(.system(size: 9))
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                             if allTaken {
@@ -323,6 +353,7 @@ struct TreatmentDetailView: View {
                             }
                         }
                         .frame(width: 44, height: 52)
+                        .opacity(isFutureDayOffset(offset) ? 0.7 : 1)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(isSelected ? tint : (isToday ? tint.opacity(0.1) : KBTheme.cardBackground(colorScheme)))
@@ -361,13 +392,24 @@ struct TreatmentDetailView: View {
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(slot.scheduledTime).font(.subheadline.bold())
+                HStack(spacing: 8) {
+                    if let p = slot.periodForChip {
+                        TreatmentPeriodBadge(period: p)
+                    } else {
+                        NeutralPeriodBadge(text: slot.periodLabel)
+                    }
+                    Text(slot.scheduledTime).font(.subheadline.bold())
+                }
                 if slot.taken, let at = slot.takenAt {
                     Text("Presa: \(at.formatted(.dateTime.hour().minute()))")
                         .font(.caption).foregroundStyle(.green)
                 } else if slot.isSkipped {
                     Label("Saltata", systemImage: "xmark.circle.fill")
                         .font(.caption).foregroundStyle(.orange)
+                } else if isSelectedDayFuture {
+                    Text("Giorno futuro: non puoi registrare assunzioni.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
                     Text("Da prendere").font(.caption).foregroundStyle(.secondary)
                 }
@@ -389,6 +431,8 @@ struct TreatmentDetailView: View {
                         .background(Capsule().stroke(Color.orange.opacity(0.4)))
                 }
                 .buttonStyle(.plain)
+            } else if isSelectedDayFuture {
+                EmptyView()
             } else {
                 HStack(spacing: 8) {
                     Button { skipDose(slot: slot) } label: {
@@ -434,12 +478,17 @@ struct TreatmentDetailView: View {
             Text("Imposta gli orari per \(treatment.dailyFrequency) dosi giornaliere")
                 .font(.subheadline).foregroundStyle(.secondary)
             
-            let labels = ["Mattina", "Pranzo", "Sera", "Notte"]
-            ForEach(treatment.scheduleTimes.indices, id: \.self) { i in
-                HStack {
-                    Text(labels[safe: i] ?? "Dose \(i+1)").foregroundStyle(.secondary)
+            let times = treatment.scheduleTimes
+            ForEach(TreatmentSchedulePeriod.sortedSlotIndices(times: times), id: \.self) { i in
+                let time = times[i]
+                HStack(spacing: 8) {
+                    if let p = schedulePeriodForTime(time, slotIndexFallback: i) {
+                        TreatmentPeriodBadge(period: p)
+                    } else {
+                        NeutralPeriodBadge(text: schedulePeriodLabel(time, slotIndexFallback: i))
+                    }
                     Spacer()
-                    Text(treatment.scheduleTimes[i]).font(.subheadline.bold())
+                    Text(time).font(.subheadline.bold())
                 }
                 .font(.subheadline)
             }
@@ -526,9 +575,16 @@ struct TreatmentDetailView: View {
                     Divider()
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Notifiche schedulate per:").font(.caption).foregroundStyle(.secondary)
-                        ForEach(treatment.scheduleTimes, id: \.self) { t in
+                        let times = treatment.scheduleTimes
+                        ForEach(TreatmentSchedulePeriod.sortedSlotIndices(times: times), id: \.self) { idx in
+                            let t = times[idx]
                             HStack(spacing: 6) {
                                 Image(systemName: "bell.fill").font(.caption2).foregroundStyle(tint)
+                                if let p = schedulePeriodForTime(t, slotIndexFallback: idx) {
+                                    TreatmentPeriodBadge(period: p)
+                                } else {
+                                    NeutralPeriodBadge(text: schedulePeriodLabel(t, slotIndexFallback: idx))
+                                }
                                 Text(t).font(.caption.bold())
                             }
                         }
@@ -606,15 +662,28 @@ struct TreatmentDetailView: View {
     }
     
     private func markDose(context ctx: ConfirmDoseContext, takenAt: Date) {
+        guard !isFutureDayOffset(ctx.dayNumber - 1) else { return }
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
-        if let existing = doseLogs.first(where: { $0.dayNumber == ctx.dayNumber && $0.slotIndex == ctx.slotIndex }) {
-            existing.taken = true; existing.takenAt = takenAt
-            existing.updatedAt = now; existing.updatedBy = uid
+        let stable = KBDoseLog.stableDocumentId(treatmentId: treatment.id, dayNumber: ctx.dayNumber, slotIndex: ctx.slotIndex)
+        let sameSlot = doseLogs.filter {
+            $0.treatmentId == treatment.id && $0.dayNumber == ctx.dayNumber && $0.slotIndex == ctx.slotIndex
+        }
+        let stableRow = sameSlot.first { $0.id == stable }
+        for log in sameSlot where log.id != stable {
+            SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
+            modelContext.delete(log)
+        }
+        if let row = stableRow {
+            row.taken = true
+            row.takenAt = takenAt
+            row.updatedAt = now
+            row.updatedBy = uid
             try? modelContext.save()
-            SyncCenter.shared.enqueueDoseLogUpsert(logId: existing.id, familyId: treatment.familyId, modelContext: modelContext)
+            SyncCenter.shared.enqueueDoseLogUpsert(logId: stable, familyId: treatment.familyId, modelContext: modelContext)
         } else {
             let newLog = KBDoseLog(
+                id: stable,
                 familyId: treatment.familyId, childId: treatment.childId,
                 treatmentId: treatment.id,
                 dayNumber: ctx.dayNumber, slotIndex: ctx.slotIndex,
@@ -623,7 +692,7 @@ struct TreatmentDetailView: View {
             )
             modelContext.insert(newLog)
             try? modelContext.save()
-            SyncCenter.shared.enqueueDoseLogUpsert(logId: newLog.id, familyId: treatment.familyId, modelContext: modelContext)
+            SyncCenter.shared.enqueueDoseLogUpsert(logId: stable, familyId: treatment.familyId, modelContext: modelContext)
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
@@ -638,14 +707,26 @@ struct TreatmentDetailView: View {
     }
     
     private func skipDose(slot: SlotViewModel) {
+        guard !isFutureDayOffset(slot.dayNumber - 1) else { return }
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        let doseLog: KBDoseLog
-        if let existing = doseLogs.first(where: { $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex }) {
-            existing.taken = false; existing.takenAt = nil
-            existing.updatedAt = Date(); existing.updatedBy = uid
-            doseLog = existing
+        let now = Date()
+        let stable = KBDoseLog.stableDocumentId(treatmentId: treatment.id, dayNumber: slot.dayNumber, slotIndex: slot.slotIndex)
+        let sameSlot = doseLogs.filter {
+            $0.treatmentId == treatment.id && $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex
+        }
+        let stableRow = sameSlot.first { $0.id == stable }
+        for log in sameSlot where log.id != stable {
+            SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
+            modelContext.delete(log)
+        }
+        if let row = stableRow {
+            row.taken = false
+            row.takenAt = nil
+            row.updatedAt = now
+            row.updatedBy = uid
         } else {
             let newLog = KBDoseLog(
+                id: stable,
                 familyId: treatment.familyId, childId: treatment.childId,
                 treatmentId: treatment.id,
                 dayNumber: slot.dayNumber, slotIndex: slot.slotIndex,
@@ -653,18 +734,22 @@ struct TreatmentDetailView: View {
                 takenAt: nil, taken: false, updatedBy: uid
             )
             modelContext.insert(newLog)
-            doseLog = newLog
         }
         try? modelContext.save()
-        SyncCenter.shared.enqueueDoseLogUpsert(logId: doseLog.id, familyId: treatment.familyId, modelContext: modelContext)
+        SyncCenter.shared.enqueueDoseLogUpsert(logId: stable, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
     private func undoDose(slot: SlotViewModel) {
-        guard let log = doseLogs.first(where: { $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex }) else { return }
-        modelContext.delete(log)
+        let sameSlot = doseLogs.filter {
+            $0.treatmentId == treatment.id && $0.dayNumber == slot.dayNumber && $0.slotIndex == slot.slotIndex
+        }
+        guard !sameSlot.isEmpty else { return }
+        for log in sameSlot {
+            SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
+            modelContext.delete(log)
+        }
         try? modelContext.save()
-        SyncCenter.shared.enqueueDoseLogDelete(logId: log.id, familyId: treatment.familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
     
@@ -700,14 +785,17 @@ struct TreatmentDetailView: View {
 // MARK: - Supporting types
 
 struct SlotViewModel {
-    let dayNumber:     Int
-    let slotIndex:     Int
+    let dayNumber: Int
+    let slotIndex: Int
     let scheduledTime: String
-    let slotLabel:     String
-    let taken:         Bool
-    let isSkipped:     Bool
-    let takenAt:       Date?
-    let logId:         String?
+    /// Etichetta fascia (anche "Dose 5" se non deducibile).
+    let periodLabel: String
+    /// Fascia per chip colore; se assunta deriva da [takenAt].
+    let periodForChip: TreatmentSchedulePeriod?
+    let taken: Bool
+    let isSkipped: Bool
+    let takenAt: Date?
+    let logId: String?
 }
 
 struct ConfirmDoseContext: Identifiable {
@@ -767,6 +855,10 @@ struct ConfirmDoseSheet: View {
                         Text(context.drugName).font(.title3.bold())
                         Text(String(format: "%.0f", context.dosageValue) + " \(context.dosageUnit)")
                             .font(.subheadline).foregroundStyle(tint)
+                        Text("Orario programmato: \(context.scheduledTime)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        TreatmentPeriodBadge(period: TreatmentSchedulePeriod.from(date: selectedDate))
+                            .padding(.top, 2)
                         Text("Quando hai dato la medicina?")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
@@ -1043,8 +1135,7 @@ struct EditScheduleTimesSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     
     @State private var editedTimes: [String] = []
-    private let tint   = KBTheme.tint
-    private let labels = ["Mattina", "Pranzo", "Sera", "Notte"]
+    private let tint = KBTheme.tint
     
     var body: some View {
         NavigationStack {
@@ -1062,12 +1153,17 @@ struct EditScheduleTimesSheet: View {
                 
                 VStack(spacing: 0) {
                     ForEach(editedTimes.indices, id: \.self) { i in
-                        HStack {
+                        HStack(spacing: 10) {
                             ZStack {
                                 Circle().fill(tint.opacity(0.1)).frame(width: 32, height: 32)
                                 Text("\(i+1)").font(.caption.bold()).foregroundStyle(tint)
                             }
-                            Text(labels[safe: i] ?? "Dose \(i+1)").font(.subheadline)
+                            let t = editedTimes[i]
+                            if let p = schedulePeriodForTime(t, slotIndexFallback: i) {
+                                TreatmentPeriodBadge(period: p)
+                            } else {
+                                NeutralPeriodBadge(text: schedulePeriodLabel(t, slotIndexFallback: i))
+                            }
                             Spacer()
                             TimePickerField(timeString: $editedTimes[i])
                         }

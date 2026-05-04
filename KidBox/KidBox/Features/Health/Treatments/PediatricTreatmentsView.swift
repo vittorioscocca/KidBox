@@ -75,7 +75,7 @@ private struct TreatmentLifecycleRow: View {
         self.onTap       = onTap
         self.onDelete    = onDelete
         let tid = treatment.id
-        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true })
+        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true && $0.isDeleted == false })
     }
     
     var lifecycle: TreatmentLifecycle {
@@ -187,7 +187,7 @@ struct PediatricTreatmentsView: View {
             sort: [SortDescriptor(\KBTreatment.startDate, order: .reverse)]
         )
         _children = Query(filter: #Predicate<KBChild> { $0.id == cid })
-        _allLogs  = Query(filter: #Predicate<KBDoseLog> { $0.familyId == fid && $0.childId == cid && $0.taken == true })
+        _allLogs  = Query(filter: #Predicate<KBDoseLog> { $0.familyId == fid && $0.childId == cid && $0.taken == true && $0.isDeleted == false })
     }
     
     // MARK: - Lifecycle
@@ -584,7 +584,7 @@ private struct TreatmentDoseCounter: View {
     init(treatment: KBTreatment) {
         self.treatment = treatment
         let tid = treatment.id
-        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true })
+        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true && $0.isDeleted == false })
     }
     
     var body: some View {
@@ -603,7 +603,7 @@ private struct TreatmentProgressLabel: View {
     init(treatment: KBTreatment) {
         self.treatment = treatment
         let tid = treatment.id
-        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true })
+        _logs = Query(filter: #Predicate<KBDoseLog> { $0.treatmentId == tid && $0.taken == true && $0.isDeleted == false })
     }
     
     private var currentDay: Int {

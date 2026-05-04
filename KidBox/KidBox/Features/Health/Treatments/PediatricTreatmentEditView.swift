@@ -279,9 +279,13 @@ struct PediatricTreatmentEditView: View {
                     Label("Orari somministrazione", systemImage: "clock.badge.checkmark")
                         .font(.subheadline.bold()).foregroundStyle(tint)
                     ForEach(times.indices, id: \.self) { i in
-                        let label = ["Mattina", "Pranzo", "Sera", "Notte"][safe: i] ?? "Dose \(i+1)"
-                        HStack {
-                            Text(label).foregroundStyle(.secondary)
+                        let t = times[i]
+                        HStack(spacing: 8) {
+                            if let p = schedulePeriodForTime(t, slotIndexFallback: i) {
+                                TreatmentPeriodBadge(period: p)
+                            } else {
+                                NeutralPeriodBadge(text: schedulePeriodLabel(t, slotIndexFallback: i))
+                            }
                             Spacer()
                             TimePickerField(timeString: $times[i])
                         }
@@ -430,9 +434,13 @@ struct PediatricTreatmentEditView: View {
                     Text("Imposta gli orari per \(dailyFrequency) dos\(dailyFrequency == 1 ? "e" : "i") giornalier\(dailyFrequency == 1 ? "a" : "e")")
                         .font(.caption).foregroundStyle(.secondary)
                     ForEach(times.indices, id: \.self) { i in
-                        let label = ["Mattina", "Pranzo", "Sera", "Notte"][safe: i] ?? "Dose \(i+1)"
-                        HStack {
-                            Text(label)
+                        let t = times[i]
+                        HStack(spacing: 8) {
+                            if let p = schedulePeriodForTime(t, slotIndexFallback: i) {
+                                TreatmentPeriodBadge(period: p)
+                            } else {
+                                NeutralPeriodBadge(text: schedulePeriodLabel(t, slotIndexFallback: i))
+                            }
                             Spacer()
                             TimePickerField(timeString: $times[i])
                         }
@@ -487,9 +495,13 @@ struct PediatricTreatmentEditView: View {
                     summaryRow(label: "Frequenza", value: "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno")
                     Divider()
                     Text("Orari somministrazione:").font(.caption).foregroundStyle(.secondary)
-                    ForEach(Array(zip(["Mattina","Pranzo","Sera","Notte"], times)), id: \.0) { label, time in
-                        HStack {
-                            Text(label)
+                    ForEach(Array(times.enumerated()), id: \.offset) { i, time in
+                        HStack(spacing: 8) {
+                            if let p = schedulePeriodForTime(time, slotIndexFallback: i) {
+                                TreatmentPeriodBadge(period: p)
+                            } else {
+                                NeutralPeriodBadge(text: schedulePeriodLabel(time, slotIndexFallback: i))
+                            }
                             Spacer()
                             Text(time).foregroundStyle(tint).bold()
                         }
@@ -703,14 +715,13 @@ struct PediatricTreatmentEditView: View {
             treatment = t
         }
         
+        treatment.reminderEnabled = reminderEnabled
+        
         do {
             try modelContext.save()
             SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
         } catch { return }
-        
-        treatment.reminderEnabled = reminderEnabled
-        try? modelContext.save()
         
         if reminderEnabled {
             Task {

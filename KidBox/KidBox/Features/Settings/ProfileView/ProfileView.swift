@@ -910,13 +910,9 @@ struct ProfileView: View {
     
     // MARK: - Logout
     private func signOut() {
-        do {
-            try Auth.auth().signOut()
+        Task { @MainActor in
+            await coordinator.signOut(modelContext: modelContext)
             KBLog.auth.info("Logout OK")
-            coordinator.resetToRoot()
-            coordinator.signOut(modelContext: modelContext)
-        } catch {
-            KBLog.auth.error("Logout failed: \(error.localizedDescription, privacy: .public)")
         }
     }
     

@@ -237,8 +237,13 @@ private struct ChildHealthCard: View {
             MeasurementInputSheet(title: "Peso", unit: "kg", placeholder: "es. 12.5",
                                   current: child.weightKg.map { String(format: "%.1f", $0) }) { value in
                 if let d = Double(value.replacingOccurrences(of: ",", with: ".")) {
-                    child.weightKg = d; child.updatedAt = Date()
+                    child.weightKg = d
+                    child.updatedAt = Date()
+                    child.updatedBy = Auth.auth().currentUser?.uid
                     try? modelContext.save()
+                    Task {
+                        try? await ChildSyncService().upsert(child: child)
+                    }
                 }
             }
         }
@@ -246,8 +251,13 @@ private struct ChildHealthCard: View {
             MeasurementInputSheet(title: "Altezza", unit: "cm", placeholder: "es. 90",
                                   current: child.heightCm.map { String(format: "%.0f", $0) }) { value in
                 if let d = Double(value.replacingOccurrences(of: ",", with: ".")) {
-                    child.heightCm = d; child.updatedAt = Date()
+                    child.heightCm = d
+                    child.updatedAt = Date()
+                    child.updatedBy = Auth.auth().currentUser?.uid
                     try? modelContext.save()
+                    Task {
+                        try? await ChildSyncService().upsert(child: child)
+                    }
                 }
             }
         }

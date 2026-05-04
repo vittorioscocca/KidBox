@@ -118,10 +118,8 @@ struct FamilySettingsView: View {
         }
         .navigationTitle("Family")
         .onAppear {
-            onAppearStartRealtime()
             syncMyMemberName()
         }
-        .onDisappear { onDisappearStopRealtime() }
         .onReceive(NotificationCenter.default.publisher(for: .kbProfileDisplayNameUpdated)) { notification in
             guard let name = notification.userInfo?["displayName"] as? String,
                   !name.isEmpty else { return }
@@ -231,26 +229,6 @@ struct FamilySettingsView: View {
         } message: {
             Text(revokeError ?? "")
         }
-    }
-    
-    // MARK: - Lifecycle
-    
-    @MainActor
-    private func onAppearStartRealtime() {
-        guard let fid = family?.id else {
-            KBLog.navigation.debug("FamilySettingsView appeared (no family)")
-            return
-        }
-        KBLog.navigation.info("FamilySettingsView appeared familyId=\(fid, privacy: .public) start realtime (members+children)")
-        SyncCenter.shared.startMembersRealtime(familyId: fid, modelContext: modelContext)
-        SyncCenter.shared.startChildrenRealtime(familyId: fid, modelContext: modelContext)
-    }
-    
-    @MainActor
-    private func onDisappearStopRealtime() {
-        KBLog.navigation.debug("FamilySettingsView disappeared stop realtime (members+children)")
-        SyncCenter.shared.stopMembersRealtime()
-        SyncCenter.shared.stopChildrenRealtime()
     }
     
     // MARK: - UI

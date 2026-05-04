@@ -146,12 +146,15 @@ final class LoginViewModel: ObservableObject {
     
     func signOut() {
         KBLog.auth.kbInfo("LoginViewModel signOut requested")
-        do {
-            try auth.signOut()
-            KBSubscriptionManager.shared.resetOnSignOut()
-            KBLog.auth.kbInfo("LoginViewModel signOut success")
-        } catch {
-            KBLog.auth.kbError("LoginViewModel signOut failed: \(error.localizedDescription)")
+        Task { @MainActor in
+            await KidBoxLocalNotificationsCleanup.cancelAllScheduledAccountReminders()
+            do {
+                try auth.signOut()
+                KBSubscriptionManager.shared.resetOnSignOut()
+                KBLog.auth.kbInfo("LoginViewModel signOut success")
+            } catch {
+                KBLog.auth.kbError("LoginViewModel signOut failed: \(error.localizedDescription)")
+            }
         }
     }
     

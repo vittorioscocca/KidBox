@@ -40,6 +40,7 @@ final class AccountDeletionService {
         
         // 🔹 3️⃣ Local wipe
         KBLog.persistence.kbInfo("deleteMyAccount local wipe started")
+        await KidBoxLocalNotificationsCleanup.cancelAllScheduledAccountReminders()
         SyncCenter.shared.beginLocalWipe()
         defer { SyncCenter.shared.endLocalWipe() }
         

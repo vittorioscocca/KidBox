@@ -65,4 +65,9 @@ extension KBDoseLog {
         get { KBSyncState(rawValue: syncStatus) ?? .synced }
         set { syncStatus = newValue.rawValue }
     }
+    
+    /// Id documento Firestore / SwiftData uguale su tutti i dispositivi per lo stesso slot terapia.
+    static func stableDocumentId(treatmentId: String, dayNumber: Int, slotIndex: Int) -> String {
+        "dose_\(treatmentId)_\(dayNumber)_\(slotIndex)"
+    }
 }

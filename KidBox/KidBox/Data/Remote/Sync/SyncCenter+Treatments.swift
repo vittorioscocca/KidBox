@@ -70,6 +70,14 @@ extension SyncCenter {
         doseLogListener = nil
     }
     
+    /// `childId` della cura coincide con l'id di un `KBChild` in famiglia (profilo bambino). Per gli adulti è il `userId` del membro — nessun `KBChild` con quell'id.
+    private func isPediatricHealthSubject(childId: String, familyId: String, modelContext: ModelContext) -> Bool {
+        let cid = childId
+        let fid = familyId
+        let desc = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == cid && $0.familyId == fid })
+        return (try? modelContext.fetch(desc).first) != nil
+    }
+    
     // MARK: - Apply inbound (Treatments)
     
     private func applyTreatmentsInbound(
@@ -102,7 +110,7 @@ extension SyncCenter {
                                 modelContext.delete(local)
                                 KBLog.sync.kbDebug("applyTreatmentsInbound: deleted locally id=\(tid)")
                             } else {
-                                applyTreatmentFields(local, from: dto)
+                                applyTreatmentFields(local, from: dto, modelContext: modelContext)
                                 local.syncState     = .synced
                                 local.lastSyncError = nil
                             }
@@ -110,6 +118,9 @@ extension SyncCenter {
                     } else {
                         // Nuovo dal remoto
                         if dto.isDeleted { continue }
+                        let pediatric = isPediatricHealthSubject(
+                            childId: dto.childId, familyId: dto.familyId, modelContext: modelContext
+                        )
                         let t = KBTreatment(
                             familyId:        dto.familyId,
                             childId:         dto.childId,
@@ -125,7 +136,7 @@ extension SyncCenter {
                             scheduleTimes:   dto.scheduleTimes,
                             isActive:        dto.isActive,
                             notes:           dto.notes,
-                            reminderEnabled: dto.reminderEnabled,
+                            reminderEnabled: pediatric ? dto.reminderEnabled : false,
                             createdAt:       dto.createdAt ?? Date(),
                             updatedAt:       remoteStamp,
                             updatedBy:       dto.updatedBy,
@@ -156,7 +167,7 @@ extension SyncCenter {
         }
     }
     
-    private func applyTreatmentFields(_ local: KBTreatment, from dto: RemoteTreatmentDTO) {
+    private func applyTreatmentFields(_ local: KBTreatment, from dto: RemoteTreatmentDTO, modelContext: ModelContext) {
         local.drugName         = dto.drugName
         local.activeIngredient = dto.activeIngredient
         local.dosageValue      = dto.dosageValue
@@ -170,7 +181,9 @@ extension SyncCenter {
         local.isActive         = dto.isActive
         local.isDeleted        = dto.isDeleted
         local.notes            = dto.notes
-        local.reminderEnabled  = dto.reminderEnabled
+        if isPediatricHealthSubject(childId: dto.childId, familyId: dto.familyId, modelContext: modelContext) {
+            local.reminderEnabled = dto.reminderEnabled
+        }
         local.updatedAt        = dto.updatedAt ?? local.updatedAt
         local.updatedBy        = dto.updatedBy
     }
@@ -188,6 +201,19 @@ extension SyncCenter {
                 switch change {
                     
                 case .upsert(let dto):
+                    if dto.isDeleted {
+                        let tid = dto.treatmentId
+                        let day = dto.dayNumber
+                        let slot = dto.slotIndex
+                        let slotDesc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { d in
+                            d.treatmentId == tid && d.dayNumber == day && d.slotIndex == slot
+                        })
+                        if let rows = try? modelContext.fetch(slotDesc) {
+                            for r in rows { modelContext.delete(r) }
+                        }
+                        continue
+                    }
+                    
                     let lid = dto.id
                     let desc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { $0.id == lid })
                     let local = try modelContext.fetch(desc).first
@@ -206,15 +232,25 @@ extension SyncCenter {
                         if remoteStamp >= local.updatedAt {
                             local.taken         = dto.taken
                             local.takenAt       = dto.takenAt
-                            local.isDeleted     = dto.isDeleted
+                            local.isDeleted     = false
                             local.updatedAt     = remoteStamp
                             local.updatedBy     = dto.updatedBy ?? local.updatedBy
                             local.syncState     = .synced
                             local.lastSyncError = nil
                         }
                     } else {
-                        if dto.isDeleted { continue }
+                        let tid = dto.treatmentId
+                        let day = dto.dayNumber
+                        let slot = dto.slotIndex
+                        let rid = dto.id
+                        let dupDesc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { d in
+                            d.treatmentId == tid && d.dayNumber == day && d.slotIndex == slot && d.id != rid
+                        })
+                        if let dupes = try? modelContext.fetch(dupDesc) {
+                            for d in dupes { modelContext.delete(d) }
+                        }
                         let log = KBDoseLog(
+                            id:            dto.id,
                             familyId:      dto.familyId,
                             childId:       dto.childId,
                             treatmentId:   dto.treatmentId,
@@ -227,7 +263,6 @@ extension SyncCenter {
                             updatedAt:     remoteStamp,
                             updatedBy:     dto.updatedBy
                         )
-                        log.id         = dto.id
                         log.isDeleted  = false
                         log.syncState  = .synced
                         modelContext.insert(log)
@@ -316,7 +351,10 @@ extension SyncCenter {
                 createdAt:        t.createdAt,
                 updatedAt:        t.updatedAt
             )
-            try await treatmentRemote.upsertTreatment(dto)
+            let syncReminder = isPediatricHealthSubject(
+                childId: t.childId, familyId: t.familyId, modelContext: modelContext
+            )
+            try await treatmentRemote.upsertTreatment(dto, syncReminderEnabledToRemote: syncReminder)
             
             t.syncState = .synced
             t.lastSyncError = nil

@@ -76,7 +76,7 @@ struct PediatricHomeView: View {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false && $0.isActive == true
         })
         _allLogs = Query(filter: #Predicate<KBDoseLog> {
-            $0.familyId == fid && $0.childId == cid && $0.taken == true
+            $0.familyId == fid && $0.childId == cid && $0.taken == true && $0.isDeleted == false
         })
         _allVaccines = Query(filter: #Predicate<KBVaccine> {
             $0.familyId == fid && $0.childId == cid && $0.isDeleted == false

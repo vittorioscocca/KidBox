@@ -104,19 +104,6 @@ struct SetupFamilyView: View {
         .navigationTitle(navTitle)
         .onAppear {
             hydrateIfNeeded()
-            
-            if case let .edit(family, _) = mode {
-                KBLog.sync.info("SetupFamilyView appear (edit) familyId=\(family.id, privacy: .public)")
-                SyncCenter.shared.startChildrenRealtime(familyId: family.id, modelContext: modelContext)
-            } else {
-                KBLog.sync.info("SetupFamilyView appear (create)")
-            }
-        }
-        .onDisappear {
-            if case .edit = mode {
-                KBLog.sync.info("SetupFamilyView disappear -> stopChildrenRealtime")
-                SyncCenter.shared.stopChildrenRealtime()
-            }
         }
     }
     

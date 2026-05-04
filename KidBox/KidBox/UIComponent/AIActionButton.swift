@@ -50,14 +50,14 @@ struct AskAIControl: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [.blue, .cyan],
+                            colors: [KBTheme.aiFabOrange, KBTheme.aiFabOrangeDeep],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 58, height: 58)
                     .scaleEffect(pulse ? 1.02 : 0.98)
-                    .shadow(color: .blue.opacity(0.30), radius: 14, x: 0, y: 6)
+                    .shadow(color: KBTheme.aiFabOrange.opacity(0.38), radius: 14, x: 0, y: 6)
                 
                 Circle()
                     .stroke(Color.white.opacity(0.22), lineWidth: 1)

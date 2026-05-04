@@ -13,6 +13,9 @@ struct KBTheme {
     static let bubbleTint = Color(red: 0.95, green: 0.55, blue: 0.20)
     static let tint = Color(red: 0.6, green: 0.45, blue: 0.85)
     static let green = Color(red: 0.3, green: 0.65, blue: 0.45)
+    /// FAB “parla con l’AI” — stesso arancione Android `ORANGE_FAB` (0xFFFF6B00).
+    static let aiFabOrange = Color(red: 1.0, green: 107.0 / 255.0, blue: 0.0)
+    static let aiFabOrangeDeep = Color(red: 0.92, green: 0.32, blue: 0.02)
     
     // MARK: - Sfondo principale (specchia LoginView)
     static func background(_ scheme: ColorScheme) -> Color {

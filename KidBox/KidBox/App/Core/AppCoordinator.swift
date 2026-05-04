@@ -245,6 +245,7 @@ final class AppCoordinator: ObservableObject {
                     let isEmailProvider = user.providerData.contains { $0.providerID == "password" }
                     if isEmailProvider && !user.isEmailVerified {
                         KBLog.auth.info("Email not verified for uid=\(user.uid) — signing out")
+                        await KidBoxLocalNotificationsCleanup.cancelAllScheduledAccountReminders()
                         try? Auth.auth().signOut()
                         KBSubscriptionManager.shared.resetOnSignOut()
                         self.isAuthenticated = false
@@ -894,8 +895,10 @@ final class AppCoordinator: ObservableObject {
     // MARK: - Sign out
     
     @MainActor
-    func signOut(modelContext: ModelContext) {
+    func signOut(modelContext: ModelContext) async {
         KBLog.auth.kbInfo("Sign out requested")
+
+        await KidBoxLocalNotificationsCleanup.cancelAllScheduledAccountReminders()
         
         do {
             KBLog.persistence.kbInfo("Wiping local data (best effort)")

@@ -52,8 +52,15 @@ struct ChildSyncService {
             payload["birthDate"] = Timestamp(date: birth)
         }
         
-        let updatedAt = child.updatedAt ?? Date()
-        payload["updatedAt"] = Timestamp(date: updatedAt)
+        if let w = child.weightKg {
+            payload["weightKg"] = w
+        }
+        if let h = child.heightCm {
+            payload["heightCm"] = h
+        }
+        
+        /// Orario server: allinea LWW tra device (stesso schema Android `HealthSubjectSelectorViewModel`).
+        payload["updatedAt"] = FieldValue.serverTimestamp()
         
         if let ub = child.updatedBy {
             payload["updatedBy"] = ub
