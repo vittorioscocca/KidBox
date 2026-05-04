@@ -25,6 +25,8 @@ struct RemoteVaccineDTO {
     let administeredBy: String?
     let administrationSiteRaw: String?
     let notes: String?
+    let reminderOn: Bool
+    let nextDoseDate: Date?
     
     let isDeleted: Bool
     let createdAt: Date?
@@ -88,6 +90,12 @@ final class VaccineRemoteStore {
         data["administrationSiteRaw"] = dto.administrationSiteRaw ?? FieldValue.delete()
         data["notes"]                 = dto.notes                 ?? FieldValue.delete()
         data["createdBy"]             = dto.createdBy             ?? FieldValue.delete()
+        data["reminderOn"]            = dto.reminderOn
+        if let nd = dto.nextDoseDate {
+            data["nextDoseDate"] = Timestamp(date: nd)
+        } else {
+            data["nextDoseDate"] = FieldValue.delete()
+        }
         
         if let d = dto.administeredDate {
             data["administeredDate"] = Timestamp(date: d)
@@ -179,6 +187,8 @@ final class VaccineRemoteStore {
                         administeredBy:        data["administeredBy"]        as? String,
                         administrationSiteRaw: data["administrationSiteRaw"] as? String,
                         notes:                 data["notes"]                 as? String,
+                        reminderOn:            data["reminderOn"]            as? Bool ?? false,
+                        nextDoseDate:          (data["nextDoseDate"]         as? Timestamp)?.dateValue(),
                         isDeleted:             data["isDeleted"]             as? Bool ?? false,
                         createdAt:             (data["createdAt"]            as? Timestamp)?.dateValue(),
                         updatedAt:             (data["updatedAt"]            as? Timestamp)?.dateValue(),

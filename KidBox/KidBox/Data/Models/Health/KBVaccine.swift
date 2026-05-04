@@ -70,6 +70,11 @@ final class KBVaccine {
     var administrationSiteRaw: String?  // "braccio_sx", "braccio_dx", ecc.
     var notes: String?
     
+    /// Promemoria locale (notifica) solo quando `status == .planned`.
+    var reminderOn: Bool
+    /// Data prevista del richiamo (usata per il promemoria «giorno prima»).
+    var nextDoseDate: Date?
+    
     // MARK: - Soft delete
     var isDeleted: Bool
     
@@ -112,6 +117,8 @@ final class KBVaccine {
         administeredBy: String? = nil,
         administrationSiteRaw: String? = nil,
         notes: String? = nil,
+        reminderOn: Bool = false,
+        nextDoseDate: Date? = nil,
         isDeleted: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -132,6 +139,8 @@ final class KBVaccine {
         self.administeredBy        = administeredBy
         self.administrationSiteRaw = administrationSiteRaw
         self.notes                 = notes
+        self.reminderOn            = reminderOn
+        self.nextDoseDate          = nextDoseDate
         self.isDeleted             = isDeleted
         self.createdAt             = createdAt
         self.updatedAt             = updatedAt

@@ -13,17 +13,20 @@ import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvid
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocs }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
+import { getFunctions, httpsCallable }
+                                   from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-functions.js';
 
 const CFG_KEY = 'kidbox_dash_cfg_v2';
 function getCfg()   { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); } catch { return null; } }
 function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
 
-let app, auth, db, provider;
+let app, auth, db, functions, provider;
 
 function initFirebase(cfg) {
   app      = initializeApp(cfg, 'kidbox-admin');
   auth     = getAuth(app);
   db       = getFirestore(app);
+  functions = getFunctions(app, 'europe-west1');
   provider = new GoogleAuthProvider();
 }
 
@@ -193,14 +196,36 @@ async function loadFamilies() {
 
   for (const chunk of chunks) {
     const res = await Promise.all(chunk.map(async fdoc => {
-      const fid  = fdoc.id;
-      const plan = fdoc.data().plan || 'free';
-      let storageBytes=0, aiToday=0;
+      const fid      = fdoc.id;
+      const d        = fdoc.data();
+      const ov       = d.planOverride;
+      const plan     = (ov === 'pro' || ov === 'max') ? ov : (d.plan || 'free');
+      const ownerUid = d.ownerUid || d.createdBy || '';
+      const familyName = d.name || '';
+      let storageBytes=0, aiToday=0, ownerEmail='—';
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
       try { const ad=await getDoc(doc(db,'ai_usage',`family_${fid}`,'daily',tdk)); if(ad.exists()) aiToday=ad.data().count||0; } catch {}
-      return { fid, plan, storageBytes, aiToday, updatedAt: fdoc.data().updatedAt?.toDate() };
+      try { if(ownerUid){ const ud=await getDoc(doc(db,'users',ownerUid)); if(ud.exists()){ const ud2=ud.data(); ownerEmail=ud2.email||ud2.displayName||ownerUid.slice(0,10)+'…'; } } } catch {}
+      return { fid, plan, storageBytes, aiToday, ownerEmail, familyName, updatedAt: d.updatedAt?.toDate() };
     }));
     rows.push(...res);
+  }
+
+  // Popola dropdown override
+  const sel = document.getElementById('override-family-select');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Seleziona un account —</option>' +
+      [...rows]
+        .filter(r => r.ownerEmail && r.ownerEmail !== '—')
+        .sort((a,b) => a.ownerEmail.localeCompare(b.ownerEmail))
+        .map(r => {
+          const label = r.familyName
+            ? `${r.ownerEmail} · ${r.familyName} (${r.plan.toUpperCase()})`
+            : `${r.ownerEmail} (${r.plan.toUpperCase()})`;
+          return `<option value="${r.fid}">${label}</option>`;
+        }).join('');
+    if (prev) sel.value = prev;
   }
 
   rows.forEach(r => {
@@ -225,7 +250,9 @@ async function loadFamilies() {
     ? '<tr><td colspan="5" class="empty">Nessuna famiglia trovata</td></tr>'
     : rows.sort((a,b)=>b.storageBytes-a.storageBytes).map(r=>`
         <tr>
-          <td class="mono dim">${r.fid.slice(0,20)}…</td>
+          <td class="mono dim" style="cursor:pointer" title="Clicca per copiare nel form override"
+            onclick="document.getElementById('override-family-id').value='${String(r.fid).replace(/'/g, "\\'")}';document.getElementById('override-family-id').scrollIntoView({behavior:'smooth'})">
+            ${r.fid.slice(0,20)}…</td>
           <td><span class="badge badge-${r.plan}">${r.plan}</span></td>
           <td class="mono">${fmtBytes(r.storageBytes)}</td>
           <td class="mono ${r.aiToday>0?'hi':''}">${r.aiToday}</td>
@@ -312,6 +339,37 @@ window.resetStorageAll = async function(btn) {
     alert('Errore: ' + e.message);
   }
 }
+
+window.setPlanOverride = async function() {
+  const familyId = document.getElementById('override-family-id').value.trim();
+  const plan     = document.getElementById('override-plan').value;
+  const note     = document.getElementById('override-note').value.trim();
+  const btn      = document.getElementById('btn-override');
+  const res        = document.getElementById('override-result');
+
+  if (!familyId) { res.textContent = '⚠ Inserisci un Family ID'; res.className='override-msg err'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  res.textContent = '';
+  res.className = 'override-msg';
+
+  try {
+    const fn = httpsCallable(functions, 'setFamilyPlanOverride');
+    await fn({ familyId, plan: plan === 'none' ? null : plan, note });
+    res.textContent = plan === 'none'
+      ? `✓ Override rimosso per ${familyId}`
+      : `✓ Piano ${plan.toUpperCase()} assegnato a ${familyId}`;
+    res.className = 'override-msg ok';
+    loadAll();
+  } catch(e) {
+    res.textContent = '✗ ' + (e.message || String(e));
+    res.className = 'override-msg err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Applica';
+  }
+};
 
 function updateTotalCost() {
   // Usa _costData (in USD) per evitare doppia conversione EUR
@@ -485,6 +543,10 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 .orange{background:var(--color-orange)}
 .green{background:var(--color-green)}
 .bar-val{width:72px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--color-text);flex-shrink:0}
+
+.override-msg { font-size: 12px; font-family: var(--mono); }
+.override-msg.ok  { color: var(--color-green); }
+.override-msg.err { color: var(--color-red); }
 
 /* ── PIE CHARTS ──────────────────────── */
 .charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
@@ -700,6 +762,56 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="tcard-hdr">Top famiglie · Storage</div>
         <div class="bars-wrap" id="bars-storage"><div class="dim small">Caricamento…</div></div>
       </div>
+    </div>
+
+    <!-- GESTIONE PIANI OVERRIDE -->
+    <div class="sec-title">🎁 Gestione Piani — Override Amministrativo</div>
+    <div class="card" style="max-width:680px">
+        <div class="card-lbl">Assegna piano gratuito a una famiglia</div>
+        <p class="card-sub" style="margin-bottom:16px;line-height:1.6">
+            Seleziona l'account dal menu — si popola automaticamente al caricamento.
+            L'override ha priorità assoluta su StoreKit e non viene mai sovrascritto dall'app.
+            Scegli <strong>— Rimuovi override</strong> per ripristinare il comportamento normale.
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="field" style="margin:0">
+                <label>Account proprietario</label>
+                <select id="override-family-select"
+                    style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none;cursor:pointer"
+                    onchange="
+                        document.getElementById('override-family-id').value = this.value;
+                        const info = document.getElementById('override-selected-info');
+                        info.textContent = this.value ? 'Family ID: ' + this.value : '';
+                    ">
+                    <option value="">— Seleziona un account —</option>
+                </select>
+                <div id="override-selected-info" style="font-family:var(--mono);font-size:10px;color:var(--color-dim);margin-top:5px;min-height:14px;word-break:break-all"></div>
+                <input id="override-family-id" type="hidden" value="" />
+            </div>
+
+            <div style="display:flex;gap:10px">
+                <div class="field" style="margin:0;flex:1">
+                    <label>Piano</label>
+                    <select id="override-plan" style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none">
+                        <option value="max">Max (gratuito)</option>
+                        <option value="pro">Pro (gratuito)</option>
+                        <option value="none">— Rimuovi override</option>
+                    </select>
+                </div>
+                <div class="field" style="margin:0;flex:2">
+                    <label>Nota interna (opzionale)</label>
+                    <input id="override-note" placeholder="Es. Beta tester, Amico, Press…" style="width:100%" />
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+                <button id="btn-override" class="btn-sm btn-accent" onclick="setPlanOverride()" style="padding:9px 24px;font-size:13px">
+                    Applica
+                </button>
+                <span id="override-result" class="override-msg"></span>
+            </div>
+        </div>
     </div>
 
     <!-- TABELLA FAMIGLIE -->

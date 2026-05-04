@@ -118,6 +118,9 @@ final class KBSubscriptionManager: ObservableObject {
         currentPlan != .free && !subscriptionWillRenew && subscriptionExpirationDate != nil
     }
     
+    /// Impostato da AppCoordinator al momento del login / cambio famiglia.
+    /// Usato per leggere `planOverride` da Firestore.
+    var currentFamilyId: String? = nil
     
     
     // MARK: - Private
@@ -143,7 +146,14 @@ final class KBSubscriptionManager: ObservableObject {
             
             if !familyId.isEmpty {
                 let familySnap = try await db.collection("families").document(familyId).getDocument()
-                plan = familySnap.data()?["plan"] as? String ?? "free"
+                let data = familySnap.data()
+                if let raw = data?["planOverride"] as? String,
+                   !raw.isEmpty,
+                   let overridePlan = KBPlan(rawValue: raw) {
+                    plan = overridePlan.rawValue
+                } else {
+                    plan = data?["plan"] as? String ?? "free"
+                }
             }
             
             if plan == "free" {
@@ -207,6 +217,7 @@ final class KBSubscriptionManager: ObservableObject {
     /// Chiamare al logout: azzera il ruolo famiglia fino al prossimo `loadPlan()`.
     func resetOnSignOut() {
         isFamilyOwner = false
+        currentFamilyId = nil
     }
     
     // MARK: - Load StoreKit products
@@ -301,10 +312,35 @@ final class KBSubscriptionManager: ObservableObject {
         }
     }
     
+    private func loadPlanOverride() async -> KBPlan? {
+        let fallback = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId") ?? ""
+        let familyId: String
+        if let id = currentFamilyId, !id.isEmpty {
+            familyId = id
+        } else if !fallback.isEmpty {
+            familyId = fallback
+        } else {
+            return nil
+        }
+        
+        guard let data = try? await db.collection("families").document(familyId).getDocument().data() else { return nil }
+        
+        guard let raw = data["planOverride"] as? String,
+              !raw.isEmpty,
+              let plan = KBPlan(rawValue: raw) else { return nil }
+        
+        KBLog.app.kbInfo("SubscriptionManager: planOverride trovato → \(plan.rawValue)")
+        return plan
+    }
+    
     /// Scrive il piano aggiornato su Firestore (users/{uid}.plan).
     /// In produzione sostituire con una Cloud Function che verifica il receipt lato server.
     private func updatePlanOnServer(plan: KBPlan, transactionId: String) async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
+        if await loadPlanOverride() != nil {
+            KBLog.app.kbDebug("SubscriptionManager: skip updatePlanOnServer — override amministrativo attivo")
+            return
+        }
         let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
         let familyId = sharedDefaults?.string(forKey: "activeFamilyId") ?? ""
         
@@ -405,6 +441,15 @@ final class KBSubscriptionManager: ObservableObject {
     func refreshCurrentEntitlement() async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         KBLog.app.kbInfo("SubscriptionManager: refreshCurrentEntitlement")
+        
+        if let overridePlan = await loadPlanOverride() {
+            currentPlan = overridePlan
+            subscriptionWillRenew = false
+            subscriptionExpirationDate = nil
+            cancelExpirationNotification()
+            KBLog.app.kbInfo("SubscriptionManager: override attivo → \(overridePlan.rawValue), skip StoreKit")
+            return
+        }
         
         var activePlan: KBPlan?         = nil
         var activeTransactionId: String = "entitlement-check"

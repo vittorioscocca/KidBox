@@ -104,6 +104,7 @@ final class AppCoordinator: ObservableObject {
     /// Cleared on sign-out.
     @Published private(set) var activeFamilyId: String? {
         didSet {
+            KBSubscriptionManager.shared.currentFamilyId = activeFamilyId
             if let id = activeFamilyId {
                 UserDefaults.standard.set(id, forKey: Self.activeFamilyIdKey)
                 KBLog.sync.kbInfo("activeFamilyId persisted familyId=\(id)")
@@ -143,6 +144,7 @@ final class AppCoordinator: ObservableObject {
     init() {
         // Restore persisted active family from previous session.
         activeFamilyId = UserDefaults.standard.string(forKey: Self.activeFamilyIdKey)
+        KBSubscriptionManager.shared.currentFamilyId = activeFamilyId
         if let id = activeFamilyId {
             KBLog.sync.kbInfo("activeFamilyId restored from UserDefaults familyId=\(id)")
             let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")

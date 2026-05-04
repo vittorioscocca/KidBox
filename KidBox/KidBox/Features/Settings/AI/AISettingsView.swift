@@ -13,6 +13,7 @@ struct AISettingsView: View {
     @State private var showConsent             = false
     @State private var showUpgrade             = false
     @State private var showManageSubscriptions = false
+    @State private var showOfferCodeRedemption = false
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
     
@@ -258,6 +259,30 @@ struct AISettingsView: View {
                     }
                 }
             }
+            
+            if subscriptionManager.isFamilyOwner {
+                Section {
+                    Button {
+                        showOfferCodeRedemption = true
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Riscatta codice offerta")
+                                Text("Codice promozionale App Store")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: "giftcard.fill")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                } footer: {
+                    Text("Si apre il foglio di sistema Apple per inserire il codice. Il piano famiglia si aggiorna dopo il riscatto.")
+                        .font(.caption)
+                }
+            }
         }
         .scrollContentBackground(.hidden)
         .background(backgroundColor)
@@ -266,6 +291,17 @@ struct AISettingsView: View {
         .onAppear {
             viewModel.load()
             Task { await subscriptionManager.loadPlan() }
+        }
+        .offerCodeRedemption(isPresented: $showOfferCodeRedemption) { result in
+            Task { @MainActor in
+                switch result {
+                case .success:
+                    await subscriptionManager.loadPlan()
+                    await subscriptionManager.refreshCurrentEntitlement()
+                case .failure:
+                    break
+                }
+            }
         }
         .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
         .onChange(of: showManageSubscriptions) { _, isShowing in
@@ -472,6 +508,8 @@ struct UpgradeSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     
+    @State private var showOfferCodeRedemption = false
+    
     private let tint     = Color(red: 0.35, green: 0.6, blue: 0.85)
     private let maxColor = Color(red: 0.55, green: 0.35, blue: 0.9)
     
@@ -518,6 +556,16 @@ struct UpgradeSheetView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     
+                    if subscriptionManager.isFamilyOwner {
+                        Button {
+                            showOfferCodeRedemption = true
+                        } label: {
+                            Label("Riscatta codice offerta o promozionale", systemImage: "giftcard.fill")
+                                .font(.footnote)
+                        }
+                        .foregroundStyle(tint)
+                    }
+                    
                     // ✅ Legal footer — FUORI dalla planCard, visibile a tutti
                     legalFooter
                 }
@@ -533,6 +581,17 @@ struct UpgradeSheetView: View {
         }
         .task {
             await subscriptionManager.loadProducts()
+        }
+        .offerCodeRedemption(isPresented: $showOfferCodeRedemption) { result in
+            Task { @MainActor in
+                switch result {
+                case .success:
+                    await subscriptionManager.loadPlan()
+                    await subscriptionManager.refreshCurrentEntitlement()
+                case .failure:
+                    break
+                }
+            }
         }
         .alert("Errore acquisto", isPresented: .init(
             get: { subscriptionManager.purchaseError != nil },

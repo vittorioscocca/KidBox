@@ -18,8 +18,9 @@ struct StorageUsageView: View {
     @StateObject private var vm = StorageUsageViewModel()
     @Query private var families: [KBFamily]
     
-    @State private var showUpgradeSheet        = false
-    @State private var showManageSubscriptions = false
+    @State private var showUpgradeSheet           = false
+    @State private var showManageSubscriptions  = false
+    @State private var showOfferCodeRedemption  = false
     
     private let tint = Color(red: 0.35, green: 0.6, blue: 0.85)
     
@@ -149,8 +150,29 @@ struct StorageUsageView: View {
                     }
                 }
                 .listRowBackground(cardBackground)
+                
+                if subscriptionManager.isFamilyOwner {
+                    Button {
+                        showOfferCodeRedemption = true
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Riscatta codice offerta")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text("Codice promozionale o offerta App Store")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: "giftcard.fill")
+                                .foregroundStyle(tint)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                }
             } footer: {
-                Text("Gli acquisti vengono verificati tramite il tuo ID Apple. Il piano si applica all'intera famiglia.")
+                Text("Gli acquisti vengono verificati tramite il tuo ID Apple. Il piano si applica all'intera famiglia. Per i codici offerta, Apple apre una schermata dedicata in cui inserire il codice.")
                     .font(.caption)
             }
         }
@@ -194,6 +216,17 @@ struct StorageUsageView: View {
         // StoreKit impiega alcuni secondi a propagare la cancellazione nel RenewalInfo.
         // @MainActor garantisce che i publish di @Published avvengano sul thread UI,
         // evitando che SwiftUI ignori o bufferizzi gli aggiornamenti.
+        .offerCodeRedemption(isPresented: $showOfferCodeRedemption) { result in
+            Task { @MainActor in
+                switch result {
+                case .success:
+                    await subscriptionManager.loadPlan()
+                    await subscriptionManager.refreshCurrentEntitlement()
+                case .failure:
+                    break
+                }
+            }
+        }
         .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
         .onChange(of: showManageSubscriptions) { _, isShowing in
             guard !isShowing else { return }

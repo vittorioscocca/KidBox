@@ -104,6 +104,8 @@ extension SyncCenter {
                             administeredBy:        dto.administeredBy,
                             administrationSiteRaw: dto.administrationSiteRaw,
                             notes:                 dto.notes,
+                            reminderOn:            dto.reminderOn,
+                            nextDoseDate:           dto.nextDoseDate,
                             isDeleted:             false,
                             createdAt:             dto.createdAt ?? Date(),
                             updatedAt:             remoteStamp,
@@ -128,6 +130,25 @@ extension SyncCenter {
             try modelContext.save()
             KBLog.sync.kbInfo("applyVaccinesInbound saved")
             
+            for change in changes {
+                if case .upsert(let dto) = change, !dto.isDeleted {
+                    let vid = dto.id
+                    let desc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == vid })
+                    if let v = try? modelContext.fetch(desc).first {
+                        let childIdForLookup = v.childId
+                        let childName = (try? modelContext.fetch(
+                            FetchDescriptor<KBChild>(predicate: #Predicate<KBChild> { $0.id == childIdForLookup })
+                        ).first?.name) ?? ""
+                        Task { @MainActor in
+                            await KBVaccineReminderService.shared.sync(vaccine: v, childName: childName)
+                        }
+                    }
+                }
+                if case .remove(let id) = change {
+                    KBVaccineReminderService.shared.cancel(vaccineId: id)
+                }
+            }
+            
         } catch {
             KBLog.sync.kbError("applyVaccinesInbound failed: \(error.localizedDescription)")
         }
@@ -145,6 +166,8 @@ extension SyncCenter {
         local.administeredBy        = dto.administeredBy
         local.administrationSiteRaw = dto.administrationSiteRaw
         local.notes                 = dto.notes
+        local.reminderOn            = dto.reminderOn
+        local.nextDoseDate          = dto.nextDoseDate
         local.isDeleted             = dto.isDeleted
         local.updatedAt             = dto.updatedAt ?? local.updatedAt
         local.updatedBy             = dto.updatedBy
@@ -197,6 +220,8 @@ extension SyncCenter {
                 administeredBy:        v.administeredBy,
                 administrationSiteRaw: v.administrationSiteRaw,
                 notes:                 v.notes,
+                reminderOn:            v.reminderOn,
+                nextDoseDate:           v.nextDoseDate,
                 isDeleted:             v.isDeleted,
                 createdAt:             v.createdAt,
                 updatedAt:             v.updatedAt,
@@ -212,6 +237,7 @@ extension SyncCenter {
             KBLog.sync.kbDebug("processVaccine upsert OK id=\(vid)")
             
         case "delete":
+            KBVaccineReminderService.shared.cancel(vaccineId: vid)
             try await vaccineRemote.softDelete(familyId: op.familyId, vaccineId: vid)
             if let v = vaccine {
                 modelContext.delete(v)

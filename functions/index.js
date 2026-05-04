@@ -1879,6 +1879,41 @@ exports.deleteFamily = onCall(
     },
 );
 
+exports.setFamilyPlanOverride = onCall(
+    {region: "europe-west1", invoker: "public"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
+
+      // Lista UID amministratori autorizzati — sostituisci con il tuo UID (Firebase → Authentication)
+      const ADMIN_UIDS = ["efw85HN41nb1rmslevC3wkFpVUo1"];
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+
+      const {familyId, plan, note} = request.data || {};
+
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId richiesto.");
+      }
+      if (plan !== null && plan !== "pro" && plan !== "max") {
+        throw new HttpsError("invalid-argument", "plan deve essere 'pro', 'max' o null.");
+      }
+
+      await admin.firestore()
+          .collection("families").doc(familyId)
+          .set({
+            planOverride: plan,
+            planOverrideNote: note || "",
+            planOverrideSetAt: admin.firestore.FieldValue.serverTimestamp(),
+            planOverrideSetBy: callerUid,
+          }, {merge: true});
+
+      logger.info("setFamilyPlanOverride", {callerUid, familyId, plan, note});
+      return {success: true};
+    },
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GARBAGE COLLECTOR NOTTURNO
 // ─────────────────────────────────────────────────────────────────────────────

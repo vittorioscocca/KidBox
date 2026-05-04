@@ -40,6 +40,7 @@ enum KidBoxLocalNotificationsCleanup {
         if id.hasPrefix("treatment-") { return true }
         if id.hasPrefix("wallet.") { return true }
         if id.hasPrefix("kb-weekly-summary-") { return true }
+        if id.hasPrefix("kb.vaccine.reminder.") { return true }
         return false
     }
 }

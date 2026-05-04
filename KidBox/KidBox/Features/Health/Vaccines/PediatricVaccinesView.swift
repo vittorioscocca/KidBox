@@ -420,6 +420,7 @@ struct PediatricVaccinesView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         for v in filtered where selectedIds.contains(v.id) {
+            KBVaccineReminderService.shared.cancel(vaccineId: v.id)
             KBHealthCalendarService.deleteLinkedCalendarEvent(
                 itemId: v.id, familyId: familyId, modelContext: modelContext)
             v.isDeleted = true; v.updatedBy = uid; v.updatedAt = now
@@ -562,6 +563,7 @@ struct PediatricVaccinesView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         for i in offsets {
             let v = list[i]
+            KBVaccineReminderService.shared.cancel(vaccineId: v.id)
             KBHealthCalendarService.deleteLinkedCalendarEvent(
                 itemId: v.id, familyId: familyId, modelContext: modelContext)
             v.isDeleted = true; v.updatedBy = uid; v.updatedAt = Date(); v.syncState = .pendingUpsert
@@ -598,6 +600,8 @@ struct PediatricVaccineEditView: View {
     @State private var administeredBy    = ""
     @State private var adminSite         = ""
     @State private var notes             = ""
+    @State private var reminderOn      = false
+    @State private var nextDoseDate     = Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date()
     
     private let sites = ["Braccio sinistro", "Braccio destro", "Coscia sinistra", "Coscia destra", "Orale", "Nasale", "Altro"]
     private let tint  = Color(red: 0.95, green: 0.55, blue: 0.45)
@@ -709,6 +713,32 @@ struct PediatricVaccineEditView: View {
                             }
                         }
                         
+                        if status == .planned {
+                            formCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    sectionLabel("Promemoria", icon: "bell")
+                                    Toggle(isOn: $reminderOn) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Avviso il giorno prima")
+                                                .font(.subheadline.bold())
+                                            Text("Solo per vaccini da programmare: imposta la data prevista del richiamo.")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .tint(tint)
+                                    if reminderOn {
+                                        DatePicker(
+                                            "Data prevista richiamo",
+                                            selection: $nextDoseDate,
+                                            displayedComponents: .date,
+                                        )
+                                        .tint(tint)
+                                    }
+                                }
+                            }
+                        }
+                        
                         // Notes
                         formCard {
                             VStack(alignment: .leading, spacing: 8) {
@@ -747,6 +777,9 @@ struct PediatricVaccineEditView: View {
                 }
             }
             .onAppear { loadIfEditing() }
+            .onChange(of: status) { _, newValue in
+                if newValue != .planned { reminderOn = false }
+            }
         }
     }
     
@@ -870,6 +903,8 @@ struct PediatricVaccineEditView: View {
         administeredBy = v.administeredBy ?? ""
         adminSite      = v.administrationSiteRaw ?? ""
         notes          = v.notes ?? ""
+        reminderOn     = v.reminderOn
+        if let nd = v.nextDoseDate { nextDoseDate = nd }
     }
     
     private func save() {
@@ -895,6 +930,10 @@ struct PediatricVaccineEditView: View {
             savedId = v.id
         }
         try? modelContext.save()
+        let syncDesc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == savedId })
+        if let vv = try? modelContext.fetch(syncDesc).first {
+            Task { await KBVaccineReminderService.shared.sync(vaccine: vv, childName: childName) }
+        }
         onSaved(savedId)
         // Proponi aggiunta al calendario solo per vaccini scheduled o administered
         if status == .scheduled || status == .administered {
@@ -926,6 +965,14 @@ struct PediatricVaccineEditView: View {
         v.notes                 = notes.isEmpty ? nil : notes
         v.updatedBy             = uid
         v.updatedAt             = now
+        if status == .planned {
+            let valid = reminderOn && nextDoseDate > now
+            v.reminderOn = valid
+            v.nextDoseDate = valid ? nextDoseDate : nil
+        } else {
+            v.reminderOn = false
+            v.nextDoseDate = nil
+        }
     }
 }
 
