@@ -607,7 +607,7 @@ final class KBSubscriptionManager: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         formatter.timeStyle = .none
-        formatter.locale    = Locale(identifier: "it_IT")
+        formatter.locale    = kbDeviceLocale()
         let dateStr = formatter.string(from: expirationDate)
         content.body  = "Il tuo abbonamento KidBox \(plan.displayName) scade il \(dateStr). Rinnova per continuare ad usare AI e storage esteso."
         content.sound = .default

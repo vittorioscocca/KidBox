@@ -354,7 +354,7 @@ struct PediatricTreatmentsView: View {
     }
     
     private var filterLabel: String {
-        let fmt = DateFormatter(); fmt.dateStyle = .short
+        let fmt = DateFormatter(); fmt.dateStyle = .short; fmt.locale = kbDeviceLocale()
         switch timeFilter {
         case .all:     return "Tutte"
         case .months3: return "Ultimi 3 mesi"
@@ -395,6 +395,8 @@ struct PediatricTreatmentsView: View {
                     .foregroundStyle(tint)
                 }
             }
+            .environment(\.locale, kbDeviceLocale())
+            .environment(\.calendar, kbDeviceCalendar())
             .navigationTitle("Filtra per periodo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

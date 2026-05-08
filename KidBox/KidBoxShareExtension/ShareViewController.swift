@@ -171,6 +171,15 @@ class ShareViewController: UIViewController {
                 "com.apple.quicktime-movie":                              ".mov",
                 "public.avi":                                             ".avi",
                 "public.3gpp":                                            ".3gp",
+                // Audio (WhatsApp vocali inclusi)
+                "public.audio":                                           ".m4a",
+                "public.mp3":                                             ".mp3",
+                "public.mpeg-4-audio":                                    ".m4a",
+                "com.apple.m4a-audio":                                    ".m4a",
+                "org.xiph.ogg-audio":                                     ".ogg",
+                "org.xiph.opus":                                          ".opus",
+                "com.microsoft.waveform-audio":                           ".wav",
+                "public.aiff-audio":                                      ".aiff",
                 // Foto
                 "public.jpeg":                                            ".jpg",
                 "public.png":                                             ".png",

@@ -170,6 +170,8 @@ struct PediatricExamDetailView: View {
                         DatePicker("Orario", selection: $reminderTime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(.wheel)
                             .labelsHidden()
+                            .environment(\.locale, kbDeviceLocale())
+                            .environment(\.calendar, kbDeviceCalendar())
                         
                         Button {
                             showReminderTimePicker = false
@@ -259,7 +261,7 @@ struct PediatricExamDetailView: View {
                     Label(e.status.rawValue, systemImage: e.status.icon)
                         .font(.caption)
                         .foregroundStyle(statusColor(e.status))
-                    Text("Creato: \(e.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                    Text("Creato: \(localizedAbbreviatedDate(e.createdAt))")
                         .font(.caption2)
                         .foregroundStyle(KBTheme.secondaryText(colorScheme))
                 }
@@ -276,7 +278,7 @@ struct PediatricExamDetailView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Da eseguire entro")
                             .font(.caption).foregroundStyle(.secondary)
-                        Text(dl.formatted(date: .long, time: .omitted))
+                        Text(localizedLongDate(dl))
                             .font(.subheadline.bold())
                             .foregroundStyle(isOverdue ? .red : KBTheme.primaryText(colorScheme))
                         if isOverdue {
@@ -324,7 +326,7 @@ struct PediatricExamDetailView: View {
             if let rd = e.resultDate {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Data risultato").font(.caption).foregroundStyle(.secondary)
-                    Text(rd.formatted(date: .long, time: .omitted)).font(.subheadline.bold())
+                    Text(localizedLongDate(rd)).font(.subheadline.bold())
                 }
             }
             
@@ -490,7 +492,7 @@ struct PediatricExamDetailView: View {
                 let cal = Calendar.current
                 let h = cal.component(.hour,   from: self.reminderTime)
                 let m = cal.component(.minute, from: self.reminderTime)
-                self.reminderAlertMsg = "Promemoria impostato per il \(date.formatted(date: .long, time: .omitted)) alle \(String(format: "%02d:%02d", h, m))."
+                self.reminderAlertMsg = "Promemoria impostato per il \(localizedLongDate(date)) alle \(String(format: "%02d:%02d", h, m))."
             } else {
                 self.reminderAlertMsg = "Impossibile impostare il promemoria. Controlla i permessi in Impostazioni → Notifiche."
             }
@@ -530,6 +532,20 @@ struct PediatricExamDetailView: View {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         if !coordinator.path.isEmpty { coordinator.path.removeLast() }
     }
+}
+
+private func localizedAbbreviatedDate(_ date: Date) -> String {
+    date.formatted(
+        Date.FormatStyle(date: .abbreviated, time: .omitted)
+            .locale(kbDeviceLocale())
+    )
+}
+
+private func localizedLongDate(_ date: Date) -> String {
+    date.formatted(
+        Date.FormatStyle(date: .long, time: .omitted)
+            .locale(kbDeviceLocale())
+    )
 }
 
 // MARK: - PrescribingVisitRow
@@ -572,7 +588,7 @@ private struct PrescribingVisitRow: View {
                         .font(.subheadline.bold())
                         .foregroundStyle(KBTheme.primaryText(colorScheme))
                     if let date = visit?.date {
-                        Text(date.formatted(date: .abbreviated, time: .omitted))
+                        Text(localizedAbbreviatedDate(date))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }

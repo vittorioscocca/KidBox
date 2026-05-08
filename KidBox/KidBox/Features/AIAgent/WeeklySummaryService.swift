@@ -165,7 +165,7 @@ final class WeeklySummaryService {
         let cal   = Calendar.current
         let now   = Date()
         let fmt   = DateFormatter()
-        fmt.locale    = Locale(identifier: "it_IT")
+        fmt.locale    = kbDeviceLocale()
         fmt.dateStyle = .long
         fmt.timeStyle = .none
         

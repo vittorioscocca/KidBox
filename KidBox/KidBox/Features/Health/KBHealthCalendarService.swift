@@ -341,7 +341,8 @@ struct HealthCalendarConfirmSheet: View {
                                 displayedComponents: isAllDay ? .date : [.date, .hourAndMinute]
                             )
                             .labelsHidden()
-                            .environment(\.locale, Locale(identifier: "it_IT"))
+                            .environment(\.locale, kbDeviceLocale())
+                            .environment(\.calendar, kbDeviceCalendar())
                         }
                     }
                     

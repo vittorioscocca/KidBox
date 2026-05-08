@@ -130,55 +130,74 @@ private struct HealthAIChatBody: View {
     /// which was the root cause of the accelerating typing-indicator animation.
     private var messageList: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    if vm.messages.isEmpty && !vm.isLoading {
-                        introBubble
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        if vm.messages.isEmpty && !vm.isLoading {
+                            introBubble
+                        }
+                        ForEach(vm.messages) { message in
+                            AIChatBubbleView(
+                                text:   message.content,
+                                isUser: message.role == .user,
+                                date:   message.createdAt
+                            )
+                            .id(message.id)
+                        }
+                        
+                        // Typing indicator — given a stable, unique id so SwiftUI
+                        // never recycles or re-creates it while it is visible.
+                        // This prevents its internal repeating animation from
+                        // restarting (and compounding) when the view is remounted.
+                        if vm.isLoading {
+                            AIChatTypingIndicator()
+                                .id("typing-indicator")
+                                .transition(.opacity)
+                        }
                     }
-                    ForEach(vm.messages) { message in
-                        AIChatBubbleView(
-                            text:   message.content,
-                            isUser: message.role == .user,
-                            date:   message.createdAt
-                        )
-                        .id(message.id)
-                    }
+                    .padding(.horizontal, 0)
+                    .padding(.vertical, 12)
                     
-                    // Typing indicator — given a stable, unique id so SwiftUI
-                    // never recycles or re-creates it while it is visible.
-                    // This prevents its internal repeating animation from
-                    // restarting (and compounding) when the view is remounted.
-                    if vm.isLoading {
-                        AIChatTypingIndicator()
-                            .id("typing-indicator")
-                            .transition(.opacity)
+                    // Invisible anchor always present at the very bottom.
+                    // scrollTo targets this instead of "typing" so there is
+                    // never a missing-id failure when isLoading flips quickly.
+                    Color.clear
+                        .frame(height: 1)
+                        .id("scroll-bottom")
+                }
+                .onTapGesture { isInputFocused = false }
+                // Scroll to bottom whenever a new message arrives.
+                .onChange(of: vm.messages.count) { _, _ in
+                    proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                }
+                // Scroll to bottom when generation starts so the indicator is visible.
+                .onChange(of: vm.isLoading) { _, loading in
+                    if loading {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                        }
                     }
                 }
-                .padding()
+                // Restore scroll position when re-entering an existing conversation.
+                .onAppear {
+                    proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                }
                 
-                // Invisible anchor always present at the very bottom.
-                // scrollTo targets this instead of "typing" so there is
-                // never a missing-id failure when isLoading flips quickly.
-                Color.clear
-                    .frame(height: 1)
-                    .id("scroll-bottom")
-            }
-            .onTapGesture { isInputFocused = false }
-            // Scroll to bottom whenever a new message arrives.
-            .onChange(of: vm.messages.count) { _, _ in
-                proxy.scrollTo("scroll-bottom", anchor: .bottom)
-            }
-            // Scroll to bottom when generation starts so the indicator is visible.
-            .onChange(of: vm.isLoading) { _, loading in
-                if loading {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                if !vm.messages.isEmpty {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(accent))
                     }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
                 }
-            }
-            // Restore scroll position when re-entering an existing conversation.
-            .onAppear {
-                proxy.scrollTo("scroll-bottom", anchor: .bottom)
             }
         }
     }
@@ -268,28 +287,39 @@ private struct HealthAIChatBody: View {
     // MARK: - Input bar
     
     private var inputBar: some View {
-        HStack(spacing: 10) {
-            TextField("Fai una domanda…", text: $inputText, axis: .vertical)
-                .focused($isInputFocused)
-                .lineLimit(1...4)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 20))
-            
-            Button {
-                let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { return }
-                inputText = ""
-                Task { await vm.send(text: text) }
-            } label: {
-                Image(systemName: vm.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(
-                        inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        ? .secondary : accent
-                    )
+        VStack(spacing: 4) {
+            if vm.dailyLimit > 0 {
+                HStack {
+                    Spacer()
+                    Text("\(vm.usageToday)/\(vm.dailyLimit)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 4)
             }
-            .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
+            HStack(spacing: 10) {
+                TextField("Fai una domanda…", text: $inputText, axis: .vertical)
+                    .focused($isInputFocused)
+                    .lineLimit(1...4)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 20))
+                
+                Button {
+                    let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !text.isEmpty else { return }
+                    inputText = ""
+                    Task { await vm.send(text: text) }
+                } label: {
+                    Image(systemName: vm.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(
+                            inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? .secondary : accent
+                        )
+                }
+                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 10)

@@ -330,7 +330,7 @@ struct PediatricExamsView: View {
     }
     
     private var filterLabel: String {
-        let fmt = DateFormatter(); fmt.dateStyle = .short
+        let fmt = DateFormatter(); fmt.dateStyle = .short; fmt.locale = kbDeviceLocale()
         switch timeFilter {
         case .all:     return "Tutti"
         case .months3: return "Ultimi 3 mesi"
@@ -366,6 +366,8 @@ struct PediatricExamsView: View {
                     .foregroundStyle(tint)
                 }
             }
+            .environment(\.locale, kbDeviceLocale())
+            .environment(\.calendar, kbDeviceCalendar())
             .navigationTitle("Filtra per periodo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -504,7 +506,7 @@ struct PediatricExamsView: View {
     }
     
     private func deadlineLabel(_ date: Date) -> String {
-        let fmt = DateFormatter(); fmt.dateStyle = .medium; fmt.locale = Locale(identifier: "it_IT")
+        let fmt = DateFormatter(); fmt.dateStyle = .medium; fmt.locale = kbDeviceLocale()
         return "Entro \(fmt.string(from: date))"
     }
 }

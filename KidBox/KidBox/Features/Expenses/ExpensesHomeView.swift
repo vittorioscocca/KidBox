@@ -8,6 +8,13 @@ import SwiftData
 import Charts
 import Combine
 
+private func expensesAppLocale() -> Locale {
+    if let lang = Locale.preferredLanguages.first, !lang.isEmpty {
+        return Locale(identifier: lang)
+    }
+    return kbDeviceLocale()
+}
+
 // MARK: - Root entry point
 
 struct ExpensesHomeView: View {
@@ -104,6 +111,7 @@ struct ExpensesHomeView: View {
             SyncCenter.shared.stopExpensesRealtime()
             syncCancellable = nil
         }
+        .environment(\.locale, expensesAppLocale())
     }
 }
 

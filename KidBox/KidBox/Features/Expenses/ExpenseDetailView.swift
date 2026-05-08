@@ -6,6 +6,13 @@
 import SwiftUI
 import SwiftData
 
+private func expensesAppLocale() -> Locale {
+    if let lang = Locale.preferredLanguages.first, !lang.isEmpty {
+        return Locale(identifier: lang)
+    }
+    return kbDeviceLocale()
+}
+
 struct ExpenseDetailView: View {
     let familyId: String
     let expenseId: String
@@ -113,6 +120,7 @@ struct ExpenseDetailView: View {
         } message: {
             Text("Questa azione non può essere annullata.")
         }
+        .environment(\.locale, expensesAppLocale())
     }
     
     // MARK: - Data loading

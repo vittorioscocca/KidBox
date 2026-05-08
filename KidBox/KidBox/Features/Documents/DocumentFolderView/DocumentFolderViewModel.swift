@@ -400,7 +400,12 @@ final class DocumentFolderViewModel: ObservableObject {
                 title: doc.title, fileName: doc.fileName,
                 mimeType: doc.mimeType, fileSize: Int(doc.fileSize),
                 storagePath: doc.storagePath, downloadURL: doc.downloadURL,
-                isDeleted: false, notes: doc.notes, updatedAt: now, updatedBy: uid
+                isDeleted: false, notes: doc.notes,
+                extractedText: doc.extractedText,
+                extractedTextUpdatedAt: doc.extractedTextUpdatedAt,
+                extractionStatusRaw: doc.extractionStatusRaw,
+                extractionError: doc.extractionError,
+                updatedAt: now, updatedBy: uid
             )
             Task.detached(priority: .userInitiated) {
                 do {
@@ -466,7 +471,12 @@ final class DocumentFolderViewModel: ObservableObject {
                 title: doc.title + " (copia)", fileName: doc.fileName,
                 mimeType: doc.mimeType, fileSize: Int(doc.fileSize),
                 storagePath: doc.storagePath, downloadURL: doc.downloadURL,
-                isDeleted: false, notes: doc.notes, updatedAt: now, updatedBy: uid
+                isDeleted: false, notes: doc.notes,
+                extractedText: doc.extractedText,
+                extractedTextUpdatedAt: doc.extractedTextUpdatedAt,
+                extractionStatusRaw: doc.extractionStatusRaw,
+                extractionError: doc.extractionError,
+                updatedAt: now, updatedBy: uid
             )
             Task.detached(priority: .userInitiated) {
                 do {

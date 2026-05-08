@@ -112,10 +112,10 @@ struct WalletTicketCardView: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
                 if let eventDate = ticket.eventDate {
-                    Text(eventDate.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
+                    Text(localizedTicketDay(eventDate))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
-                    Text(eventDate.formatted(date: .omitted, time: .shortened))
+                    Text(localizedTicketTime(eventDate))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.white)
                 } else if let location = ticket.location, !location.isEmpty {
@@ -145,5 +145,21 @@ struct WalletTicketCardView: View {
                 }
             }
         }
+    }
+
+    private func localizedTicketDay(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
+        return formatter.string(from: date)
+    }
+
+    private func localizedTicketTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.setLocalizedDateFormatFromTemplate("HHmm")
+        return formatter.string(from: date)
     }
 }

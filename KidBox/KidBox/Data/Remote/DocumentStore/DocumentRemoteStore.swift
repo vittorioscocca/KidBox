@@ -27,6 +27,10 @@ struct RemoteDocumentDTO {
     
     let isDeleted: Bool
     let notes: String?
+    let extractedText: String?
+    let extractedTextUpdatedAt: Date?
+    let extractionStatusRaw: Int?
+    let extractionError: String?
     let updatedAt: Date?
     let updatedBy: String?
 }
@@ -105,6 +109,20 @@ final class DocumentRemoteStore {
         
         if let notes = dto.notes {
             data["notes"] = notes
+        }
+
+        // OCR fields are additive-only: avoid deleting remote OCR data when local dto has nil.
+        if let extractedText = dto.extractedText, !extractedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            data["extractedText"] = extractedText
+        }
+        if let extractedTextUpdatedAt = dto.extractedTextUpdatedAt {
+            data["extractedTextUpdatedAt"] = Timestamp(date: extractedTextUpdatedAt)
+        }
+        if let extractionStatusRaw = dto.extractionStatusRaw {
+            data["extractionStatusRaw"] = extractionStatusRaw
+        }
+        if let extractionError = dto.extractionError {
+            data["extractionError"] = extractionError
         }
         
         try await ref.setData(data, merge: true)
@@ -206,6 +224,10 @@ final class DocumentRemoteStore {
                         downloadURL: data["downloadURL"] as? String,
                         isDeleted: data["isDeleted"] as? Bool ?? false,
                         notes: data["notes"] as? String,
+                        extractedText: data["extractedText"] as? String,
+                        extractedTextUpdatedAt: (data["extractedTextUpdatedAt"] as? Timestamp)?.dateValue(),
+                        extractionStatusRaw: data["extractionStatusRaw"] as? Int,
+                        extractionError: data["extractionError"] as? String,
                         updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),
                         updatedBy: data["updatedBy"] as? String
                     )

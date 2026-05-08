@@ -7,63 +7,171 @@
 
 import SwiftUI
 
-private struct AIChatMarkdownText: View {
+private enum AITextBlock: Identifiable {
+    case heading(level: Int, text: String)
+    case paragraph(String)
+    case bullet([String], ordered: Bool)
+    case code(String)
+
+    var id: String {
+        switch self {
+        case .heading(let level, let text): return "h\(level)-\(text)"
+        case .paragraph(let text): return "p-\(text)"
+        case .bullet(let items, let ordered): return "l-\(ordered)-\(items.joined(separator: "|"))"
+        case .code(let text): return "c-\(text)"
+        }
+    }
+}
+
+private struct AIClaudeMarkdownText: View {
     let text: String
-    let isUser: Bool
-    
     @Environment(\.colorScheme) private var colorScheme
-    
+
     var body: some View {
-        Text(displayText)
-            .textSelection(.enabled)
-            .font(.body)
-            .foregroundStyle(isUser ? .white : KBTheme.primaryText(colorScheme))
-            .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .heading(let level, let headingText):
+                    Text(markdownAttributed(headingText))
+                        .font(level == 2 ? .title3.weight(.semibold) : .headline.weight(.semibold))
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Divider()
+                        .padding(.top, 6)
+                        .padding(.bottom, 10)
+
+                case .paragraph(let paragraph):
+                    Text(markdownAttributed(paragraph))
+                        .font(.body)
+                        .lineSpacing(5)
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 8)
+
+                case .bullet(let items, let ordered):
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text(ordered ? "\(index + 1)." : "•")
+                                    .font(.body)
+                                    .foregroundStyle(KBTheme.primaryText(colorScheme))
+                                    .frame(width: 18, alignment: .leading)
+                                Text(markdownAttributed(item))
+                                    .font(.body)
+                                    .lineSpacing(5)
+                                    .foregroundStyle(KBTheme.primaryText(colorScheme))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 8)
+
+                case .code(let code):
+                    Text(code)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 8)
+                }
+            }
+        }
+        .textSelection(.enabled)
     }
-    
-    private var displayText: String {
-        normalizeMarkdownLikeText(text)
+
+    private var blocks: [AITextBlock] {
+        let lines = text.replacingOccurrences(of: "\r\n", with: "\n").split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var out: [AITextBlock] = []
+        var i = 0
+
+        func pushParagraph(_ value: String) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { out.append(.paragraph(trimmed)) }
+        }
+
+        while i < lines.count {
+            let line = lines[i]
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            if trimmed.hasPrefix("```") {
+                i += 1
+                var codeLines: [String] = []
+                while i < lines.count && !lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+                    codeLines.append(lines[i])
+                    i += 1
+                }
+                out.append(.code(codeLines.joined(separator: "\n")))
+                i += 1
+                continue
+            }
+
+            if trimmed.hasPrefix("## ") || trimmed.hasPrefix("### ") {
+                let level = trimmed.hasPrefix("### ") ? 3 : 2
+                let text = String(trimmed.dropFirst(level + 1))
+                out.append(.heading(level: level, text: text))
+                i += 1
+                continue
+            }
+
+            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
+                var items: [String] = []
+                while i < lines.count {
+                    let t = lines[i].trimmingCharacters(in: .whitespaces)
+                    if t.hasPrefix("- ") || t.hasPrefix("* ") {
+                        items.append(String(t.dropFirst(2)))
+                        i += 1
+                    } else {
+                        break
+                    }
+                }
+                out.append(.bullet(items, ordered: false))
+                continue
+            }
+
+            if let _ = trimmed.range(of: #"^\d+\.\s+"#, options: .regularExpression) {
+                var items: [String] = []
+                while i < lines.count {
+                    let t = lines[i].trimmingCharacters(in: .whitespaces)
+                    if let range = t.range(of: #"^\d+\.\s+"#, options: .regularExpression) {
+                        items.append(String(t[range.upperBound...]))
+                        i += 1
+                    } else {
+                        break
+                    }
+                }
+                out.append(.bullet(items, ordered: true))
+                continue
+            }
+
+            if trimmed.isEmpty {
+                i += 1
+                continue
+            }
+
+            var paragraphLines = [line]
+            i += 1
+            while i < lines.count {
+                let t = lines[i].trimmingCharacters(in: .whitespaces)
+                if t.isEmpty || t.hasPrefix("## ") || t.hasPrefix("### ") || t.hasPrefix("```") ||
+                    t.hasPrefix("- ") || t.hasPrefix("* ") || t.range(of: #"^\d+\.\s+"#, options: .regularExpression) != nil {
+                    break
+                }
+                paragraphLines.append(lines[i])
+                i += 1
+            }
+            pushParagraph(paragraphLines.joined(separator: "\n"))
+        }
+        return out
     }
-    
-    private func normalizeMarkdownLikeText(_ input: String) -> String {
-        var output = input
-        
-        // Normalizza ritorni a capo
-        output = output.replacingOccurrences(of: "\r\n", with: "\n")
-        output = output.replacingOccurrences(of: "\r", with: "\n")
-        
-        // Titoli markdown -> testo normale con spazio sopra
-        output = output.replacingOccurrences(of: "## ", with: "\n")
-        output = output.replacingOccurrences(of: "# ", with: "\n")
-        
-        // Grassetto markdown -> rimuove i marker
-        output = output.replacingOccurrences(of: "**", with: "")
-        output = output.replacingOccurrences(of: "__", with: "")
-        
-        // Evita testi attaccati dopo i :
-        output = output.replacingOccurrences(of: ":", with: ":\n")
-        
-        // Mantieni leggibili gli elenchi
-        output = output.replacingOccurrences(of: "\n- ", with: "\n• ")
-        output = output.replacingOccurrences(of: "- ", with: "• ")
-        
-        // Assicura spazio prima degli elenchi numerati se attaccati
-        output = output.replacingOccurrences(
-            of: #"(?<!\n)(\d+\.) "#,
-            with: "\n$1 ",
-            options: .regularExpression
-        )
-        
-        // Riduce i buchi enormi ma lascia respirare il testo
-        output = output.replacingOccurrences(
-            of: #"\n{3,}"#,
-            with: "\n\n",
-            options: .regularExpression
-        )
-        
-        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    private func markdownAttributed(_ source: String) -> AttributedString {
+        do {
+            return try AttributedString(
+                markdown: source,
+                options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
+            )
+        } catch {
+            return AttributedString(source)
+        }
     }
 }
 
@@ -76,76 +184,45 @@ struct AIChatBubbleView: View {
     
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if !isUser {
-                ZStack {
-                    Circle()
-                        .fill(KBTheme.bubbleTint.opacity(0.12))
-                        .frame(width: 28, height: 28)
-                    
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(KBTheme.bubbleTint)
-                }
-            } else {
-                Spacer(minLength: 36)
-            }
-            
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                AIChatMarkdownText(
-                    text: text,
-                    isUser: isUser
-                )
-                .frame(maxWidth: 280, alignment: isUser ? .trailing : .leading)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    bubbleBackground,
-                    in: UnevenRoundedRectangle(
-                        topLeadingRadius: isUser ? 18 : 6,
-                        bottomLeadingRadius: 18,
-                        bottomTrailingRadius: isUser ? 6 : 18,
-                        topTrailingRadius: 18
+                if isUser {
+                    Text(text)
+                    .font(.body)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        bubbleBackground,
+                        in: UnevenRoundedRectangle(
+                            topLeadingRadius: 18,
+                            bottomLeadingRadius: 18,
+                            bottomTrailingRadius: 6,
+                            topTrailingRadius: 18
+                        )
                     )
-                )
-                .overlay(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: isUser ? 18 : 6,
-                        bottomLeadingRadius: 18,
-                        bottomTrailingRadius: isUser ? 6 : 18,
-                        topTrailingRadius: 18
+                    .shadow(
+                        color: KBTheme.shadow(colorScheme),
+                        radius: 3,
+                        x: 0,
+                        y: 1
                     )
-                    .stroke(
-                        isUser ? Color.clear : KBTheme.separator(colorScheme),
-                        lineWidth: isUser ? 0 : 1
-                    )
-                )
-                .shadow(
-                    color: KBTheme.shadow(colorScheme),
-                    radius: 3,
-                    x: 0,
-                    y: 1
-                )
+                    .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: .trailing)
+                } else {
+                    AIClaudeMarkdownText(text: text)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 2)
+                }
                 
                 Text(timeString)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, isUser ? 4 : 0)
             }
             .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
-            
-            if isUser {
-                Circle()
-                    .fill(KBTheme.bubbleTint.opacity(0.14))
-                    .frame(width: 28, height: 28)
-                    .overlay {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(KBTheme.bubbleTint)
-                    }
-            } else {
-                Spacer(minLength: 36)
-            }
         }
+        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
     
@@ -155,7 +232,7 @@ struct AIChatBubbleView: View {
     
     private var timeString: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "it_IT")
+        formatter.locale = kbDeviceLocale()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         return formatter.string(from: date)
@@ -163,56 +240,37 @@ struct AIChatBubbleView: View {
 }
 
 struct AIChatTypingIndicator: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var phase = 0
+    @State private var isAnimating = false
+    private let assistantTextInset: CGFloat = 12
     
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(KBTheme.bubbleTint.opacity(0.12))
-                    .frame(width: 28, height: 28)
-                
-                Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(KBTheme.bubbleTint)
-            }
-            
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { index in
                     Circle()
-                        .fill(KBTheme.bubbleTint.opacity(phase == index ? 1 : 0.3))
+                        .fill(KBTheme.bubbleTint)
                         .frame(width: 8, height: 8)
+                        .scaleEffect(isAnimating ? 1.0 : 0.72)
+                        .opacity(isAnimating ? 1.0 : 0.35)
+                        .animation(
+                            .easeInOut(duration: 0.7)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.22),
+                            value: isAnimating
+                        )
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                KBTheme.cardBackground(colorScheme),
-                in: UnevenRoundedRectangle(
-                    topLeadingRadius: 6,
-                    bottomLeadingRadius: 18,
-                    bottomTrailingRadius: 18,
-                    topTrailingRadius: 18
-                )
-            )
-            .overlay(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 6,
-                    bottomLeadingRadius: 18,
-                    bottomTrailingRadius: 18,
-                    topTrailingRadius: 18
-                )
-                .stroke(KBTheme.separator(colorScheme), lineWidth: 1)
-            )
-            
+            .padding(.horizontal, 4)
+            .padding(.vertical, 4)
+
             Spacer()
         }
-        .task {
-            while true {
-                try? await Task.sleep(for: .milliseconds(280))
-                phase = (phase + 1) % 3
-            }
+        .onAppear {
+            isAnimating = true
         }
+        .onDisappear {
+            isAnimating = false
+        }
+        .padding(.leading, assistantTextInset)
     }
 }

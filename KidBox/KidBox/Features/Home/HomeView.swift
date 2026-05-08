@@ -744,7 +744,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(
                     title: "Assistente",
-                    subtitle: aiAvailable ? "Conosce calendario, spesa e documenti" : "Disponibile con Pro o Max",
+                    subtitle: aiAvailable ? "Conosce salute, visite, esami, documenti e wallet" : "Disponibile con Pro o Max",
                     systemImage: aiAvailable ? "brain.head.profile" : "lock.fill",
                     tint: aiAvailable ? .purple : .gray
                 ) {

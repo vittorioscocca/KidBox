@@ -215,7 +215,8 @@ struct PediatricVisitsView: View {
                 .padding(.bottom, 96)
             }
         }
-        .environment(\.locale, Locale(identifier: "it_IT"))
+        .environment(\.locale, kbDeviceLocale())
+        .environment(\.calendar, kbDeviceCalendar())
     }
     
     // MARK: - Toolbar
@@ -276,7 +277,7 @@ struct PediatricVisitsView: View {
                     if let doctor = v.doctorName, !doctor.isEmpty {
                         Text(doctor).font(.caption).foregroundStyle(tint).lineLimit(1)
                     }
-                    Text(v.date.formatted(date: .abbreviated, time: .shortened))
+                    Text(localizedVisitDateTime(v.date))
                         .font(.caption).foregroundStyle(KBTheme.secondaryText(colorScheme))
                     if let status = v.visitStatus {
                         Label(status.rawValue, systemImage: status.icon)
@@ -326,7 +327,7 @@ struct PediatricVisitsView: View {
     }
     
     private var filterLabel: String {
-        let fmt = DateFormatter(); fmt.dateStyle = .short
+        let fmt = DateFormatter(); fmt.dateStyle = .short; fmt.locale = kbDeviceLocale()
         switch selectedPeriod {
         case .all:        return "Tutti"
         case .thirtyDays: return "Ultimi 30 giorni"
@@ -361,6 +362,8 @@ struct PediatricVisitsView: View {
                     .foregroundStyle(tint)
                 }
             }
+            .environment(\.locale, kbDeviceLocale())
+            .environment(\.calendar, kbDeviceCalendar())
             .navigationTitle("Filtra per periodo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -481,18 +484,13 @@ struct PediatricVisitsView: View {
     
     // MARK: - AI
     
-    private func buildAiScopeId(for person: PediatricPerson, period: PeriodFilter) -> String {
+    private func buildAiScopeId(for person: PediatricPerson, period _: PeriodFilter) -> String {
         let base: String
         switch person {
-        case .child(let c):  base = "visits-child-\(c.id)"
-        case .member(let m): base = "visits-member-\(m.id)"
+        case .child(let c):  base = "visits-child-v2-\(c.id)"
+        case .member(let m): base = "visits-member-v2-\(m.id)"
         }
-        if period == .custom {
-            let fmt = DateFormatter()
-            fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.dateFormat = "yyyyMMdd"
-            return "\(base)-custom-\(fmt.string(from: min(customStartDate, customEndDate)))-\(fmt.string(from: max(customStartDate, customEndDate)))"
-        }
-        return "\(base)-\(period.rawValue)"
+        return base
     }
     
     private func handleAskAI(person: PediatricPerson, visits _: [KBMedicalVisit], period: PeriodFilter) {
@@ -511,7 +509,16 @@ struct PediatricVisitsView: View {
     
     private func italianShortDate(_ date: Date) -> String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "it_IT"); f.dateFormat = "d MMM yyyy"
+        f.locale = kbDeviceLocale(); f.dateFormat = "d MMM yyyy"
         return f.string(from: date)
+    }
+
+    private func localizedVisitDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }

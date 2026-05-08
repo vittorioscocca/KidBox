@@ -1067,19 +1067,24 @@ private struct ChatConversationView: View {
     }
     
     private static func dayLabel(for date: Date, daysAgo: Int) -> String {
+        let locale = kbDeviceLocale()
         switch daysAgo {
-        case 0: return "Oggi"
-        case 1: return "Ieri"
+        case 0, 1:
+            let relativeFormatter = RelativeDateTimeFormatter()
+            relativeFormatter.locale = locale
+            relativeFormatter.unitsStyle = .full
+            let label = relativeFormatter.localizedString(for: date, relativeTo: Date())
+            return label.capitalized(with: locale)
         case 2...6:
             return date.formatted(
-                Date.FormatStyle().weekday(.wide).locale(Locale(identifier: "it_IT"))
-            ).capitalized
+                Date.FormatStyle().weekday(.wide).locale(locale)
+            ).capitalized(with: locale)
         default:
             return date.formatted(
                 Date.FormatStyle()
                     .weekday(.wide).day().month(.abbreviated)
-                    .locale(Locale(identifier: "it_IT"))
-            ).capitalized
+                    .locale(locale)
+            ).capitalized(with: locale)
         }
     }
     
@@ -1260,6 +1265,10 @@ private struct ChatConversationView: View {
                     downloadURL: mediaURL,
                     isDeleted: false,
                     notes: "chat_plain",
+                    extractedText: nil,
+                    extractedTextUpdatedAt: nil,
+                    extractionStatusRaw: nil,
+                    extractionError: nil,
                     updatedAt: Date(),
                     updatedBy: uid
                 )

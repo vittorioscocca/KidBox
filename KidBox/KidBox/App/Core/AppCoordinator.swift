@@ -155,12 +155,6 @@ final class AppCoordinator: ObservableObject {
         let rawAppearance = UserDefaults.standard.string(forKey: Self.appearanceModeKey) ?? AppearanceMode.system.rawValue
         appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
         KBLog.settings.debug("AppCoordinator init appearanceMode=\(rawAppearance, privacy: .public)")
-        // Solo in debug — rimuovere prima del lancio
-        // DOPO — resetta anche la proprietà @Published
-#if DEBUG
-        UserDefaults.standard.removeObject(forKey: Self.onboardingKey)
-        hasSeenOnboarding = false   // ← aggiunge questa riga
-#endif
         KBLog.navigation.kbInfo("hasSeenOnboarding = \(UserDefaults.standard.bool(forKey: "hasSeenOnboarding"))")
     }
     

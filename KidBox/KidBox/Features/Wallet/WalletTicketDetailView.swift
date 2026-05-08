@@ -123,7 +123,7 @@ struct WalletTicketDetailView: View {
                     detailRow(
                         icon: "calendar",
                         title: "Quando",
-                        value: eventDate.formatted(date: .complete, time: .shortened)
+                        value: localizedTicketDateTime(eventDate)
                     )
                 }
                 if let location = ticket.location, !location.isEmpty {
@@ -238,5 +238,14 @@ struct WalletTicketDetailView: View {
             await WalletReminderService.shared.cancelReminders(ticketId: ticket.id)
         }
         dismiss()
+    }
+
+    private func localizedTicketDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.dateStyle = .full
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }

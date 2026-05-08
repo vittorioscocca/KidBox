@@ -26,6 +26,11 @@ final class KBAIMessage {
         set { roleRaw = newValue.rawValue }
     }
     
+    /// Data-layer summary marker used by chat compaction flow.
+    var isSummary: Bool {
+        id.hasPrefix("summary-")
+    }
+    
     init(
         id: String = UUID().uuidString,
         role: AIMessageRole,

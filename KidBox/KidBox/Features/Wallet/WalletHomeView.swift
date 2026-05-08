@@ -135,7 +135,12 @@ struct WalletHomeView: View {
         var parts: [String] = [ticket.kind.displayName]
         if !ticket.title.isEmpty { parts.append(ticket.title) }
         if let d = ticket.eventDate {
-            parts.append(d.formatted(date: .abbreviated, time: .shortened))
+            parts.append(
+                d.formatted(
+                    Date.FormatStyle(date: .abbreviated, time: .shortened)
+                        .locale(kbDeviceLocale())
+                )
+            )
         }
         return parts.joined(separator: ", ")
     }

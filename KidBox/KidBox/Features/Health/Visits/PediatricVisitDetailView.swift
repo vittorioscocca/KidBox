@@ -154,7 +154,7 @@ struct PediatricVisitDetailView: View {
                             .font(.title3.bold())
                             .foregroundStyle(KBTheme.primaryText(colorScheme))
                             .multilineTextAlignment(.leading)
-                        Text(v.date.formatted(date: .long, time: .shortened))
+                        Text(localizedLongDateTime(v.date))
                             .font(.caption)
                             .foregroundStyle(KBTheme.secondaryText(colorScheme))
                         // ── Stato visita ──
@@ -328,7 +328,7 @@ struct PediatricVisitDetailView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Prossimo Appuntamento")
                     .font(.caption).foregroundStyle(.secondary)
-                Text(v.nextVisitDate!.formatted(date: .long, time: .omitted))
+                Text(localizedLongDate(v.nextVisitDate!))
                     .font(.subheadline.bold())
                 if let r = v.nextVisitReason, !r.isEmpty {
                     Text(r).font(.caption).foregroundStyle(.secondary)
@@ -412,6 +412,33 @@ struct PediatricVisitDetailView: View {
         }
     }
     
+    private func localizedLongDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private func localizedLongDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
+    }
+
+    private func localizedAbbreviatedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
+    }
+
     private func deleteVisit(_ v: KBMedicalVisit) {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         KBHealthCalendarService.deleteLinkedCalendarEvent(
@@ -525,7 +552,7 @@ private struct LinkedExamDetailRow: View {
                     }
                 }
                 if let d = exam?.deadline {
-                    Text("Entro: \(d.formatted(date: .abbreviated, time: .omitted))")
+                    Text("Entro: \(abbreviatedDateForRow(d))")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if let p = exam?.preparation, !p.isEmpty {
@@ -556,6 +583,15 @@ private struct LinkedExamDetailRow: View {
                 )
             }
         }
+    }
+
+    private func abbreviatedDateForRow(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.calendar = kbDeviceCalendar()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 }
 

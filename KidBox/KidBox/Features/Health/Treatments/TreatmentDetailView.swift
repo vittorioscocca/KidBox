@@ -40,8 +40,8 @@ struct TreatmentDetailView: View {
     /// Mese abbreviato in italiano (come Android), indipendentemente dalla lingua di sistema.
     private static let timelineMonthFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "it_IT")
-        f.dateFormat = "MMM"
+        f.locale = kbDeviceLocale()
+        f.setLocalizedDateFormatFromTemplate("MMM")
         return f
     }()
     
@@ -291,14 +291,14 @@ struct TreatmentDetailView: View {
                             Image(systemName: "infinity").foregroundStyle(tint).font(.caption.bold())
                             Text("Cura a lungo termine").font(.subheadline.bold())
                         }
-                        Text("In corso dal \(treatment.startDate.formatted(.dateTime.day().month(.abbreviated).year()))")
+                        Text("In corso dal \(localizedDayMonthYear(treatment.startDate))")
                             .font(.caption).foregroundStyle(.secondary)
                         Text("\(takenCount) dosi somministrate").font(.caption).foregroundStyle(.secondary)
                     } else {
                         let day = currentDayOffset + 1
                         Text("Giorno \(day) di \(totalDays)").font(.subheadline.bold())
                         let end = dateForOffset(totalDays - 1)
-                        Text("\(treatment.startDate.formatted(.dateTime.day().month(.abbreviated).year())) – \(end.formatted(.dateTime.day().month(.abbreviated).year()))")
+                        Text("\(localizedDayMonthYear(treatment.startDate)) – \(localizedDayMonthYear(end))")
                             .font(.caption).foregroundStyle(.secondary)
                         Text("\(takenCount)/\(totalDoseCount) Dosi totali")
                             .font(.caption).foregroundStyle(.secondary)
@@ -405,7 +405,7 @@ struct TreatmentDetailView: View {
                     Text(slot.scheduledTime).font(.subheadline.bold())
                 }
                 if slot.taken, let at = slot.takenAt {
-                    Text("Presa: \(at.formatted(.dateTime.hour().minute()))")
+                    Text("Presa: \(localizedHourMinute(at))")
                         .font(.caption).foregroundStyle(.green)
                 } else if slot.isSkipped {
                     Label("Saltata", systemImage: "xmark.circle.fill")
@@ -830,8 +830,8 @@ struct ConfirmDoseContext: Identifiable {
 private enum ConfirmDoseItalianFormatters {
     static let preview: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "it_IT")
-        f.dateFormat = "d MMMM yyyy 'alle' HH:mm"
+        f.locale = kbDeviceLocale()
+        f.setLocalizedDateFormatFromTemplate("dMMMMyHHmm")
         return f
     }()
 }
@@ -965,7 +965,8 @@ struct ConfirmDoseSheet: View {
                     .padding(.horizontal).padding(.bottom, 16)
                 }
             }
-            .environment(\.locale, Locale(identifier: "it_IT"))
+            .environment(\.locale, kbDeviceLocale())
+            .environment(\.calendar, kbDeviceCalendar())
             .background(KBTheme.background(colorScheme).ignoresSafeArea())
             .navigationTitle("Conferma dose")
             .navigationBarTitleDisplayMode(.inline)
@@ -985,7 +986,8 @@ struct ConfirmDoseSheet: View {
                     )
                     .datePickerStyle(.graphical)
                     .labelsHidden()
-                    .environment(\.locale, Locale(identifier: "it_IT"))
+                    .environment(\.locale, kbDeviceLocale())
+                    .environment(\.calendar, kbDeviceCalendar())
                     .tint(tint)
                     .padding()
                 }
@@ -1017,7 +1019,8 @@ struct ConfirmDoseSheet: View {
                     )
                     .datePickerStyle(.wheel)
                     .labelsHidden()
-                    .environment(\.locale, Locale(identifier: "it_IT"))
+                    .environment(\.locale, kbDeviceLocale())
+                    .environment(\.calendar, kbDeviceCalendar())
                     .tint(tint)
                     Spacer(minLength: 0)
                 }
@@ -1081,7 +1084,12 @@ private struct TreatmentPrescribingVisitNavRow: View {
                         .font(.subheadline.bold())
                         .foregroundStyle(KBTheme.primaryText(colorScheme))
                     if let date = visit?.date {
-                        Text(date.formatted(date: .abbreviated, time: .omitted))
+                        Text(
+                            date.formatted(
+                                Date.FormatStyle(date: .abbreviated, time: .omitted)
+                                    .locale(kbDeviceLocale())
+                            )
+                        )
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
@@ -1098,6 +1106,25 @@ private struct TreatmentPrescribingVisitNavRow: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+private func localizedDayMonthYear(_ date: Date) -> String {
+    return date.formatted(
+        Date.FormatStyle()
+            .day()
+            .month(.abbreviated)
+            .year()
+            .locale(kbDeviceLocale())
+    )
+}
+
+private func localizedHourMinute(_ date: Date) -> String {
+    return date.formatted(
+        Date.FormatStyle()
+            .hour()
+            .minute()
+            .locale(kbDeviceLocale())
+    )
 }
 
 // MARK: - Extend Treatment Sheet

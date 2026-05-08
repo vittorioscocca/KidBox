@@ -69,6 +69,10 @@ struct PlanningContextInput {
     let pendingGroceryItems: [KBGroceryItem]
     /// Messaggi chat di testo recenti (max ultimi 20, no media).
     let recentChatMessages: [KBChatMessage]
+    /// Documenti recenti della famiglia (max ultimi 10, non eliminati).
+    let recentDocuments: [KBDocument]
+    /// Biglietti Wallet recenti (max ultimi 10, non eliminati).
+    let recentWalletTickets: [KBWalletTicket]
     
     // ── Profili sanitari figli (pediatria avanzata) ───────────────
     /// Tutti i figli della famiglia — per costruire il profilo avanzato.
@@ -101,6 +105,8 @@ struct PlanningContextInput {
         expenseCategoryNames:  [String: String]    = [:],
         pendingGroceryItems:   [KBGroceryItem]     = [],
         recentChatMessages:    [KBChatMessage]     = [],
+        recentDocuments:       [KBDocument]        = [],
+        recentWalletTickets:   [KBWalletTicket]    = [],
         children:              [KBChild]           = [],
         pediatricProfiles:     [String: KBPediatricProfile] = [:],
         allVisits:             [KBMedicalVisit]    = [],
@@ -124,6 +130,8 @@ struct PlanningContextInput {
         self.expenseCategoryNames   = expenseCategoryNames
         self.pendingGroceryItems    = pendingGroceryItems
         self.recentChatMessages     = recentChatMessages
+        self.recentDocuments        = recentDocuments
+        self.recentWalletTickets    = recentWalletTickets
         self.children               = children
         self.pediatricProfiles      = pediatricProfiles
         self.allVisits              = allVisits
@@ -154,7 +162,9 @@ enum PlanningContextBuilder {
         notes=\(input.recentNotes.count) \
         expenses=\(input.recentExpenses.count) \
         grocery=\(input.pendingGroceryItems.count) \
-        chat=\(input.recentChatMessages.count)
+        chat=\(input.recentChatMessages.count) \
+        docs=\(input.recentDocuments.count) \
+        wallet=\(input.recentWalletTickets.count)
         """)
         
         let now      = Date()
@@ -168,8 +178,9 @@ enum PlanningContextBuilder {
         lines.append("""
         Sei un assistente di pianificazione familiare integrato nell'app KidBox.
         Hai accesso al calendario, ai to-do, alle routine dei bambini, alle cure \
-        attive, alle scadenze sanitarie, alle note, alle spese, alla lista della spesa \
-        e agli ultimi messaggi della chat famiglia di \(input.familyName).
+        attive, alle visite e agli esami, alle scadenze sanitarie, ai documenti, al wallet, \
+        alle note, alle spese, alla lista della spesa e agli ultimi messaggi della chat famiglia \
+        di \(input.familyName).
         
         REGOLE IMPORTANTI:
         - Aiuta i genitori a pianificare, trovare spazi liberi e non dimenticare scadenze.
@@ -212,6 +223,8 @@ enum PlanningContextBuilder {
                        memberNames: input.memberNames, to: &lines)
         appendGrocery(input.pendingGroceryItems, to: &lines)
         appendChatMessages(input.recentChatMessages, to: &lines)
+        appendDocuments(input.recentDocuments, to: &lines)
+        appendWalletTickets(input.recentWalletTickets, to: &lines)
         
         // ── Profili sanitari figli (pediatria avanzata) ───────────────
         appendChildrenHealthProfiles(input: input, to: &lines)
@@ -697,7 +710,7 @@ enum PlanningContextBuilder {
     
     private static func formatDate(_ date: Date) -> String {
         let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
+        f.locale    = kbDeviceLocale()
         f.dateStyle = .long
         f.timeStyle = .none
         return f.string(from: date)
@@ -705,14 +718,14 @@ enum PlanningContextBuilder {
     
     private static func formatDateShort(_ date: Date) -> String {
         let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
+        f.locale    = kbDeviceLocale()
         f.dateFormat = "EEEE d MMMM"
         return f.string(from: date)
     }
     
     private static func formatDateTime(_ date: Date) -> String {
         let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
+        f.locale    = kbDeviceLocale()
         f.dateStyle = .medium
         f.timeStyle = .short
         return f.string(from: date)
@@ -720,9 +733,35 @@ enum PlanningContextBuilder {
     
     private static func formatTime(_ date: Date) -> String {
         let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
+        f.locale    = kbDeviceLocale()
         f.timeStyle = .short
         f.dateStyle = .none
         return f.string(from: date)
+    }
+}
+
+// MARK: - Documents & Wallet
+
+private extension PlanningContextBuilder {
+    static func appendDocuments(_ docs: [KBDocument], to lines: inout [String]) {
+        guard !docs.isEmpty else { return }
+        lines.append("\n## Documenti (recenti)")
+        for d in docs.prefix(10) {
+            let scope = d.childId == nil ? "famiglia" : "bambino:\(d.childId!)"
+            let extracted = d.extractedText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let hasText = (extracted?.isEmpty == false)
+            lines.append("- \(d.title) (\(scope)) — \(d.fileName) — OCR:\(hasText ? "si" : "no") — aggiornato: \(formatDate(d.updatedAt))")
+        }
+    }
+
+    static func appendWalletTickets(_ tickets: [KBWalletTicket], to lines: inout [String]) {
+        guard !tickets.isEmpty else { return }
+        lines.append("\n## Wallet (biglietti recenti)")
+        for t in tickets.prefix(10) {
+            let whenLine = t.eventDate.map { formatDate($0) } ?? "data: n/d"
+            let kind = t.kindRaw
+            let emitter = t.emitter?.isEmpty == false ? " — \(t.emitter!)" : ""
+            lines.append("- \(t.title) — tipo: \(kind) — \(whenLine)\(emitter)")
+        }
     }
 }

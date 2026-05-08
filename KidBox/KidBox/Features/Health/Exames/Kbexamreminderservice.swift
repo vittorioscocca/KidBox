@@ -147,7 +147,7 @@ final class KBExamReminderService {
         let content       = UNMutableNotificationContent()
         content.title     = "Promemoria esame 🩺"
         let fmt           = DateFormatter()
-        fmt.locale        = Locale(identifier: "it_IT")
+        fmt.locale        = kbDeviceLocale()
         fmt.dateFormat    = "HH:mm"
         
         // Determina l'orario effettivo che apparirà nel body

@@ -113,6 +113,8 @@ struct PediatricTreatmentEditView: View {
                 }
             }
             .background(KBTheme.background(colorScheme).ignoresSafeArea())
+            .environment(\.locale, kbDeviceLocale())
+            .environment(\.calendar, kbDeviceCalendar())
             .navigationTitle(isEditing ? "Modifica Cura" : "Nuova Cura")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -297,6 +299,8 @@ struct PediatricTreatmentEditView: View {
             // ── Data inizio ──────────────────────────────────────────────────
             styledGroupBox {
                 DatePicker("Data inizio", selection: $startDate, displayedComponents: .date)
+                    .environment(\.locale, kbDeviceLocale())
+                    .environment(\.calendar, kbDeviceCalendar())
             }
             
             // ── Note ─────────────────────────────────────────────────────────
@@ -429,6 +433,8 @@ struct PediatricTreatmentEditView: View {
             styledGroupBox {
                 VStack(alignment: .leading, spacing: 8) {
                     DatePicker("Data inizio", selection: $startDate, displayedComponents: .date)
+                        .environment(\.locale, kbDeviceLocale())
+                        .environment(\.calendar, kbDeviceCalendar())
                     Divider()
                     Text("Orari somministrazione").font(.subheadline.bold())
                     Text("Imposta gli orari per \(dailyFrequency) dos\(dailyFrequency == 1 ? "e" : "i") giornalier\(dailyFrequency == 1 ? "a" : "e")")
@@ -452,11 +458,11 @@ struct PediatricTreatmentEditView: View {
             styledGroupBox(title: "Riepilogo") {
                 VStack(spacing: 6) {
                     summaryRow(label: "Durata",      value: isLongTerm ? "A lungo termine (senza fine)" : "\(durationDays) giorni")
-                    summaryRow(label: "Data inizio", value: startDate.formatted(.dateTime.day().month(.abbreviated).year()))
+                    summaryRow(label: "Data inizio", value: localizedDayMonthYear(startDate))
                     if isLongTerm {
                         summaryRow(label: "Data fine", value: "Nessuna — cura permanente")
                     } else {
-                        summaryRow(label: "Data fine",   value: endDate.formatted(.dateTime.day().month(.abbreviated).year()))
+                        summaryRow(label: "Data fine",   value: localizedDayMonthYear(endDate))
                         summaryRow(label: "Dosi totali", value: "\(totalDoses)")
                     }
                 }
@@ -509,8 +515,8 @@ struct PediatricTreatmentEditView: View {
                     }
                     if !isLongTerm {
                         Divider()
-                        summaryRow(label: "Prima dose", value: "\(startDate.formatted(.dateTime.day().month(.abbreviated).year())), \(times.first ?? "")")
-                        summaryRow(label: "Ultima dose", value: "\(endDate.formatted(.dateTime.day().month(.abbreviated).year())), \(times.last ?? "")")
+                        summaryRow(label: "Prima dose", value: "\(localizedDayMonthYear(startDate)), \(times.first ?? "")")
+                        summaryRow(label: "Ultima dose", value: "\(localizedDayMonthYear(endDate)), \(times.last ?? "")")
                         summaryRow(label: "Dosi totali", value: "\(totalDoses)")
                     }
                 }
@@ -786,6 +792,8 @@ struct TimePickerField: View {
     var body: some View {
         DatePicker("", selection: date, displayedComponents: .hourAndMinute)
             .labelsHidden()
+            .environment(\.locale, kbDeviceLocale())
+            .environment(\.calendar, kbDeviceCalendar())
     }
 }
 
@@ -795,4 +803,14 @@ extension Collection {
     subscript(safe index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil
     }
+}
+
+private func localizedDayMonthYear(_ date: Date) -> String {
+    return date.formatted(
+        Date.FormatStyle()
+            .day()
+            .month(.abbreviated)
+            .year()
+            .locale(kbDeviceLocale())
+    )
 }

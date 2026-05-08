@@ -1439,6 +1439,61 @@ exports.getStorageUsage = onCall(
       const usedBytes = Math.max(0, Math.round(data.usedBytes || 0));
       const rawSections = data.sections || {};
 
+      // Firestore-overhead estimates for sections that don't store media files.
+      // Keeps Android/iOS aligned while still using Cloud as source of truth.
+      const [notesSnap, calendarSnap, todoSnap, expensesSnap] = await Promise.all([
+        admin.firestore()
+            .collection("families").doc(familyId)
+            .collection("notes")
+            .where("isDeleted", "==", false)
+            .get(),
+        admin.firestore()
+            .collection("families").doc(familyId)
+            .collection("calendarEvents")
+            .where("isDeleted", "==", false)
+            .get(),
+        admin.firestore()
+            .collection("families").doc(familyId)
+            .collection("todos")
+            .where("isDeleted", "==", false)
+            .get(),
+        admin.firestore()
+            .collection("families").doc(familyId)
+            .collection("expenses")
+            .where("isDeleted", "==", false)
+            .get(),
+      ]);
+      const notesCount = notesSnap.size;
+      const calendarCount = calendarSnap.size;
+      const todoCount = todoSnap.size;
+      const expensesCount = expensesSnap.size;
+
+      const estimatedNotesBytes = notesCount * 3 * 1024;
+      const estimatedCalendarBytes = calendarCount * 1024;
+      const estimatedTodoBytes = todoCount * 1024;
+      const estimatedExpensesBytes = expensesCount * 1024;
+
+      const notesBytes = Math.max(
+          0,
+          Math.round(rawSections.notes || 0),
+          estimatedNotesBytes,
+      );
+      const calendarBytes = Math.max(
+          0,
+          Math.round(rawSections.calendar || 0),
+          estimatedCalendarBytes,
+      );
+      const todoBytes = Math.max(
+          0,
+          Math.round(rawSections.todo || 0),
+          estimatedTodoBytes,
+      );
+      const expensesBytes = Math.max(
+          0,
+          Math.round(rawSections.expenses || 0),
+          estimatedExpensesBytes,
+      );
+
       const plan = await resolveFamilyPlanForQuotas(uid, familyId);
       const quotaBytes = storageQuotaBytesForPlan(plan);
       logger.info("getStorageUsage", {uid, familyId, usedBytes, plan, quotaBytes});
@@ -1452,10 +1507,16 @@ exports.getStorageUsage = onCall(
           chat: Math.max(0, Math.round(rawSections.chat || 0)),
           photos: Math.max(0, Math.round(rawSections.photos || 0)),
           salute: Math.max(0, Math.round(rawSections.salute || 0)),
-          expenses: Math.max(0, Math.round(rawSections.expenses || 0)),
-          notes: Math.max(0, Math.round(rawSections.notes || 0)),
-          calendar: Math.max(0, Math.round(rawSections.calendar || 0)),
-          todo: Math.max(0, Math.round(rawSections.todo || 0)),
+          expenses: expensesBytes,
+          notes: notesBytes,
+          calendar: calendarBytes,
+          todo: todoBytes,
+        },
+        counts: {
+          notes: notesCount,
+          calendar: calendarCount,
+          todo: todoCount,
+          expenses: expensesCount,
         },
       };
     },
@@ -1921,8 +1982,6 @@ exports.setFamilyPlanOverride = onCall(
       const callerUid = request.auth?.uid;
       if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
 
-      // Lista UID amministratori autorizzati — sostituisci con il tuo UID (Firebase → Authentication)
-      const ADMIN_UIDS = ["SOSTITUISCI_CON_TUO_UID"];
       if (!ADMIN_UIDS.includes(callerUid)) {
         throw new HttpsError("permission-denied", "Non autorizzato.");
       }

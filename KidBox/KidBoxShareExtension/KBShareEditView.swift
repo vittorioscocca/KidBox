@@ -602,6 +602,7 @@ struct KBShareEditView: View {
         case "pdf":                         return "doc.richtext.fill"
         case "jpg", "jpeg", "png", "heic":  return "photo.fill"
         case "mp4", "mov", "m4v":           return "video.fill"
+        case "m4a", "mp3", "aac", "wav", "aiff", "ogg", "opus": return "waveform"
         case "doc", "docx":                 return "doc.fill"
         case "xls", "xlsx":                 return "tablecells.fill"
         case "zip", "rar":                  return "archivebox.fill"
@@ -962,6 +963,7 @@ struct KBShareEditView: View {
             let ext = url.pathExtension.lowercased()
             let isVideo = ["mp4", "mov", "m4v"].contains(ext)
             let isImage = ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp"].contains(ext)
+            let isAudio = isAudioExtension(ext)
             
             if isVideo {
                 let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
@@ -985,6 +987,7 @@ struct KBShareEditView: View {
             
             let (fileName, mimeType, typeRaw): (String, String, String) = {
                 if isImage { return ("photo.jpg", "image/jpeg", "photo") }
+                if isAudio { return (url.lastPathComponent, mimeTypeForAudioExtension(ext), "audio") }
                 return (url.lastPathComponent, "application/octet-stream", "document")
             }()
             guard let data = try? Data(contentsOf: url) else { throw ShareError.missingFile }
@@ -1012,18 +1015,22 @@ struct KBShareEditView: View {
                 defer { if accessed { fileURL.stopAccessingSecurityScopedResource() } }
                 guard let data = try? Data(contentsOf: fileURL) else { throw ShareError.missingFile }
                 let fileName = fileURL.lastPathComponent
+                let ext = fileURL.pathExtension.lowercased()
+                let isAudio = isAudioExtension(ext)
+                let typeRaw = isAudio ? "audio" : "document"
+                let mimeType = isAudio ? mimeTypeForAudioExtension(ext) : "application/octet-stream"
                 log("sendDirectToChat uploading file-url bytes=\(data.count) name=\(fileName)")
                 let (storagePath, downloadURL) = try await storage.upload(
                     data: data, familyId: familyId, messageId: messageId,
-                    fileName: fileName, mimeType: "application/octet-stream"
+                    fileName: fileName, mimeType: mimeType
                 )
                 let text = fileName
                 let uid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
                     .string(forKey: "currentUserUID") ?? ""
-                let encryptedText = !uid.isEmpty
+                let encryptedText = !uid.isEmpty && typeRaw == "document"
                     ? (try? NoteCryptoService.encryptString(text, familyId: familyId, userId: uid))
                     : nil
-                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: "document",
+                let dto = makeDTO(messageId: messageId, familyId: familyId, typeRaw: typeRaw,
                                   text: encryptedText != nil ? nil : text,
                                   textEnc: encryptedText,
                                   mediaStoragePath: storagePath, mediaURL: downloadURL)
@@ -1283,6 +1290,23 @@ struct KBShareEditView: View {
         // Fallback copyItem
         if (try? FileManager.default.copyItem(at: source, to: dest)) != nil { return dest }
         return nil
+    }
+
+    private func isAudioExtension(_ ext: String) -> Bool {
+        ["m4a", "mp3", "aac", "wav", "aiff", "ogg", "opus"].contains(ext)
+    }
+
+    private func mimeTypeForAudioExtension(_ ext: String) -> String {
+        switch ext {
+        case "mp3": return "audio/mpeg"
+        case "wav": return "audio/wav"
+        case "aiff": return "audio/aiff"
+        case "aac": return "audio/aac"
+        case "ogg": return "audio/ogg"
+        case "opus": return "audio/ogg"
+        case "m4a": return "audio/m4a"
+        default: return "audio/m4a"
+        }
     }
 }
 

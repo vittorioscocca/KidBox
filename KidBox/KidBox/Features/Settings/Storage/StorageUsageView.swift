@@ -428,7 +428,7 @@ struct StorageUsageView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         formatter.timeStyle = .none
-        formatter.locale    = Locale(identifier: "it_IT")
+        formatter.locale    = kbDeviceLocale()
         let dateStr = formatter.string(from: expirationDate)
         
         return HStack(spacing: 12) {
@@ -540,7 +540,7 @@ struct SubscriptionExpiryRow: View {
         let f = DateFormatter()
         f.dateStyle = .long
         f.timeStyle = .none
-        f.locale    = Locale(identifier: "it_IT")
+        f.locale    = kbDeviceLocale()
         return f
     }()
     

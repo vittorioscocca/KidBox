@@ -48,6 +48,13 @@ struct TodoEditView: View {
     
     private let remote = TodoRemoteStore()
     
+    private func appLocale() -> Locale {
+        if let lang = Locale.preferredLanguages.first, !lang.isEmpty {
+            return Locale(identifier: lang)
+        }
+        return kbDeviceLocale()
+    }
+    
     init(familyId: String,
          childId: String,
          listId: String,
@@ -140,6 +147,7 @@ struct TodoEditView: View {
                             displayedComponents: [.date, .hourAndMinute]
                         )
                         .datePickerStyle(.compact)
+                        .environment(\.locale, appLocale())
                     }
                     
                     Toggle("Promemoria", isOn: Binding(
@@ -172,7 +180,9 @@ struct TodoEditView: View {
                         wantsReminder = false
                     }
                 } message: {
-                    Text("Vuoi ricevere una notifica locale il \(reminderPreviewDate.formatted(.dateTime.day().month().year().hour().minute()))?")
+                    Text(
+                        "Vuoi ricevere una notifica locale il \(reminderPreviewDate.formatted(.dateTime.day().month().year().hour().minute().locale(appLocale())))?"
+                    )
                 }
                 
                 Toggle("Urgente", isOn: $isUrgent)

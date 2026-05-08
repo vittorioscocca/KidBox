@@ -188,8 +188,15 @@ struct PediatricHomeView: View {
     
     private func monthName(_ month: Int) -> String {
         let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "it_IT")
+        fmt.locale = deviceLanguageLocale
         return fmt.monthSymbols[month - 1].capitalized
+    }
+    
+    private var deviceLanguageLocale: Locale {
+        if let language = Locale.preferredLanguages.first, !language.isEmpty {
+            return Locale(identifier: language)
+        }
+        return .autoupdatingCurrent
     }
     
     var body: some View {
@@ -373,6 +380,12 @@ struct HealthTimelineView: View {
     @State private var isSearchPresented = false
     
     private let allKinds: [HealthEventKind] = [.visit, .exam, .treatment, .vaccine]
+    private var deviceLanguageLocale: Locale {
+        if let language = Locale.preferredLanguages.first, !language.isEmpty {
+            return Locale(identifier: language)
+        }
+        return .autoupdatingCurrent
+    }
     
     // Anni disponibili calcolati dagli eventi grezzi
     private var availableYears: [Int] {
@@ -506,7 +519,7 @@ struct HealthTimelineView: View {
                             
                             ForEach(yearGroup.months, id: \.month) { monthGroup in
                                 HStack(spacing: 6) {
-                                    Text(monthName(monthGroup.month).uppercased())
+                                    Text(monthName(monthGroup.month).uppercased(with: deviceLanguageLocale))
                                         .font(.caption.bold())
                                         .foregroundStyle(.secondary)
                                     Rectangle()
@@ -640,7 +653,12 @@ struct HealthTimelineView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text(event.date.formatted(date: .abbreviated, time: .omitted))
+                    Text(
+                        event.date.formatted(
+                            Date.FormatStyle(date: .abbreviated, time: .omitted)
+                                .locale(deviceLanguageLocale)
+                        )
+                    )
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -755,8 +773,15 @@ struct PediatricTimelineDestinationView: View {
     
     private func monthName(_ month: Int) -> String {
         let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "it_IT")
+        fmt.locale = deviceLanguageLocale
         return fmt.monthSymbols[month - 1].capitalized
+    }
+    
+    private var deviceLanguageLocale: Locale {
+        if let language = Locale.preferredLanguages.first, !language.isEmpty {
+            return Locale(identifier: language)
+        }
+        return .autoupdatingCurrent
     }
     
     var body: some View {

@@ -174,7 +174,8 @@ struct PediatricVisitEditView: View {
             }
             .storageUpgradeSheet($showStorageUpgrade)
         }
-        .environment(\.locale, Locale(identifier: "it_IT"))
+        .environment(\.locale, deviceLanguageLocale)
+        .environment(\.calendar, kbDeviceCalendar())
     }
     
     // MARK: - Progress bar
@@ -381,6 +382,7 @@ struct PediatricVisitEditView: View {
                     Label("Data Visita", systemImage: "calendar").font(.headline).padding(.horizontal)
                     DatePicker("", selection: $visitDate, displayedComponents: [.date, .hourAndMinute])
                         .datePickerStyle(.compact).labelsHidden().padding(.horizontal)
+                        .environment(\.locale, deviceLanguageLocale)
                     // ── Promemoria visita ──
                     HStack(spacing: 12) {
                         Image(systemName: visitReminderOn ? "bell.fill" : "bell")
@@ -845,6 +847,7 @@ struct PediatricVisitEditView: View {
                     }
                     if hasNextVisit {
                         DatePicker("", selection: $nextVisitDate, in: Date()..., displayedComponents: [.date])
+                            .environment(\.locale, deviceLanguageLocale)
                             .datePickerStyle(.compact).labelsHidden()
                         Text(italianDateOnly(nextVisitDate)).font(.caption).foregroundStyle(.secondary)
                         Divider()
@@ -1074,15 +1077,19 @@ struct PediatricVisitEditView: View {
     }
     
     private func italianDateTime(_ date: Date) -> String {
-        let f = DateFormatter(); f.locale = Locale(identifier: "it_IT")
+        let f = DateFormatter(); f.locale = deviceLanguageLocale
         f.calendar = Calendar(identifier: .gregorian); f.dateStyle = .long; f.timeStyle = .short
         return f.string(from: date)
     }
     
     private func italianDateOnly(_ date: Date) -> String {
-        let f = DateFormatter(); f.locale = Locale(identifier: "it_IT")
+        let f = DateFormatter(); f.locale = deviceLanguageLocale
         f.calendar = Calendar(identifier: .gregorian); f.dateStyle = .long; f.timeStyle = .none
         return f.string(from: date)
+    }
+
+    private var deviceLanguageLocale: Locale {
+        kbDeviceLocale()
     }
 }
 

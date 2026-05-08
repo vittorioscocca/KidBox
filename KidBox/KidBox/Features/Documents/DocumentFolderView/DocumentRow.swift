@@ -44,7 +44,7 @@ struct DocumentRow: View {
                         Text("·")
                             .foregroundStyle(.tertiary)
                     }
-                    Text(doc.updatedAt.formatted(date: .abbreviated, time: .omitted))
+                    Text(localizedDocumentDate(doc.updatedAt))
                     Text("·")
                         .foregroundStyle(.tertiary)
                     Text(prettySize(doc.fileSize))
@@ -99,6 +99,16 @@ struct DocumentRow: View {
         if m.contains("word") || m.contains("document") { return "doc.text.fill" }
         if m.contains("sheet") || m.contains("excel") { return "tablecells.fill" }
         return "doc.fill"
+    }
+
+    private func localizedDocumentDate(_ date: Date) -> String {
+        date.formatted(
+            Date.FormatStyle()
+                .day()
+                .month(.abbreviated)
+                .year()
+                .locale(kbDeviceLocale())
+        )
     }
     
     private func prettySize(_ bytes: Int64) -> String {

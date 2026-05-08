@@ -44,7 +44,7 @@ struct FolderGridCard: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 } else if let date = updatedAt {
-                    Text(date.formatted(date: .abbreviated, time: .omitted))
+                    Text(localizedFolderDate(date))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -54,5 +54,15 @@ struct FolderGridCard: View {
         }
         .scaleEffect(isSelected ? 0.94 : 1.0)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
+    }
+
+    private func localizedFolderDate(_ date: Date) -> String {
+        date.formatted(
+            Date.FormatStyle()
+                .day()
+                .month(.abbreviated)
+                .year()
+                .locale(kbDeviceLocale())
+        )
     }
 }

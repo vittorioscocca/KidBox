@@ -47,6 +47,8 @@ struct KidBoxApp: App {
                 RootHostView()
                     .environmentObject(coordinator)
                     .environmentObject(subscriptionManager)
+                    .environment(\.locale, kbDeviceLocale())
+                    .environment(\.calendar, kbDeviceCalendar())
                 // ── Tema chiaro / scuro / sistema ──────────────────────────
                     .preferredColorScheme(coordinator.appearanceMode.colorScheme)
                 // ──────────────────────────────────────────────────────────
@@ -90,6 +92,7 @@ struct KidBoxApp: App {
                         TreatmentAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         VisitAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         ExpenseAttachmentService.shared.start(modelContext: modelContainer.mainContext)
+                        await OCRRecoveryMigration.runIfNeeded(modelContext: modelContainer.mainContext)
 #if DEBUG
                         KBLog.sync.kbDebug("DEBUG FirestorePingService ping()")
                         FirestorePingService().ping { _ in }

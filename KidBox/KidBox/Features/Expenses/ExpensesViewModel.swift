@@ -173,7 +173,11 @@ final class ExpensesViewModel: ObservableObject {
         var bars: [MonthlyExpenseBar] = []
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM ''yy"
-        fmt.locale = Locale(identifier: "it_IT")
+        if let lang = Locale.preferredLanguages.first, !lang.isEmpty {
+            fmt.locale = Locale(identifier: lang)
+        } else {
+            fmt.locale = kbDeviceLocale()
+        }
         
         while cursor <= endMonth {
             let comps = cal.dateComponents([.year, .month], from: cursor)

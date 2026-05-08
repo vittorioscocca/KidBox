@@ -346,7 +346,7 @@ enum PlanningReminderService {
     
     private static func formatDate(_ date: Date) -> String {
         let f        = DateFormatter()
-        f.locale     = Locale(identifier: "it_IT")
+        f.locale     = kbDeviceLocale()
         f.dateStyle  = .long
         f.timeStyle  = .none
         return f.string(from: date)
@@ -354,7 +354,7 @@ enum PlanningReminderService {
     
     private static func formatDateTime(_ date: Date) -> String {
         let f        = DateFormatter()
-        f.locale     = Locale(identifier: "it_IT")
+        f.locale     = kbDeviceLocale()
         f.dateStyle  = .medium
         f.timeStyle  = .short
         return f.string(from: date)

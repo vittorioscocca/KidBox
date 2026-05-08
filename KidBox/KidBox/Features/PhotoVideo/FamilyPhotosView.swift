@@ -779,7 +779,7 @@ struct FamilyPhotosView: View {
     
     private var groupedPhotos: [PhotoGroup] {
         let cal = Calendar.current
-        let fmt = DateFormatter(); fmt.locale = Locale(identifier: "it_IT")
+        let fmt = DateFormatter(); fmt.locale = kbDeviceLocale()
         
         func group(keyFor: (KBFamilyPhoto) -> Date, labelFor: (Date) -> String) -> [PhotoGroup] {
             var dict: [Date: [KBFamilyPhoto]] = [:]

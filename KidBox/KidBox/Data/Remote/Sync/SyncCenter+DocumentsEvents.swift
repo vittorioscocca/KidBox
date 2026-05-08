@@ -210,6 +210,18 @@ extension SyncCenter {
                         local.downloadURL = dto.downloadURL
                         local.isDeleted = dto.isDeleted
                         local.notes = dto.notes
+                        if let remoteExtractedText = dto.extractedText {
+                            local.extractedText = remoteExtractedText
+                        }
+                        if let remoteExtractedUpdatedAt = dto.extractedTextUpdatedAt {
+                            local.extractedTextUpdatedAt = remoteExtractedUpdatedAt
+                        }
+                        if let remoteExtractionStatusRaw = dto.extractionStatusRaw {
+                            local.extractionStatusRaw = remoteExtractionStatusRaw
+                        }
+                        if let remoteExtractionError = dto.extractionError {
+                            local.extractionError = remoteExtractionError
+                        }
                         local.updatedAt = remoteStamp
                         local.updatedBy = dto.updatedBy ?? local.updatedBy
                         local.syncState = .synced
@@ -431,6 +443,10 @@ extension SyncCenter {
                 downloadURL: doc.downloadURL,
                 isDeleted: doc.isDeleted,
                 notes: doc.notes,
+                extractedText: doc.extractedText,
+                extractedTextUpdatedAt: doc.extractedTextUpdatedAt,
+                extractionStatusRaw: doc.extractionStatusRaw,
+                extractionError: doc.extractionError,
                 updatedAt: doc.updatedAt,
                 updatedBy: doc.updatedBy
             )

@@ -31,11 +31,16 @@ struct RootGateView: View {
               !fid.isEmpty else { return false }
         return families.contains { $0.id == fid }
     }
+
+    /// Any local family already available in SwiftData.
+    private var hasAnyLocalFamily: Bool {
+        !families.isEmpty
+    }
     
     /// Mostra la Home se onboarding completato **oppure** c’è una famiglia attiva coerente nel DB (nessuna lista selezione dopo join).
     private var shouldShowHome: Bool {
         if coordinator.hasSeenOnboarding { return true }
-        return pinnedFamilyReadyInStore
+        return pinnedFamilyReadyInStore || hasAnyLocalFamily
     }
     
     var body: some View {
@@ -65,7 +70,7 @@ struct RootGateView: View {
         /// Quando SwiftData riceve la famiglia dopo join ma `hasSeenOnboarding` è ancora false, completa l’onboarding così non si resta bloccati sul walkthrough.
         .task(id: families.map(\.id).joined(separator: "|")) {
             guard !coordinator.hasSeenOnboarding,
-                  pinnedFamilyReadyInStore else { return }
+                  hasAnyLocalFamily else { return }
             coordinator.completeOnboarding()
             KBLog.navigation.kbInfo("RootGateView: completeOnboarding after joined family present in store")
         }

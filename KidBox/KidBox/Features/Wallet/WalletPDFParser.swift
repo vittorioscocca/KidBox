@@ -137,7 +137,6 @@ enum WalletPDFParser {
     }
 
     private static func parseDate(datePart: String, timePart: String?) -> Date? {
-        let locale = Locale(identifier: "it_IT")
         let calendar = Calendar(identifier: .gregorian)
         let normalized = datePart.replacingOccurrences(of: "-", with: "/")
         let formats = [
@@ -151,13 +150,20 @@ enum WalletPDFParser {
         let base = timePart.map { "\(normalized) \($0)" } ?? normalized
         for format in formats {
             if format.contains("HH:mm") != (timePart != nil) { continue }
-            let f = DateFormatter()
-            f.locale = locale
-            f.calendar = calendar
-            f.dateFormat = format
-            if let d = f.date(from: base) { return d }
+            for locale in parsingLocales() {
+                let f = DateFormatter()
+                f.locale = locale
+                f.calendar = calendar
+                f.dateFormat = format
+                if let d = f.date(from: base) { return d }
+            }
         }
         return nil
+    }
+
+    private static func parsingLocales() -> [Locale] {
+        // Try system locale first, then keep explicit fallbacks for legacy Italian PDFs.
+        [.autoupdatingCurrent, Locale(identifier: "it_IT"), Locale(identifier: "en_US_POSIX")]
     }
 
     private static func extractWalletURL(from doc: PDFDocument, fullText: String) -> String? {
@@ -221,7 +227,7 @@ enum WalletPDFParser {
         if let emitter = detection.emitter {
             if let eventDate {
                 let formatter = DateFormatter()
-                formatter.locale = Locale(identifier: "it_IT")
+                formatter.locale = .autoupdatingCurrent
                 formatter.dateFormat = "dd MMM"
                 return "\(emitter) • \(formatter.string(from: eventDate))"
             }

@@ -54,6 +54,8 @@ struct PlanningAIChatView: View {
     @Query                                                   private var allExpCats:  [KBExpenseCategory]
     @Query(sort: \KBGroceryItem.createdAt, order: .reverse)  private var allGrocery:  [KBGroceryItem]
     @Query(sort: \KBChatMessage.createdAt, order: .reverse)  private var allChat:     [KBChatMessage]
+    @Query(sort: \KBDocument.updatedAt, order: .reverse)     private var allDocuments: [KBDocument]
+    @Query(sort: \KBWalletTicket.updatedAt, order: .reverse) private var allWalletTickets: [KBWalletTicket]
     
     // ── Pediatria avanzata ────────────────────────────────────────
     // allVisits e allVaccines già presenti sopra — riutilizzati
@@ -167,6 +169,18 @@ struct PlanningAIChatView: View {
             .filter { $0.familyId == familyId && !$0.isDeleted && $0.type == .text }
             .prefix(20))
     }
+
+    private var recentDocuments: [KBDocument] {
+        Array(allDocuments
+            .filter { $0.familyId == familyId && !$0.isDeleted }
+            .prefix(10))
+    }
+
+    private var recentWalletTickets: [KBWalletTicket] {
+        Array(allWalletTickets
+            .filter { $0.familyId == familyId && !$0.isDeleted }
+            .prefix(10))
+    }
     
     // ── Pediatria avanzata ────────────────────────────────────────
     
@@ -265,6 +279,8 @@ struct PlanningAIChatView: View {
                 expenseCategoryNames:   expenseCategoryNames,
                 pendingGroceryItems:    pendingGroceryItems,
                 recentChatMessages:     recentChatMessages,
+                recentDocuments:        recentDocuments,
+                recentWalletTickets:    recentWalletTickets,
                 children:               allChildren.filter { $0.familyId == familyId },
                 pediatricProfiles:      pediatricProfiles,
                 allVisits:              allVisitsForChildren,
@@ -398,62 +414,80 @@ private struct PlanningAIChatInnerView: View {
                     
                     // Messages
                     ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                if vm.messages.isEmpty {
-                                    emptyState
-                                        .padding(.top, 40)
-                                }
-                                
-                                ForEach(vm.messages) { message in
-                                    VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
-                                        AIChatBubbleView(
-                                            text:   message.content,
-                                            isUser: message.role == .user,
-                                            date:   message.createdAt
-                                        )
-                                        if message.role == .assistant {
-                                            actionCards(for: message)
+                        ZStack(alignment: .bottomTrailing) {
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    if vm.messages.isEmpty {
+                                        emptyState
+                                            .padding(.top, 40)
+                                    }
+                                    
+                                    ForEach(vm.messages) { message in
+                                        VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
+                                            AIChatBubbleView(
+                                                text:   message.content,
+                                                isUser: message.role == .user,
+                                                date:   message.createdAt
+                                            )
+                                            if message.role == .assistant {
+                                                actionCards(for: message)
+                                            }
+                                        }
+                                        .id(message.id)
+                                    }
+                                    
+                                    if vm.isLoading {
+                                        HStack {
+                                            AIChatTypingIndicator()
+                                                .id("typing-indicator")
+                                            Spacer()
                                         }
                                     }
-                                    .id(message.id)
+                                    
+                                    Color.clear.frame(height: 1).id("bottom")
                                 }
-                                
-                                if vm.isLoading {
-                                    HStack {
-                                        AIChatTypingIndicator()
-                                            .id("typing-indicator")
-                                        Spacer()
-                                    }
-                                }
-                                
-                                Color.clear.frame(height: 1).id("bottom")
+                                .padding(.horizontal, 0)
+                                .padding(.vertical, 12)
+                                .padding(.bottom, 140)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .padding(.bottom, 140)
-                        }
-                        // Dismiss tastiera scrollando verso il basso
-                        .scrollDismissesKeyboard(.interactively)
-                        // Dismiss tastiera toccando lo sfondo
-                        .onTapGesture {
-                            UIApplication.shared.sendAction(
-                                #selector(UIResponder.resignFirstResponder),
-                                to: nil, from: nil, for: nil
-                            )
-                        }
-                        .onChange(of: vm.messages.count) { _, _ in
-                            withAnimation(.easeOut(duration: 0.3)) {
+                            // Dismiss tastiera scrollando verso il basso
+                            .scrollDismissesKeyboard(.interactively)
+                            // Dismiss tastiera toccando lo sfondo
+                            .onTapGesture {
+                                UIApplication.shared.sendAction(
+                                    #selector(UIResponder.resignFirstResponder),
+                                    to: nil, from: nil, for: nil
+                                )
+                            }
+                            .onChange(of: vm.messages.count) { _, _ in
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    proxy.scrollTo("bottom", anchor: .bottom)
+                                }
+                            }
+                            .onChange(of: vm.isLoading) { _, loading in
+                                if loading {
+                                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                                }
+                            }
+                            .onAppear {
                                 proxy.scrollTo("bottom", anchor: .bottom)
                             }
-                        }
-                        .onChange(of: vm.isLoading) { _, loading in
-                            if loading {
-                                withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                            
+                            if !vm.messages.isEmpty {
+                                Button {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        proxy.scrollTo("bottom", anchor: .bottom)
+                                    }
+                                } label: {
+                                    Image(systemName: "arrow.down")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 36, height: 36)
+                                        .background(Circle().fill(tint))
+                                }
+                                .padding(.trailing, 20)
+                                .padding(.bottom, 132)
                             }
-                        }
-                        .onAppear {
-                            proxy.scrollTo("bottom", anchor: .bottom)
                         }
                     }
                 }
@@ -694,7 +728,7 @@ private struct PlanningAIChatInnerView: View {
                 Text("Ciao, sono il tuo assistente")
                     .font(.headline)
                     .foregroundStyle(KBTheme.primaryText(colorScheme))
-                Text("Conosco il tuo calendario, i to-do, le cure, le note, le spese e le scadenze sanitarie.\nChiedimi qualsiasi cosa.")
+                Text("Conosco il tuo calendario, i to-do, le cure, visite ed esami, i documenti, il wallet, le note, le spese e le scadenze sanitarie.\nChiedimi qualsiasi cosa.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -777,7 +811,7 @@ private struct PlanningAIChatInnerView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 12)
             }
         }
     }
@@ -807,7 +841,7 @@ private struct PlanningAIChatInnerView: View {
                     )
                 }
             }
-            .padding(.leading, 36) // allineato con le bolle AI
+            .padding(.leading, 12)
         }
     }
     
@@ -1263,7 +1297,7 @@ enum PlanningActionParser {
     
     private static func shortDate(_ date: Date) -> String {
         let f = DateFormatter()
-        f.locale    = Locale(identifier: "it_IT")
+        f.locale    = kbDeviceLocale()
         f.dateFormat = "d MMM"
         return f.string(from: date)
     }

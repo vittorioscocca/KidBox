@@ -34,7 +34,7 @@ struct FolderRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else if let date = updatedAt {
-                    Text("Modificata \(date.formatted(.relative(presentation: .named)))")
+                    Text(localizedRelativeDate(date))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -45,5 +45,12 @@ struct FolderRow: View {
             Spacer(minLength: 8)
         }
         .padding(.vertical, 6)
+    }
+
+    private func localizedRelativeDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = kbDeviceLocale()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date()).capitalized(with: kbDeviceLocale())
     }
 }

@@ -32,8 +32,10 @@ final class MedicalAIChatViewModel: ObservableObject {
     
     // MARK: - Summary config
     
-    private let summaryThreshold               = 8
-    private let recentMessagesToKeepAfterSummary = 4
+    private let compactionThreshold: Double = 0.60
+    private var lastCompactionThreshold: Int = 0
+    private var usageTodaySnapshot: Int = 0
+    private var dailyLimitSnapshot: Int = 0
     
     // MARK: - Init
     
@@ -151,6 +153,7 @@ final class MedicalAIChatViewModel: ObservableObject {
             if let existing {
                 self.conversation = existing
                 self.messages = existing.sortedMessages
+                if existing.summary?.isEmpty == false { lastCompactionThreshold = 3 }
                 
                 KBLog.ai.kbInfo("Loaded existing conversation id=\(existing.id) messagesCount=\(existing.messages.count)")
             } else {
@@ -212,8 +215,6 @@ final class MedicalAIChatViewModel: ObservableObject {
         }
         
         do {
-            try await summarizeIfNeeded(conversation: conversation)
-            
             let payloadMessages = buildPayloadMessages(conversation: conversation)
             let finalSystemPrompt = buildFinalSystemPrompt(conversation: conversation)
             
@@ -223,6 +224,8 @@ final class MedicalAIChatViewModel: ObservableObject {
                 messages: payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
+            usageTodaySnapshot = response.usageToday
+            dailyLimitSnapshot = response.dailyLimit
             
             let replyText = response.reply
             
@@ -231,6 +234,7 @@ final class MedicalAIChatViewModel: ObservableObject {
             let assistantMsg = KBAIMessage(role: .assistant, content: replyText)
             conversation.messages.append(assistantMsg)
             messages.append(assistantMsg)
+            try await compactIfNeeded(conversation: conversation)
             saveContext()
             
             KBLog.ai.kbInfo("send completed totalMessagesCount=\(messages.count)")
@@ -264,75 +268,65 @@ final class MedicalAIChatViewModel: ObservableObject {
         loadOrCreateConversation()
     }
     
-    // MARK: - Summary / compaction
+    // MARK: - Compaction
     
-    private func summarizeIfNeeded(conversation: KBAIConversation) async throws {
-        let sorted = conversation.sortedMessages
-        let unsummarizedCount = sorted.count - conversation.summarizedMessageCount
+    private func shouldCompact(messagesInSession: Int, dailyLimit: Int) -> Bool {
+        guard dailyLimit > 0 else { return false }
+        return Double(messagesInSession) >= Double(dailyLimit) * compactionThreshold
+    }
+    
+    private func compactIfNeeded(conversation: KBAIConversation) async throws {
+        guard shouldCompact(messagesInSession: usageTodaySnapshot, dailyLimit: dailyLimitSnapshot) else { return }
+        let stepBase = Double(dailyLimitSnapshot) * 0.20
+        guard stepBase > 0 else { return }
+        let currentThresholdStep = Int(Double(usageTodaySnapshot) / stepBase)
+        guard currentThresholdStep > lastCompactionThreshold else { return }
         
-        KBLog.ai.kbInfo("summarizeIfNeeded unsummarizedCount=\(unsummarizedCount)")
-        
-        guard unsummarizedCount > summaryThreshold else { return }
-        guard sorted.count > recentMessagesToKeepAfterSummary else { return }
-        
-        let messagesToSummarize = Array(sorted.prefix(sorted.count - recentMessagesToKeepAfterSummary))
-        guard !messagesToSummarize.isEmpty else { return }
-        
-        let transcript = messagesToSummarize.map {
-            "[\($0.role.rawValue)] \($0.content)"
-        }.joined(separator: "\n")
-        
-        let summarySystemPrompt = """
-        Riassumi in modo fedele e compatto la conversazione seguente.
-        Mantieni:
-        - richieste principali del genitore
-        - diagnosi, raccomandazioni, terapie, cure, esami menzionati
-        - farmaci prescritti e relative istruzioni
-        - eventuali dubbi ancora aperti
-        Non aggiungere nulla di nuovo.
-        """
-        
-        let summaryMessages = [
-            KBAIMessage(role: .user, content: transcript)
-        ]
-        
-        KBLog.ai.kbInfo("summarizeIfNeeded calling AIService messages=\(summaryMessages.count)")
-        
-        let response = try await AIService.shared.sendMessage(
-            messages: summaryMessages,
-            systemPrompt: summarySystemPrompt
+        let fullMessages = conversation.sortedMessages
+        guard !fullMessages.isEmpty else { return }
+        let summaryReply = try await AIService.shared.sendMessage(
+            messages: fullMessages.map { KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt) },
+            systemPrompt: Self.compactionSystemPrompt
         )
-        
-        conversation.summary                  = response.reply
-        conversation.summaryUpdatedAt         = Date()
-        conversation.summarizedMessageCount   = messagesToSummarize.count
-        
-        try modelContext.save()
-        
-        KBLog.ai.kbInfo("summarizeIfNeeded updated summary chars=\(response.reply.count)")
-        KBLog.ai.kbInfo("summarizeIfNeeded summarizedMessageCount=\(conversation.summarizedMessageCount)")
+        let compacted = KBAIMessage(
+            id: "summary-\(conversation.id)",
+            role: .assistant,
+            content: summaryReply.reply
+        )
+        conversation.messages.removeAll()
+        conversation.messages.append(compacted)
+        conversation.summary = summaryReply.reply
+        conversation.summaryUpdatedAt = Date()
+        conversation.summarizedMessageCount = 0
+        lastCompactionThreshold = currentThresholdStep
+        messages = [compacted]
     }
     
     private func buildFinalSystemPrompt(conversation: KBAIConversation) -> String {
-        guard let summary = conversation.summary,
-              !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return systemPrompt
-        }
-        return """
-        \(systemPrompt)
-        
-        RIASSUNTO CONVERSAZIONE PRECEDENTE
-        \(summary)
-        """
+        systemPrompt
     }
     
     private func buildPayloadMessages(conversation: KBAIConversation) -> [KBAIMessage] {
-        let recentMessages = Array(conversation.sortedMessages.dropFirst(conversation.summarizedMessageCount))
-        KBLog.ai.kbInfo("buildPayloadMessages recentMessages.count=\(recentMessages.count)")
-        return recentMessages.map {
-            KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt)
+        let sorted = conversation.sortedMessages
+        let summary = conversation.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let summaryMessage = summary.flatMap { s -> KBAIMessage? in
+            guard !s.isEmpty else { return nil }
+            return KBAIMessage(role: .assistant, content: s)
         }
+        let recentMessages = sorted
+            .filter { msg in
+                guard let summary else { return true }
+                return !(msg.role == .assistant && msg.content == summary)
+            }
+            .suffix(6)
+        KBLog.ai.kbInfo("buildPayloadMessages recentMessages.count=\(recentMessages.count)")
+        let payload = ([summaryMessage].compactMap { $0 } + recentMessages.map {
+            KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt)
+        }).prefix(7).map { $0 }
+        return payload
     }
+    
+    private static let compactionSystemPrompt = "Riassumi in modo conciso ma completo la conversazione seguente, mantenendo i punti chiave, le decisioni prese e il contesto importante. Il riassunto sarà usato come contesto per continuare la conversazione."
     
     // MARK: - Private helpers
     

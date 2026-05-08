@@ -119,49 +119,68 @@ private struct MedicalAIChatBody: View {
     /// to compound and accelerate after re-entering the chat.
     private var messageList: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    if vm.messages.isEmpty && !vm.isLoading {
-                        introBubble
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        if vm.messages.isEmpty && !vm.isLoading {
+                            introBubble
+                        }
+                        ForEach(vm.messages) { message in
+                            AIChatBubbleView(
+                                text: message.content,
+                                isUser: message.role == .user,
+                                date: message.createdAt
+                            )
+                            .id(message.id)
+                        }
+                        // Stable id prevents SwiftUI from recycling the view and
+                        // restarting its internal repeating animation on remount.
+                        if vm.isLoading {
+                            AIChatTypingIndicator()
+                                .id("typing-indicator")
+                                .transition(.opacity)
+                        }
                     }
-                    ForEach(vm.messages) { message in
-                        AIChatBubbleView(
-                            text: message.content,
-                            isUser: message.role == .user,
-                            date: message.createdAt
-                        )
-                        .id(message.id)
-                    }
-                    // Stable id prevents SwiftUI from recycling the view and
-                    // restarting its internal repeating animation on remount.
-                    if vm.isLoading {
-                        AIChatTypingIndicator()
-                            .id("typing-indicator")
-                            .transition(.opacity)
+                    .padding(.horizontal, 0)
+                    .padding(.vertical, 12)
+                    
+                    // Persistent bottom anchor — scrollTo always has a valid target.
+                    Color.clear
+                        .frame(height: 1)
+                        .id("scroll-bottom")
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { isInputFocused = false }
+                .scrollDismissesKeyboard(.interactively)
+                .onChange(of: vm.messages.count) { _, _ in
+                    proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                }
+                .onChange(of: vm.isLoading) { _, loading in
+                    if loading {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                        }
                     }
                 }
-                .padding()
+                .onAppear {
+                    proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                }
                 
-                // Persistent bottom anchor — scrollTo always has a valid target.
-                Color.clear
-                    .frame(height: 1)
-                    .id("scroll-bottom")
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { isInputFocused = false }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: vm.messages.count) { _, _ in
-                proxy.scrollTo("scroll-bottom", anchor: .bottom)
-            }
-            .onChange(of: vm.isLoading) { _, loading in
-                if loading {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                if !vm.messages.isEmpty {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo("scroll-bottom", anchor: .bottom)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(Color.blue))
                     }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
                 }
-            }
-            .onAppear {
-                proxy.scrollTo("scroll-bottom", anchor: .bottom)
             }
         }
     }

@@ -299,10 +299,11 @@ private struct MiniMonthView: View {
     
     // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
     private func monthAbbrev(_ date: Date) -> String {
+        let locale = appLocale()
         let f = DateFormatter()
-        f.locale = Locale(identifier: "it_IT")
-        f.dateFormat = "MMM"
-        return f.string(from: date).capitalized
+        f.locale = locale
+        f.setLocalizedDateFormatFromTemplate("MMM")
+        return f.string(from: date).capitalized(with: locale)
     }
     // ─────────────────────────────────────────────────────────────────────
     
@@ -313,7 +314,7 @@ private struct MiniMonthView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
             
-            let symbols = localizedCalendar.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased() }
+            let symbols = localizedCalendar().shortWeekdaySymbols.map { String($0.prefix(1)).uppercased(with: appLocale()) }
             HStack(spacing: 0) {
                 ForEach(symbols.indices, id: \.self) { i in
                     Text(symbols[i])
@@ -338,6 +339,7 @@ private struct MiniMonthView: View {
             }
         }
         .padding(8)
+        .frame(maxWidth: .infinity, minHeight: 168, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous).fill(cardBackground)
         )
@@ -393,10 +395,11 @@ private struct MonthDetailView: View {
     
     // ── FIX: DateFormatter rispetta il locale di sistema ──────────────────
     private func monthTitle(_ date: Date) -> String {
+        let locale = appLocale()
         let f = DateFormatter()
-        f.locale = Locale(identifier: "it_IT")
+        f.locale = locale
         f.dateFormat = "MMMM yyyy"
-        return f.string(from: date).capitalized
+        return f.string(from: date).capitalized(with: locale)
     }
     // ─────────────────────────────────────────────────────────────────────
     
@@ -441,7 +444,8 @@ private struct MonthDetailView: View {
                 }
             }
             
-            let weekdays = localizedCalendar.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased() }
+            let cal = localizedCalendar()
+            let weekdays = cal.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased(with: appLocale()) }
             HStack(spacing: 0) {
                 ForEach(weekdays.indices, id: \.self) { i in
                     Text(weekdays[i])
@@ -527,12 +531,16 @@ private struct MonthDetailView: View {
 
 // Calendario con primo giorno = lunedì e locale di sistema
 // I shortWeekdaySymbols usano il locale corrente → italiano se il sistema è in italiano
-fileprivate var localizedCalendar: Calendar = {
+fileprivate func appLocale() -> Locale {
+    kbDeviceLocale()
+}
+
+fileprivate func localizedCalendar() -> Calendar {
     var cal = Calendar(identifier: .gregorian)
-    cal.locale = Locale(identifier: "it_IT")
+    cal.locale = appLocale()
     cal.firstWeekday = 2   // lunedì
     return cal
-}()
+}
 
 fileprivate func calendarDayComponentsCoveredByEvent(_ event: KBCalendarEvent) -> [DateComponents] {
     let calendar = Calendar.current
@@ -560,7 +568,7 @@ fileprivate func eventOccursOnDay(_ event: KBCalendarEvent, day: Date) -> Bool {
 }
 
 fileprivate func calendarDays(for month: Date) -> [Date?] {
-    let cal   = localizedCalendar
+    let cal   = localizedCalendar()
     let start = cal.date(from: cal.dateComponents([.year, .month], from: month))!
     let range = cal.range(of: .day, in: .month, for: start)!
     let first = cal.component(.weekday, from: start)
@@ -571,6 +579,8 @@ fileprivate func calendarDays(for month: Date) -> [Date?] {
         days.append(cal.date(byAdding: .day, value: day - 1, to: start))
     }
     while days.count % 7 != 0 { days.append(nil) }
+    // Sempre 6 righe (42 celle) per card uniformi nell'overview annuale.
+    while days.count < 42 { days.append(nil) }
     return days
 }
 
@@ -719,12 +729,13 @@ struct CalendarEventFormView: View {
                             
                             VStack(alignment: .leading, spacing: 8) {
                                 label("Ricorrenza")
-                                Picker("", selection: $recurrence) {
-                                    ForEach(KBEventRecurrence.allCases) { r in
-                                        Text(r.label).tag(r)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(KBEventRecurrence.allCases) { r in
+                                            recurrenceChip(r)
+                                        }
                                     }
                                 }
-                                .pickerStyle(.segmented)
                             }
                         }
                         
@@ -821,8 +832,28 @@ struct CalendarEventFormView: View {
             Spacer()
             DatePicker("", selection: selection, displayedComponents: components)
                 .labelsHidden()
-                .environment(\.locale, .current)
+                .environment(\.locale, appLocale())
         }
+    }
+
+    @ViewBuilder
+    private func recurrenceChip(_ value: KBEventRecurrence) -> some View {
+        let isSelected = recurrence == value
+        Button { recurrence = value } label: {
+            Text(value.label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isSelected ? .white : primaryText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? buttonBg : cardBackground)
+                )
+                .overlay(
+                    Capsule().strokeBorder(primaryText.opacity(isSelected ? 0 : 0.12), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
     
     @ViewBuilder

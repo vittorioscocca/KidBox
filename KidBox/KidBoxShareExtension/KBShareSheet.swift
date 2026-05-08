@@ -201,6 +201,7 @@ struct KBShareSheet: View {
         case "pdf":                         return "doc.richtext.fill"
         case "jpg", "jpeg", "png", "heic":  return "photo.fill"
         case "mp4", "mov", "m4v":           return "video.fill"
+        case "m4a", "mp3", "aac", "wav", "aiff", "ogg", "opus": return "waveform"
         case "doc", "docx":                 return "doc.fill"
         case "xls", "xlsx":                 return "tablecells.fill"
         case "zip", "rar":                  return "archivebox.fill"

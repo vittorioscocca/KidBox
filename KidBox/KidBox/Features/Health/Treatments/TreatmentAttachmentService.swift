@@ -272,6 +272,20 @@ final class TreatmentAttachmentService {
                 if let doc = try? modelContext.fetch(desc).first {
                     doc.localPath = rel
                     try? modelContext.save()
+                    let needsExtraction =
+                        (doc.extractedText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) ||
+                        doc.extractionStatus == .none ||
+                        doc.extractionStatus == .pending ||
+                        doc.extractionStatus == .processing ||
+                        doc.extractionStatus == .failed
+                    if needsExtraction {
+                        let uid = Auth.auth().currentUser?.uid ?? "local"
+                        DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                            for: doc,
+                            updatedBy: uid,
+                            modelContext: modelContext
+                        )
+                    }
                     KBLog.sync.kbDebug("downloadRemoteAttachment saved localPath docId=\(docId)")
                 }
             }

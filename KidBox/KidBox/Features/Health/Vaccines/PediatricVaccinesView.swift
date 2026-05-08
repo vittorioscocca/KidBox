@@ -106,6 +106,20 @@ struct PediatricVaccinesView: View {
         }
         return ref >= cutoff
     }
+
+    private var deviceLanguageLocale: Locale {
+        kbDeviceLocale()
+    }
+
+    private func localizedDayMonthYear(_ date: Date) -> String {
+        date.formatted(
+            Date.FormatStyle()
+                .day()
+                .month(.abbreviated)
+                .year()
+                .locale(deviceLanguageLocale)
+        )
+    }
     
     private var filtered:    [KBVaccine] { vaccines.filter { passesFilter($0) } }
     private var administered: [KBVaccine] { filtered.filter { $0.status == .administered } }
@@ -290,7 +304,7 @@ struct PediatricVaccinesView: View {
                             .background(Capsule().fill(tint.opacity(0.85)))
                         
                         if let d = v.administeredDate ?? v.scheduledDate {
-                            Text(d.formatted(.dateTime.day().month(.abbreviated).year()))
+                            Text(localizedDayMonthYear(d))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -770,6 +784,8 @@ struct PediatricVaccineEditView: View {
             }
             .navigationTitle(isEditing ? "Modifica Vaccino" : "Nuovo Vaccino")
             .navigationBarTitleDisplayMode(.inline)
+            .environment(\.locale, deviceLanguageLocale)
+            .environment(\.calendar, kbDeviceCalendar())
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Annulla") { dismiss() }
@@ -781,6 +797,20 @@ struct PediatricVaccineEditView: View {
                 if newValue != .planned { reminderOn = false }
             }
         }
+    }
+
+    private var deviceLanguageLocale: Locale {
+        kbDeviceLocale()
+    }
+
+    private func localizedDayMonthYear(_ date: Date) -> String {
+        date.formatted(
+            Date.FormatStyle()
+                .day()
+                .month(.abbreviated)
+                .year()
+                .locale(deviceLanguageLocale)
+        )
     }
     
     // MARK: - UI helpers

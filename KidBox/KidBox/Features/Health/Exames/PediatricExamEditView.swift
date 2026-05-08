@@ -224,6 +224,8 @@ struct PediatricExamEditView: View {
             }
             .navigationTitle(isEditing ? "Modifica Esame" : "Nuovo Esame")
             .navigationBarTitleDisplayMode(.inline)
+            .environment(\.locale, deviceLanguageLocale)
+            .environment(\.calendar, kbDeviceCalendar())
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -294,6 +296,10 @@ struct PediatricExamEditView: View {
             Text("Chiave di crittografia non disponibile.")
         }
         .storageUpgradeSheet($showStorageUpgrade)
+    }
+
+    private var deviceLanguageLocale: Locale {
+        kbDeviceLocale()
     }
     
     // MARK: - Existing doc row

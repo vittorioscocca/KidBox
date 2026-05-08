@@ -183,7 +183,7 @@ final class KBVisitReminderService {
     private func body(reason: String, childName: String, date: Date) -> String {
         let name = childName.isEmpty ? "il bambino" : childName
         let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "it_IT")
+        fmt.locale = kbDeviceLocale()
         fmt.dateFormat = "HH:mm"
         let timeStr = fmt.string(from: date)
         return reason.isEmpty
