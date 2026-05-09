@@ -84,6 +84,8 @@ final class AppDelegate: NSObject,
             KBLog.auth.kbError("Auth useUserAccessGroup failed: \(error.localizedDescription)")
         }
         
+        // Imposta App ID / client token prima dell’SDK Facebook: `ApplicationDelegate` valida subito la config.
+        configureFacebookFromInfoPlistIfNeeded()
         ApplicationDelegate.shared.application(
             application,
             didFinishLaunchingWithOptions: launchOptions
@@ -117,6 +119,23 @@ final class AppDelegate: NSObject,
         }
         
         return true
+    }
+
+    /// Assicura App ID / Client Token letti dal plist risolto (xcconfig). Se restano `$(...)`, il token Graph è invalido → Firebase 190.
+    private func configureFacebookFromInfoPlistIfNeeded() {
+        guard let info = Bundle.main.infoDictionary else { return }
+        let rawAppID = info["FacebookAppID"] as? String ?? ""
+        let rawClient = info["FacebookClientToken"] as? String ?? ""
+        if rawAppID.contains("$(") || rawAppID.isEmpty {
+            KBLog.app.kbError(
+                "FacebookAppID non risolto nel plist — verifica che il target Xcode includa Facebook.xcconfig / Facebook.local.xcconfig"
+            )
+            return
+        }
+        Settings.shared.appID = rawAppID
+        if !rawClient.isEmpty && !rawClient.contains("$(") {
+            Settings.shared.clientToken = rawClient
+        }
     }
     
     func scene(

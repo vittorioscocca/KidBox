@@ -349,7 +349,34 @@ struct StorageUsageView: View {
     private func planRow(plan: KBPlan) -> some View {
         let isCurrent = subscriptionManager.currentPlan == plan
         let product   = subscriptionManager.storeProduct(for: plan)
+        /// Stesso criterio dell’ "Abbonati" in Piani: Pro/Max quando non è già il piano attuale e l’utente è proprietario.
+        let canPurchaseRow = subscriptionManager.isFamilyOwner && !isCurrent && plan != .free
         
+        Group {
+            if canPurchaseRow {
+                Button {
+                    Task { await subscriptionManager.purchase(plan) }
+                } label: {
+                    planRowInner(plan: plan, product: product, isCurrent: isCurrent)
+                }
+                .buttonStyle(.plain)
+                .disabled(subscriptionManager.isPurchasing)
+                .accessibilityLabel(
+                    "Abbonati \(plan.displayName)"
+                )
+                .accessibilityHint(
+                    "Avvia l’acquisto del piano selezionato"
+                )
+                .padding(.vertical, 4)
+            } else {
+                planRowInner(plan: plan, product: product, isCurrent: isCurrent)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func planRowInner(plan: KBPlan, product: StoreKit.Product?, isCurrent: Bool) -> some View {
         let nonOwnerPaidRow = !subscriptionManager.isFamilyOwner && !isCurrent && product != nil
         
         VStack(alignment: .leading, spacing: 12) {
@@ -386,40 +413,41 @@ struct StorageUsageView: View {
                 
                 Spacer(minLength: 8)
                 
-                if isCurrent {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(planColor(plan))
-                        .font(.title3)
-                } else if let product {
-                    if subscriptionManager.isFamilyOwner {
-                        Button {
-                            Task { await subscriptionManager.purchase(plan) }
-                        } label: {
-                            if subscriptionManager.isPurchasing {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Text(product.displayPrice + "/mese")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 12).padding(.vertical, 6)
-                                    .background(Capsule().fill(planColor(plan)))
-                            }
-                        }
-                        .disabled(subscriptionManager.isPurchasing)
-                        .buttonStyle(.plain)
-                    }
-                } else {
-                    Text(plan.monthlyPrice)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                planRowTrailing(plan: plan, product: product, isCurrent: isCurrent)
             }
             
             if nonOwnerPaidRow {
                 NonOwnerUpgradeNotice()
             }
         }
-        .padding(.vertical, 4)
+    }
+    
+    @ViewBuilder
+    private func planRowTrailing(plan: KBPlan, product: StoreKit.Product?, isCurrent: Bool) -> some View {
+        if isCurrent {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(planColor(plan))
+                .font(.title3)
+        } else if subscriptionManager.isFamilyOwner && plan != .free {
+            if subscriptionManager.isPurchasing {
+                ProgressView().controlSize(.small)
+            } else if let product {
+                Text(product.displayPrice + "/mese")
+                    .font(.caption.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(planColor(plan)))
+                    .allowsHitTesting(false)
+            } else {
+                Text(plan.monthlyPrice)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            Text(plan.monthlyPrice)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
     }
     
     // MARK: - Expiring banner (abbonamento cancellato ma attivo)

@@ -6,6 +6,9 @@ const admin = require("firebase-admin");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const STORAGE_BUCKET = "kidbox-42cd7-eu";
 
+/** Stima foto visita pediatrica (allineata a initStorageUsage / client). */
+const VISIT_PHOTO_ESTIMATE_BYTES = 200 * 1024;
+
 admin.initializeApp();
 
 /**
@@ -74,6 +77,69 @@ async function resolveWalletPdfBytes(familyId, ticketId, data) {
     logger.warn("resolveWalletPdfBytes: metadata lookup failed", {familyId, ticketId, path, err: e.message});
     return 0;
   }
+}
+
+/**
+ * Ricalcola byte “media” (Firebase Storage + stime visite) dalla sola Firestore,
+ * escludendo record con isDeleted === true. Allineato a initStorageUsage.
+ * @param {string} familyId
+ * @return {Promise<{docBytes: number, walletBytes: number, chatBytes: number, photoBytes: number, saluteBytes: number}>}
+ */
+async function computeMediaStorageBytesForFamily(familyId) {
+  const kb = 1024;
+  const mediaTypes = ["photo", "video", "audio", "document"];
+  const db = admin.firestore();
+
+  const [docsSnap, walletSnap, chatSnap, photosSnap, visitsSnap] = await Promise.all([
+    db.collection("families").doc(familyId).collection("documents").where("isDeleted", "==", false).get(),
+    db.collection("families").doc(familyId).collection("walletTickets").where("isDeleted", "==", false).get(),
+    db.collection("families").doc(familyId).collection("chatMessages").where("isDeleted", "==", false).get(),
+    db.collection("families").doc(familyId).collection("photos").where("isDeleted", "==", false).get(),
+    db.collection("families").doc(familyId).collection("medicalVisits").where("isDeleted", "==", false).get(),
+  ]);
+
+  let docBytes = 0;
+  docsSnap.forEach((d) => {
+    const size = d.get("fileSize");
+    if (typeof size === "number" && size > 0) docBytes += size;
+  });
+
+  let walletBytes = 0;
+  for (const d of walletSnap.docs) {
+    walletBytes += await resolveWalletPdfBytes(familyId, d.id, d.data());
+  }
+
+  let chatBytes = 0;
+  chatSnap.forEach((d) => {
+    const hasMedia = d.get("mediaStoragePath");
+    const type = d.get("type") || "";
+    if (hasMedia && mediaTypes.includes(type)) {
+      const size = d.get("mediaFileSize");
+      chatBytes += (typeof size === "number" && size > 0) ? size : 512 * kb;
+    }
+  });
+
+  let photoBytes = 0;
+  photosSnap.forEach((d) => {
+    const size = d.get("fileSize");
+    if (typeof size === "number" && size > 0) photoBytes += size;
+  });
+
+  let saluteBytes = 0;
+  visitsSnap.forEach((d) => {
+    const photoURLs = d.get("photoURLs");
+    if (Array.isArray(photoURLs) && photoURLs.length > 0) {
+      saluteBytes += photoURLs.length * VISIT_PHOTO_ESTIMATE_BYTES;
+    }
+  });
+
+  return {
+    docBytes,
+    walletBytes,
+    chatBytes,
+    photoBytes,
+    saluteBytes,
+  };
 }
 
 /**
@@ -271,11 +337,37 @@ exports.onDocumentHardDeleted = onDocumentWritten(
 
       if (!before || after) return;
 
+      // Soft-delete aveva già sottratto i byte; alla cancellazione fisica non ricalcolare.
+      if (before.isDeleted === true) return;
+
       const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
       if (sizeBefore <= 0) return;
 
       logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
       await updateStorageBytes(familyId, -sizeBefore, "documents");
+    },
+);
+
+/** Soft-delete documento (isDeleted → true): toglie subito byte da stats (come iOS dopo init/live). */
+exports.onDocumentSoftDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/documents/{docId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      if (!before || !after) return;
+      if (before.isDeleted === true) return;
+      if (after.isDeleted !== true) return;
+
+      const size = typeof before.fileSize === "number" ? before.fileSize : 0;
+      if (size <= 0) return;
+
+      logger.info("onDocumentSoftDeleted: removing bytes", {familyId, size});
+      await updateStorageBytes(familyId, -size, "documents");
     },
 );
 
@@ -504,10 +596,36 @@ exports.onPhotoHardDeleted = onDocumentWritten(
 
       if (!before || after) return;
 
+      // Stesso comportamento dei documenti: soft-delete aveva già liberato byte.
+      if (before.isDeleted === true) return;
+
       const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
       if (sizeBefore <= 0) return;
 
       logger.info("onPhotoHardDeleted: removing bytes", {familyId, sizeBefore});
+      await updateStorageBytes(familyId, -sizeBefore, "photos");
+    },
+);
+
+/** Soft-delete foto album (isDeleted → true): allinea stats a Firebase (solo hard delete decrementava prima). */
+exports.onPhotoSoftDeleted = onDocumentWritten(
+    {
+      document: "families/{familyId}/photos/{photoId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      if (!before || !after) return;
+      if (before.isDeleted === true) return;
+      if (after.isDeleted !== true) return;
+
+      const sizeBefore = typeof before.fileSize === "number" ? before.fileSize : 0;
+      if (sizeBefore <= 0) return;
+
+      logger.info("onPhotoSoftDeleted: removing bytes", {familyId, sizeBefore});
       await updateStorageBytes(familyId, -sizeBefore, "photos");
     },
 );
@@ -517,8 +635,6 @@ exports.onPhotoHardDeleted = onDocumentWritten(
 // Quando una visita viene creata/aggiornata con photoURLs, aggiorna lo storage.
 // Stima 200KB per foto (compressa, media mobile) perché non c'è fileSize nel modello.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const VISIT_PHOTO_ESTIMATE_BYTES = 200 * 1024; // 200 KB
 
 exports.onMedicalVisitWritten = onDocumentWritten(
     {
@@ -1435,34 +1551,34 @@ exports.getStorageUsage = onCall(
       if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
 
       const snap = await storageStatsRef(familyId).get();
-      const data = snap.exists ? snap.data() : {};
-      const usedBytes = Math.max(0, Math.round(data.usedBytes || 0));
-      const rawSections = data.sections || {};
+      const legacy = snap.exists ? snap.data() : {};
+      const legacyUsed = Math.max(0, Math.round(legacy.usedBytes || 0));
+      const rawSections = legacy.sections || {};
 
-      // Firestore-overhead estimates for sections that don't store media files.
-      // Keeps Android/iOS aligned while still using Cloud as source of truth.
-      const [notesSnap, calendarSnap, todoSnap, expensesSnap] = await Promise.all([
-        admin.firestore()
-            .collection("families").doc(familyId)
-            .collection("notes")
-            .where("isDeleted", "==", false)
-            .get(),
-        admin.firestore()
-            .collection("families").doc(familyId)
-            .collection("calendarEvents")
-            .where("isDeleted", "==", false)
-            .get(),
-        admin.firestore()
-            .collection("families").doc(familyId)
-            .collection("todos")
-            .where("isDeleted", "==", false)
-            .get(),
-        admin.firestore()
-            .collection("families").doc(familyId)
-            .collection("expenses")
-            .where("isDeleted", "==", false)
-            .get(),
+      const db = admin.firestore();
+      const fam = db.collection("families").doc(familyId);
+
+      // Documenti/media/salute: sempre da Firestore con isDeleted == false (allineato a iOS dopo merge + somma sezioni).
+      const [
+        media,
+        notesSnap,
+        calendarSnap,
+        todoSnap,
+        expensesSnap,
+      ] = await Promise.all([
+        computeMediaStorageBytesForFamily(familyId),
+        fam.collection("notes").where("isDeleted", "==", false).get(),
+        fam.collection("calendarEvents").where("isDeleted", "==", false).get(),
+        fam.collection("todos").where("isDeleted", "==", false).get(),
+        fam.collection("expenses").where("isDeleted", "==", false).get(),
       ]);
+
+      const documentsSection = Math.max(0, Math.round(media.docBytes));
+      const walletSection = Math.max(0, Math.round(media.walletBytes));
+      const chatSection = Math.max(0, Math.round(media.chatBytes));
+      const photosSection = Math.max(0, Math.round(media.photoBytes));
+      const saluteSection = Math.max(0, Math.round(media.saluteBytes));
+
       const notesCount = notesSnap.size;
       const calendarCount = calendarSnap.size;
       const todoCount = todoSnap.size;
@@ -1494,19 +1610,40 @@ exports.getStorageUsage = onCall(
           estimatedExpensesBytes,
       );
 
+      /** Totale coerente con la somma delle sezioni esposte (come la UI iOS dopo merge). */
+      const usedBytes = Math.round(
+          documentsSection +
+        walletSection +
+        chatSection +
+        photosSection +
+        saluteSection +
+        expensesBytes +
+        notesBytes +
+        calendarBytes +
+        todoBytes,
+      );
+
       const plan = await resolveFamilyPlanForQuotas(uid, familyId);
       const quotaBytes = storageQuotaBytesForPlan(plan);
-      logger.info("getStorageUsage", {uid, familyId, usedBytes, plan, quotaBytes});
+      logger.info("getStorageUsage", {
+        uid,
+        familyId,
+        usedBytes,
+        legacyStoredUsed: legacyUsed,
+        plan,
+        quotaBytes,
+        sectionsLive: media,
+      });
 
       return {
         usedBytes,
         quotaBytes,
         sections: {
-          documents: Math.max(0, Math.round(rawSections.documents || 0)),
-          wallet: Math.max(0, Math.round(rawSections.wallet || 0)),
-          chat: Math.max(0, Math.round(rawSections.chat || 0)),
-          photos: Math.max(0, Math.round(rawSections.photos || 0)),
-          salute: Math.max(0, Math.round(rawSections.salute || 0)),
+          documents: documentsSection,
+          wallet: walletSection,
+          chat: chatSection,
+          photos: photosSection,
+          salute: saluteSection,
           expenses: expensesBytes,
           notes: notesBytes,
           calendar: calendarBytes,
@@ -1558,84 +1695,16 @@ exports.initStorageUsage = onCall(
 
       logger.info("initStorageUsage: starting", {uid, familyId});
 
-      const kb = 1024;
+      const {
+        docBytes,
+        walletBytes,
+        chatBytes,
+        photoBytes,
+        saluteBytes,
+      } = await computeMediaStorageBytesForFamily(familyId);
 
-      // ── 1. Documenti (fileSize reale) ─────────────────────────────────────
-      const docsSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("documents")
-          .where("isDeleted", "==", false)
-          .get();
-
-      let docBytes = 0;
-      docsSnap.forEach((d) => {
-        const size = d.get("fileSize");
-        if (typeof size === "number" && size > 0) docBytes += size;
-      });
-
-      // ── 1b. Wallet (pdfStorageBytes reale) ────────────────────────────────
-      const walletSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("walletTickets")
-          .where("isDeleted", "==", false)
-          .get();
-
-      let walletBytes = 0;
-      for (const d of walletSnap.docs) {
-        walletBytes += await resolveWalletPdfBytes(familyId, d.id, d.data());
-      }
-
-      // ── 2. Chat media (mediaFileSize reale, fallback 512KB) ────────────────
-      const chatSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("chatMessages")
-          .where("isDeleted", "==", false)
-          .get();
-
-      const mediaTypes = ["photo", "video", "audio", "document"];
-      let chatBytes = 0;
-      chatSnap.forEach((d) => {
-        const hasMedia = d.get("mediaStoragePath");
-        const type = d.get("type") || "";
-        if (hasMedia && mediaTypes.includes(type)) {
-          const size = d.get("mediaFileSize");
-          chatBytes += (typeof size === "number" && size > 0) ? size : 512 * kb;
-        }
-      });
-
-      // ── 3. Foto album condiviso (fileSize reale) ───────────────────────────
-      const photosSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("photos")
-          .where("isDeleted", "==", false)
-          .get();
-
-      let photoBytes = 0;
-      photosSnap.forEach((d) => {
-        const size = d.get("fileSize");
-        if (typeof size === "number" && size > 0) photoBytes += size;
-      });
-
-      // ── 4. Salute: foto visite pediatriche (stima 200KB/foto) ─────────────
-      // KBMedicalExam, KBTreatment, KBVaccine non hanno allegati su Storage.
-      const visitsSnap = await admin.firestore()
-          .collection("families").doc(familyId)
-          .collection("medicalVisits")
-          .where("isDeleted", "==", false)
-          .get();
-
-      let saluteBytes = 0;
-      visitsSnap.forEach((d) => {
-        const photoURLs = d.get("photoURLs");
-        if (Array.isArray(photoURLs) && photoURLs.length > 0) {
-          saluteBytes += photoURLs.length * VISIT_PHOTO_ESTIMATE_BYTES;
-        }
-      });
-
-      // ── 5. Expense: attachedDocumentId → già in documents, niente extra ───
       const expensesBytes = 0;
 
-      // ── Totale ────────────────────────────────────────────────────────────
       const totalBytes = docBytes + walletBytes + chatBytes + photoBytes + saluteBytes + expensesBytes;
 
       await storageStatsRef(familyId).set({
@@ -1699,8 +1768,6 @@ exports.initStorageUsageAdmin = onCall(
       if (!ADMIN_UIDS.includes(uid)) throw new HttpsError("permission-denied", "Non autorizzato.");
 
       const db = admin.firestore();
-      const kb = 1024;
-      const mediaTypes = ["photo", "video", "audio", "document"];
 
       logger.info("initStorageUsageAdmin: start", {uid});
 
@@ -1711,48 +1778,13 @@ exports.initStorageUsageAdmin = onCall(
       for (const familyDoc of familiesSnap.docs) {
         const familyId = familyDoc.id;
 
-        const [docsSnap, walletSnap, chatSnap, photosSnap, visitsSnap] = await Promise.all([
-          db.collection("families").doc(familyId).collection("documents").where("isDeleted", "==", false).get(),
-          db.collection("families").doc(familyId).collection("walletTickets").where("isDeleted", "==", false).get(),
-          db.collection("families").doc(familyId).collection("chatMessages").where("isDeleted", "==", false).get(),
-          db.collection("families").doc(familyId).collection("photos").where("isDeleted", "==", false).get(),
-          db.collection("families").doc(familyId).collection("medicalVisits").where("isDeleted", "==", false).get(),
-        ]);
-
-        let docBytes = 0;
-        docsSnap.forEach((d) => {
-          const size = d.get("fileSize");
-          if (typeof size === "number" && size > 0) docBytes += size;
-        });
-
-        let walletBytes = 0;
-        for (const d of walletSnap.docs) {
-          walletBytes += await resolveWalletPdfBytes(familyId, d.id, d.data());
-        }
-
-        let chatBytes = 0;
-        chatSnap.forEach((d) => {
-          const hasMedia = d.get("mediaStoragePath");
-          const type = d.get("type") || "";
-          if (hasMedia && mediaTypes.includes(type)) {
-            const size = d.get("mediaFileSize");
-            chatBytes += (typeof size === "number" && size > 0) ? size : 512 * kb;
-          }
-        });
-
-        let photoBytes = 0;
-        photosSnap.forEach((d) => {
-          const size = d.get("fileSize");
-          if (typeof size === "number" && size > 0) photoBytes += size;
-        });
-
-        let saluteBytes = 0;
-        visitsSnap.forEach((d) => {
-          const photoURLs = d.get("photoURLs");
-          if (Array.isArray(photoURLs) && photoURLs.length > 0) {
-            saluteBytes += photoURLs.length * VISIT_PHOTO_ESTIMATE_BYTES;
-          }
-        });
+        const {
+          docBytes,
+          walletBytes,
+          chatBytes,
+          photoBytes,
+          saluteBytes,
+        } = await computeMediaStorageBytesForFamily(familyId);
 
         const totalBytes = docBytes + walletBytes + chatBytes + photoBytes + saluteBytes;
         grandTotalBytes += totalBytes;

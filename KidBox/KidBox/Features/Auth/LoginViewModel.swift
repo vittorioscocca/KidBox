@@ -204,8 +204,20 @@ final class LoginViewModel: ObservableObject {
             return "Troppi tentativi. Riprova tra qualche minuto."
         case .userDisabled:
             return "Account disabilitato. Contatta il supporto."
+        case .accountExistsWithDifferentCredential:
+            return "Esiste già un account con questa email creato con un altro accesso. Entra con quel metodo oppure collega i provider da Firebase."
+        case .invalidCredential:
+            let msg = error.localizedDescription
+            if msg.contains("190") || msg.contains("Bad access token") || msg.contains("Invalid OAuth") {
+                return "Accesso Facebook non validato da Firebase: in Firebase Console → Authentication → Facebook, verifica che App ID e App Secret coincidano esattamente con Meta (developers.facebook.com → Impostazioni)."
+            }
+            fallthrough
         default:
-            return error.localizedDescription
+            let msg = error.localizedDescription
+            if msg.contains("190") || msg.contains("Bad access token") {
+                return "Accesso Facebook non validato da Firebase: controlla App ID e App Secret del provider Facebook in Firebase Console e che nel progetto Xcode sia caricato Facebook.xcconfig (FacebookAppID risolto)."
+            }
+            return msg
         }
     }
 }

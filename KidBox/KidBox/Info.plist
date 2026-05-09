@@ -45,6 +45,7 @@
 	<array>
 		<string>fbapi</string>
 		<string>fb-messenger-share-api</string>
+		<string>fbauth2</string>
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>KidBox usa i contatti per permetterti di condividere un contatto in chat.</string>

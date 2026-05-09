@@ -2,11 +2,11 @@
 //  Facebook.xcconfig
 //  KidBox
 //
-//  Created by vscocca on 27/02/26.
+//  Non committare qui App ID / Client Token.
+//  Copia Facebook.local.xcconfig.example → Facebook.local.xcconfig e compila i valori da Meta.
 //
 
-#include? "Facebook.local.xcconfig"
+#include "Facebook.local.xcconfig"
 
-// Default safe values (repo safe)
 FACEBOOK_APP_ID = $(FACEBOOK_APP_ID_LOCAL)
 FACEBOOK_CLIENT_TOKEN = $(FACEBOOK_CLIENT_TOKEN_LOCAL)
