@@ -2,11 +2,11 @@
 //  Facebook.local.xcconfig
 //  KidBox
 //
-//  Questo file è nel repo così Xcode Cloud risolve #include in Facebook.xcconfig.
-//  Sostituisci i placeholder con i valori Meta oppure imposta le variabili d’ambiente
-//  FACEBOOK_APP_ID_LOCAL e FACEBOOK_CLIENT_TOKEN_LOCAL nello workflow Xcode Cloud
-//  (ci_scripts/ci_post_clone.sh le scrive qui prima della build).
+//  Devono coincidere con CFBundleURLSchemes fb… in Info.plist e con Meta/Firebase.
+//  Placeholder tipo YOUR_META_APP_ID causano crash: fbYOUR_META_APP_ID non è uno scheme valido.
+//
+//  Xcode Cloud: ci_scripts/ci_post_clone.sh può sovrascrivere questo file da secret di workflow.
 //
 
-FACEBOOK_APP_ID_LOCAL = YOUR_META_APP_ID
-FACEBOOK_CLIENT_TOKEN_LOCAL = YOUR_META_CLIENT_TOKEN
+FACEBOOK_APP_ID_LOCAL = 25962552233393986
+FACEBOOK_CLIENT_TOKEN_LOCAL = 5b9865a1b3cafd6f89a71162d5c4094f

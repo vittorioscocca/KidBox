@@ -10,5 +10,6 @@
 //  workflow; ci_scripts/ci_post_clone.sh sovrascrive il file prima della build.
 //
 
+// Non lasciare YOUR_META_* in build: l’SDK richiede fb<APP_ID> reale (allineato a Info.plist).
 FACEBOOK_APP_ID_LOCAL = YOUR_META_APP_ID
 FACEBOOK_CLIENT_TOKEN_LOCAL = YOUR_META_CLIENT_TOKEN
