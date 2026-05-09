@@ -2,11 +2,12 @@
 //  Facebook.local.xcconfig.example
 //  KidBox
 //
-//  1. Copia questo file nella stessa cartella con nome: Facebook.local.xcconfig
-//  2. Sostituisci i placeholder con i valori da developers.facebook.com → la tua app
-//     e Firebase Console → Authentication → Sign-in method → Facebook.
+//  Il progetto usa anche Facebook.local.xcconfig (versionato con placeholder).
+//  In locale puoi modificare KidBox/KidBox/KidBox/Facebook.local.xcconfig con i valori reali
+//  e usare `git update-index --skip-worktree` se non vuoi rischiare commit accidentali.
 //
-//  Facebook.local.xcconfig è in .gitignore e non va su GitHub.
+//  Xcode Cloud: imposta secret FACEBOOK_APP_ID_LOCAL e FACEBOOK_CLIENT_TOKEN_LOCAL nello
+//  workflow; ci_scripts/ci_post_clone.sh sovrascrive il file prima della build.
 //
 
 FACEBOOK_APP_ID_LOCAL = YOUR_META_APP_ID

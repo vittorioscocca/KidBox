@@ -2,8 +2,8 @@
 //  Facebook.xcconfig
 //  KidBox
 //
-//  Non committare qui App ID / Client Token.
-//  Copia Facebook.local.xcconfig.example → Facebook.local.xcconfig e compila i valori da Meta.
+//  Valori sensibili: KidBox/KidBox/Facebook.local.xcconfig (placeholder nel repo;
+//  override in Xcode Cloud via ci_scripts/ci_post_clone.sh + secret nel workflow).
 //
 
 #include "Facebook.local.xcconfig"
