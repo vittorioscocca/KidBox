@@ -130,6 +130,41 @@ enum FamilyKeyEscrowService {
         }
     }
 
+    // MARK: - Convenience key-ensure
+
+    /// Ensures the family master key is available in the local Keychain.
+    ///
+    /// - Checks Keychain first (fast path).
+    /// - On miss, attempts Firestore escrow recovery and saves to Keychain.
+    /// - Returns `true` if the key is available after the call, `false` otherwise.
+    static func ensureFamilyKeyAvailable(familyId: String, userId: String) async -> Bool {
+        guard !familyId.isEmpty, !userId.isEmpty else { return false }
+        if FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: userId) != nil {
+            return true
+        }
+        KBLog.security.info(
+            "KeyEscrow key missing locally, trying escrow recovery familyId=\(familyId, privacy: .public)"
+        )
+        guard let recovered = await recover(familyId: familyId, userId: userId) else {
+            KBLog.security.error(
+                "KeyEscrow escrow recovery failed (no backup) familyId=\(familyId, privacy: .public)"
+            )
+            return false
+        }
+        do {
+            try FamilyKeychainStore.saveFamilyKey(recovered, familyId: familyId, userId: userId)
+            KBLog.security.info(
+                "KeyEscrow escrow recovery OK familyId=\(familyId, privacy: .public)"
+            )
+            return true
+        } catch {
+            KBLog.security.error(
+                "KeyEscrow save failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            )
+            return false
+        }
+    }
+
     // MARK: - Private helpers
 
     /// Derives a deterministic 32-byte AES-GCM key for wrapping the escrow payload.

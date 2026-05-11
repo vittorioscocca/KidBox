@@ -58,9 +58,14 @@ final class ExamAttachmentService {
         let (_, referti) = TreatmentAttachmentService.shared.ensureHealthFolders(
             familyId: familyId, modelContext: modelContext
         )
-        
+
+        // Encrypt before writing to local cache.
+        guard let encrypted = try? DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid) else {
+            KBLog.storage.kbError("ExamAttachment: encrypt failed docId=\(docId)")
+            return nil
+        }
         guard let localRelPath = try? DocumentLocalCache.write(
-            familyId: familyId, docId: docId, fileName: fileName, data: data
+            familyId: familyId, docId: docId, fileName: fileName, data: encrypted
         ) else {
             KBLog.storage.kbError("ExamAttachment: local cache write failed docId=\(docId)")
             return nil
@@ -99,9 +104,8 @@ final class ExamAttachmentService {
         
         // Upload remoto cifrato in background
         Task.detached {
-            guard let encrypted = try? await DocumentCryptoService.encrypt(
-                data, familyId: familyId, userId: uid
-            ) else { return }
+            // encrypted is already computed; reuse it.
+            guard !encrypted.isEmpty else { return }
             
             let ref = Storage.storage().reference(withPath: storagePath)
             let meta = StorageMetadata()
@@ -190,31 +194,12 @@ final class ExamAttachmentService {
             let ref = Storage.storage().reference(withPath: doc.storagePath)
             let encryptedData = try await ref.data(maxSize: 50 * 1024 * 1024) // 50 MB max
             
-            let clearData: Data
-            do {
-                clearData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
-                    encryptedData,
-                    storagePath: doc.storagePath,
-                    notes: doc.notes,
-                    familyId: doc.familyId,
-                    userId: uid
-                )
-            } catch DocumentCryptoService.CryptoError.missingFamilyKey {
-                await MainActor.run { onKeyMissing() }
-                return
-            } catch {
-                await MainActor.run {
-                    onError("Download fallito: \(error.localizedDescription)")
-                }
-                return
-            }
-            
-            // 3. Salva in cache locale
+            // 3. Salva ENCRYPTED in cache locale (open() legge dal cache e decifra).
             guard let localRelPath = try? DocumentLocalCache.write(
                 familyId: doc.familyId,
                 docId:    doc.id,
                 fileName: doc.fileName,
-                data:     clearData
+                data:     encryptedData
             ) else {
                 await MainActor.run { onError("Impossibile salvare il file in cache") }
                 return
@@ -229,7 +214,7 @@ final class ExamAttachmentService {
                 )
             }
             
-            // 5. Apri tramite il service standard (ora ha localPath)
+            // 5. Apri tramite il service standard (ora ha localPath, legge e decifra dal cache)
             await MainActor.run {
                 TreatmentAttachmentService.shared.open(
                     doc: doc, modelContext: modelContext,

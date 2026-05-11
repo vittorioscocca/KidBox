@@ -79,115 +79,126 @@ extension SyncCenter {
     }
     
     // MARK: - Apply inbound (Treatments)
-    
+
     private func applyTreatmentsInbound(
         changes: [TreatmentRemoteChange],
         modelContext: ModelContext
     ) {
+        guard !changes.isEmpty else { return }
         KBLog.sync.kbDebug("applyTreatmentsInbound changes=\(changes.count)")
-        
+
         do {
+            // Bulk fetch: 2 queries total instead of O(n) queries.
+            let familyId = changes.lazy.compactMap {
+                if case .upsert(let dto) = $0 { return dto.familyId } else { return nil }
+            }.first ?? ""
+
+            var byId: [String: KBTreatment] = [:]
+            var pediatricChildIds: Set<String> = []
+            if !familyId.isEmpty {
+                let fid = familyId
+                let allT = try modelContext.fetch(
+                    FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.familyId == fid })
+                )
+                for t in allT { byId[t.id] = t }
+
+                let allC = try modelContext.fetch(
+                    FetchDescriptor<KBChild>(predicate: #Predicate { $0.familyId == fid })
+                )
+                pediatricChildIds = Set(allC.map(\.id))
+            }
+
             for change in changes {
                 switch change {
-                    
+
                 case .upsert(let dto):
-                    let tid = dto.id
-                    let desc = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.id == tid })
-                    let local = try modelContext.fetch(desc).first
-                    
                     let remoteStamp = dto.updatedAt ?? Date.distantPast
-                    
-                    if let local {
-                        // 🛡️ Anti-resurrect: non sovrascrivere delete locale pendente
+
+                    if let local = byId[dto.id] {
                         if local.isDeleted && local.syncState == .pendingUpsert {
-                            KBLog.sync.kbDebug("applyTreatmentsInbound skip anti-resurrect id=\(tid)")
+                            KBLog.sync.kbDebug("applyTreatmentsInbound skip anti-resurrect id=\(dto.id)")
                             continue
                         }
-                        
                         if remoteStamp >= local.updatedAt {
-                            // ✅ FIX #3: se il remoto dice isDeleted, rimuovi anche localmente
                             if dto.isDeleted {
                                 modelContext.delete(local)
-                                KBLog.sync.kbDebug("applyTreatmentsInbound: deleted locally id=\(tid)")
+                                byId.removeValue(forKey: dto.id)
+                                KBLog.sync.kbDebug("applyTreatmentsInbound: deleted locally id=\(dto.id)")
                             } else {
-                                applyTreatmentFields(local, from: dto, modelContext: modelContext)
+                                applyTreatmentFields(local, from: dto,
+                                                     isPediatric: pediatricChildIds.contains(dto.childId))
                                 local.syncState     = .synced
                                 local.lastSyncError = nil
                             }
                         }
                     } else {
-                        // Nuovo dal remoto
                         if dto.isDeleted { continue }
-                        let pediatric = isPediatricHealthSubject(
-                            childId: dto.childId, familyId: dto.familyId, modelContext: modelContext
-                        )
+                        let isPediatric = pediatricChildIds.contains(dto.childId)
                         let t = KBTreatment(
-                            familyId:        dto.familyId,
-                            childId:         dto.childId,
-                            drugName:        dto.drugName,
-                            activeIngredient: dto.activeIngredient,
-                            dosageValue:     dto.dosageValue,
-                            dosageUnit:      dto.dosageUnit,
-                            isLongTerm:      dto.isLongTerm,
-                            durationDays:    dto.durationDays,
-                            startDate:       dto.startDate,
-                            endDate:         dto.endDate,
-                            dailyFrequency:  dto.dailyFrequency,
-                            scheduleTimes:   dto.scheduleTimes,
-                            isActive:        dto.isActive,
-                            notes:           dto.notes,
-                            reminderEnabled: pediatric ? dto.reminderEnabled : false,
-                            createdAt:       dto.createdAt ?? Date(),
-                            updatedAt:       remoteStamp,
-                            updatedBy:       dto.updatedBy,
-                            createdBy:       dto.createdBy ?? dto.updatedBy,
+                            familyId:           dto.familyId,
+                            childId:            dto.childId,
+                            drugName:           dto.drugName,
+                            activeIngredient:   dto.activeIngredient,
+                            dosageValue:        dto.dosageValue,
+                            dosageUnit:         dto.dosageUnit,
+                            isLongTerm:         dto.isLongTerm,
+                            durationDays:       dto.durationDays,
+                            startDate:          dto.startDate,
+                            endDate:            dto.endDate,
+                            dailyFrequency:     dto.dailyFrequency,
+                            scheduleTimes:      dto.scheduleTimes,
+                            isActive:           dto.isActive,
+                            notes:              dto.notes,
+                            reminderEnabled:    isPediatric ? dto.reminderEnabled : false,
+                            createdAt:          dto.createdAt ?? Date(),
+                            updatedAt:          remoteStamp,
+                            updatedBy:          dto.updatedBy,
+                            createdBy:          dto.createdBy ?? dto.updatedBy,
                             prescribingVisitId: dto.prescribingVisitId
                         )
-                        t.id         = dto.id
-                        t.isDeleted  = false
-                        t.syncState  = KBSyncState.synced
+                        t.id        = dto.id
+                        t.isDeleted = false
+                        t.syncState = .synced
                         modelContext.insert(t)
-                        KBLog.sync.kbDebug("applyTreatmentsInbound: created treatmentId=\(tid)")
+                        byId[t.id] = t
+                        KBLog.sync.kbDebug("applyTreatmentsInbound: created treatmentId=\(dto.id)")
                     }
-                    
+
                 case .remove(let id):
-                    let tid = id
-                    let desc = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.id == tid })
-                    if let local = try modelContext.fetch(desc).first {
+                    if let local = byId[id] {
                         modelContext.delete(local)
+                        byId.removeValue(forKey: id)
                         KBLog.sync.kbDebug("applyTreatmentsInbound: removed treatmentId=\(id)")
                     }
                 }
             }
-            
+
             try modelContext.save()
             KBLog.sync.kbInfo("applyTreatmentsInbound saved")
-            
+
         } catch {
             KBLog.sync.kbError("applyTreatmentsInbound failed: \(error.localizedDescription)")
         }
     }
-    
-    private func applyTreatmentFields(_ local: KBTreatment, from dto: RemoteTreatmentDTO, modelContext: ModelContext) {
-        local.drugName         = dto.drugName
-        local.activeIngredient = dto.activeIngredient
-        local.dosageValue      = dto.dosageValue
-        local.dosageUnit       = dto.dosageUnit
-        local.isLongTerm       = dto.isLongTerm
-        local.durationDays     = dto.durationDays
-        local.startDate        = dto.startDate
-        local.endDate          = dto.endDate
-        local.dailyFrequency   = dto.dailyFrequency
-        local.scheduleTimes    = dto.scheduleTimes
-        local.isActive         = dto.isActive
-        local.isDeleted        = dto.isDeleted
-        local.notes            = dto.notes
+
+    private func applyTreatmentFields(_ local: KBTreatment, from dto: RemoteTreatmentDTO, isPediatric: Bool) {
+        local.drugName           = dto.drugName
+        local.activeIngredient   = dto.activeIngredient
+        local.dosageValue        = dto.dosageValue
+        local.dosageUnit         = dto.dosageUnit
+        local.isLongTerm         = dto.isLongTerm
+        local.durationDays       = dto.durationDays
+        local.startDate          = dto.startDate
+        local.endDate            = dto.endDate
+        local.dailyFrequency     = dto.dailyFrequency
+        local.scheduleTimes      = dto.scheduleTimes
+        local.isActive           = dto.isActive
+        local.isDeleted          = dto.isDeleted
+        local.notes              = dto.notes
         local.prescribingVisitId = dto.prescribingVisitId
-        if isPediatricHealthSubject(childId: dto.childId, familyId: dto.familyId, modelContext: modelContext) {
-            local.reminderEnabled = dto.reminderEnabled
-        }
-        local.updatedAt        = dto.updatedAt ?? local.updatedAt
-        local.updatedBy        = dto.updatedBy
+        if isPediatric { local.reminderEnabled = dto.reminderEnabled }
+        local.updatedAt          = dto.updatedAt ?? local.updatedAt
+        local.updatedBy          = dto.updatedBy
     }
     
     // MARK: - Apply inbound (DoseLogs)
@@ -196,41 +207,53 @@ extension SyncCenter {
         changes: [DoseLogRemoteChange],
         modelContext: ModelContext
     ) {
+        guard !changes.isEmpty else { return }
         KBLog.sync.kbDebug("applyDoseLogsInbound changes=\(changes.count)")
-        
+
         do {
+            // Bulk fetch: 1 query instead of O(n) queries (was ~304 queries for 152 items).
+            let familyId = changes.lazy.compactMap {
+                if case .upsert(let dto) = $0 { return dto.familyId } else { return nil }
+            }.first ?? ""
+
+            var byId: [String: KBDoseLog] = [:]
+            // key = "treatmentId_dayNumber_slotIndex" for compound-key lookups
+            var bySlot: [String: [KBDoseLog]] = [:]
+            if !familyId.isEmpty {
+                let fid = familyId
+                let all = try modelContext.fetch(
+                    FetchDescriptor<KBDoseLog>(predicate: #Predicate { $0.familyId == fid })
+                )
+                for item in all {
+                    byId[item.id] = item
+                    let key = "\(item.treatmentId)_\(item.dayNumber)_\(item.slotIndex)"
+                    bySlot[key, default: []].append(item)
+                }
+            }
+
             for change in changes {
                 switch change {
-                    
+
                 case .upsert(let dto):
                     if dto.isDeleted {
-                        let tid = dto.treatmentId
-                        let day = dto.dayNumber
-                        let slot = dto.slotIndex
-                        let slotDesc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { d in
-                            d.treatmentId == tid && d.dayNumber == day && d.slotIndex == slot
-                        })
-                        if let rows = try? modelContext.fetch(slotDesc) {
-                            for r in rows { modelContext.delete(r) }
+                        let key = "\(dto.treatmentId)_\(dto.dayNumber)_\(dto.slotIndex)"
+                        for r in bySlot[key, default: []] {
+                            modelContext.delete(r)
+                            byId.removeValue(forKey: r.id)
                         }
+                        bySlot.removeValue(forKey: key)
                         continue
                     }
-                    
-                    let lid = dto.id
-                    let desc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { $0.id == lid })
-                    let local = try modelContext.fetch(desc).first
-                    
+
                     let remoteStamp = dto.updatedAt ?? Date.distantPast
-                    
-                    if let local {
-                        // 🛡️ Anti-resurrect
+
+                    if let local = byId[dto.id] {
                         if local.isDeleted && local.syncState == .pendingUpsert { continue }
                         let localIsRecent = local.updatedAt.timeIntervalSince(remoteStamp) > -30
                         if localIsRecent && local.taken && !dto.taken {
-                            KBLog.sync.kbDebug("applyDoseLogsInbound skip anti-overwrite (local taken=true protetto) id=\(lid)")
+                            KBLog.sync.kbDebug("applyDoseLogsInbound skip anti-overwrite id=\(dto.id)")
                             continue
                         }
-                        
                         if remoteStamp >= local.updatedAt {
                             local.taken         = dto.taken
                             local.takenAt       = dto.takenAt
@@ -241,16 +264,14 @@ extension SyncCenter {
                             local.lastSyncError = nil
                         }
                     } else {
-                        let tid = dto.treatmentId
-                        let day = dto.dayNumber
-                        let slot = dto.slotIndex
-                        let rid = dto.id
-                        let dupDesc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { d in
-                            d.treatmentId == tid && d.dayNumber == day && d.slotIndex == slot && d.id != rid
-                        })
-                        if let dupes = try? modelContext.fetch(dupDesc) {
-                            for d in dupes { modelContext.delete(d) }
+                        // Remove any duplicates occupying the same slot (in-memory)
+                        let key = "\(dto.treatmentId)_\(dto.dayNumber)_\(dto.slotIndex)"
+                        for dup in bySlot[key, default: []] where dup.id != dto.id {
+                            modelContext.delete(dup)
+                            byId.removeValue(forKey: dup.id)
                         }
+                        bySlot[key] = []
+
                         let log = KBDoseLog(
                             id:            dto.id,
                             familyId:      dto.familyId,
@@ -265,23 +286,24 @@ extension SyncCenter {
                             updatedAt:     remoteStamp,
                             updatedBy:     dto.updatedBy
                         )
-                        log.isDeleted  = false
-                        log.syncState  = .synced
+                        log.isDeleted = false
+                        log.syncState = .synced
                         modelContext.insert(log)
+                        byId[log.id] = log
+                        bySlot[key] = [log]
                     }
-                    
+
                 case .remove(let id):
-                    let lid = id
-                    let desc = FetchDescriptor<KBDoseLog>(predicate: #Predicate { $0.id == lid })
-                    if let local = try modelContext.fetch(desc).first {
+                    if let local = byId[id] {
                         modelContext.delete(local)
+                        byId.removeValue(forKey: id)
                     }
                 }
             }
-            
+
             try modelContext.save()
             KBLog.sync.kbInfo("applyDoseLogsInbound saved")
-            
+
         } catch {
             KBLog.sync.kbError("applyDoseLogsInbound failed: \(error.localizedDescription)")
         }

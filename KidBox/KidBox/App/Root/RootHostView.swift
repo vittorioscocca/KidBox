@@ -23,6 +23,7 @@
 import SwiftUI
 import SwiftData
 import Combine
+import FirebaseAuth
 internal import os
 
 struct RootHostView: View {
@@ -235,6 +236,14 @@ struct RootHostView: View {
         guard startedFamilyId != familyId else {
             KBLog.sync.kbDebug("Realtime already active for familyId=\(familyId)")
             return
+        }
+
+        // Proactive key recovery: if Keychain entry is missing after reinstall/switch,
+        // try Firestore escrow restore before document operations start failing.
+        if let uid = Auth.auth().currentUser?.uid, !uid.isEmpty {
+            Task {
+                _ = await FamilyKeyEscrowService.ensureFamilyKeyAvailable(familyId: familyId, userId: uid)
+            }
         }
         
         // Se stiamo usando il fallback families.first (activeFamilyId == nil),

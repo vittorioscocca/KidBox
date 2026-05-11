@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import FirebaseAuth
 
 @MainActor
 final class DocumentTextExtractionCoordinator {
@@ -73,12 +74,39 @@ final class DocumentTextExtractionCoordinator {
             syncExtractedDocument(document, modelContext: modelContext)
             return
         }
-        
+
+        // The local cache always holds the encrypted payload (or plaintext for
+        // chat-origin documents). Decrypt to a temp file so the extractor
+        // receives a valid, readable file.
+        let decryptedURL: URL
+        do {
+            let userId = Auth.auth().currentUser?.uid ?? "local"
+            let cipherData = try Data(contentsOf: localFileURL)
+            let plainData  = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                cipherData,
+                storagePath: document.storagePath,
+                notes: document.notes,
+                familyId: document.familyId,
+                userId: userId
+            )
+            let tmp = FileManager.default.temporaryDirectory
+                .appendingPathComponent("extract_\(document.id)_\(document.fileName)")
+            try plainData.write(to: tmp, options: .atomic)
+            decryptedURL = tmp
+        } catch {
+            KBLog.storage.kbError("Extraction decrypt failed for document id=\(document.id): \(error.localizedDescription)")
+            document.markExtractionFailed("Decifratura fallita: \(error.localizedDescription)", updatedBy: updatedBy)
+            save(modelContext)
+            syncExtractedDocument(document, modelContext: modelContext)
+            return
+        }
+        defer { try? FileManager.default.removeItem(at: decryptedURL) }
+
         let input = MedicalDocumentExtractionInput(
             documentId: document.id,
             fileName: document.fileName,
             mimeType: document.mimeType,
-            localFileURL: localFileURL
+            localFileURL: decryptedURL
         )
         
         do {

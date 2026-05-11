@@ -21,10 +21,12 @@ import FirebaseAuth
 /// - Best-effort existence check
 /// - Download encrypted blobs from Firebase Storage and return a TEMP decrypted file URL
 ///
-/// Security model (current behavior, unchanged):
-/// - Persistent cache stores **encrypted data** (ciphertext).
-/// - When downloading from remote, data is decrypted and written to **temporary** location only.
-/// - `localPath` should not be persisted for decrypted temporary files.
+/// Security model:
+/// - Persistent cache (localPath) always stores **encrypted data** (ciphertext).
+///   All callers must encrypt before calling `write()` and decrypt after `readEncrypted()`.
+/// - When downloading for preview, decrypt to a **temporary** file only — never persist the
+///   plaintext path in `doc.localPath`.
+/// - `DocumentTextExtractionCoordinator` decrypts to a temp file before text extraction.
 enum DocumentLocalCache {
     
     // MARK: - Directories
@@ -65,8 +67,11 @@ enum DocumentLocalCache {
     /// - Throws: If resolution fails or the file cannot be read.
     static func readEncrypted(localPath: String) throws -> Data {
         let url = try resolve(localPath: localPath)
-        KBLog.persistence.kbDebug("Reading encrypted cache file at \(localPath)")
-        return try Data(contentsOf: url)
+        let data = try Data(contentsOf: url)
+        // Log magic bytes to detect if the cache accidentally contains plaintext (e.g. %PDF = 0x25504446).
+        let magic = data.prefix(4).map { String(format: "%02X", $0) }.joined(separator: " ")
+        KBLog.persistence.kbInfo("Cache readEncrypted localPath=\(localPath) bytes=\(data.count) magic=\(magic)")
+        return data
     }
     
     // MARK: - Paths
@@ -100,12 +105,11 @@ enum DocumentLocalCache {
     /// - Returns: Relative localPath to store in metadata.
     static func write(familyId: String, docId: String, fileName: String, data: Data) throws -> String {
         let url = try localURL(familyId: familyId, docId: docId, fileName: fileName)
-        
-        KBLog.persistence.kbInfo("Writing cache file familyId=\(familyId) docId=\(docId) bytes=\(data.count)")
+        let magic = data.prefix(4).map { String(format: "%02X", $0) }.joined(separator: " ")
+        KBLog.persistence.kbInfo("Cache write familyId=\(familyId) docId=\(docId) bytes=\(data.count) magic=\(magic)")
         try data.write(to: url, options: .atomic)
-        
         let relative = "\(familyId)/\(url.lastPathComponent)"
-        KBLog.persistence.kbDebug("Cache write completed localPath=\(relative)")
+        KBLog.persistence.kbDebug("Cache write OK localPath=\(relative)")
         return relative
     }
     

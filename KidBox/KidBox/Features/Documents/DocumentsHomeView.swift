@@ -28,7 +28,6 @@ struct DocumentsHomeView: View {
             if familyId.isEmpty {
                 emptyNoFamily
             } else {
-                // ✅ Root del filesystem: da qui hai N livelli
                 DocumentFolderView(familyId: familyId, folderId: nil, folderTitle: "Documenti")
                     .id("root-\(familyId)")
             }

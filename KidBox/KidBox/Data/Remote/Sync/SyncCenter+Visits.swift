@@ -48,27 +48,40 @@ extension SyncCenter {
     // MARK: - Apply inbound
     
     func applyVisitsInbound(changes: [VisitRemoteChange], modelContext: ModelContext) {
+        guard !changes.isEmpty else { return }
         KBLog.sync.kbDebug("applyVisitsInbound changes=\(changes.count)")
+
         do {
+            // Bulk fetch: 1 query instead of O(n) queries (was ~59 queries for 59 items).
+            let familyId = changes.lazy.compactMap {
+                if case .upsert(let dto) = $0 { return dto.familyId } else { return nil }
+            }.first ?? ""
+
+            var byId: [String: KBMedicalVisit] = [:]
+            if !familyId.isEmpty {
+                let fid = familyId
+                let all = try modelContext.fetch(
+                    FetchDescriptor<KBMedicalVisit>(predicate: #Predicate { $0.familyId == fid })
+                )
+                for v in all { byId[v.id] = v }
+            }
+
             for change in changes {
                 switch change {
-                    
+
                 case .upsert(let dto):
-                    let vid = dto.id
-                    let desc = FetchDescriptor<KBMedicalVisit>(predicate: #Predicate { $0.id == vid })
-                    let local = try modelContext.fetch(desc).first
                     let remoteStamp = dto.updatedAt ?? Date.distantPast
-                    
-                    if let local {
-                        // Anti-resurrect
+
+                    if let local = byId[dto.id] {
                         if local.isDeleted && local.syncState == .pendingUpsert {
-                            KBLog.sync.kbDebug("applyVisitsInbound skip anti-resurrect id=\(vid)")
+                            KBLog.sync.kbDebug("applyVisitsInbound skip anti-resurrect id=\(dto.id)")
                             continue
                         }
                         if remoteStamp >= local.updatedAt {
                             if dto.isDeleted {
                                 modelContext.delete(local)
-                                KBLog.sync.kbDebug("applyVisitsInbound: deleted locally id=\(vid)")
+                                byId.removeValue(forKey: dto.id)
+                                KBLog.sync.kbDebug("applyVisitsInbound: deleted locally id=\(dto.id)")
                             } else {
                                 applyVisitFields(local, from: dto)
                                 local.syncState     = .synced
@@ -78,21 +91,21 @@ extension SyncCenter {
                     } else {
                         if dto.isDeleted { continue }
                         let v = KBMedicalVisit(
-                            familyId:          dto.familyId,
-                            childId:           dto.childId,
-                            date:              dto.date,
-                            doctorName:        dto.doctorName,
-                            reason:            dto.reason,
-                            diagnosis:         dto.diagnosis,
-                            recommendations:   dto.recommendations,
-                            photoURLs:         dto.photoURLs,
-                            notes:             dto.notes,
-                            nextVisitDate:     dto.nextVisitDate,
-                            nextVisitReason:   dto.nextVisitReason,
-                            createdAt:         dto.createdAt ?? Date(),
-                            updatedAt:         remoteStamp,
-                            updatedBy:         dto.updatedBy,
-                            createdBy:         dto.createdBy ?? dto.updatedBy
+                            familyId:        dto.familyId,
+                            childId:         dto.childId,
+                            date:            dto.date,
+                            doctorName:      dto.doctorName,
+                            reason:          dto.reason,
+                            diagnosis:       dto.diagnosis,
+                            recommendations: dto.recommendations,
+                            photoURLs:       dto.photoURLs,
+                            notes:           dto.notes,
+                            nextVisitDate:   dto.nextVisitDate,
+                            nextVisitReason: dto.nextVisitReason,
+                            createdAt:       dto.createdAt ?? Date(),
+                            updatedAt:       remoteStamp,
+                            updatedBy:       dto.updatedBy,
+                            createdBy:       dto.createdBy ?? dto.updatedBy
                         )
                         v.id                      = dto.id
                         v.doctorSpecializationRaw = dto.doctorSpecializationRaw
@@ -108,20 +121,22 @@ extension SyncCenter {
                         v.isDeleted               = false
                         v.syncState               = .synced
                         modelContext.insert(v)
-                        KBLog.sync.kbDebug("applyVisitsInbound: created visitId=\(vid)")
+                        byId[v.id] = v
+                        KBLog.sync.kbDebug("applyVisitsInbound: created visitId=\(dto.id)")
                     }
-                    
+
                 case .remove(let id):
-                    let vid = id
-                    let desc = FetchDescriptor<KBMedicalVisit>(predicate: #Predicate { $0.id == vid })
-                    if let local = try modelContext.fetch(desc).first {
+                    if let local = byId[id] {
                         modelContext.delete(local)
+                        byId.removeValue(forKey: id)
                         KBLog.sync.kbDebug("applyVisitsInbound: removed visitId=\(id)")
                     }
                 }
             }
+
             try modelContext.save()
             KBLog.sync.kbInfo("applyVisitsInbound saved")
+
         } catch {
             KBLog.sync.kbError("applyVisitsInbound failed: \(error.localizedDescription)")
         }

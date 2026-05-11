@@ -48,10 +48,11 @@ final class KBDocument {
     var extractionError: String?
     
     // Visibility (same semantics as KBNote / todos / calendar)
-    var visibilityScope: String
-    var visibilityMemberIds: [String]
+    // Default inline per migrazione SwiftData: le righe pre-esistenti ricevono il valore di default.
+    var visibilityScope: String = KBVisibilityScope.family
+    var visibilityMemberIds: [String] = []
     /// Owner uid for `visibilityScope == "private"` filtering.
-    var createdBy: String
+    var createdBy: String = ""
     
     // Dates
     var createdAt: Date

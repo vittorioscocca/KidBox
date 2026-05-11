@@ -24,14 +24,11 @@ struct DocumentFolderView: View {
         var id: String { rawValue }
     }
     
-    struct FolderNav: Hashable, Identifiable {
-        let id: String
-        let title: String
-    }
-    
-    struct IdentifiableURL: Identifiable {
-        let id = UUID()
+    /// Stable `id` is required: `.sheet(item:)` tracks identity by `id`. A per-get `UUID()` caused
+    /// a new identity on every body pass → sheet dismissed/re-presented (double bounce).
+    struct IdentifiableURL: Identifiable, Equatable {
         let url: URL
+        var id: String { url.absoluteString }
     }
     
     // MARK: - Env
@@ -81,9 +78,6 @@ struct DocumentFolderView: View {
     // Camera
     @State var showCamera = false
     @State var cameraImage: UIImage?
-    
-    // Nav
-    @State var navSelection: FolderNav?
     
     // Child scope
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
@@ -344,19 +338,28 @@ struct DocumentFolderView: View {
                 // Folders
                 ForEach(viewModel.folders) { f in
                     let item = DocumentFolderViewModel.SelectionItem.folder(f.id)
-                    Button {
-                        if viewModel.isSelecting { viewModel.toggleSelection(item) }
-                        else { navSelection = FolderNav(id: f.id, title: f.title) }
-                    } label: {
-                        FolderGridCard(
-                            title: f.title,
-                            updatedAt: f.updatedAt,
-                            isSelecting: viewModel.isSelecting,
-                            isSelected: viewModel.isSelected(item)
-                        )
+                    if viewModel.isSelecting {
+                        Button { viewModel.toggleSelection(item) } label: {
+                            FolderGridCard(
+                                title: f.title,
+                                updatedAt: f.updatedAt,
+                                isSelecting: true,
+                                isSelected: viewModel.isSelected(item)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(value: Route.documentsCategory(familyId: familyId, categoryId: f.id, title: f.title)) {
+                            FolderGridCard(
+                                title: f.title,
+                                updatedAt: f.updatedAt,
+                                isSelecting: false,
+                                isSelected: false
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu { folderContextMenu(f) }
                     }
-                    .buttonStyle(.plain)
-                    .contextMenu { if !viewModel.isSelecting { folderContextMenu(f) } }
                 }
                 
                 // Docs
@@ -515,29 +518,31 @@ struct DocumentFolderView: View {
                 // Folders
                 ForEach(viewModel.folders) { f in
                     let item = DocumentFolderViewModel.SelectionItem.folder(f.id)
-                    Button {
-                        if viewModel.isSelecting { viewModel.toggleSelection(item) }
-                        else { navSelection = FolderNav(id: f.id, title: f.title) }
-                    } label: {
-                        HStack(spacing: 14) {
-                            if viewModel.isSelecting {
+                    if viewModel.isSelecting {
+                        Button { viewModel.toggleSelection(item) } label: {
+                            HStack(spacing: 14) {
                                 SelectionBadge(isSelected: viewModel.isSelected(item))
                                     .frame(width: 24, height: 24)
+                                FolderRow(title: f.title, updatedAt: f.updatedAt)
                             }
-                            FolderRow(title: f.title, updatedAt: f.updatedAt)
+                            .contentShape(Rectangle())
+                            .padding(.horizontal)
                         }
-                        .contentShape(Rectangle())
-                        .padding(.horizontal)
+                        .buttonStyle(.plain)
+                    } else {
+                        NavigationLink(value: Route.documentsCategory(familyId: familyId, categoryId: f.id, title: f.title)) {
+                            HStack(spacing: 14) {
+                                FolderRow(title: f.title, updatedAt: f.updatedAt)
+                            }
+                            .contentShape(Rectangle())
+                            .padding(.horizontal)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu { folderContextMenu(f) }
+                        .swipeActions(edge: .trailing) { folderSwipeActions(f) }
+                        .swipeActions(edge: .leading) { folderLeadingSwipeActions(f) }
                     }
-                    .buttonStyle(.plain)
-                    .contextMenu { if !viewModel.isSelecting { folderContextMenu(f) } }
-                    .swipeActions(edge: .trailing) {
-                        if !viewModel.isSelecting { folderSwipeActions(f) }
-                    }
-                    .swipeActions(edge: .leading) {
-                        if !viewModel.isSelecting { folderLeadingSwipeActions(f) }
-                    }
-                    
+
                 }
                 
                 // Docs
@@ -1116,6 +1121,8 @@ private extension DocumentFolderView {
                             view.finalizeUploadStagingAndOpenSource()
                         }
                     }
+                    .presentationDetents([.fraction(0.36), .medium])
+                    .presentationDragIndicator(.visible)
                 }
                 .sheet(item: view.$documentDetailSheetItem) { item in
                     NavigationStack {
@@ -1171,14 +1178,6 @@ private extension DocumentFolderView {
             content
                 .overlay {
                     ZStack { view.uploadingOverlay; view.downloadingOverlay }
-                }
-                .navigationDestination(item: view.$navSelection) { item in
-                    DocumentFolderView(
-                        familyId: view.familyId,
-                        folderId: item.id,
-                        folderTitle: item.title
-                    )
-                    .id(item.id)
                 }
                 .fileImporter(
                     isPresented: view.$showImporter,

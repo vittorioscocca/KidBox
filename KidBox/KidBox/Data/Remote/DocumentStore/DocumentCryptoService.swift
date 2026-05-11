@@ -7,6 +7,7 @@
 
 import Foundation
 import CryptoKit
+internal import os
 
 /// Cryptographic utilities for encrypting/decrypting KidBox documents.
 ///
@@ -110,9 +111,45 @@ enum DocumentCryptoService {
         familyId: String,
         userId: String
     ) throws -> Data {
-        guard !storedKBDocumentPayloadIsPlaintext(notes: notes, storagePath: storagePath) else {
+        let isPlain = storedKBDocumentPayloadIsPlaintext(notes: notes, storagePath: storagePath)
+        KBLog.storage.kbInfo("CryptoService decryptPayload: bytes=\(data.count) isPlain=\(isPlain) notes=\(notes ?? "nil") storagePath=\(storagePath)")
+        guard !isPlain else {
+            KBLog.storage.kbDebug("CryptoService decryptPayload: returning as-is (plain)")
             return data
         }
-        return try decrypt(data, familyId: familyId, userId: userId)
+        do {
+            let result = try decrypt(data, familyId: familyId, userId: userId)
+            KBLog.storage.kbInfo("CryptoService decryptPayload: success outBytes=\(result.count)")
+            return result
+        } catch {
+            // Backward compatibility / bad cache: some rows or on-disk cache files hold
+            // plaintext PDF/JPEG/etc. while `storagePath` still ends in `.kbenc`.
+            // Decrypt then fails (e.g. CryptoKit authentication) — if magic matches a
+            // known file type, return bytes as-is instead of blocking open.
+            if looksLikePlainFilePayload(data) {
+                KBLog.storage.kbInfo("CryptoService decryptPayload: plaintext blob fallback bytes=\(data.count) storagePath=\(storagePath) underlying=\(error.localizedDescription)")
+                return data
+            }
+            KBLog.storage.kbError("CryptoService decryptPayload: FAILED bytes=\(data.count) storagePath=\(storagePath) error=\(error.localizedDescription)")
+            throw error
+        }
     }
+
+    private static func looksLikePlainFilePayload(_ data: Data) -> Bool {
+        if data.count >= 4 {
+            let b4 = Array(data.prefix(4))
+            // %PDF
+            if b4 == [0x25, 0x50, 0x44, 0x46] { return true }
+            // ZIP (docx/xlsx/pptx)
+            if b4 == [0x50, 0x4B, 0x03, 0x04] { return true }
+            // PNG
+            if data.count >= 8 && Array(data.prefix(8)) == [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] { return true }
+            // JPEG
+            if data.count >= 3 && Array(data.prefix(3)) == [0xFF, 0xD8, 0xFF] { return true }
+            // OLE (legacy Office)
+            if data.count >= 8 && Array(data.prefix(8)) == [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1] { return true }
+        }
+        return false
+    }
+
 }

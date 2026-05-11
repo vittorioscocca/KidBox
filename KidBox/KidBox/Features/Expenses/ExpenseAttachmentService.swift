@@ -243,11 +243,16 @@ final class ExpenseAttachmentService {
             modelContext: modelContext
         )
         
+        // Encrypt before writing to local cache.
+        guard let encrypted = try? DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid) else {
+            KBLog.storage.kbError("Encrypt failed docId=\(docId) file=\(fileName)")
+            return nil
+        }
         guard let localRelPath = try? DocumentLocalCache.write(
             familyId: familyId,
             docId: docId,
             fileName: fileName,
-            data: data
+            data: encrypted
         ) else {
             KBLog.storage.kbError("Failed writing local cache docId=\(docId) file=\(fileName)")
             return nil
@@ -305,21 +310,12 @@ final class ExpenseAttachmentService {
         KBLog.sync.kbDebug("Flush global requested after attachment insert docId=\(doc.id)")
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
-        // Upload remoto cifrato in background
+        // Upload remoto cifrato in background (reusa encrypted già calcolato sopra).
         Task.detached {
             await KBLog.storage.kbInfo("Remote encrypted upload start docId=\(docId) file=\(fileName)")
             
             do {
-                guard let encrypted = try? await DocumentCryptoService.encrypt(
-                    data,
-                    familyId: familyId,
-                    userId: uid
-                ) else {
-                    await KBLog.crypto.kbError("Encryption failed docId=\(docId)")
-                    return
-                }
-                
-                await KBLog.crypto.kbDebug("Encryption completed docId=\(docId) encryptedBytes=\(encrypted.count)")
+                await KBLog.crypto.kbDebug("Encryption ready docId=\(docId) encryptedBytes=\(encrypted.count)")
                 
                 let ref      = Storage.storage().reference(withPath: storagePath)
                 let metadata = StorageMetadata()

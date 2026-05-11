@@ -40,16 +40,25 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ nav: UINavigationController, context: Context) {
-        context.coordinator.urls = urls
-        
         guard let ql = nav.viewControllers.first as? QLPreviewController else {
             KBLog.ui.error("QuickLookPreview updateUIViewController: missing QLPreviewController")
             return
         }
         
-        ql.reloadData()
-        
         let idx = clampIndex(initialIndex, count: urls.count)
+        
+        // Avoid redundant `reloadData()` when SwiftUI re-renders with the same URLs — that reload
+        // can flash the sheet / re-run layout as if the preview opened twice.
+        if context.coordinator.urls == urls {
+            if ql.currentPreviewItemIndex != idx {
+                ql.currentPreviewItemIndex = idx
+                KBLog.ui.debug("QuickLookPreview updated index only index=\(idx)")
+            }
+            return
+        }
+        
+        context.coordinator.urls = urls
+        ql.reloadData()
         if ql.currentPreviewItemIndex != idx {
             ql.currentPreviewItemIndex = idx
         }

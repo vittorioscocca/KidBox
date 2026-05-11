@@ -149,9 +149,11 @@ final class TreatmentAttachmentService {
         let storagePath = "families/\(familyId)/treatment-attachments/\(treatmentId)/\(docId)/\(fileName).kbenc"
         
         let (_, referti) = ensureHealthFolders(familyId: familyId, modelContext: modelContext)
-        
+
+        // Encrypt before writing to local cache so that open() can decrypt correctly.
+        guard let encrypted = try? DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid) else { return nil }
         guard let localRelPath = try? DocumentLocalCache.write(
-            familyId: familyId, docId: docId, fileName: fileName, data: data
+            familyId: familyId, docId: docId, fileName: fileName, data: encrypted
         ) else { return nil }
         
         let doc = KBDocument(
@@ -184,8 +186,6 @@ final class TreatmentAttachmentService {
         
         Task.detached {
             do {
-                guard let encrypted = try? await DocumentCryptoService.encrypt(
-                    data, familyId: familyId, userId: uid) else { return }
                 let ref = Storage.storage().reference(withPath: storagePath)
                 let metadata = StorageMetadata()
                 metadata.contentType = "application/octet-stream"
@@ -219,7 +219,7 @@ final class TreatmentAttachmentService {
     // MARK: - Download remoto (auto, account B)
     
     private static var downloadingDocIds = Set<String>()
-    
+
     func downloadRemoteAttachment(
         docId:        String,
         familyId:     String,
@@ -229,7 +229,21 @@ final class TreatmentAttachmentService {
         modelContext: ModelContext
     ) async {
         guard !storagePath.isEmpty else { return }
-        
+
+        // Deduplicate concurrent download requests for the same document.
+        let alreadyInFlight = await MainActor.run {
+            if TreatmentAttachmentService.downloadingDocIds.contains(docId) { return true }
+            TreatmentAttachmentService.downloadingDocIds.insert(docId)
+            return false
+        }
+        guard !alreadyInFlight else {
+            KBLog.sync.kbDebug("downloadRemoteAttachment skip duplicate in-flight docId=\(docId)")
+            return
+        }
+        defer {
+            Task { @MainActor in TreatmentAttachmentService.downloadingDocIds.remove(docId) }
+        }
+
         KBLog.sync.kbDebug("downloadRemoteAttachment start docId=\(docId)")
         
         do {
@@ -256,19 +270,14 @@ final class TreatmentAttachmentService {
             }
             
             let encrypted = try Data(contentsOf: tmpURL)
-            let userId    = Auth.auth().currentUser?.uid ?? "local"
-            let decrypted = try DocumentCryptoService.decryptStoredKBDocumentPayload(
-                encrypted,
-                storagePath: storagePath,
-                notes: notes,
-                familyId: familyId,
-                userId: userId
-            )
-            
+
+            // Store the encrypted payload so that open() / downloadAndDecrypt()
+            // can decrypt from cache using the family key — consistent with the
+            // remote Firebase Storage copy.
             let rel = try DocumentLocalCache.write(
                 familyId: familyId, docId: docId,
                 fileName: fileName.isEmpty ? docId : fileName,
-                data: decrypted
+                data: encrypted
             )
             
             try? FileManager.default.removeItem(at: tmpURL)
@@ -386,35 +395,38 @@ final class TreatmentAttachmentService {
         onError:      @escaping (String) -> Void,
         onKeyMissing: @escaping () -> Void
     ) {
-        let userId = Auth.auth().currentUser?.uid ?? "local"
-        
-        guard DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath)
-                || FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) != nil else {
-            onKeyMissing(); return
-        }
-        
-        if let localPath = doc.localPath, !localPath.isEmpty,
-           DocumentLocalCache.exists(localPath: localPath) != nil {
-            do {
-                let cipherData = try DocumentLocalCache.readEncrypted(localPath: localPath)
-                let plainData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
-                    cipherData,
-                    storagePath: doc.storagePath,
-                    notes: doc.notes,
-                    familyId: doc.familyId,
-                    userId: userId
-                )
-                let tempURL = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("\(doc.id)_\(doc.fileName)")
-                try plainData.write(to: tempURL, options: .atomic)
-                onURL(tempURL)
-            } catch {
-                isCryptoKeyError(error) ? onKeyMissing() : onError("Apertura fallita: \(error.localizedDescription)")
+        // Same pattern as `DocumentFolderViewModel.open`: unstructured `Task { }` does not
+        // inherit MainActor; Keychain + SwiftData + Auth must run on the main actor or we can
+        // get false "missing key" / failed decrypt for attachments opened from sheets (Spese, …).
+        Task { @MainActor in
+            let userId = Auth.auth().currentUser?.uid ?? "local"
+            let isPlain = DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath)
+            if !isPlain,
+               !(await FamilyKeyEscrowService.ensureFamilyKeyAvailable(familyId: doc.familyId, userId: userId)) {
+                onKeyMissing(); return
             }
-            return
-        }
-        
-        Task {
+
+            if let localPath = doc.localPath, !localPath.isEmpty,
+               DocumentLocalCache.exists(localPath: localPath) != nil {
+                do {
+                    let cipherData = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                    let plainData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                        cipherData,
+                        storagePath: doc.storagePath,
+                        notes: doc.notes,
+                        familyId: doc.familyId,
+                        userId: userId
+                    )
+                    let tempURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("\(doc.id)_\(doc.fileName)")
+                    try plainData.write(to: tempURL, options: .atomic)
+                    onURL(tempURL)
+                } catch {
+                    isCryptoKeyError(error) ? onKeyMissing() : onError("Apertura fallita: \(error.localizedDescription)")
+                }
+                return
+            }
+
             do {
                 let url = try await downloadAndDecrypt(doc: doc, modelContext: modelContext)
                 onURL(url)
@@ -448,6 +460,16 @@ final class TreatmentAttachmentService {
         }
         
         let encrypted = try Data(contentsOf: tmpURL)
+        // Persist encrypted payload so open() / downloadAndDecrypt() can decrypt from cache.
+        let rel = try DocumentLocalCache.write(
+            familyId: doc.familyId, docId: doc.id,
+            fileName: doc.fileName.isEmpty ? doc.id : doc.fileName,
+            data: encrypted
+        )
+        doc.localPath = rel
+        try? modelContext.save()
+        try? FileManager.default.removeItem(at: tmpURL)
+        // Decrypt to a temp file for the immediate preview — not persisted in localPath.
         let decrypted = try DocumentCryptoService.decryptStoredKBDocumentPayload(
             encrypted,
             storagePath: doc.storagePath,
@@ -455,15 +477,10 @@ final class TreatmentAttachmentService {
             familyId: doc.familyId,
             userId: Auth.auth().currentUser?.uid ?? "local"
         )
-        let rel = try DocumentLocalCache.write(
-            familyId: doc.familyId, docId: doc.id,
-            fileName: doc.fileName.isEmpty ? doc.id : doc.fileName,
-            data: decrypted
-        )
-        doc.localPath = rel
-        try? modelContext.save()
-        try? FileManager.default.removeItem(at: tmpURL)
-        return try DocumentLocalCache.resolve(localPath: rel)
+        let previewTmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(doc.id)_\(doc.fileName)")
+        try decrypted.write(to: previewTmp, options: .atomic)
+        return previewTmp
     }
     
     // MARK: - Helpers
@@ -480,10 +497,12 @@ final class TreatmentAttachmentService {
         }
     }
     
+    /// Only true when the family key is actually absent — not for CryptoKit auth failures
+    /// (wrong ciphertext, plaintext in cache, etc.).
     private func isCryptoKeyError(_ error: Error) -> Bool {
-        let desc = error.localizedDescription.lowercased()
-        if desc.contains("cryptokit") { return true }
-        return (error as NSError).domain == "CryptoKit.CryptoKitError"
+        guard let crypto = error as? DocumentCryptoService.CryptoError else { return false }
+        if case .missingFamilyKey = crypto { return true }
+        return false
     }
 }
 

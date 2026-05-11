@@ -193,31 +193,43 @@ final class DocumentFolderViewModel: ObservableObject {
     
     func reload() {
         guard let modelContext else { return }
+        let t0 = Date()
+        KBLog.data.kbDebug("DocumentFolderVM reload START folderId=\(folderId ?? "root")")
         do {
             let fid = familyId
-            let allCats = try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
-                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
-            ))
-            let allDocs = try modelContext.fetch(FetchDescriptor<KBDocument>(
-                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
-            ))
             var folderList = try fetchFolders(modelContext: modelContext)
-            let viewerUid = Auth.auth().currentUser?.uid
-            folderList = folderList.filter {
-                DocumentFolderSubtreeVisibility.folderIsBrowsable(
-                    folder: $0,
-                    allCategories: allCats,
-                    allDocuments: allDocs,
-                    viewerUid: viewerUid
-                )
+
+            // Full-family fetch is only needed for the visibility subtree filter.
+            // Skip it when there are no subfolders (leaf folder like exp-cat-…),
+            // to avoid blocking the main thread with expensive scans on every
+            // docsChanged emission across all active ViewModels.
+            if !folderList.isEmpty {
+                let t1 = Date()
+                let allCats = try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
+                    predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+                ))
+                let allDocs = try modelContext.fetch(FetchDescriptor<KBDocument>(
+                    predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+                ))
+                KBLog.data.kbDebug("DocumentFolderVM reload full-family fetch: allCats=\(allCats.count) allDocs=\(allDocs.count) ms=\(Int(Date().timeIntervalSince(t1)*1000)) folderId=\(folderId ?? "root")")
+                let viewerUid = Auth.auth().currentUser?.uid
+                folderList = folderList.filter {
+                    DocumentFolderSubtreeVisibility.folderIsBrowsable(
+                        folder: $0,
+                        allCategories: allCats,
+                        allDocuments: allDocs,
+                        viewerUid: viewerUid
+                    )
+                }
             }
+
             folders = folderList
             docs    = try fetchDocs(modelContext: modelContext)
             applySort()
-            KBLog.data.debug("DocumentFolderVM reload ok folders=\(self.folders.count) docs=\(self.docs.count)")
+            KBLog.data.kbInfo("DocumentFolderVM reload OK folderId=\(folderId ?? "root") folders=\(self.folders.count) docs=\(self.docs.count) ms=\(Int(Date().timeIntervalSince(t0)*1000))")
         } catch {
             errorText = error.localizedDescription
-            KBLog.data.error("DocumentFolderVM reload failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("DocumentFolderVM reload FAILED folderId=\(folderId ?? "root") error=\(error.localizedDescription)")
         }
     }
     
@@ -380,7 +392,7 @@ final class DocumentFolderViewModel: ObservableObject {
         isObserving = true
         SyncCenter.shared.docsChanged
             .filter { [weak self] fid in fid == self?.familyId }
-            .receive(on: DispatchQueue.main)
+            .debounce(for: .milliseconds(250), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in self?.reload() }
             .store(in: &cancellables)
     }
@@ -770,9 +782,12 @@ final class DocumentFolderViewModel: ObservableObject {
             let now        = Date()
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
-            
+
+            // Encrypt before writing to local cache so that open() can decrypt
+            // from cache with the same key that protects the remote copy.
+            let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
             let localRelPath = try DocumentLocalCache.write(
-                familyId: familyId, docId: documentId, fileName: fileName, data: data)
+                familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData)
             
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
@@ -790,7 +805,6 @@ final class DocumentFolderViewModel: ObservableObject {
                 documentId: local.id, familyId: familyId, modelContext: modelContext)
             
             do {
-                let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
                 let (_, downloadURL) = try await storageService.upload(
                     familyId: familyId, docId: documentId, fileName: fileName,
                     originalMimeType: mime, encryptedData: encryptedData)
@@ -871,8 +885,11 @@ final class DocumentFolderViewModel: ObservableObject {
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
             
+            // Encrypt before writing to local cache so that open() can decrypt
+            // from cache with the same key that protects the remote copy.
+            let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
             let localRelPath = try DocumentLocalCache.write(
-                familyId: familyId, docId: documentId, fileName: fileName, data: data)
+                familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData)
             
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
@@ -890,7 +907,6 @@ final class DocumentFolderViewModel: ObservableObject {
                 documentId: local.id, familyId: familyId, modelContext: modelContext)
             
             do {
-                let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
                 let (_, downloadURL) = try await storageService.upload(
                     familyId: familyId, docId: documentId, fileName: fileName,
                     originalMimeType: mime, encryptedData: encryptedData)
@@ -930,7 +946,8 @@ final class DocumentFolderViewModel: ObservableObject {
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
             
             guard let encryptedData = try? DocumentCryptoService.encrypt(plaintext, familyId: familyId, userId: uid) else { return false }
-            guard let localPath = try? DocumentLocalCache.write(familyId: familyId, docId: documentId, fileName: fileName, data: plaintext) else { return false }
+            // Store encrypted bytes so open() can decrypt from cache correctly.
+            guard let localPath = try? DocumentLocalCache.write(familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData) else { return false }
             
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: childId, categoryId: folderId,
@@ -1071,16 +1088,22 @@ final class DocumentFolderViewModel: ObservableObject {
     func open(_ doc: KBDocument) {
         guard let modelContext else { return }
         errorText = nil
+        KBLog.storage.kbInfo("DocVM open: id=\(doc.id) fileName=\(doc.fileName) localPath=\(doc.localPath ?? "nil") notes=\(doc.notes ?? "nil") storagePath=\(doc.storagePath)")
         Task { @MainActor in
             let userId = Auth.auth().currentUser?.uid ?? "local"
-            if !DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath),
-               FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) == nil {
+            let isPlain = DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath)
+            KBLog.storage.kbInfo("DocVM open: isPlain=\(isPlain) docId=\(doc.id)")
+            if !isPlain,
+               !(await FamilyKeyEscrowService.ensureFamilyKeyAvailable(familyId: doc.familyId, userId: userId)) {
+                KBLog.storage.kbError("DocVM open: missing family key familyId=\(doc.familyId) docId=\(doc.id)")
                 showKeyMissingAlert = true; return
             }
             if let localPath = doc.localPath, !localPath.isEmpty,
                let _ = DocumentLocalCache.exists(localPath: localPath) {
+                KBLog.storage.kbInfo("DocVM open: cache HIT localPath=\(localPath) docId=\(doc.id)")
                 do {
                     let cipherData = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                    KBLog.storage.kbInfo("DocVM open: cache read bytes=\(cipherData.count) docId=\(doc.id)")
                     let plainData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
                         cipherData,
                         storagePath: doc.storagePath,
@@ -1088,20 +1111,29 @@ final class DocumentFolderViewModel: ObservableObject {
                         familyId: doc.familyId,
                         userId: userId
                     )
+                    KBLog.storage.kbInfo("DocVM open: decrypted bytes=\(plainData.count) docId=\(doc.id)")
                     let tempURL = FileManager.default.temporaryDirectory
                         .appendingPathComponent("\(doc.id)_\(doc.fileName)")
                     try plainData.write(to: tempURL, options: .atomic)
+                    KBLog.storage.kbInfo("DocVM open: preview ready from cache docId=\(doc.id)")
                     previewURL = tempURL; return
                 } catch {
-                    if isCryptoKeyError(error) { showKeyMissingAlert = true }
-                    else { errorText = "Apertura file fallita: \(error.localizedDescription)" }
-                    return
+                    KBLog.storage.kbError("DocVM open: cache decrypt failed docId=\(doc.id) error=\(error.localizedDescription)")
+                    // Corrupt/legacy cache entry — delete it and fall through to remote download.
+                    if let lp = doc.localPath { DocumentLocalCache.deleteFile(localPath: lp) }
+                    doc.localPath = nil
+                    try? modelContext.save()
+                    KBLog.storage.kbInfo("DocVM open: purged bad cache entry, will re-download docId=\(doc.id)")
                 }
+            } else {
+                KBLog.storage.kbInfo("DocVM open: cache MISS (no localPath or file gone) docId=\(doc.id)")
             }
             do {
+                KBLog.storage.kbInfo("DocVM open: starting remote download docId=\(doc.id)")
                 previewURL = try await downloadToLocalWithProgress(doc: doc, modelContext: modelContext)
             } catch {
                 isDownloading = false; downloadProgress = 0; downloadCurrentName = ""
+                KBLog.storage.kbError("DocVM open: download failed docId=\(doc.id) error=\(error.localizedDescription)")
                 if isCryptoKeyError(error) { showKeyMissingAlert = true }
                 else { errorText = "Apertura file fallita: \(error.localizedDescription)" }
             }
@@ -1118,9 +1150,9 @@ final class DocumentFolderViewModel: ObservableObject {
     }
     
     private func isCryptoKeyError(_ error: Error) -> Bool {
-        let desc = error.localizedDescription.lowercased()
-        if desc.contains("cryptokit") { return true }
-        return (error as NSError).domain == "CryptoKit.CryptoKitError"
+        guard let crypto = error as? DocumentCryptoService.CryptoError else { return false }
+        if case .missingFamilyKey = crypto { return true }
+        return false
     }
     
     private func downloadToLocalWithProgress(doc: KBDocument, modelContext: ModelContext) async throws -> URL {
@@ -1156,7 +1188,17 @@ final class DocumentFolderViewModel: ObservableObject {
                                                                 userInfo: [NSLocalizedDescriptionKey: "Download fallito"]))
                 }
             }
+            // fileData = raw encrypted bytes from Firebase Storage.
             let fileData = try Data(contentsOf: tmpURL)
+            KBLog.storage.kbInfo("DocVM downloadToLocal: downloaded bytes=\(fileData.count) docId=\(doc.id) storagePath=\(doc.storagePath)")
+
+            // Persist ENCRYPTED bytes so that open() can decrypt from cache next time.
+            let rel = try DocumentLocalCache.write(familyId: doc.familyId, docId: doc.id,
+                                                   fileName: doc.fileName.isEmpty ? doc.id : doc.fileName, data: fileData)
+            doc.localPath = rel; try modelContext.save()
+            try? FileManager.default.removeItem(at: tmpURL)
+
+            // Decrypt for the Quick Look preview (temp file, not persisted in localPath).
             let finalData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
                 fileData,
                 storagePath: doc.storagePath,
@@ -1164,12 +1206,12 @@ final class DocumentFolderViewModel: ObservableObject {
                 familyId: doc.familyId,
                 userId: Auth.auth().currentUser?.uid ?? "local"
             )
-            let rel = try DocumentLocalCache.write(familyId: doc.familyId, docId: doc.id,
-                                                   fileName: doc.fileName.isEmpty ? doc.id : doc.fileName, data: finalData)
-            doc.localPath = rel; try modelContext.save()
-            try? FileManager.default.removeItem(at: tmpURL)
+            KBLog.storage.kbInfo("DocVM downloadToLocal: decrypted bytes=\(finalData.count) docId=\(doc.id)")
+            let previewTmp = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(doc.id)_\(doc.fileName)")
+            try finalData.write(to: previewTmp, options: .atomic)
             await endDownloadingWithMinimumDelay(start: start)
-            return try DocumentLocalCache.resolve(localPath: rel)
+            return previewTmp
         } catch {
             try? FileManager.default.removeItem(at: tmp)
             await endDownloadingWithMinimumDelay(start: start)

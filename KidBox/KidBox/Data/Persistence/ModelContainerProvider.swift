@@ -25,16 +25,23 @@ enum ModelContainerProvider {
     
     private static let appGroupIdentifier = "group.it.vittorioscocca.kidbox"
     
-    /// Apple store error often seen when lightweight migration cannot satisfy mandatory destination attributes (`NSCocoaErrorDomain` 134110).
+    /// Apple store error often seen when lightweight migration cannot satisfy mandatory destination
+    /// attributes (`NSCocoaErrorDomain` 134110) or SwiftData store load failures.
     private static func isRecoverableMigrationOrLoadFailure(_ error: Error) -> Bool {
+        // SwiftData wraps CoreData errors in SwiftDataError; the underlying NSError isn't always
+        // reachable via NSUnderlyingErrorKey. Accept any SwiftDataError at load time as recoverable.
+        let topNS = error as NSError
+        if topNS.domain == "SwiftData.SwiftDataError" { return true }
+        // Fallback: scan the error chain for CoreData migration failures (134110).
         var current: Error? = error
         var depth = 0
-        while let err = current, depth < 8 {
+        while let err = current, depth < 10 {
             depth += 1
             let ns = err as NSError
             if ns.domain == NSCocoaErrorDomain && ns.code == 134110 { return true }
             let msg = ns.localizedDescription.lowercased()
             if msg.contains("mandatory destination attribute")
+                || msg.contains("134110")
                 || (msg.contains("migration") && msg.contains("attribute")) {
                 return true
             }
@@ -85,7 +92,24 @@ enum ModelContainerProvider {
         }
         return support.appendingPathComponent("default.store")
     }
-    
+
+    /// After a successful `ModelContainer` load, touches persisted rows for models with visibility
+    /// fields. Hard migration/runtime faults surface here as throws instead of hanging the UI later.
+    private static func probeStoreIntegrity(_ container: ModelContainer) -> Bool {
+        let context = ModelContext(container)
+        do {
+            _ = try context.fetch(FetchDescriptor<KBDocument>())
+            _ = try context.fetch(FetchDescriptor<KBNote>())
+            _ = try context.fetch(FetchDescriptor<KBTodoItem>())
+            _ = try context.fetch(FetchDescriptor<KBWalletTicket>())
+            _ = try context.fetch(FetchDescriptor<KBCalendarEvent>())
+            return true
+        } catch {
+            KBLog.persistence.kbError("Store integrity probe failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     /// Builds a `ModelContainer` containing all KidBox SwiftData models.
     ///
     /// - Parameter inMemory: Use `true` for previews/tests to avoid writing to disk.
@@ -148,8 +172,26 @@ enum ModelContainerProvider {
         }()
         
         do {
-            let container = try ModelContainer(for: schema, configurations: [configuration])
+            var container = try ModelContainer(for: schema, configurations: [configuration])
             KBLog.persistence.kbInfo("ModelContainer created successfully")
+
+            if !inMemory, !probeStoreIntegrity(container) {
+                KBLog.persistence.kbInfo(
+                    "Store integrity probe failed; quarantining on-disk SwiftData store and recreating container"
+                )
+                if let diskURL = appGroupPersistentStoreURL() {
+                    quarantinePersistentStoreArtifacts(at: diskURL)
+                }
+                didQuarantineCorruptedStoreThisLaunch = true
+                container = try ModelContainer(for: schema, configurations: [configuration])
+                KBLog.persistence.kbInfo("ModelContainer created successfully after probe-triggered quarantine")
+                guard probeStoreIntegrity(container) else {
+                    fatalError(
+                        "Could not create ModelContainer: store integrity probe failed after quarantine"
+                    )
+                }
+            }
+
             return container
         } catch {
             KBLog.persistence.kbError("ModelContainer creation failed: \(error.localizedDescription)")
@@ -167,6 +209,13 @@ enum ModelContainerProvider {
                 let container = try ModelContainer(for: schema, configurations: [configuration])
                 didQuarantineCorruptedStoreThisLaunch = true
                 KBLog.persistence.kbInfo("ModelContainer created successfully after store quarantine")
+                if !inMemory {
+                    guard probeStoreIntegrity(container) else {
+                        fatalError(
+                            "Could not create ModelContainer after store recovery: integrity probe failed"
+                        )
+                    }
+                }
                 return container
             } catch {
                 KBLog.persistence.kbError("ModelContainer creation failed again: \(error.localizedDescription)")

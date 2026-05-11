@@ -29,9 +29,12 @@ struct VisibilityPickerSheet: View {
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Annulla") { dismiss() }
+                                .controlSize(.regular)
                         }
                     }
             }
+            .presentationDetents([.fraction(0.36), .medium])
+            .presentationDragIndicator(.visible)
         }
     }
 
@@ -87,6 +90,7 @@ struct VisibilityPickerSheet: View {
                         dismiss()
                     }
                 }
+                .controlSize(.regular)
             }
         }
     }

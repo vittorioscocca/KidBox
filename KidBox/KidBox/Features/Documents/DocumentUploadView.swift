@@ -23,27 +23,34 @@ struct DocumentUploadView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Scegli chi potrà vedere il documento che stai per caricare.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Scegli chi potrà vedere il documento che stai per caricare.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                    
+                    visibilityChip
+                        .padding(.leading, 4)
+                }
+                
+                Button {
+                    onContinue()
+                } label: {
+                    Text("Continua")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.regular)
                 .padding(.top, 8)
-            
-            visibilityChip
-                .padding(.leading, 4)
-            
-            Spacer(minLength: 0)
-            
-            Button {
-                onContinue()
-            } label: {
-                Text("Continua")
-                    .frame(maxWidth: .infinity)
+                .padding(.bottom, 4)
             }
-            .buttonStyle(.borderedProminent)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 20)
+        .scrollBounceBehavior(.basedOnSize)
         .navigationTitle("Nuovo documento")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isVisibilitySheetPresented) {

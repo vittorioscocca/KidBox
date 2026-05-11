@@ -22,10 +22,11 @@ final class KBNote {
     var visibilityMemberIds: [String]?
     
     // Autore / ultimo editor (no email!)
-    var createdBy: String
-    var createdByName: String
-    var updatedBy: String
-    var updatedByName: String
+    // Default `""` inline per migrazione SwiftData: le righe pre-esistenti ricevono stringa vuota.
+    var createdBy: String = ""
+    var createdByName: String = ""
+    var updatedBy: String = ""
+    var updatedByName: String = ""
     
     var createdAt: Date
     var updatedAt: Date

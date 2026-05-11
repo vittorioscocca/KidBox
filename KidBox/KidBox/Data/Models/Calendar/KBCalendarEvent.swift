@@ -58,8 +58,9 @@ final class KBCalendarEvent {
     var isDeleted: Bool
     var createdAt: Date
     var updatedAt: Date
-    var updatedBy: String
-    var createdBy: String
+    // Default `""` inline per migrazione SwiftData: le righe pre-esistenti ricevono stringa vuota.
+    var updatedBy: String = ""
+    var createdBy: String = ""
     var syncStateRaw: Int         // maps to KBSyncState
     var lastSyncError: String?
     
