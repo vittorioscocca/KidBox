@@ -72,6 +72,15 @@ struct KidBoxApp: App {
                             return
                         }
                         
+                        if url.scheme == "kidbox", url.host == "control",
+                           url.path == "/open-family-photos-camera" || url.path == "open-family-photos-camera" {
+                            KBLog.sync.kbInfo("onOpenURL control -> family photos camera shortcut")
+                            coordinator.openFamilyPhotosWithCameraShortcut(
+                                modelContext: modelContainer.mainContext
+                            )
+                            return
+                        }
+                        
                         KBLog.auth.kbInfo("onOpenURL received url=\(url.absoluteString)")
                         
                         // 1) Facebook

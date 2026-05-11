@@ -24,6 +24,7 @@ import SwiftUI
 import SwiftData
 import Combine
 import FirebaseAuth
+import UIKit
 internal import os
 
 struct RootHostView: View {
@@ -99,6 +100,10 @@ struct RootHostView: View {
             // della Share Extension, scenePhase parte già .active e
             // willEnterForeground non scatta. Controlliamo qui.
             coordinator.handleIncomingShare(modelContext: modelContext)
+            coordinator.consumePendingControlWidgetRouteIfNeeded(modelContext: modelContext)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            coordinator.consumePendingControlWidgetRouteIfNeeded(modelContext: modelContext)
         }
         // React to explicit family selection changes (join, switch).
         .onChange(of: coordinator.activeFamilyId) { oldValue, newValue in

@@ -53,6 +53,10 @@ final class AppCoordinator: ObservableObject {
     /// Document id pending to be opened once the UI is ready (e.g. after a push notification).
     @Published var pendingOpenDocumentId: String? = nil
     
+    /// Control Widget iOS / URL `kidbox://control/...` → aprire fotocamera in **Foto e video** per questo `familyId`.
+    @Published var openFamilyPhotosCameraForFamilyId: String? = nil
+    
+    
     @Published var pendingShareText: String? = nil
     
     /// Path locale di un'immagine/file copiata nell'App Group, da inviare in chat.
@@ -632,6 +636,55 @@ final class AppCoordinator: ObservableObject {
         }
     }
     
+    // MARK: - Control Widget / deep link → Foto e video + fotocamera
+    
+    /// Control Widget: URL `kidbox://control/open-family-photos-camera` **oppure** handoff App Group
+    /// (`consumePendingControlWidgetRouteIfNeeded`) → **Foto e video** + fotocamera.
+    @MainActor
+    func openFamilyPhotosWithCameraShortcut(modelContext: ModelContext) {
+        guard isAuthenticated else {
+            KBLog.navigation.kbInfo("Control shortcut: skipped — not authenticated")
+            return
+        }
+        
+        let suite = "group.it.vittorioscocca.kidbox"
+        let defs = UserDefaults(suiteName: suite)
+        let fid = activeFamilyId
+            ?? defs?.string(forKey: "activeFamilyId")
+            ?? (try? modelContext.fetch(
+                FetchDescriptor<KBFamily>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
+            ))?.first?.id
+        
+        guard let familyId = fid, !familyId.isEmpty else {
+            globalBannerMessage = "Apri KidBox e attendi il caricamento della famiglia, poi riprova dal controllo."
+            KBLog.navigation.kbError("Control shortcut: no familyId")
+            return
+        }
+        
+        setActiveFamily(familyId, force: false)
+        path.removeAll()
+        path.append(.familyPhotos(familyId: familyId))
+        openFamilyPhotosCameraForFamilyId = familyId
+        KBLog.navigation.kbInfo("Control shortcut: familyPhotos + camera pending fid=\(familyId)")
+    }
+
+    /// Stessi valori scritti da `App/Intents/OpenKidBoxFamilyPhotosCameraIntent` (estensione + app).
+    private static let controlWidgetPendingRouteKey = "kidbox.controlWidget.pendingRoute"
+    private static let controlWidgetRouteFamilyPhotosCamera = "openFamilyPhotosCamera"
+
+    /// Dopo tap sul Control Widget: l’estensione scrive l’App Group; qui consumiamo e navighiamo.
+    /// Chiamare da `didBecomeActive` / `onAppear` (non usare `OpenURLIntent` con `kidbox://`).
+    func consumePendingControlWidgetRouteIfNeeded(modelContext: ModelContext) {
+        let suite = "group.it.vittorioscocca.kidbox"
+        guard let defs = UserDefaults(suiteName: suite) else { return }
+        let raw = defs.string(forKey: Self.controlWidgetPendingRouteKey)
+        guard raw == Self.controlWidgetRouteFamilyPhotosCamera else { return }
+        defs.removeObject(forKey: Self.controlWidgetPendingRouteKey)
+        defs.synchronize()
+        KBLog.navigation.kbInfo("Control widget handoff: consuming pending route familyPhotosCamera")
+        openFamilyPhotosWithCameraShortcut(modelContext: modelContext)
+    }
+    
     // MARK: - Navigation actions
     
     func navigate(to route: Route) {
@@ -943,6 +996,7 @@ final class AppCoordinator: ObservableObject {
     
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
+        openFamilyPhotosCameraForFamilyId = nil
         path.removeAll()
         // `activeFamilyId` non viene azzerato qui: resta in UserDefaults / App Group
         // così dopo join + resetToRoot() la root vede ancora la famiglia attiva.

@@ -13,6 +13,10 @@
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CB37F452F72B12F00CD0F7C /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CB37F442F72B12F00CD0F7C /* StoreKit.framework */; };
 		7CD645642F88195600AF9B23 /* KidBoxNotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7CE0B0052F3378CB0086D687 /* KidBoxControlsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7CE0B0192F3378CB0086D687 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CE0B0182F3378CB0086D687 /* AppIntents.framework */; };
+		7CE0B01B2F3378CB0086D687 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CE0B01A2F3378CB0086D687 /* SwiftUI.framework */; };
+		7CE0B01D2F3378CB0086D687 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CE0B01C2F3378CB0086D687 /* WidgetKit.framework */; };
 		7CE572042F47900B008FE22B /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 7CE572032F47900B008FE22B /* FirebaseFunctions */; };
 		7CED80602F5B0F2E00CB9923 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 7CED805F2F5B0F2E00CB9923 /* ZIPFoundation */; };
 		7CF6177D2F609689007587D9 /* KidBoxShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CF617732F609689007587D9 /* KidBoxShareExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -33,6 +37,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 7CD6455C2F88195600AF9B23;
 			remoteInfo = KidBoxNotificationService;
+		};
+		7CE0B0062F3378CB0086D687 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7CFC51552F3378CB0086D687 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7CE0B00A2F3378CB0086D687;
+			remoteInfo = KidBoxControlsExtension;
 		};
 		7CF6177B2F609689007587D9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -66,6 +77,7 @@
 			files = (
 				7CD645642F88195600AF9B23 /* KidBoxNotificationService.appex in Embed Foundation Extensions */,
 				7CF6177D2F609689007587D9 /* KidBoxShareExtension.appex in Embed Foundation Extensions */,
+				7CE0B0052F3378CB0086D687 /* KidBoxControlsExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,6 +87,10 @@
 /* Begin PBXFileReference section */
 		7CB37F442F72B12F00CD0F7C /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxControlsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7CE0B0182F3378CB0086D687 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		7CE0B01A2F3378CB0086D687 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		7CE0B01C2F3378CB0086D687 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		7CF617732F609689007587D9 /* KidBoxShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CFC515D2F3378CB0086D687 /* KidBox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KidBox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CFC516C2F3378CD0086D687 /* KidBoxTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KidBoxTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -99,6 +115,13 @@
 				Support/KBLog.swift,
 			);
 			target = 7CD6455C2F88195600AF9B23 /* KidBoxNotificationService */;
+		};
+		7CE0B0092F3378CB0086D687 /* Exceptions for "KidBoxControlsExtension" folder in "KidBoxControlsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
 		};
 		7CF617812F609689007587D9 /* Exceptions for "KidBoxShareExtension" folder in "KidBoxShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -131,6 +154,13 @@
 			);
 			target = 7CFC515C2F3378CB0086D687 /* KidBox */;
 		};
+		7CE0B01E2F3378CB0086D687 /* Exceptions for "KidBox" folder in "KidBoxControlsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Intents/OpenKidBoxFamilyPhotosCameraIntent.swift,
+			);
+			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -140,6 +170,14 @@
 				7CD645682F88195600AF9B23 /* Exceptions for "KidBoxNotificationService" folder in "KidBoxNotificationService" target */,
 			);
 			path = KidBoxNotificationService;
+			sourceTree = "<group>";
+		};
+		7CE0B0082F3378CB0086D687 /* KidBoxControlsExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7CE0B0092F3378CB0086D687 /* Exceptions for "KidBoxControlsExtension" folder in "KidBoxControlsExtension" target */,
+			);
+			path = KidBoxControlsExtension;
 			sourceTree = "<group>";
 		};
 		7CF617742F609689007587D9 /* KidBoxShareExtension */ = {
@@ -156,6 +194,7 @@
 				7CFC52162F33F98E0086D687 /* Exceptions for "KidBox" folder in "KidBox" target */,
 				7CF617902F60B2BE007587D9 /* Exceptions for "KidBox" folder in "KidBoxShareExtension" target */,
 				7CD645702F881A6700AF9B23 /* Exceptions for "KidBox" folder in "KidBoxNotificationService" target */,
+				7CE0B01E2F3378CB0086D687 /* Exceptions for "KidBox" folder in "KidBoxControlsExtension" target */,
 			);
 			path = KidBox;
 			sourceTree = "<group>";
@@ -177,6 +216,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7CE0B00C2F3378CB0086D687 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7CE0B0192F3378CB0086D687 /* AppIntents.framework in Frameworks */,
+				7CE0B01B2F3378CB0086D687 /* SwiftUI.framework in Frameworks */,
+				7CE0B01D2F3378CB0086D687 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,6 +283,7 @@
 				7CFC51792F3378CD0086D687 /* KidBoxUITests */,
 				7CF617742F609689007587D9 /* KidBoxShareExtension */,
 				7CD6455E2F88195600AF9B23 /* KidBoxNotificationService */,
+				7CE0B0082F3378CB0086D687 /* KidBoxControlsExtension */,
 				7CFC51F52F33E9000086D687 /* Frameworks */,
 				7CFC515E2F3378CB0086D687 /* Products */,
 			);
@@ -247,6 +297,7 @@
 				7CFC51762F3378CD0086D687 /* KidBoxUITests.xctest */,
 				7CF617732F609689007587D9 /* KidBoxShareExtension.appex */,
 				7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */,
+				7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -254,7 +305,10 @@
 		7CFC51F52F33E9000086D687 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7CE0B0182F3378CB0086D687 /* AppIntents.framework */,
 				7CB37F442F72B12F00CD0F7C /* StoreKit.framework */,
+				7CE0B01A2F3378CB0086D687 /* SwiftUI.framework */,
+				7CE0B01C2F3378CB0086D687 /* WidgetKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -282,6 +336,28 @@
 			);
 			productName = KidBoxNotificationService;
 			productReference = 7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7CE0B0032F3378CB0086D687 /* Build configuration list for PBXNativeTarget "KidBoxControlsExtension" */;
+			buildPhases = (
+				7CE0B00B2F3378CB0086D687 /* Sources */,
+				7CE0B00C2F3378CB0086D687 /* Frameworks */,
+				7CE0B00D2F3378CB0086D687 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7CE0B0082F3378CB0086D687 /* KidBoxControlsExtension */,
+			);
+			name = KidBoxControlsExtension;
+			packageProductDependencies = (
+			);
+			productName = KidBoxControlsExtension;
+			productReference = 7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		7CF617722F609689007587D9 /* KidBoxShareExtension */ = {
@@ -323,6 +399,7 @@
 			dependencies = (
 				7CF6177C2F609689007587D9 /* PBXTargetDependency */,
 				7CD645632F88195600AF9B23 /* PBXTargetDependency */,
+				7CE0B0072F3378CB0086D687 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				7CFC515F2F3378CB0086D687 /* KidBox */,
@@ -404,6 +481,9 @@
 					7CD6455C2F88195600AF9B23 = {
 						CreatedOnToolsVersion = 26.4;
 					};
+					7CE0B00A2F3378CB0086D687 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					7CF617722F609689007587D9 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -445,12 +525,20 @@
 				7CFC51752F3378CD0086D687 /* KidBoxUITests */,
 				7CF617722F609689007587D9 /* KidBoxShareExtension */,
 				7CD6455C2F88195600AF9B23 /* KidBoxNotificationService */,
+				7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		7CD6455B2F88195600AF9B23 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7CE0B00D2F3378CB0086D687 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -495,6 +583,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7CE0B00B2F3378CB0086D687 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7CF6176F2F609689007587D9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -532,6 +627,12 @@
 			target = 7CD6455C2F88195600AF9B23 /* KidBoxNotificationService */;
 			targetProxy = 7CD645622F88195600AF9B23 /* PBXContainerItemProxy */;
 		};
+		7CE0B0072F3378CB0086D687 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
+			targetProxy = 7CE0B0062F3378CB0086D687 /* PBXContainerItemProxy */;
+		};
 		7CF6177C2F609689007587D9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			platformFilter = ios;
@@ -556,7 +657,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 43;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -587,7 +688,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 43;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -614,12 +715,77 @@
 			};
 			name = Release;
 		};
+		7CE0B0012F3378CB0086D687 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 43;
+				DEVELOPMENT_TEAM = 5WA8KG2G2W;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = KidBox;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.8;
+				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxControlsExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7CE0B0022F3378CB0086D687 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 43;
+				DEVELOPMENT_TEAM = 5WA8KG2G2W;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = KidBox;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.8;
+				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxControlsExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		7CF6177F2F609689007587D9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 43;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -650,7 +816,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 43;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -810,7 +976,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 43;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -877,7 +1043,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 42;
+				CURRENT_PROJECT_VERSION = 43;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1057,6 +1223,15 @@
 			buildConfigurations = (
 				7CD645662F88195600AF9B23 /* Debug */,
 				7CD645672F88195600AF9B23 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7CE0B0032F3378CB0086D687 /* Build configuration list for PBXNativeTarget "KidBoxControlsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7CE0B0012F3378CB0086D687 /* Debug */,
+				7CE0B0022F3378CB0086D687 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

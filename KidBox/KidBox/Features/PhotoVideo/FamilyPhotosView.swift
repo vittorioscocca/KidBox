@@ -243,7 +243,24 @@ struct FamilyPhotosView: View {
                     coordinator.pendingShareEncryptedMediaType = nil
                     Task { await uploadFromAppGroup(path: path, fileType: type) }
                 }
+                openCameraIfPendingFromControlWidget()
             }
+            .onChange(of: coordinator.openFamilyPhotosCameraForFamilyId) { _, _ in
+                openCameraIfPendingFromControlWidget()
+            }
+    }
+    
+    /// Control Widget iOS / URL → apre la fotocamera in questa schermata (stesso gate storage della toolbar).
+    private func openCameraIfPendingFromControlWidget() {
+        guard coordinator.openFamilyPhotosCameraForFamilyId == familyId else { return }
+        coordinator.openFamilyPhotosCameraForFamilyId = nil
+        guard CameraCaptureView.isAvailable else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
+                uploadTargetAlbumId = nil
+                showCamera = true
+            }
+        }
     }
     
     // MARK: - Toolbar

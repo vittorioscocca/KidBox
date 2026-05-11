@@ -32,6 +32,34 @@ enum CameraCaptureResult {
     case cancelled
 }
 
+// MARK: - Host (presentazione modale corretta della camera)
+
+/// `UIImagePickerController` con `sourceType == .camera` va **presentato modally** in fullscreen
+/// da un `UIViewController` nella finestra attiva. Usarlo come root di un `UIViewControllerRepresentable`
+/// (es. dentro `fullScreenCover`) spesso rompe scatto / controlli — soprattutto dopo cold open da URL/widget.
+private final class CameraPickerHostViewController: UIViewController {
+    private let picker: UIImagePickerController
+    private var didPresentPicker = false
+
+    init(picker: UIImagePickerController) {
+        self.picker = picker
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .fullScreen
+        view.backgroundColor = .black
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:)") }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !didPresentPicker else { return }
+        didPresentPicker = true
+        picker.modalPresentationStyle = .fullScreen
+        present(picker, animated: true)
+    }
+}
+
 // MARK: - View
 
 struct CameraCaptureView: UIViewControllerRepresentable {
@@ -44,7 +72,7 @@ struct CameraCaptureView: UIViewControllerRepresentable {
         Coordinator(onResult: onResult)
     }
     
-    func makeUIViewController(context: Context) -> UIImagePickerController {
+    func makeUIViewController(context: Context) -> UIViewController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.mediaTypes = mediaTypes
@@ -52,10 +80,10 @@ struct CameraCaptureView: UIViewControllerRepresentable {
         picker.videoMaximumDuration = 300          // max 5 minuti
         picker.allowsEditing = false
         picker.delegate = context.coordinator
-        return picker
+        return CameraPickerHostViewController(picker: picker)
     }
     
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
     
     // MARK: - Coordinator
     
@@ -66,8 +94,14 @@ struct CameraCaptureView: UIViewControllerRepresentable {
             self.onResult = onResult
         }
         
+        private func finish(on picker: UIImagePickerController, result: CameraCaptureResult) {
+            picker.dismiss(animated: true) { [onResult] in
+                onResult(result)
+            }
+        }
+        
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            onResult(.cancelled)
+            finish(on: picker, result: .cancelled)
         }
         
         func imagePickerController(
@@ -83,10 +117,10 @@ struct CameraCaptureView: UIViewControllerRepresentable {
                     .appendingPathExtension("mp4")
                 do {
                     try FileManager.default.copyItem(at: videoURL, to: dest)
-                    onResult(.video(dest))
+                    finish(on: picker, result: .video(dest))
                 } catch {
                     KBLog.sync.kbError("CameraCaptureView: video copy failed err=\(error.localizedDescription)")
-                    onResult(.cancelled)
+                    finish(on: picker, result: .cancelled)
                 }
                 return
             }
@@ -96,15 +130,15 @@ struct CameraCaptureView: UIViewControllerRepresentable {
                 // Normalizza orientamento e comprimi in JPEG 85%
                 let normalized = image.normalizedOrientation()
                 if let data = normalized.jpegData(compressionQuality: 0.85) {
-                    onResult(.photo(data))
+                    finish(on: picker, result: .photo(data))
                 } else {
                     KBLog.sync.kbError("CameraCaptureView: JPEG compression failed")
-                    onResult(.cancelled)
+                    finish(on: picker, result: .cancelled)
                 }
                 return
             }
             
-            onResult(.cancelled)
+            finish(on: picker, result: .cancelled)
         }
     }
 }
