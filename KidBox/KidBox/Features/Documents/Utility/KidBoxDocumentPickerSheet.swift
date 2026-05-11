@@ -29,6 +29,8 @@ struct KidBoxDocumentPickerSheet: View {
     let familyId: String
     /// Se `true`, mostra solo documenti PDF (es. import wallet).
     var pdfOnly: Bool = false
+    /// Se valorizzato (es. Garage/Casa `#FF6B00`), tinta toolbar e controlli della navigazione.
+    var accentTint: Color? = nil
     /// Chiamata con la URL del file decriptato pronto per l'upload come allegato.
     let onPick: (URL) -> Void
     
@@ -80,6 +82,7 @@ struct KidBoxDocumentPickerSheet: View {
                 Text(errorText ?? "")
             }
         }
+        .modifier(KidBoxDocumentPickerAccentTintModifier(accentTint: accentTint))
     }
     
     // MARK: - Pick action
@@ -348,5 +351,20 @@ private struct KidBoxFolderPickerLevel: View {
         if kb < 1024   { return String(format: "%.1f KB", kb) }
         let mb = kb / 1024
         return String(format: "%.1f MB", mb)
+    }
+}
+
+// MARK: - Accent (Garage / Casa)
+
+private struct KidBoxDocumentPickerAccentTintModifier: ViewModifier {
+    let accentTint: Color?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let accentTint {
+            content.tint(accentTint)
+        } else {
+            content
+        }
     }
 }

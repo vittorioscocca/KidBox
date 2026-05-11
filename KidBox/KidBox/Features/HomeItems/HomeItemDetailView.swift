@@ -56,6 +56,11 @@ struct HomeItemDetailView: View {
                             .textCase(.uppercase)
                         deadlineRow("Garanzia", it.warrantyExpiryDate)
                         deadlineRow("Prossima manutenzione", it.nextServiceDate)
+                        Text("Allegati")
+                            .font(.custom("Nunito", size: 13).weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        HomeItemAttachmentsSection(homeItemId: it.id, familyId: familyId)
                     }
                     .padding()
                 }
@@ -169,6 +174,11 @@ struct HomeItemDetailView: View {
 
     private func deleteItem() {
         guard let it = item else { return }
+        HomeAttachmentService.shared.deleteAllForHomeItem(
+            homeItemId: it.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
         let uid = Auth.auth().currentUser?.uid ?? "local"
         it.isDeleted = true
         it.updatedAt = Date()

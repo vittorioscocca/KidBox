@@ -63,6 +63,12 @@ struct VehicleEventDetailView: View {
                                 Text(n).font(.custom("Nunito", size: 15))
                             }
                         }
+                        Text("Allegati")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .padding(.top, 8)
+                        VehicleEventAttachmentsSection(eventId: eventId, familyId: familyId)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -116,6 +122,7 @@ struct VehicleEventDetailView: View {
 
     private func deleteEv() {
         guard let e = event else { return }
+        VehicleAttachmentService.shared.deleteAllForEvent(eventId: e.id, familyId: familyId, modelContext: modelContext)
         let uid = Auth.auth().currentUser?.uid ?? "local"
         e.isDeleted = true
         e.updatedAt = Date()

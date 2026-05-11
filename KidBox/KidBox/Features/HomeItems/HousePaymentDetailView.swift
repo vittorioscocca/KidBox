@@ -63,6 +63,11 @@ struct HousePaymentDetailView: View {
                         if p.dataScadenzaContratto != nil {
                             deadlineRow("Scadenza contratto", p.dataScadenzaContratto)
                         }
+                        Text("Allegati")
+                            .font(.custom("Nunito", size: 13).weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        HousePaymentAttachmentsSection(paymentId: p.id, familyId: familyId)
                     }
                     .padding()
                 }
@@ -183,6 +188,11 @@ struct HousePaymentDetailView: View {
 
     private func deletePayment() {
         guard let p = payment else { return }
+        HomeAttachmentService.shared.deleteAllForHousePayment(
+            paymentId: p.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
         let uid = Auth.auth().currentUser?.uid ?? "local"
         Task { await HousePaymentReminderService.shared.cancelAll(paymentId: p.id) }
         p.isDeleted = true

@@ -60,6 +60,7 @@ struct PlanningAIChatView: View {
     @Query(sort: \KBPet.name) private var allPets: [KBPet]
     @Query(sort: \KBPetEvent.date, order: .reverse) private var allPetEvents: [KBPetEvent]
     @Query(sort: \KBHomeItem.name) private var allHomeItems: [KBHomeItem]
+    @Query(sort: \KBHousePayment.name) private var allHousePayments: [KBHousePayment]
     @Query(sort: \KBVehicle.name) private var allVehicles: [KBVehicle]
     @Query(sort: \KBVehicleEvent.date, order: .reverse) private var allVehicleEvents: [KBVehicleEvent]
     
@@ -200,6 +201,10 @@ struct PlanningAIChatView: View {
     private var contextHomeItems: [KBHomeItem] {
         allHomeItems.filter { $0.familyId == familyId && !$0.isDeleted }
     }
+
+    private var contextHousePayments: [KBHousePayment] {
+        allHousePayments.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
     
     private var contextVehicles: [KBVehicle] {
         allVehicles.filter { $0.familyId == familyId && !$0.isDeleted }
@@ -317,6 +322,7 @@ struct PlanningAIChatView: View {
                 pets:                   contextPets,
                 petEvents:              contextPetEvents,
                 homeItems:              contextHomeItems,
+                housePayments:          contextHousePayments,
                 vehicles:               contextVehicles,
                 vehicleEvents:          contextVehicleEvents,
                 modelContext:           modelContext

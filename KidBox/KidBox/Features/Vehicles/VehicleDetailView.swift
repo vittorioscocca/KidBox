@@ -43,6 +43,14 @@ struct VehicleDetailView: View {
             .sorted { $0.date > $1.date }
     }
 
+    private var vehicleEventsPreview: [KBVehicleEvent] {
+        Array(vehicleEvents.prefix(4))
+    }
+
+    private var hasMoreThanFourInterventions: Bool {
+        vehicleEvents.count > 4
+    }
+
     init(familyId: String, vehicleId: String) {
         self.familyId = familyId
         self.vehicleId = vehicleId
@@ -66,20 +74,38 @@ struct VehicleDetailView: View {
                         deadline("Revisione", v.revisionExpiryDate)
                         deadline("Bollo", v.taxExpiryDate)
                         deadline("Prossimo tagliando", v.nextServiceDate)
-                        sectionHeader("Storico interventi")
+                        HStack(alignment: .center, spacing: 8) {
+                            Text("Storico interventi")
+                                .font(.custom("Nunito", size: 13).weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                            Spacer(minLength: 8)
+                            if hasMoreThanFourInterventions {
+                                Button {
+                                    coordinator.navigate(to: .vehicleEventsList(familyId: familyId, vehicleId: vehicleId))
+                                } label: {
+                                    Text("Vedi tutti")
+                                        .font(.custom("Nunito", size: 14).weight(.semibold))
+                                        .foregroundStyle(accentOrange)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                         if vehicleEvents.isEmpty {
                             Text("Nessun intervento registrato")
                                 .font(.custom("Nunito", size: 15))
                                 .foregroundStyle(.secondary)
                         } else {
                             VStack(spacing: 0) {
-                                ForEach(vehicleEvents, id: \.id) { ev in
+                                ForEach(vehicleEventsPreview, id: \.id) { ev in
                                     eventRow(ev)
                                     Divider()
                                 }
                             }
                             .background(cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+                        sectionHeader("Allegati")
+                        VehicleAttachmentsSection(vehicleId: vehicleId, familyId: familyId)
                     }
                     .padding()
                 }
@@ -246,10 +272,12 @@ struct VehicleDetailView: View {
 
     private func deleteVehicleAsync() async {
         guard let v = vehicle else { return }
+        VehicleAttachmentService.shared.deleteAllForVehicle(vehicleId: v.id, familyId: familyId, modelContext: modelContext)
         await VehicleReminderService.shared.cancelAll(vehicleId: v.id)
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         for ev in events where ev.vehicleId == v.id && !ev.isDeleted {
+            VehicleAttachmentService.shared.deleteAllForEvent(eventId: ev.id, familyId: familyId, modelContext: modelContext)
             ev.isDeleted = true
             ev.updatedAt = now
             ev.updatedBy = uid

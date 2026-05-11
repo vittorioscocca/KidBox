@@ -15,6 +15,10 @@ struct HomeItemFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Id stabile per allegati prima del primo salvataggio.
+    @State private var attachmentHomeItemId: String
+    @State private var saveCompleted = false
+
     @State private var name: String = ""
     @State private var categoryRaw: String = "appliance"
     @State private var brand: String = ""
@@ -46,6 +50,12 @@ struct HomeItemFormView: View {
         ("Contratto", "contract"),
         ("Altro", "other"),
     ]
+
+    init(familyId: String, existing: KBHomeItem?) {
+        self.familyId = familyId
+        self.existing = existing
+        _attachmentHomeItemId = State(initialValue: existing?.id ?? UUID().uuidString)
+    }
 
     var body: some View {
         NavigationStack {
@@ -81,6 +91,9 @@ struct HomeItemFormView: View {
                     TextEditor(text: $notes)
                         .frame(minHeight: 80)
                 } header: { Text("Note") }
+                Section {
+                    HomeItemAttachmentsSection(homeItemId: attachmentHomeItemId, familyId: familyId)
+                } header: { Text("Allegati") }
             }
             .scrollContentBackground(.hidden)
             .background(backgroundColor)
@@ -108,10 +121,20 @@ struct HomeItemFormView: View {
                 if let m = e.servicePeriodMonths { hasPeriod = true; serviceMonths = m }
                 notes = e.notes ?? ""
             }
+            .onDisappear {
+                if existing == nil && !saveCompleted {
+                    HomeAttachmentService.shared.deleteAllForHomeItem(
+                        homeItemId: attachmentHomeItemId,
+                        familyId: familyId,
+                        modelContext: modelContext
+                    )
+                }
+            }
         }
     }
 
     private func save() {
+        saveCompleted = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -137,6 +160,7 @@ struct HomeItemFormView: View {
             SyncCenter.shared.enqueueHomeItemUpsert(itemId: ex.id, familyId: familyId, modelContext: modelContext)
         } else {
             let row = KBHomeItem(
+                id: attachmentHomeItemId,
                 familyId: familyId,
                 name: n,
                 categoryRaw: categoryRaw,

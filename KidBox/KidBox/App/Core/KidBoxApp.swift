@@ -108,6 +108,8 @@ struct KidBoxApp: App {
                     .task {
                         TreatmentAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         VisitAttachmentService.shared.start(modelContext: modelContainer.mainContext)
+                        VehicleAttachmentService.shared.start(modelContext: modelContainer.mainContext)
+                        HomeAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         ExpenseAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         await OCRRecoveryMigration.runIfNeeded(modelContext: modelContainer.mainContext)
 #if DEBUG

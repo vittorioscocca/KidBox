@@ -64,6 +64,7 @@ final class PlanningAIChatViewModel: ObservableObject {
     let pets:              [KBPet]
     let petEvents:         [KBPetEvent]
     let homeItems:         [KBHomeItem]
+    let housePayments:     [KBHousePayment]
     let vehicles:          [KBVehicle]
     let vehicleEvents:     [KBVehicleEvent]
     
@@ -123,6 +124,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         pets:                   [KBPet]           = [],
         petEvents:              [KBPetEvent]      = [],
         homeItems:              [KBHomeItem]      = [],
+        housePayments:          [KBHousePayment] = [],
         vehicles:               [KBVehicle]       = [],
         vehicleEvents:          [KBVehicleEvent]  = [],
         modelContext:           ModelContext
@@ -155,6 +157,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         self.pets                   = pets
         self.petEvents              = petEvents
         self.homeItems              = homeItems
+        self.housePayments          = housePayments
         self.vehicles               = vehicles
         self.vehicleEvents          = vehicleEvents
         self.modelContext           = modelContext
@@ -169,7 +172,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         treatments=\(activeTreatments.count) \
         docs=\(recentDocuments.count) \
         wallet=\(recentWalletTickets.count) \
-        pets=\(pets.count) homeItems=\(homeItems.count) vehicles=\(vehicles.count)
+        pets=\(pets.count) homeItems=\(homeItems.count) housePayments=\(housePayments.count) vehicles=\(vehicles.count)
         """)
     }
     
@@ -210,6 +213,7 @@ final class PlanningAIChatViewModel: ObservableObject {
                     pets:                   pets,
                     petEvents:              petEvents,
                     homeItems:              homeItems,
+                    housePayments:          housePayments,
                     vehicles:               vehicles,
                     vehicleEvents:          vehicleEvents,
                     children:               children,

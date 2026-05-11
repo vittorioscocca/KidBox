@@ -15,6 +15,9 @@ struct HousePaymentFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
+    @State private var attachmentPaymentId: String
+    @State private var saveCompleted = false
+
     @State private var name: String = ""
     @State private var typeRaw: String = KidBoxHousePaymentType.bolletta.rawValue
     @State private var subtypeRaw: String = ""
@@ -47,6 +50,12 @@ struct HousePaymentFormView: View {
         ("IMU", "IMU"), ("TARI", "TARI"), ("Dichiarazione redditi", "dichiarazione redditi"),
         ("Bollo auto", "bollo auto"), ("Altre", "altre"),
     ]
+
+    init(familyId: String, existing: KBHousePayment?) {
+        self.familyId = familyId
+        self.existing = existing
+        _attachmentPaymentId = State(initialValue: existing?.id ?? UUID().uuidString)
+    }
 
     var body: some View {
         NavigationStack {
@@ -125,6 +134,10 @@ struct HousePaymentFormView: View {
                 } header: { Text("Note") }
 
                 Section {
+                    HousePaymentAttachmentsSection(paymentId: attachmentPaymentId, familyId: familyId)
+                } header: { Text("Allegati") }
+
+                Section {
                     Toggle("Promemoria (3 giorni prima)", isOn: $reminderOn)
                 }
             }
@@ -157,6 +170,15 @@ struct HousePaymentFormView: View {
                 fornitore = e.fornitore ?? ""
                 note = e.note ?? ""
                 reminderOn = e.reminderOn
+            }
+            .onDisappear {
+                if existing == nil && !saveCompleted {
+                    HomeAttachmentService.shared.deleteAllForHousePayment(
+                        paymentId: attachmentPaymentId,
+                        familyId: familyId,
+                        modelContext: modelContext
+                    )
+                }
             }
         }
     }
@@ -196,6 +218,7 @@ struct HousePaymentFormView: View {
     }
 
     private func save() {
+        saveCompleted = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -223,6 +246,7 @@ struct HousePaymentFormView: View {
             Task { await HousePaymentReminderService.shared.scheduleNext(for: ex) }
         } else {
             let row = KBHousePayment(
+                id: attachmentPaymentId,
                 familyId: familyId,
                 name: n,
                 typeRaw: typeRaw,

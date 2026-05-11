@@ -33,6 +33,15 @@ struct VehicleFormView: View {
     @State private var serviceDate = Date()
     @State private var kmText: String = ""
     @State private var notes: String = ""
+    /// Id stabile per allegati (nuovo veicolo = UUID assegnato all’apertura del form).
+    @State private var attachmentVehicleId: String
+    @State private var saveCompleted = false
+
+    init(familyId: String, existing: KBVehicle?) {
+        self.familyId = familyId
+        self.existing = existing
+        _attachmentVehicleId = State(initialValue: existing?.id ?? UUID().uuidString)
+    }
 
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -86,6 +95,9 @@ struct VehicleFormView: View {
                     TextEditor(text: $notes)
                         .frame(minHeight: 80)
                 } header: { Text("Note") }
+                Section {
+                    VehicleAttachmentsSection(vehicleId: attachmentVehicleId, familyId: familyId)
+                } header: { Text("Allegati") }
             }
             .scrollContentBackground(.hidden)
             .background(backgroundColor)
@@ -117,10 +129,20 @@ struct VehicleFormView: View {
                 if let k = v.currentKm { kmText = "\(k)" }
                 notes = v.notes ?? ""
             }
+            .onDisappear {
+                if existing == nil && !saveCompleted {
+                    VehicleAttachmentService.shared.deleteAllForVehicle(
+                        vehicleId: attachmentVehicleId,
+                        familyId: familyId,
+                        modelContext: modelContext
+                    )
+                }
+            }
         }
     }
 
     private func save() {
+        saveCompleted = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -153,6 +175,7 @@ struct VehicleFormView: View {
             Task { await VehicleReminderService.shared.scheduleReminders(for: ex) }
         } else {
             let v = KBVehicle(
+                id: attachmentVehicleId,
                 familyId: familyId,
                 name: n,
                 licensePlate: licensePlate.trimmedNil,

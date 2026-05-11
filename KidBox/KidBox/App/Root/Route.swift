@@ -95,5 +95,6 @@ enum Route: Hashable {
     // MARK: - Garage
     case vehiclesHome(familyId: String)
     case vehicleDetail(familyId: String, vehicleId: String)
+    case vehicleEventsList(familyId: String, vehicleId: String)
     case vehicleEventDetail(familyId: String, vehicleId: String, eventId: String)
 }

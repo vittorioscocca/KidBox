@@ -23,6 +23,15 @@ struct VehicleEventFormView: View {
     @State private var costText: String = ""
     @State private var garage: String = ""
     @State private var notes: String = ""
+    @State private var attachmentEventId: String
+    @State private var saveCompleted = false
+
+    init(familyId: String, vehicleId: String, existing: KBVehicleEvent?) {
+        self.familyId = familyId
+        self.vehicleId = vehicleId
+        self.existing = existing
+        _attachmentEventId = State(initialValue: existing?.id ?? UUID().uuidString)
+    }
 
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -66,6 +75,9 @@ struct VehicleEventFormView: View {
                     TextEditor(text: $notes)
                         .frame(minHeight: 80)
                 } header: { Text("Note") }
+                Section {
+                    VehicleEventAttachmentsSection(eventId: attachmentEventId, familyId: familyId)
+                } header: { Text("Allegati") }
             }
             .scrollContentBackground(.hidden)
             .background(backgroundColor)
@@ -89,10 +101,20 @@ struct VehicleEventFormView: View {
                 garage = e.garageName ?? ""
                 notes = e.notes ?? ""
             }
+            .onDisappear {
+                if existing == nil && !saveCompleted {
+                    VehicleAttachmentService.shared.deleteAllForEvent(
+                        eventId: attachmentEventId,
+                        familyId: familyId,
+                        modelContext: modelContext
+                    )
+                }
+            }
         }
     }
 
     private func save() {
+        saveCompleted = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -117,6 +139,7 @@ struct VehicleEventFormView: View {
             SyncCenter.shared.enqueueVehicleEventUpsert(eventId: ex.id, familyId: familyId, modelContext: modelContext)
         } else {
             let ev = KBVehicleEvent(
+                id: attachmentEventId,
                 familyId: familyId,
                 vehicleId: vehicleId,
                 title: t,

@@ -495,6 +495,8 @@ final class AppCoordinator: ObservableObject {
             VehiclesHomeView(familyId: familyId)
         case .vehicleDetail(let familyId, let vehicleId):
             VehicleDetailView(familyId: familyId, vehicleId: vehicleId)
+        case .vehicleEventsList(let familyId, let vehicleId):
+            VehicleEventsListView(familyId: familyId, vehicleId: vehicleId)
         case .vehicleEventDetail(let familyId, let vehicleId, let eventId):
             VehicleEventDetailView(familyId: familyId, vehicleId: vehicleId, eventId: eventId)
         }

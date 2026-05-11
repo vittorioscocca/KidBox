@@ -32,6 +32,28 @@ enum KBAppEvent {
         expenseTitle: String,
         familyId:     String
     )
+    case vehicleAttachmentPending(
+        urls: [URL],
+        vehicleId: String,
+        familyId: String
+    )
+    case vehicleEventAttachmentPending(
+        urls: [URL],
+        eventId: String,
+        familyId: String
+    )
+    /// Casa — elementi (elettrodomestici, impianti, …)
+    case homeItemAttachmentPending(
+        urls: [URL],
+        homeItemId: String,
+        familyId: String
+    )
+    /// Casa — scadenze & pagamenti
+    case housePaymentAttachmentPending(
+        urls: [URL],
+        paymentId: String,
+        familyId: String
+    )
 }
 
 // MARK: - Bus
