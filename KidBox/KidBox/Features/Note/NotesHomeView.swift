@@ -48,7 +48,9 @@ struct NotesHomeView: View {
     
     private var sectioned: [(NoteSection, [KBNote])] {
         let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let base = notes.filter { !$0.isDeleted }
+        let base = notes.filter {
+            !$0.isDeleted && $0.isVisible(to: currentUid)
+        }
         let filtered = q.isEmpty ? base : base.filter {
             $0.title.lowercased().contains(q) || $0.body.lowercased().contains(q)
         }
@@ -82,6 +84,10 @@ struct NotesHomeView: View {
     
     private var allVisibleIds: [String] {
         sectioned.flatMap { $0.1 }.map { $0.id }
+    }
+
+    private var currentUid: String? {
+        Auth.auth().currentUser?.uid
     }
     
     init(familyId: String) {
@@ -187,7 +193,7 @@ struct NotesHomeView: View {
     
     @ViewBuilder
     private var contentView: some View {
-        if notes.isEmpty {
+        if notes.filter({ !$0.isDeleted && $0.isVisible(to: currentUid) }).isEmpty {
             NotesEmptyStateView { createNewNote() }
                 .background(backgroundColor)
         } else if sectioned.isEmpty {

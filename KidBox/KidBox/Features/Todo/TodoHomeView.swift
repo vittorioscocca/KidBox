@@ -65,10 +65,24 @@ struct TodoHomeView: View {
     
     private var familyId: String { activeFamily?.id ?? "" }
     private var childId: String { activeChild?.id ?? "" }
+
+    private var currentUid: String? { Auth.auth().currentUser?.uid }
+    
+    private var todosInFamilyChild: [KBTodoItem] {
+        guard !familyId.isEmpty, !childId.isEmpty else { return [] }
+        return allTodos.filter { $0.familyId == familyId && $0.childId == childId && !$0.isDeleted }
+    }
     
     private var visibleLists: [KBTodoList] {
         guard !familyId.isEmpty, !childId.isEmpty else { return [] }
-        return allLists.filter { $0.familyId == familyId && $0.childId == childId && !$0.isDeleted }
+        return allLists.filter { list in
+            guard list.familyId == familyId && list.childId == childId && !list.isDeleted else { return false }
+            return TodoListExposure.memberCanSeeListRow(
+                listId: list.id,
+                todos: todosInFamilyChild,
+                currentUid: currentUid,
+            )
+        }
     }
     
     private var visibleTodos: [KBTodoItem] {
@@ -76,7 +90,8 @@ struct TodoHomeView: View {
         return allTodos.filter {
             $0.familyId == familyId &&
             $0.childId == childId &&
-            !$0.isDeleted
+            !$0.isDeleted &&
+            $0.isVisible(to: currentUid)
         }
     }
     

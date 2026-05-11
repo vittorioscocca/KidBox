@@ -166,6 +166,7 @@ final class TreatmentAttachmentService {
             storagePath: storagePath,
             downloadURL: nil,
             notes: TreatmentAttachmentTag.make(treatmentId),
+            createdBy: uid.trimmingCharacters(in: .whitespacesAndNewlines),
             updatedBy: uid,
             createdAt: now,
             updatedAt: now,
@@ -224,6 +225,7 @@ final class TreatmentAttachmentService {
         familyId:     String,
         storagePath:  String,
         fileName:     String,
+        notes:        String? = nil,
         modelContext: ModelContext
     ) async {
         guard !storagePath.isEmpty else { return }
@@ -255,8 +257,13 @@ final class TreatmentAttachmentService {
             
             let encrypted = try Data(contentsOf: tmpURL)
             let userId    = Auth.auth().currentUser?.uid ?? "local"
-            let decrypted = try DocumentCryptoService.decrypt(
-                encrypted, familyId: familyId, userId: userId)
+            let decrypted = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                encrypted,
+                storagePath: storagePath,
+                notes: notes,
+                familyId: familyId,
+                userId: userId
+            )
             
             let rel = try DocumentLocalCache.write(
                 familyId: familyId, docId: docId,
@@ -381,17 +388,25 @@ final class TreatmentAttachmentService {
     ) {
         let userId = Auth.auth().currentUser?.uid ?? "local"
         
-        guard FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) != nil else {
+        guard DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath)
+                || FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) != nil else {
             onKeyMissing(); return
         }
         
         if let localPath = doc.localPath, !localPath.isEmpty,
            DocumentLocalCache.exists(localPath: localPath) != nil {
             do {
-                let plaintext = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                let cipherData = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                let plainData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                    cipherData,
+                    storagePath: doc.storagePath,
+                    notes: doc.notes,
+                    familyId: doc.familyId,
+                    userId: userId
+                )
                 let tempURL = FileManager.default.temporaryDirectory
                     .appendingPathComponent("\(doc.id)_\(doc.fileName)")
-                try plaintext.write(to: tempURL, options: .atomic)
+                try plainData.write(to: tempURL, options: .atomic)
                 onURL(tempURL)
             } catch {
                 isCryptoKeyError(error) ? onKeyMissing() : onError("Apertura fallita: \(error.localizedDescription)")
@@ -433,8 +448,11 @@ final class TreatmentAttachmentService {
         }
         
         let encrypted = try Data(contentsOf: tmpURL)
-        let decrypted = try DocumentCryptoService.decrypt(
-            encrypted, familyId: doc.familyId,
+        let decrypted = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+            encrypted,
+            storagePath: doc.storagePath,
+            notes: doc.notes,
+            familyId: doc.familyId,
             userId: Auth.auth().currentUser?.uid ?? "local"
         )
         let rel = try DocumentLocalCache.write(

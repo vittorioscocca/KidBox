@@ -363,6 +363,8 @@ final class FamilyJoinService {
                 existing.isDeleted = t.isDeleted
                 existing.updatedAt = t.updatedAt ?? Date()
                 existing.updatedBy = t.updatedBy ?? fallbackUpdatedBy
+                existing.visibilityScope = KBVisibilityScope.normalized(t.visibilityScope)
+                existing.visibilityMemberIds = t.visibilityMemberIds ?? []
             } else {
                 let todo = KBTodoItem(
                     id: t.id,
@@ -380,6 +382,8 @@ final class FamilyJoinService {
                     updatedAt: t.updatedAt ?? Date(),
                     isDeleted: t.isDeleted
                 )
+                todo.visibilityScope = KBVisibilityScope.normalized(t.visibilityScope)
+                todo.visibilityMemberIds = t.visibilityMemberIds ?? []
                 modelContext.insert(todo)
             }
         }

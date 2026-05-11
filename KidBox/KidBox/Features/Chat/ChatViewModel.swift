@@ -394,6 +394,7 @@ final class ChatViewModel: NSObject, ObservableObject {
     private func applyUpsert(dto: RemoteChatMessageDTO, modelContext: ModelContext) {
         let mid          = dto.id
         let myUID        = Auth.auth().currentUser?.uid ?? ""
+        let msgType      = KBChatMessageType(rawValue: dto.typeRaw) ?? .text
         let resolvedText: String?
         if let enc = dto.textEnc, !enc.isEmpty, !myUID.isEmpty {
             // Try on-device decryption; if it fails fall back to the plain-text field so we
@@ -404,6 +405,11 @@ final class ChatViewModel: NSObject, ObservableObject {
         } else {
             resolvedText = dto.text // fallback legacy plaintext
         }
+        let textForModel: String? = {
+            guard let t = resolvedText else { return nil }
+            if msgType == .document { return ChatAttachmentFileNaming.sanitizeDocumentDisplayText(t) }
+            return t
+        }()
         let deletedForMe = !myUID.isEmpty && dto.deletedFor.contains(myUID)
         let desc = FetchDescriptor<KBChatMessage>(predicate: #Predicate { $0.id == mid })
         if let existing = try? modelContext.fetch(desc).first {
@@ -411,7 +417,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             existing.senderName    = dto.senderName
             // Only update text when we actually have a resolved value — never overwrite a
             // visible message with nil just because decryption or the DTO had no text field.
-            if let resolved = resolvedText { existing.text = resolved }
+            if let resolved = textForModel { existing.text = resolved }
             existing.editedAt      = dto.editedAt
             existing.mediaURL      = dto.mediaURL
             if let grpURLs  = dto.mediaGroupURLsJSON  { existing.mediaGroupURLsJSON  = grpURLs }
@@ -441,8 +447,8 @@ final class ChatViewModel: NSObject, ObservableObject {
                 id: dto.id, familyId: dto.familyId,
                 senderId: dto.senderId,
                 senderName: dto.senderName,
-                type: KBChatMessageType(rawValue: dto.typeRaw) ?? .text,
-                text: resolvedText,
+                type: msgType,
+                text: textForModel,
                 mediaStoragePath: dto.mediaStoragePath,
                 mediaURL: dto.mediaURL,
                 mediaDurationSeconds: dto.mediaDurationSeconds,

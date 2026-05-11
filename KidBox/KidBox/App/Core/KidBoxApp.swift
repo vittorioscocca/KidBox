@@ -28,6 +28,14 @@ struct KidBoxApp: App {
         let container = ModelContainerProvider.makeContainer(inMemory: false)
         self.modelContainer = container
         _appDelegate.wrappedValue.modelContainer = container
+        if ModelContainerProvider.didQuarantineCorruptedStoreThisLaunch {
+            KBLog.sync.kbInfo("SwiftData store was quarantined — scheduling bootstrap + flushGlobal")
+            Task { @MainActor in
+                let ctx = container.mainContext
+                await FamilyBootstrapService(modelContext: ctx).bootstrapIfNeeded()
+                SyncCenter.shared.flushGlobal(modelContext: ctx)
+            }
+        }
         KBLog.persistence.kbInfo("Starting migrations (best effort)")
         Task {
             do {
@@ -185,7 +193,11 @@ struct KidBoxApp: App {
                                 BadgeManager.shared.clearCalendar()
                                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
                             }
-                            coordinator.navigate(to: .calendar(familyId: familyId, highlightEventId: eventId))
+                            coordinator.openCalendarEventFromPush(
+                                familyId: familyId,
+                                eventId: eventId,
+                                modelContext: modelContainer.mainContext
+                            )
                             NotificationManager.shared.consumeDeepLink()
                             
                         case .pediatricVisit(let familyId, let childId, let visitId):

@@ -37,7 +37,9 @@ final class CalendarRemoteStore {
             "createdAt":     Timestamp(date: dto.createdAt),
             "updatedAt":     Timestamp(date: dto.updatedAt),
             "updatedBy":     dto.updatedBy,
-            "createdBy":     dto.createdBy
+            "createdBy":     dto.createdBy,
+            "visibilityScope": KBVisibilityScope.normalized(dto.visibilityScope),
+            "visibilityMemberIds": dto.visibilityMemberIds
         ]
         
         // Optional fields – delete key when nil so Firestore stays clean
@@ -111,6 +113,8 @@ final class CalendarRemoteStore {
             categoryRaw:     d["categoryRaw"] as? String ?? KBEventCategory.family.rawValue,
             recurrenceRaw:   d["recurrenceRaw"]     as? String ?? KBEventRecurrence.none.rawValue,
             reminderMinutes: d["reminderMinutes"]   as? Int,
+            visibilityScope: KBVisibilityScope.normalized(d["visibilityScope"] as? String),
+            visibilityMemberIds: d["visibilityMemberIds"] as? [String] ?? [],
             isDeleted:       d["isDeleted"]         as? Bool   ?? false,
             createdAt:       ts("createdAt") ?? Date(),
             updatedAt:       ts("updatedAt") ?? Date(),

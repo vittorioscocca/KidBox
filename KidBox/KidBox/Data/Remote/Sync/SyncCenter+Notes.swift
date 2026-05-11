@@ -181,6 +181,8 @@ extension SyncCenter {
                         
                         if let ub = dto.updatedBy, !ub.isEmpty { existing.updatedBy = ub }
                         if let ubn = dto.updatedByName, !ubn.isEmpty { existing.updatedByName = ubn }
+                        existing.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
+                        existing.visibilityMemberIds = dto.visibilityMemberIds ?? []
                         
                         existing.syncState = .synced
                         existing.lastSyncError = nil
@@ -204,6 +206,8 @@ extension SyncCenter {
                             updatedAt: now,
                             isDeleted: false
                         )
+                        note.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
+                        note.visibilityMemberIds = dto.visibilityMemberIds ?? []
                         
                         note.syncState = .synced
                         note.lastSyncError = nil

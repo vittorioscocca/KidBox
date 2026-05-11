@@ -40,6 +40,11 @@ struct TodoEditView: View {
     @State private var assignedTo: String? = nil
     @State private var showAssigneePicker = false
     @State private var errorMessage: String? = nil
+
+    @State private var isVisibilitySheetPresented = false
+    @State private var showVisibilityLockedAlert = false
+    @State private var selectedVisibilityScope = KBVisibilityScope.family
+    @State private var selectedVisibilityMemberIds: Set<String> = []
     
     @State private var showReminderAlert = false
     @State private var wantsReminder = false   // decisione utente per questo edit
@@ -84,6 +89,17 @@ struct TodoEditView: View {
     }
     
     private var editingTodo: KBTodoItem? { editTodos.first }
+
+    private var isNewTodo: Bool { todoIdToEdit == nil }
+
+    private var canEditVisibility: Bool {
+        if isNewTodo { return true }
+        guard let uid = currentUID else { return false }
+        if let cid = editingTodo?.createdBy?.trimmingCharacters(in: .whitespacesAndNewlines), !cid.isEmpty {
+            return cid == uid
+        }
+        return true
+    }
     
     private var familyMembers: [KBFamilyMember] {
         members.filter { $0.familyId == familyId && !$0.isDeleted }
@@ -118,6 +134,30 @@ struct TodoEditView: View {
                     Section {
                         Text(errorMessage).foregroundStyle(.red)
                     }
+                }
+                
+                Section {
+                    Button {
+                        if canEditVisibility {
+                            isVisibilitySheetPresented = true
+                        } else {
+                            showVisibilityLockedAlert = true
+                        }
+                    } label: {
+                        HStack {
+                            Text(KBVisibilityScope.chipLabel(for: selectedVisibilityScope))
+                                .font(.custom("Nunito", size: 14))
+                                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(red: 0.949, green: 0.941, blue: 0.922))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .listRowBackground(Color.clear)
                 }
                 
                 Section {
@@ -222,6 +262,10 @@ struct TodoEditView: View {
             }
             .onAppear {
                 KBLog.app.kbInfo("TodoEditView familyMembers: \(familyMembers.map { m in "\(m.userId) → \(m.displayName ?? "NIL")" }.joined(separator: ", "))")
+                if todoIdToEdit == nil {
+                    selectedVisibilityScope = KBVisibilityScope.family
+                    selectedVisibilityMemberIds = []
+                }
                 hydrateIfEditing()
                 if todoIdToEdit == nil && !prefillTitle.isEmpty {
                     title = prefillTitle
@@ -245,6 +289,23 @@ struct TodoEditView: View {
                 members: otherMembers
             )
         }
+        .sheet(isPresented: $isVisibilitySheetPresented) {
+            VisibilityPickerSheet(
+                selectedScope: $selectedVisibilityScope,
+                selectedMemberIds: $selectedVisibilityMemberIds,
+                members: visibilitySelectableMembers,
+                currentUid: currentUID,
+                scopeSectionTitle: "Chi può vedere questo to-do"
+            ) { scope, ids in
+                selectedVisibilityScope = scope
+                selectedVisibilityMemberIds = ids
+            }
+        }
+        .alert("Visibilità bloccata", isPresented: $showVisibilityLockedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Solo chi ha creato il to-do può modificare la visibilità.")
+        }
     }
     
     private var meMember: KBFamilyMember? {
@@ -257,6 +318,10 @@ struct TodoEditView: View {
         return familyMembers
             .filter { $0.userId != uid }
             .sorted { ($0.displayName ?? "") < ($1.displayName ?? "") }
+    }
+
+    private var visibilitySelectableMembers: [KBFamilyMember] {
+        familyMembers.filter { $0.userId != currentUID }
     }
     
     // MARK: - Hydrate
@@ -295,6 +360,8 @@ struct TodoEditView: View {
         isUrgent      = (t.priorityRaw ?? 0) == 1
         assignedTo    = t.assignedTo
         wantsReminder = (t.dueAt != nil) && t.reminderEnabled
+        selectedVisibilityScope = KBVisibilityScope.normalized(t.visibilityScope)
+        selectedVisibilityMemberIds = Set(t.visibilityMemberIds ?? [])
     }
     
     // MARK: - Save
@@ -348,6 +415,12 @@ struct TodoEditView: View {
             existing.updatedAt = now
             existing.syncState = .pendingUpsert
             existing.lastSyncError = nil
+            if canEditVisibility {
+                existing.visibilityScope = selectedVisibilityScope
+                existing.visibilityMemberIds = selectedVisibilityScope == KBVisibilityScope.members
+                    ? Array(selectedVisibilityMemberIds).sorted()
+                    : []
+            }
             
             // ✅ Reminder logic
             if let due = existing.dueAt {
@@ -401,6 +474,10 @@ struct TodoEditView: View {
         local.assignedTo = assignedTo
         local.createdBy = uid
         local.priorityRaw = isUrgent ? 1 : 0
+        local.visibilityScope = selectedVisibilityScope
+        local.visibilityMemberIds = selectedVisibilityScope == KBVisibilityScope.members
+        ? Array(selectedVisibilityMemberIds).sorted()
+        : []
         local.syncState = .pendingUpsert
         local.lastSyncError = nil
         

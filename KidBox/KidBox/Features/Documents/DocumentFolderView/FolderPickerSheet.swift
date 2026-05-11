@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 /// Sheet per scegliere una cartella destinazione per Sposta / Copia.
 ///
@@ -74,10 +75,26 @@ struct FolderPickerSheet: View {
     
     private func loadFolders() {
         let fid = familyId
-        let desc = FetchDescriptor<KBDocumentCategory>(
+        let catDesc = FetchDescriptor<KBDocumentCategory>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
         )
-        allFolders = (try? modelContext.fetch(desc)) ?? []
+        let docDesc = FetchDescriptor<KBDocument>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        guard let cats = try? modelContext.fetch(catDesc),
+              let docs = try? modelContext.fetch(docDesc) else {
+            allFolders = []
+            return
+        }
+        let viewerUid = Auth.auth().currentUser?.uid
+        allFolders = cats.filter {
+            DocumentFolderSubtreeVisibility.folderIsBrowsable(
+                folder: $0,
+                allCategories: cats,
+                allDocuments: docs,
+                viewerUid: viewerUid
+            )
+        }
     }
 }
 

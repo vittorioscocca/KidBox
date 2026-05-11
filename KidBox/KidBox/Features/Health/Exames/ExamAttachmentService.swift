@@ -78,6 +78,7 @@ final class ExamAttachmentService {
             storagePath: storagePath,
             downloadURL: nil,
             notes:       ExamAttachmentTag.make(examId),
+            createdBy:   uid.trimmingCharacters(in: .whitespacesAndNewlines),
             updatedBy:   uid,
             createdAt:   now,
             updatedAt:   now,
@@ -189,11 +190,22 @@ final class ExamAttachmentService {
             let ref = Storage.storage().reference(withPath: doc.storagePath)
             let encryptedData = try await ref.data(maxSize: 50 * 1024 * 1024) // 50 MB max
             
-            // 2. Decifra
-            guard let clearData = try? DocumentCryptoService.decrypt(
-                encryptedData, familyId: doc.familyId, userId: uid
-            ) else {
+            let clearData: Data
+            do {
+                clearData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                    encryptedData,
+                    storagePath: doc.storagePath,
+                    notes: doc.notes,
+                    familyId: doc.familyId,
+                    userId: uid
+                )
+            } catch DocumentCryptoService.CryptoError.missingFamilyKey {
                 await MainActor.run { onKeyMissing() }
+                return
+            } catch {
+                await MainActor.run {
+                    onError("Download fallito: \(error.localizedDescription)")
+                }
                 return
             }
             

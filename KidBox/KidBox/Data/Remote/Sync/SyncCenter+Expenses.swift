@@ -274,6 +274,7 @@ extension SyncCenter {
             familyId:     familyId,
             storagePath:  doc.storagePath,
             fileName:     doc.fileName,
+            notes:        doc.notes,
             modelContext: modelContext
         )
     }

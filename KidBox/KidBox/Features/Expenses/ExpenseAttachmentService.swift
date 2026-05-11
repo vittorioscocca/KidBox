@@ -267,6 +267,7 @@ final class ExpenseAttachmentService {
             storagePath: storagePath,
             downloadURL: nil,
             notes: ExpenseAttachmentTag.make(expenseId),
+            createdBy: uid.trimmingCharacters(in: .whitespacesAndNewlines),
             updatedBy: uid,
             createdAt: now,
             updatedAt: now,
@@ -481,6 +482,7 @@ final class ExpenseAttachmentService {
         familyId: String,
         storagePath: String,
         fileName: String,
+        notes: String? = nil,
         modelContext: ModelContext
     ) async {
         KBLog.storage.kbInfo("Download remote expense attachment docId=\(docId) familyId=\(familyId) fileName=\(fileName)")
@@ -490,6 +492,7 @@ final class ExpenseAttachmentService {
             familyId: familyId,
             storagePath: storagePath,
             fileName: fileName,
+            notes: notes,
             modelContext: modelContext
         )
     }

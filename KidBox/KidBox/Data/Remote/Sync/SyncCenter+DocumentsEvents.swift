@@ -224,6 +224,15 @@ extension SyncCenter {
                         }
                         local.updatedAt = remoteStamp
                         local.updatedBy = dto.updatedBy ?? local.updatedBy
+                        local.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
+                        local.visibilityMemberIds = dto.visibilityMemberIds
+                        if dto.createdBy.isEmpty {
+                            if local.createdBy.isEmpty {
+                                local.createdBy = (dto.updatedBy ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                            }
+                        } else {
+                            local.createdBy = dto.createdBy
+                        }
                         local.syncState = .synced
                         local.lastSyncError = nil
                         
@@ -237,12 +246,14 @@ extension SyncCenter {
                             let familyId    = local.familyId
                             let storagePath = local.storagePath
                             let fileName    = local.fileName
+                            let notes       = local.notes
                             Task.detached {
                                 await TreatmentAttachmentService.shared.downloadRemoteAttachment(
                                     docId:        docId,
                                     familyId:     familyId,
                                     storagePath:  storagePath,
                                     fileName:     fileName,
+                                    notes:        notes,
                                     modelContext: modelContext
                                 )
                             }
@@ -256,12 +267,14 @@ extension SyncCenter {
                             let familyId    = local.familyId
                             let storagePath = local.storagePath
                             let fileName    = local.fileName
+                            let notes       = local.notes
                             Task.detached {
                                 await VisitAttachmentService.shared.downloadRemoteAttachment(
                                     docId:        docId,
                                     familyId:     familyId,
                                     storagePath:  storagePath,
                                     fileName:     fileName,
+                                    notes:        notes,
                                     modelContext: modelContext
                                 )
                             }
@@ -275,12 +288,14 @@ extension SyncCenter {
                             let familyId    = local.familyId
                             let storagePath = local.storagePath
                             let fileName    = local.fileName
+                            let notes       = local.notes
                             Task.detached {
                                 await TreatmentAttachmentService.shared.downloadRemoteAttachment(
                                     docId:        docId,
                                     familyId:     familyId,
                                     storagePath:  storagePath,
                                     fileName:     fileName,
+                                    notes:        notes,
                                     modelContext: modelContext
                                 )
                             }
@@ -301,12 +316,14 @@ extension SyncCenter {
                             let familyId    = local.familyId
                             let storagePath = local.storagePath
                             let fileName    = local.fileName
+                            let notes       = local.notes
                             Task.detached {
                                 await ExpenseAttachmentService.shared.downloadRemoteAttachment(
                                     docId:        docId,
                                     familyId:     familyId,
                                     storagePath:  storagePath,
                                     fileName:     fileName,
+                                    notes:        notes,
                                     modelContext: modelContext
                                 )
                             }
@@ -448,7 +465,10 @@ extension SyncCenter {
                 extractionStatusRaw: doc.extractionStatusRaw,
                 extractionError: doc.extractionError,
                 updatedAt: doc.updatedAt,
-                updatedBy: doc.updatedBy
+                updatedBy: doc.updatedBy,
+                visibilityScope: doc.visibilityScope,
+                visibilityMemberIds: doc.visibilityMemberIds,
+                createdBy: doc.createdBy.trimmingCharacters(in: .whitespacesAndNewlines)
             )
             
             try await remote.upsert(dto: dto)

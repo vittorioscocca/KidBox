@@ -49,6 +49,11 @@ final class KBCalendarEvent {
     /// Tipo dell'oggetto collegato: "visit" | "exam" | "vaccine"
     var linkedHealthItemType: String? = nil
     
+    // ── Visibility (stesso modello di KBNote / KBTodoItem) ───────────────────
+    /// `"family"` | `"members"` | `"private"` (solo creatore) — default `"family"`.
+    var visibilityScope: String = KBVisibilityScope.family
+    var visibilityMemberIds: [String] = []
+    
     // ── Sync bookkeeping ──────────────────────────────────────────────────────
     var isDeleted: Bool
     var createdAt: Date
@@ -90,6 +95,8 @@ final class KBCalendarEvent {
         category:         KBEventCategory  = .family,
         recurrence:       KBEventRecurrence = .none,
         reminderMinutes:  Int?         = nil,
+        visibilityScope:  String       = KBVisibilityScope.family,
+        visibilityMemberIds: [String] = [],
         isDeleted:        Bool         = false,
         createdAt:        Date         = Date(),
         updatedAt:        Date         = Date(),
@@ -108,6 +115,8 @@ final class KBCalendarEvent {
         self.categoryRaw     = category.rawValue
         self.recurrenceRaw   = recurrence.rawValue
         self.reminderMinutes = reminderMinutes
+        self.visibilityScope = KBVisibilityScope.normalized(visibilityScope)
+        self.visibilityMemberIds = visibilityMemberIds
         self.isDeleted       = isDeleted
         self.createdAt       = createdAt
         self.updatedAt       = updatedAt
@@ -115,6 +124,16 @@ final class KBCalendarEvent {
         self.createdBy       = createdBy
         self.syncStateRaw    = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError   = nil
+    }
+    
+    func isVisible(to currentUid: String?) -> Bool {
+        KBVisibilityScope.isVisible(
+            scope: visibilityScope,
+            memberIds: visibilityMemberIds,
+            createdBy: createdBy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? nil : createdBy,
+            currentUid: currentUid
+        )
     }
 }
 
@@ -199,8 +218,8 @@ struct KBCalendarEventDTO {
     var categoryRaw:     String
     var recurrenceRaw:   String
     var reminderMinutes: Int?
-    var linkedHealthItemId:   String?
-    var linkedHealthItemType: String?
+    var visibilityScope: String
+    var visibilityMemberIds: [String]
     var isDeleted:       Bool
     var createdAt:       Date
     var updatedAt:       Date

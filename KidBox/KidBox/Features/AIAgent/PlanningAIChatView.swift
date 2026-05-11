@@ -90,8 +90,9 @@ struct PlanningAIChatView: View {
     private var upcomingEvents: [KBCalendarEvent] {
         let now     = Date()
         let horizon = Calendar.current.date(byAdding: .day, value: 14, to: now) ?? now
+        let uid = Auth.auth().currentUser?.uid
         return allCalendarEvents.filter {
-            $0.familyId == familyId && !$0.isDeleted &&
+            $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid) &&
             $0.startDate >= now && $0.startDate <= horizon
         }.sorted { $0.startDate < $1.startDate }
     }
@@ -209,8 +210,9 @@ struct PlanningAIChatView: View {
     // ── Today briefing stats ──────────────────────────────────────
     
     private var todayEvents: [KBCalendarEvent] {
-        allCalendarEvents.filter {
-            $0.familyId == familyId && !$0.isDeleted &&
+        let uid = Auth.auth().currentUser?.uid
+        return allCalendarEvents.filter {
+            $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid) &&
             Calendar.current.isDateInToday($0.startDate)
         }.sorted { $0.startDate < $1.startDate }
     }

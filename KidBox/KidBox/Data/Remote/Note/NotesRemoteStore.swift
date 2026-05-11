@@ -34,6 +34,8 @@ struct NoteDTO {
     
     let updatedBy: String?
     let updatedByName: String?
+    let visibilityScope: String?
+    let visibilityMemberIds: [String]?
 }
 
 enum NoteRemoteChange {
@@ -80,6 +82,8 @@ final class NotesRemoteStore {
             "schemaVersion": 1,
             "titleEnc": titleEnc,
             "bodyEnc": bodyEnc,
+            "visibilityScope": KBVisibilityScope.normalized(note.visibilityScope),
+            "visibilityMemberIds": note.visibilityMemberIds ?? [],
             
             // hard remove legacy plaintext fields (if any)
             "title": FieldValue.delete(),
@@ -167,7 +171,9 @@ final class NotesRemoteStore {
                         createdBy: d["createdBy"] as? String,
                         createdByName: d["createdByName"] as? String,
                         updatedBy: d["updatedBy"] as? String,
-                        updatedByName: d["updatedByName"] as? String
+                        updatedByName: d["updatedByName"] as? String,
+                        visibilityScope: d["visibilityScope"] as? String,
+                        visibilityMemberIds: d["visibilityMemberIds"] as? [String]
                     )
                     
                     switch diff.type {

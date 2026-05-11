@@ -16,6 +16,10 @@ final class KBNote {
     
     var title: String
     var body: String
+    /// Opzionale per migrazione SwiftData: `nil` → comportamento come tutta la famiglia.
+    var visibilityScope: String?
+    /// Opzionale per migrazione SwiftData: ai record precedenti può mancare nel DB (`nil` = nessun membro aggiunto).
+    var visibilityMemberIds: [String]?
     
     // Autore / ultimo editor (no email!)
     var createdBy: String
@@ -41,6 +45,8 @@ final class KBNote {
         familyId: String,
         title: String = "",
         body: String = "",
+        visibilityScope: String = KBVisibilityScope.family,
+        visibilityMemberIds: [String] = [],
         createdBy: String,
         createdByName: String,
         updatedBy: String,
@@ -53,6 +59,8 @@ final class KBNote {
         self.familyId = familyId
         self.title = title
         self.body = body
+        self.visibilityScope = visibilityScope
+        self.visibilityMemberIds = visibilityMemberIds
         self.createdBy = createdBy
         self.createdByName = createdByName
         self.updatedBy = updatedBy
@@ -61,5 +69,14 @@ final class KBNote {
         self.updatedAt = updatedAt
         self.isDeleted = isDeleted
         self.syncStateRaw = KBSyncState.synced.rawValue
+    }
+
+    func isVisible(to currentUid: String?) -> Bool {
+        KBVisibilityScope.isVisible(
+            scope: visibilityScope,
+            memberIds: visibilityMemberIds ?? [],
+            createdBy: createdBy.isEmpty ? nil : createdBy,
+            currentUid: currentUid,
+        )
     }
 }

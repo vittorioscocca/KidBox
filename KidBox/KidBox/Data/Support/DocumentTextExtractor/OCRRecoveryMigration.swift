@@ -44,6 +44,7 @@ enum OCRRecoveryMigration {
                 familyId: document.familyId,
                 storagePath: document.storagePath,
                 fileName: document.fileName,
+                notes: document.notes,
                 modelContext: modelContext
             )
         }

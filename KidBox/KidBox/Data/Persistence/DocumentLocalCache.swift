@@ -162,17 +162,20 @@ enum DocumentLocalCache {
             )
         }
         
-        KBLog.storage.kbInfo("Downloading encrypted file from Storage docId=\(doc.id)")
+        KBLog.storage.kbInfo("Downloading document file from Storage docId=\(doc.id)")
         let ref = Storage.storage().reference(withPath: storagePath)
         
-        // ciphertext download
         let encrypted = try await ref.data(maxSize: 30 * 1024 * 1024)
         KBLog.storage.kbDebug("Download OK bytes=\(encrypted.count) docId=\(doc.id)")
         
-        // decrypt
-        KBLog.storage.kbDebug("Decrypting downloaded data docId=\(doc.id)")
-        let decrypted = try DocumentCryptoService.decrypt(encrypted, familyId: doc.familyId, userId: Auth.auth().currentUser?.uid ?? "local")
-        KBLog.storage.kbDebug("Decrypt OK bytes=\(decrypted.count) docId=\(doc.id)")
+        let decrypted = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+            encrypted,
+            storagePath: storagePath,
+            notes: doc.notes,
+            familyId: doc.familyId,
+            userId: Auth.auth().currentUser?.uid ?? "local"
+        )
+        KBLog.storage.kbDebug("Payload ready bytes=\(decrypted.count) docId=\(doc.id)")
         
         // write to TEMP
         let tempDir = FileManager.default.temporaryDirectory

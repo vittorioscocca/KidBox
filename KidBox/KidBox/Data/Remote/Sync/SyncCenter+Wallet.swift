@@ -211,6 +211,9 @@ extension SyncCenter {
                         existing.addToAppleWalletURL = dto.addToAppleWalletURL
                         existing.extractedBarcodeFormat = dto.barcodeFormat
 
+                        existing.visibilityScope = KBWalletTicket.normalizedVisibilityScopeForWallet(dto.visibilityScope)
+                        existing.visibilityMemberIds = dto.visibilityMemberIds ?? []
+
                         existing.isDeleted = false
                         existing.updatedAt = remoteTs
 
@@ -245,6 +248,8 @@ extension SyncCenter {
                             bookingCode: bookingCode,
                             notes: notes,
                             emitter: dto.emitter,
+                            visibilityScope: KBWalletTicket.normalizedVisibilityScopeForWallet(dto.visibilityScope),
+                            visibilityMemberIds: dto.visibilityMemberIds ?? [],
                             pdfStorageURL: dto.pdfStorageURL,
                             pdfFileName: fileName,
                             pdfStorageBytes: dto.pdfStorageBytes,

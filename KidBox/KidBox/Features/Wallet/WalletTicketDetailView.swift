@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import FirebaseAuth
 
 struct WalletTicketDetailView: View {
     let familyId: String
@@ -18,10 +19,16 @@ struct WalletTicketDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Query private var tickets: [KBWalletTicket]
+    @Query private var members: [KBFamilyMember]
+
     @State private var isLoadingPDF = false
     @State private var pdfData: Data?
     @State private var pdfError: String?
     @State private var showPDF = false
+    @State private var isVisibilitySheetPresented = false
+    @State private var showVisibilityLockedAlert = false
+    @State private var visibilitySheetScope = KBVisibilityScope.onlyCreator
+    @State private var visibilitySheetMemberIds: Set<String> = []
 
     private let pdfStore = WalletPDFStore()
 
@@ -29,15 +36,105 @@ struct WalletTicketDetailView: View {
         self.familyId = familyId
         self.ticketId = ticketId
         _tickets = Query(filter: #Predicate<KBWalletTicket> { $0.id == ticketId && $0.isDeleted == false })
+        let fid = familyId
+        _members = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.displayName
+        )
     }
 
     private var ticket: KBWalletTicket? { tickets.first }
 
+    private var currentUid: String? {
+        Auth.auth().currentUser?.uid
+    }
+
+    private var selectableMembers: [KBFamilyMember] {
+        members.filter { $0.userId != currentUid }
+    }
+
+    private func canEditVisibility(for ticket: KBWalletTicket) -> Bool {
+        guard let uid = currentUid else { return false }
+        let cid = ticket.createdBy.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cid.isEmpty { return true }
+        return cid == uid
+    }
+
     var body: some View {
         Group {
             if let ticket {
-                ScrollView {
+                if ticket.isVisible(to: currentUid) {
+                    ticketDetailScroll(ticket)
+                } else {
+                    ContentUnavailableView(
+                        "Biglietto non disponibile",
+                        systemImage: "eye.slash",
+                        description: Text("Non hai accesso a questo biglietto.")
+                    )
+                }
+            } else {
+                missingTicketPlaceholder
+            }
+        }
+        .navigationTitle("Dettaglio biglietto")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPDF) {
+            if let pdfData {
+                WalletPDFViewer(pdfData: pdfData)
+            } else {
+                Text("Nessun PDF disponibile")
+                    .padding()
+            }
+        }
+        .overlay {
+            if isLoadingPDF {
+                ProgressView("Caricamento PDF...")
+                    .padding()
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+        }
+        .alert("Errore PDF", isPresented: Binding(
+            get: { pdfError != nil },
+            set: { if !$0 { pdfError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(pdfError ?? "")
+        }
+        .sheet(isPresented: $isVisibilitySheetPresented) {
+            VisibilityPickerSheet(
+                selectedScope: $visibilitySheetScope,
+                selectedMemberIds: $visibilitySheetMemberIds,
+                members: selectableMembers,
+                currentUid: currentUid,
+                scopeSectionTitle: "Chi può vedere questo biglietto"
+            ) { scope, memberIds in
+                guard let t = tickets.first else { return }
+                applyWalletVisibility(ticket: t, scope: scope, memberIds: memberIds)
+                isVisibilitySheetPresented = false
+            }
+        }
+        .alert("Visibilità bloccata", isPresented: $showVisibilityLockedAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Solo chi ha creato il biglietto può modificare la visibilità.")
+        }
+    }
+
+    private var missingTicketPlaceholder: some View {
+        ContentUnavailableView(
+            "Biglietto non trovato",
+            systemImage: "ticket.slash",
+            description: Text("Potrebbe essere stato eliminato o non ancora sincronizzato.")
+        )
+    }
+
+    @ViewBuilder
+    private func ticketDetailScroll(_ ticket: KBWalletTicket) -> some View {
+        ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
+                        walletVisibilityChip(for: ticket)
+
                         // Header card — stesso componente della home, altezza
                         // un filo maggiore per dare respiro.
                         WalletTicketCardView(ticket: ticket, height: 210)
@@ -70,39 +167,55 @@ struct WalletTicketDetailView: View {
                     .padding(16)
                 }
                 .background(KBTheme.background(colorScheme).ignoresSafeArea())
+    }
+
+    private func walletVisibilityChip(for ticket: KBWalletTicket) -> some View {
+        Button {
+            if canEditVisibility(for: ticket) {
+                visibilitySheetScope = KBWalletTicket.normalizedVisibilityScopeForWallet(ticket.visibilityScope)
+                visibilitySheetMemberIds = Set(ticket.visibilityMemberIds ?? [])
+                isVisibilitySheetPresented = true
             } else {
-                ContentUnavailableView(
-                    "Biglietto non trovato",
-                    systemImage: "ticket.slash",
-                    description: Text("Potrebbe essere stato eliminato o non ancora sincronizzato.")
-                )
+                showVisibilityLockedAlert = true
             }
-        }
-        .navigationTitle("Dettaglio biglietto")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showPDF) {
-            if let pdfData {
-                WalletPDFViewer(pdfData: pdfData)
-            } else {
-                Text("Nessun PDF disponibile")
-                    .padding()
+        } label: {
+            HStack {
+                Text(KBVisibilityScope.chipLabel(for: KBWalletTicket.normalizedVisibilityScopeForWallet(ticket.visibilityScope)))
+                    .font(.custom("Nunito", size: 14))
+                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(red: 0.949, green: 0.941, blue: 0.922))
+            .clipShape(Capsule())
         }
-        .overlay {
-            if isLoadingPDF {
-                ProgressView("Caricamento PDF...")
-                    .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func applyWalletVisibility(ticket: KBWalletTicket, scope: String, memberIds: Set<String>) {
+        let normalizedScope = KBWalletTicket.normalizedVisibilityScopeForWallet(scope)
+        ticket.visibilityScope = normalizedScope
+        ticket.visibilityMemberIds = normalizedScope == KBVisibilityScope.members
+            ? Array(memberIds).sorted()
+            : []
+        if let uid = Auth.auth().currentUser?.uid {
+            ticket.updatedBy = uid
+            ticket.updatedByName = Auth.auth().currentUser?.displayName ?? ""
         }
-        .alert("Errore PDF", isPresented: Binding(
-            get: { pdfError != nil },
-            set: { if !$0 { pdfError = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(pdfError ?? "")
-        }
+        ticket.updatedAt = .now
+        ticket.syncState = .pendingUpsert
+        try? modelContext.save()
+        SyncCenter.shared.enqueueWalletTicketUpsert(
+            ticketId: ticket.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
 
     // MARK: - Blocks

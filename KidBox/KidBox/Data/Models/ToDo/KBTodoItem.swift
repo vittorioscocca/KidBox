@@ -42,7 +42,12 @@ final class KBTodoItem {
     
     var assignedTo: String?        // uid membro famiglia
     var createdBy: String?         // separato da updatedBy
-    var priorityRaw: Int? 
+    var priorityRaw: Int?
+
+    /// Opzionale per migrazione SwiftData: `nil` → equivalente a `family`.
+    var visibilityScope: String?
+    /// Opzionale per migrazione SwiftData: `nil` in store legacy → equivalente a `[]`.
+    var visibilityMemberIds: [String]?
     
     var syncState: KBSyncState {
         get { KBSyncState(rawValue: syncStateRaw ?? KBSyncState.synced.rawValue) ?? .synced }
@@ -60,6 +65,8 @@ final class KBTodoItem {
         childId: String,
         title: String,
         listId: String?,
+        visibilityScope: String = KBVisibilityScope.family,
+        visibilityMemberIds: [String] = [],
         notes: String? = nil,
         dueAt: Date? = nil,
         isDone: Bool = false,
@@ -75,6 +82,8 @@ final class KBTodoItem {
         self.childId = childId
         self.title = title
         self.listId = listId
+        self.visibilityScope = visibilityScope
+        self.visibilityMemberIds = visibilityMemberIds
         self.notes = notes
         self.dueAt = dueAt
         self.isDone = isDone
@@ -91,6 +100,15 @@ final class KBTodoItem {
         // default for new records
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil
+    }
+
+    func isVisible(to currentUid: String?) -> Bool {
+        KBVisibilityScope.isVisible(
+            scope: visibilityScope,
+            memberIds: visibilityMemberIds ?? [],
+            createdBy: createdBy,
+            currentUid: currentUid,
+        )
     }
 }
 

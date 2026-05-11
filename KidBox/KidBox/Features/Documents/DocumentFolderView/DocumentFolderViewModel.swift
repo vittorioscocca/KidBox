@@ -52,6 +52,10 @@ final class DocumentFolderViewModel: ObservableObject {
     
     @Published var isDeleting: Bool = false
     
+    /// Applied to uploads from Documenti folder (Importer / camera / libreria).
+    @Published var pendingUploadVisibilityScope: String = KBVisibilityScope.family
+    @Published var pendingUploadVisibilityMemberIds: Set<String> = []
+    
     // rename
     @Published var folderToRename: KBDocumentCategory?
     @Published var docToRename: KBDocument?
@@ -190,7 +194,24 @@ final class DocumentFolderViewModel: ObservableObject {
     func reload() {
         guard let modelContext else { return }
         do {
-            folders = try fetchFolders(modelContext: modelContext)
+            let fid = familyId
+            let allCats = try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
+                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+            ))
+            let allDocs = try modelContext.fetch(FetchDescriptor<KBDocument>(
+                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+            ))
+            var folderList = try fetchFolders(modelContext: modelContext)
+            let viewerUid = Auth.auth().currentUser?.uid
+            folderList = folderList.filter {
+                DocumentFolderSubtreeVisibility.folderIsBrowsable(
+                    folder: $0,
+                    allCategories: allCats,
+                    allDocuments: allDocs,
+                    viewerUid: viewerUid
+                )
+            }
+            folders = folderList
             docs    = try fetchDocs(modelContext: modelContext)
             applySort()
             KBLog.data.debug("DocumentFolderVM reload ok folders=\(self.folders.count) docs=\(self.docs.count)")
@@ -220,6 +241,16 @@ final class DocumentFolderViewModel: ObservableObject {
     func toggleSelection(_ item: SelectionItem) {
         if selectedItems.contains(item) { selectedItems.remove(item) }
         else { selectedItems.insert(item) }
+    }
+    
+    /// Visibility for documents created via Carica/Fotocamera/Libreria in this cartella.
+    func applyPendingUploadVisibility(doc: KBDocument, uid: String) {
+        let u = uid.trimmingCharacters(in: .whitespacesAndNewlines)
+        doc.visibilityScope = KBVisibilityScope.normalized(pendingUploadVisibilityScope)
+        doc.visibilityMemberIds = pendingUploadVisibilityScope == KBVisibilityScope.members
+            ? Array(pendingUploadVisibilityMemberIds).sorted()
+            : []
+        doc.createdBy = u.isEmpty ? doc.updatedBy : u
     }
     
     func isSelected(_ item: SelectionItem) -> Bool { selectedItems.contains(item) }
@@ -405,7 +436,10 @@ final class DocumentFolderViewModel: ObservableObject {
                 extractedTextUpdatedAt: doc.extractedTextUpdatedAt,
                 extractionStatusRaw: doc.extractionStatusRaw,
                 extractionError: doc.extractionError,
-                updatedAt: now, updatedBy: uid
+                updatedAt: now, updatedBy: uid,
+                visibilityScope: KBVisibilityScope.normalized(doc.visibilityScope),
+                visibilityMemberIds: doc.visibilityMemberIds,
+                createdBy: doc.createdBy.trimmingCharacters(in: .whitespacesAndNewlines)
             )
             Task.detached(priority: .userInitiated) {
                 do {
@@ -455,6 +489,9 @@ final class DocumentFolderViewModel: ObservableObject {
         )
         copy.syncState = .pendingUpsert
         copy.lastSyncError = nil
+        copy.visibilityScope = KBVisibilityScope.family
+        copy.visibilityMemberIds = []
+        copy.createdBy = uid
         
         do {
             modelContext.insert(copy)
@@ -476,7 +513,10 @@ final class DocumentFolderViewModel: ObservableObject {
                 extractedTextUpdatedAt: doc.extractedTextUpdatedAt,
                 extractionStatusRaw: doc.extractionStatusRaw,
                 extractionError: doc.extractionError,
-                updatedAt: now, updatedBy: uid
+                updatedAt: now, updatedBy: uid,
+                visibilityScope: KBVisibilityScope.family,
+                visibilityMemberIds: [],
+                createdBy: uid.trimmingCharacters(in: .whitespacesAndNewlines)
             )
             Task.detached(priority: .userInitiated) {
                 do {
@@ -740,6 +780,7 @@ final class DocumentFolderViewModel: ObservableObject {
                 storagePath: storagePath, downloadURL: nil, updatedBy: uid,
                 createdAt: now, updatedAt: now, isDeleted: false
             )
+            applyPendingUploadVisibility(doc: local, uid: uid)
             local.localPath     = localRelPath
             local.syncState     = .pendingUpsert
             local.lastSyncError = nil
@@ -839,6 +880,7 @@ final class DocumentFolderViewModel: ObservableObject {
                 storagePath: storagePath, downloadURL: nil, updatedBy: uid,
                 createdAt: now, updatedAt: now, isDeleted: false
             )
+            applyPendingUploadVisibility(doc: local, uid: uid)
             local.localPath   = localRelPath
             local.syncState   = .pendingUpsert
             local.lastSyncError = nil
@@ -896,6 +938,7 @@ final class DocumentFolderViewModel: ObservableObject {
                 storagePath: storagePath, downloadURL: nil, updatedBy: uid,
                 createdAt: now, updatedAt: now, isDeleted: false
             )
+            applyPendingUploadVisibility(doc: local, uid: uid)
             local.syncState = .pendingUpsert; local.lastSyncError = nil; local.localPath = localPath
             modelContext.insert(local); try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(documentId: local.id, familyId: familyId, modelContext: modelContext)
@@ -942,8 +985,10 @@ final class DocumentFolderViewModel: ObservableObject {
     
     private func fetchDocs(modelContext: ModelContext) throws -> [KBDocument] {
         let fid = familyId
+        let currentUid = Auth.auth().currentUser?.uid
+        let raw: [KBDocument]
         if let pid = folderId {
-            return try modelContext.fetch(FetchDescriptor<KBDocument>(
+            raw = try modelContext.fetch(FetchDescriptor<KBDocument>(
                 predicate: #Predicate { $0.familyId == fid && $0.categoryId == pid && $0.isDeleted == false },
                 sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]))
         } else {
@@ -953,8 +998,9 @@ final class DocumentFolderViewModel: ObservableObject {
                 predicate: #Predicate { $0.familyId == fid && $0.categoryId == "" && $0.isDeleted == false }))
             var map: [String: KBDocument] = [:]
             for x in a { map[x.id] = x }; for x in b { map[x.id] = x }
-            return map.values.sorted { $0.updatedAt > $1.updatedAt }
+            raw = map.values.sorted { $0.updatedAt > $1.updatedAt }
         }
+        return raw.filteredToVisibleDocuments(currentUid: currentUid)
     }
     
     // MARK: - Create folder
@@ -1027,17 +1073,24 @@ final class DocumentFolderViewModel: ObservableObject {
         errorText = nil
         Task { @MainActor in
             let userId = Auth.auth().currentUser?.uid ?? "local"
-            if doc.notes != "chat_plain",
+            if !DocumentCryptoService.storedKBDocumentPayloadIsPlaintext(notes: doc.notes, storagePath: doc.storagePath),
                FamilyKeychainStore.loadFamilyKey(familyId: doc.familyId, userId: userId) == nil {
                 showKeyMissingAlert = true; return
             }
             if let localPath = doc.localPath, !localPath.isEmpty,
                let _ = DocumentLocalCache.exists(localPath: localPath) {
                 do {
-                    let plaintext = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                    let cipherData = try DocumentLocalCache.readEncrypted(localPath: localPath)
+                    let plainData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                        cipherData,
+                        storagePath: doc.storagePath,
+                        notes: doc.notes,
+                        familyId: doc.familyId,
+                        userId: userId
+                    )
                     let tempURL = FileManager.default.temporaryDirectory
                         .appendingPathComponent("\(doc.id)_\(doc.fileName)")
-                    try plaintext.write(to: tempURL, options: .atomic)
+                    try plainData.write(to: tempURL, options: .atomic)
                     previewURL = tempURL; return
                 } catch {
                     if isCryptoKeyError(error) { showKeyMissingAlert = true }
@@ -1104,12 +1157,13 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
             }
             let fileData = try Data(contentsOf: tmpURL)
-            let finalData: Data
-            if doc.notes == "chat_plain" {
-                finalData = fileData   // documento chat: già in chiaro, nessuna decifratura
-            } else {
-                finalData = try DocumentCryptoService.decrypt(fileData, familyId: doc.familyId, userId: Auth.auth().currentUser?.uid ?? "local")
-            }
+            let finalData = try DocumentCryptoService.decryptStoredKBDocumentPayload(
+                fileData,
+                storagePath: doc.storagePath,
+                notes: doc.notes,
+                familyId: doc.familyId,
+                userId: Auth.auth().currentUser?.uid ?? "local"
+            )
             let rel = try DocumentLocalCache.write(familyId: doc.familyId, docId: doc.id,
                                                    fileName: doc.fileName.isEmpty ? doc.id : doc.fileName, data: finalData)
             doc.localPath = rel; try modelContext.save()

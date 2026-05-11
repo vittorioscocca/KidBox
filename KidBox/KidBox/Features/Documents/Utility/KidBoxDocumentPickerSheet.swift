@@ -8,7 +8,9 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 import OSLog
+import FirebaseAuth
 
 /// Sheet che consente all'utente di scegliere un documento dalla sezione
 /// "Documenti" di KidBox per allegarlo a una visita, cura, esame o spesa.
@@ -25,6 +27,8 @@ struct KidBoxDocumentPickerSheet: View {
     @Environment(\.dismiss)      private var dismiss
     
     let familyId: String
+    /// Se `true`, mostra solo documenti PDF (es. import wallet).
+    var pdfOnly: Bool = false
     /// Chiamata con la URL del file decriptato pronto per l'upload come allegato.
     let onPick: (URL) -> Void
     
@@ -37,13 +41,14 @@ struct KidBoxDocumentPickerSheet: View {
                 familyId: familyId,
                 folderId: nil,
                 folderTitle: "Documenti",
+                pdfOnly: pdfOnly,
                 isLoading: $isLoading,
                 errorText: $errorText,
                 onPick: { doc in
                     Task { await pick(doc) }
                 }
             )
-            .navigationTitle("Scegli da KidBox")
+            .navigationTitle(pdfOnly ? "Scegli PDF" : "Scegli da KidBox")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -81,6 +86,10 @@ struct KidBoxDocumentPickerSheet: View {
     
     @MainActor
     private func pick(_ doc: KBDocument) async {
+        if pdfOnly && !Self.isPdfDocument(doc) {
+            errorText = "Per il wallet serve un file PDF."
+            return
+        }
         isLoading = true
         defer { isLoading = false }
         
@@ -124,6 +133,12 @@ struct KidBoxDocumentPickerSheet: View {
         try FileManager.default.copyItem(at: rawURL, to: namedURL)
         return namedURL
     }
+
+    private static func isPdfDocument(_ doc: KBDocument) -> Bool {
+        let m = doc.mimeType.lowercased()
+        if m.contains("pdf") { return true }
+        return doc.fileName.lowercased().hasSuffix(".pdf")
+    }
 }
 
 // MARK: - Recursive folder level
@@ -136,6 +151,7 @@ private struct KidBoxFolderPickerLevel: View {
     let familyId:    String
     let folderId:    String?
     let folderTitle: String
+    let pdfOnly: Bool
     @Binding var isLoading: Bool
     @Binding var errorText: String?
     let onPick: (KBDocument) -> Void
@@ -155,6 +171,7 @@ private struct KidBoxFolderPickerLevel: View {
                                 familyId: familyId,
                                 folderId: folder.id,
                                 folderTitle: folder.title,
+                                pdfOnly: pdfOnly,
                                 isLoading: $isLoading,
                                 errorText: $errorText,
                                 onPick: onPick
@@ -169,7 +186,7 @@ private struct KidBoxFolderPickerLevel: View {
             
             // ── Documenti ────────────────────────────────────────────────
             if !docs.isEmpty {
-                Section("Documenti") {
+                Section(pdfOnly ? "Documenti PDF" : "Documenti") {
                     ForEach(docs) { doc in
                         Button {
                             onPick(doc)
@@ -210,13 +227,18 @@ private struct KidBoxFolderPickerLevel: View {
                 ContentUnavailableView(
                     "Cartella vuota",
                     systemImage: "doc.text.magnifyingglass",
-                    description: Text("Nessun documento in questa cartella.")
+                    description: Text(pdfOnly ? "Nessun PDF in questa cartella." : "Nessun documento in questa cartella.")
                 )
             }
         }
         .navigationTitle(folderTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { loadContent() }
+        // Allineato a DocumentFolderView: senza questo, aprendo il picker prima che il listener
+        // Firestore abbia scritto in SwiftData si vede "Cartella vuota" e non si aggiorna mai.
+        .onReceive(SyncCenter.shared.docsChanged.filter { $0 == familyId }) { _ in
+            loadContent()
+        }
     }
     
     // MARK: - Load
@@ -226,12 +248,32 @@ private struct KidBoxFolderPickerLevel: View {
         let pid = folderId
         
         do {
+            let allCats = try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
+                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+            ))
+            let allDocs = try modelContext.fetch(FetchDescriptor<KBDocument>(
+                predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+            ))
+            let viewerUid = Auth.auth().currentUser?.uid
+            func filterBrowsable(_ raw: [KBDocumentCategory]) -> [KBDocumentCategory] {
+                raw.filter {
+                    DocumentFolderSubtreeVisibility.folderIsBrowsable(
+                        folder: $0,
+                        allCategories: allCats,
+                        allDocuments: allDocs,
+                        viewerUid: viewerUid
+                    )
+                }
+            }
+
             // Cartelle
             if let pid {
-                folders = try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
-                    predicate: #Predicate { $0.familyId == fid && $0.parentId == pid && $0.isDeleted == false },
-                    sortBy: [SortDescriptor(\.sortOrder)]
-                ))
+                folders = filterBrowsable(
+                    try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
+                        predicate: #Predicate { $0.familyId == fid && $0.parentId == pid && $0.isDeleted == false },
+                        sortBy: [SortDescriptor(\.sortOrder)]
+                    ))
+                )
             } else {
                 let a = try modelContext.fetch(FetchDescriptor<KBDocumentCategory>(
                     predicate: #Predicate { $0.familyId == fid && $0.parentId == nil && $0.isDeleted == false }
@@ -242,10 +284,11 @@ private struct KidBoxFolderPickerLevel: View {
                 var map: [String: KBDocumentCategory] = [:]
                 for x in a { map[x.id] = x }
                 for x in b { map[x.id] = x }
-                folders = map.values.sorted { $0.sortOrder < $1.sortOrder }
+                folders = filterBrowsable(map.values.sorted { $0.sortOrder < $1.sortOrder })
             }
             
             // Documenti
+            let uid = Auth.auth().currentUser?.uid
             if let pid {
                 docs = try modelContext.fetch(FetchDescriptor<KBDocument>(
                     predicate: #Predicate { $0.familyId == fid && $0.categoryId == pid && $0.isDeleted == false },
@@ -263,9 +306,19 @@ private struct KidBoxFolderPickerLevel: View {
                 for x in b { map[x.id] = x }
                 docs = map.values.sorted { $0.updatedAt > $1.updatedAt }
             }
+            docs = docs.filteredToVisibleDocuments(currentUid: uid)
+            if pdfOnly {
+                docs = docs.filter { Self.docIsPdf($0) }
+            }
         } catch {
             KBLog.data.error("KidBoxFolderPickerLevel loadContent failed: \(error.localizedDescription)")
         }
+    }
+
+    private static func docIsPdf(_ doc: KBDocument) -> Bool {
+        let m = doc.mimeType.lowercased()
+        if m.contains("pdf") { return true }
+        return doc.fileName.lowercased().hasSuffix(".pdf")
     }
     
     // MARK: - Helpers

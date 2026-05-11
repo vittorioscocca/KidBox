@@ -47,6 +47,12 @@ final class KBDocument {
     var extractionStatusRaw: Int = 0
     var extractionError: String?
     
+    // Visibility (same semantics as KBNote / todos / calendar)
+    var visibilityScope: String
+    var visibilityMemberIds: [String]
+    /// Owner uid for `visibilityScope == "private"` filtering.
+    var createdBy: String
+    
     // Dates
     var createdAt: Date
     var updatedAt: Date
@@ -80,6 +86,9 @@ final class KBDocument {
         storagePath: String,
         downloadURL: String?,
         notes: String? = nil,
+        visibilityScope: String = KBVisibilityScope.family,
+        visibilityMemberIds: [String] = [],
+        createdBy: String = "",
         extractedText: String? = nil,
         extractedTextUpdatedAt: Date? = nil,
         extractionStatus: KBTextExtractionStatus = .none,
@@ -101,6 +110,10 @@ final class KBDocument {
         self.storagePath = storagePath
         self.downloadURL = downloadURL
         self.notes = notes
+        
+        self.visibilityScope = KBVisibilityScope.normalized(visibilityScope)
+        self.visibilityMemberIds = visibilityMemberIds
+        self.createdBy = createdBy
         
         self.extractedText = extractedText
         self.extractedTextUpdatedAt = extractedTextUpdatedAt
@@ -193,3 +206,26 @@ extension KBDocument {
 }
 
 extension KBDocument: HasFamilyId {}
+
+extension KBDocument {
+    /// Whether the signed-in user may list/open this document in UI.
+    func isVisibleToCurrentUser(currentUid: String?) -> Bool {
+        let effectiveCreatedBy: String? = {
+            if !createdBy.isEmpty { return createdBy }
+            if !updatedBy.isEmpty { return updatedBy }
+            return nil
+        }()
+        return KBVisibilityScope.isVisible(
+            scope: visibilityScope,
+            memberIds: visibilityMemberIds,
+            createdBy: effectiveCreatedBy,
+            currentUid: currentUid
+        )
+    }
+}
+
+extension Sequence where Element == KBDocument {
+    func filteredToVisibleDocuments(currentUid: String?) -> [KBDocument] {
+        filter { $0.isVisibleToCurrentUser(currentUid: currentUid) }
+    }
+}

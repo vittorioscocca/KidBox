@@ -66,7 +66,7 @@ enum Route: Hashable {
     
     // MARK: - Note
     case notesHome(familyId: String)
-    case noteDetail(familyId: String, noteId: String)
+    case noteDetail(familyId: String, noteId: String, isNewNote: Bool = false)
     
     // MARK: - Foto e video
     case familyPhotos(familyId: String)

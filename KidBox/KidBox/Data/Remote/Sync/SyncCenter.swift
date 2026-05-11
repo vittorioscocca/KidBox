@@ -841,7 +841,9 @@ final class SyncCenter: ObservableObject {
                 doneBy: todo.doneBy,
                 assignedTo: todo.assignedTo,
                 createdBy: todo.createdBy,
-                priority: todo.priorityRaw
+                priority: todo.priorityRaw,
+                visibilityScope: KBVisibilityScope.normalized(todo.visibilityScope),
+                visibilityMemberIds: todo.visibilityMemberIds ?? []
             ))
             
             todo.syncState = .synced
@@ -1046,6 +1048,8 @@ final class SyncCenter: ObservableObject {
                     todo.assignedTo = dto.assignedTo
                     todo.createdBy = dto.createdBy ?? todo.createdBy
                     todo.priorityRaw = dto.priority ?? 0
+                    todo.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
+                    todo.visibilityMemberIds = dto.visibilityMemberIds ?? []
                     
                     todo.syncState = .synced
                     todo.lastSyncError = nil
@@ -1155,6 +1159,8 @@ final class SyncCenter: ObservableObject {
                             
                             existing.assignedTo = dto.assignedTo
                             existing.priorityRaw = dto.priority ?? 0
+                            existing.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
+                            existing.visibilityMemberIds = dto.visibilityMemberIds ?? []
                             
                             // updatedAt/updatedBy safe unwrap
                             existing.updatedAt = remoteUpdatedAt
@@ -1209,6 +1215,8 @@ final class SyncCenter: ObservableObject {
                         
                         created.assignedTo = dto.assignedTo
                         created.priorityRaw = dto.priority ?? 0
+                        created.visibilityScope = KBVisibilityScope.normalized(dto.visibilityScope)
+                        created.visibilityMemberIds = dto.visibilityMemberIds ?? []
                         
                         created.updatedAt = remoteUpdatedAt
                         if let ub = dto.updatedBy, !ub.isEmpty {
@@ -1332,7 +1340,9 @@ extension TodoRemoteStore {
                 updatedBy: data["updatedBy"] as? String,
                 assignedTo: data["assignedTo"] as? String,
                 createdBy: data["createdBy"] as? String,
-                priority: data["priority"] as? Int
+                priority: data["priority"] as? Int,
+                visibilityScope: data["visibilityScope"] as? String,
+                visibilityMemberIds: data["visibilityMemberIds"] as? [String]
             )
         }
     }

@@ -33,6 +33,9 @@ struct RemoteDocumentDTO {
     let extractionError: String?
     let updatedAt: Date?
     let updatedBy: String?
+    let visibilityScope: String
+    let visibilityMemberIds: [String]
+    let createdBy: String
 }
 
 /// Realtime change type for documents.
@@ -88,8 +91,18 @@ final class DocumentRemoteStore {
             "isDeleted": dto.isDeleted,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp(),
-            "createdAt": FieldValue.serverTimestamp()
+            "createdAt": FieldValue.serverTimestamp(),
+            "visibilityScope": KBVisibilityScope.normalized(dto.visibilityScope),
+            "visibilityMemberIds": dto.visibilityMemberIds
         ]
+        
+        if !dto.createdBy.isEmpty {
+            data["createdBy"] = dto.createdBy
+        }
+        if KBVisibilityScope.normalized(dto.visibilityScope) == KBVisibilityScope.onlyCreator {
+            let effective = dto.createdBy.isEmpty ? uid : dto.createdBy
+            data["createdBy"] = effective
+        }
         
         if let categoryId = dto.categoryId {
             data["categoryId"] = categoryId
@@ -211,6 +224,12 @@ final class DocumentRemoteStore {
                     let doc = diff.document
                     let data = doc.data()
                     
+                    let inferredCreatedBy: String = {
+                        let c = (data["createdBy"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !c.isEmpty { return c }
+                        return (data["updatedBy"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    }()
+                    
                     let dto = RemoteDocumentDTO(
                         id: doc.documentID,
                         familyId: familyId,
@@ -229,7 +248,10 @@ final class DocumentRemoteStore {
                         extractionStatusRaw: data["extractionStatusRaw"] as? Int,
                         extractionError: data["extractionError"] as? String,
                         updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue(),
-                        updatedBy: data["updatedBy"] as? String
+                        updatedBy: data["updatedBy"] as? String,
+                        visibilityScope: data["visibilityScope"] as? String ?? "family",
+                        visibilityMemberIds: data["visibilityMemberIds"] as? [String] ?? [],
+                        createdBy: inferredCreatedBy
                     )
                     
                     switch diff.type {

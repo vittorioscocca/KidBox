@@ -43,7 +43,10 @@ struct TodoSmartListView: View {
     
     // MARK: - Filtro Swift per kind
     
+    private var currentUid: String? { Auth.auth().currentUser?.uid }
+
     private var filteredTodos: [KBTodoItem] {
+        let visible = todos.filter { $0.isVisible(to: currentUid) }
         let me = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
@@ -51,29 +54,29 @@ struct TodoSmartListView: View {
         
         switch kind {
         case .all:
-            return todos
+            return visible
             
         case .today:
-            return todos.filter { t in
+            return visible.filter { t in
                 guard !t.isDone, let due = t.dueAt else { return false }
                 return due >= startOfDay && due < endOfDay
             }
             
         case .assignedToMe:
-            return todos.filter { t in
+            return visible.filter { t in
                 !t.isDone && t.assignedTo == me
             }
             
         case .notAssignedToMe:
-            return todos.filter { t in
+            return visible.filter { t in
                 !t.isDone && t.assignedTo != me
             }
             
         case .completed:
-            return todos.filter { $0.isDone }
+            return visible.filter { $0.isDone }
             
         case .notCompleted:
-            return todos.filter { !$0.isDone }
+            return visible.filter { !$0.isDone }
         }
     }
     

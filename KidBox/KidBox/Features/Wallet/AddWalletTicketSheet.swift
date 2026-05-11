@@ -20,6 +20,8 @@ struct AddWalletTicketSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
+    @Query private var members: [KBFamilyMember]
+
     @State private var title: String = ""
     @State private var kind: KBWalletTicketKind = .other
     @State private var hasEventDate = false
@@ -35,14 +37,62 @@ struct AddWalletTicketSheet: View {
     @State private var parsedBarcodeFormat: String?
     @State private var parsedEmitter: String?
     @State private var showImporter = false
+    @State private var showKidBoxDocumentPicker = false
     @State private var isSaving = false
     @State private var errorMessage: String?
 
+    @State private var selectedVisibilityScope: String = KBVisibilityScope.onlyCreator
+    @State private var selectedVisibilityMemberIds: Set<String> = []
+    @State private var isVisibilitySheetPresented = false
+
     private let pdfStore = WalletPDFStore()
+
+    init(
+        familyId: String,
+        prefilledLocalPDFPath: String?,
+        prefilledTitle: String?,
+        onSaved: @escaping (String) -> Void
+    ) {
+        self.familyId = familyId
+        self.prefilledLocalPDFPath = prefilledLocalPDFPath
+        self.prefilledTitle = prefilledTitle
+        self.onSaved = onSaved
+        let fid = familyId
+        _members = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.displayName
+        )
+    }
+
+    private var currentUid: String? {
+        Auth.auth().currentUser?.uid
+    }
+
+    private var selectableMembers: [KBFamilyMember] {
+        members.filter { $0.userId != currentUid }
+    }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Visibilità") {
+                    Button {
+                        isVisibilitySheetPresented = true
+                    } label: {
+                        HStack {
+                            Text(KBVisibilityScope.chipLabel(for: selectedVisibilityScope))
+                                .font(.custom("Nunito", size: 14))
+                                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Section("PDF") {
                     if !selectedFileName.isEmpty {
                         Text(selectedFileName)
@@ -55,7 +105,13 @@ struct AddWalletTicketSheet: View {
                     Button {
                         showImporter = true
                     } label: {
-                        Label("Scegli PDF", systemImage: "doc.richtext")
+                        Label("Da file / Files", systemImage: "folder")
+                    }
+
+                    Button {
+                        showKidBoxDocumentPicker = true
+                    } label: {
+                        Label("Da documenti KidBox", systemImage: "doc.text.magnifyingglass")
                     }
                 }
 
@@ -69,7 +125,8 @@ struct AddWalletTicketSheet: View {
 
                     Toggle("Data evento", isOn: $hasEventDate)
                     if hasEventDate {
-                        DatePicker("Quando", selection: $eventDate)
+                        DatePicker("Quando", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(.compact)
                     }
 
                     TextField("Luogo (opzionale)", text: $location)
@@ -130,6 +187,23 @@ struct AddWalletTicketSheet: View {
                     loadPrefilledPDF(path: prefilledLocalPDFPath)
                 }
             }
+            .sheet(isPresented: $isVisibilitySheetPresented) {
+                VisibilityPickerSheet(
+                    selectedScope: $selectedVisibilityScope,
+                    selectedMemberIds: $selectedVisibilityMemberIds,
+                    members: selectableMembers,
+                    currentUid: currentUid,
+                    scopeSectionTitle: "Chi può vedere questo biglietto"
+                ) { scope, memberIds in
+                    selectedVisibilityScope = scope
+                    selectedVisibilityMemberIds = memberIds
+                }
+            }
+            .sheet(isPresented: $showKidBoxDocumentPicker) {
+                KidBoxDocumentPickerSheet(familyId: familyId, pdfOnly: true) { url in
+                    loadPDF(from: url)
+                }
+            }
         }
     }
 
@@ -144,14 +218,27 @@ struct AddWalletTicketSheet: View {
             if accessed { url.stopAccessingSecurityScopedResource() }
         }
 
-        guard let data = try? Data(contentsOf: url), !data.isEmpty else {
-            errorMessage = "Impossibile leggere il PDF selezionato."
+        var data = try? Data(contentsOf: url)
+        if data == nil || data?.isEmpty == true {
+            let temp = FileManager.default.temporaryDirectory
+                .appendingPathComponent("kidbox_wallet_\(UUID().uuidString).pdf", isDirectory: false)
+            do {
+                try FileManager.default.copyItem(at: url, to: temp)
+                data = try? Data(contentsOf: temp)
+                try? FileManager.default.removeItem(at: temp)
+            } catch {
+                data = nil
+            }
+        }
+
+        guard let pdfBytes = data, !pdfBytes.isEmpty else {
+            errorMessage = "Impossibile leggere il PDF. Se è in iCloud, apri il file nell’app File e attendi il download, oppure salva una copia sul dispositivo e riselezionalo."
             return
         }
-        selectedPDFData = data
-        selectedFileName = url.lastPathComponent
+        selectedPDFData = pdfBytes
+        selectedFileName = url.lastPathComponent.isEmpty ? "ticket.pdf" : url.lastPathComponent
 
-        let parsed = WalletPDFParser.parse(pdfData: data, fileName: url.lastPathComponent)
+        let parsed = WalletPDFParser.parse(pdfData: pdfBytes, fileName: url.lastPathComponent)
         applyParsedData(parsed)
     }
 
@@ -215,6 +302,10 @@ struct AddWalletTicketSheet: View {
                 bookingCode: sanitized(bookingCode),
                 notes: sanitized(notes),
                 emitter: parsedEmitter,
+                visibilityScope: selectedVisibilityScope,
+                visibilityMemberIds: selectedVisibilityScope == KBVisibilityScope.members
+                    ? Array(selectedVisibilityMemberIds).sorted()
+                    : [],
                 pdfStorageURL: upload.downloadURL,
                 pdfFileName: fileName,
                 pdfStorageBytes: upload.encryptedBytes,

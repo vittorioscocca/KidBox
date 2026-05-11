@@ -41,6 +41,8 @@ struct RemoteTodoWrite {
     let assignedTo: String?
     let createdBy: String?
     let priority: Int?
+    let visibilityScope: String
+    let visibilityMemberIds: [String]
 }
 
 struct TodoRemoteDTO {
@@ -60,6 +62,8 @@ struct TodoRemoteDTO {
     let assignedTo: String?
     let createdBy: String?
     let priority: Int?
+    let visibilityScope: String?
+    let visibilityMemberIds: [String]?
 }
 
 enum TodoRemoteChange {
@@ -120,6 +124,8 @@ final class TodoRemoteStore {
         data["doneBy"] = todo.doneBy as Any
         data["assignedTo"] = todo.assignedTo as Any
         data["priority"] = (todo.priority ?? 0)
+        data["visibilityScope"] = KBVisibilityScope.normalized(todo.visibilityScope)
+        data["visibilityMemberIds"] = todo.visibilityMemberIds
         
         if isNew { data["createdBy"] = (todo.createdBy ?? uid) }
         
@@ -403,7 +409,9 @@ extension TodoRemoteStore {
                         updatedBy: data["updatedBy"] as? String,
                         assignedTo: data["assignedTo"] as? String,
                         createdBy: data["createdBy"] as? String,
-                        priority: data["priority"] as? Int
+                        priority: data["priority"] as? Int,
+                        visibilityScope: data["visibilityScope"] as? String,
+                        visibilityMemberIds: data["visibilityMemberIds"] as? [String]
                     )
                     
                     if dto.childId.isEmpty {

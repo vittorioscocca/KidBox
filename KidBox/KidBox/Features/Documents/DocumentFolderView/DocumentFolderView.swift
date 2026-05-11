@@ -89,6 +89,23 @@ struct DocumentFolderView: View {
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     var activeChildId: String? { families.first?.children.first?.id }
     
+    @Query private var visibilityMembers: [KBFamilyMember]
+    
+    enum PendingVisibilityUploadIntent {
+        case fileImporter
+        case camera
+        case photoLibrary
+    }
+    
+    @State var showUploadVisibilityStaging = false
+    @State private var pendingVisibilityUploadIntent: PendingVisibilityUploadIntent?
+    
+    struct DocumentDetailSheetItem: Identifiable {
+        let id: String
+        let document: KBDocument
+    }
+    @State var documentDetailSheetItem: DocumentDetailSheetItem?
+    
     @ViewBuilder
     var keyMissingAlertButtons: some View {
         Button("Impostazioni") {
@@ -107,6 +124,32 @@ struct DocumentFolderView: View {
         self.folderId = folderId
         self.folderTitle = folderTitle
         _viewModel = StateObject(wrappedValue: DocumentFolderViewModel(familyId: familyId, folderId: folderId))
+        let fid = familyId
+        _visibilityMembers = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.displayName
+        )
+    }
+    
+    /// Membri (escluso utente corrente) per `VisibilityPickerSheet`.
+    private var selectableVisibilityMembers: [KBFamilyMember] {
+        let uid = Auth.auth().currentUser?.uid
+        return visibilityMembers.filter { $0.userId != uid }
+    }
+    
+    /// Dopo `DocumentUploadView` — avvia Fotocamera, Libreria o fileImporter.
+    fileprivate func finalizeUploadStagingAndOpenSource() {
+        guard let intent = pendingVisibilityUploadIntent else {
+            showUploadVisibilityStaging = false
+            return
+        }
+        pendingVisibilityUploadIntent = nil
+        showUploadVisibilityStaging = false
+        switch intent {
+        case .fileImporter: showImporter = true
+        case .camera: showCamera = true
+        case .photoLibrary: viewModel.showPhotoLibrary = true
+        }
     }
     
     // MARK: - Bindings helpers
@@ -559,6 +602,11 @@ struct DocumentFolderView: View {
     
     @ViewBuilder
     private func docContextMenu(_ doc: KBDocument) -> some View {
+        Button {
+            documentDetailSheetItem = DocumentDetailSheetItem(id: doc.id, document: doc)
+        } label: {
+            Label("Informazioni", systemImage: "info.circle")
+        }
         Button { viewModel.docToRename = doc; viewModel.renameText = doc.title } label: {
             Label("Rinomina", systemImage: "pencil")
         }
@@ -713,14 +761,17 @@ private extension DocumentFolderView {
                 }
                 Button {
                     checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
-                        viewModel.errorText = nil; showImporter = true
+                        viewModel.errorText = nil
+                        pendingVisibilityUploadIntent = .fileImporter
+                        showUploadVisibilityStaging = true
                     }
                 } label: {
                     Label("Carica documento", systemImage: "doc.badge.plus")
                 }
                 Button {
                     checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
-                        showCamera = true
+                        pendingVisibilityUploadIntent = .camera
+                        showUploadVisibilityStaging = true
                     }
                 } label: {
                     Label("Fotocamera", systemImage: "camera")
@@ -728,7 +779,8 @@ private extension DocumentFolderView {
                 .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
                 Button {
                     checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
-                        viewModel.showPhotoLibrary = true
+                        pendingVisibilityUploadIntent = .photoLibrary
+                        showUploadVisibilityStaging = true
                     }
                 } label: {
                     Label("Libreria foto", systemImage: "photo.on.rectangle")
@@ -1044,6 +1096,32 @@ private extension DocumentFolderView {
         @ViewBuilder
         private func applySheets<V: View>(_ content: V) -> some View {
             content
+            // Visibilità prima del caricamento
+                .sheet(isPresented: view.$showUploadVisibilityStaging) {
+                    NavigationStack {
+                        DocumentUploadView(
+                            visibilityScope: Binding(
+                                get: { view.viewModel.pendingUploadVisibilityScope },
+                                set: { view.viewModel.pendingUploadVisibilityScope = $0 }
+                            ),
+                            visibilityMemberIds: Binding(
+                                get: { view.viewModel.pendingUploadVisibilityMemberIds },
+                                set: { view.viewModel.pendingUploadVisibilityMemberIds = $0 }
+                            ),
+                            members: view.selectableVisibilityMembers,
+                            currentUid: Auth.auth().currentUser?.uid,
+                            isNewDocument: true,
+                            scopeSectionTitle: "Chi può vedere questo documento"
+                        ) {
+                            view.finalizeUploadStagingAndOpenSource()
+                        }
+                    }
+                }
+                .sheet(item: view.$documentDetailSheetItem) { item in
+                    NavigationStack {
+                        DocumentDetailView(document: item.document, members: view.selectableVisibilityMembers)
+                    }
+                }
             // Preview
                 .sheet(item: previewItemBinding) { item in
                     QuickLookPreview(urls: [item.url], initialIndex: 0)

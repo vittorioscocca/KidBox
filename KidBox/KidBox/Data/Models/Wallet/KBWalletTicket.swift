@@ -45,6 +45,13 @@ final class KBWalletTicket {
     /// senza dover scaricare e riparsare il PDF.
     var emitter: String?
 
+    /// `"family"` | `"members"` | `"private"`. Default `"private"` (personale).
+    /// Opzionale per migrazione SwiftData: ai record precedenti può mancare nel DB (`nil` → normalizzato in lettura).
+    var visibilityScope: String?
+    /// Popolato solo se lo scope effettivo è `"members"`.
+    /// Opzionale per migrazione SwiftData: `nil` = nessun membro / valore assente (come `KBNote`).
+    var visibilityMemberIds: [String]?
+
     // MARK: - PDF
     /// URL pubblico Firebase Storage del PDF cifrato (AES-GCM combined).
     var pdfStorageURL: String?
@@ -113,6 +120,8 @@ final class KBWalletTicket {
         bookingCode: String? = nil,
         notes: String? = nil,
         emitter: String? = nil,
+        visibilityScope: String = KBVisibilityScope.onlyCreator,
+        visibilityMemberIds: [String] = [],
         pdfStorageURL: String? = nil,
         pdfFileName: String? = nil,
         pdfStorageBytes: Int64? = nil,
@@ -139,6 +148,8 @@ final class KBWalletTicket {
         self.bookingCode = bookingCode
         self.notes = notes
         self.emitter = emitter
+        self.visibilityScope = Self.normalizedVisibilityScopeForWallet(visibilityScope)
+        self.visibilityMemberIds = visibilityMemberIds
         self.pdfStorageURL = pdfStorageURL
         self.pdfFileName = pdfFileName
         if let pdfStorageBytes {
@@ -158,5 +169,27 @@ final class KBWalletTicket {
         self.updatedAt = updatedAt
         self.isDeleted = isDeleted
         self.syncStateRaw = KBSyncState.synced.rawValue
+    }
+
+    /// Scope effettivo: `nil`/vuoto/sconosciuto → `private` (default Wallet).
+    static func normalizedVisibilityScopeForWallet(_ raw: String?) -> String {
+        let t = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.isEmpty { return KBVisibilityScope.onlyCreator }
+        switch t {
+        case KBVisibilityScope.family, KBVisibilityScope.members, KBVisibilityScope.onlyCreator:
+            return t
+        default:
+            return KBVisibilityScope.onlyCreator
+        }
+    }
+
+    func isVisible(to currentUid: String?) -> Bool {
+        let scope = Self.normalizedVisibilityScopeForWallet(visibilityScope)
+        return KBVisibilityScope.isVisible(
+            scope: scope,
+            memberIds: visibilityMemberIds ?? [],
+            createdBy: createdBy.isEmpty ? nil : createdBy,
+            currentUid: currentUid
+        )
     }
 }

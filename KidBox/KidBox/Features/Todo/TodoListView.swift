@@ -75,13 +75,32 @@ struct TodoListView: View {
         allLists.first(where: { $0.id == listId })?.name ?? "Lista"
     }
     
+    private var currentUid: String? { Auth.auth().currentUser?.uid }
+
     private var visibleTodos: [KBTodoItem] {
-        todos.filter { $0.listId == listId && !$0.isDeleted }
+        todos.filter {
+            $0.listId == listId &&
+            !$0.isDeleted &&
+            $0.isVisible(to: currentUid)
+        }
+    }
+    
+    /// Lista con solo To-Do di altri (tutti non visibili al membro corrente).
+    private var listAccessDenied: Bool {
+        !TodoListExposure.memberCanSeeListRow(
+            listId: listId,
+            todos: todos.filter { !$0.isDeleted },
+            currentUid: currentUid,
+        )
     }
     
     // MARK: - Body
     
     var body: some View {
+        Group {
+            if listAccessDenied {
+                listAccessDeniedContent
+            } else {
         ScrollViewReader { proxy in
             List {
                 if visibleTodos.isEmpty {
@@ -171,6 +190,23 @@ struct TodoListView: View {
                 KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId)")
             }
         }
+            }
+        }
+    }
+    
+    private var listAccessDeniedContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Questo contenuto non è più disponibile.")
+                .font(.headline)
+            Text("Questa lista contiene solo attività personali di altri membri.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
+        .background(backgroundColor)
+        .navigationTitle(listName)
     }
     
     // MARK: - Highlight

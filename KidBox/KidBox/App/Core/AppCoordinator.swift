@@ -78,6 +78,7 @@ final class AppCoordinator: ObservableObject {
     @Published var pendingShareWalletPDFPath: String? = nil
     /// Titolo o filename suggerito per il ticket Wallet importato dalla share extension.
     @Published var pendingShareWalletTitle: String? = nil
+    @Published var globalBannerMessage: String? = nil
     
     /// URL temporaneo decriptato di un documento da inviare in chat.
     /// Impostato da DocumentFolderViewModel.sendToChat, consumato da ChatView.
@@ -447,7 +448,7 @@ final class AppCoordinator: ObservableObject {
             
         case .notesHome(familyId: let familyId):
             NotesHomeView(familyId: familyId)
-        case .noteDetail(familyId: let familyId, noteId: let noteId):
+        case .noteDetail(familyId: let familyId, noteId: let noteId, isNewNote: _):
             NoteDetailView(familyId: familyId, noteId: noteId)
             
         case .familyPhotos(familyId: let familyId):
@@ -735,17 +736,72 @@ final class AppCoordinator: ObservableObject {
             
             let nid = noteId
             let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
-            let found = (try? modelContext.fetch(desc).first) != nil
+            let currentUid = Auth.auth().currentUser?.uid
+            let found = (try? modelContext.fetch(desc).first)
             
             path.removeAll()
-            if found {
+            if let found, found.isVisible(to: currentUid) {
                 path.append(.notesHome(familyId: familyId))
-                path.append(.noteDetail(familyId: familyId, noteId: noteId))
+                path.append(.noteDetail(familyId: familyId, noteId: noteId, isNewNote: false))
                 KBLog.navigation.kbInfo("openNoteFromPush: navigating to noteDetail")
             } else {
                 path.append(.notesHome(familyId: familyId))
-                KBLog.navigation.kbError("openNoteFromPush: note not found after fetch, fallback to notesHome")
+                globalBannerMessage = "Questo contenuto non è più disponibile."
+                KBLog.navigation.kbError("openNoteFromPush: note missing or not visible, fallback to notesHome")
             }
+        }
+    }
+    
+    /// Deep link da notifica `new_calendar_event`: apre il calendario e evidenzia l'evento se visibile all'utente corrente.
+    @MainActor
+    func openCalendarEventFromPush(familyId: String, eventId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openCalendarEventFromPush familyId=\(familyId) eventId=\(eventId)")
+        
+        Task { @MainActor in
+            let maxAttempts = 8
+            var resolved: KBCalendarEvent?
+            for attempt in 1...maxAttempts {
+                let eid = eventId
+                let desc = FetchDescriptor<KBCalendarEvent>(predicate: #Predicate { $0.id == eid })
+                resolved = try? modelContext.fetch(desc).first
+                if resolved != nil {
+                    KBLog.navigation.kbDebug("openCalendarEventFromPush: event found attempt=\(attempt)")
+                    break
+                }
+                KBLog.navigation.kbDebug("openCalendarEventFromPush: event not yet local attempt=\(attempt)/\(maxAttempts)")
+                if attempt < maxAttempts {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+            }
+            
+            let currentUid = Auth.auth().currentUser?.uid
+            let fid = familyId
+            
+            /// Evidenzia la data/evento solo se l'evento esiste in locale, appartiene alla famiglia ed è visibile.
+            /// Se non è ancora in locale dopo i retry, apri comunque il calendario con evidenziazione (può comparire dopo il sync).
+            let shouldHighlight: Bool = {
+                guard let resolved else { return true }
+                guard resolved.familyId == fid else { return false }
+                return resolved.isVisible(to: currentUid)
+            }()
+            
+            let isHiddenToUser: Bool = {
+                guard let resolved else { return false }
+                guard resolved.familyId == fid else { return false }
+                return !resolved.isVisible(to: currentUid)
+            }()
+            
+            if isHiddenToUser {
+                globalBannerMessage = "Questo contenuto non è più disponibile."
+                KBLog.navigation.kbError("openCalendarEventFromPush: event present but not visible eventId=\(eventId)")
+            }
+            
+            path.removeAll()
+            path.append(.calendar(familyId: familyId, highlightEventId: shouldHighlight ? eventId : nil))
+            KBLog.navigation.kbInfo("""
+            [openCalendarEventFromPush] path rebuilt highlight=\(shouldHighlight) \
+            resolved=\(resolved != nil) hiddenToUser=\(isHiddenToUser)
+            """)
         }
     }
     
@@ -841,12 +897,12 @@ final class AppCoordinator: ObservableObject {
         Task { @MainActor in
             // Aspetta che il todo sia disponibile in SwiftData (max 4 tentativi × 500ms)
             let maxAttempts = 4
-            var found = false
+            var resolved: KBTodoItem?
             for attempt in 1...maxAttempts {
                 let tid = todoId
                 let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == tid })
-                if (try? modelContext.fetch(desc).first) != nil {
-                    found = true
+                resolved = try? modelContext.fetch(desc).first
+                if resolved != nil {
                     KBLog.navigation.kbDebug("openTodoFromPush: todo found attempt=\(attempt)")
                     break
                 }
@@ -856,17 +912,29 @@ final class AppCoordinator: ObservableObject {
                 }
             }
             
-            // Imposta l'highlight PRIMA di navigare, così TodoListView lo trova in onAppear
-            TodoHighlightStore.shared.set(todoId)
-            KBLog.navigation.kbInfo("[openTodoFromPush] TodoHighlightStore set todoId=\(todoId) found=\(found)")
+            let currentUid = Auth.auth().currentUser?.uid
+            let shouldOpenList = resolved?.isVisible(to: currentUid) == true
+            
+            if shouldOpenList {
+                TodoHighlightStore.shared.set(todoId)
+            } else {
+                TodoHighlightStore.shared.set(nil)
+                globalBannerMessage = "Questo contenuto non è più disponibile."
+            }
             
             path.removeAll()
             path.append(.todo)
-            path.append(.todoList(familyId: familyId, childId: childId, listId: listId))
-            KBLog.navigation.kbInfo("[openTodoFromPush] path rebuilt count=\(path.count) routes=\(path.map { String(describing: $0) }.joined(separator: " → "))")
+            if shouldOpenList {
+                path.append(.todoList(familyId: familyId, childId: childId, listId: listId))
+            }
+            KBLog.navigation.kbInfo("""
+            [openTodoFromPush] path rebuilt count=\(path.count) \
+            resolved=\(resolved != nil) visible=\(shouldOpenList) \
+            routes=\(path.map { String(describing: $0) }.joined(separator: " → "))
+            """)
             
-            if !found {
-                KBLog.navigation.kbError("openTodoFromPush: todo not found after retries, navigating anyway todoId=\(todoId)")
+            if !shouldOpenList {
+                KBLog.navigation.kbError("openTodoFromPush: todo missing or not visible todoId=\(todoId)")
             } else {
                 KBLog.navigation.kbInfo("openTodoFromPush: navigating to todoList and highlighting todoId=\(todoId)")
             }

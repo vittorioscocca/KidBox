@@ -167,17 +167,36 @@ struct RootHostView: View {
             }
         }
         .overlay(alignment: .top) {
-            if showRevokedAlert {
-                Text("Sei stato rimosso dalla famiglia \"\(revokedFamilyName ?? "")\".")
-                    .padding()
-                    .background(.red.opacity(0.9))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.top, 12)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            VStack(spacing: 8) {
+                if showRevokedAlert {
+                    Text("Sei stato rimosso dalla famiglia \"\(revokedFamilyName ?? "")\".")
+                        .padding()
+                        .background(.red.opacity(0.9))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                if let message = coordinator.globalBannerMessage {
+                    Text(message)
+                        .padding()
+                        .background(.black.opacity(0.85))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
+            .padding(.top, 12)
+            .padding(.horizontal, 12)
         }
         .animation(.spring(), value: showRevokedAlert)
+        .animation(.spring(), value: coordinator.globalBannerMessage)
+        .onChange(of: coordinator.globalBannerMessage) { _, newValue in
+            guard newValue != nil else { return }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_200_000_000)
+                coordinator.globalBannerMessage = nil
+            }
+        }
     }
     
     // MARK: - Realtime lifecycle

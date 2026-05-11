@@ -140,6 +140,7 @@ final class VisitAttachmentService {
             storagePath: storagePath,
             downloadURL: nil,
             notes: VisitAttachmentTag.make(visitId),
+            createdBy: uid.trimmingCharacters(in: .whitespacesAndNewlines),
             updatedBy: uid,
             createdAt: now,
             updatedAt: now,
@@ -342,6 +343,7 @@ final class VisitAttachmentService {
         familyId: String,
         storagePath: String,
         fileName: String,
+        notes: String? = nil,
         modelContext: ModelContext
     ) async {
         KBLog.storage.kbInfo("Download remote attachment docId=\(docId) familyId=\(familyId) fileName=\(fileName)")
@@ -351,6 +353,7 @@ final class VisitAttachmentService {
             familyId: familyId,
             storagePath: storagePath,
             fileName: fileName,
+            notes: notes,
             modelContext: modelContext
         )
     }

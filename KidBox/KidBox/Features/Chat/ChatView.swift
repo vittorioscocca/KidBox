@@ -1246,6 +1246,9 @@ private struct ChatConversationView: View {
                     storagePath: storagePath,
                     downloadURL: mediaURL,
                     notes: "chat_plain",
+                    visibilityScope: KBVisibilityScope.family,
+                    visibilityMemberIds: [],
+                    createdBy: uid.trimmingCharacters(in: .whitespacesAndNewlines),
                     updatedBy: uid
                 )
                 doc.syncState = .pendingUpsert
@@ -1270,7 +1273,10 @@ private struct ChatConversationView: View {
                     extractionStatusRaw: nil,
                     extractionError: nil,
                     updatedAt: Date(),
-                    updatedBy: uid
+                    updatedBy: uid,
+                    visibilityScope: KBVisibilityScope.family,
+                    visibilityMemberIds: [],
+                    createdBy: uid.trimmingCharacters(in: .whitespacesAndNewlines)
                 )
                 try? await DocumentRemoteStore().upsert(dto: dto)
             }

@@ -11,6 +11,7 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 struct WalletHomeView: View {
     let familyId: String
@@ -41,9 +42,14 @@ struct WalletHomeView: View {
         )
     }
 
+    private var visibleTickets: [KBWalletTicket] {
+        let uid = Auth.auth().currentUser?.uid
+        return tickets.filter { $0.isVisible(to: uid) }
+    }
+
     var body: some View {
         Group {
-            if tickets.isEmpty {
+            if visibleTickets.isEmpty {
                 ContentUnavailableView(
                     "Wallet vuoto",
                     systemImage: "wallet.pass",
@@ -102,7 +108,7 @@ struct WalletHomeView: View {
             // spazio per la sua altezza piena.
             let overlap = cardHeight - peekHeight
             VStack(spacing: -overlap) {
-                ForEach(Array(tickets.enumerated()), id: \.element.id) { index, ticket in
+                ForEach(Array(visibleTickets.enumerated()), id: \.element.id) { index, ticket in
                     Button {
                         coordinator.navigate(to: .walletTicketDetail(familyId: familyId, ticketId: ticket.id))
                     } label: {

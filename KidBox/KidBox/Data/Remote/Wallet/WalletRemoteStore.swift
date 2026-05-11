@@ -46,6 +46,9 @@ struct WalletTicketDTO {
     let createdByName: String?
     let updatedBy: String?
     let updatedByName: String?
+
+    let visibilityScope: String?
+    let visibilityMemberIds: [String]?
 }
 
 enum WalletRemoteChange {
@@ -74,6 +77,12 @@ final class WalletRemoteStore {
         if let v = any as? Int { return Int64(v) }
         if let v = any as? Double { return Int64(v) }
         return 0
+    }
+
+    private func stringArray(_ any: Any?) -> [String] {
+        if let a = any as? [String] { return a }
+        if let a = any as? [Any] { return a.compactMap { $0 as? String } }
+        return []
     }
 
     // MARK: - References
@@ -131,6 +140,9 @@ final class WalletRemoteStore {
             "pdfStorageBytes":     ticket.pdfStorageBytes ?? 0,
             "addToAppleWalletURL": ticket.addToAppleWalletURL as Any,
             "barcodeFormat":       ticket.extractedBarcodeFormat as Any,
+
+            "visibilityScope":     KBWalletTicket.normalizedVisibilityScopeForWallet(ticket.visibilityScope),
+            "visibilityMemberIds": ticket.visibilityMemberIds ?? [],
 
             "isDeleted":     false,
             "updatedBy":     uid,
@@ -213,7 +225,11 @@ final class WalletRemoteStore {
                         createdBy:          d["createdBy"]       as? String,
                         createdByName:      d["createdByName"]   as? String,
                         updatedBy:          d["updatedBy"]       as? String,
-                        updatedByName:      d["updatedByName"]   as? String
+                        updatedByName:      d["updatedByName"]   as? String,
+                        visibilityScope:      d["visibilityScope"] as? String,
+                        visibilityMemberIds:  d["visibilityMemberIds"] == nil
+                            ? nil
+                            : self.stringArray(d["visibilityMemberIds"])
                     )
 
                     switch diff.type {
@@ -262,7 +278,11 @@ final class WalletRemoteStore {
                 createdBy:          d["createdBy"]       as? String,
                 createdByName:      d["createdByName"]   as? String,
                 updatedBy:          d["updatedBy"]       as? String,
-                updatedByName:      d["updatedByName"]   as? String
+                updatedByName:      d["updatedByName"]   as? String,
+                visibilityScope:      d["visibilityScope"] as? String,
+                visibilityMemberIds:  d["visibilityMemberIds"] == nil
+                    ? nil
+                    : stringArray(d["visibilityMemberIds"])
             )
         }
     }

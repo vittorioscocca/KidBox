@@ -26,6 +26,7 @@ struct NoteDetailView: View {
     
     // ✅ @Query osserva automaticamente i cambiamenti da SyncCenter (listener realtime)
     @Query private var queriedNotes: [KBNote]
+    @Query private var members: [KBFamilyMember]
     
     // Stato locale — fonte di verità mentre la nota è aperta
     @State private var titleText: String   = ""
@@ -34,6 +35,10 @@ struct NoteDetailView: View {
     @State private var note: KBNote?      = nil
     @State private var bodyFocusTrigger: UUID? = nil
     @State private var isSharePresented   = false
+    @State private var isVisibilitySheetPresented = false
+    @State private var showVisibilityLockedAlert = false
+    @State private var selectedVisibilityScope = KBVisibilityScope.family
+    @State private var selectedVisibilityMemberIds: Set<String> = []
     
     // ✅ Versione remota ricevuta mentre editing è attivo:
     //    tenuta da parte e applicata solo quando si esce senza salvare.
@@ -45,6 +50,11 @@ struct NoteDetailView: View {
         self.noteId   = noteId
         let nid = noteId
         _queriedNotes = Query(filter: #Predicate<KBNote> { $0.id == nid && $0.familyId == familyId })
+        let fid = familyId
+        _members = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.displayName
+        )
     }
     
     var body: some View {
@@ -52,6 +62,9 @@ struct NoteDetailView: View {
             backgroundColor.ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 0) {
+                visibilityChip
+                    .padding(.top, 10)
+                    .padding(.leading, 8)
                 
                 // ── Titolo ────────────────────────────────────────────────────
                 NoteTitleTextField(text: $titleText, placeholder: "Titolo") {
@@ -99,6 +112,8 @@ struct NoteDetailView: View {
                 // Nessuna modifica locale: aggiorna l'UI con il remoto
                 titleText = n.title
                 bodyHTML  = n.body.normalizedKidBoxChecklistGlyphs()
+                selectedVisibilityScope = KBVisibilityScope.normalized(n.visibilityScope)
+                selectedVisibilityMemberIds = Set(n.visibilityMemberIds ?? [])
                 note      = n
             }
         }
@@ -124,6 +139,24 @@ struct NoteDetailView: View {
             let text  = [title, body].filter { !$0.isEmpty }.joined(separator: "\n\n")
             ShareSheet(items: [text]).ignoresSafeArea()
         }
+        .sheet(isPresented: $isVisibilitySheetPresented) {
+            VisibilityPickerSheet(
+                selectedScope: $selectedVisibilityScope,
+                selectedMemberIds: $selectedVisibilityMemberIds,
+                members: selectableMembers,
+                currentUid: currentUid,
+                scopeSectionTitle: "Chi può vedere questa nota"
+            ) { scope, memberIds in
+                selectedVisibilityScope = scope
+                selectedVisibilityMemberIds = memberIds
+                isDirty = true
+            }
+        }
+        .alert("Visibilità bloccata", isPresented: $showVisibilityLockedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Solo chi ha creato la nota può modificare la visibilità.")
+        }
     }
     
     // MARK: - Computed: versione remota della nota per onChange
@@ -131,6 +164,42 @@ struct NoteDetailView: View {
     /// Proxy per rilevare aggiornamenti remoti: cambia ogni volta che SwiftData aggiorna la nota.
     private var noteRemoteVersion: Date {
         queriedNotes.first?.updatedAt ?? .distantPast
+    }
+
+    private var currentUid: String? {
+        Auth.auth().currentUser?.uid
+    }
+
+    private var canEditVisibility: Bool {
+        guard let uid = currentUid else { return false }
+        guard let n = note else { return true }
+        let cid = n.createdBy.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cid.isEmpty { return true }
+        return cid == uid
+    }
+
+    private var selectableMembers: [KBFamilyMember] {
+        members.filter { $0.userId != currentUid }
+    }
+
+    @ViewBuilder
+    private var visibilityChip: some View {
+        Button {
+            if canEditVisibility {
+                isVisibilitySheetPresented = true
+            } else {
+                showVisibilityLockedAlert = true
+            }
+        } label: {
+            Text(KBVisibilityScope.chipLabel(for: selectedVisibilityScope))
+                .font(.custom("Nunito", size: 14))
+                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(red: 0.949, green: 0.941, blue: 0.922))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Load / Create
@@ -140,6 +209,8 @@ struct NoteDetailView: View {
             note      = existing
             titleText = existing.title
             bodyHTML  = existing.body.normalizedKidBoxChecklistGlyphs()
+            selectedVisibilityScope = KBVisibilityScope.normalized(existing.visibilityScope)
+            selectedVisibilityMemberIds = Set(existing.visibilityMemberIds ?? [])
             isDirty   = false
             return
         }
@@ -162,6 +233,8 @@ struct NoteDetailView: View {
         note      = n
         titleText = ""
         bodyHTML  = ""
+        selectedVisibilityScope = KBVisibilityScope.normalized(n.visibilityScope)
+        selectedVisibilityMemberIds = Set(n.visibilityMemberIds ?? [])
         isDirty   = false
     }
     
@@ -196,6 +269,10 @@ struct NoteDetailView: View {
         note.updatedAt     = .now
         note.updatedBy     = uid
         note.updatedByName = ""
+        note.visibilityScope = selectedVisibilityScope
+        note.visibilityMemberIds = selectedVisibilityScope == KBVisibilityScope.members
+        ? Array(selectedVisibilityMemberIds).sorted()
+        : []
         note.syncState     = .pendingUpsert
         note.lastSyncError = nil
         
@@ -214,6 +291,7 @@ struct NoteDetailView: View {
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+
 }
 
 // MARK: - ShareSheet

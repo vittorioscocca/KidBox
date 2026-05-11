@@ -49,7 +49,10 @@ struct CalendarView: View {
     var highlightEventId: String? = nil
     
     private var events: [KBCalendarEvent] {
-        allEvents.filter { $0.familyId == familyId && !$0.isDeleted }
+        let uid = Auth.auth().currentUser?.uid
+        return allEvents.filter {
+            $0.familyId == familyId && !$0.isDeleted && $0.isVisible(to: uid)
+        }
     }
     
     private var datesWithEvents: Set<DateComponents> {
@@ -642,6 +645,8 @@ struct CalendarEventFormView: View {
     var event:       KBCalendarEvent?
     var prefillTitle: String = ""
     
+    @Query private var members: [KBFamilyMember]
+    
     @State private var title         = ""
     @State private var notes         = ""
     @State private var location      = ""
@@ -652,6 +657,44 @@ struct CalendarEventFormView: View {
     @State private var recurrence    = KBEventRecurrence.none
     @State private var hasReminder   = false
     @State private var reminderIndex = 1
+    
+    @State private var isVisibilitySheetPresented = false
+    @State private var selectedVisibilityScope = KBVisibilityScope.family
+    @State private var selectedVisibilityMemberIds: Set<String> = []
+    @State private var showVisibilityLockedAlert = false
+    /// Guards `populateFields()` so it only runs once (not again when returning from a navigation push).
+    @State private var didPopulateFields = false
+    
+    private var isNewEvent: Bool { event == nil }
+    
+    private var currentUid: String? {
+        Auth.auth().currentUser?.uid
+    }
+    
+    private var canEditVisibility: Bool {
+        guard let uid = currentUid else { return isNewEvent }
+        if isNewEvent { return true }
+        guard let ev = event else { return false }
+        let cid = ev.createdBy.trimmingCharacters(in: .whitespacesAndNewlines)
+        return cid.isEmpty || cid == uid
+    }
+    
+    /// Membri selezionabili per visibilità "members" (escluso utente corrente).
+    private var visibilitySelectableMembers: [KBFamilyMember] {
+        members.filter { $0.userId != currentUid }
+    }
+    
+    init(familyId: String, initialDate: Date, event: KBCalendarEvent? = nil, prefillTitle: String = "") {
+        self.familyId = familyId
+        self.initialDate = initialDate
+        self.event = event
+        self.prefillTitle = prefillTitle
+        let fid = familyId
+        _members = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \KBFamilyMember.displayName
+        )
+    }
     
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -691,6 +734,11 @@ struct CalendarEventFormView: View {
                                 label("Titolo")
                                 TextField("Es. Visita pediatrica", text: $title)
                                     .font(.body)
+                            }
+                            Divider()
+                            VStack(alignment: .leading, spacing: 4) {
+                                label("Visibilità")
+                                eventVisibilityChipRow
                             }
                             Divider()
                             VStack(alignment: .leading, spacing: 8) {
@@ -800,8 +848,76 @@ struct CalendarEventFormView: View {
                         .foregroundStyle(primaryText)
                 }
             }
-            .onAppear { populateFields() }
+            .onAppear {
+                guard !didPopulateFields else { return }
+                didPopulateFields = true
+                populateFields()
+            }
+            // Push the picker within the SAME NavigationStack instead of a nested sheet/fullScreenCover.
+            // This avoids the iOS "sheet-in-sheet" problem where a second presentation inside
+            // an already-presented sheet silently fails.
+            .navigationDestination(isPresented: $isVisibilitySheetPresented) {
+                VisibilityPickerSheet(
+                    selectedScope: $selectedVisibilityScope,
+                    selectedMemberIds: $selectedVisibilityMemberIds,
+                    members: visibilitySelectableMembers,
+                    currentUid: currentUid,
+                    scopeSectionTitle: "Chi può vedere questo evento",
+                    embedded: true
+                ) { scope, ids in
+                    selectedVisibilityScope = scope
+                    selectedVisibilityMemberIds = ids
+                    // Pop the navigation push without calling dismiss() (which would risk
+                    // dismissing the entire CalendarEventFormView sheet on some iOS versions).
+                    isVisibilitySheetPresented = false
+                }
+            }
         }
+        .alert("Visibilità bloccata", isPresented: $showVisibilityLockedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Solo chi ha creato l’evento può modificare la visibilità.")
+        }
+    }
+    
+    @ViewBuilder
+    private var eventVisibilityChipRow: some View {
+        Button {
+            if canEditVisibility {
+                isVisibilitySheetPresented = true
+            } else {
+                showVisibilityLockedAlert = true
+            }
+        } label: {
+            HStack {
+                eventVisibilityChipLabel
+                if canEditVisibility {
+                    Spacer(minLength: 8)
+                    Text("Cambia")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(secondaryText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var eventVisibilityChipLabel: some View {
+        Text(KBVisibilityScope.chipLabel(for: selectedVisibilityScope))
+            .font(.custom("Nunito", size: 14))
+            .foregroundStyle(primaryText)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(cardBackground.opacity(colorScheme == .dark ? 0.55 : 0.85))
+            .overlay(
+                Capsule()
+                    .strokeBorder(primaryText.opacity(0.12), lineWidth: 1)
+            )
+            .clipShape(Capsule())
     }
     
     @ViewBuilder
@@ -894,6 +1010,8 @@ struct CalendarEventFormView: View {
             isAllDay      = e.isAllDay
             category      = e.category
             recurrence    = e.recurrence
+            selectedVisibilityScope = KBVisibilityScope.normalized(e.visibilityScope)
+            selectedVisibilityMemberIds = Set(e.visibilityMemberIds)
             if let mins = e.reminderMinutes {
                 hasReminder   = true
                 reminderIndex = reminderOptions.firstIndex(where: { $0.minutes == mins }) ?? 1
@@ -901,6 +1019,8 @@ struct CalendarEventFormView: View {
         } else {
             startDate = Calendar.current.startOfDay(for: initialDate)
             endDate   = startDate.addingTimeInterval(3600)
+            selectedVisibilityScope = KBVisibilityScope.family
+            selectedVisibilityMemberIds = []
         }
         if event == nil && !prefillTitle.isEmpty {
             title = prefillTitle
@@ -922,6 +1042,12 @@ struct CalendarEventFormView: View {
             e.category        = category
             e.recurrence      = recurrence
             e.reminderMinutes = mins
+            e.visibilityScope = KBVisibilityScope.normalized(selectedVisibilityScope)
+            if selectedVisibilityScope == KBVisibilityScope.members {
+                e.visibilityMemberIds = Array(selectedVisibilityMemberIds).sorted()
+            } else {
+                e.visibilityMemberIds = []
+            }
             e.updatedAt       = now
             e.updatedBy       = uid
             e.syncState       = .pendingUpsert
@@ -939,6 +1065,10 @@ struct CalendarEventFormView: View {
                 category:        category,
                 recurrence:      recurrence,
                 reminderMinutes: mins,
+                visibilityScope: KBVisibilityScope.normalized(selectedVisibilityScope),
+                visibilityMemberIds: selectedVisibilityScope == KBVisibilityScope.members
+                    ? Array(selectedVisibilityMemberIds).sorted()
+                    : [],
                 createdAt:       now,
                 updatedAt:       now,
                 updatedBy:       uid,

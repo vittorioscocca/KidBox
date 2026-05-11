@@ -51,7 +51,9 @@ private func makeNoteDTO(
         createdBy: "user-1",
         createdByName: "Mario",
         updatedBy: "user-1",
-        updatedByName: "Mario"
+        updatedByName: "Mario",
+        visibilityScope: KBVisibilityScope.family,
+        visibilityMemberIds: []
     )
 }
 

@@ -52,6 +52,8 @@ struct RemoteTodoRead {
     let assignedTo: String?
     let createdBy: String?
     let priority: Int?
+    let visibilityScope: String?
+    let visibilityMemberIds: [String]?
     let updatedAt: Date?
     let updatedBy: String?
     let isDeleted: Bool
@@ -277,6 +279,8 @@ final class FamilyReadRemoteStore {
                 assignedTo: d["assignedTo"] as? String,
                 createdBy: d["createdBy"] as? String,
                 priority: d["priority"] as? Int,
+                visibilityScope: d["visibilityScope"] as? String,
+                visibilityMemberIds: d["visibilityMemberIds"] as? [String],
                 updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue(),
                 updatedBy: d["updatedBy"] as? String,
                 isDeleted: (d["isDeleted"] as? Bool) ?? false

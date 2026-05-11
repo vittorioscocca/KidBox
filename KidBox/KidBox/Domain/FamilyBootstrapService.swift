@@ -479,6 +479,8 @@ childId.empty=\(childEmptyCount)
                 existing.isDeleted = t.isDeleted
                 existing.updatedAt = t.updatedAt ?? Date()
                 existing.updatedBy = t.updatedBy ?? fallbackUpdatedBy
+                existing.visibilityScope = KBVisibilityScope.normalized(t.visibilityScope)
+                existing.visibilityMemberIds = t.visibilityMemberIds ?? []
                 updated += 1
                 
                 // Log “diff” SOLO per casi sospetti (no PII)
@@ -504,6 +506,8 @@ childId.empty=\(childEmptyCount)
                     updatedAt: t.updatedAt ?? Date(),
                     isDeleted: t.isDeleted
                 )
+                todo.visibilityScope = KBVisibilityScope.normalized(t.visibilityScope)
+                todo.visibilityMemberIds = t.visibilityMemberIds ?? []
                 modelContext.insert(todo)
                 inserted += 1
                 

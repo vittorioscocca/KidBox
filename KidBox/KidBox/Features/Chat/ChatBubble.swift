@@ -864,7 +864,13 @@ struct ChatBubble: View {
         defer { isDownloadingDoc = false }
         do {
             let (tmpURL, _) = try await URLSession.shared.download(from: remoteURL)
-            let fileName = message.text ?? remoteURL.lastPathComponent
+            let peek = try? Data(contentsOf: tmpURL, options: [.mappedIfSafe])
+            let sniffed = peek.map { ChatAttachmentFileNaming.sniffPreferredExtension(from: $0) } ?? "bin"
+            let fileName = ChatAttachmentFileNaming.localPreviewFileName(
+                storedText: message.text,
+                remoteURL: remoteURL,
+                sniffedExtension: sniffed
+            )
             let destURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
                 .appendingPathComponent(fileName)

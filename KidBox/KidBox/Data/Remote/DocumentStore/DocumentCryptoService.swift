@@ -84,4 +84,35 @@ enum DocumentCryptoService {
         KBLog.sync.kbDebug("Decrypt OK familyId=\(familyId) outBytes=\(plaintext.count)")
         return plaintext
     }
+    
+    // MARK: - Chat-linked KBDocument payloads
+    
+    /// Firebase paths under `.../chat/...` store **plaintext** media, except legacy `*.kbenc`.
+    static func isPlainChatStoragePath(_ storagePath: String) -> Bool {
+        guard !storagePath.isEmpty,
+              storagePath.range(of: "/chat/", options: .caseInsensitive) != nil else {
+            return false
+        }
+        return !storagePath.lowercased().hasSuffix(".kbenc")
+    }
+    
+    /// Indexed chat saves use `notes == "chat_plain"`; remote rows may omit it while still using a chat `storagePath`.
+    static func storedKBDocumentPayloadIsPlaintext(notes: String?, storagePath: String) -> Bool {
+        if notes == "chat_plain" { return true }
+        return isPlainChatStoragePath(storagePath)
+    }
+    
+    /// Bytes from Storage or local cache: decrypt KidBox document ciphertext, or return as-is for plain chat payloads.
+    static func decryptStoredKBDocumentPayload(
+        _ data: Data,
+        storagePath: String,
+        notes: String?,
+        familyId: String,
+        userId: String
+    ) throws -> Data {
+        guard !storedKBDocumentPayloadIsPlaintext(notes: notes, storagePath: storagePath) else {
+            return data
+        }
+        return try decrypt(data, familyId: familyId, userId: userId)
+    }
 }
