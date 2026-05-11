@@ -71,6 +71,7 @@ struct PetEventDetailView: View {
                                     .foregroundStyle(.primary)
                             }
                         }
+                        PetEventAttachmentsSection(eventId: e.id, familyId: familyId)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -144,6 +145,11 @@ struct PetEventDetailView: View {
 
     private func deleteEvent() {
         guard let e = event else { return }
+        PetEventAttachmentService.shared.deleteAllForPetEvent(
+            eventId: e.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
         let uid = Auth.auth().currentUser?.uid ?? "local"
         e.isDeleted = true
         e.updatedAt = Date()

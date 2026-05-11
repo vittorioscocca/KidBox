@@ -34,6 +34,7 @@
 import Foundation
 import UserNotifications
 import SwiftData
+import FirebaseAuth
 
 // MARK: - WeeklySummaryService
 
@@ -58,10 +59,12 @@ final class WeeklySummaryService {
     
     /// Chiama all'avvio e quando l'app torna in foreground.
     /// Genera la sintesi solo se quella di questa settimana manca ancora.
+    /// - Parameter forcedFamilyId: se valorizzato (es. da `RootHostView`), usato per caricare gli allegati life-area anche con `input` minimale.
     func scheduleWeeklyIfNeeded(
         input:        PlanningContextInput,
         familyName:   String,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        forcedFamilyId: String? = nil
     ) async {
         guard isEnabled else {
             KBLog.ai.kbDebug("WeeklySummaryService: disabled by user preference")
@@ -85,7 +88,12 @@ final class WeeklySummaryService {
         }
         
         KBLog.ai.kbInfo("WeeklySummaryService: generating summary for week \(currentWeek)")
-        await generateAndSchedule(input: input, familyName: familyName, weekKey: currentWeek)
+        let enrichedInput = await enrichInputWithLifeAreaDocuments(
+            forcedFamilyId: forcedFamilyId,
+            base: input,
+            modelContext: modelContext
+        )
+        await generateAndSchedule(input: enrichedInput, familyName: familyName, weekKey: currentWeek)
     }
     
     /// Restituisce la sintesi dell'ultima settimana se disponibile.
@@ -97,6 +105,99 @@ final class WeeklySummaryService {
     var isEnabled: Bool {
         get { UserDefaults.standard.object(forKey: Keys.enabled) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: Keys.enabled) }
+    }
+    
+    // MARK: - Life-area documents (Casa / Garage / Animali)
+    
+    /// Aggiunge allegati life-area con OCR completato al contesto del recap settimanale
+    /// (stessi tag di `OCRRecoveryMigration` / planning AI).
+    private func enrichInputWithLifeAreaDocuments(
+        forcedFamilyId: String?,
+        base: PlanningContextInput,
+        modelContext: ModelContext
+    ) async -> PlanningContextInput {
+        let trimmed = forcedFamilyId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let familyId = !trimmed.isEmpty ? trimmed : Self.resolveFamilyId(from: base)
+        guard !familyId.isEmpty else { return base }
+        do {
+            let fid = familyId
+            let desc = FetchDescriptor<KBDocument>(
+                predicate: #Predicate { doc in
+                    doc.familyId == fid && doc.isDeleted == false
+                }
+            )
+            let rows = try modelContext.fetch(desc)
+            let lifeTagged = rows.filter { Self.isLifeAreaTaggedDocument($0) }
+            Self.enqueuePendingLifeAreaExtractions(documents: lifeTagged, modelContext: modelContext)
+            let completed = lifeTagged.filter { $0.extractionStatus == .completed && $0.hasExtractedText }
+            guard !completed.isEmpty else { return base }
+            var byId = Dictionary(uniqueKeysWithValues: base.lifeAreaDocuments.map { ($0.id, $0) })
+            for d in completed { byId[d.id] = d }
+            return base.withLifeAreaDocuments(Array(byId.values).sorted { $0.updatedAt > $1.updatedAt })
+        } catch {
+            KBLog.ai.kbError("WeeklySummaryService: enrich life-area docs failed \(error.localizedDescription)")
+            return base
+        }
+    }
+    
+    private static func resolveFamilyId(from input: PlanningContextInput) -> String {
+        if let id = input.children.first?.familyId, !id.isEmpty { return id }
+        if let id = input.pets.first?.familyId, !id.isEmpty { return id }
+        if let id = input.homeItems.first?.familyId, !id.isEmpty { return id }
+        if let id = input.housePayments.first?.familyId, !id.isEmpty { return id }
+        if let id = input.vehicles.first?.familyId, !id.isEmpty { return id }
+        if let id = input.calendarEvents.first?.familyId, !id.isEmpty { return id }
+        return ""
+    }
+    
+    private static func isLifeAreaTaggedDocument(_ document: KBDocument) -> Bool {
+        let tag = document.notes?.lowercased() ?? ""
+        return tag.hasPrefix("homeitem:")
+            || tag.hasPrefix("housepayment:")
+            || tag.hasPrefix("vehicle:")
+            || tag.hasPrefix("vehicleevent:")
+            || tag.hasPrefix("petevent:")
+    }
+    
+    private static func enqueuePendingLifeAreaExtractions(
+        documents: [KBDocument],
+        modelContext: ModelContext
+    ) {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        for doc in documents {
+            guard !doc.isDeleted else { continue }
+            let empty = doc.extractedText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+            let needsWork = empty || doc.extractionStatus == .none || doc.extractionStatus == .pending
+                || doc.extractionStatus == .processing || doc.extractionStatus == .failed
+            guard needsWork else { continue }
+            guard doc.localFileURL != nil else { continue }
+            DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                for: doc,
+                updatedBy: uid,
+                modelContext: modelContext
+            )
+        }
+    }
+    
+    private static let weeklyLifeDocMaxCharsPerFile = 6_000
+    
+    private static func sanitizeWeeklyExtractedText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+    }
+    
+    private static func clippedWeeklyLifeExtract(from doc: KBDocument) -> String? {
+        guard let raw = doc.extractedText else { return nil }
+        let sanitized = sanitizeWeeklyExtractedText(raw)
+        guard !sanitized.isEmpty else { return nil }
+        if sanitized.count <= weeklyLifeDocMaxCharsPerFile { return sanitized }
+        let head = String(sanitized.prefix(weeklyLifeDocMaxCharsPerFile))
+        return head + "\n[… troncato per recap settimanale …]"
     }
     
     // MARK: - Generation
@@ -245,6 +346,24 @@ final class WeeklySummaryService {
         // Grocery
         if !input.pendingGroceryItems.isEmpty {
             lines.append("\nLISTA SPESA: \(input.pendingGroceryItems.count) articoli da acquistare")
+        }
+        
+        // Allegati Casa / Garage / Animali (testo estratto OCR)
+        let lifeDocs = input.lifeAreaDocuments
+            .filter { !$0.isDeleted && $0.extractionStatus == .completed && $0.hasExtractedText }
+            .sorted { $0.updatedAt > $1.updatedAt }
+        if !lifeDocs.isEmpty {
+            lines.append("\nALLEGATI CASA / GARAGE / ANIMALI (testo estratto, max 8 file):")
+            for doc in lifeDocs.prefix(8) {
+                guard let body = Self.clippedWeeklyLifeExtract(from: doc) else { continue }
+                lines.append("  — \(doc.title):")
+                for row in body.split(separator: "\n", omittingEmptySubsequences: false) {
+                    let s = String(row)
+                    if !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        lines.append("    \(s)")
+                    }
+                }
+            }
         }
         
         lines.append("\nGenera ora la sintesi seguendo le regole del sistema.")

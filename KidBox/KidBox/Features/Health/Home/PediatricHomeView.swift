@@ -99,6 +99,7 @@ struct PediatricHomeView: View {
     private var activeTreatments: [KBTreatment] {
         let today = Calendar.current.startOfDay(for: Date())
         return allTreatments.filter { t in
+            if !t.petId.isEmpty { return false }
             if t.isLongTerm { return true }
             if let end = t.endDate, end < today { return false }
             let total = t.totalDoses

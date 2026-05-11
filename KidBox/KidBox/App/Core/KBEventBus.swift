@@ -54,6 +54,12 @@ enum KBAppEvent {
         paymentId: String,
         familyId: String
     )
+    /// Animali — evento (vaccino, visita, …)
+    case petEventAttachmentPending(
+        urls: [URL],
+        eventId: String,
+        familyId: String
+    )
 }
 
 // MARK: - Bus

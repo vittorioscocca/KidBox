@@ -168,7 +168,10 @@ final class HomeAttachmentService {
         let ext = url.pathExtension.lowercased()
         let mime = mimeType(for: ext)
         let title = url.deletingPathExtension().lastPathComponent
-        let storagePath = "families/\(familyId)/\(storageScope)/\(docId)/\(fileName).kbenc"
+        // Firebase Storage rules: uploads must live under `documents/` (same as DocumentStorageService).
+        // Logical scope (home vs payment) stays in Firestore metadata + notes tag, not in the path.
+        let storagePath = "families/\(familyId)/documents/\(docId)/\(fileName).kbenc"
+        KBLog.storage.kbDebug("Casa attachment upload logicalScope=\(storageScope) storagePath=\(storagePath)")
 
         let casaFolder = ensureCasaFolder(familyId: familyId, modelContext: modelContext)
 

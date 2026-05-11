@@ -549,6 +549,7 @@ struct PediatricTreatmentsView: View {
             let copy = KBTreatment(
                 familyId:         t.familyId,
                 childId:          t.childId,
+                petId:            t.petId,
                 drugName:         t.drugName,
                 activeIngredient: t.activeIngredient,
                 dosageValue:      t.dosageValue,

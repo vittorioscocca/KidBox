@@ -15,6 +15,8 @@ struct DrugSelectorStep: View {
     
     @Binding var drugName: String
     @Binding var activeIngredient: String
+    /// `.pet` per cure legate a un animale (catalogo veterinario, senza suggerimenti da pediatria umana).
+    var audience: DrugSuggestionAudience = .pediatric
     
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
@@ -34,12 +36,12 @@ struct DrugSelectorStep: View {
     }
     
     private var results: [DrugEntry] {
-        DrugCatalog.search(searchText, custom: customEntries)
+        DrugCatalog.search(searchText, custom: customEntries, audience: audience)
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Seleziona farmaco")
+            Text(audience == .pet ? "Seleziona farmaco (veterinario)" : "Seleziona farmaco")
                 .font(.title3.bold())
                 .foregroundStyle(KBTheme.primaryText(colorScheme))
             

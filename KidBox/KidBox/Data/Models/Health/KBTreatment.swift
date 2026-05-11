@@ -14,7 +14,9 @@ final class KBTreatment {
     @Attribute(.unique) var id: String
     var familyId: String
     var childId: String
-    
+    /// Se non vuoto, cura legata a un animale (`KBPet.id`); `childId` resta vuoto per queste righe.
+    var petId: String = ""
+
     var drugName: String
     var activeIngredient: String?
     
@@ -56,6 +58,7 @@ final class KBTreatment {
         id: String = UUID().uuidString,
         familyId: String,
         childId: String,
+        petId: String = "",
         drugName: String,
         activeIngredient: String? = nil,
         dosageValue: Double = 0,
@@ -79,6 +82,7 @@ final class KBTreatment {
         self.id               = id
         self.familyId         = familyId
         self.childId          = childId
+        self.petId            = petId
         self.drugName         = drugName
         self.activeIngredient = activeIngredient
         self.dosageValue      = dosageValue

@@ -33,6 +33,13 @@ struct DrugEntry: Identifiable, Hashable {
     }
 }
 
+enum DrugSuggestionAudience: Equatable {
+    /// Farmaci tipici pediatria / uso umano in famiglia.
+    case pediatric
+    /// Cane / animali domestici: suggerimenti da medicina veterinaria (non pediatria).
+    case pet
+}
+
 enum DrugCatalog {
     
     static let common: [DrugEntry] = [
@@ -53,8 +60,32 @@ enum DrugCatalog {
         DrugEntry(name: "Deltacortene", activeIngredient: "Prednisone", category: "Cortisonico", systemImage: "cross.vial", iconColor: .pink),
     ]
     
-    static func search(_ query: String, custom: [DrugEntry] = []) -> [DrugEntry] {
-        let all = deduplicated(common + custom)
+    /// Suggerimenti per nuove cure **animali** (cane): antiparassitari, antielmintici, antibiotici e antinfiammatori d’uso veterinario frequente in Italia.
+    /// Non include lavaggi nasali / mucolitici da pediatria umana (es. Rinowash).
+    static let commonForPet: [DrugEntry] = [
+        DrugEntry(name: "Frontline", activeIngredient: "Fipronil", category: "Antiparassitario", systemImage: "pawprint.fill", iconColor: .brown),
+        DrugEntry(name: "Advantix", activeIngredient: "Imidacloprid + permetrina", category: "Antiparassitario", systemImage: "pawprint.fill", iconColor: .brown),
+        DrugEntry(name: "NexGard", activeIngredient: "Afoxolaner", category: "Antiparassitario", systemImage: "pawprint.fill", iconColor: .brown),
+        DrugEntry(name: "Bravecto", activeIngredient: "Fluralaner", category: "Antiparassitario", systemImage: "pawprint.fill", iconColor: .brown),
+        DrugEntry(name: "Seresto", activeIngredient: "Flumetrina + imidacloprid", category: "Antiparassitario", form: "Collare", systemImage: "pawprint.fill", iconColor: .brown),
+        DrugEntry(name: "Milbemax", activeIngredient: "Milbemicina + praziquantel", category: "Antielmintico", systemImage: "pills", iconColor: .teal),
+        DrugEntry(name: "Drontal", activeIngredient: "Febantel + praziquantel", category: "Antielmintico", systemImage: "pills", iconColor: .teal),
+        DrugEntry(name: "Synulox", activeIngredient: "Amoxicillina + ac. clavulanico", category: "Antibiotico", systemImage: "pills", iconColor: Color(red: 0.6, green: 0.45, blue: 0.85)),
+        DrugEntry(name: "Convenia", activeIngredient: "Cefovecin", category: "Antibiotico", systemImage: "syringe", iconColor: Color(red: 0.6, green: 0.45, blue: 0.85)),
+        DrugEntry(name: "Rimadyl", activeIngredient: "Carprofene", category: "Antinfiammatorio veterinario", systemImage: "bandage", iconColor: .orange),
+        DrugEntry(name: "Onsior", activeIngredient: "Robenacoxib", category: "Antinfiammatorio veterinario", systemImage: "bandage", iconColor: .orange),
+        DrugEntry(name: "Otomax", activeIngredient: "Gentamicina + clotrimazolo", category: "Otico veterinario", systemImage: "ear", iconColor: .blue),
+    ]
+    
+    static func catalog(for audience: DrugSuggestionAudience) -> [DrugEntry] {
+        switch audience {
+        case .pediatric: common
+        case .pet: commonForPet
+        }
+    }
+    
+    static func search(_ query: String, custom: [DrugEntry] = [], audience: DrugSuggestionAudience = .pediatric) -> [DrugEntry] {
+        let all = deduplicated(catalog(for: audience) + custom)
         
         guard !query.isEmpty else { return all }
         let q = query.lowercased()
@@ -88,6 +119,10 @@ enum DrugCatalog {
         case "Nasale": return .blue
         case "Antistaminico": return .green
         case "Cortisonico": return .pink
+        case "Antiparassitario": return .brown
+        case "Antielmintico": return .teal
+        case "Antinfiammatorio veterinario": return .orange
+        case "Otico veterinario": return .blue
         default: return KBTheme.tint
         }
     }
@@ -113,6 +148,10 @@ enum DrugCatalog {
         case "Nasale": return "nose"
         case "Antistaminico": return "allergens"
         case "Cortisonico": return "cross.vial"
+        case "Antiparassitario": return "pawprint.fill"
+        case "Antielmintico": return "pills"
+        case "Antinfiammatorio veterinario": return "bandage"
+        case "Otico veterinario": return "ear"
         default: return "cross.vial.fill"
         }
     }

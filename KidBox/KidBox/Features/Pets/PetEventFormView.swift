@@ -16,6 +16,10 @@ struct PetEventFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Id stabile per allegati prima del primo salvataggio (parity HomeItemFormView).
+    @State private var attachmentEventId: String
+    @State private var saveCompleted = false
+
     @State private var title: String = ""
     @State private var eventTypeRaw: String = "vaccine"
     @State private var date = Date()
@@ -43,6 +47,13 @@ struct PetEventFormView: View {
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    init(familyId: String, petId: String, existingEvent: KBPetEvent?) {
+        self.familyId = familyId
+        self.petId = petId
+        self.existingEvent = existingEvent
+        _attachmentEventId = State(initialValue: existingEvent?.id ?? UUID().uuidString)
     }
 
     var body: some View {
@@ -73,6 +84,11 @@ struct PetEventFormView: View {
                         .font(.custom("Nunito", size: 15))
                 } header: {
                     Text("Note")
+                }
+                Section {
+                    PetEventAttachmentsSection(eventId: attachmentEventId, familyId: familyId)
+                } header: {
+                    Text("Allegati")
                 }
             }
             .scrollContentBackground(.hidden)
@@ -133,6 +149,7 @@ struct PetEventFormView: View {
             SyncCenter.shared.enqueuePetEventUpsert(eventId: existing.id, familyId: familyId, modelContext: modelContext)
         } else {
             let ev = KBPetEvent(
+                id: attachmentEventId,
                 familyId: familyId,
                 petId: petId,
                 title: t,

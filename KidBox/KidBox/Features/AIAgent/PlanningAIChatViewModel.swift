@@ -15,6 +15,7 @@
 import Foundation
 import SwiftData
 import Combine
+import FirebaseAuth
 
 @MainActor
 final class PlanningAIChatViewModel: ObservableObject {
@@ -189,40 +190,7 @@ final class PlanningAIChatViewModel: ObservableObject {
             messages     = convo.sortedMessages
             if convo.summary?.isEmpty == false { lastCompactionThreshold = 3 }
             
-            systemPrompt = PlanningContextBuilder.buildSystemPrompt(
-                input: PlanningContextInput(
-                    familyName:             familyName,
-                    memberNames:            memberNames,
-                    horizonDays:            horizonDays,
-                    calendarEvents:         calendarEvents,
-                    openTodos:              openTodos,
-                    activeRoutines:         activeRoutines,
-                    todayChecks:            todayChecks,
-                    childNames:             childNames,
-                    activeTreatments:       activeTreatments,
-                    visitsWithNextDate:     visitsWithNextDate,
-                    visitsWithPendingExams: visitsWithPendingExams,
-                    upcomingVaccines:       upcomingVaccines,
-                    recentNotes:            recentNotes,
-                    recentExpenses:         recentExpenses,
-                    expenseCategoryNames:   expenseCategoryNames,
-                    pendingGroceryItems:    pendingGroceryItems,
-                    recentChatMessages:     recentChatMessages,
-                    recentDocuments:        recentDocuments,
-                    recentWalletTickets:    recentWalletTickets,
-                    pets:                   pets,
-                    petEvents:              petEvents,
-                    homeItems:              homeItems,
-                    housePayments:          housePayments,
-                    vehicles:               vehicles,
-                    vehicleEvents:          vehicleEvents,
-                    children:               children,
-                    pediatricProfiles:      pediatricProfiles,
-                    allVisits:              allVisits,
-                    allExams:               allExams,
-                    allVaccines:            allVaccines
-                )
-            )
+            try refreshPlanningSystemPrompt()
             
             contextPrepared  = true
             isLoadingContext = false
@@ -258,6 +226,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         isLoading = true
         
         do {
+            try refreshPlanningSystemPrompt()
             let payloadMessages   = buildPayloadMessages(conversation: conversation)
             let finalSystemPrompt = buildFinalSystemPrompt(conversation: conversation)
             
@@ -359,6 +328,111 @@ final class PlanningAIChatViewModel: ObservableObject {
         conversation.summarizedMessageCount = 0
         lastCompactionThreshold = currentThresholdStep
         messages = [compacted]
+    }
+    
+    // MARK: - Planning context refresh
+    
+    private func refreshPlanningSystemPrompt() throws {
+        let linked = try fetchLifeAreaDocumentsLinkedToPlanningContext()
+        enqueueLifeAreaExtractionsIfNeeded(documents: linked)
+        let completed = linked.filter { $0.extractionStatus == .completed && $0.hasExtractedText }
+        systemPrompt = PlanningContextBuilder.buildSystemPrompt(
+            input: makePlanningContextInput(lifeAreaDocuments: completed)
+        )
+    }
+    
+    private func makePlanningContextInput(lifeAreaDocuments: [KBDocument]) -> PlanningContextInput {
+        PlanningContextInput(
+            familyName:             familyName,
+            memberNames:            memberNames,
+            horizonDays:            horizonDays,
+            calendarEvents:         calendarEvents,
+            openTodos:              openTodos,
+            activeRoutines:         activeRoutines,
+            todayChecks:            todayChecks,
+            childNames:             childNames,
+            activeTreatments:       activeTreatments,
+            visitsWithNextDate:     visitsWithNextDate,
+            visitsWithPendingExams: visitsWithPendingExams,
+            upcomingVaccines:       upcomingVaccines,
+            recentNotes:            recentNotes,
+            recentExpenses:         recentExpenses,
+            expenseCategoryNames:   expenseCategoryNames,
+            pendingGroceryItems:    pendingGroceryItems,
+            recentChatMessages:     recentChatMessages,
+            recentDocuments:        recentDocuments,
+            recentWalletTickets:    recentWalletTickets,
+            pets:                   pets,
+            petEvents:              petEvents,
+            homeItems:              homeItems,
+            housePayments:          housePayments,
+            vehicles:               vehicles,
+            vehicleEvents:          vehicleEvents,
+            lifeAreaDocuments:      lifeAreaDocuments,
+            children:               children,
+            pediatricProfiles:      pediatricProfiles,
+            allVisits:              allVisits,
+            allExams:               allExams,
+            allVaccines:            allVaccines
+        )
+    }
+    
+    private func fetchLifeAreaDocumentsLinkedToPlanningContext() throws -> [KBDocument] {
+        guard !familyId.isEmpty else { return [] }
+        let fid = familyId
+        let homeIds = Set(homeItems.map(\.id))
+        let paymentIds = Set(housePayments.map(\.id))
+        let vehicleIds = Set(vehicles.map(\.id))
+        let vehEventIds = Set(vehicleEvents.map(\.id))
+        let petEventIds = Set(petEvents.map(\.id))
+        let desc = FetchDescriptor<KBDocument>(
+            predicate: #Predicate { doc in
+                doc.familyId == fid && doc.isDeleted == false
+            }
+        )
+        let rows = try modelContext.fetch(desc)
+        return rows.filter {
+            matchesLifeAreaPlanningTags(
+                $0,
+                homeIds: homeIds,
+                paymentIds: paymentIds,
+                vehicleIds: vehicleIds,
+                vehEventIds: vehEventIds,
+                petEventIds: petEventIds
+            )
+        }
+    }
+    
+    private func matchesLifeAreaPlanningTags(
+        _ doc: KBDocument,
+        homeIds: Set<String>,
+        paymentIds: Set<String>,
+        vehicleIds: Set<String>,
+        vehEventIds: Set<String>,
+        petEventIds: Set<String>
+    ) -> Bool {
+        homeIds.contains { HomeItemAttachmentTag.matches(doc, homeItemId: $0) } ||
+            paymentIds.contains { HousePaymentAttachmentTag.matches(doc, paymentId: $0) } ||
+            vehicleIds.contains { VehicleAttachmentTag.matches(doc, vehicleId: $0) } ||
+            vehEventIds.contains { VehicleEventAttachmentTag.matches(doc, eventId: $0) } ||
+            petEventIds.contains { PetEventAttachmentTag.matches(doc, eventId: $0) }
+    }
+    
+    private func enqueueLifeAreaExtractionsIfNeeded(documents: [KBDocument]) {
+        let uid = Auth.auth().currentUser?.uid ?? "local"
+        for doc in documents {
+            guard !doc.isDeleted else { continue }
+            let empty = doc.extractedText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+            let needsWork = empty || doc.extractionStatus == .none || doc.extractionStatus == .pending
+                || doc.extractionStatus == .processing || doc.extractionStatus == .failed
+            guard needsWork else { continue }
+            guard doc.localFileURL != nil else { continue }
+            DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                for: doc,
+                updatedBy: uid,
+                modelContext: modelContext
+            )
+        }
     }
     
     // MARK: - Payload building

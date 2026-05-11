@@ -57,8 +57,15 @@ struct TreatmentDetailView: View {
     }
     
     // MARK: Computed
-    
-    private var childName: String { children.first?.name ?? "" }
+
+    private var subjectDisplayName: String {
+        if treatment.petId.isEmpty {
+            return children.first?.name ?? ""
+        }
+        let pid = treatment.petId
+        let d = FetchDescriptor<KBPet>(predicate: #Predicate<KBPet> { $0.id == pid })
+        return (try? modelContext.fetch(d).first?.name) ?? "Animale"
+    }
     private var totalDays: Int {
         guard treatment.isLongTerm else { return treatment.durationDays }
         let cal = Calendar.current
@@ -197,14 +204,14 @@ struct TreatmentDetailView: View {
             PediatricTreatmentEditView(
                 familyId:  treatment.familyId,
                 childId:   treatment.childId,
-                childName: childName,
+                childName: subjectDisplayName,
                 treatmentId: treatment.id
             )
         }
         .sheet(isPresented: $showExtendSheet) { ExtendTreatmentSheet(treatment: treatment) }
         .sheet(isPresented: $showTimeEditor)  { EditScheduleTimesSheet(treatment: treatment) }
         .sheet(item: $showConfirmDose) { ctx in
-            ConfirmDoseSheet(treatment: treatment, childName: childName, context: ctx) { takenAt in
+            ConfirmDoseSheet(treatment: treatment, childName: subjectDisplayName, context: ctx) { takenAt in
                 markDose(context: ctx, takenAt: takenAt)
             }
         }
@@ -227,10 +234,10 @@ struct TreatmentDetailView: View {
                 Image(systemName: "cross.vial.fill").font(.title).foregroundStyle(tint)
             }
             
-            if !childName.isEmpty {
+            if !subjectDisplayName.isEmpty {
                 HStack(spacing: 4) {
-                    Text(children.first?.avatarEmoji ?? "👶").font(.caption)
-                    Text(childName).font(.caption.bold())
+                    Text(treatment.petId.isEmpty ? (children.first?.avatarEmoji ?? "👶") : "🐾").font(.caption)
+                    Text(subjectDisplayName).font(.caption.bold())
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
                 .background(Capsule().fill(tint.opacity(0.1)))
@@ -666,7 +673,7 @@ struct TreatmentDetailView: View {
             Task {
                 let granted = await TreatmentNotificationManager.requestAuthorization()
                 if granted {
-                    TreatmentNotificationManager.schedule(treatment: treatment, childName: childName)
+                    TreatmentNotificationManager.schedule(treatment: treatment, childName: subjectDisplayName)
                 } else {
                     await MainActor.run {
                         treatment.reminderEnabled = false

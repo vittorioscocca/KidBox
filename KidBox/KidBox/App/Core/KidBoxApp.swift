@@ -110,8 +110,10 @@ struct KidBoxApp: App {
                         VisitAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         VehicleAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         HomeAttachmentService.shared.start(modelContext: modelContainer.mainContext)
+                        PetEventAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         ExpenseAttachmentService.shared.start(modelContext: modelContainer.mainContext)
                         await OCRRecoveryMigration.runIfNeeded(modelContext: modelContainer.mainContext)
+                        await OCRRecoveryMigration.runLifeAreaIfNeeded(modelContext: modelContainer.mainContext)
 #if DEBUG
                         KBLog.sync.kbDebug("DEBUG FirestorePingService ping()")
                         FirestorePingService().ping { _ in }
@@ -328,14 +330,23 @@ struct KidBoxApp: App {
                     )
                     guard let treatments = try? context.fetch(descriptor) else { return }
                     for treatment in treatments {
-                        let cid = treatment.childId
-                        let childDesc = FetchDescriptor<KBChild>(
-                            predicate: #Predicate { $0.id == cid }
-                        )
-                        let childName = (try? context.fetch(childDesc).first?.name) ?? ""
+                        let displayName: String
+                        if treatment.petId.isEmpty {
+                            let cid = treatment.childId
+                            let childDesc = FetchDescriptor<KBChild>(
+                                predicate: #Predicate { $0.id == cid }
+                            )
+                            displayName = (try? context.fetch(childDesc).first?.name) ?? ""
+                        } else {
+                            let pid = treatment.petId
+                            let petDesc = FetchDescriptor<KBPet>(
+                                predicate: #Predicate { $0.id == pid }
+                            )
+                            displayName = (try? context.fetch(petDesc).first?.name) ?? "Animale"
+                        }
                         TreatmentNotificationManager.rescheduleIfNeeded(
                             treatment: treatment,
-                            childName: childName
+                            childName: displayName
                         )
                     }
                     KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")

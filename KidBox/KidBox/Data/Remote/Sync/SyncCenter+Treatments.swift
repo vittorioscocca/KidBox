@@ -113,6 +113,7 @@ extension SyncCenter {
 
                 case .upsert(let dto):
                     let remoteStamp = dto.updatedAt ?? Date.distantPast
+                    let hasPet = dto.petId.map { !$0.isEmpty } ?? false
 
                     if let local = byId[dto.id] {
                         if local.isDeleted && local.syncState == .pendingUpsert {
@@ -126,7 +127,8 @@ extension SyncCenter {
                                 KBLog.sync.kbDebug("applyTreatmentsInbound: deleted locally id=\(dto.id)")
                             } else {
                                 applyTreatmentFields(local, from: dto,
-                                                     isPediatric: pediatricChildIds.contains(dto.childId))
+                                                     isPediatric: pediatricChildIds.contains(dto.childId),
+                                                     hasPet: hasPet)
                                 local.syncState     = .synced
                                 local.lastSyncError = nil
                             }
@@ -134,9 +136,11 @@ extension SyncCenter {
                     } else {
                         if dto.isDeleted { continue }
                         let isPediatric = pediatricChildIds.contains(dto.childId)
+                        let syncReminders = isPediatric || hasPet
                         let t = KBTreatment(
                             familyId:           dto.familyId,
                             childId:            dto.childId,
+                            petId:              dto.petId ?? "",
                             drugName:           dto.drugName,
                             activeIngredient:   dto.activeIngredient,
                             dosageValue:        dto.dosageValue,
@@ -149,7 +153,7 @@ extension SyncCenter {
                             scheduleTimes:      dto.scheduleTimes,
                             isActive:           dto.isActive,
                             notes:              dto.notes,
-                            reminderEnabled:    isPediatric ? dto.reminderEnabled : false,
+                            reminderEnabled:    syncReminders ? dto.reminderEnabled : false,
                             createdAt:          dto.createdAt ?? Date(),
                             updatedAt:          remoteStamp,
                             updatedBy:          dto.updatedBy,
@@ -181,7 +185,7 @@ extension SyncCenter {
         }
     }
 
-    private func applyTreatmentFields(_ local: KBTreatment, from dto: RemoteTreatmentDTO, isPediatric: Bool) {
+    private func applyTreatmentFields(_ local: KBTreatment, from dto: RemoteTreatmentDTO, isPediatric: Bool, hasPet: Bool) {
         local.drugName           = dto.drugName
         local.activeIngredient   = dto.activeIngredient
         local.dosageValue        = dto.dosageValue
@@ -196,7 +200,10 @@ extension SyncCenter {
         local.isDeleted          = dto.isDeleted
         local.notes              = dto.notes
         local.prescribingVisitId = dto.prescribingVisitId
-        if isPediatric { local.reminderEnabled = dto.reminderEnabled }
+        if let pid = dto.petId {
+            local.petId = pid
+        }
+        if isPediatric || hasPet || !local.petId.isEmpty { local.reminderEnabled = dto.reminderEnabled }
         local.updatedAt          = dto.updatedAt ?? local.updatedAt
         local.updatedBy          = dto.updatedBy
     }
@@ -356,6 +363,7 @@ extension SyncCenter {
                 id:               t.id,
                 familyId:         t.familyId,
                 childId:          t.childId,
+                petId:            t.petId.isEmpty ? nil : t.petId,
                 prescribingVisitId: t.prescribingVisitId,
                 drugName:         t.drugName,
                 activeIngredient: t.activeIngredient,
@@ -378,7 +386,7 @@ extension SyncCenter {
             )
             let syncReminder = isPediatricHealthSubject(
                 childId: t.childId, familyId: t.familyId, modelContext: modelContext
-            )
+            ) || !t.petId.isEmpty
             try await treatmentRemote.upsertTreatment(dto, syncReminderEnabledToRemote: syncReminder)
             
             t.syncState = .synced

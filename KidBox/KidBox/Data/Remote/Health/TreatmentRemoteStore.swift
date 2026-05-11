@@ -15,6 +15,7 @@ struct RemoteTreatmentDTO {
     let id:              String
     let familyId:        String
     let childId:         String
+    let petId:           String?
     let prescribingVisitId: String?
     let drugName:        String
     let activeIngredient: String?
@@ -125,7 +126,12 @@ final class TreatmentRemoteStore {
         } else {
             data["prescribingVisitId"] = FieldValue.delete()
         }
-        
+        if let pid = dto.petId, !pid.isEmpty {
+            data["petId"] = pid
+        } else {
+            data["petId"] = FieldValue.delete()
+        }
+
         try await db.collection("families")
             .document(dto.familyId)
             .collection("treatments")
@@ -252,17 +258,24 @@ final class TreatmentRemoteStore {
     private static func decodeTreatment(_ doc: QueryDocumentSnapshot, familyId: String) -> RemoteTreatmentDTO? {
         let data = doc.data()
         guard
-            let childId   = data["childId"]   as? String,
             let drugName  = data["drugName"]  as? String,
             let startDate = (data["startDate"] as? Timestamp)?.dateValue()
         else { return nil }
+
+        let childId = (data["childId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         
         let updatedBy = data["updatedBy"] as? String ?? "remote"
+        let petId: String? = {
+            guard let s = data["petId"] as? String else { return nil }
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }()
         
         return RemoteTreatmentDTO(
             id:               doc.documentID,
             familyId:         familyId,
             childId:          childId,
+            petId:            petId,
             prescribingVisitId: data["prescribingVisitId"] as? String,
             drugName:         drugName,
             activeIngredient: data["activeIngredient"] as? String,

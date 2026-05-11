@@ -122,7 +122,9 @@ struct PlanningAIChatView: View {
     }
     
     private var activeTreatments: [KBTreatment] {
-        allTreatments.filter { $0.familyId == familyId && !$0.isDeleted && $0.isActive }
+        allTreatments.filter {
+            $0.familyId == familyId && !$0.isDeleted && $0.isActive && $0.petId.isEmpty
+        }
     }
     
     private var visitsWithNextDate: [KBMedicalVisit] {

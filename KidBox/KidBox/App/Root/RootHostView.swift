@@ -81,6 +81,16 @@ struct RootHostView: View {
                     coordinator.makeDestination(for: $0)
                 }
         }
+        .task(id: resolvedActiveFamilyId) {
+            guard let fid = resolvedActiveFamilyId else { return }
+            let famName = families.first(where: { $0.id == fid })?.name ?? "Famiglia"
+            await WeeklySummaryService.shared.scheduleWeeklyIfNeeded(
+                input: PlanningContextInput(familyName: famName),
+                familyName: famName,
+                modelContext: modelContext,
+                forcedFamilyId: fid
+            )
+        }
         .onAppear {
             KBLog.navigation.kbDebug("RootHostView appeared")
             

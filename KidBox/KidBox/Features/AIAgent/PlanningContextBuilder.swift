@@ -82,6 +82,8 @@ struct PlanningContextInput {
     let housePayments: [KBHousePayment]
     let vehicles: [KBVehicle]
     let vehicleEvents: [KBVehicleEvent]
+    /// Allegati Casa / Garage / eventi animali con OCR completato (testo pronto per l'AI).
+    let lifeAreaDocuments: [KBDocument]
     
     // ── Profili sanitari figli (pediatria avanzata) ───────────────
     /// Tutti i figli della famiglia — per costruire il profilo avanzato.
@@ -122,6 +124,7 @@ struct PlanningContextInput {
         housePayments:         [KBHousePayment]    = [],
         vehicles:              [KBVehicle]         = [],
         vehicleEvents:         [KBVehicleEvent]    = [],
+        lifeAreaDocuments:     [KBDocument]        = [],
         children:              [KBChild]           = [],
         pediatricProfiles:     [String: KBPediatricProfile] = [:],
         allVisits:             [KBMedicalVisit]    = [],
@@ -153,11 +156,49 @@ struct PlanningContextInput {
         self.housePayments          = housePayments
         self.vehicles               = vehicles
         self.vehicleEvents          = vehicleEvents
+        self.lifeAreaDocuments      = lifeAreaDocuments
         self.children               = children
         self.pediatricProfiles      = pediatricProfiles
         self.allVisits              = allVisits
         self.allExams               = allExams
         self.allVaccines            = allVaccines
+    }
+    
+    /// Copia con `lifeAreaDocuments` sostituiti (es. sintesi settimanale dopo fetch OCR).
+    func withLifeAreaDocuments(_ docs: [KBDocument]) -> PlanningContextInput {
+        PlanningContextInput(
+            familyName:             familyName,
+            memberNames:            memberNames,
+            horizonDays:            horizonDays,
+            calendarEvents:         calendarEvents,
+            openTodos:              openTodos,
+            activeRoutines:         activeRoutines,
+            todayChecks:            todayChecks,
+            childNames:             childNames,
+            activeTreatments:       activeTreatments,
+            visitsWithNextDate:     visitsWithNextDate,
+            visitsWithPendingExams: visitsWithPendingExams,
+            upcomingVaccines:       upcomingVaccines,
+            recentNotes:            recentNotes,
+            recentExpenses:         recentExpenses,
+            expenseCategoryNames:   expenseCategoryNames,
+            pendingGroceryItems:    pendingGroceryItems,
+            recentChatMessages:     recentChatMessages,
+            recentDocuments:        recentDocuments,
+            recentWalletTickets:    recentWalletTickets,
+            pets:                   pets,
+            petEvents:              petEvents,
+            homeItems:              homeItems,
+            housePayments:          housePayments,
+            vehicles:               vehicles,
+            vehicleEvents:          vehicleEvents,
+            lifeAreaDocuments:      docs,
+            children:               children,
+            pediatricProfiles:      pediatricProfiles,
+            allVisits:              allVisits,
+            allExams:               allExams,
+            allVaccines:            allVaccines
+        )
     }
 }
 
@@ -188,7 +229,8 @@ enum PlanningContextBuilder {
         wallet=\(input.recentWalletTickets.count) \
         pets=\(input.pets.count) petEvents=\(input.petEvents.count) \
         homeItems=\(input.homeItems.count) housePayments=\(input.housePayments.count) \
-        vehicles=\(input.vehicles.count) vehicleEvents=\(input.vehicleEvents.count)
+        vehicles=\(input.vehicles.count) vehicleEvents=\(input.vehicleEvents.count) \
+        lifeAreaDocs=\(input.lifeAreaDocuments.count)
         """)
         
         let now      = Date()
@@ -260,6 +302,7 @@ enum PlanningContextBuilder {
             housePayments: input.housePayments,
             vehicles: input.vehicles,
             vehicleEvents: input.vehicleEvents,
+            lifeDocuments: input.lifeAreaDocuments,
             now: now,
             horizon: horizon,
             to: &lines
@@ -728,6 +771,7 @@ enum PlanningContextBuilder {
         housePayments: [KBHousePayment],
         vehicles: [KBVehicle],
         vehicleEvents: [KBVehicleEvent],
+        lifeDocuments: [KBDocument],
         now: Date,
         horizon: Date,
         to lines: inout [String]
@@ -782,6 +826,12 @@ enum PlanningContextBuilder {
                     line += " — note: \(short)\(n.count > 80 ? "…" : "")"
                 }
                 lines.append(line)
+                appendLifeAreaDocExtracts(
+                    lifeDocuments: lifeDocuments,
+                    matching: { PetEventAttachmentTag.matches($0, eventId: ev.id) },
+                    indent: "    ",
+                    to: &lines
+                )
             }
         }
         
@@ -815,6 +865,12 @@ enum PlanningContextBuilder {
                     line += " — note: \(short)\(n.count > 100 ? "…" : "")"
                 }
                 lines.append(line)
+                appendLifeAreaDocExtracts(
+                    lifeDocuments: lifeDocuments,
+                    matching: { HomeItemAttachmentTag.matches($0, homeItemId: h.id) },
+                    indent: "    ",
+                    to: &lines
+                )
             }
         }
 
@@ -853,6 +909,12 @@ enum PlanningContextBuilder {
                     line += " — note: \(short)\(n.count > 100 ? "…" : "")"
                 }
                 lines.append(line)
+                appendLifeAreaDocExtracts(
+                    lifeDocuments: lifeDocuments,
+                    matching: { HousePaymentAttachmentTag.matches($0, paymentId: p.id) },
+                    indent: "    ",
+                    to: &lines
+                )
             }
         }
         
@@ -886,6 +948,12 @@ enum PlanningContextBuilder {
                     line += " — note: \(short)\(n.count > 80 ? "…" : "")"
                 }
                 lines.append(line)
+                appendLifeAreaDocExtracts(
+                    lifeDocuments: lifeDocuments,
+                    matching: { VehicleAttachmentTag.matches($0, vehicleId: v.id) },
+                    indent: "    ",
+                    to: &lines
+                )
             }
         }
         
@@ -910,6 +978,12 @@ enum PlanningContextBuilder {
                     line += " — note: \(short)\(n.count > 80 ? "…" : "")"
                 }
                 lines.append(line)
+                appendLifeAreaDocExtracts(
+                    lifeDocuments: lifeDocuments,
+                    matching: { VehicleEventAttachmentTag.matches($0, eventId: ev.id) },
+                    indent: "    ",
+                    to: &lines
+                )
             }
         }
         
@@ -921,6 +995,46 @@ enum PlanningContextBuilder {
             home=\(homeList.count) payments=\(paymentList.count) vehicles=\(vehicleList.count) vehEvents=\(relevantVehEvents.count)
             """)
         }
+    }
+
+    private static let planningLifeDocMaxChars = 18_000
+
+    private static func appendLifeAreaDocExtracts(
+        lifeDocuments: [KBDocument],
+        matching: (KBDocument) -> Bool,
+        indent: String,
+        to lines: inout [String]
+    ) {
+        for doc in lifeDocuments where !doc.isDeleted && matching(doc) {
+            guard doc.extractionStatus == .completed, doc.hasExtractedText else { continue }
+            guard let clipped = clippedPlanningLifeExtract(from: doc) else { continue }
+            lines.append("\(indent)Allegato (\(doc.title)) — testo estratto:")
+            for row in clipped.split(separator: "\n", omittingEmptySubsequences: false) {
+                let s = String(row)
+                if !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    lines.append("\(indent)  \(s)")
+                }
+            }
+        }
+    }
+
+    private static func clippedPlanningLifeExtract(from doc: KBDocument) -> String? {
+        guard let raw = doc.extractedText else { return nil }
+        let sanitized = sanitizePlanningLifeExtractedText(raw)
+        guard !sanitized.isEmpty else { return nil }
+        if sanitized.count <= planningLifeDocMaxChars { return sanitized }
+        let head = String(sanitized.prefix(planningLifeDocMaxChars))
+        return head + "\n\n[… Testo troncato per limite contesto AI (\(planningLifeDocMaxChars) caratteri); il file completo è in app. …]"
+    }
+
+    private static func sanitizePlanningLifeExtractedText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
     }
 
     private static func homeItemCategoryLabel(_ raw: String) -> String {

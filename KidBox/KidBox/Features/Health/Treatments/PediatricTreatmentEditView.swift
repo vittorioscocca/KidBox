@@ -21,6 +21,8 @@ struct PediatricTreatmentEditView: View {
     let childId: String
     let childName: String
     let treatmentId: String?
+    /// Se non vuoto, nuova cura per animale (`KBPet.id`); in quel caso `childId` in ingresso è tipicamente vuoto.
+    let initialPetId: String
     var onSaved: ((String) -> Void)? = nil
     @State private var reminderEnabled = false
     
@@ -46,6 +48,9 @@ struct PediatricTreatmentEditView: View {
     
     @State private var currentStep = 0
     private let totalSteps = 4
+
+    /// Copia locale dell’id animale (da `initialPetId` o da cura esistente in modifica).
+    @State private var petIdForSave: String = ""
     
     @State private var showAttachmentDialog   = false
     @State private var showAttachmentImporter = false
@@ -77,7 +82,29 @@ struct PediatricTreatmentEditView: View {
     
     private var totalDoses: Int { dailyFrequency * durationDays }
     private var isEditing: Bool { treatmentId != nil }
+
+    private var resolvedChildIdForSave: String { petIdForSave.isEmpty ? childId : "" }
+    private var resolvedPetIdForSave: String { petIdForSave }
     
+    private var isPetTreatment: Bool { !petIdForSave.isEmpty }
+
+    init(
+        familyId: String,
+        childId: String,
+        childName: String,
+        treatmentId: String?,
+        initialPetId: String = "",
+        onSaved: ((String) -> Void)? = nil
+    ) {
+        self.familyId = familyId
+        self.childId = childId
+        self.childName = childName
+        self.treatmentId = treatmentId
+        self.initialPetId = initialPetId
+        self.onSaved = onSaved
+        _petIdForSave = State(initialValue: initialPetId)
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -314,7 +341,11 @@ struct PediatricTreatmentEditView: View {
     // MARK: - Step 0 — Farmaco
     
     private var step0_drug: some View {
-        DrugSelectorStep(drugName: $drugName, activeIngredient: $activeIngredient)
+        DrugSelectorStep(
+            drugName: $drugName,
+            activeIngredient: $activeIngredient,
+            audience: isPetTreatment ? .pet : .pediatric,
+        )
     }
     
     // MARK: - Step 1 — Dose e frequenza
@@ -689,6 +720,7 @@ struct PediatricTreatmentEditView: View {
         times            = t.scheduleTimes.isEmpty ? defaultTimes : t.scheduleTimes
         notes            = t.notes ?? ""
         currentStep      = 0
+        petIdForSave     = t.petId
     }
     
     @MainActor
@@ -706,7 +738,9 @@ struct PediatricTreatmentEditView: View {
             treatment = t
         } else {
             let t = KBTreatment(
-                familyId: familyId, childId: childId,
+                familyId: familyId,
+                childId: resolvedChildIdForSave,
+                petId: resolvedPetIdForSave,
                 drugName: drugName,
                 activeIngredient: activeIngredient.isEmpty ? nil : activeIngredient,
                 dosageValue: dosageValue, dosageUnit: dosageUnit,
@@ -743,7 +777,7 @@ struct PediatricTreatmentEditView: View {
                 urls: pendingAttachmentURLs,
                 treatmentId: treatment.id,
                 familyId: familyId,
-                childId: childId
+                childId: resolvedChildIdForSave
             ))
         }
         onSaved?(treatment.id)
@@ -764,6 +798,8 @@ struct PediatricTreatmentEditView: View {
         t.notes            = notes.isEmpty ? nil : notes
         t.updatedBy        = uid
         t.updatedAt        = now
+        t.childId          = resolvedChildIdForSave
+        t.petId            = resolvedPetIdForSave
     }
 }
 
