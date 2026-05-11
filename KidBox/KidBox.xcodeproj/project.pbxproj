@@ -123,6 +123,13 @@
 			);
 			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
 		};
+		7CE0B01E2F3378CB0086D687 /* Exceptions for "KidBox" folder in "KidBoxControlsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Intents/OpenKidBoxFamilyPhotosCameraIntent.swift,
+			);
+			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
+		};
 		7CF617812F609689007587D9 /* Exceptions for "KidBoxShareExtension" folder in "KidBoxShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -153,13 +160,6 @@
 				Info.plist,
 			);
 			target = 7CFC515C2F3378CB0086D687 /* KidBox */;
-		};
-		7CE0B01E2F3378CB0086D687 /* Exceptions for "KidBox" folder in "KidBoxControlsExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				App/Intents/OpenKidBoxFamilyPhotosCameraIntent.swift,
-			);
-			target = 7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
