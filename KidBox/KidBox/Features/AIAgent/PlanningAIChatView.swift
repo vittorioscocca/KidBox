@@ -57,6 +57,12 @@ struct PlanningAIChatView: View {
     @Query(sort: \KBDocument.updatedAt, order: .reverse)     private var allDocuments: [KBDocument]
     @Query(sort: \KBWalletTicket.updatedAt, order: .reverse) private var allWalletTickets: [KBWalletTicket]
     
+    @Query(sort: \KBPet.name) private var allPets: [KBPet]
+    @Query(sort: \KBPetEvent.date, order: .reverse) private var allPetEvents: [KBPetEvent]
+    @Query(sort: \KBHomeItem.name) private var allHomeItems: [KBHomeItem]
+    @Query(sort: \KBVehicle.name) private var allVehicles: [KBVehicle]
+    @Query(sort: \KBVehicleEvent.date, order: .reverse) private var allVehicleEvents: [KBVehicleEvent]
+    
     // ── Pediatria avanzata ────────────────────────────────────────
     // allVisits e allVaccines già presenti sopra — riutilizzati
     @Query private var allProfiles:  [KBPediatricProfile]
@@ -183,6 +189,26 @@ struct PlanningAIChatView: View {
             .prefix(10))
     }
     
+    private var contextPets: [KBPet] {
+        allPets.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+    
+    private var contextPetEvents: [KBPetEvent] {
+        Array(allPetEvents.filter { $0.familyId == familyId && !$0.isDeleted }.prefix(50))
+    }
+    
+    private var contextHomeItems: [KBHomeItem] {
+        allHomeItems.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+    
+    private var contextVehicles: [KBVehicle] {
+        allVehicles.filter { $0.familyId == familyId && !$0.isDeleted }
+    }
+    
+    private var contextVehicleEvents: [KBVehicleEvent] {
+        Array(allVehicleEvents.filter { $0.familyId == familyId && !$0.isDeleted }.prefix(50))
+    }
+    
     // ── Pediatria avanzata ────────────────────────────────────────
     
     private var pediatricProfiles: [String: KBPediatricProfile] {
@@ -288,6 +314,11 @@ struct PlanningAIChatView: View {
                 allVisits:              allVisitsForChildren,
                 allExams:               allExamsForChildren,
                 allVaccines:            allVaccinesForChildren,
+                pets:                   contextPets,
+                petEvents:              contextPetEvents,
+                homeItems:              contextHomeItems,
+                vehicles:               contextVehicles,
+                vehicleEvents:          contextVehicleEvents,
                 modelContext:           modelContext
             )
             vm = newVM
@@ -309,7 +340,7 @@ struct PlanningAIChatView: View {
                 Text("Disponibile con i piani Pro e Max")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("Passa a Pro per accedere all'assistente che conosce calendario, spesa, salute dei tuoi figli e molto altro.")
+                Text("Passa a Pro per accedere all'assistente che conosce calendario, spesa, salute dei tuoi figli, animali, casa, garage e molto altro.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

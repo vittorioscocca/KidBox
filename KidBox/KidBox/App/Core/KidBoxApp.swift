@@ -338,12 +338,21 @@ struct KidBoxApp: App {
                     }
                     KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
                 }
+                Task { @MainActor in
+                    await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
+                }
             case .inactive:
                 KBLog.sync.kbDebug("ScenePhase inactive")
             case .background:
                 KBLog.sync.kbInfo("ScenePhase background -> stopAutoFlush + stopFamilyBundleRealtime")
                 SyncCenter.shared.stopAutoFlush()
                 SyncCenter.shared.stopFamilyBundleRealtime()
+                SyncCenter.shared.stopPetsRealtime()
+                SyncCenter.shared.stopPetEventsRealtime()
+                SyncCenter.shared.stopHomeItemsRealtime()
+                SyncCenter.shared.stopHousePaymentsRealtime()
+                SyncCenter.shared.stopVehiclesRealtime()
+                SyncCenter.shared.stopVehicleEventsRealtime()
             @unknown default:
                 KBLog.sync.kbDebug("ScenePhase unknown default")
             }

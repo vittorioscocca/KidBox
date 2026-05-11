@@ -229,6 +229,12 @@ struct RootHostView: View {
                 SyncCenter.shared.stopTreatmentsRealtime()
                 SyncCenter.shared.stopExpensesRealtime()
                 SyncCenter.shared.stopWalletRealtime()
+                SyncCenter.shared.stopPetsRealtime()
+                SyncCenter.shared.stopPetEventsRealtime()
+                SyncCenter.shared.stopHomeItemsRealtime()
+                SyncCenter.shared.stopHousePaymentsRealtime()
+                SyncCenter.shared.stopVehiclesRealtime()
+                SyncCenter.shared.stopVehicleEventsRealtime()
                 startedFamilyId = nil
                 KBLog.sync.kbDebug("Realtime listeners stopped and startedFamilyId cleared")
             } else {
@@ -269,6 +275,12 @@ struct RootHostView: View {
             SyncCenter.shared.stopTreatmentsRealtime()
             SyncCenter.shared.stopExpensesRealtime()
             SyncCenter.shared.stopWalletRealtime()
+            SyncCenter.shared.stopPetsRealtime()
+            SyncCenter.shared.stopPetEventsRealtime()
+            SyncCenter.shared.stopHomeItemsRealtime()
+            SyncCenter.shared.stopHousePaymentsRealtime()
+            SyncCenter.shared.stopVehiclesRealtime()
+            SyncCenter.shared.stopVehicleEventsRealtime()
         } else {
             KBLog.sync.kbInfo("Starting realtime listeners for familyId=\(familyId)")
         }
@@ -325,6 +337,37 @@ struct RootHostView: View {
 
         KBLog.sync.kbDebug("startWalletRealtime familyId=\(familyId)")
         SyncCenter.shared.startWalletRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        KBLog.sync.kbDebug("startPetsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startPetsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        KBLog.sync.kbDebug("startPetEventsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startPetEventsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        KBLog.sync.kbDebug("startHomeItemsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startHomeItemsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        KBLog.sync.kbDebug("startHousePaymentsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startHousePaymentsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        KBLog.sync.kbDebug("startVehiclesRealtime familyId=\(familyId)")
+        SyncCenter.shared.startVehiclesRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        KBLog.sync.kbDebug("startVehicleEventsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startVehicleEventsRealtime(
             familyId: familyId,
             modelContext: modelContext
         )

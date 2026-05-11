@@ -478,6 +478,25 @@ final class AppCoordinator: ObservableObject {
             WalletTicketDetailView(familyId: familyId, ticketId: ticketId)
         case .askExpert:
             PlanningAIChatView()
+
+        case .petsHome(let familyId):
+            PetsHomeView(familyId: familyId)
+        case .petDetail(let familyId, let petId):
+            PetDetailView(familyId: familyId, petId: petId)
+        case .petEventDetail(let familyId, let petId, let eventId):
+            PetEventDetailView(familyId: familyId, petId: petId, eventId: eventId)
+        case .homeItemsHome(let familyId):
+            HomeItemsHomeView(familyId: familyId)
+        case .homeItemDetail(let familyId, let itemId):
+            HomeItemDetailView(familyId: familyId, itemId: itemId)
+        case .housePaymentDetail(let familyId, let paymentId):
+            HousePaymentDetailView(familyId: familyId, paymentId: paymentId)
+        case .vehiclesHome(let familyId):
+            VehiclesHomeView(familyId: familyId)
+        case .vehicleDetail(let familyId, let vehicleId):
+            VehicleDetailView(familyId: familyId, vehicleId: vehicleId)
+        case .vehicleEventDetail(let familyId, let vehicleId, let eventId):
+            VehicleEventDetailView(familyId: familyId, vehicleId: vehicleId, eventId: eventId)
         }
     }
     

@@ -1852,6 +1852,15 @@ const FAMILY_SUBCOLLECTIONS = [
   // ── Contatori e statistiche ─────────────────────────────────────
   "counters",
   "stats",
+  // ── Animali ────────────────────────────────────────────────────
+  "pets",
+  "petEvents",
+  // ── Casa ───────────────────────────────────────────────────────
+  "homeItems",
+  "housePayments",
+  // ── Garage ─────────────────────────────────────────────────────
+  "vehicles",
+  "vehicleEvents",
 ];
 
 /**

@@ -61,6 +61,12 @@ final class PlanningAIChatViewModel: ObservableObject {
     let allExams:          [KBMedicalExam]
     let allVaccines:       [KBVaccine]
     
+    let pets:              [KBPet]
+    let petEvents:         [KBPetEvent]
+    let homeItems:         [KBHomeItem]
+    let vehicles:          [KBVehicle]
+    let vehicleEvents:     [KBVehicleEvent]
+    
     // Alias pubblici usati dal PlanningActionParser nella view
     // per abbinare oggetti SwiftData alle action cards di reminder.
     var todosForParser:    [KBTodoItem]     { openTodos }
@@ -114,6 +120,11 @@ final class PlanningAIChatViewModel: ObservableObject {
         allVisits:              [KBMedicalVisit]  = [],
         allExams:               [KBMedicalExam]   = [],
         allVaccines:            [KBVaccine]       = [],
+        pets:                   [KBPet]           = [],
+        petEvents:              [KBPetEvent]      = [],
+        homeItems:              [KBHomeItem]      = [],
+        vehicles:               [KBVehicle]       = [],
+        vehicleEvents:          [KBVehicleEvent]  = [],
         modelContext:           ModelContext
     ) {
         self.familyId               = familyId
@@ -141,6 +152,11 @@ final class PlanningAIChatViewModel: ObservableObject {
         self.allVisits              = allVisits
         self.allExams               = allExams
         self.allVaccines            = allVaccines
+        self.pets                   = pets
+        self.petEvents              = petEvents
+        self.homeItems              = homeItems
+        self.vehicles               = vehicles
+        self.vehicleEvents          = vehicleEvents
         self.modelContext           = modelContext
         
         KBLog.ai.kbInfo("""
@@ -152,7 +168,8 @@ final class PlanningAIChatViewModel: ObservableObject {
         routines=\(activeRoutines.count) \
         treatments=\(activeTreatments.count) \
         docs=\(recentDocuments.count) \
-        wallet=\(recentWalletTickets.count)
+        wallet=\(recentWalletTickets.count) \
+        pets=\(pets.count) homeItems=\(homeItems.count) vehicles=\(vehicles.count)
         """)
     }
     
@@ -190,6 +207,11 @@ final class PlanningAIChatViewModel: ObservableObject {
                     recentChatMessages:     recentChatMessages,
                     recentDocuments:        recentDocuments,
                     recentWalletTickets:    recentWalletTickets,
+                    pets:                   pets,
+                    petEvents:              petEvents,
+                    homeItems:              homeItems,
+                    vehicles:               vehicles,
+                    vehicleEvents:          vehicleEvents,
                     children:               children,
                     pediatricProfiles:      pediatricProfiles,
                     allVisits:              allVisits,

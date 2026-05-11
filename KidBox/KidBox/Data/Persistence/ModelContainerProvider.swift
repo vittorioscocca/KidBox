@@ -155,7 +155,13 @@ enum ModelContainerProvider {
             KBPhotoAlbum.self,
             KBExpenseCategory.self,
             KBExpense.self,
-            KBWalletTicket.self
+            KBWalletTicket.self,
+            KBPet.self,
+            KBPetEvent.self,
+            KBHomeItem.self,
+            KBHousePayment.self,
+            KBVehicle.self,
+            KBVehicleEvent.self
         ])
         
         let configuration: ModelConfiguration = {

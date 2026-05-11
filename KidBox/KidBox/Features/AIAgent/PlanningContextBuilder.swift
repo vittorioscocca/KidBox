@@ -74,6 +74,13 @@ struct PlanningContextInput {
     /// Biglietti Wallet recenti (max ultimi 10, non eliminati).
     let recentWalletTickets: [KBWalletTicket]
     
+    // ── Animali / Casa / Garage ───────────────────────────────────
+    let pets: [KBPet]
+    let petEvents: [KBPetEvent]
+    let homeItems: [KBHomeItem]
+    let vehicles: [KBVehicle]
+    let vehicleEvents: [KBVehicleEvent]
+    
     // ── Profili sanitari figli (pediatria avanzata) ───────────────
     /// Tutti i figli della famiglia — per costruire il profilo avanzato.
     let children: [KBChild]
@@ -107,6 +114,11 @@ struct PlanningContextInput {
         recentChatMessages:    [KBChatMessage]     = [],
         recentDocuments:       [KBDocument]        = [],
         recentWalletTickets:   [KBWalletTicket]    = [],
+        pets:                  [KBPet]             = [],
+        petEvents:             [KBPetEvent]        = [],
+        homeItems:             [KBHomeItem]        = [],
+        vehicles:              [KBVehicle]         = [],
+        vehicleEvents:         [KBVehicleEvent]    = [],
         children:              [KBChild]           = [],
         pediatricProfiles:     [String: KBPediatricProfile] = [:],
         allVisits:             [KBMedicalVisit]    = [],
@@ -132,6 +144,11 @@ struct PlanningContextInput {
         self.recentChatMessages     = recentChatMessages
         self.recentDocuments        = recentDocuments
         self.recentWalletTickets    = recentWalletTickets
+        self.pets                   = pets
+        self.petEvents              = petEvents
+        self.homeItems              = homeItems
+        self.vehicles               = vehicles
+        self.vehicleEvents          = vehicleEvents
         self.children               = children
         self.pediatricProfiles      = pediatricProfiles
         self.allVisits              = allVisits
@@ -164,7 +181,9 @@ enum PlanningContextBuilder {
         grocery=\(input.pendingGroceryItems.count) \
         chat=\(input.recentChatMessages.count) \
         docs=\(input.recentDocuments.count) \
-        wallet=\(input.recentWalletTickets.count)
+        wallet=\(input.recentWalletTickets.count) \
+        pets=\(input.pets.count) petEvents=\(input.petEvents.count) \
+        homeItems=\(input.homeItems.count) vehicles=\(input.vehicles.count) vehicleEvents=\(input.vehicleEvents.count)
         """)
         
         let now      = Date()
@@ -179,7 +198,9 @@ enum PlanningContextBuilder {
         Sei un assistente di pianificazione familiare integrato nell'app KidBox.
         Hai accesso al calendario, ai to-do, alle routine dei bambini, alle cure \
         attive, alle visite e agli esami, alle scadenze sanitarie, ai documenti, al wallet, \
-        alle note, alle spese, alla lista della spesa e agli ultimi messaggi della chat famiglia \
+        alle note, alle spese, alla lista della spesa, agli ultimi messaggi della chat famiglia, \
+        agli animali domestici (con eventi e promemoria), agli oggetti di casa (garanzie e manutenzione) \
+        e al garage (veicoli e interventi) \
         di \(input.familyName).
         
         REGOLE IMPORTANTI:
@@ -225,6 +246,17 @@ enum PlanningContextBuilder {
         appendChatMessages(input.recentChatMessages, to: &lines)
         appendDocuments(input.recentDocuments, to: &lines)
         appendWalletTickets(input.recentWalletTickets, to: &lines)
+        
+        appendPetsHomeGarage(
+            pets: input.pets,
+            petEvents: input.petEvents,
+            homeItems: input.homeItems,
+            vehicles: input.vehicles,
+            vehicleEvents: input.vehicleEvents,
+            now: now,
+            horizon: horizon,
+            to: &lines
+        )
         
         // ── Profili sanitari figli (pediatria avanzata) ───────────────
         appendChildrenHealthProfiles(input: input, to: &lines)
@@ -678,6 +710,125 @@ enum PlanningContextBuilder {
         }
         
         KBLog.ai.kbDebug("PlanningContextBuilder childProfiles appended count=\(input.children.count)")
+    }
+    
+    // MARK: - Animali, Casa, Garage
+    
+    private static func appendPetsHomeGarage(
+        pets: [KBPet],
+        petEvents: [KBPetEvent],
+        homeItems: [KBHomeItem],
+        vehicles: [KBVehicle],
+        vehicleEvents: [KBVehicleEvent],
+        now: Date,
+        horizon: Date,
+        to lines: inout [String]
+    ) {
+        let petList = pets.filter { !$0.isDeleted }
+        let eventList = petEvents.filter { !$0.isDeleted }
+        let homeList = homeItems.filter { !$0.isDeleted }
+        let vehicleList = vehicles.filter { !$0.isDeleted }
+        let vehEventList = vehicleEvents.filter { !$0.isDeleted }
+        
+        let pastWindow = Calendar.current.date(byAdding: .day, value: -60, to: now) ?? now
+        let petNames = Dictionary(uniqueKeysWithValues: petList.map { ($0.id, $0.name) })
+        
+        if !petList.isEmpty {
+            lines.append("\n--- ANIMALI (\(petList.count)) ---")
+            for p in petList.prefix(20) {
+                var line = "• \(p.name) — specie: \(p.species)"
+                if let b = p.breed, !b.isEmpty { line += ", razza: \(b)" }
+                if let chip = p.chipCode, !chip.isEmpty { line += ", chip: \(chip)" }
+                if let n = p.notes, !n.isEmpty {
+                    let short = String(n.prefix(120))
+                    line += " — note: \(short)\(n.count > 120 ? "…" : "")"
+                }
+                lines.append(line)
+            }
+        }
+        
+        let relevantPetEvents = eventList.filter { ev in
+            (ev.date >= pastWindow && ev.date <= horizon) ||
+            (ev.nextDueDate.map { $0 >= now && $0 <= horizon } ?? false)
+        }.sorted { $0.date > $1.date }
+        
+        if !relevantPetEvents.isEmpty {
+            lines.append("\n--- EVENTI ANIMALI (finestra utile) ---")
+            for ev in relevantPetEvents.prefix(25) {
+                let pet = petNames[ev.petId] ?? "animale"
+                var line = "• [\(formatDate(ev.date))] \(ev.title) (\(pet)) — tipo: \(ev.eventTypeRaw)"
+                if let nd = ev.nextDueDate {
+                    line += " — prossimo: \(formatDate(nd))"
+                    if nd <= horizon { line += " 📅" }
+                }
+                if let v = ev.vetName, !v.isEmpty { line += " — vet: \(v)" }
+                lines.append(line)
+            }
+        }
+        
+        if !homeList.isEmpty {
+            lines.append("\n--- CASA / OGGETTI (\(homeList.count)) ---")
+            for h in homeList.prefix(25) {
+                var line = "• \(h.name) [\(h.categoryRaw)]"
+                if let w = h.warrantyExpiryDate {
+                    line += " — garanzia fino: \(formatDate(w))"
+                    if w >= now && w <= horizon { line += " 📅 in scadenza" }
+                    if w < now { line += " ⚠️ scaduta" }
+                }
+                if let s = h.nextServiceDate {
+                    line += " — prossima manutenzione: \(formatDate(s))"
+                    if s >= now && s <= horizon { line += " 📅" }
+                }
+                lines.append(line)
+            }
+        }
+        
+        if !vehicleList.isEmpty {
+            lines.append("\n--- GARAGE / VEICOLI (\(vehicleList.count)) ---")
+            for v in vehicleList.prefix(12) {
+                var line = "• \(v.name)"
+                if let p = v.licensePlate, !p.isEmpty { line += " — targa \(p)" }
+                if let ins = v.insuranceExpiryDate {
+                    line += " — assicurazione: \(formatDate(ins))"
+                    if ins >= now && ins <= horizon { line += " 📅" }
+                }
+                if let rev = v.revisionExpiryDate {
+                    line += " — revisione: \(formatDate(rev))"
+                    if rev >= now && rev <= horizon { line += " 📅" }
+                }
+                if let tax = v.taxExpiryDate {
+                    line += " — bollo: \(formatDate(tax))"
+                    if tax >= now && tax <= horizon { line += " 📅" }
+                }
+                if let ns = v.nextServiceDate {
+                    line += " — tagliando/manutenzione: \(formatDate(ns))"
+                }
+                lines.append(line)
+            }
+        }
+        
+        let vehNames = Dictionary(uniqueKeysWithValues: vehicleList.map { ($0.id, $0.name) })
+        let relevantVehEvents = vehEventList.filter { $0.date >= pastWindow && $0.date <= horizon }
+            .sorted { $0.date > $1.date }
+        
+        if !relevantVehEvents.isEmpty {
+            lines.append("\n--- INTERVENTI VEICOLO (finestra utile) ---")
+            for ev in relevantVehEvents.prefix(20) {
+                let vn = vehNames[ev.vehicleId] ?? "veicolo"
+                var line = "• [\(formatDate(ev.date))] \(ev.title) (\(vn)) — tipo: \(ev.eventTypeRaw)"
+                if let km = ev.km { line += " — \(km) km" }
+                lines.append(line)
+            }
+        }
+        
+        if petList.isEmpty && relevantPetEvents.isEmpty && homeList.isEmpty && vehicleList.isEmpty && relevantVehEvents.isEmpty {
+            KBLog.ai.kbDebug("PlanningContextBuilder pets/home/garage: none")
+        } else {
+            KBLog.ai.kbDebug("""
+            PlanningContextBuilder life: pets=\(petList.count) petEvents=\(relevantPetEvents.count) \
+            home=\(homeList.count) vehicles=\(vehicleList.count) vehEvents=\(relevantVehEvents.count)
+            """)
+        }
     }
     
     

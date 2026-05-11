@@ -139,6 +139,12 @@ extension SyncCenter {
         }
         Self._familyListener?.remove()
         Self._familyListener = nil
+
+        stopPetsRealtime()
+        stopPetEventsRealtime()
+        stopHomeItemsRealtime()
+        stopVehiclesRealtime()
+        stopVehicleEventsRealtime()
     }
     
     // MARK: - Enqueue (one op for family+child)

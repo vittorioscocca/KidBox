@@ -33,7 +33,23 @@ enum LocalDataWiper {
         
         let fid = familyId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !fid.isEmpty else { return }
-        
+
+        if let vehicles = try? context.fetch(
+            FetchDescriptor<KBVehicle>(predicate: #Predicate { $0.familyId == fid })
+        ) {
+            for v in vehicles {
+                Task { await VehicleReminderService.shared.cancelAll(vehicleId: v.id) }
+            }
+        }
+
+        if let housePayments = try? context.fetch(
+            FetchDescriptor<KBHousePayment>(predicate: #Predicate { $0.familyId == fid })
+        ) {
+            for p in housePayments {
+                Task { await HousePaymentReminderService.shared.cancelAll(paymentId: p.id) }
+            }
+        }
+
         do {
             // Leaf entities
             try delete(KBDocument.self, familyId: fid, context: context)
@@ -47,6 +63,13 @@ enum LocalDataWiper {
             try delete(KBCustodySchedule.self, familyId: fid, context: context)
             
             try delete(KBFamilyMember.self, familyId: fid, context: context)
+
+            try delete(KBPetEvent.self, familyId: fid, context: context)
+            try delete(KBPet.self, familyId: fid, context: context)
+            try delete(KBHomeItem.self, familyId: fid, context: context)
+            try delete(KBHousePayment.self, familyId: fid, context: context)
+            try delete(KBVehicleEvent.self, familyId: fid, context: context)
+            try delete(KBVehicle.self, familyId: fid, context: context)
             
             // Children (relationship-based)
             try deleteChildren(familyId: fid, context: context)

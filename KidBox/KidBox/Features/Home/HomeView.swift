@@ -409,6 +409,9 @@ enum HomeDestination {
     case chat, document
     case expenses(familyId: String)
     case wallet(familyId: String)
+    case pets(familyId: String)
+    case homeItems(familyId: String)
+    case vehicles(familyId: String)
     case familyLocation(familyId: String), familyPhotos(familyId: String), familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
     case pediatric(familyId: String, childId: String)
@@ -424,6 +427,9 @@ enum HomeDestination {
         case .document:                      return .document
         case .expenses(let familyId):        return .expensesHome(familyId: familyId)
         case .wallet(let familyId):          return .walletHome(familyId: familyId)
+        case .pets(let fid):                 return .petsHome(familyId: fid)
+        case .homeItems(let fid):            return .homeItemsHome(familyId: fid)
+        case .vehicles(let fid):             return .vehiclesHome(familyId: fid)
         case .familyLocation(let familyID):  return .familyLocation(familyId: familyID)
         case .familyPhotos(let familyId):    return .familyPhotos(familyId: familyId)
         case .familySettings:                return .familySettings
@@ -504,6 +510,9 @@ private enum HomeCardID: String, CaseIterable, Codable {
     case photos
     case family
     case expert
+    case pets
+    case homeItems
+    case vehicles
 }
 
 // MARK: - HomeCardGrid
@@ -739,6 +748,27 @@ private struct HomeCardGrid: View {
                 onNavigate(.familySettings)
             }
             
+        case .pets:
+            HomeCardView(title: "Animali", subtitle: "Cure e promemoria", systemImage: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange) {
+                KBLog.navigation.debug("Home: tap Pets")
+                FABUsageTracker.shared.record("pets")
+                onNavigate(.pets(familyId: familyId))
+            }
+
+        case .homeItems:
+            HomeCardView(title: "Casa", subtitle: "Garanzie e manutenzioni", systemImage: "house.fill", tint: Color(hex: "#8B6914") ?? .brown) {
+                KBLog.navigation.debug("Home: tap HomeItems")
+                FABUsageTracker.shared.record("home_items")
+                onNavigate(.homeItems(familyId: familyId))
+            }
+
+        case .vehicles:
+            HomeCardView(title: "Garage", subtitle: "Auto e scadenze", systemImage: "car.fill", tint: Color(hex: "#1A1A1A") ?? .primary) {
+                KBLog.navigation.debug("Home: tap Vehicles")
+                FABUsageTracker.shared.record("vehicles")
+                onNavigate(.vehicles(familyId: familyId))
+            }
+
         case .expert:
             let aiAvailable = subscriptionManager.currentPlan.includesAI
             ZStack(alignment: .topTrailing) {
@@ -776,7 +806,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .location, .photos, .family, .expert]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .location, .photos, .family, .expert, .pets, .homeItems, .vehicles]
     }
     
     private func loadOrder() -> [HomeCardID]? {

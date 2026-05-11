@@ -60,6 +60,20 @@ final class SyncCenter: ObservableObject {
     var walletListener: ListenerRegistration?
     let walletRemote = WalletRemoteStore()
     let walletPDFStore = WalletPDFStore()
+
+    var petListener: ListenerRegistration?
+    var petEventListener: ListenerRegistration?
+    var homeItemListener: ListenerRegistration?
+    var housePaymentListener: ListenerRegistration?
+    var vehicleListener: ListenerRegistration?
+    var vehicleEventListener: ListenerRegistration?
+
+    let petRemote = PetRemoteStore()
+    let petEventRemote = PetEventRemoteStore()
+    let homeItemRemote = HomeItemRemoteStore()
+    let housePaymentRemote = HousePaymentRemoteStore()
+    let vehicleRemote = VehicleRemoteStore()
+    let vehicleEventRemote = VehicleEventRemoteStore()
     
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
@@ -774,6 +788,19 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.walletTicket.rawValue:
                 try await processWalletTicket(op: op, modelContext: modelContext)
+
+            case SyncEntityType.pet.rawValue:
+                try await processPet(op: op, modelContext: modelContext)
+            case SyncEntityType.petEvent.rawValue:
+                try await processPetEvent(op: op, modelContext: modelContext)
+            case SyncEntityType.homeItem.rawValue:
+                try await processHomeItem(op: op, modelContext: modelContext)
+            case SyncEntityType.housePayment.rawValue:
+                try await processHousePayment(op: op, modelContext: modelContext)
+            case SyncEntityType.vehicle.rawValue:
+                try await processVehicle(op: op, modelContext: modelContext)
+            case SyncEntityType.vehicleEvent.rawValue:
+                try await processVehicleEvent(op: op, modelContext: modelContext)
                 
                 // MARK: - Photos (SyncCenter+Photos.swift)
             case "photo", "photoAlbum":

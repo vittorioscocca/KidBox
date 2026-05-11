@@ -23,4 +23,10 @@ enum SyncEntityType: String {
     case calendarEvent
     case expense
     case walletTicket
+    case pet = "pet"
+    case petEvent = "petEvent"
+    case homeItem = "homeItem"
+    case housePayment = "housePayment"
+    case vehicle = "vehicle"
+    case vehicleEvent = "vehicleEvent"
 }
