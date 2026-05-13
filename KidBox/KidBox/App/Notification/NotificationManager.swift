@@ -80,6 +80,10 @@ final class NotificationManager: NSObject, ObservableObject {
         case walletTicket(familyId: String, ticketId: String)
         /// Apre PlanningAIChatView — usato dalla sintesi settimanale AI
         case askExpert
+        /// Notifica locale promemoria scadenza password (T-30 / T-7 / T-1).
+        case passwordExpiry(familyId: String, entryId: String)
+        /// Notifica locale aggregata dopo scan sicurezza password.
+        case passwordSecurity(familyId: String)
     }
 
     // MARK: - Auth / FCM token ownership
@@ -271,6 +275,24 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .walletTicket(familyId: familyId, ticketId: ticketId)
             KBLog.auth.kbInfo("DeepLink set for walletTicket familyId=\(familyId) ticketId=\(ticketId)")
+
+        } else if type == "password_expiry_reminder" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let entryId = userInfo["entryId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid password_expiry_reminder payload")
+                return
+            }
+            pendingDeepLink = .passwordExpiry(familyId: familyId, entryId: entryId)
+            KBLog.auth.kbInfo("DeepLink set for passwordExpiry entryId=\(entryId)")
+        } else if type == "password_security_summary" {
+            guard let familyId = userInfo["familyId"] as? String else {
+                KBLog.auth.kbError("Invalid password_security_summary payload")
+                return
+            }
+            pendingDeepLink = .passwordSecurity(familyId: familyId)
+            KBLog.auth.kbInfo("DeepLink set for passwordSecurity familyId=\(familyId)")
         }
     }
     
@@ -810,6 +832,134 @@ extension NotificationManager {
                     .removePendingNotificationRequests(withIdentifiers: ["kb-weekly-summary"])
                 KBLog.ai.kbInfo("NotificationManager: weekly summary disabled, notification removed")
             }
+        }
+    }
+}
+
+// MARK: - Password expiry (local reminders T-30 / T-7 / T-1)
+
+extension NotificationManager {
+
+    private static func passwordExpiryIdPrefix(entryId: String) -> String {
+        "kb.password.expiry.\(entryId)."
+    }
+
+    /// Rimuove tutte le richieste locali KidBox per una voce password (logout / delete / sync).
+    func cancelPasswordExpiryNotifications(forEntryId entryId: String) async {
+        let center = UNUserNotificationCenter.current()
+        let prefix = Self.passwordExpiryIdPrefix(entryId: entryId)
+        let pending = await center.pendingNotificationRequests()
+        let ids = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
+        guard !ids.isEmpty else { return }
+        center.removePendingNotificationRequests(withIdentifiers: ids)
+        center.removeDeliveredNotifications(withIdentifiers: ids)
+        KBLog.auth.kbDebug("[PasswordExpiry] cancelled pending count=\(ids.count) entryId=\(entryId)")
+    }
+
+    /// Cancella i precedenti e ripianifica fino a tre notifiche locali: **30 / 7 / 1 giorni prima** della scadenza, alle **09:00** (stesso schema di `HousePaymentReminderService` / vaccini).
+    func syncPasswordExpiryNotifications(for entry: PasswordEntry) async {
+        await cancelPasswordExpiryNotifications(forEntryId: entry.id)
+
+        guard entry.deletedAt == nil,
+              let expiry = entry.expiresAt
+        else { return }
+
+        let cal = Calendar.current
+        if cal.startOfDay(for: expiry) < cal.startOfDay(for: Date()) { return }
+
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+            KBLog.auth.kbDebug("[PasswordExpiry] not authorized — skip entry=\(entry.id)")
+            return
+        }
+
+        let titlePlain = (try? entry.decryptTitle())?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Password"
+        let displayTitle = titlePlain.isEmpty ? "Password" : titlePlain
+
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        formatter.locale = kbDeviceLocale()
+        let expiryStr = formatter.string(from: expiry)
+
+        for days in [30, 7, 1] {
+            guard let fireDate = Self.fireDateNineAM(daysBeforeExpiry: days, expiry: expiry) else { continue }
+            guard fireDate > Date().addingTimeInterval(5) else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Password in scadenza"
+            switch days {
+            case 1:
+                content.body = "«\(displayTitle)» scade domani (\(expiryStr))."
+            case 7:
+                content.body = "«\(displayTitle)» scade il \(expiryStr). Mancano 7 giorni."
+            default:
+                content.body = "«\(displayTitle)» scade il \(expiryStr). Mancano 30 giorni."
+            }
+            content.sound = .default
+            content.threadIdentifier = "kidbox.passwords"
+            content.userInfo = [
+                "type": "password_expiry_reminder",
+                "familyId": entry.familyId,
+                "entryId": entry.id,
+                "daysBefore": days,
+            ]
+
+            var comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+            comps.second = 0
+            let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+            let identifier = "\(Self.passwordExpiryIdPrefix(entryId: entry.id))d\(days)"
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+            do {
+                try await center.add(request)
+                KBLog.auth.kbInfo("[PasswordExpiry] scheduled id=\(identifier) fire=\(fireDate)")
+            } catch {
+                KBLog.auth.kbError("[PasswordExpiry] schedule failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private static func fireDateNineAM(daysBeforeExpiry: Int, expiry: Date) -> Date? {
+        let cal = Calendar.current
+        let expiryStart = cal.startOfDay(for: expiry)
+        guard let targetDay = cal.date(byAdding: .day, value: -daysBeforeExpiry, to: expiryStart) else { return nil }
+        var c = cal.dateComponents([.year, .month, .day], from: targetDay)
+        c.hour = 9
+        c.minute = 0
+        c.second = 0
+        return cal.date(from: c)
+    }
+
+    /// Notifica locale unica (raggruppata) quando uno scan rileva nuove password compromesse.
+    func schedulePasswordSecuritySummaryNotification(familyId: String, newlyCompromised: Int) async {
+        guard newlyCompromised > 0 else { return }
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+
+        let id = "kb.password.security.summary.\(familyId)"
+        let content = UNMutableNotificationContent()
+        content.title = "Sicurezza password"
+        content.body = newlyCompromised == 1
+            ? "Abbiamo trovato 1 nuova password compromessa."
+            : "Abbiamo trovato \(newlyCompromised) nuove password compromesse."
+        content.sound = .default
+        content.threadIdentifier = "kidbox.passwords.security"
+        content.userInfo = [
+            "type": "password_security_summary",
+            "familyId": familyId,
+            "newlyCompromised": newlyCompromised
+        ]
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        do {
+            center.removePendingNotificationRequests(withIdentifiers: [id])
+            try await center.add(request)
+            KBLog.auth.kbInfo("[PasswordSecurity] summary notification scheduled newly=\(newlyCompromised)")
+        } catch {
+            KBLog.auth.kbError("[PasswordSecurity] schedule summary failed: \(error.localizedDescription)")
         }
     }
 }

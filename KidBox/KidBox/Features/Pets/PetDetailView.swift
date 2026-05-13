@@ -240,7 +240,7 @@ struct PetDetailView: View {
                             .foregroundStyle(accentOrange)
                     }
                 }
-                Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.dailyFrequency) volt\(t.dailyFrequency == 1 ? "a" : "e") al giorno")
+                Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.frequencyDisplayLabel)")
                     .font(.custom("Nunito", size: 13))
                     .foregroundStyle(.secondary)
                 if !t.scheduleTimes.isEmpty {

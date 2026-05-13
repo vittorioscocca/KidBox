@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import CoreLocation
+import BackgroundTasks
 import FirebaseCore
 import FirebaseMessaging
 import UserNotifications
@@ -53,6 +54,7 @@ final class AppDelegate: NSObject,
     /// Serve solo per ricevere il primo evento di significant change che sveglia l'app
     /// dopo che è stata terminata dall'utente, poi il ViewModel prende il controllo.
     private var backgroundLocationManager: CLLocationManager?
+    private static let passwordSecurityRefreshTaskId = "it.vittorioscocca.kidbox.password-security-refresh"
     
     // MARK: - App lifecycle
     
@@ -107,6 +109,8 @@ final class AppDelegate: NSObject,
         
         configureMediaURLCache()
         KBLog.app.kbDebug("Cache configured")
+        registerBackgroundTasks()
+        schedulePasswordSecurityRefresh()
         
         // 📍 Background location relaunch
         // iOS rilancia l'app con .location nelle launchOptions quando c'è
@@ -119,6 +123,54 @@ final class AppDelegate: NSObject,
         }
         
         return true
+    }
+
+    private func registerBackgroundTasks() {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: Self.passwordSecurityRefreshTaskId,
+            using: nil
+        ) { [weak self] task in
+            guard let appRefresh = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self?.handlePasswordSecurityRefresh(task: appRefresh)
+        }
+    }
+
+    private func schedulePasswordSecurityRefresh() {
+        let req = BGAppRefreshTaskRequest(identifier: Self.passwordSecurityRefreshTaskId)
+        req.earliestBeginDate = Date(timeIntervalSinceNow: 6 * 60 * 60)
+        do {
+            try BGTaskScheduler.shared.submit(req)
+        } catch {
+            KBLog.app.kbError("Failed scheduling password security BG refresh: \(error.localizedDescription)")
+        }
+    }
+
+    private func handlePasswordSecurityRefresh(task: BGAppRefreshTask) {
+        schedulePasswordSecurityRefresh()
+        guard let container = modelContainer else {
+            task.setTaskCompleted(success: false)
+            return
+        }
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId") ?? ""
+        guard !familyId.isEmpty else {
+            task.setTaskCompleted(success: true)
+            return
+        }
+        guard PasswordsSecurityScanner.shouldRunWeeklyAutoScan(familyId: familyId) else {
+            task.setTaskCompleted(success: true)
+            return
+        }
+        let context = container.mainContext
+        let work = Task { @MainActor in
+            _ = await PasswordsSecurityScanner(modelContext: context, familyId: familyId).runFullSecurityScan()
+            task.setTaskCompleted(success: true)
+        }
+        task.expirationHandler = {
+            work.cancel()
+        }
     }
 
     /// Assicura App ID / Client Token letti dal plist risolto (xcconfig). Se restano `$(...)`, il token Graph è invalido → Firebase 190.

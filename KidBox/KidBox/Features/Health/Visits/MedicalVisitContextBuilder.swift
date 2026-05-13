@@ -76,7 +76,7 @@ enum MedicalVisitContextBuilder {
             for t in treatments {
                 var line = "- \(t.drugName)"
                 line += ", \(t.dosageValue, default: "%.0f") \(t.dosageUnit)"
-                line += ", \(t.dailyFrequency)x al giorno"
+                line += ", \(t.frequencyDisplayLabel)"
                 line += t.isLongTerm ? ", lungo termine" : ", \(t.durationDays) giorni"
                 if let notes = t.notes, !notes.isEmpty {
                     line += " (\(notes))"

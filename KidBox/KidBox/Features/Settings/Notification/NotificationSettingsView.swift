@@ -153,6 +153,13 @@ struct NotificationSettingsView: View {
                     .foregroundStyle(.secondary)
                     .listRowBackground(cardBackground)
             }
+
+            Section("Privacy password breach check") {
+                Text("Per il controllo sicurezza password (Have I Been Pwned), KidBox usa k-anonymity: invia solo i primi 5 caratteri dell'hash SHA-1, mai la password in chiaro.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .listRowBackground(cardBackground)
         }
         .scrollContentBackground(.hidden)
         .background(backgroundColor)

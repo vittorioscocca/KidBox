@@ -71,7 +71,7 @@ struct OnboardingWalkthroughView: View {
             iconColor:   Color(red: 0.30, green: 0.65, blue: 0.45),
             accentColor: Color(red: 0.20, green: 0.55, blue: 0.38),
             title:       "Salute, spese\ne molto altro.",
-            subtitle:    "Visite mediche, vaccini, spese di famiglia e lista della spesa. Tutto aggiornato tra voi due."
+            subtitle:    "Visite mediche, vaccini, spese di famiglia, password sicure di famiglia e lista della spesa. Tutto aggiornato tra voi due."
         )
     ]
     

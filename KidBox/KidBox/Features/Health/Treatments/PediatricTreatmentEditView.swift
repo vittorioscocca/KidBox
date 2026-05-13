@@ -36,6 +36,8 @@ struct PediatricTreatmentEditView: View {
     @State private var isLongTerm     = false
     @State private var durationDays   = 5
     @State private var dailyFrequency = 1
+    /// 0 = uso di `dailyFrequency` (volte al giorno); >0 = una dose ogni N giorni.
+    @State private var intervalBetweenDosesDays = 0
     @State private var notifGranted   = false
     @State private var pendingAttachmentURLs: [URL] = []
     
@@ -58,6 +60,9 @@ struct PediatricTreatmentEditView: View {
     @State private var showAttachmentCamera   = false
     @State private var showKidBoxPicker       = false
     @State private var showStorageUpgrade     = false
+    @State private var showCustomIntervalSheet = false
+    @State private var customIntervalDaysDraft = 30
+    @State private var customIntervalYearsDraft = 1
     
     private let tint        = KBTheme.tint
     private let units       = ["ml", "mg", "gocce", "compresse", "bustine"]
@@ -80,7 +85,13 @@ struct PediatricTreatmentEditView: View {
         Calendar.current.date(byAdding: .day, value: durationDays - 1, to: startDate) ?? startDate
     }
     
-    private var totalDoses: Int { dailyFrequency * durationDays }
+    private var totalDoses: Int {
+        if intervalBetweenDosesDays > 0 {
+            let n = intervalBetweenDosesDays
+            return max(1, (durationDays + n - 1) / n)
+        }
+        return dailyFrequency * durationDays
+    }
     private var isEditing: Bool { treatmentId != nil }
 
     private var resolvedChildIdForSave: String { petIdForSave.isEmpty ? childId : "" }
@@ -156,10 +167,14 @@ struct PediatricTreatmentEditView: View {
             }
             .onAppear {
                 loadIfEditing()
+                ensureScheduleTimesMatchesFrequency()
                 Task {
                     let s = await UNUserNotificationCenter.current().notificationSettings()
                     notifGranted = s.authorizationStatus == .authorized
                 }
+            }
+            .onChange(of: currentStep) { _, step in
+                if step == 2 { ensureScheduleTimesMatchesFrequency() }
             }
             .sheet(isPresented: $showAttachmentDialog) {
                 AttachmentSourcePickerSheet(
@@ -188,6 +203,9 @@ struct PediatricTreatmentEditView: View {
                 }
             }
             .storageUpgradeSheet($showStorageUpgrade)
+            .sheet(isPresented: $showCustomIntervalSheet) {
+                treatmentCustomIntervalSheet
+            }
         }
     }
     
@@ -209,6 +227,8 @@ struct PediatricTreatmentEditView: View {
     
     private var editForm: some View {
         VStack(alignment: .leading, spacing: 20) {
+            Color.clear.frame(width: 0, height: 0)
+                .onAppear { ensureScheduleTimesMatchesFrequency() }
             
             // ── Farmaco ──────────────────────────────────────────────────────
             styledGroupBox {
@@ -269,45 +289,18 @@ struct PediatricTreatmentEditView: View {
             }
             
             // ── Frequenza ────────────────────────────────────────────────────
-            styledGroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Frequenza", systemImage: "clock")
-                        .font(.subheadline.bold()).foregroundStyle(tint)
-                    ForEach(freqOptions, id: \.0) { (freq, label, sub) in
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(dailyFrequency == freq ? tint : KBTheme.inputBackground(colorScheme))
-                                    .frame(width: 30, height: 30)
-                                Text("\(freq)x")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(dailyFrequency == freq ? .white : .secondary)
-                            }
-                            VStack(alignment: .leading) {
-                                Text(label).font(.subheadline)
-                                Text(sub).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if dailyFrequency == freq {
-                                Image(systemName: "checkmark").foregroundStyle(tint)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dailyFrequency = freq
-                            times = defaultTimes
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            
+            treatmentFrequencyGroup
+
             // ── Orari ────────────────────────────────────────────────────────
             styledGroupBox {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Orari somministrazione", systemImage: "clock.badge.checkmark")
                         .font(.subheadline.bold()).foregroundStyle(tint)
-                    ForEach(times.indices, id: \.self) { i in
+                    if intervalBetweenDosesDays > 0 {
+                        Text("Un solo orario: una dose ogni \(intervalBetweenDosesDays) giorni.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    ForEach(0..<scheduleSlotCount, id: \.self) { i in
                         let t = times[i]
                         HStack(spacing: 8) {
                             if let p = schedulePeriodForTime(t, slotIndexFallback: i) {
@@ -418,38 +411,7 @@ struct PediatricTreatmentEditView: View {
             }
             
             // Frequenza
-            styledGroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Frequenza", systemImage: "clock")
-                        .font(.subheadline.bold()).foregroundStyle(tint)
-                    ForEach(freqOptions, id: \.0) { (freq, label, sub) in
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(dailyFrequency == freq ? tint : KBTheme.inputBackground(colorScheme))
-                                    .frame(width: 30, height: 30)
-                                Text("\(freq)x")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(dailyFrequency == freq ? .white : .secondary)
-                            }
-                            VStack(alignment: .leading) {
-                                Text(label).font(.subheadline)
-                                Text(sub).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if dailyFrequency == freq {
-                                Image(systemName: "checkmark").foregroundStyle(tint)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            dailyFrequency = freq
-                            times = defaultTimes
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
+            treatmentFrequencyGroup
         }
     }
     
@@ -457,6 +419,8 @@ struct PediatricTreatmentEditView: View {
     
     private var step2_schedule: some View {
         VStack(alignment: .leading, spacing: 20) {
+            Color.clear.frame(width: 0, height: 0)
+                .onAppear { ensureScheduleTimesMatchesFrequency() }
             Text("Configura orari")
                 .font(.title3.bold())
                 .foregroundStyle(KBTheme.primaryText(colorScheme))
@@ -468,9 +432,13 @@ struct PediatricTreatmentEditView: View {
                         .environment(\.calendar, kbDeviceCalendar())
                     Divider()
                     Text("Orari somministrazione").font(.subheadline.bold())
-                    Text("Imposta gli orari per \(dailyFrequency) dos\(dailyFrequency == 1 ? "e" : "i") giornalier\(dailyFrequency == 1 ? "a" : "e")")
+                    Text(
+                        intervalBetweenDosesDays > 0
+                        ? "Un orario per le giornate di assunzione (ogni \(intervalBetweenDosesDays) giorni da data inizio)."
+                        : "Imposta gli orari per \(dailyFrequency) dos\(dailyFrequency == 1 ? "e" : "i") giornalier\(dailyFrequency == 1 ? "a" : "e")"
+                    )
                         .font(.caption).foregroundStyle(.secondary)
-                    ForEach(times.indices, id: \.self) { i in
+                    ForEach(0..<scheduleSlotCount, id: \.self) { i in
                         let t = times[i]
                         HStack(spacing: 8) {
                             if let p = schedulePeriodForTime(t, slotIndexFallback: i) {
@@ -529,10 +497,10 @@ struct PediatricTreatmentEditView: View {
                     if isLongTerm {
                         summaryRow(label: "Fine", value: "Senza fine — cura permanente")
                     }
-                    summaryRow(label: "Frequenza", value: "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno")
+                    summaryRow(label: "Frequenza", value: frequencySummaryLabel)
                     Divider()
                     Text("Orari somministrazione:").font(.caption).foregroundStyle(.secondary)
-                    ForEach(Array(times.enumerated()), id: \.offset) { i, time in
+                    ForEach(Array(times.prefix(scheduleSlotCount).enumerated()), id: \.offset) { i, time in
                         HStack(spacing: 8) {
                             if let p = schedulePeriodForTime(time, slotIndexFallback: i) {
                                 TreatmentPeriodBadge(period: p)
@@ -546,8 +514,8 @@ struct PediatricTreatmentEditView: View {
                     }
                     if !isLongTerm {
                         Divider()
-                        summaryRow(label: "Prima dose", value: "\(localizedDayMonthYear(startDate)), \(times.first ?? "")")
-                        summaryRow(label: "Ultima dose", value: "\(localizedDayMonthYear(endDate)), \(times.last ?? "")")
+                        summaryRow(label: "Prima dose", value: "\(localizedDayMonthYear(startDate)), \(times.prefix(scheduleSlotCount).first ?? "")")
+                        summaryRow(label: "Ultima dose", value: "\(localizedDayMonthYear(endDate)), \(times.prefix(scheduleSlotCount).first ?? "")")
                         summaryRow(label: "Dosi totali", value: "\(totalDoses)")
                     }
                 }
@@ -580,7 +548,7 @@ struct PediatricTreatmentEditView: View {
                         Toggle(isOn: $reminderEnabled) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Attiva promemoria")
-                                Text("Riceverai una notifica per ogni dose")
+                                Text(intervalBetweenDosesDays > 0 ? "Riceverai una notifica nei giorni di assunzione" : "Riceverai una notifica per ogni dose")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -589,8 +557,8 @@ struct PediatricTreatmentEditView: View {
                         if reminderEnabled {
                             Divider()
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Notifiche schedulate per:").font(.caption).foregroundStyle(.secondary)
-                                ForEach(times, id: \.self) { t in
+                                Text(intervalBetweenDosesDays > 0 ? "Orario notifica (giorni di dose):" : "Notifiche schedulate per:").font(.caption).foregroundStyle(.secondary)
+                                ForEach(Array(times.prefix(scheduleSlotCount)), id: \.self) { t in
                                     HStack(spacing: 6) {
                                         Image(systemName: "bell.fill").font(.caption2).foregroundStyle(tint)
                                         Text(t).font(.caption.bold())
@@ -664,6 +632,160 @@ struct PediatricTreatmentEditView: View {
         }
     }
     
+    /// Numero di slot orari in UI (in modalità intervallo: un solo orario).
+    private var scheduleSlotCount: Int { intervalBetweenDosesDays > 0 ? 1 : dailyFrequency }
+    
+    private var frequencySummaryLabel: String {
+        if intervalBetweenDosesDays > 0 { return "Ogni \(intervalBetweenDosesDays) giorni" }
+        return "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno"
+    }
+    
+    private func ensureScheduleTimesMatchesFrequency() {
+        let n = scheduleSlotCount
+        if times.count < n {
+            let def = defaultTimes
+            var t = times
+            while t.count < n {
+                let idx = t.count
+                t.append(idx < def.count ? def[idx] : "08:00")
+            }
+            times = t
+        } else if times.count > n {
+            times = Array(times.prefix(n))
+        }
+    }
+    
+    private func normalizedScheduleTimesForSave() -> [String] {
+        ensureScheduleTimesMatchesFrequency()
+        if intervalBetweenDosesDays > 0 {
+            return [times.first ?? "08:00"]
+        }
+        return Array(times.prefix(dailyFrequency))
+    }
+    
+    private func applyIntervalDays(_ n: Int) {
+        let capped = min(7300, max(1, n))
+        intervalBetweenDosesDays = capped
+        dailyFrequency = 1
+        if times.isEmpty { times = ["08:00"] }
+        else { times = [times[0]] }
+        showCustomIntervalSheet = false
+    }
+    
+    private var treatmentFrequencyGroup: some View {
+        styledGroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Frequenza", systemImage: "clock")
+                    .font(.subheadline.bold()).foregroundStyle(tint)
+                ForEach(freqOptions, id: \.0) { (freq, label, sub) in
+                    HStack {
+                        ZStack {
+                            Circle()
+                                .fill(intervalBetweenDosesDays == 0 && dailyFrequency == freq ? tint : KBTheme.inputBackground(colorScheme))
+                                .frame(width: 30, height: 30)
+                            Text("\(freq)x")
+                                .font(.caption.bold())
+                                .foregroundStyle(intervalBetweenDosesDays == 0 && dailyFrequency == freq ? .white : .secondary)
+                        }
+                        VStack(alignment: .leading) {
+                            Text(label).font(.subheadline)
+                            Text(sub).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if intervalBetweenDosesDays == 0 && dailyFrequency == freq {
+                            Image(systemName: "checkmark").foregroundStyle(tint)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        intervalBetweenDosesDays = 0
+                        dailyFrequency = freq
+                        times = defaultTimes
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                Divider().padding(.vertical, 4)
+                
+                if intervalBetweenDosesDays > 0 {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(tint)
+                        Text("Ogni \(intervalBetweenDosesDays) giorni")
+                            .font(.subheadline.bold())
+                        Spacer()
+                        Button("Modifica") {
+                            customIntervalDaysDraft = intervalBetweenDosesDays
+                            customIntervalYearsDraft = max(1, min(20, (intervalBetweenDosesDays + 182) / 365))
+                            showCustomIntervalSheet = true
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(tint)
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                Button {
+                    customIntervalDaysDraft = intervalBetweenDosesDays > 0 ? intervalBetweenDosesDays : 30
+                    customIntervalYearsDraft = max(1, min(20, (intervalBetweenDosesDays + 182) / 365))
+                    showCustomIntervalSheet = true
+                } label: {
+                    Label("Personalizza frequenza assunzione", systemImage: "calendar.badge.clock")
+                        .font(.subheadline.bold())
+                        .frame(maxWidth: .infinity)
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.45)))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(tint)
+            }
+        }
+    }
+    
+    private var treatmentCustomIntervalSheet: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("Indica ogni quanti giorni assumere una dose. È previsto un solo orario al giorno di assunzione.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Section("Preimpostate") {
+                    Button("Ogni 7 giorni") { applyIntervalDays(7) }
+                    Button("Ogni 15 giorni") { applyIntervalDays(15) }
+                    Button("Circa 2 volte al mese (~15 giorni)") { applyIntervalDays(15) }
+                    Button("Circa 1 volta al mese (~30 giorni)") { applyIntervalDays(30) }
+                    Button("Una volta all'anno (~365 giorni)") { applyIntervalDays(365) }
+                }
+                Section("Personalizzato") {
+                    Stepper(value: $customIntervalDaysDraft, in: 1...730) {
+                        Text("Ogni \(customIntervalDaysDraft) giorni")
+                    }
+                    Button("Usa questo intervallo") {
+                        applyIntervalDays(customIntervalDaysDraft)
+                    }
+                    .font(.headline)
+                }
+                Section("Anni") {
+                    Stepper(value: $customIntervalYearsDraft, in: 1...20) {
+                        Text(customIntervalYearsDraft == 1 ? "Ogni 1 anno" : "Ogni \(customIntervalYearsDraft) anni")
+                    }
+                    Button("Usa questo intervallo") {
+                        applyIntervalDays(customIntervalYearsDraft * 365)
+                    }
+                    .font(.headline)
+                }
+            }
+            .navigationTitle("Frequenza assunzione")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Chiudi") { showCustomIntervalSheet = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+    
     // MARK: - Reusable styled GroupBox
     
     @ViewBuilder
@@ -716,8 +838,13 @@ struct PediatricTreatmentEditView: View {
         isLongTerm       = t.isLongTerm
         durationDays     = t.durationDays
         dailyFrequency   = t.dailyFrequency
+        intervalBetweenDosesDays = t.intervalBetweenDosesDays
         startDate        = t.startDate
         times            = t.scheduleTimes.isEmpty ? defaultTimes : t.scheduleTimes
+        if intervalBetweenDosesDays > 0 {
+            times = Array(times.prefix(1))
+            if times.isEmpty { times = ["08:00"] }
+        }
         notes            = t.notes ?? ""
         currentStep      = 0
         petIdForSave     = t.petId
@@ -746,7 +873,9 @@ struct PediatricTreatmentEditView: View {
                 dosageValue: dosageValue, dosageUnit: dosageUnit,
                 isLongTerm: isLongTerm, durationDays: durationDays,
                 startDate: startDate, endDate: ed,
-                dailyFrequency: dailyFrequency, scheduleTimes: times,
+                dailyFrequency: dailyFrequency,
+                intervalBetweenDosesDays: intervalBetweenDosesDays,
+                scheduleTimes: normalizedScheduleTimesForSave(),
                 isActive: true, notes: notes.isEmpty ? nil : notes,
                 reminderEnabled: false,
                 createdAt: now, updatedAt: now, updatedBy: uid, createdBy: uid
@@ -794,7 +923,8 @@ struct PediatricTreatmentEditView: View {
         t.startDate        = startDate
         t.endDate          = endDate
         t.dailyFrequency   = dailyFrequency
-        t.scheduleTimes    = times
+        t.intervalBetweenDosesDays = intervalBetweenDosesDays
+        t.scheduleTimes    = normalizedScheduleTimesForSave()
         t.notes            = notes.isEmpty ? nil : notes
         t.updatedBy        = uid
         t.updatedAt        = now

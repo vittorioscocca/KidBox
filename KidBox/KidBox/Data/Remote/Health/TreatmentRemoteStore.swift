@@ -26,6 +26,8 @@ struct RemoteTreatmentDTO {
     let startDate:       Date
     let endDate:         Date?
     let dailyFrequency:  Int
+    /// 0 = solo frequenza giornaliera; >0 = una dose ogni N giorni.
+    let intervalBetweenDosesDays: Int
     let scheduleTimes:   [String]
     let isActive:        Bool
     let isDeleted:       Bool
@@ -105,6 +107,7 @@ final class TreatmentRemoteStore {
             "durationDays":     dto.durationDays,
             "startDate":        Timestamp(date: dto.startDate),
             "dailyFrequency":   dto.dailyFrequency,
+            "intervalBetweenDosesDays": dto.intervalBetweenDosesDays,
             "scheduleTimes":    dto.scheduleTimes,
             "isActive":         dto.isActive,
             "isDeleted":        dto.isDeleted,
@@ -286,6 +289,7 @@ final class TreatmentRemoteStore {
             startDate:        startDate,
             endDate:          (data["endDate"]     as? Timestamp)?.dateValue(),
             dailyFrequency:   data["dailyFrequency"] as? Int  ?? 1,
+            intervalBetweenDosesDays: Self.firestoreInt(data["intervalBetweenDosesDays"]) ?? 0,
             scheduleTimes:    data["scheduleTimes"] as? [String] ?? [],
             isActive:         data["isActive"]     as? Bool   ?? true,
             isDeleted:        data["isDeleted"]    as? Bool   ?? false,

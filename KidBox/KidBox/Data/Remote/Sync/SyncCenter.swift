@@ -59,6 +59,9 @@ final class SyncCenter: ObservableObject {
     let expenseRemote = ExpenseRemoteStore()
     var walletListener: ListenerRegistration?
     let walletRemote = WalletRemoteStore()
+    let passwordRemote = PasswordRemoteStore()
+    var passwordEntriesListener: ListenerRegistration?
+    var passwordGroupsListener: ListenerRegistration?
     let walletPDFStore = WalletPDFStore()
 
     var petListener: ListenerRegistration?
@@ -147,6 +150,7 @@ final class SyncCenter: ObservableObject {
         stopPhotosRealtime()
         stopExpensesRealtime()
         stopWalletRealtime()
+        stopPasswordsRealtime()
         
         Self._currentUserRevoked.send(familyId)
     }
@@ -571,10 +575,27 @@ final class SyncCenter: ObservableObject {
                 
                 let ops = try modelContext.fetch(desc)
                 KBLog.sync.kbInfo("flushGlobal ops=\(ops.count)")
+                if !ops.isEmpty {
+                    KBLog.sync.kbInfo("flushGlobal outbox snapshot(before)=\(self.outboxEntitySummary(ops))")
+                    let duplicates = self.outboxDuplicateEntityIds(ops)
+                    if !duplicates.isEmpty {
+                        KBLog.sync.kbDebug("flushGlobal duplicate pending ids(before)=\(duplicates)")
+                    }
+                }
                 
                 for op in ops {
                     KBLog.sync.kbDebug("Processing op entity=\(op.entityTypeRaw) opType=\(op.opType) id=\(op.entityId)")
                     await self.process(op: op, modelContext: modelContext, remote: self.todoRemote)
+                }
+                
+                let remaining = try modelContext.fetch(desc)
+                KBLog.sync.kbInfo("flushGlobal remainingOps=\(remaining.count)")
+                if !remaining.isEmpty {
+                    KBLog.sync.kbInfo("flushGlobal outbox snapshot(after)=\(self.outboxEntitySummary(remaining))")
+                    let duplicates = self.outboxDuplicateEntityIds(remaining)
+                    if !duplicates.isEmpty {
+                        KBLog.sync.kbDebug("flushGlobal duplicate pending ids(after)=\(duplicates)")
+                    }
                 }
                 
                 KBLog.sync.kbInfo("flushGlobal completed")
@@ -789,6 +810,11 @@ final class SyncCenter: ObservableObject {
             case SyncEntityType.walletTicket.rawValue:
                 try await processWalletTicket(op: op, modelContext: modelContext)
 
+            case SyncEntityType.passwordEntry.rawValue:
+                try await processPasswordEntry(op: op, modelContext: modelContext)
+            case SyncEntityType.passwordGroup.rawValue:
+                try await processPasswordGroup(op: op, modelContext: modelContext)
+
             case SyncEntityType.pet.rawValue:
                 try await processPet(op: op, modelContext: modelContext)
             case SyncEntityType.petEvent.rawValue:
@@ -965,6 +991,23 @@ final class SyncCenter: ObservableObject {
     
     private func backoffSeconds(attempts: Int) -> TimeInterval {
         min(pow(2.0, Double(max(0, attempts - 1))), 300.0)
+    }
+    
+    private func outboxEntitySummary(_ ops: [KBSyncOp]) -> String {
+        let grouped = Dictionary(grouping: ops, by: \.entityTypeRaw)
+        return grouped
+            .map { key, value in "\(key)=\(value.count)" }
+            .sorted()
+            .joined(separator: ", ")
+    }
+    
+    private func outboxDuplicateEntityIds(_ ops: [KBSyncOp]) -> String {
+        let grouped = Dictionary(grouping: ops, by: { "\($0.entityTypeRaw):\($0.entityId)" })
+        let duplicates = grouped
+            .filter { $0.value.count > 1 }
+            .map { "\($0.key)x\($0.value.count)" }
+            .sorted()
+        return duplicates.joined(separator: ", ")
     }
     
     private func updateFamilyLastSyncAt(

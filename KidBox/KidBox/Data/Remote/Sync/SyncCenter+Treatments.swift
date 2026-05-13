@@ -150,6 +150,7 @@ extension SyncCenter {
                             startDate:          dto.startDate,
                             endDate:            dto.endDate,
                             dailyFrequency:     dto.dailyFrequency,
+                            intervalBetweenDosesDays: dto.intervalBetweenDosesDays,
                             scheduleTimes:      dto.scheduleTimes,
                             isActive:           dto.isActive,
                             notes:              dto.notes,
@@ -195,6 +196,7 @@ extension SyncCenter {
         local.startDate          = dto.startDate
         local.endDate            = dto.endDate
         local.dailyFrequency     = dto.dailyFrequency
+        local.intervalBetweenDosesDays = dto.intervalBetweenDosesDays
         local.scheduleTimes      = dto.scheduleTimes
         local.isActive           = dto.isActive
         local.isDeleted          = dto.isDeleted
@@ -374,6 +376,7 @@ extension SyncCenter {
                 startDate:        t.startDate,
                 endDate:          t.endDate,
                 dailyFrequency:   t.dailyFrequency,
+                intervalBetweenDosesDays: t.intervalBetweenDosesDays,
                 scheduleTimes:    t.scheduleTimes,
                 isActive:         t.isActive,
                 isDeleted:        t.isDeleted,

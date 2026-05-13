@@ -1,0 +1,12 @@
+{
+  "/Users/vscocca/KidBox/KidBox/KidBox/Support/AutoFillSnapshot.swift" : {
+    "abi-baseline-json" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill.abi.json",
+    "const-values" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.swiftconstvalues",
+    "dependencies" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.d",
+    "diagnostics" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.dia",
+    "objc-header" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-Swift.h",
+    "swiftdoc" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill.swiftdoc",
+    "swiftmodule" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill.swiftmodule",
+    "swiftsourceinfo" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill.swiftsourceinfo"
+  }
+}

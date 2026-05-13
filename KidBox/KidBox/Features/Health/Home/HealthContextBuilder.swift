@@ -102,7 +102,7 @@ enum HealthContextBuilder {
         for t in treatments {
             var line = "• \(t.drugName)"
             line += " — \(t.dosageValue, default: "%.0f") \(t.dosageUnit)"
-            line += ", \(t.dailyFrequency)x/giorno"
+            line += ", \(t.frequencyDisplayLabel)"
             if t.isLongTerm {
                 line += ", lungo termine"
             } else {

@@ -85,7 +85,21 @@ struct TreatmentDetailView: View {
     private var takenCount: Int { doseLogs.filter { $0.taken }.count }
     
     private var totalDoseCount: Int {
-        treatment.isLongTerm ? totalDays * treatment.dailyFrequency : treatment.totalDoses
+        if !treatment.isLongTerm { return treatment.totalDoses }
+        if treatment.usesIntervalSchedule {
+            let n = treatment.intervalBetweenDosesDays
+            guard n > 0 else { return totalDays * treatment.dailyFrequency }
+            return (0..<totalDays).filter { treatment.isScheduledDoseDay(calendarDayOffsetFromStart: $0) }.count
+        }
+        return totalDays * treatment.dailyFrequency
+    }
+    
+    /// Numero di dosi previste nel giorno di calendario `dayOffset` (0 = primo giorno cura).
+    private func expectedDoseSlotsCount(dayOffset: Int) -> Int {
+        if treatment.usesIntervalSchedule {
+            return treatment.isScheduledDoseDay(calendarDayOffsetFromStart: dayOffset) ? 1 : 0
+        }
+        return treatment.dailyFrequency
     }
     
     private var progressFraction: Double {
@@ -115,6 +129,33 @@ struct TreatmentDetailView: View {
     private var slotsForSelectedDay: [SlotViewModel] {
         let dayNumber = selectedDayOffset + 1
         let times = treatment.scheduleTimes
+        if treatment.usesIntervalSchedule {
+            guard treatment.isScheduledDoseDay(calendarDayOffsetFromStart: selectedDayOffset) else { return [] }
+            let slotIdx = 0
+            let timeStr = times.first ?? "08:00"
+            let log = doseLogs.first { $0.dayNumber == dayNumber && $0.slotIndex == slotIdx && !$0.isDeleted }
+            let sched = schedulePeriodForTime(timeStr, slotIndexFallback: slotIdx)
+            let label = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
+            let chipPeriod: TreatmentSchedulePeriod? = {
+                if log?.taken == true, let at = log?.takenAt {
+                    return TreatmentSchedulePeriod.from(date: at)
+                }
+                return sched
+            }()
+            return [
+                SlotViewModel(
+                    dayNumber: dayNumber,
+                    slotIndex: slotIdx,
+                    scheduledTime: timeStr,
+                    periodLabel: label,
+                    periodForChip: chipPeriod,
+                    taken: log?.taken ?? false,
+                    isSkipped: log != nil && (log?.taken == false),
+                    takenAt: log?.takenAt,
+                    logId: log?.id
+                )
+            ]
+        }
         return TreatmentSchedulePeriod.sortedSlotIndices(times: times).map { slotIdx in
             let timeStr = times[slotIdx]
             let log = doseLogs.first { $0.dayNumber == dayNumber && $0.slotIndex == slotIdx && !$0.isDeleted }
@@ -256,7 +297,7 @@ struct TreatmentDetailView: View {
             Text(String(format: "%.0f", treatment.dosageValue) + " \(treatment.dosageUnit)")
                 .font(.headline).foregroundStyle(tint)
             
-            Text("\(treatment.dailyFrequency) volt\(treatment.dailyFrequency == 1 ? "a" : "e") al giorno")
+            Text(treatment.frequencyDisplayLabel)
                 .font(.subheadline).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -347,8 +388,9 @@ struct TreatmentDetailView: View {
                         let date       = dateForOffset(offset)
                         let isToday    = offset == currentDayOffset
                         let isSelected = offset == selectedDayOffset
-                        let dayDoses   = doseLogs.filter { $0.dayNumber == offset + 1 }
-                        let allTaken   = dayDoses.count == treatment.dailyFrequency && dayDoses.allSatisfy { $0.taken }
+                        let dayDoses   = doseLogs.filter { $0.dayNumber == offset + 1 && !$0.isDeleted }
+                        let expected   = expectedDoseSlotsCount(dayOffset: offset)
+                        let allTaken   = expected > 0 && dayDoses.count == expected && dayDoses.allSatisfy { $0.taken }
                         
                         VStack(spacing: 4) {
                             Text(date.formatted(.dateTime.day()))
@@ -387,7 +429,19 @@ struct TreatmentDetailView: View {
     
     private var doseSlotsList: some View {
         VStack(spacing: 10) {
-            ForEach(slotsForSelectedDay, id: \.slotIndex) { slot in doseSlotRow(slot) }
+            if slotsForSelectedDay.isEmpty {
+                Text("Nessuna dose programmata per questo giorno.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(KBTheme.cardBackground(colorScheme))
+                    )
+            } else {
+                ForEach(slotsForSelectedDay, id: \.slotIndex) { slot in doseSlotRow(slot) }
+            }
         }
     }
     
@@ -486,12 +540,19 @@ struct TreatmentDetailView: View {
     
     private var scheduleInfoCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Imposta gli orari per \(treatment.dailyFrequency) dosi giornaliere")
+            Text(
+                treatment.usesIntervalSchedule
+                ? "Orario nel giorno di assunzione (ogni \(treatment.intervalBetweenDosesDays) giorni)."
+                : "Imposta gli orari per \(treatment.dailyFrequency) dosi giornaliere"
+            )
                 .font(.subheadline).foregroundStyle(.secondary)
             
             let times = treatment.scheduleTimes
-            ForEach(TreatmentSchedulePeriod.sortedSlotIndices(times: times), id: \.self) { i in
-                let time = times[i]
+            let indices: [Int] = treatment.usesIntervalSchedule
+                ? [0]
+                : TreatmentSchedulePeriod.sortedSlotIndices(times: times)
+            ForEach(indices, id: \.self) { i in
+                let time = times.indices.contains(i) ? times[i] : "08:00"
                 HStack(spacing: 8) {
                     if let p = schedulePeriodForTime(time, slotIndexFallback: i) {
                         TreatmentPeriodBadge(period: p)
@@ -575,7 +636,7 @@ struct TreatmentDetailView: View {
                 )) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Promemoria attivo")
-                        Text("Notifica per ogni dose agli orari impostati")
+                        Text(treatment.usesIntervalSchedule ? "Notifica nei giorni di dose, all’orario impostato" : "Notifica per ogni dose agli orari impostati")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     .font(.subheadline)
@@ -587,7 +648,10 @@ struct TreatmentDetailView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Notifiche schedulate per:").font(.caption).foregroundStyle(.secondary)
                         let times = treatment.scheduleTimes
-                        ForEach(TreatmentSchedulePeriod.sortedSlotIndices(times: times), id: \.self) { idx in
+                        let idxList: [Int] = treatment.usesIntervalSchedule
+                            ? [0]
+                            : TreatmentSchedulePeriod.sortedSlotIndices(times: times)
+                        ForEach(idxList, id: \.self) { idx in
                             let t = times[idx]
                             HStack(spacing: 6) {
                                 Image(systemName: "bell.fill").font(.caption2).foregroundStyle(tint)
@@ -1257,7 +1321,11 @@ struct EditScheduleTimesSheet: View {
                         Image(systemName: "clock.badge.checkmark").font(.title2).foregroundStyle(tint)
                     }
                     Text("Personalizza orari").font(.title3.bold())
-                    Text("Imposta gli orari per \(treatment.dailyFrequency) dos\(treatment.dailyFrequency == 1 ? "e" : "i") giornalier\(treatment.dailyFrequency == 1 ? "a" : "e")")
+                    Text(
+                        treatment.usesIntervalSchedule
+                        ? "Un orario per i giorni di dose (ogni \(treatment.intervalBetweenDosesDays) giorni)."
+                        : "Imposta gli orari per \(treatment.dailyFrequency) dos\(treatment.dailyFrequency == 1 ? "e" : "i") giornalier\(treatment.dailyFrequency == 1 ? "a" : "e")"
+                    )
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
                 .padding(.top, 20).padding(.bottom, 12)
@@ -1307,9 +1375,14 @@ struct EditScheduleTimesSheet: View {
                 ToolbarItem(placement: .topBarLeading) { Button("Annulla") { dismiss() } }
             }
             .onAppear {
-                editedTimes = treatment.scheduleTimes.isEmpty
-                ? Array(repeating: "08:00", count: treatment.dailyFrequency)
-                : treatment.scheduleTimes
+                if treatment.usesIntervalSchedule {
+                    let base = treatment.scheduleTimes.isEmpty ? ["08:00"] : treatment.scheduleTimes
+                    editedTimes = [base[0]]
+                } else {
+                    editedTimes = treatment.scheduleTimes.isEmpty
+                    ? Array(repeating: "08:00", count: treatment.dailyFrequency)
+                    : treatment.scheduleTimes
+                }
             }
         }
         .presentationDetents([.medium])
@@ -1317,7 +1390,9 @@ struct EditScheduleTimesSheet: View {
     
     private func saveTimes() {
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        treatment.scheduleTimes = editedTimes
+        treatment.scheduleTimes = treatment.usesIntervalSchedule
+            ? Array(editedTimes.prefix(1))
+            : editedTimes
         treatment.updatedAt     = Date()
         treatment.updatedBy     = uid
         try? modelContext.save()

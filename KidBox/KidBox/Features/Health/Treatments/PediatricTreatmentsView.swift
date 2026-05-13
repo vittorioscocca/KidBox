@@ -108,7 +108,7 @@ private struct TreatmentLifecycleRow: View {
                             Image(systemName: "bell.fill").font(.caption2).foregroundStyle(tint)
                         }
                     }
-                    Text("\(treatment.dosageValue, specifier: "%.0f") \(treatment.dosageUnit) · \(treatment.dailyFrequency) volt\(treatment.dailyFrequency == 1 ? "a" : "e") al giorno")
+                    Text("\(treatment.dosageValue, specifier: "%.0f") \(treatment.dosageUnit) · \(treatment.frequencyDisplayLabel)")
                         .font(.caption).foregroundStyle(tint)
                     lifecycleLabel
                 }
@@ -559,6 +559,7 @@ struct PediatricTreatmentsView: View {
                 startDate:        now,
                 endDate:          endDate,
                 dailyFrequency:   t.dailyFrequency,
+                intervalBetweenDosesDays: t.intervalBetweenDosesDays,
                 scheduleTimes:    t.scheduleTimes,
                 isActive:         true,
                 notes:            t.notes,

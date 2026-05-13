@@ -331,11 +331,17 @@ final class AppCoordinator: ObservableObject {
                     // `refreshCurrentEntitlement()` non ripristina il ruolo: serve `loadPlan()`
                     // dopo che `activeFamilyId` è in App Group (non solo al primo skip onboarding).
                     await KBSubscriptionManager.shared.loadPlan()
-                    
+
+                    UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.set(user.uid, forKey: "kidbox.autofill.currentUid")
+                    await AutoFillSnapshotWriter.rebuildNow(modelContext: modelContext)
+
                 } else {
                     self.isAuthenticated = false
                     self.uid = nil
-                    
+
+                    UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.removeObject(forKey: "kidbox.autofill.currentUid")
+                    AutoFillSnapshotWriter.clearAllAutoFillSharedArtifacts()
+
                     KBLog.auth.kbInfo("Auth state changed: logged out")
                     self.setActiveFamily(nil)
                     self.resetToRoot()
@@ -476,6 +482,12 @@ final class AppCoordinator: ObservableObject {
             WalletHomeView(familyId: familyId)
         case .walletTicketDetail(familyId: let familyId, ticketId: let ticketId):
             WalletTicketDetailView(familyId: familyId, ticketId: ticketId)
+        case .passwordsHome(familyId: let familyId):
+            PasswordsHomeView(familyId: familyId)
+        case .passwordsSecurity(familyId: let familyId):
+            PasswordsSecurityView(familyId: familyId)
+        case .passwordDetail(familyId: let familyId, entryId: let entryId):
+            PasswordDetailView(familyId: familyId, entryId: entryId)
         case .askExpert:
             PlanningAIChatView()
 
@@ -712,6 +724,13 @@ final class AppCoordinator: ObservableObject {
         KBLog.navigation.kbInfo("Navigate to route=\(String(describing: route))")
         path.append(route)
         KBLog.navigation.kbDebug("Path updated count=\(self.path.count)")
+    }
+
+    /// Rimuove l’ultima destinazione dallo stack (equivalente al tap su «Indietro»).
+    func navigateBack() {
+        guard !path.isEmpty else { return }
+        path.removeLast()
+        KBLog.navigation.kbDebug("Path pop count=\(self.path.count)")
     }
     
     @MainActor
@@ -1036,6 +1055,8 @@ final class AppCoordinator: ObservableObject {
     @MainActor
     func signOut(modelContext: ModelContext) async {
         KBLog.auth.kbInfo("Sign out requested")
+
+        AutoFillSnapshotWriter.clearAllAutoFillSharedArtifacts()
 
         await KidBoxLocalNotificationsCleanup.cancelAllScheduledAccountReminders()
         

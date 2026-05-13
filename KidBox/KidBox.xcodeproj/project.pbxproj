@@ -10,6 +10,7 @@
 		7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7C11ACD42F3629A500EB83F7 /* FirebaseStorage */; };
 		7C1D3C7A2F59BC7C001FB004 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */; };
 		7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7C4C85532F51ABA80054A4C3 /* FacebookLogin */; };
+		7CAF2A092F90C0DE00AB0009 /* KidBoxAutoFill.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CB37F452F72B12F00CD0F7C /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CB37F442F72B12F00CD0F7C /* StoreKit.framework */; };
 		7CD645642F88195600AF9B23 /* KidBoxNotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -31,6 +32,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		7CAF2A0A2F90C0DE00AB000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7CFC51552F3378CB0086D687 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7CAF2A022F90C0DE00AB0002;
+			remoteInfo = KidBoxAutoFill;
+		};
 		7CD645622F88195600AF9B23 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CFC51552F3378CB0086D687 /* Project object */;
@@ -78,6 +86,7 @@
 				7CD645642F88195600AF9B23 /* KidBoxNotificationService.appex in Embed Foundation Extensions */,
 				7CF6177D2F609689007587D9 /* KidBoxShareExtension.appex in Embed Foundation Extensions */,
 				7CE0B0052F3378CB0086D687 /* KidBoxControlsExtension.appex in Embed Foundation Extensions */,
+				7CAF2A092F90C0DE00AB0009 /* KidBoxAutoFill.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -85,6 +94,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxAutoFill.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CB37F442F72B12F00CD0F7C /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxControlsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -98,6 +108,23 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7CAF2A042F90C0DE00AB0004 /* Exceptions for "KidBoxAutoFill" folder in "KidBoxAutoFill" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7CAF2A022F90C0DE00AB0002 /* KidBoxAutoFill */;
+		};
+		7CAF2A052F90C0DE00AB0005 /* Exceptions for "KidBox" folder in "KidBoxAutoFill" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Support/AutoFillSnapshot.swift,
+				Support/SharedFamilyKey.swift,
+				Support/TOTPCodeGenerator.swift,
+				UIComponent/KBTheme.swift,
+			);
+			target = 7CAF2A022F90C0DE00AB0002 /* KidBoxAutoFill */;
+		};
 		7CD645682F88195600AF9B23 /* Exceptions for "KidBoxNotificationService" folder in "KidBoxNotificationService" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -164,6 +191,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		7CAF2A032F90C0DE00AB0003 /* KidBoxAutoFill */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7CAF2A042F90C0DE00AB0004 /* Exceptions for "KidBoxAutoFill" folder in "KidBoxAutoFill" target */,
+			);
+			path = KidBoxAutoFill;
+			sourceTree = "<group>";
+		};
 		7CD6455E2F88195600AF9B23 /* KidBoxNotificationService */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -195,6 +230,7 @@
 				7CF617902F60B2BE007587D9 /* Exceptions for "KidBox" folder in "KidBoxShareExtension" target */,
 				7CD645702F881A6700AF9B23 /* Exceptions for "KidBox" folder in "KidBoxNotificationService" target */,
 				7CE0B01E2F3378CB0086D687 /* Exceptions for "KidBox" folder in "KidBoxControlsExtension" target */,
+				7CAF2A052F90C0DE00AB0005 /* Exceptions for "KidBox" folder in "KidBoxAutoFill" target */,
 			);
 			path = KidBox;
 			sourceTree = "<group>";
@@ -212,6 +248,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7CAF2A072F90C0DE00AB0007 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7CD6455A2F88195600AF9B23 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -284,6 +327,7 @@
 				7CF617742F609689007587D9 /* KidBoxShareExtension */,
 				7CD6455E2F88195600AF9B23 /* KidBoxNotificationService */,
 				7CE0B0082F3378CB0086D687 /* KidBoxControlsExtension */,
+				7CAF2A032F90C0DE00AB0003 /* KidBoxAutoFill */,
 				7CFC51F52F33E9000086D687 /* Frameworks */,
 				7CFC515E2F3378CB0086D687 /* Products */,
 			);
@@ -298,6 +342,7 @@
 				7CF617732F609689007587D9 /* KidBoxShareExtension.appex */,
 				7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */,
 				7CE0B0042F3378CB0086D687 /* KidBoxControlsExtension.appex */,
+				7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -316,6 +361,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		7CAF2A022F90C0DE00AB0002 /* KidBoxAutoFill */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7CAF2A0E2F90C0DE00AB000E /* Build configuration list for PBXNativeTarget "KidBoxAutoFill" */;
+			buildPhases = (
+				7CAF2A062F90C0DE00AB0006 /* Sources */,
+				7CAF2A072F90C0DE00AB0007 /* Frameworks */,
+				7CAF2A082F90C0DE00AB0008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7CAF2A032F90C0DE00AB0003 /* KidBoxAutoFill */,
+			);
+			name = KidBoxAutoFill;
+			packageProductDependencies = (
+			);
+			productName = KidBoxAutoFill;
+			productReference = 7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		7CD6455C2F88195600AF9B23 /* KidBoxNotificationService */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7CD645652F88195600AF9B23 /* Build configuration list for PBXNativeTarget "KidBoxNotificationService" */;
@@ -400,6 +467,7 @@
 				7CF6177C2F609689007587D9 /* PBXTargetDependency */,
 				7CD645632F88195600AF9B23 /* PBXTargetDependency */,
 				7CE0B0072F3378CB0086D687 /* PBXTargetDependency */,
+				7CAF2A0B2F90C0DE00AB000B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				7CFC515F2F3378CB0086D687 /* KidBox */,
@@ -478,6 +546,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					7CAF2A022F90C0DE00AB0002 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 					7CD6455C2F88195600AF9B23 = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -506,6 +577,10 @@
 			knownRegions = (
 				en,
 				Base,
+				it,
+				es,
+				"zh-Hans",
+				"en-GB",
 			);
 			mainGroup = 7CFC51542F3378CB0086D687;
 			minimizedProjectReferenceProxies = 1;
@@ -526,11 +601,19 @@
 				7CF617722F609689007587D9 /* KidBoxShareExtension */,
 				7CD6455C2F88195600AF9B23 /* KidBoxNotificationService */,
 				7CE0B00A2F3378CB0086D687 /* KidBoxControlsExtension */,
+				7CAF2A022F90C0DE00AB0002 /* KidBoxAutoFill */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7CAF2A082F90C0DE00AB0008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7CD6455B2F88195600AF9B23 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -576,6 +659,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7CAF2A062F90C0DE00AB0006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7CD645592F88195600AF9B23 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -621,6 +711,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		7CAF2A0B2F90C0DE00AB000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 7CAF2A022F90C0DE00AB0002 /* KidBoxAutoFill */;
+			targetProxy = 7CAF2A0A2F90C0DE00AB000A /* PBXContainerItemProxy */;
+		};
 		7CD645632F88195600AF9B23 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			platformFilter = ios;
@@ -652,12 +748,71 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		7CAF2A0C2F90C0DE00AB000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 49;
+				DEVELOPMENT_TEAM = 5WA8KG2G2W;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.9;
+				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxAutoFill;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7CAF2A0D2F90C0DE00AB000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 49;
+				DEVELOPMENT_TEAM = 5WA8KG2G2W;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.9;
+				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxAutoFill;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		7CD645662F88195600AF9B23 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -669,7 +824,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -688,7 +843,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -700,7 +855,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -721,7 +876,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -733,7 +888,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxControlsExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -753,7 +908,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -765,7 +920,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxControlsExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -785,7 +940,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -797,7 +952,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -816,7 +971,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -828,7 +983,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -976,7 +1131,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1016,7 +1171,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1043,7 +1198,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1083,7 +1238,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1218,6 +1373,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7CAF2A0E2F90C0DE00AB000E /* Build configuration list for PBXNativeTarget "KidBoxAutoFill" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7CAF2A0C2F90C0DE00AB000C /* Debug */,
+				7CAF2A0D2F90C0DE00AB000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		7CD645652F88195600AF9B23 /* Build configuration list for PBXNativeTarget "KidBoxNotificationService" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -4,6 +4,8 @@
 <dict>
 	<key>aps-environment</key>
 	<string>development</string>
+	<key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+	<true/>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>
@@ -19,6 +21,7 @@
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(AppIdentifierPrefix)it.vittorioscocca.KidBox</string>
+		<string>$(AppIdentifierPrefix)it.vittorioscocca.kidbox.shared</string>
 	</array>
 </dict>
 </plist>

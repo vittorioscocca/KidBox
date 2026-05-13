@@ -29,6 +29,8 @@ final class KBTreatment {
     var endDate: Date?
     
     var dailyFrequency: Int
+    /// Se `> 0`, una sola dose ogni N giorni (calendario da `startDate`), solo al primo orario in `scheduleTimes`. Se `0`, frequenza classica `dailyFrequency` volte al giorno.
+    var intervalBetweenDosesDays: Int = 0
     var scheduleTimesData: String   // stored: "08:00,14:00,20:00"
     
     var isActive: Bool
@@ -68,6 +70,7 @@ final class KBTreatment {
         startDate: Date = Date(),
         endDate: Date? = nil,
         dailyFrequency: Int = 1,
+        intervalBetweenDosesDays: Int = 0,
         scheduleTimes: [String] = ["08:00"],
         isActive: Bool = true,
         notes: String? = nil,
@@ -92,6 +95,7 @@ final class KBTreatment {
         self.startDate        = startDate
         self.endDate          = endDate
         self.dailyFrequency   = dailyFrequency
+        self.intervalBetweenDosesDays = max(0, intervalBetweenDosesDays)
         self.scheduleTimesData = scheduleTimes.joined(separator: ",")
         self.isActive         = isActive
         self.notes            = notes
@@ -118,7 +122,31 @@ extension KBTreatment {
     }
     
     var totalDoses: Int {
-        isLongTerm ? -1 : dailyFrequency * durationDays
+        if isLongTerm { return -1 }
+        if intervalBetweenDosesDays > 0 {
+            let n = intervalBetweenDosesDays
+            return max(1, (durationDays + n - 1) / n)
+        }
+        return dailyFrequency * durationDays
+    }
+
+    /// Frequenza non giornaliera (es. ogni 15 giorni).
+    var usesIntervalSchedule: Bool { intervalBetweenDosesDays > 0 }
+
+    /// `offset` = giorni da `startDate` (0 = primo giorno).
+    func isScheduledDoseDay(calendarDayOffsetFromStart offset: Int) -> Bool {
+        guard usesIntervalSchedule else { return true }
+        let n = intervalBetweenDosesDays
+        guard n > 0 else { return true }
+        return offset >= 0 && offset % n == 0
+    }
+
+    /// Testo riassuntivo per UI (lista cure, dettaglio, ecc.).
+    var frequencyDisplayLabel: String {
+        if intervalBetweenDosesDays > 0 {
+            return "Ogni \(intervalBetweenDosesDays) giorni"
+        }
+        return "\(dailyFrequency) volt\(dailyFrequency == 1 ? "a" : "e") al giorno"
     }
     
     var currentDay: Int? {

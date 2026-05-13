@@ -102,6 +102,8 @@ enum ModelContainerProvider {
             _ = try context.fetch(FetchDescriptor<KBNote>())
             _ = try context.fetch(FetchDescriptor<KBTodoItem>())
             _ = try context.fetch(FetchDescriptor<KBWalletTicket>())
+            _ = try context.fetch(FetchDescriptor<PasswordEntry>())
+            _ = try context.fetch(FetchDescriptor<PasswordGroup>())
             _ = try context.fetch(FetchDescriptor<KBCalendarEvent>())
             return true
         } catch {
@@ -156,6 +158,8 @@ enum ModelContainerProvider {
             KBExpenseCategory.self,
             KBExpense.self,
             KBWalletTicket.self,
+            PasswordEntry.self,
+            PasswordGroup.self,
             KBPet.self,
             KBPetEvent.self,
             KBHomeItem.self,

@@ -491,7 +491,7 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
                 for treatment in treatments {
                     var row = "- \(treatment.drugName)"
                     row += " | dose: \(String(format: "%.0f", treatment.dosageValue)) \(treatment.dosageUnit)"
-                    row += " | frequenza: \(treatment.dailyFrequency)x/die"
+                    row += " | frequenza: \(treatment.frequencyDisplayLabel)"
                     if treatment.isLongTerm {
                         row += " | lungo termine"
                     } else {

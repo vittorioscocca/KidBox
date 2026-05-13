@@ -109,7 +109,9 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(cardBackground)
-            
+
+            AutoFillSettingsBlock()
+
             NavigationLink {
                 StorageUsageView()
             } label: {

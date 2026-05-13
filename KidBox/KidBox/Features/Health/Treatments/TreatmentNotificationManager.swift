@@ -167,7 +167,63 @@ enum TreatmentNotificationManager {
         
         while currentDay <= windowEnd {
             let dayOffset = cal.dateComponents([.day], from: cal.startOfDay(for: treatment.startDate), to: currentDay).day ?? 0
-            
+
+            if treatment.intervalBetweenDosesDays > 0 {
+                let n = treatment.intervalBetweenDosesDays
+                guard dayOffset >= 0, dayOffset % n == 0 else {
+                    currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
+                    continue
+                }
+                guard let timeStr = treatment.scheduleTimes.first else {
+                    currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
+                    continue
+                }
+                let slotIdx = 0
+                let parts = timeStr.split(separator: ":").compactMap { Int($0) }
+                guard parts.count == 2 else {
+                    currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
+                    continue
+                }
+
+                var dc = cal.dateComponents([.year, .month, .day], from: currentDay)
+                dc.hour = parts[0]
+                dc.minute = parts[1]
+                dc.second = 0
+
+                guard let fire = cal.date(from: dc), fire > Date() else {
+                    currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
+                    continue
+                }
+
+                let content = UNMutableNotificationContent()
+                content.title = "💊 \(treatment.drugName)"
+                let fascia = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
+                content.body = "\(fascia) · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit)"
+                content.sound = .default
+                content.categoryIdentifier = TreatmentNotificationCategory.identifier
+                content.userInfo = [
+                    "type": "treatment_reminder",
+                    "familyId": treatment.familyId,
+                    "childId": treatment.childId,
+                    "treatmentId": treatment.id,
+                    "dayOffset": dayOffset,
+                    "slotIndex": slotIdx,
+                ]
+
+                let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
+                let reqId = notificationId(for: treatment.id, dayOffset: dayOffset, slotIndex: slotIdx)
+                let request = UNNotificationRequest(identifier: reqId, content: content, trigger: trigger)
+
+                center.add(request) { err in
+                    if let err { log.error("schedule failed id=\(reqId): \(err.localizedDescription)") }
+                }
+
+                lastRequest = request
+
+                currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
+                continue
+            }
+
             for (slotIdx, timeStr) in treatment.scheduleTimes.enumerated() {
                 let parts = timeStr.split(separator: ":").compactMap { Int($0) }
                 guard parts.count == 2 else { continue }
@@ -182,7 +238,7 @@ enum TreatmentNotificationManager {
                 let content                    = UNMutableNotificationContent()
                 content.title                  = "💊 \(treatment.drugName)"
                 let fascia = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
-                content.body                   = "\(fascia) · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit) per \(childName)"
+                content.body                   = "\(fascia) · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit)"
                 content.sound                  = .default
                 content.categoryIdentifier     = TreatmentNotificationCategory.identifier
                 content.userInfo               = [

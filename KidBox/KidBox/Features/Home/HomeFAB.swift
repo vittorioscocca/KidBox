@@ -71,6 +71,7 @@ extension FABAction {
         FABAction(id: "chat",     icon: "bubble.left.fill",      label: "Messaggio",    color: Color(red: 0.20, green: 0.75, blue: 0.40)),
         FABAction(id: "health",   icon: "cross.case.fill",       label: "Salute",       color: Color(red: 0.90, green: 0.25, blue: 0.25)),
         FABAction(id: "documents", icon: "doc.text.fill", label: "Documenti", color: Color(red: 0.25, green: 0.55, blue: 0.90)),
+        FABAction(id: "passwords", icon: "key.fill", label: "Password", color: Color(red: 0.37, green: 0.36, blue: 0.90)),
         FABAction(id: "pets", icon: "pawprint.fill", label: "Animali", color: Color(red: 1.00, green: 0.58, blue: 0.00)),
         FABAction(id: "home_items", icon: "house.fill", label: "Casa", color: Color(red: 0.55, green: 0.41, blue: 0.08)),
         FABAction(id: "vehicles", icon: "car.fill", label: "Garage", color: Color(red: 0.10, green: 0.10, blue: 0.10)),
@@ -240,6 +241,8 @@ struct HomeFAB: View {
             coordinator.navigate(to: .pediatricChildSelector(familyId: familyId))
         case "documents":
             coordinator.navigate(to: .documentsHome)
+        case "passwords":
+            coordinator.navigate(to: .passwordsHome(familyId: familyId))
         case "pets":
             coordinator.navigate(to: .petsHome(familyId: familyId))
         case "home_items":

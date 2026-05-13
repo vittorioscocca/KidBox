@@ -119,6 +119,7 @@ struct RootHostView: View {
         .onChange(of: coordinator.activeFamilyId) { oldValue, newValue in
             KBLog.sync.kbInfo("coordinator.activeFamilyId changed old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
             startFamilyRealtimeIfPossible()
+            AutoFillSnapshotWriter.scheduleRebuild(modelContext: modelContext)
         }
         // Dopo join: `resetToRoot()` mantiene lo stesso `activeFamilyId` ma azzera lo stack;
         // forza un nuovo ciclo listener così non restiamo agganciati a dati/sessione vecchi.
@@ -136,6 +137,7 @@ struct RootHostView: View {
             }
             KBLog.sync.kbInfo("families.first changed (fallback) old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
             startFamilyRealtimeIfPossible()
+            AutoFillSnapshotWriter.scheduleRebuild(modelContext: modelContext)
         }
         // Espulsione: wipa i dati locali e torna al root da qualsiasi view.
         .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
@@ -239,6 +241,7 @@ struct RootHostView: View {
                 SyncCenter.shared.stopTreatmentsRealtime()
                 SyncCenter.shared.stopExpensesRealtime()
                 SyncCenter.shared.stopWalletRealtime()
+                SyncCenter.shared.stopPasswordsRealtime()
                 SyncCenter.shared.stopPetsRealtime()
                 SyncCenter.shared.stopPetEventsRealtime()
                 SyncCenter.shared.stopHomeItemsRealtime()
@@ -285,6 +288,7 @@ struct RootHostView: View {
             SyncCenter.shared.stopTreatmentsRealtime()
             SyncCenter.shared.stopExpensesRealtime()
             SyncCenter.shared.stopWalletRealtime()
+            SyncCenter.shared.stopPasswordsRealtime()
             SyncCenter.shared.stopPetsRealtime()
             SyncCenter.shared.stopPetEventsRealtime()
             SyncCenter.shared.stopHomeItemsRealtime()
@@ -347,6 +351,12 @@ struct RootHostView: View {
 
         KBLog.sync.kbDebug("startWalletRealtime familyId=\(familyId)")
         SyncCenter.shared.startWalletRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        KBLog.sync.kbDebug("startPasswordsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startPasswordsRealtime(
             familyId: familyId,
             modelContext: modelContext
         )

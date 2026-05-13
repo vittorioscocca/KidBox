@@ -140,5 +140,12 @@ enum FamilyKeychainStore {
         KBLog.security.info(
             "Master key saved and synced to iCloud Keychain for familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public)"
         )
+
+        NotificationCenter.default.post(name: .kidBoxFamilyKeyDidChange, object: nil)
     }
+}
+
+extension Notification.Name {
+    /// Dopo `FamilyKeychainStore.saveFamilyKey` (mirror AutoFill aggiornato).
+    static let kidBoxFamilyKeyDidChange = Notification.Name("kidBoxFamilyKeyDidChange")
 }

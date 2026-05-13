@@ -484,7 +484,7 @@ private struct LinkedTreatmentDetailRow: View {
                 Text(treatment?.drugName ?? "Farmaco")
                     .font(.subheadline.bold())
                 if let t = treatment {
-                    Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.dailyFrequency)x/die · \(t.isLongTerm ? "lungo termine" : "\(t.durationDays)gg")")
+                    Text("\(t.dosageValue, specifier: "%.0f") \(t.dosageUnit) · \(t.frequencyDisplayLabel) · \(t.isLongTerm ? "lungo termine" : "\(t.durationDays)gg")")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

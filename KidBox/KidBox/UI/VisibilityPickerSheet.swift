@@ -16,9 +16,23 @@ struct VisibilityPickerSheet: View {
     let scopeSectionTitle: String
     /// When true the view is pushed via `navigationDestination` and must NOT have its own NavigationStack.
     var embedded: Bool = false
+    /// Se valorizzato, mostra solo queste opzioni (ordine preservato). Es. Password v1: `[family, onlyCreator]`.
+    var allowedScopes: [String]? = nil
     let onConfirm: (String, Set<String>) -> Void
 
     @Environment(\.dismiss) private var dismiss
+
+    private var visibilityOptions: [(scope: String, title: String)] {
+        let all: [(String, String)] = [
+            (KBVisibilityScope.family, "👨‍👩‍👧 Tutta la famiglia"),
+            (KBVisibilityScope.members, "👥 Membri selezionati"),
+            (KBVisibilityScope.onlyCreator, "🔒 Solo io"),
+        ]
+        if let allowed = allowedScopes, !allowed.isEmpty {
+            return all.filter { allowed.contains($0.0) }
+        }
+        return all
+    }
 
     var body: some View {
         if embedded {
@@ -41,9 +55,9 @@ struct VisibilityPickerSheet: View {
     private var pickerList: some View {
         List {
             Section(scopeSectionTitle) {
-                visibilityRow(KBVisibilityScope.family, "👨‍👩‍👧 Tutta la famiglia")
-                visibilityRow(KBVisibilityScope.members, "👥 Membri selezionati")
-                visibilityRow(KBVisibilityScope.onlyCreator, "🔒 Solo io")
+                ForEach(visibilityOptions, id: \.scope) { row in
+                    visibilityRow(row.scope, row.title)
+                }
             }
 
             if selectedScope == KBVisibilityScope.members {
@@ -72,6 +86,11 @@ struct VisibilityPickerSheet: View {
         .navigationTitle("Visibilità")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if embedded {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annulla") { dismiss() }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Conferma") {
                     var finalIds = selectedMemberIds

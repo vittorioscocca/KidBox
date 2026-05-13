@@ -22,6 +22,7 @@ struct KidBoxApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var notifications = NotificationManager.shared
     @State private var showLaunch = true
+    @State private var lastForegroundMaintenanceAt: Date?
     
     init() {
         KBLog.app.kbInfo("KidBoxApp init")
@@ -59,6 +60,9 @@ struct KidBoxApp: App {
                     .environment(\.calendar, kbDeviceCalendar())
                 // ── Tema chiaro / scuro / sistema ──────────────────────────
                     .preferredColorScheme(coordinator.appearanceMode.colorScheme)
+                    .onReceive(NotificationCenter.default.publisher(for: .kidBoxFamilyKeyDidChange)) { _ in
+                        AutoFillSnapshotWriter.scheduleRebuild(modelContext: modelContainer.mainContext)
+                    }
                 // ──────────────────────────────────────────────────────────
                 
                 // MARK: URL handling
@@ -277,6 +281,18 @@ struct KidBoxApp: App {
                                 modelContext: modelContainer.mainContext
                             )
                             NotificationManager.shared.consumeDeepLink()
+
+                        case .passwordExpiry(let familyId, let entryId):
+                            KBLog.navigation.kbInfo("Deep link -> password detail entryId=\(entryId)")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.navigate(to: .passwordDetail(familyId: familyId, entryId: entryId))
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .passwordSecurity(let familyId):
+                            KBLog.navigation.kbInfo("Deep link -> password security")
+                            coordinator.setActiveFamily(familyId)
+                            coordinator.navigate(to: .passwordsSecurity(familyId: familyId))
+                            NotificationManager.shared.consumeDeepLink()
                         }
                         notifications.consumeDeepLink()
                         KBLog.auth.kbDebug("Deep link consumed")
@@ -318,41 +334,51 @@ struct KidBoxApp: App {
                 // chain può fallire silenziosamente), drenalo qui comunque.
                 // handleIncomingShare è idempotente: no-op se la chiave è vuota.
                 coordinator.handleIncomingShare(modelContext: context)
-                // ── Rischedula notifiche cure (finestra scorrevole) ──────────────
-                // Avanza la finestra di 7 giorni se le notifiche pendenti sono poche.
-                Task {
-                    let descriptor = FetchDescriptor<KBTreatment>(
-                        predicate: #Predicate {
-                            $0.reminderEnabled == true &&
-                            $0.isActive        == true &&
-                            $0.isDeleted       == false
-                        }
-                    )
-                    guard let treatments = try? context.fetch(descriptor) else { return }
-                    for treatment in treatments {
-                        let displayName: String
-                        if treatment.petId.isEmpty {
-                            let cid = treatment.childId
-                            let childDesc = FetchDescriptor<KBChild>(
-                                predicate: #Predicate { $0.id == cid }
-                            )
-                            displayName = (try? context.fetch(childDesc).first?.name) ?? ""
-                        } else {
-                            let pid = treatment.petId
-                            let petDesc = FetchDescriptor<KBPet>(
-                                predicate: #Predicate { $0.id == pid }
-                            )
-                            displayName = (try? context.fetch(petDesc).first?.name) ?? "Animale"
-                        }
-                        TreatmentNotificationManager.rescheduleIfNeeded(
-                            treatment: treatment,
-                            childName: displayName
+                let now = Date()
+                let canRunForegroundMaintenance: Bool = {
+                    guard let last = lastForegroundMaintenanceAt else { return true }
+                    return now.timeIntervalSince(last) >= 120
+                }()
+                if canRunForegroundMaintenance {
+                    lastForegroundMaintenanceAt = now
+                    // ── Rischedula notifiche cure (finestra scorrevole) ──────────────
+                    // Avanza la finestra di 7 giorni se le notifiche pendenti sono poche.
+                    Task {
+                        let descriptor = FetchDescriptor<KBTreatment>(
+                            predicate: #Predicate {
+                                $0.reminderEnabled == true &&
+                                $0.isActive        == true &&
+                                $0.isDeleted       == false
+                            }
                         )
+                        guard let treatments = try? context.fetch(descriptor) else { return }
+                        for treatment in treatments {
+                            let displayName: String
+                            if treatment.petId.isEmpty {
+                                let cid = treatment.childId
+                                let childDesc = FetchDescriptor<KBChild>(
+                                    predicate: #Predicate { $0.id == cid }
+                                )
+                                displayName = (try? context.fetch(childDesc).first?.name) ?? ""
+                            } else {
+                                let pid = treatment.petId
+                                let petDesc = FetchDescriptor<KBPet>(
+                                    predicate: #Predicate { $0.id == pid }
+                                )
+                                displayName = (try? context.fetch(petDesc).first?.name) ?? "Animale"
+                            }
+                            TreatmentNotificationManager.rescheduleIfNeeded(
+                                treatment: treatment,
+                                childName: displayName
+                            )
+                        }
+                        KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
                     }
-                    KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
-                }
-                Task { @MainActor in
-                    await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
+                    Task { @MainActor in
+                        await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
+                    }
+                } else {
+                    KBLog.sync.kbDebug("ScenePhase active -> skip heavy foreground maintenance (throttled)")
                 }
             case .inactive:
                 KBLog.sync.kbDebug("ScenePhase inactive")

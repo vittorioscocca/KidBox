@@ -260,6 +260,8 @@ extension RemoteVaccineDTO {
             administeredBy: nil,
             administrationSiteRaw: nil,
             notes: notes,
+            reminderOn: false,
+            nextDoseDate: nil,
             isDeleted: isDeleted,
             createdAt: Date(),
             updatedAt: updatedAt,

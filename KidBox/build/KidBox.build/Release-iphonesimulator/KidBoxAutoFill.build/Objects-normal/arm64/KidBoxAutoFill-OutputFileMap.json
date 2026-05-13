@@ -1,0 +1,36 @@
+{
+  "" : {
+    "const-values" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.swiftconstvalues",
+    "dependencies" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.d",
+    "diagnostics" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.dia",
+    "emit-module-dependencies" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary-emit-module.dia",
+    "pch" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KidBoxAutoFill-primary.swiftdeps"
+  },
+  "/Users/vscocca/KidBox/KidBox/KidBox/Support/AutoFillSnapshot.swift" : {
+    "index-unit-output-path" : "/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/AutoFillSnapshot.o",
+    "llvm-bc" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/AutoFillSnapshot.bc",
+    "object" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/AutoFillSnapshot.o"
+  },
+  "/Users/vscocca/KidBox/KidBox/KidBox/Support/SharedFamilyKey.swift" : {
+    "index-unit-output-path" : "/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/SharedFamilyKey.o",
+    "llvm-bc" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/SharedFamilyKey.bc",
+    "object" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/SharedFamilyKey.o"
+  },
+  "/Users/vscocca/KidBox/KidBox/KidBox/Support/TOTPCodeGenerator.swift" : {
+    "index-unit-output-path" : "/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/TOTPCodeGenerator.o",
+    "llvm-bc" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/TOTPCodeGenerator.bc",
+    "object" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/TOTPCodeGenerator.o"
+  },
+  "/Users/vscocca/KidBox/KidBox/KidBox/UIComponent/KBTheme.swift" : {
+    "index-unit-output-path" : "/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KBTheme.o",
+    "llvm-bc" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KBTheme.bc",
+    "object" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/KBTheme.o"
+  },
+  "/Users/vscocca/KidBox/KidBox/KidBoxAutoFill/CredentialProviderViewController.swift" : {
+    "index-unit-output-path" : "/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/CredentialProviderViewController.o",
+    "llvm-bc" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/CredentialProviderViewController.bc",
+    "object" : "/Users/vscocca/KidBox/KidBox/build/KidBox.build/Release-iphonesimulator/KidBoxAutoFill.build/Objects-normal/arm64/CredentialProviderViewController.o"
+  }
+}

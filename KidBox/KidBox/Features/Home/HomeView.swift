@@ -409,6 +409,7 @@ enum HomeDestination {
     case chat, document
     case expenses(familyId: String)
     case wallet(familyId: String)
+    case passwords(familyId: String)
     case pets(familyId: String)
     case homeItems(familyId: String)
     case vehicles(familyId: String)
@@ -427,6 +428,7 @@ enum HomeDestination {
         case .document:                      return .document
         case .expenses(let familyId):        return .expensesHome(familyId: familyId)
         case .wallet(let familyId):          return .walletHome(familyId: familyId)
+        case .passwords(let familyId):      return .passwordsHome(familyId: familyId)
         case .pets(let fid):                 return .petsHome(familyId: fid)
         case .homeItems(let fid):            return .homeItemsHome(familyId: fid)
         case .vehicles(let fid):             return .vehiclesHome(familyId: fid)
@@ -506,6 +508,7 @@ private enum HomeCardID: String, CaseIterable, Codable {
     case documents
     case expenses
     case wallet
+    case passwords
     case location
     case photos
     case family
@@ -525,6 +528,7 @@ private struct HomeCardGrid: View {
     @ObservedObject private var badge = BadgeManager.shared
     @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
     @StateObject private var locationObserver = LocationSharingObserver()
+    @Query private var passwordEntries: [PasswordEntry]
     
     @State private var order: [HomeCardID] = []
     @State private var dragged: HomeCardID?
@@ -534,11 +538,30 @@ private struct HomeCardGrid: View {
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
+
+    init(hasFamily: Bool, familyId: String, onNavigate: @escaping (HomeDestination) -> Void) {
+        self.hasFamily = hasFamily
+        self.familyId = familyId
+        self.onNavigate = onNavigate
+        let fid = familyId
+        _passwordEntries = Query(
+            filter: #Predicate<PasswordEntry> { $0.familyId == fid && $0.deletedAt == nil },
+            sort: [SortDescriptor(\PasswordEntry.updatedAt, order: .reverse)]
+        )
+    }
     
     private var storageKey: String {
         // Ordine per famiglia (se presente), così ogni famiglia può avere un layout diverso
         let fam = familyId.isEmpty ? "nofamily" : familyId
         return "kb.home.cardOrder.\(fam)"
+    }
+
+    private var passwordHomeSecurityBadgeCount: Int {
+        PasswordsHomeBadgeAck.homeBadgeCount(
+            entries: passwordEntries,
+            familyId: familyId,
+            currentUid: Auth.auth().currentUser?.uid
+        )
     }
     
     var body: some View {
@@ -710,6 +733,26 @@ private struct HomeCardGrid: View {
                 }
             }
 
+        case .passwords:
+            // Card standard (come Documenti / Wallet / Salute): KBTheme via HomeCardView, nessun tema dedicato.
+            HomeCardView(
+                title: "Password",
+                subtitle: "Credenziali di famiglia",
+                systemImage: "key.fill",
+                tint: Color(hex: "#5E5CE6") ?? .blue
+            ) {
+                KBLog.navigation.debug("Home: tap Passwords")
+                FABUsageTracker.shared.record("passwords")
+                onNavigate(.passwords(familyId: familyId))
+            }
+            .overlay(alignment: .topTrailing) {
+                if passwordHomeSecurityBadgeCount > 0 {
+                    BadgeView(count: passwordHomeSecurityBadgeCount)
+                        .padding(.top, 8)
+                        .padding(.trailing, 8)
+                }
+            }
+
         case .location:
             ZStack {
                 HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
@@ -774,7 +817,7 @@ private struct HomeCardGrid: View {
             ZStack(alignment: .topTrailing) {
                 HomeCardView(
                     title: "Assistente",
-                    subtitle: aiAvailable ? "Conosce salute, visite, esami, documenti e wallet" : "Disponibile con Pro o Max",
+                    subtitle: aiAvailable ? "Conosce salute, visite, esami, documenti, wallet e password" : "Disponibile con Pro o Max",
                     systemImage: aiAvailable ? "brain.head.profile" : "lock.fill",
                     tint: aiAvailable ? .purple : .gray
                 ) {
@@ -806,7 +849,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .location, .photos, .family, .expert, .pets, .homeItems, .vehicles]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .family, .expert, .pets, .homeItems, .vehicles]
     }
     
     private func loadOrder() -> [HomeCardID]? {

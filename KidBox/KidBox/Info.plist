@@ -46,9 +46,31 @@
 		<string>fbapi</string>
 		<string>fb-messenger-share-api</string>
 		<string>fbauth2</string>
+		<string>App-Prefs</string>
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>KidBox usa i contatti per permetterti di condividere un contatto in chat.</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>it.vittorioscocca.kidbox.kbpw</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>KidBox Password Export</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>kbpw</string>
+					<string>txt</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -56,6 +78,8 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>KidBoxSharedKeychainAccessGroup</key>
+	<string>$(AppIdentifierPrefix)it.vittorioscocca.kidbox.shared</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIImageName</key>

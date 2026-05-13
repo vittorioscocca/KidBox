@@ -537,7 +537,7 @@ enum PlanningContextBuilder {
             var line = "• \(t.drugName)"
             if let ai = t.activeIngredient, !ai.isEmpty { line += " (\(ai))" }
             line += " — \(String(format: "%.0f", t.dosageValue)) \(t.dosageUnit)"
-            line += ", \(t.dailyFrequency)x/giorno"
+            line += ", \(t.frequencyDisplayLabel)"
             line += " — orari: \(t.scheduleTimes.joined(separator: ", "))"
             
             if t.isLongTerm {
