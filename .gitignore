@@ -64,5 +64,3 @@ fastlane/test_output
 
 # Copie locali opzionali del template Meta (non sovrascrivono il file già tracciato in git).
 Facebook.local.xcconfig
-
-KidBoxAndroid/

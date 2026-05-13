@@ -31,6 +31,10 @@ struct PasswordsHomeView: View {
     private enum PasswordListScope: Equatable {
         case all
         case favorites
+        /// Visibilità «tutta la famiglia» (`KBVisibilityScope.family`).
+        case familyShared
+        /// Visibilità «solo io» per password create dall’utente corrente.
+        case onlyMinePrivate
         case group(String)
     }
 
@@ -84,12 +88,19 @@ struct PasswordsHomeView: View {
 
     private var sections: [PasswordSection] {
         let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let uid = currentUid
         let base = visibleEntries.filter { e in
             switch listScope {
             case .all:
                 return true
             case .favorites:
                 return e.isFavorite
+            case .familyShared:
+                return PasswordEntry.normalizedPasswordVisibility(e.visibility) == KBVisibilityScope.family
+            case .onlyMinePrivate:
+                guard let uid, !uid.isEmpty else { return false }
+                return PasswordEntry.normalizedPasswordVisibility(e.visibility) == KBVisibilityScope.onlyCreator
+                    && e.createdBy == uid
             case .group(let gid):
                 return (e.groupId ?? unassignedGroupId) == gid
             }
@@ -159,14 +170,31 @@ struct PasswordsHomeView: View {
     }
 
     private var emptyPasswordsTitle: String {
-        listScope == .favorites ? "Nessuna preferita" : "Nessuna password"
+        let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !q.isEmpty { return "Nessun risultato" }
+        switch listScope {
+        case .favorites: return "Nessuna preferita"
+        case .familyShared: return "Nessuna condivisa in famiglia"
+        case .onlyMinePrivate: return "Nessuna solo per te"
+        default: return "Nessuna password"
+        }
     }
 
     private var emptyPasswordsDescription: Text {
-        if listScope == .favorites {
-            return Text("Segna le password come preferite dal dettaglio o con uno swipe sulla riga.")
+        let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !q.isEmpty {
+            return Text("Prova con altre parole chiave.")
         }
-        return Text("Tocca + per aggiungere la prima credenziale.")
+        switch listScope {
+        case .favorites:
+            return Text("Segna le password come preferite dal dettaglio o con uno swipe sulla riga.")
+        case .familyShared:
+            return Text("Qui compaiono le password con visibilità «Tutta la famiglia».")
+        case .onlyMinePrivate:
+            return Text("Qui compaiono le password con visibilità «Solo io» che hai creato tu.")
+        default:
+            return Text("Tocca + per aggiungere la prima credenziale.")
+        }
     }
 
     var body: some View {
@@ -335,6 +363,12 @@ struct PasswordsHomeView: View {
                 }
                 filterChip(title: "Preferite", selected: listScope == .favorites) {
                     listScope = .favorites
+                }
+                filterChip(title: "In famiglia", selected: listScope == .familyShared) {
+                    listScope = .familyShared
+                }
+                filterChip(title: "Solo io", selected: listScope == .onlyMinePrivate) {
+                    listScope = .onlyMinePrivate
                 }
                 ForEach(visibleGroups, id: \.id) { group in
                     filterChip(
