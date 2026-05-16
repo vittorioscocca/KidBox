@@ -65,6 +65,7 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
     // MARK: - Published
     
     @Published var messages: [KBAIMessage] = []
+    @Published var streamingMessageId: String?
     @Published var isLoading = false
     @Published var isLoadingContext = false
     @Published var errorMessage: String?
@@ -99,11 +100,13 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
             
             let documentsByExamId = try fetchDocumentsByExamId(exams: contextExams)
             
-            systemPrompt = buildSystemPrompt(
-                subjectName: subjectName,
-                scope: scope,
-                exams: contextExams,
-                documentsByExamId: documentsByExamId
+            systemPrompt = withFamilyMemory(
+                buildSystemPrompt(
+                    subjectName: subjectName,
+                    scope: scope,
+                    exams: contextExams,
+                    documentsByExamId: documentsByExamId
+                )
             )
             
             contextPrepared  = true
@@ -128,6 +131,7 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
             conversation.summarizedMessageCount = 0
             try modelContext.save()
             messages.removeAll()
+            streamingMessageId = nil
             errorMessage = nil
             KBLog.ai.kbInfo("ExamsAIChatVM clearConversation OK")
         } catch {
@@ -136,8 +140,12 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
         }
     }
     
+    func finishStreaming(messageId: String) {
+        AIChatStreamingDelivery.finishReveal(messageId: messageId, streamingMessageId: &streamingMessageId)
+    }
+
     // MARK: - Send
-    
+
     func send(text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isLoading else { return }
@@ -175,14 +183,17 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
             try modelContext.save()
+            isLoading = false
             messages.append(assistantMessage)
+            AIChatStreamingDelivery.beginAssistantReveal(
+                messageId: assistantMessage.id,
+                streamingMessageId: &streamingMessageId
+            )
             try await compactIfNeeded(
                 conversation: conversation,
                 messagesInSession: response.usageToday,
                 dailyLimit: response.dailyLimit
             )
-            
-            isLoading = false
         } catch {
             isLoading = false
             errorMessage = error.localizedDescription
@@ -245,6 +256,7 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
         
         let fullMessages = conversation.sortedMessages
         guard !fullMessages.isEmpty else { return }
+        let messagesForMemoryExtraction = fullMessages
         let summaryReply = try await AIService.shared.sendMessage(
             messages: fullMessages.map { KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt) },
             systemPrompt: Self.compactionSystemPrompt
@@ -263,6 +275,19 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
         lastCompactionThreshold = currentThresholdStep
         try modelContext.save()
         messages = [compacted]
+
+        let fid = Self.activeFamilyId
+        let ctx = modelContext
+        let memorySnapshot = messagesForMemoryExtraction
+        Task {
+            await FamilyMemoryService.shared.extractAndStore(
+                from: conversation,
+                familyId: fid,
+                modelContext: ctx,
+                transcriptMessages: memorySnapshot
+            )
+        }
+        KBLog.ai.kbDebug("ExamsAIChatVM: scheduled family memory extract convId=\(conversation.id)")
     }
     
     // MARK: - Payload building
@@ -325,5 +350,22 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
                 documentsByExamId: documentsByExamId
             )
         }
+    }
+
+    private static var activeFamilyId: String {
+        UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId") ?? ""
+    }
+
+    private func withFamilyMemory(_ base: String) -> String {
+        let memFacts = FamilyMemoryService.shared.fetchFacts(
+            for: Self.activeFamilyId,
+            modelContext: modelContext
+        ).map(\.content)
+        guard !memFacts.isEmpty else { return base }
+        var prompt = base
+        prompt += "\n\n## Memoria famiglia\n"
+        prompt += memFacts.map { "• \($0)" }.joined(separator: "\n")
+        prompt += "\nUsa questi fatti per personalizzare le risposte senza citare esplicitamente che li hai memorizzati."
+        return prompt
     }
 }

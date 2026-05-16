@@ -43,7 +43,10 @@ final class NotificationManager: NSObject, ObservableObject {
     
     /// Pending deep link triggered by push tap.
     @Published var pendingDeepLink: DeepLink? = nil
-    
+
+    /// Testo briefing da mostrare come primo messaggio in PlanningAIChatView (tap notifica daily/weekly).
+    private(set) var pendingPlanningInitialMessage: String?
+
     // MARK: - Private
     
     private let db = Firestore.firestore()
@@ -262,8 +265,22 @@ final class NotificationManager: NSObject, ObservableObject {
             KBLog.auth.kbInfo("DeepLink set for expense familyId=\(familyId) expenseId=\(expenseId)")
             
         } else if type == "weekly_summary" {
+            pendingPlanningInitialMessage = (userInfo["fullText"] as? String)
+                ?? WeeklySummaryService.shared.lastSummaryText
             pendingDeepLink = .askExpert
             KBLog.auth.kbInfo("DeepLink set for weeklySummary → askExpert")
+
+        } else if type == "daily_briefing" {
+            pendingPlanningInitialMessage = (userInfo["fullText"] as? String)
+                ?? DailyBriefingService.shared.lastBriefingText
+            pendingDeepLink = .askExpert
+            KBLog.auth.kbInfo("DeepLink set for dailyBriefing → askExpert")
+
+        } else if type == "health_pattern" {
+            pendingPlanningInitialMessage = (userInfo["fullText"] as? String)
+                ?? HealthPatternAnalyzerService.shared.lastInsightText
+            pendingDeepLink = .askExpert
+            KBLog.auth.kbInfo("DeepLink set for healthPattern → askExpert")
 
         } else if type == "new_wallet_ticket" || type == "wallet_ticket_reminder" {
             guard
@@ -498,6 +515,14 @@ final class NotificationManager: NSObject, ObservableObject {
     func consumeDeepLink() {
         KBLog.auth.kbDebug("Consuming deep link")
         pendingDeepLink = nil
+    }
+
+    /// Restituisce e azzera il briefing da iniettare in PlanningAIChatView.
+    func takePendingPlanningInitialMessage() -> String? {
+        defer { pendingPlanningInitialMessage = nil }
+        let trimmed = pendingPlanningInitialMessage?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
     
     /// Imposta direttamente un deep link (es. da notifiche locali).

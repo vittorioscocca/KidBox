@@ -29,7 +29,10 @@ import FirebaseAuth
 // MARK: - Entry point (gestisce il caricamento dei dati da SwiftData)
 
 struct PlanningAIChatView: View {
-    
+
+    /// Se valorizzato (o da notifica), mostrato come primo messaggio assistente in chat.
+    var initialMessage: String? = nil
+
     @Environment(\.modelContext)  private var modelContext
     @Environment(\.colorScheme)   private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -331,6 +334,17 @@ struct PlanningAIChatView: View {
             )
             vm = newVM
             newVM.loadOrCreateConversation()
+
+            let healthInsight = HealthPatternAnalyzerService.shared.consumeUnreadInsightIfNeeded(
+                familyId: familyId,
+                modelContext: modelContext
+            )
+            let seed = healthInsight
+                ?? initialMessage
+                ?? NotificationManager.shared.takePendingPlanningInitialMessage()
+            if let seed, !seed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                newVM.injectInitialAssistantMessageIfNeeded(seed)
+            }
         }
     }
     
@@ -454,85 +468,45 @@ private struct PlanningAIChatInnerView: View {
                     }
                     
                     // Messages
-                    ScrollViewReader { proxy in
-                        ZStack(alignment: .bottomTrailing) {
-                            ScrollView {
-                                LazyVStack(spacing: 12) {
-                                    if vm.messages.isEmpty {
-                                        emptyState
-                                            .padding(.top, 40)
-                                    }
-                                    
-                                    ForEach(vm.messages) { message in
-                                        VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
-                                            AIChatBubbleView(
-                                                text:   message.content,
-                                                isUser: message.role == .user,
-                                                date:   message.createdAt
-                                            )
-                                            if message.role == .assistant {
-                                                actionCards(for: message)
-                                            }
-                                        }
-                                        .id(message.id)
-                                    }
-                                    
-                                    if vm.isLoading {
-                                        HStack {
-                                            AIChatTypingIndicator()
-                                                .id("typing-indicator")
-                                            Spacer()
-                                        }
-                                    }
-                                    
-                                    Color.clear.frame(height: 1).id("bottom")
-                                }
-                                .padding(.horizontal, 0)
-                                .padding(.vertical, 12)
-                                .padding(.bottom, 140)
+                    AIChatMessageListView(
+                        messages: vm.messages,
+                        isLoading: vm.isLoading,
+                        streamingMessageId: vm.streamingMessageId,
+                        scrollButtonTint: tint,
+                        bottomPadding: 140,
+                        onStreamingComplete: { vm.finishStreaming(messageId: $0) },
+                        intro: {
+                            if vm.messages.isEmpty {
+                                emptyState
+                                    .padding(.top, 40)
                             }
-                            // Dismiss tastiera scrollando verso il basso
-                            .scrollDismissesKeyboard(.interactively)
-                            // Dismiss tastiera toccando lo sfondo
-                            .onTapGesture {
-                                UIApplication.shared.sendAction(
-                                    #selector(UIResponder.resignFirstResponder),
-                                    to: nil, from: nil, for: nil
+                        },
+                        messageRow: { message, isStreaming, onTick in
+                            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
+                                AIChatBubbleView(
+                                    text: message.content,
+                                    isUser: message.role == .user,
+                                    date: message.createdAt,
+                                    streamReveal: isStreaming && message.role == .assistant,
+                                    onStreamingTick: onTick,
+                                    onStreamingComplete: { vm.finishStreaming(messageId: message.id) }
                                 )
-                            }
-                            .onChange(of: vm.messages.count) { _, _ in
-                                withAnimation(.easeOut(duration: 0.3)) {
-                                    proxy.scrollTo("bottom", anchor: .bottom)
+                                if message.role == .assistant, !isStreaming {
+                                    actionCards(for: message)
                                 }
-                            }
-                            .onChange(of: vm.isLoading) { _, loading in
-                                if loading {
-                                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-                                }
-                            }
-                            .onAppear {
-                                proxy.scrollTo("bottom", anchor: .bottom)
-                            }
-                            
-                            if !vm.messages.isEmpty {
-                                Button {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        proxy.scrollTo("bottom", anchor: .bottom)
-                                    }
-                                } label: {
-                                    Image(systemName: "arrow.down")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 36, height: 36)
-                                        .background(Circle().fill(tint))
-                                }
-                                .padding(.trailing, 20)
-                                .padding(.bottom, 132)
                             }
                         }
+                    )
+                    .scrollDismissesKeyboard(.interactively)
+                    .onTapGesture {
+                        UIApplication.shared.sendAction(
+                            #selector(UIResponder.resignFirstResponder),
+                            to: nil, from: nil, for: nil
+                        )
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                
+
                 // Input bar flottante
                 VStack(spacing: 0) {
                     Spacer()

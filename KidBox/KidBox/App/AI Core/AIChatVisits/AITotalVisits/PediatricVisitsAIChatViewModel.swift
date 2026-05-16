@@ -35,6 +35,7 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
     // MARK: - Published
     
     @Published var messages: [KBAIMessage] = []
+    @Published var streamingMessageId: String?
     @Published var isLoading = false
     @Published var isLoadingContext = false
     @Published var errorMessage: String?
@@ -98,11 +99,13 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             let treatmentsByVisitId = try fetchTreatmentsByVisitId(visits: contextVisits)
             let documentsByVisitId = try fetchDocumentsByVisitId(visits: contextVisits)
             
-            systemPrompt = buildSystemPrompt(
-                subjectName: subjectName,
-                visits: contextVisits,
-                treatmentsByVisitId: treatmentsByVisitId,
-                documentsByVisitId: documentsByVisitId
+            systemPrompt = withFamilyMemory(
+                buildSystemPrompt(
+                    subjectName: subjectName,
+                    visits: contextVisits,
+                    treatmentsByVisitId: treatmentsByVisitId,
+                    documentsByVisitId: documentsByVisitId
+                )
             )
             
             contextPrepared = true
@@ -134,6 +137,7 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         
         guard let conversation else {
             messages.removeAll()
+            streamingMessageId = nil
             KBLog.ai.kbDebug("clearConversation no conversation in memory")
             return
         }
@@ -149,8 +153,9 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             try modelContext.save()
             
             messages.removeAll()
+            streamingMessageId = nil
             errorMessage = nil
-            
+
             KBLog.ai.kbInfo("clearConversation END")
         } catch {
             errorMessage = "Non sono riuscito a cancellare la conversazione."
@@ -158,6 +163,10 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         }
     }
     
+    func finishStreaming(messageId: String) {
+        AIChatStreamingDelivery.finishReveal(messageId: messageId, streamingMessageId: &streamingMessageId)
+    }
+
     func send(text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         KBLog.ai.kbInfo("send called textLength=\(trimmed.count)")
@@ -215,16 +224,19 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
             try modelContext.save()
+            isLoading = false
             messages.append(assistantMessage)
+            AIChatStreamingDelivery.beginAssistantReveal(
+                messageId: assistantMessage.id,
+                streamingMessageId: &streamingMessageId
+            )
             try await compactIfNeeded(
                 conversation: conversation,
                 messagesInSession: response.usageToday,
                 dailyLimit: response.dailyLimit
             )
-            
+
             KBLog.ai.kbInfo("assistant message saved id=\(assistantMessage.id)")
-            
-            isLoading = false
         } catch {
             isLoading = false
             errorMessage = error.localizedDescription
@@ -295,6 +307,7 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         
         let fullMessages = conversation.sortedMessages
         guard !fullMessages.isEmpty else { return }
+        let messagesForMemoryExtraction = fullMessages
         let summaryReply = try await AIService.shared.sendMessage(
             messages: fullMessages.map { KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt) },
             systemPrompt: Self.compactionSystemPrompt
@@ -313,6 +326,19 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         lastCompactionThreshold = currentThresholdStep
         try modelContext.save()
         messages = [compacted]
+
+        let fid = Self.activeFamilyId
+        let ctx = modelContext
+        let memorySnapshot = messagesForMemoryExtraction
+        Task {
+            await FamilyMemoryService.shared.extractAndStore(
+                from: conversation,
+                familyId: fid,
+                modelContext: ctx,
+                transcriptMessages: memorySnapshot
+            )
+        }
+        KBLog.ai.kbDebug("PediatricVisitsAIChatVM: scheduled family memory extract convId=\(conversation.id)")
     }
     
     // MARK: - Payload building
@@ -523,6 +549,23 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
         
         let prompt = lines.joined(separator: "\n")
         KBLog.ai.kbInfo("buildSystemPrompt END chars=\(prompt.count)")
+        return prompt
+    }
+
+    private static var activeFamilyId: String {
+        UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.string(forKey: "activeFamilyId") ?? ""
+    }
+
+    private func withFamilyMemory(_ base: String) -> String {
+        let memFacts = FamilyMemoryService.shared.fetchFacts(
+            for: Self.activeFamilyId,
+            modelContext: modelContext
+        ).map(\.content)
+        guard !memFacts.isEmpty else { return base }
+        var prompt = base
+        prompt += "\n\n## Memoria famiglia\n"
+        prompt += memFacts.map { "• \($0)" }.joined(separator: "\n")
+        prompt += "\nUsa questi fatti per personalizzare le risposte senza citare esplicitamente che li hai memorizzati."
         return prompt
     }
 }

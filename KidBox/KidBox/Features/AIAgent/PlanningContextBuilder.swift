@@ -96,7 +96,10 @@ struct PlanningContextInput {
     let allExams: [KBMedicalExam]
     /// Tutti i vaccini per tutti i figli.
     let allVaccines: [KBVaccine]
-    
+
+    /// Fatti narrativi appresi dalle conversazioni precedenti (testo già fetchato).
+    let familyMemoryFacts: [String]
+
     // ── Convenience init with sensible defaults ───────────────────
     init(
         familyName:            String,
@@ -129,7 +132,8 @@ struct PlanningContextInput {
         pediatricProfiles:     [String: KBPediatricProfile] = [:],
         allVisits:             [KBMedicalVisit]    = [],
         allExams:              [KBMedicalExam]     = [],
-        allVaccines:           [KBVaccine]         = []
+        allVaccines:           [KBVaccine]         = [],
+        familyMemoryFacts:     [String]            = []
     ) {
         self.familyName             = familyName
         self.memberNames            = memberNames
@@ -162,8 +166,9 @@ struct PlanningContextInput {
         self.allVisits              = allVisits
         self.allExams               = allExams
         self.allVaccines            = allVaccines
+        self.familyMemoryFacts      = familyMemoryFacts
     }
-    
+
     /// Copia con `lifeAreaDocuments` sostituiti (es. sintesi settimanale dopo fetch OCR).
     func withLifeAreaDocuments(_ docs: [KBDocument]) -> PlanningContextInput {
         PlanningContextInput(
@@ -197,7 +202,8 @@ struct PlanningContextInput {
             pediatricProfiles:      pediatricProfiles,
             allVisits:              allVisits,
             allExams:               allExams,
-            allVaccines:            allVaccines
+            allVaccines:            allVaccines,
+            familyMemoryFacts:      familyMemoryFacts
         )
     }
 }
@@ -230,7 +236,8 @@ enum PlanningContextBuilder {
         pets=\(input.pets.count) petEvents=\(input.petEvents.count) \
         homeItems=\(input.homeItems.count) housePayments=\(input.housePayments.count) \
         vehicles=\(input.vehicles.count) vehicleEvents=\(input.vehicleEvents.count) \
-        lifeAreaDocs=\(input.lifeAreaDocuments.count)
+        lifeAreaDocs=\(input.lifeAreaDocuments.count) \
+        memoryFacts=\(input.familyMemoryFacts.count)
         """)
         
         let now      = Date()
@@ -260,6 +267,17 @@ enum PlanningContextBuilder {
         - L'orizzonte temporale corrente è \(formatDate(now)) — \(formatDate(horizon)) \
           (\(input.horizonDays) giorni).
         """)
+
+        if !input.familyMemoryFacts.isEmpty {
+            lines.append("""
+            
+            ## Memoria famiglia (fatti appresi dalle conversazioni precedenti)
+            \(input.familyMemoryFacts.map { "• \($0)" }.joined(separator: "\n"))
+            
+            Usa questi fatti per personalizzare le risposte senza menzionare esplicitamente \
+            che li hai memorizzati, a meno che non sia rilevante.
+            """)
+        }
         
         // ── Today's snapshot ─────────────────────────────────────────
         appendTodaySnapshot(input: input, now: now, to: &lines)

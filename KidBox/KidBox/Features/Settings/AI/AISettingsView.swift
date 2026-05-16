@@ -205,7 +205,33 @@ struct AISettingsView: View {
                         Label("Recap ogni lunedì mattina", systemImage: "calendar.badge.clock")
                     }
                     .listRowBackground(cardBackground)
-                    
+
+                    Toggle(isOn: Binding(
+                        get: { DailyBriefingService.shared.isEnabled },
+                        set: { DailyBriefingService.shared.isEnabled = $0 }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label("Briefing quotidiano AI", systemImage: "sun.max.fill")
+                            Text("Notifica ogni mattina alle 8:00 con gli impegni del giorno")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+
+                    Toggle(isOn: Binding(
+                        get: { HealthPatternAnalyzerService.shared.isEnabled },
+                        set: { HealthPatternAnalyzerService.shared.isEnabled = $0 }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Pattern salute AI")
+                            Text("Analisi mensile della storia sanitaria dei figli")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+
                     infoRow(
                         icon: "sparkles",
                         color: KBTheme.tint,

@@ -332,6 +332,16 @@ final class AppCoordinator: ObservableObject {
                     // dopo che `activeFamilyId` è in App Group (non solo al primo skip onboarding).
                     await KBSubscriptionManager.shared.loadPlan()
 
+                    let memoryFamilyId = self.activeFamilyId
+                        ?? sharedDefaults?.string(forKey: "activeFamilyId")
+                        ?? gateFamilyId
+                    if !memoryFamilyId.isEmpty {
+                        await FamilyMemoryService.shared.loadFactsFromFirestore(
+                            familyId: memoryFamilyId,
+                            modelContext: modelContext
+                        )
+                    }
+
                     UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?.set(user.uid, forKey: "kidbox.autofill.currentUid")
                     await AutoFillSnapshotWriter.rebuildNow(modelContext: modelContext)
 
@@ -343,6 +353,7 @@ final class AppCoordinator: ObservableObject {
                     AutoFillSnapshotWriter.clearAllAutoFillSharedArtifacts()
 
                     KBLog.auth.kbInfo("Auth state changed: logged out")
+                    FamilyMemoryService.shared.clearFirestoreLoadCache()
                     self.setActiveFamily(nil)
                     self.resetToRoot()
                 }

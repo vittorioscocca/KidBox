@@ -23,6 +23,7 @@ final class PlanningAIChatViewModel: ObservableObject {
     // MARK: - Published
     
     @Published var messages:        [KBAIMessage] = []
+    @Published var streamingMessageId: String?
     @Published var isLoading:       Bool          = false
     @Published var isLoadingContext: Bool         = false
     @Published var errorMessage:    String?       = nil
@@ -201,9 +202,34 @@ final class PlanningAIChatViewModel: ObservableObject {
             KBLog.ai.kbError("PlanningAIChatVM loadOrCreate error: \(error)")
         }
     }
+
+    /// Inietta il briefing AI come primo messaggio assistente (es. tap notifica mattutina).
+    func injectInitialAssistantMessageIfNeeded(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard let conversation else {
+            KBLog.ai.kbDebug("PlanningAIChatVM inject skipped: no conversation")
+            return
+        }
+        guard messages.isEmpty else {
+            KBLog.ai.kbDebug("PlanningAIChatVM inject skipped: messages not empty")
+            return
+        }
+
+        let assistant = makeMessage(role: .assistant, text: trimmed)
+        assistant.conversation = conversation
+        conversation.messages.append(assistant)
+        messages.append(assistant)
+        try? modelContext.save()
+        KBLog.ai.kbInfo("PlanningAIChatVM injected initial briefing chars=\(trimmed.count)")
+    }
     
+    func finishStreaming(messageId: String) {
+        AIChatStreamingDelivery.finishReveal(messageId: messageId, streamingMessageId: &streamingMessageId)
+    }
+
     // MARK: - Send
-    
+
     func send() async {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isLoading, contextPrepared else { return }
@@ -239,16 +265,19 @@ final class PlanningAIChatViewModel: ObservableObject {
             
             let assistantMessage = makeMessage(role: .assistant, text: response.reply)
             conversation.messages.append(assistantMessage)
+            isLoading = false
             messages.append(assistantMessage)
+            AIChatStreamingDelivery.beginAssistantReveal(
+                messageId: assistantMessage.id,
+                streamingMessageId: &streamingMessageId
+            )
             usageTodaySnapshot = response.usageToday
             dailyLimitSnapshot = response.dailyLimit
-            
+
             try await compactIfNeeded(conversation: conversation)
             try? modelContext.save()
-            
+
             KBLog.ai.kbInfo("PlanningAIChatVM send done replyChars=\(response.reply.count) usage=\(response.usageToday)/\(response.dailyLimit)")
-            
-            isLoading = false
         } catch {
             isLoading    = false
             errorMessage = error.localizedDescription
@@ -267,6 +296,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         conversation.summarizedMessageCount   = 0
         try? modelContext.save()
         messages = []
+        streamingMessageId = nil
     }
     
     // MARK: - Persistence helpers
@@ -310,7 +340,9 @@ final class PlanningAIChatViewModel: ObservableObject {
         
         let fullMessages = conversation.sortedMessages
         guard !fullMessages.isEmpty else { return }
-        
+
+        let messagesForMemoryExtraction = fullMessages
+
         let summaryReply = try await AIService.shared.sendMessage(
             messages: fullMessages.map { KBAIMessage(id: $0.id, role: $0.role, content: $0.content, createdAt: $0.createdAt) },
             systemPrompt: Self.compactionSystemPrompt
@@ -328,6 +360,20 @@ final class PlanningAIChatViewModel: ObservableObject {
         conversation.summarizedMessageCount = 0
         lastCompactionThreshold = currentThresholdStep
         messages = [compacted]
+
+        let convoId = conversation.id
+        let fid = familyId
+        let ctx = modelContext
+        let memorySnapshot = messagesForMemoryExtraction
+        Task {
+            await FamilyMemoryService.shared.extractAndStore(
+                from: conversation,
+                familyId: fid,
+                modelContext: ctx,
+                transcriptMessages: memorySnapshot
+            )
+        }
+        KBLog.ai.kbDebug("FamilyMemoryService: scheduled extract after compaction convId=\(convoId)")
     }
     
     // MARK: - Planning context refresh
@@ -336,12 +382,22 @@ final class PlanningAIChatViewModel: ObservableObject {
         let linked = try fetchLifeAreaDocumentsLinkedToPlanningContext()
         enqueueLifeAreaExtractionsIfNeeded(documents: linked)
         let completed = linked.filter { $0.extractionStatus == .completed && $0.hasExtractedText }
+        let memoryFacts = FamilyMemoryService.shared.fetchFacts(
+            for: familyId,
+            modelContext: modelContext
+        ).map(\.content)
         systemPrompt = PlanningContextBuilder.buildSystemPrompt(
-            input: makePlanningContextInput(lifeAreaDocuments: completed)
+            input: makePlanningContextInput(
+                lifeAreaDocuments: completed,
+                familyMemoryFacts: memoryFacts
+            )
         )
     }
-    
-    private func makePlanningContextInput(lifeAreaDocuments: [KBDocument]) -> PlanningContextInput {
+
+    private func makePlanningContextInput(
+        lifeAreaDocuments: [KBDocument],
+        familyMemoryFacts: [String] = []
+    ) -> PlanningContextInput {
         PlanningContextInput(
             familyName:             familyName,
             memberNames:            memberNames,
@@ -373,10 +429,11 @@ final class PlanningAIChatViewModel: ObservableObject {
             pediatricProfiles:      pediatricProfiles,
             allVisits:              allVisits,
             allExams:               allExams,
-            allVaccines:            allVaccines
+            allVaccines:            allVaccines,
+            familyMemoryFacts:      familyMemoryFacts
         )
     }
-    
+
     private func fetchLifeAreaDocumentsLinkedToPlanningContext() throws -> [KBDocument] {
         guard !familyId.isEmpty else { return [] }
         let fid = familyId

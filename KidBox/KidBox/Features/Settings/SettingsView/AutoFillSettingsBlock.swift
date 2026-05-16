@@ -7,13 +7,19 @@ import AuthenticationServices
 import SwiftUI
 import UIKit
 
-/// Sezione Impostazioni per AutoFill / QuickType.
-struct AutoFillSettingsBlock: View {
+/// Dettaglio impostazioni AutoFill / QuickType (aperto da Impostazioni → Password).
+struct AutoFillSettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var providerEnabled = false
     @State private var requireBiometric = KidBoxAutoFillPreferences.requireBiometricForQuickType
     @State private var autofillCount = 0
+
+    private var backgroundColor: Color {
+        colorScheme == .dark
+        ? Color(red: 0.13, green: 0.13, blue: 0.13)
+        : Color(red: 0.961, green: 0.957, blue: 0.945)
+    }
 
     private var cardBackground: Color {
         colorScheme == .dark
@@ -22,48 +28,55 @@ struct AutoFillSettingsBlock: View {
     }
 
     var body: some View {
-        Section {
-            HStack {
-                Text("Stato")
-                Spacer()
-                Text(providerEnabled ? "Attivo" : "Da attivare in Impostazioni iOS")
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
-            }
-            .listRowBackground(cardBackground)
-
-            Button {
-                openIOSPasswordSettings()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "gear")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Apri Impostazioni iOS")
-                        .foregroundStyle(.primary)
+        List {
+            Section {
+                HStack {
+                    Text("Stato")
+                    Spacer()
+                    Text(providerEnabled ? "Attivo" : "Da attivare in Impostazioni iOS")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
                 }
-            }
-            .listRowBackground(cardBackground)
+                .listRowBackground(cardBackground)
 
-            Toggle(isOn: $requireBiometric) {
-                Text("Richiedi Face ID anche per AutoFill da QuickType")
-            }
-            .tint(KBTheme.bubbleTint)
-            .onChange(of: requireBiometric) { _, newValue in
-                KidBoxAutoFillPreferences.requireBiometricForQuickType = newValue
-            }
-            .listRowBackground(cardBackground)
+                Button {
+                    openIOSPasswordSettings()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "gear")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        Text("Apri Impostazioni iOS")
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .listRowBackground(cardBackground)
 
-            HStack {
-                Text("Password disponibili per AutoFill")
-                Spacer()
-                Text("\(autofillCount)")
-                    .foregroundStyle(.secondary)
+                Toggle(isOn: $requireBiometric) {
+                    Text("Richiedi Face ID anche per AutoFill da QuickType")
+                }
+                .tint(KBTheme.bubbleTint)
+                .onChange(of: requireBiometric) { _, newValue in
+                    KidBoxAutoFillPreferences.requireBiometricForQuickType = newValue
+                }
+                .listRowBackground(cardBackground)
+
+                HStack {
+                    Text("Password disponibili per AutoFill")
+                    Spacer()
+                    Text("\(autofillCount)")
+                        .foregroundStyle(.secondary)
+                }
+                .listRowBackground(cardBackground)
+            } footer: {
+                Text("Abilita KidBox come provider password in Impostazioni iOS per compilare automaticamente login e app.")
             }
-            .listRowBackground(cardBackground)
-        } header: {
-            Text("AutoFill")
         }
+        .scrollContentBackground(.hidden)
+        .background(backgroundColor)
+        .navigationTitle("AutoFill")
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(.primary)
         .onAppear {
             refreshState()
         }

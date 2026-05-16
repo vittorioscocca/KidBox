@@ -110,7 +110,23 @@ struct SettingsView: View {
             }
             .listRowBackground(cardBackground)
 
-            AutoFillSettingsBlock()
+            NavigationLink {
+                AutoFillSettingsView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "key.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Password")
+                            .foregroundStyle(.primary)
+                        Text("AutoFill e compilazione automatica")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .listRowBackground(cardBackground)
 
             NavigationLink {
                 StorageUsageView()

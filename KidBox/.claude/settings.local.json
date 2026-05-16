@@ -4,7 +4,10 @@
       "Bash(git add KidBox/Features/Note/NoteLiquidToolbar.swift KidBox/Features/Note/RichTextAccessoryView.swift)",
       "Bash(git commit:*)",
       "Bash(git -C /Users/vscocca/KidBox/KidBox status)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Bash(find /Users/vscocca/KidBox/KidBoxAndroid -type f \\\\\\( -name \"*AI*\" -o -name \"*askAI*\" -o -name \"*Claude*\" -o -name \"*anthropic*\" \\\\\\) 2>/dev/null)",
+      "Bash(find /Users/vscocca/KidBox* -type f -name \"FamilyMemoryService.kt\" 2>/dev/null)",
+      "Bash(find /Users/vscocca/KidBox* -type f -name \"KBMemoryFactEntity.kt\")"
     ]
   }
 }

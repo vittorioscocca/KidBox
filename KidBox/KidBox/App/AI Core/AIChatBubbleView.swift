@@ -179,14 +179,25 @@ struct AIChatBubbleView: View {
     let text: String
     let isUser: Bool
     let date: Date
-    
+    var streamReveal: Bool = false
+    var onStreamingTick: (() -> Void)? = nil
+    var onStreamingComplete: (() -> Void)? = nil
+
     @Environment(\.colorScheme) private var colorScheme
-    
+    @State private var revealedCount = 0
+    @State private var revealTask: Task<Void, Never>?
+
+    private var displayText: String {
+        guard streamReveal, !isUser else { return text }
+        guard revealedCount > 0 else { return "" }
+        return String(text.prefix(revealedCount))
+    }
+
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 if isUser {
-                    Text(text)
+                    Text(displayText)
                     .font(.body)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.leading)
@@ -210,9 +221,10 @@ struct AIChatBubbleView: View {
                     )
                     .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: .trailing)
                 } else {
-                    AIClaudeMarkdownText(text: text)
+                    AIClaudeMarkdownText(text: displayText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 2)
+                    .animation(nil, value: revealedCount)
                 }
                 
                 Text(timeString)
@@ -224,8 +236,56 @@ struct AIChatBubbleView: View {
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+        .onAppear { syncRevealAnimation() }
+        .onChange(of: streamReveal) { _, _ in syncRevealAnimation() }
+        .onChange(of: text) { _, _ in
+            if !streamReveal { revealedCount = text.count }
+        }
+        .onDisappear {
+            revealTask?.cancel()
+            revealTask = nil
+        }
     }
-    
+
+    private func syncRevealAnimation() {
+        revealTask?.cancel()
+        if streamReveal, !isUser, !text.isEmpty {
+            revealedCount = 0
+            revealTask = Task { @MainActor in
+                await runTypewriterReveal()
+            }
+        } else {
+            revealedCount = text.count
+        }
+    }
+
+    @MainActor
+    private func runTypewriterReveal() async {
+        let total = text.count
+        let baseIntervalNs: UInt64 = total > 1_200 ? 6_000_000 : (total > 400 ? 10_000_000 : 14_000_000)
+        var index = 0
+        while index < total {
+            if Task.isCancelled { return }
+            let step = revealStep(from: index)
+            index = min(index + step, total)
+            revealedCount = index
+            onStreamingTick?()
+            if index < total {
+                try? await Task.sleep(nanoseconds: baseIntervalNs * UInt64(step))
+            }
+        }
+        onStreamingComplete?()
+    }
+
+    private func revealStep(from index: Int) -> Int {
+        guard index < text.count else { return 1 }
+        let i = text.index(text.startIndex, offsetBy: index)
+        let ch = text[i]
+        if ch == "\n" { return 1 }
+        if ch == " " { return 2 }
+        return min(4, text.count - index)
+    }
+
     private var bubbleBackground: Color {
         isUser ? KBTheme.bubbleTint : KBTheme.cardBackground(colorScheme)
     }

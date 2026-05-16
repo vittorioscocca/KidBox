@@ -129,77 +129,30 @@ private struct HealthAIChatBody: View {
     /// from being re-registered every time the parent body is re-evaluated,
     /// which was the root cause of the accelerating typing-indicator animation.
     private var messageList: some View {
-        ScrollViewReader { proxy in
-            ZStack(alignment: .bottomTrailing) {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        if vm.messages.isEmpty && !vm.isLoading {
-                            introBubble
-                        }
-                        ForEach(vm.messages) { message in
-                            AIChatBubbleView(
-                                text:   message.content,
-                                isUser: message.role == .user,
-                                date:   message.createdAt
-                            )
-                            .id(message.id)
-                        }
-                        
-                        // Typing indicator — given a stable, unique id so SwiftUI
-                        // never recycles or re-creates it while it is visible.
-                        // This prevents its internal repeating animation from
-                        // restarting (and compounding) when the view is remounted.
-                        if vm.isLoading {
-                            AIChatTypingIndicator()
-                                .id("typing-indicator")
-                                .transition(.opacity)
-                        }
-                    }
-                    .padding(.horizontal, 0)
-                    .padding(.vertical, 12)
-                    
-                    // Invisible anchor always present at the very bottom.
-                    // scrollTo targets this instead of "typing" so there is
-                    // never a missing-id failure when isLoading flips quickly.
-                    Color.clear
-                        .frame(height: 1)
-                        .id("scroll-bottom")
+        AIChatMessageListView(
+            messages: vm.messages,
+            isLoading: vm.isLoading,
+            streamingMessageId: vm.streamingMessageId,
+            scrollButtonTint: accent,
+            onStreamingComplete: { vm.finishStreaming(messageId: $0) },
+            intro: {
+                if vm.messages.isEmpty && !vm.isLoading {
+                    introBubble
                 }
-                .onTapGesture { isInputFocused = false }
-                // Scroll to bottom whenever a new message arrives.
-                .onChange(of: vm.messages.count) { _, _ in
-                    proxy.scrollTo("scroll-bottom", anchor: .bottom)
-                }
-                // Scroll to bottom when generation starts so the indicator is visible.
-                .onChange(of: vm.isLoading) { _, loading in
-                    if loading {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo("scroll-bottom", anchor: .bottom)
-                        }
-                    }
-                }
-                // Restore scroll position when re-entering an existing conversation.
-                .onAppear {
-                    proxy.scrollTo("scroll-bottom", anchor: .bottom)
-                }
-                
-                if !vm.messages.isEmpty {
-                    Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo("scroll-bottom", anchor: .bottom)
-                        }
-                    } label: {
-                        Image(systemName: "arrow.down")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(accent))
-                    }
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 16)
-                }
+            },
+            messageRow: { message, isStreaming, onTick in
+                AIChatBubbleView(
+                    text: message.content,
+                    isUser: message.role == .user,
+                    date: message.createdAt,
+                    streamReveal: isStreaming && message.role == .assistant,
+                    onStreamingTick: onTick,
+                    onStreamingComplete: { vm.finishStreaming(messageId: message.id) }
+                )
             }
-        }
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { isInputFocused = false }
     }
     
     // MARK: - Provider badge

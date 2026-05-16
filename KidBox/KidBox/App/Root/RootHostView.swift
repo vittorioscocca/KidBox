@@ -41,6 +41,8 @@ struct RootHostView: View {
     /// Ordered by latest update so families.first is a reasonable default.
     @Query(sort: \KBFamily.updatedAt, order: .reverse)
     private var families: [KBFamily]
+
+    @Query private var allChildren: [KBChild]
     
     // MARK: - State
     
@@ -84,12 +86,39 @@ struct RootHostView: View {
         .task(id: resolvedActiveFamilyId) {
             guard let fid = resolvedActiveFamilyId else { return }
             let famName = families.first(where: { $0.id == fid })?.name ?? "Famiglia"
-            await WeeklySummaryService.shared.scheduleWeeklyIfNeeded(
-                input: PlanningContextInput(familyName: famName),
-                familyName: famName,
-                modelContext: modelContext,
-                forcedFamilyId: fid
-            )
+            let planningInput = PlanningContextInput(familyName: famName)
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    await WeeklySummaryService.shared.scheduleWeeklyIfNeeded(
+                        input: planningInput,
+                        familyName: famName,
+                        modelContext: modelContext,
+                        forcedFamilyId: fid
+                    )
+                }
+                group.addTask {
+                    await DailyBriefingService.shared.scheduleDailyIfNeeded(
+                        input: planningInput,
+                        familyName: famName,
+                        modelContext: modelContext,
+                        forcedFamilyId: fid
+                    )
+                }
+                group.addTask {
+                    await HealthPatternAnalyzerService.shared.analyzeIfNeeded(
+                        familyId: fid,
+                        familyName: famName,
+                        children: allChildren.filter { $0.familyId == fid },
+                        modelContext: modelContext
+                    )
+                }
+                group.addTask {
+                    await FamilyMemoryService.shared.loadFactsFromFirestore(
+                        familyId: fid,
+                        modelContext: modelContext
+                    )
+                }
+            }
         }
         .onAppear {
             KBLog.navigation.kbDebug("RootHostView appeared")
