@@ -33,6 +33,12 @@ struct PediatricExamsAIChatView: View {
             Group {
                 if let vm = viewModel {
                     ExamsAIChatBody(vm: vm, inputText: $inputText)
+                        .aiActionExecutionToast(
+                            summary: Binding(
+                                get: { vm.actionExecutionSummary },
+                                set: { vm.actionExecutionSummary = $0 }
+                            )
+                        )
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

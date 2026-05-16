@@ -24,6 +24,12 @@ struct MedicalAIChatView: View {
             Group {
                 if let vm = viewModel {
                     MedicalAIChatBody(vm: vm, inputText: $inputText)
+                        .aiActionExecutionToast(
+                            summary: Binding(
+                                get: { vm.actionExecutionSummary },
+                                set: { vm.actionExecutionSummary = $0 }
+                            )
+                        )
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -71,6 +71,7 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var usageToday: Int = 0
     @Published var dailyLimit: Int = 0
+    @Published var actionExecutionSummary: String? = nil
     
     // MARK: - Init
     
@@ -179,7 +180,22 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
             
-            let assistantMessage = makeMessage(role: .assistant, text: response.reply)
+            let exams = scope.exams
+            let familyId = exams.first?.familyId ?? ""
+            let childId = exams.first?.childId
+            let outcome = await KidBoxAIActionPipeline.processReply(
+                response.reply,
+                modelContext: modelContext,
+                familyId: familyId,
+                defaultChildId: childId,
+                pendingGroceryNames: KidBoxAIActionPipeline.fetchPendingGroceryNames(
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+            )
+            actionExecutionSummary = outcome.executionSummary
+            
+            let assistantMessage = makeMessage(role: .assistant, text: outcome.displayText)
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
             try modelContext.save()

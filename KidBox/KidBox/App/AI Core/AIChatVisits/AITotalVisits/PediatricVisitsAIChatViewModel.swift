@@ -41,6 +41,7 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var usageToday: Int = 0
     @Published var dailyLimit: Int = 0
+    @Published var actionExecutionSummary: String? = nil
     
     // MARK: - Init
     
@@ -220,7 +221,21 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             KBLog.ai.kbInfo("AI reply received chars=\(response.reply.count)")
             KBLog.ai.kbInfo("AI usage=\(response.usageToday)/\(response.dailyLimit)")
             
-            let assistantMessage = makeMessage(role: .assistant, text: response.reply)
+            let familyId = contextVisits.first?.familyId ?? visibleVisits.first?.familyId ?? ""
+            let childId = contextVisits.first?.childId ?? visibleVisits.first?.childId
+            let outcome = await KidBoxAIActionPipeline.processReply(
+                response.reply,
+                modelContext: modelContext,
+                familyId: familyId,
+                defaultChildId: childId,
+                pendingGroceryNames: KidBoxAIActionPipeline.fetchPendingGroceryNames(
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+            )
+            actionExecutionSummary = outcome.executionSummary
+            
+            let assistantMessage = makeMessage(role: .assistant, text: outcome.displayText)
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
             try modelContext.save()

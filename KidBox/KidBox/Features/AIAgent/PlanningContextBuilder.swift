@@ -332,9 +332,10 @@ enum PlanningContextBuilder {
         lines.append("\n--- FINE CONTESTO PIANIFICAZIONE ---")
         lines.append("""
         \nRispondi alle domande del genitore usando le informazioni sopra.
-        Quando identifichi un'azione concreta (creare evento, aggiungere to-do, \
-        impostare reminder) descrivila in modo chiaro e proponi di eseguirla.
+        Quando identifichi un'azione concreta (lista spesa, to-do, nota, calendario, \
+        promemoria salute) descrivila in modo chiaro.
         """)
+        lines.append(PlanningAIActionBlock.promptSection)
         
         let prompt = lines.joined(separator: "\n")
         KBLog.ai.kbInfo("PlanningContextBuilder done chars=\(prompt.count)")

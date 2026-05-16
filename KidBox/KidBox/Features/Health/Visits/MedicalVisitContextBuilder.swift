@@ -177,6 +177,7 @@ enum MedicalVisitContextBuilder {
         
         lines.append("\n--- FINE DATI VISITA ---")
         lines.append("\nRispondi alle domande del genitore sulla visita usando le informazioni sopra.")
+        lines.append(PlanningAIActionBlock.promptSection)
         
         let prompt = lines.joined(separator: "\n")
         KBLog.ai.kbInfo("Build system prompt completed visitId=\(visit.id) chars=\(prompt.count)")

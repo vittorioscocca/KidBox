@@ -19,6 +19,7 @@ final class MedicalAIChatViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var inputText: String = ""
     @Published var isLoadingContext: Bool = true
+    @Published var actionExecutionSummary: String? = nil
     
     // MARK: - Dependencies
     
@@ -228,11 +229,22 @@ final class MedicalAIChatViewModel: ObservableObject {
             usageTodaySnapshot = response.usageToday
             dailyLimitSnapshot = response.dailyLimit
             
-            let replyText = response.reply
+            let familyId = child.familyId ?? visit.familyId
+            let outcome = await KidBoxAIActionPipeline.processReply(
+                response.reply,
+                modelContext: modelContext,
+                familyId: familyId,
+                defaultChildId: child.id,
+                pendingGroceryNames: KidBoxAIActionPipeline.fetchPendingGroceryNames(
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+            )
+            actionExecutionSummary = outcome.executionSummary
             
-            KBLog.ai.kbInfo("AIService reply received replyLength=\(replyText.count)")
+            KBLog.ai.kbInfo("AIService reply received replyLength=\(outcome.displayText.count)")
             
-            let assistantMsg = KBAIMessage(role: .assistant, content: replyText)
+            let assistantMsg = KBAIMessage(role: .assistant, content: outcome.displayText)
             conversation.messages.append(assistantMsg)
             isLoading = false
             messages.append(assistantMsg)

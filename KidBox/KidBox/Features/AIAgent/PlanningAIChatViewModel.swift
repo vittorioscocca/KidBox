@@ -28,6 +28,9 @@ final class PlanningAIChatViewModel: ObservableObject {
     @Published var isLoadingContext: Bool         = false
     @Published var errorMessage:    String?       = nil
     @Published var inputText:       String        = ""
+    @Published var actionExecutionSummary: String? = nil
+    /// Messaggi il cui blocco `KIDBOX_ACTIONS` è già stato eseguito — niente card duplicate.
+    @Published private(set) var autoExecutedMessageIds: Set<String> = []
     
     // MARK: - Input data (injected by the view)
     
@@ -263,7 +266,14 @@ final class PlanningAIChatViewModel: ObservableObject {
                 systemPrompt: finalSystemPrompt
             )
             
-            let assistantMessage = makeMessage(role: .assistant, text: response.reply)
+            let outcome = await KidBoxAIActionPipeline.processReply(
+                response.reply,
+                modelContext: modelContext,
+                familyId: familyId,
+                defaultChildId: children.first?.id,
+                pendingGroceryNames: pendingGroceryItems.map(\.name)
+            )
+            let assistantMessage = makeMessage(role: .assistant, text: outcome.displayText)
             conversation.messages.append(assistantMessage)
             isLoading = false
             messages.append(assistantMessage)
@@ -271,6 +281,11 @@ final class PlanningAIChatViewModel: ObservableObject {
                 messageId: assistantMessage.id,
                 streamingMessageId: &streamingMessageId
             )
+            actionExecutionSummary = outcome.executionSummary
+            if outcome.didAutoExecute {
+                autoExecutedMessageIds.insert(assistantMessage.id)
+            }
+            
             usageTodaySnapshot = response.usageToday
             dailyLimitSnapshot = response.dailyLimit
 
@@ -297,6 +312,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         try? modelContext.save()
         messages = []
         streamingMessageId = nil
+        autoExecutedMessageIds = []
     }
     
     // MARK: - Persistence helpers

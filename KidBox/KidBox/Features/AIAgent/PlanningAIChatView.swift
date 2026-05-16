@@ -540,6 +540,11 @@ private struct PlanningAIChatInnerView: View {
             Button("Cancella", role: .destructive) { vm.clearConversation() }
             Button("Annulla", role: .cancel) { }
         }
+        .onChange(of: vm.actionExecutionSummary) { _, summary in
+            guard let summary, !summary.isEmpty else { return }
+            actionResultIsError = false
+            actionResultMessage = summary
+        }
         // Feedback toast
         .overlay(alignment: .top) {
             if let msg = actionResultMessage {
@@ -835,28 +840,28 @@ private struct PlanningAIChatInnerView: View {
     
     @ViewBuilder
     private func actionCards(for message: KBAIMessage) -> some View {
-        // Passa le collezioni dal ViewModel al parser così può abbinare
-        // oggetti SwiftData concreti invece di ricadere su .freeText
-        let actions = PlanningActionParser.parse(
-            from:       message.content,
-            todos:      vm.openTodos,
-            visits:     vm.visitsWithNextDate,
-            treatments: vm.activeTreatments,
-            childNames: childNames
-        )
-        if !actions.isEmpty {
-            VStack(spacing: 8) {
-                ForEach(actions) { action in
-                    PlanningActionCard(
-                        action:      action,
-                        tint:        tint,
-                        colorScheme: colorScheme,
-                        onConfirm:   { executeAction(action) },
-                        onNavigate:  { navigateForAction(action) }
-                    )
+        if !vm.autoExecutedMessageIds.contains(message.id) {
+            let actions = PlanningActionParser.parse(
+                from:       message.content,
+                todos:      vm.openTodos,
+                visits:     vm.visitsWithNextDate,
+                treatments: vm.activeTreatments,
+                childNames: childNames
+            )
+            if !actions.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(actions) { action in
+                        PlanningActionCard(
+                            action:      action,
+                            tint:        tint,
+                            colorScheme: colorScheme,
+                            onConfirm:   { executeAction(action) },
+                            onNavigate:  { navigateForAction(action) }
+                        )
+                    }
                 }
+                .padding(.leading, 12)
             }
-            .padding(.leading, 12)
         }
     }
     
@@ -869,8 +874,13 @@ private struct PlanningAIChatInnerView: View {
             showNewEventSheet = true
             
         case .createTodo:
-            prefillTodoTitle = action.title
-            showNewTodoSheet  = true
+            Task { await persistTodoFromCard(action) }
+            
+        case .createGrocery:
+            Task { await persistGroceryFromCard(action) }
+            
+        case .createNote:
+            Task { await persistNoteFromCard(action) }
             
         case .setReminder:
             Task { await executeReminder(action) }
@@ -878,6 +888,78 @@ private struct PlanningAIChatInnerView: View {
         case .navigate:
             navigateForAction(action)
         }
+    }
+    
+    @MainActor
+    private func persistGroceryFromCard(_ action: PlanningAction) async {
+        let uid = Auth.auth().currentUser?.uid ?? "ai-agent"
+        let executor = PlanningActionExecutor(
+            modelContext: modelContext,
+            familyId: familyId,
+            uid: uid,
+            children: vm.children,
+            pendingGroceryNames: vm.pendingGroceryItems.map(\.name)
+        )
+        let payload = PlanningExecutableAction(
+            type: "grocery_add",
+            items: action.groceryItems,
+            title: nil, body: nil, notes: nil, category: nil,
+            dueAt: nil, startAt: nil, endAt: nil, isAllDay: nil,
+            childId: nil, listId: nil
+        )
+        showExecutionResult(await executor.execute([payload]))
+    }
+    
+    @MainActor
+    private func persistTodoFromCard(_ action: PlanningAction) async {
+        let uid = Auth.auth().currentUser?.uid ?? "ai-agent"
+        let executor = PlanningActionExecutor(
+            modelContext: modelContext,
+            familyId: familyId,
+            uid: uid,
+            children: vm.children,
+            pendingGroceryNames: vm.pendingGroceryItems.map(\.name)
+        )
+        let payload = PlanningExecutableAction(
+            type: "todo_add",
+            items: nil,
+            title: action.title, body: nil, notes: nil, category: nil,
+            dueAt: nil, startAt: nil, endAt: nil, isAllDay: nil,
+            childId: nil, listId: nil
+        )
+        showExecutionResult(await executor.execute([payload]))
+    }
+    
+    @MainActor
+    private func persistNoteFromCard(_ action: PlanningAction) async {
+        let uid = Auth.auth().currentUser?.uid ?? "ai-agent"
+        let executor = PlanningActionExecutor(
+            modelContext: modelContext,
+            familyId: familyId,
+            uid: uid,
+            children: vm.children,
+            pendingGroceryNames: vm.pendingGroceryItems.map(\.name)
+        )
+        let payload = PlanningExecutableAction(
+            type: "note_add",
+            items: nil,
+            title: action.title,
+            body: action.noteBody ?? action.title,
+            notes: nil, category: nil,
+            dueAt: nil, startAt: nil, endAt: nil, isAllDay: nil,
+            childId: nil, listId: nil
+        )
+        showExecutionResult(await executor.execute([payload]))
+    }
+    
+    private func showExecutionResult(_ summary: String?) {
+        guard let summary, !summary.isEmpty else {
+            actionResultIsError = true
+            actionResultMessage = "Impossibile completare l'azione."
+            return
+        }
+        actionResultIsError = false
+        actionResultMessage = summary
     }
     
     // MARK: - Reminder execution
@@ -1062,6 +1144,8 @@ private struct PlanningAIChatInnerView: View {
 enum PlanningActionKind {
     case createEvent
     case createTodo
+    case createGrocery
+    case createNote
     case setReminder
     case navigate
 }
@@ -1099,6 +1183,10 @@ struct PlanningAction: Identifiable {
     let navigationTarget: PlanningNavigationTarget
     /// Solo per azioni `.setReminder` — porta il contesto necessario al service.
     var reminderContext:  PlanningReminderContext = .none
+    /// Articoli spesa per `.createGrocery`.
+    var groceryItems:     [String] = []
+    /// Corpo nota per `.createNote`.
+    var noteBody:         String?  = nil
 }
 
 // MARK: - PlanningActionParser
@@ -1112,6 +1200,25 @@ struct PlanningAction: Identifiable {
 // "posso impostare", "ti ricordo") così da evitare falsi positivi.
 
 enum PlanningActionParser {
+
+    /// Card solo per proposte ("vuoi che…", "posso…"), non dopo un'azione già completata ("ho aggiunto…").
+    static func shouldOfferCreatableActionCard(lower: String) -> Bool {
+        let completionPhrases = [
+            "ho aggiunto", "ho creato", "ho inserito", "ho salvato", "ho registrato",
+            "è stato aggiunto", "sono stati aggiunti", "li ho aggiunti", "l'ho aggiunto",
+            "aggiunto alla lista", "inserito nella lista", "già aggiunto", "già inserito",
+            "ho impostato", "promemoria attivo", "fatto!",
+        ]
+        if completionPhrases.contains(where: { lower.contains($0) }) { return false }
+
+        let proposalPhrases = [
+            "vuoi che", "posso ", "vuoi ", "desideri che", "preferisci che",
+            "ti va se", "posso aggiungere", "posso creare", "posso inserire",
+            "vuoi che aggiunga", "vuoi che crei", "vuoi che imposti",
+            "crea un to-do", "creare un", "aggiungere al calendario",
+        ]
+        return proposalPhrases.contains(where: { lower.contains($0) })
+    }
     
     // MARK: - Main parse — senza contesto SwiftData (fallback freeText)
     
@@ -1135,10 +1242,12 @@ enum PlanningActionParser {
         
         var actions: [PlanningAction] = []
         let lower = text.lowercased()
+        let offerCreatableCards = shouldOfferCreatableActionCard(lower: lower)
         
         // ── Crea evento ───────────────────────────────────────────
-        if lower.contains("creo l'evento") || lower.contains("creare l'evento") ||
-            lower.contains("aggiungo al calendario") || lower.contains("vuoi che crei l'evento") {
+        if offerCreatableCards,
+           lower.contains("vuoi che crei l'evento") || lower.contains("posso aggiungere al calendario") ||
+            lower.contains("aggiungere al calendario") {
             let title = extractQuoted(from: text) ?? "Nuovo evento"
             actions.append(PlanningAction(
                 kind:             .createEvent,
@@ -1148,9 +1257,45 @@ enum PlanningActionParser {
             ))
         }
         
+        // ── Lista spesa ───────────────────────────────────────────
+        let grocerySignals = [
+            "lista della spesa", "lista spesa", "alla spesa", "nella spesa",
+            "aggiungo alla lista", "aggiunto alla lista", "articoli alla spesa"
+        ]
+        if offerCreatableCards,
+           grocerySignals.contains(where: { lower.contains($0) }),
+           (lower.contains("vuoi che") || lower.contains("posso ")) {
+            let items = extractGroceryItems(from: text)
+            let title = items.first ?? extractQuoted(from: text) ?? "Articoli spesa"
+            var action = PlanningAction(
+                kind:             .createGrocery,
+                title:            title,
+                subtitle:         items.count > 1 ? "\(items.count) articoli" : "Aggiungi alla lista spesa",
+                navigationTarget: .none
+            )
+            action.groceryItems = items.isEmpty ? [title] : items
+            actions.append(action)
+        }
+        
+        // ── Nota ──────────────────────────────────────────────────
+        if offerCreatableCards,
+           lower.contains("vuoi che") || lower.contains("posso "),
+           lower.contains("nota") {
+            let title = extractQuoted(from: text) ?? "Nuova nota"
+            var action = PlanningAction(
+                kind:             .createNote,
+                title:            title,
+                subtitle:         "Salva nelle note famiglia",
+                navigationTarget: .none
+            )
+            action.noteBody = title
+            actions.append(action)
+        }
+        
         // ── Crea to-do ────────────────────────────────────────────
-        if lower.contains("aggiungo il to-do") || lower.contains("creo il to-do") ||
-            lower.contains("vuoi che aggiunga il to-do") || lower.contains("crea un to-do") {
+        if offerCreatableCards,
+           lower.contains("vuoi che aggiunga il to-do") || lower.contains("crea un to-do") ||
+            lower.contains("posso aggiungere il to-do") {
             let title = extractQuoted(from: text) ?? "Nuovo to-do"
             actions.append(PlanningAction(
                 kind:             .createTodo,
@@ -1165,8 +1310,6 @@ enum PlanningActionParser {
             "vuoi che imposti un promemoria",
             "posso impostare un promemoria",
             "ti ricordo con una notifica",
-            "imposto il reminder",
-            "attivo il promemoria",
             "vuoi ricevere una notifica",
             "posso mandarti un reminder"
         ]
@@ -1267,6 +1410,26 @@ enum PlanningActionParser {
             }
         }
         return nil
+    }
+    
+    private static func extractGroceryItems(from text: String) -> [String] {
+        var items: [String] = []
+        let quotedPattern = #/["«']([^"»']+)["»']/#
+        for match in text.matches(of: quotedPattern) {
+            let value = String(match.1).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !value.isEmpty { items.append(value) }
+        }
+        if items.isEmpty {
+            let lines = text.components(separatedBy: "\n")
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed.hasPrefix("- ") || trimmed.hasPrefix("• ") {
+                    let item = trimmed.drop(while: { $0 == "-" || $0 == "•" || $0 == " " })
+                    if !item.isEmpty { items.append(String(item)) }
+                }
+            }
+        }
+        return items
     }
     
     /// Estrae una data approssimativa dal testo in italiano.
@@ -1386,7 +1549,7 @@ private struct PlanningActionCard: View {
                         }
                     }
                 } label: {
-                    Text(action.kind == .navigate ? "Vai" : action.kind == .setReminder ? "Attiva" : "Crea")
+                    Text(buttonLabel(for: action.kind))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
@@ -1411,10 +1574,22 @@ private struct PlanningActionCard: View {
     
     private func iconForAction(_ kind: PlanningActionKind) -> String {
         switch kind {
-        case .createEvent:  return "calendar.badge.plus"
-        case .createTodo:   return "checklist.checked"
-        case .setReminder:  return "bell.badge"
-        case .navigate:     return "arrow.right.circle"
+        case .createEvent:   return "calendar.badge.plus"
+        case .createTodo:    return "checklist.checked"
+        case .createGrocery: return "cart.badge.plus"
+        case .createNote:    return "note.text.badge.plus"
+        case .setReminder:   return "bell.badge"
+        case .navigate:      return "arrow.right.circle"
+        }
+    }
+    
+    private func buttonLabel(for kind: PlanningActionKind) -> String {
+        switch kind {
+        case .navigate:      return "Vai"
+        case .setReminder:   return "Attiva"
+        case .createGrocery: return "Aggiungi"
+        case .createNote:    return "Salva"
+        default:             return "Crea"
         }
     }
 }

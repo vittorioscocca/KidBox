@@ -87,6 +87,12 @@ enum HealthContextBuilder {
         // ── Chiusura ─────────────────────────────────────────────────────────
         lines.append("\n--- FINE CONTESTO SALUTE ---")
         lines.append("Rispondi alle domande usando le informazioni sopra.")
+        lines.append(PlanningAIActionBlock.promptSection)
+        lines.append("""
+        
+        Quando il genitore chiede di aggiungere to-do, note, eventi in calendario (es. prossima visita), \
+        articoli in lista spesa o promemoria, usa il blocco azioni per eseguire l'operazione nell'app.
+        """)
         
         let prompt = lines.joined(separator: "\n")
         KBLog.ai.kbInfo("HealthContextBuilder end chars=\(prompt.count)")

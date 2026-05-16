@@ -33,6 +33,13 @@ struct HealthAIChatView: View {
             Group {
                 if let vm = viewModel {
                     HealthAIChatBody(vm: vm, inputText: $inputText)
+                        .aiActionExecutionToast(
+                            summary: Binding(
+                                get: { vm.actionExecutionSummary },
+                                set: { vm.actionExecutionSummary = $0 }
+                            ),
+                            tint: Color(red: 0.35, green: 0.6, blue: 0.85)
+                        )
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

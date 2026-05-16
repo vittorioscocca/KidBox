@@ -71,6 +71,7 @@ enum ExamContextBuilder {
         
         lines.append("\n--- FINE DATI ESAME ---")
         lines.append("\nRispondi alle domande del genitore sull'esame usando le informazioni sopra.")
+        lines.append(PlanningAIActionBlock.promptSection)
         
         let prompt = lines.joined(separator: "\n")
         KBLog.ai.kbInfo("ExamContextBuilder single end examId=\(exam.id) chars=\(prompt.count)")
@@ -165,6 +166,7 @@ enum ExamContextBuilder {
             }
         }
         
+        lines.append(PlanningAIActionBlock.promptSection)
         lines.append("\n--- FINE DATI ESAMI ---")
         lines.append("\nRispondi alle domande del genitore sugli esami usando le informazioni sopra.")
         

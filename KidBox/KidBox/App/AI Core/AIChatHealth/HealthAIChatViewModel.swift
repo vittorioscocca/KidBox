@@ -32,6 +32,7 @@ final class HealthAIChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var usageToday: Int = 0
     @Published var dailyLimit: Int = 0
+    @Published var actionExecutionSummary: String? = nil
     
     // MARK: - Private
     
@@ -189,7 +190,20 @@ final class HealthAIChatViewModel: ObservableObject {
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
             
-            let assistantMessage = makeMessage(role: .assistant, text: response.reply)
+            let familyId = resolveFamilyId()
+            let outcome = await KidBoxAIActionPipeline.processReply(
+                response.reply,
+                modelContext: modelContext,
+                familyId: familyId,
+                defaultChildId: subjectId,
+                pendingGroceryNames: KidBoxAIActionPipeline.fetchPendingGroceryNames(
+                    familyId: familyId,
+                    modelContext: modelContext
+                )
+            )
+            actionExecutionSummary = outcome.executionSummary
+            
+            let assistantMessage = makeMessage(role: .assistant, text: outcome.displayText)
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
             try modelContext.save()
@@ -340,5 +354,14 @@ final class HealthAIChatViewModel: ObservableObject {
         prompt += memFacts.map { "• \($0)" }.joined(separator: "\n")
         prompt += "\nUsa questi fatti per personalizzare le risposte senza citare esplicitamente che li hai memorizzati."
         return prompt
+    }
+
+    private func resolveFamilyId() -> String {
+        if !Self.activeFamilyId.isEmpty { return Self.activeFamilyId }
+        return exams.first?.familyId
+            ?? visits.first?.familyId
+            ?? treatments.first?.familyId
+            ?? vaccines.first?.familyId
+            ?? ""
     }
 }
