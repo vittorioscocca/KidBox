@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "KidBox-symbol-orange.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
