@@ -14,6 +14,7 @@ struct TravelListView: View {
 
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
     @Query private var trips: [KBTrip]
     @Query private var tripLegs: [KBTripLeg]
@@ -117,8 +118,10 @@ struct TravelListView: View {
                     }
                     .padding(.vertical, 12)
                 }
+                .background(KBTheme.background(colorScheme))
             }
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle(needsOnboarding == true ? "" : "Viaggi")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

@@ -22,6 +22,7 @@ struct TravelDetailView: View {
     @Query private var todoLists: [KBTodoList]
     @Query private var todoItems: [KBTodoItem]
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
 
     @State private var showDeleteTripConfirmation = false
@@ -191,6 +192,7 @@ struct TravelDetailView: View {
                 ContentUnavailableView("Viaggio non trovato", systemImage: "exclamationmark.triangle")
             }
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -217,6 +219,7 @@ struct TravelDetailView: View {
                     .padding(.top, 24)
                     .padding(.bottom, 24)
             }
+            .background(KBTheme.background(colorScheme))
         } else {
             let hotels = TravelItineraryBuilder.collectHotels(dayPlans: dayPlans, overview: overview)
             let restaurants = TravelItineraryBuilder.collectRestaurants(
@@ -293,6 +296,7 @@ struct TravelDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             }
+            .background(KBTheme.background(colorScheme))
         }
     }
 

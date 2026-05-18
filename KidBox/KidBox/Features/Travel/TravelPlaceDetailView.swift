@@ -12,6 +12,8 @@ struct TravelPlaceDetailView: View {
     let context: TravelItineraryStopContext
     let familyId: String
 
+    @Environment(\.colorScheme) private var colorScheme
+
     @State private var details: TravelPlaceDetails?
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -30,7 +32,7 @@ struct TravelPlaceDetailView: View {
                 fallbackContent
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle(context.placeName)
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadPlace() }
@@ -99,7 +101,7 @@ struct TravelPlaceDetailView: View {
                         case .success(let image):
                             image.resizable().scaledToFill()
                         default:
-                            Color(.secondarySystemBackground)
+                            KBTheme.cardBackground(colorScheme)
                                 .overlay { ProgressView() }
                         }
                     }
@@ -227,7 +229,7 @@ struct TravelPlaceDetailView: View {
                 Text("Indicazioni")
                     .font(.headline)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Color(.systemBackground))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(Color.primary)
@@ -277,7 +279,7 @@ struct TravelPlaceDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(14)
-                .background(Color(.secondarySystemBackground))
+                .background(KBTheme.cardBackground(colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
@@ -339,11 +341,11 @@ struct TravelPlaceDetailView: View {
             }
         }
         .padding(14)
-        .background(Color(.systemBackground))
+        .background(KBTheme.cardBackground(colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                .stroke(KBTheme.separator(colorScheme), lineWidth: 1)
         )
     }
 

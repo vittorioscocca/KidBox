@@ -9,6 +9,7 @@ struct TravelTripExpensesSection: View {
 
     let onTap: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     private let accent = Color(red: 0.12, green: 0.62, blue: 0.45)
 
     var body: some View {
@@ -40,7 +41,7 @@ struct TravelTripExpensesSection: View {
                     .foregroundStyle(accent)
             }
             .padding(16)
-            .background(Color(.secondarySystemBackground))
+            .background(KBTheme.cardBackground(colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)

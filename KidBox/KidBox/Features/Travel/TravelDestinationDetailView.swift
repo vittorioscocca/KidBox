@@ -12,6 +12,7 @@ struct TravelDestinationDetailView: View {
     let familyId: String
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
 
     @Query private var members: [KBFamilyMember]
@@ -80,6 +81,7 @@ struct TravelDestinationDetailView: View {
 
             bottomActions
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle(destination.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showWizard) {
@@ -124,7 +126,7 @@ struct TravelDestinationDetailView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(.secondarySystemBackground))
+        .background(KBTheme.cardBackground(colorScheme))
         .clipShape(Capsule())
     }
 

@@ -7,6 +7,23 @@ import SwiftUI
 
 private let wizardAccent = Color(red: 0.95, green: 0.38, blue: 0.10)
 
+private struct WizardInfoTip: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(wizardAccent)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+        .padding(12)
+        .background(wizardAccent.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
 // MARK: - Chrome
 
 struct TravelWizardStepLayout<Content: View>: View {
@@ -339,7 +356,7 @@ struct TravelWizardBudgetStep: View {
                             .foregroundStyle(selected ? .white : .primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(selected ? Color.primary : Color(.secondarySystemBackground))
+                            .background(selected ? wizardAccent : Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -353,7 +370,7 @@ struct TravelWizardBudgetStep: View {
                         .foregroundStyle(vm.usesCustomBudget ? .white : .primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(vm.usesCustomBudget ? Color.primary : Color(.secondarySystemBackground))
+                        .background(vm.usesCustomBudget ? wizardAccent : Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -389,7 +406,7 @@ struct TravelWizardBudgetStep: View {
                 }
                 .padding(12)
             }
-            .background(Color(red: 1.0, green: 0.97, blue: 0.88))
+            .background(wizardAccent.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -418,15 +435,7 @@ struct TravelWizardTripStyleStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "info.circle.fill").foregroundStyle(wizardAccent)
-                Text("Precompilato dal tuo profilo — modifica quando vuoi.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(12)
-            .background(Color(red: 1.0, green: 0.97, blue: 0.88))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            WizardInfoTip(text: "Precompilato dal tuo profilo — modifica quando vuoi.")
 
             Text("STILE DEL VIAGGIO")
                 .font(.caption.weight(.semibold))

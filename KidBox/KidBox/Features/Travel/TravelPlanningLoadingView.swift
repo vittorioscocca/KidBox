@@ -12,6 +12,8 @@ struct TravelPlanningLoadingView: View {
     let subtitle: String
     let plannedDayCount: Int
 
+    @Environment(\.colorScheme) private var colorScheme
+
     @State private var secondsLeft: Int
     @State private var tip = TravelDiscoverTips.random()
     private let totalSeconds: Int
@@ -60,7 +62,11 @@ struct TravelPlanningLoadingView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(36)
-                .background(Circle().fill(Color(.systemBackground)).shadow(color: .black.opacity(0.06), radius: 12, y: 4))
+                .background(
+                    Circle()
+                        .fill(KBTheme.cardBackground(colorScheme))
+                        .shadow(color: KBTheme.shadow(colorScheme), radius: 12, y: 4)
+                )
             }
 
             VStack(spacing: 8) {
@@ -100,13 +106,15 @@ struct TravelPlanningLoadingView: View {
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground))
+            .background(KBTheme.cardBackground(colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .padding(.horizontal, 4)
 
             Spacer()
         }
         .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(KBTheme.background(colorScheme))
         .onReceive(timer) { _ in
             if secondsLeft > 0 { secondsLeft -= 1 }
             if Int.random(in: 0 ..< 12) == 0 {

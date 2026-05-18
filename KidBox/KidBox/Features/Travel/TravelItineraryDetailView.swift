@@ -9,6 +9,8 @@ private let itineraryAccent = Color(red: 0.95, green: 0.38, blue: 0.1)
 
 struct TravelItineraryDetailView: View {
 
+    @Environment(\.colorScheme) private var colorScheme
+
     let overview: TravelItineraryOverview
     let legs: [KBTripLeg]
     var introduction: String? = nil
@@ -23,6 +25,9 @@ struct TravelItineraryDetailView: View {
     var regeneratingDayId: String? = nil
     /// Padding orizzontale per testo e card sotto l’hero (l’immagine resta a tutta larghezza).
     var contentHorizontalPadding: CGFloat = 16
+
+    private var cardFill: Color { KBTheme.cardBackground(colorScheme) }
+    private var cardStroke: Color { KBTheme.separator(colorScheme) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -86,7 +91,7 @@ struct TravelItineraryDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(Color(.secondarySystemBackground))
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -165,11 +170,11 @@ struct TravelItineraryDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .background(Color(.systemBackground))
+                .background(cardFill)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                        .stroke(cardStroke, lineWidth: 1)
                 )
             }
             .buttonStyle(.plain)
@@ -216,11 +221,11 @@ struct TravelItineraryDetailView: View {
             }
         }
         .padding(14)
-        .background(Color(.systemBackground))
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                .stroke(cardStroke, lineWidth: 1)
         )
     }
 
@@ -234,11 +239,11 @@ struct TravelItineraryDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color(.systemBackground))
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                .stroke(cardStroke, lineWidth: 1)
         )
     }
 
@@ -264,7 +269,7 @@ struct TravelItineraryDetailView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color(.tertiarySystemFill))
+                    .background(KBTheme.inputBackground(colorScheme))
                     .clipShape(Capsule())
             }
 
@@ -341,11 +346,11 @@ struct TravelItineraryDetailView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, 12)
         }
-        .background(Color(.systemBackground))
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                .stroke(cardStroke, lineWidth: 1)
         )
     }
 

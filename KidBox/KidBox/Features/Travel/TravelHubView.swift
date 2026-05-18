@@ -13,6 +13,8 @@ struct TravelHubView: View {
     let onPlanTrip: () -> Void
     let onDiscover: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+
     private let accent = Color(red: 0.95, green: 0.38, blue: 0.10)
 
     private var greeting: String {
@@ -121,18 +123,21 @@ struct TravelHubView: View {
                     .foregroundStyle(.secondary)
                 Text("Mostrami i posti →")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(.systemBackground))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(Color.primary)
                     .clipShape(Capsule())
             }
             .padding(20)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(KBTheme.cardBackground(colorScheme))
+                    .shadow(color: KBTheme.shadow(colorScheme), radius: 8, x: 0, y: 2)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                    .stroke(KBTheme.separator(colorScheme), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -149,7 +154,10 @@ struct TravelHubView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(KBTheme.cardBackground(colorScheme))
+                .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
+        )
     }
 }

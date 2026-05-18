@@ -8,6 +8,7 @@ import SwiftUI
 struct TravelDiscoverView: View {
 
     let familyId: String
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
     @StateObject private var vm: TravelDiscoverViewModel
     @State private var showLoading = true
@@ -52,6 +53,7 @@ struct TravelDiscoverView: View {
             await vm.loadSuggestions()
             showLoading = false
         }
+        .background(KBTheme.background(colorScheme).ignoresSafeArea())
     }
 
     private var suggestionsList: some View {
@@ -81,6 +83,7 @@ struct TravelDiscoverView: View {
             }
             .padding(16)
         }
+        .background(KBTheme.background(colorScheme))
         .overlay {
             if vm.isLoading && !vm.destinations.isEmpty {
                 ProgressView()
@@ -156,9 +159,9 @@ struct TravelDiscoverView: View {
             }
             .padding(14)
         }
-        .background(Color(.systemBackground))
+        .background(KBTheme.cardBackground(colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+        .shadow(color: KBTheme.shadow(colorScheme), radius: 10, y: 4)
     }
 
     private func compactCard(_ destination: TravelDestination) -> some View {
@@ -188,11 +191,12 @@ struct TravelDiscoverView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(12)
-        .background(Color(.systemBackground))
+        .background(KBTheme.cardBackground(colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                .stroke(KBTheme.separator(colorScheme), lineWidth: 1)
         )
+        .shadow(color: KBTheme.shadow(colorScheme), radius: 6, y: 2)
     }
 }
