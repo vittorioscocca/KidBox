@@ -217,7 +217,12 @@ struct AddEditExpenseView: View {
     // MARK: - Populate
     
     private func populate() {
-        guard let e = expense else { return }
+        guard let e = expense else {
+            if selectedCategoryId == nil, let filter = vm.selectedCategoryFilter {
+                selectedCategoryId = filter
+            }
+            return
+        }
         title              = e.title
         amountString       = String(format: "%.2f", e.amount)
             .replacingOccurrences(of: ".", with: ",")

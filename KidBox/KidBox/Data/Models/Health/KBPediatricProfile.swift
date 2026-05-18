@@ -25,9 +25,12 @@ final class KBPediatricProfile {
     var allergies: String?               // testo libero
     var medicalNotes: String?
     
-    // MARK: - Pediatra
+    // MARK: - Medico / pediatra di riferimento
     var doctorName: String?
     var doctorPhone: String?
+    var doctorAddress: String?
+    var doctorWebsite: String?
+    var doctorOfficeHoursData: Data? = nil
     
     // MARK: - Sync
     var updatedAt: Date
@@ -48,6 +51,8 @@ final class KBPediatricProfile {
         medicalNotes: String? = nil,
         doctorName: String? = nil,
         doctorPhone: String? = nil,
+        doctorAddress: String? = nil,
+        doctorWebsite: String? = nil,
         updatedAt: Date = Date(),
         updatedBy: String? = nil
     ) {
@@ -59,10 +64,66 @@ final class KBPediatricProfile {
         self.medicalNotes = medicalNotes
         self.doctorName  = doctorName
         self.doctorPhone = doctorPhone
+        self.doctorAddress = doctorAddress
+        self.doctorWebsite = doctorWebsite
         self.updatedAt   = updatedAt
         self.updatedBy   = updatedBy
         self.syncStateRaw = KBSyncState.synced.rawValue
     }
+}
+
+/// Fascia oraria di ricevimento (giorno in italiano, dalle/alle in HH:mm).
+struct KBDoctorOfficeHourSlot: Codable, Identifiable, Equatable {
+    var id: UUID = UUID()
+    var weekday: String
+    var fromTime: String
+    var toTime: String
+}
+
+extension Array where Element == KBDoctorOfficeHourSlot {
+
+    /// Es. `Lunedì: 08:30 – 10:30; 16:30 – 18:30` (fasce dello stesso giorno sulla stessa riga).
+    var groupedOfficeHourDisplayLines: [String] {
+        guard !isEmpty else { return [] }
+
+        var byWeekday: [String: [KBDoctorOfficeHourSlot]] = [:]
+        for slot in self {
+            byWeekday[slot.weekday, default: []].append(slot)
+        }
+
+        var lines: [String] = []
+        for day in KBItalianWeekday.allCases.map(\.rawValue) {
+            guard let slots = byWeekday.removeValue(forKey: day), !slots.isEmpty else { continue }
+            lines.append(Self.formatGroupedOfficeHourLine(weekday: day, slots: slots))
+        }
+        for day in byWeekday.keys.sorted() {
+            guard let slots = byWeekday[day], !slots.isEmpty else { continue }
+            lines.append(Self.formatGroupedOfficeHourLine(weekday: day, slots: slots))
+        }
+        return lines
+    }
+
+    private static func formatGroupedOfficeHourLine(
+        weekday: String,
+        slots: [KBDoctorOfficeHourSlot]
+    ) -> String {
+        let ranges = slots
+            .map { "\($0.fromTime) – \($0.toTime)" }
+            .joined(separator: "; ")
+        return "\(weekday): \(ranges)"
+    }
+}
+
+enum KBItalianWeekday: String, CaseIterable, Identifiable {
+    case lunedi = "Lunedì"
+    case martedi = "Martedì"
+    case mercoledi = "Mercoledì"
+    case giovedi = "Giovedì"
+    case venerdi = "Venerdì"
+    case sabato = "Sabato"
+    case domenica = "Domenica"
+
+    var id: String { rawValue }
 }
 
 /// Contatto di emergenza associato a un bambino.
@@ -89,5 +150,22 @@ extension KBPediatricProfile {
         set {
             emergencyContactsData = try? JSONEncoder().encode(newValue)
         }
+    }
+
+    var doctorOfficeHours: [KBDoctorOfficeHourSlot] {
+        get {
+            guard let data = doctorOfficeHoursData else { return [] }
+            return (try? JSONDecoder().decode([KBDoctorOfficeHourSlot].self, from: data)) ?? []
+        }
+        set {
+            doctorOfficeHoursData = newValue.isEmpty
+                ? nil
+                : try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var hasReferenceDoctor: Bool {
+        let name = doctorName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !name.isEmpty
     }
 }

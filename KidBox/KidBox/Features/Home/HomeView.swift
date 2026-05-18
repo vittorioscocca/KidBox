@@ -57,6 +57,7 @@ struct HomeView: View {
     
     // MARK: - FAB
     @State private var fabExpanded = false
+    @State private var showFamilySwitcher = false
     
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
     
@@ -67,7 +68,10 @@ struct HomeView: View {
     
     private let heroService = FamilyHeroPhotoService()
     
-    private var activeFamily: KBFamily? { families.first }
+    private var activeFamily: KBFamily? {
+        families.first { $0.id == coordinator.activeFamilyId }
+        ?? families.first
+    }
     private var hasFamily: Bool { activeFamily != nil }
     private var activeFamilyId: String { activeFamily?.id ?? "" }
     
@@ -104,6 +108,39 @@ struct HomeView: View {
             offsetY: activeFamily?.heroPhotoOffsetY ?? 0.0
         )
     }
+
+    /// Allineato ad Android Home: titolo KidBox + nome famiglia a sinistra, switch a destra (centrato verticalmente).
+    private var homeTitleHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("KidBox")
+                    .font(.system(size: 34, weight: .heavy))
+                    .kerning(-0.5)
+                    .foregroundStyle(colorScheme == .dark ? .white : Color.primary)
+                if hasFamily, let familyName = activeFamily?.name, !familyName.isEmpty {
+                    Text(familyName)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            if hasFamily {
+                Button {
+                    showFamilySwitcher = true
+                } label: {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(colorScheme == .dark ? .white : Color.primary)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Cambia famiglia")
+            }
+        }
+        .padding(.top, 4)
+    }
     
     var body: some View {
         ZStack {
@@ -123,6 +160,7 @@ struct HomeView: View {
             
             ScrollView {
                 VStack(spacing: 14) {
+                    homeTitleHeader
                     
                     // HERO
                     HomeHeroCard(
@@ -162,8 +200,8 @@ struct HomeView: View {
                 .padding()
             }
         } // ZStack
-        .navigationTitle("KidBox")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
             if hasFamily {
                 HomeFAB(familyId: activeFamilyId, isExpanded: $fabExpanded)
@@ -184,7 +222,7 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
             }
-            
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     KBLog.navigation.debug("Home: tap Settings")
@@ -194,6 +232,12 @@ struct HomeView: View {
                 }
                 .accessibilityLabel("Impostazioni")
             }
+        }
+        .sheet(isPresented: $showFamilySwitcher) {
+            FamilySwitcherView()
+                .environmentObject(coordinator)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .onAppear {
             guard !activeFamilyId.isEmpty else { return }
@@ -416,6 +460,7 @@ enum HomeDestination {
     case familyLocation(familyId: String), familyPhotos(familyId: String), familySettings
     case askExpert, profile, settings, inviteCode, shopping(familyId: String)
     case pediatric(familyId: String, childId: String)
+    case travel(familyId: String)
     
     /// Mappa verso il Route dell'AppCoordinator.
     var route: Route {
@@ -441,6 +486,7 @@ enum HomeDestination {
         case .inviteCode:                    return .inviteCode
         case .shopping(let familyID):        return .shoppingList(familyId: familyID)
         case .pediatric(let fid, _):         return .pediatricChildSelector(familyId: fid)
+        case .travel(let fid):               return .travelList(familyId: fid)
         }
     }
 }
@@ -516,6 +562,7 @@ private enum HomeCardID: String, CaseIterable, Codable {
     case pets
     case homeItems
     case vehicles
+    case travel
 }
 
 // MARK: - HomeCardGrid
@@ -588,6 +635,10 @@ private struct HomeCardGrid: View {
             if order.isEmpty {
                 order = loadOrder() ?? defaultOrder()
             }
+        }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeSheetView()
+                .environmentObject(subscriptionManager)
         }
     }
     
@@ -812,6 +863,39 @@ private struct HomeCardGrid: View {
                 onNavigate(.vehicles(familyId: familyId))
             }
 
+        case .travel:
+            let travelAI = subscriptionManager.currentPlan.includesAI
+            if hasFamily {
+                ZStack(alignment: .topTrailing) {
+                    HomeCardView(
+                        title: "Viaggi",
+                        subtitle: travelAI ? "Pianifica con l'AI" : "Piano Pro o Max per l'AI",
+                        systemImage: travelAI ? "suitcase.fill" : "lock.fill",
+                        tint: travelAI ? .teal : .gray
+                    ) {
+                        KBLog.navigation.debug("Home: tap Travel")
+                        if travelAI {
+                            onNavigate(.travel(familyId: familyId))
+                        } else if subscriptionManager.isFamilyOwner {
+                            showUpgrade = true
+                        }
+                    }
+                    if !travelAI {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .padding(6)
+                            .background(Color.gray.opacity(0.9))
+                            .clipShape(Circle())
+                            .padding(8)
+                    }
+                }
+            } else {
+                HomeCardView(title: "Viaggi", subtitle: "Pianifica con l'AI", systemImage: "suitcase.fill", tint: .teal) {
+                    onNavigate(.familySettings)
+                }
+            }
+
         case .expert:
             let aiAvailable = subscriptionManager.currentPlan.includesAI
             ZStack(alignment: .topTrailing) {
@@ -838,10 +922,6 @@ private struct HomeCardGrid: View {
                         .padding(.trailing, 8)
                 }
             }
-            .sheet(isPresented: $showUpgrade) {
-                UpgradeSheetView()
-                    .environmentObject(KBSubscriptionManager.shared)
-            }
         }
     }
     
@@ -849,7 +929,7 @@ private struct HomeCardGrid: View {
     
     private func defaultOrder() -> [HomeCardID] {
         // ordine iniziale (puoi cambiarlo quando vuoi)
-        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .family, .expert, .pets, .homeItems, .vehicles]
+        [.note, .todo, .shopping, .calendar, .care, .chat, .documents, .expenses, .wallet, .passwords, .location, .photos, .family, .expert, .travel, .pets, .homeItems, .vehicles]
     }
     
     private func loadOrder() -> [HomeCardID]? {

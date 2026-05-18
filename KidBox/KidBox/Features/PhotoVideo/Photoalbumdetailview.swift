@@ -14,6 +14,7 @@ struct PhotoAlbumDetailView: View {
     let familyId: String
     let albumId: String
     let albumTitle: String
+    var showTripDedicatedBanner: Bool = false
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
@@ -47,10 +48,11 @@ struct PhotoAlbumDetailView: View {
         : Color(red: 0.961, green: 0.957, blue: 0.945)
     }
     
-    init(familyId: String, albumId: String, albumTitle: String) {
+    init(familyId: String, albumId: String, albumTitle: String, showTripDedicatedBanner: Bool = false) {
         self.familyId   = familyId
         self.albumId    = albumId
         self.albumTitle = albumTitle
+        self.showTripDedicatedBanner = showTripDedicatedBanner
         _allPhotos = Query(
             filter: #Predicate<KBFamilyPhoto> { $0.familyId == familyId && $0.isDeleted == false },
             sort: \KBFamilyPhoto.takenAt, order: .reverse
@@ -62,11 +64,19 @@ struct PhotoAlbumDetailView: View {
             bg.ignoresSafeArea()
             
             if photos.isEmpty {
-                emptyState
+                ScrollView {
+                    VStack(spacing: 0) {
+                        if showTripDedicatedBanner { tripDedicatedAlbumBanner }
+                        emptyState
+                    }
+                }
             } else {
                 ScrollView {
-                    photoGrid(photos)
-                        .padding(.bottom, 24)
+                    VStack(spacing: 12) {
+                        if showTripDedicatedBanner { tripDedicatedAlbumBanner }
+                        photoGrid(photos)
+                    }
+                    .padding(.bottom, 24)
                 }
             }
             
@@ -123,6 +133,31 @@ struct PhotoAlbumDetailView: View {
             }
     }
     
+    private var emptyStateMessage: String {
+        if showTripDedicatedBanner {
+            return "Scatta la prima foto del viaggio: verrà salvata automaticamente in questo album dedicato."
+        }
+        return "Aggiungi foto a questo album dalla libreria o scatta direttamente con la fotocamera."
+    }
+
+    private var tripDedicatedAlbumBanner: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Album dedicato al viaggio", systemImage: "airplane.departure")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text("Sei nell'album KidBox creato per questo viaggio. Le foto che scatti qui e quelle che aggiungi dalla libreria verranno salvate automaticamente in questo album.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+    }
+
     // MARK: - Upload banner (clone di FamilyPhotosView)
     
     private var uploadBanner: some View {
@@ -311,7 +346,7 @@ struct PhotoAlbumDetailView: View {
             Image(systemName: "rectangle.stack.fill")
                 .font(.system(size: 64)).foregroundStyle(.quaternary)
             Text("Album vuoto").font(.title3.weight(.semibold))
-            Text("Aggiungi foto a questo album dalla libreria o scatta direttamente con la fotocamera.")
+            Text(emptyStateMessage)
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             
             // ── Bottone fotocamera nello stato vuoto ─────────────────────────

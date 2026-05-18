@@ -74,12 +74,12 @@ extension SyncCenter {
                     let remoteStamp = dto.updatedAt ?? Date.distantPast
                     
                     if let local {
-                        // 🛡️ Anti-resurrect: non sovrascrivere se c'è una write locale pendente
-                        if local.syncState == .pendingUpsert && local.updatedAt > remoteStamp {
-                            KBLog.sync.kbDebug("applyPediatricProfileInbound: skip anti-resurrect childId=\(cid)")
+                        // Non sovrascrivere finché il push locale non è completato.
+                        if local.syncState == .pendingUpsert {
+                            KBLog.sync.kbDebug("applyPediatricProfileInbound: skip pending local childId=\(cid)")
                             continue
                         }
-                        
+
                         if remoteStamp >= local.updatedAt {
                             if dto.isDeleted {
                                 modelContext.delete(local)
@@ -101,6 +101,8 @@ extension SyncCenter {
                             medicalNotes: dto.medicalNotes,
                             doctorName:  dto.doctorName,
                             doctorPhone: dto.doctorPhone,
+                            doctorAddress: dto.doctorAddress,
+                            doctorWebsite: dto.doctorWebsite,
                             updatedAt:   remoteStamp,
                             updatedBy:   dto.updatedBy
                         )
@@ -109,6 +111,12 @@ extension SyncCenter {
                            let data = json.data(using: .utf8) {
                             p.emergencyContactsData = data
                         }
+                        if let json = dto.doctorOfficeHoursJSON,
+                           let data = json.data(using: .utf8) {
+                            p.doctorOfficeHoursData = data
+                        }
+                        p.doctorAddress = dto.doctorAddress
+                        p.doctorWebsite = dto.doctorWebsite
                         p.syncState = .synced
                         modelContext.insert(p)
                         KBLog.sync.kbDebug("applyPediatricProfileInbound: created childId=\(cid)")
@@ -138,14 +146,19 @@ extension SyncCenter {
         local.medicalNotes  = dto.medicalNotes
         local.doctorName    = dto.doctorName
         local.doctorPhone   = dto.doctorPhone
+        local.doctorAddress = dto.doctorAddress
+        local.doctorWebsite = dto.doctorWebsite
         local.updatedAt     = dto.updatedAt ?? local.updatedAt
         local.updatedBy     = dto.updatedBy
         
         if let json = dto.emergencyContactsJSON,
            let data = json.data(using: .utf8) {
             local.emergencyContactsData = data
-        } else if dto.emergencyContactsJSON == nil {
-            local.emergencyContactsData = nil
+        }
+
+        if let json = dto.doctorOfficeHoursJSON,
+           let data = json.data(using: .utf8) {
+            local.doctorOfficeHoursData = data
         }
     }
     
@@ -162,54 +175,65 @@ extension SyncCenter {
         )
     }
     
+    // MARK: - Push immediato (scheda medica e outbox)
+
+    /// Scrive la scheda su Firestore e marca il profilo come sincronizzato in locale.
+    @MainActor
+    func pushPediatricProfileToRemote(
+        _ profile: KBPediatricProfile,
+        modelContext: ModelContext
+    ) async throws {
+        let dto = remotePediatricProfileDTO(from: profile)
+        try await pediatricProfileRemote.upsert(dto: dto)
+        profile.syncState = .synced
+        profile.lastSyncError = nil
+        try modelContext.save()
+        KBLog.sync.kbInfo("pushPediatricProfileToRemote OK childId=\(profile.childId)")
+    }
+
+    private func remotePediatricProfileDTO(from profile: KBPediatricProfile) -> RemotePediatricProfileDTO {
+        let contactsJSON: String? = profile.emergencyContactsData.flatMap { String(data: $0, encoding: .utf8) }
+        let officeHoursJSON: String? = profile.doctorOfficeHoursData.flatMap { String(data: $0, encoding: .utf8) }
+        return RemotePediatricProfileDTO(
+            id: profile.id,
+            familyId: profile.familyId,
+            childId: profile.childId,
+            bloodGroup: profile.bloodGroup,
+            allergies: profile.allergies,
+            medicalNotes: profile.medicalNotes,
+            doctorName: profile.doctorName,
+            doctorPhone: profile.doctorPhone,
+            doctorAddress: profile.doctorAddress,
+            doctorWebsite: profile.doctorWebsite,
+            doctorOfficeHoursJSON: officeHoursJSON,
+            emergencyContactsJSON: contactsJSON,
+            isDeleted: false,
+            updatedAt: profile.updatedAt,
+            updatedBy: profile.updatedBy
+        )
+    }
+
     // MARK: - Process outbox op
-    
+
     func processPediatricProfile(op: KBSyncOp, modelContext: ModelContext) async throws {
         let cid = op.entityId
         let desc = FetchDescriptor<KBPediatricProfile>(predicate: #Predicate { $0.childId == cid })
         let profile = try modelContext.fetch(desc).first
-        
+
         switch op.opType {
         case "upsert":
             guard let p = profile else {
                 KBLog.sync.kbDebug("processPediatricProfile upsert skip: missing childId=\(cid)")
                 return
             }
-            
-            p.syncState     = .pendingUpsert
+
+            p.syncState = .pendingUpsert
             p.lastSyncError = nil
             try modelContext.save()
-            
-            // Serializza emergencyContacts in JSON string per Firestore
-            let contactsJSON: String?
-            if let data = p.emergencyContactsData {
-                contactsJSON = String(data: data, encoding: .utf8)
-            } else {
-                contactsJSON = nil
-            }
-            
-            let dto = RemotePediatricProfileDTO(
-                id:                    p.id,
-                familyId:              p.familyId,
-                childId:               p.childId,
-                bloodGroup:            p.bloodGroup,
-                allergies:             p.allergies,
-                medicalNotes:          p.medicalNotes,
-                doctorName:            p.doctorName,
-                doctorPhone:           p.doctorPhone,
-                emergencyContactsJSON: contactsJSON,
-                isDeleted:             false,
-                updatedAt:             p.updatedAt,
-                updatedBy:             p.updatedBy
-            )
-            
-            try await pediatricProfileRemote.upsert(dto: dto)
-            
-            p.syncState     = .synced
-            p.lastSyncError = nil
-            try modelContext.save()
+
+            try await pushPediatricProfileToRemote(p, modelContext: modelContext)
             KBLog.sync.kbDebug("processPediatricProfile upsert OK childId=\(cid)")
-            
+
         default:
             KBLog.sync.kbDebug("processPediatricProfile unknown opType=\(op.opType)")
         }

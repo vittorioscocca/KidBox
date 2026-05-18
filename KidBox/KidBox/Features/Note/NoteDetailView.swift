@@ -11,6 +11,8 @@ import UIKit
 struct NoteDetailView: View {
     let familyId: String
     let noteId: String
+    /// Porta il focus sul corpo all’apertura (es. nota viaggio appena creata).
+    var focusBodyOnAppear: Bool = false
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss)      private var dismiss
@@ -45,9 +47,10 @@ struct NoteDetailView: View {
     @State private var pendingRemoteTitle: String? = nil
     @State private var pendingRemoteBody:  String? = nil
     
-    init(familyId: String, noteId: String) {
+    init(familyId: String, noteId: String, focusBodyOnAppear: Bool = false) {
         self.familyId = familyId
         self.noteId   = noteId
+        self.focusBodyOnAppear = focusBodyOnAppear
         let nid = noteId
         _queriedNotes = Query(filter: #Predicate<KBNote> { $0.id == nid && $0.familyId == familyId })
         let fid = familyId
@@ -92,6 +95,11 @@ struct NoteDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear  {
             loadOrCreate()
+            if focusBodyOnAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    bodyFocusTrigger = UUID()
+                }
+            }
             Task { @MainActor in
                 BadgeManager.shared.clearNotes()
                 BadgeManager.shared.refreshAppBadge()

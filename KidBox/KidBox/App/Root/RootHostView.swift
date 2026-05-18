@@ -164,9 +164,20 @@ struct RootHostView: View {
                 KBLog.sync.kbDebug("families.first changed but activeFamilyId is pinned — ignoring")
                 return
             }
+            if let firstId = newValue ?? families.first?.id {
+                coordinator.setActiveFamily(firstId)
+                KBLog.sync.kbInfo("RootHostView: pinned first family on bootstrap familyId=\(firstId)")
+            }
             KBLog.sync.kbInfo("families.first changed (fallback) old=\(oldValue ?? "nil") new=\(newValue ?? "nil")")
             startFamilyRealtimeIfPossible()
             AutoFillSnapshotWriter.scheduleRebuild(modelContext: modelContext)
+        }
+        .onChange(of: families.count) { _, count in
+            guard count > 0,
+                  coordinator.activeFamilyId == nil,
+                  let firstId = families.first?.id else { return }
+            coordinator.setActiveFamily(firstId)
+            KBLog.sync.kbInfo("RootHostView: persisted activeFamilyId on families load familyId=\(firstId)")
         }
         // Espulsione: wipa i dati locali e torna al root da qualsiasi view.
         .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
@@ -277,6 +288,7 @@ struct RootHostView: View {
                 SyncCenter.shared.stopHousePaymentsRealtime()
                 SyncCenter.shared.stopVehiclesRealtime()
                 SyncCenter.shared.stopVehicleEventsRealtime()
+                SyncCenter.shared.stopTripsRealtime()
                 startedFamilyId = nil
                 KBLog.sync.kbDebug("Realtime listeners stopped and startedFamilyId cleared")
             } else {
@@ -299,12 +311,10 @@ struct RootHostView: View {
             }
         }
         
-        // Se stiamo usando il fallback families.first (activeFamilyId == nil),
-        // salva il familyId nell'App Group per la Share Extension.
+        // Primo avvio: persiste la famiglia di fallback (UserDefaults + App Group).
         if coordinator.activeFamilyId == nil {
-            let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
-            sharedDefaults?.set(familyId, forKey: "activeFamilyId")
-            KBLog.sync.kbInfo("AppGroup: fallback activeFamilyId saved fid=\(familyId)")
+            coordinator.setActiveFamily(familyId)
+            KBLog.sync.kbInfo("RootHostView: pinned fallback activeFamilyId familyId=\(familyId)")
         }
         
         // Switching to a different family → stop previous listeners first.
@@ -324,6 +334,7 @@ struct RootHostView: View {
             SyncCenter.shared.stopHousePaymentsRealtime()
             SyncCenter.shared.stopVehiclesRealtime()
             SyncCenter.shared.stopVehicleEventsRealtime()
+            SyncCenter.shared.stopTripsRealtime()
         } else {
             KBLog.sync.kbInfo("Starting realtime listeners for familyId=\(familyId)")
         }
@@ -417,6 +428,12 @@ struct RootHostView: View {
         )
         KBLog.sync.kbDebug("startVehicleEventsRealtime familyId=\(familyId)")
         SyncCenter.shared.startVehicleEventsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        KBLog.sync.kbDebug("startTripsRealtime familyId=\(familyId)")
+        SyncCenter.shared.startTripsRealtime(
             familyId: familyId,
             modelContext: modelContext
         )

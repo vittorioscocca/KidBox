@@ -19,7 +19,9 @@ private func expensesAppLocale() -> Locale {
 
 struct ExpensesHomeView: View {
     let familyId: String
-    
+    /// Se valorizzato, filtra subito per questa categoria (es. Viaggi dal dettaglio viaggio).
+    let initialCategoryId: String?
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -29,8 +31,9 @@ struct ExpensesHomeView: View {
     @StateObject private var vm: ExpensesViewModel
     @State private var syncCancellable: AnyCancellable? = nil
     
-    init(familyId: String) {
+    init(familyId: String, initialCategoryId: String? = nil) {
         self.familyId = familyId
+        self.initialCategoryId = initialCategoryId
         // Inizializzazione con un context temporaneo in-memory: viene subito
         // sostituito dal bind(modelContext:) nell'onAppear con il context reale.
         _vm = StateObject(wrappedValue: ExpensesViewModel(
@@ -101,6 +104,9 @@ struct ExpensesHomeView: View {
                 .receive(on: DispatchQueue.main)
                 .sink { fid in vm.reload() }
             vm.bind(modelContext: modelContext)
+            if let catId = initialCategoryId {
+                vm.selectedCategoryFilter = catId
+            }
             vm.reload()
         }
         .onChange(of: vm.period)       { vm.reload() }

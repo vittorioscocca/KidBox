@@ -70,7 +70,7 @@ enum Route: Hashable {
     
     // MARK: - Foto e video
     case familyPhotos(familyId: String)
-    case photoAlbumDetail(familyId: String, albumId: String, albumTitle: String)
+    case photoAlbumDetail(familyId: String, albumId: String, albumTitle: String, isTripAlbum: Bool = false)
     
     case askExpert
 
@@ -102,4 +102,11 @@ enum Route: Hashable {
     case vehicleDetail(familyId: String, vehicleId: String)
     case vehicleEventsList(familyId: String, vehicleId: String)
     case vehicleEventDetail(familyId: String, vehicleId: String, eventId: String)
+
+    // MARK: - Viaggi
+    case travelList(familyId: String)
+    case travelAllTrips(familyId: String)
+    case travelTripDetail(familyId: String, tripId: String)
+    case travelDiscover(familyId: String)
+    case travelDestinationDetail(familyId: String, destinationId: String)
 }

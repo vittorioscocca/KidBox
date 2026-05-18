@@ -1102,6 +1102,7 @@ exports.notifyNewNote = onDocumentCreated(
 
 const {defineSecret} = require("firebase-functions/params");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
+const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
 
 /**
  * Returns today's date as YYYY-MM-DD in Europe/Rome timezone.
@@ -1188,9 +1189,12 @@ async function resolveAIDailyLimit(uid, familyId = null) {
  * @param {string} familyId
  * @param {string} uid
  * @param {number} limit
- * @return {Promise<number>}
+ * @param {number} incrementBy messaggi da scalare (default 1; itinerario viaggio = 2 ogni 3 giorni)
+ * @return {Promise<number>} nuovo totale giornaliero dopo l'incremento
  */
-async function checkAndIncrementAIUsage(familyId, uid, limit) {
+async function checkAndIncrementAIUsage(familyId, uid, limit, incrementBy = 1) {
+  const delta = Math.max(1, Math.floor(Number(incrementBy) || 1));
+
   // Free = 0 messaggi → blocca subito senza toccare il contatore
   if (limit <= 0) {
     throw new HttpsError(
@@ -1207,7 +1211,7 @@ async function checkAndIncrementAIUsage(familyId, uid, limit) {
     const snap = await tx.get(ref);
     const current = snap.exists ? (snap.data().count || 0) : 0;
 
-    if (current >= limit) {
+    if (current + delta > limit) {
       throw new HttpsError(
           "resource-exhausted",
           `La famiglia ha raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`,
@@ -1215,13 +1219,13 @@ async function checkAndIncrementAIUsage(familyId, uid, limit) {
     }
 
     tx.set(ref, {
-      count: admin.firestore.FieldValue.increment(1),
+      count: admin.firestore.FieldValue.increment(delta),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       familyId,
       lastUid: uid,
     }, {merge: true});
 
-    return current + 1;
+    return current + delta;
   });
 }
 
@@ -1339,6 +1343,1448 @@ exports.askAI = onCall(
 
       logger.info("askAI success", {uid, usageCount});
       return {reply, usageToday: usageCount, dailyLimit};
+    },
+);
+
+/**
+ * System prompt per generateTravelPlan (Travel Card).
+ * @param {object} wizardData
+ * @param {object|null|undefined} familyContext
+ * @return {string}
+ */
+/**
+ * Giorni di viaggio inclusivi tra due date ISO (stesso giorno = 1).
+ * @param {string} startDate
+ * @param {string} endDate
+ * @return {number}
+ */
+function inclusiveTripDayCount(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 1;
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  const diffMs = end.getTime() - start.getTime();
+  const days = Math.floor(diffMs / (24 * 3600 * 1000));
+  return Math.max(days + 1, 1);
+}
+
+/** Allineato a TravelPlanningCountdown su iOS/Android: 1 blocco ogni 3 giorni di itinerario. */
+const TRAVEL_PLANNING_MESSAGES_PER_BLOCK = 2;
+
+/**
+ * @param {number} plannedDayCount
+ * @return {number}
+ */
+function travelPlanningBlocks(plannedDayCount) {
+  const days = Math.max(1, Math.floor(Number(plannedDayCount)) || 1);
+  return Math.max(1, Math.floor((days + 2) / 3));
+}
+
+/**
+ * @param {object} wizardData
+ * @return {number}
+ */
+function plannedDayCountFromWizard(wizardData) {
+  const fromDates = wizardData?.startDate && wizardData?.endDate ?
+    inclusiveTripDayCount(wizardData.startDate, wizardData.endDate) : 0;
+  let fromLegs = 0;
+  if (Array.isArray(wizardData?.legs)) {
+    fromLegs = wizardData.legs.reduce((sum, leg) => {
+      return sum + Math.max(0, Math.floor(Number(leg?.days) || 0));
+    }, 0);
+  }
+  return Math.max(fromDates, fromLegs, 1);
+}
+
+/**
+ * Costo in messaggi sul contatore giornaliero famiglia (Pro 30 / Max 100).
+ * @param {number} plannedDayCount
+ * @return {number}
+ */
+function travelMessageCostForPlannedDays(plannedDayCount) {
+  return travelPlanningBlocks(plannedDayCount) * TRAVEL_PLANNING_MESSAGES_PER_BLOCK;
+}
+
+function buildTravelSystemPrompt(wizardData, familyContext, regenerateSingleDay = false) {
+  const totalDays = wizardData?.startDate && wizardData?.endDate ?
+    inclusiveTripDayCount(wizardData.startDate, wizardData.endDate) :
+    1;
+  const ctx = familyContext || {};
+  const participants = ctx.participants;
+  const children = ctx.children;
+  const travelProfile = ctx.travelProfile;
+
+  let travelPrefsInfo = "";
+  if (travelProfile && typeof travelProfile === "object") {
+    const styles = Array.isArray(travelProfile.styles) ? travelProfile.styles.join(", ") : "";
+    const pace = travelProfile.pace || "";
+    const ageGroup = travelProfile.ageGroup || "";
+    travelPrefsInfo = `
+PREFERENZE VIAGGIO (profilo utente):
+- Stili preferiti: ${styles || "non specificati"}
+- Ritmo: ${pace || "non specificato"}
+- Fascia d'età: ${ageGroup || "non specificata"}
+Adatta attività, tempi e suggerimenti a questo profilo.`;
+  }
+
+  let childrenInfo = "";
+  if (children && children.length > 0) {
+    childrenInfo = children.map((c) => {
+      const age = Math.floor(
+          (Date.now() - new Date(c.birthDate).getTime()) / (365.25 * 24 * 3600 * 1000),
+      );
+      let info = `- ${c.name}, ${age} anni`;
+      if (c.allergies) info += `. ALLERGIE: ${c.allergies}`;
+      if (c.medicalNotes) info += `. Note mediche: ${c.medicalNotes}`;
+      if (c.medications && c.medications.length > 0) {
+        info += `. Farmaci: ${c.medications.map((m) => `${m.name} ${m.dose}`).join(", ")}`;
+      }
+      return info;
+    }).join("\n");
+  }
+
+  if (regenerateSingleDay) {
+    return `Sei un esperto pianificatore di viaggi in famiglia. Conosci la famiglia:
+
+BAMBINI:
+${childrenInfo || "Nessun bambino"}
+
+ADULTI PARTECIPANTI: ${participants?.join(", ") || "famiglia"}
+${travelPrefsInfo}
+
+RIGENERA UN SOLO GIORNO del viaggio "${wizardData?.tripName || "viaggio"}".
+Data da rigenerare: ${wizardData?.startDate || ""}.
+
+Restituisci SEMPRE:
+1. Una breve introduzione in italiano (1-2 frasi) sulle novità del giorno
+2. JSON dentro \`\`\`json ... \`\`\` con ESATTAMENTE 1 elemento in dayPlans
+
+Lo schema OBBLIGATORIO del dayPlan è:
+{
+  "dayPlans": [{
+    "date": "${wizardData?.startDate || ""}",
+    "location": string (nome città/zona),
+    "morningPlan": string (riepilogo testuale della mattina con luoghi e orari),
+    "afternoonPlan": string,
+    "eveningPlan": string,
+    "morningStops": [{ "time": "HH:mm", "title": string (NOME REALE del luogo, MAI vuoto), "durationMinutes": number, "costLabel": string, "category": "flight"|"transport"|"food"|"hotel"|"culture"|"beach"|"shopping"|"other" }],
+    "afternoonStops": [ ... stessa forma ... ],
+    "eveningStops": [ ... stessa forma ... ],
+    "accommodationName": string (opzionale),
+    "accommodationType": "hotel"|"bb"|"camping"|"airbnb"|"other" (opzionale),
+    "accommodationCostPerNight": number (opzionale),
+    "weatherBackupPlan": string,
+    "estimatedDailyCost": number
+  }]
+}
+
+REGOLE TASSATIVE:
+- Ogni elemento di morningStops/afternoonStops/eveningStops DEVE avere "title" non vuoto con il NOME REALE del luogo (es. "Trattoria da Maria", "Castello di Procida"). MAI omettere "title" e MAI usare placeholder come "Pranzo" o "Visita".
+- Per category "food" usa SEMPRE il nome reale del locale.
+- Minimo 2 tappe per fascia oraria quando possibile.
+- morningPlan/afternoonPlan/eveningPlan devono elencare gli stessi luoghi con i loro orari (es. "10:00 Castello di Procida · ingresso 8€").
+- NON ripetere i luoghi già citati negli altri giorni (vedi messaggio utente).
+- Puoi omettere trip, legs, packingList, diningPlaces.
+
+Rispondi in italiano.`;
+  }
+
+  return `Sei un esperto pianificatore di viaggi in famiglia. Conosci la famiglia:
+
+BAMBINI:
+${childrenInfo || "Nessun bambino"}
+
+ADULTI PARTECIPANTI: ${participants?.join(", ") || "famiglia"}
+${travelPrefsInfo}
+
+Il tuo compito è generare un piano di viaggio dettagliato e SEMPRE restituire la risposta
+in questo formato ESATTO:
+
+1. Una breve introduzione narrativa in italiano (2-3 frasi)
+2. Il piano strutturato come JSON dentro un blocco \`\`\`json ... \`\`\`
+
+Il JSON deve seguire ESATTAMENTE questo schema:
+{
+  "trip": {
+    "estimatedTotalCost": number,
+    "currency": "EUR",
+    "summary": string,
+    "budgetBreakdown": {
+      "hotels": number,
+      "flights": number,
+      "restaurants": number,
+      "activities": number
+    }
+  },
+  "legs": [{
+    "order": number,
+    "fromLocation": string,
+    "toLocation": string,
+    "transportMode": "flight"|"train"|"ship"|"car"|"walk"|"bike",
+    "notes": string
+  }],
+  "dayPlans": [{
+    "date": "YYYY-MM-DD",
+    "location": string,
+    "morningPlan": string,
+    "afternoonPlan": string,
+    "eveningPlan": string,
+    "morningStops": [{ "time": string, "title": string, "durationMinutes": number, "costLabel": string, "category": "flight"|"transport"|"food"|"hotel"|"culture"|"beach"|"shopping"|"other" }],
+    "afternoonStops": [{ "time": string, "title": string, "durationMinutes": number, "costLabel": string, "category": string }],
+    "eveningStops": [{ "time": string, "title": string, "durationMinutes": number, "costLabel": string, "category": string }],
+    "accommodationName": string,
+    "accommodationType": "hotel"|"bb"|"camping"|"airbnb"|"other",
+    "accommodationCostPerNight": number,
+    "weatherBackupPlan": string,
+    "estimatedDailyCost": number
+  }],
+  "diningPlaces": [{
+    "name": string,
+    "cuisine": string,
+    "day": "YYYY-MM-DD",
+    "meal": "colazione"|"pranzo"|"cena"|"aperitivo",
+    "location": string,
+    "estimatedCost": number,
+    "notes": string
+  }],
+  "packingList": [{
+    "label": string,
+    "category": "documents"|"clothing"|"health"|"kids"|"other",
+    "fromMedicalProfile": boolean
+  }],
+  "healthNotes": [string],
+  "emergencyContacts": {
+    "country": string,
+    "emergencyNumber": string,
+    "italianEmbassy": string,
+    "nearestHospital": string
+  }
+}
+
+REGOLE IMPORTANTI:
+- Le attività devono essere adatte alle età dei bambini presenti
+- Segnala SEMPRE le allergie nei piani pasto con "⚠️ ALLERGIA:"
+- Includi i farmaci abituali nella packing list con fromMedicalProfile=true
+- I tempi di percorrenza devono essere realistici con bambini (aggiungi 30% al tempo adulti)
+- Il piano B per maltempo deve essere sempre al coperto e adatto ai bimbi
+- Per mattina/pomeriggio/sera compila SEMPRE morningStops, afternoonStops, eveningStops (minimo 2 tappe per fascia quando possibile)
+- Ogni tappa: orario realistico, titolo del luogo, durata in minuti, costo stimato e costLabel ("Gratis" se 0)
+- Per category "food" usa SEMPRE il nome reale del locale (es. "Trattoria da Maria", "Ristorante Il Gabbiano") — MAI solo "Cena" o "Pranzo"
+- Includi almeno 1 tappa food al giorno (pranzo e/o cena) con nomi di locali plausibili per la destinazione
+- Compila diningPlaces con TUTTI i ristoranti/trattorie/osterie citati (minimo 1 per giorno di viaggio), con name, cuisine, day, meal, location, estimatedCost
+- morningPlan/afternoonPlan/eveningPlan devono elencare gli stessi locali con nomi reali (es. "13:00 Trattoria X — pesce · ~35€")
+- Compila trip.budgetBreakdown con stime coerenti con estimatedTotalCost
+- Il viaggio dura ${totalDays} giorni INCLUSIVI: dayPlans DEVE contenere ESATTAMENTE ${totalDays} elementi
+- Le date in dayPlans devono essere consecutive dal ${wizardData?.startDate || "startDate"} al ${wizardData?.endDate || "endDate"} (un piano per ogni giorno, senza salti)
+- Rispondi SEMPRE in italiano`;
+}
+
+/**
+ * Estrae il piano strutturato e lascia solo l'introduzione narrativa (senza blocco JSON).
+ * @param {string} raw
+ * @return {{travelPlan: object|null, narrativeText: string}}
+ */
+/**
+ * @param {string} text
+ * @return {object|null}
+ */
+function tryParseTravelPlanJson(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && (parsed.trip || (Array.isArray(parsed.dayPlans) && parsed.dayPlans.length > 0))) {
+      return parsed;
+    }
+  } catch (parseErr) {
+    logger.warn("tryParseTravelPlanJson: parse failed", {error: parseErr.message});
+  }
+  const repaired = extractJSONObject(trimmed);
+  if (repaired && repaired !== trimmed) {
+    try {
+      const parsed = JSON.parse(repaired);
+      if (parsed && (parsed.trip || (Array.isArray(parsed.dayPlans) && parsed.dayPlans.length > 0))) {
+        return parsed;
+      }
+    } catch (repairErr) {
+      logger.warn("tryParseTravelPlanJson: repaired parse failed", {error: repairErr.message});
+    }
+  }
+  return null;
+}
+
+/**
+ * @param {string} source
+ * @return {string|null}
+ */
+function extractJSONObject(source) {
+  let depth = 0;
+  let started = false;
+  let start = -1;
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (ch === "{") {
+      if (!started) {
+        started = true;
+        start = i;
+      }
+      depth++;
+    } else if (ch === "}" && started) {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        return source.slice(start, i + 1);
+      }
+    }
+  }
+  if (started && depth > 0 && start >= 0) {
+    return source.slice(start) + "}".repeat(depth);
+  }
+  return null;
+}
+
+/**
+ * @param {string} raw
+ * @return {{travelPlan: object|null, narrativeText: string}}
+ */
+function parseTravelPlanResponse(raw) {
+  let narrativeText = (raw || "").trim();
+  let travelPlan = null;
+
+  const fenced = narrativeText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/i);
+  if (fenced) {
+    travelPlan = tryParseTravelPlanJson(fenced[1]);
+    if (travelPlan) {
+      narrativeText = narrativeText.replace(/```(?:json)?\s*[\s\S]*?```/gi, "").trim();
+    }
+  }
+
+  if (!travelPlan) {
+    const unclosed = narrativeText.match(/```(?:json)?\s*\n?([\s\S]+)/i);
+    if (unclosed) {
+      travelPlan = tryParseTravelPlanJson(unclosed[1]);
+      if (travelPlan) {
+        narrativeText = narrativeText.replace(/```(?:json)?[\s\S]*/i, "").trim();
+      }
+    }
+  }
+
+  if (!travelPlan) {
+    const jsonStart = narrativeText.search(/\{\s*"(?:trip|dayPlans)"\s*:/);
+    if (jsonStart >= 0) {
+      const candidate = extractJSONObject(narrativeText.slice(jsonStart));
+      if (candidate) {
+        travelPlan = tryParseTravelPlanJson(candidate);
+        if (travelPlan) {
+          narrativeText = narrativeText.slice(0, jsonStart).trim();
+        }
+      }
+    }
+  }
+
+  narrativeText = narrativeText
+      .replace(/```(?:json)?\s*/gi, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  return {travelPlan, narrativeText};
+}
+
+/**
+ * User message per generateTravelPlan.
+ * @param {object} wizardData
+ * @param {string|null|undefined} freeTextPrompt
+ * @return {string}
+ */
+function buildTravelUserMessage(wizardData, freeTextPrompt, regenerateSingleDay = false) {
+  if (regenerateSingleDay) {
+    return (freeTextPrompt && freeTextPrompt.trim()) ?
+      freeTextPrompt.trim() :
+      `Rigenera il piano per il giorno ${wizardData?.startDate || ""}.`;
+  }
+
+  const {tripName, startDate, endDate, legs, budgetTotal, currency} = wizardData;
+  const days = inclusiveTripDayCount(startDate, endDate);
+
+  const legsText = (legs || []).map((l, i) =>
+    `${i + 1}. ${l.fromLocation} → ${l.toLocation} (${l.transportMode}, ${l.days || 1} giorni)`,
+  ).join("\n");
+
+  let msg = `Pianifica il viaggio "${tripName}":
+- Date: ${startDate} → ${endDate} (${days} giorni totali)
+- Tappe:
+${legsText}
+- Budget totale: ${budgetTotal} ${currency || "EUR"}`;
+
+  if (freeTextPrompt && freeTextPrompt.trim()) {
+    msg += `\n\nPreferenze aggiuntive: ${freeTextPrompt.trim()}`;
+  }
+
+  return msg;
+}
+
+/**
+ * Scrive i costi Anthropic su Firestore (stesso schema di askAI).
+ * @param {string} familyId
+ * @param {number} inputTokens
+ * @param {number} outputTokens
+ * @return {void}
+ */
+function trackAnthropicCosts(familyId, inputTokens, outputTokens) {
+  const costUsd = (inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0;
+  const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7);
+
+  const costRef = admin.firestore()
+      .collection("ai_costs").doc(monthKey)
+      .collection("families").doc(familyId);
+
+  costRef.set({
+    calls: admin.firestore.FieldValue.increment(1),
+    inputTokens: admin.firestore.FieldValue.increment(inputTokens),
+    outputTokens: admin.firestore.FieldValue.increment(outputTokens),
+    costUsd: admin.firestore.FieldValue.increment(costUsd),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, {merge: true}).catch((e) => logger.warn("ai_costs write failed", {error: e.message}));
+
+  const totalRef = admin.firestore().collection("ai_costs").doc(monthKey);
+  totalRef.set({
+    calls: admin.firestore.FieldValue.increment(1),
+    inputTokens: admin.firestore.FieldValue.increment(inputTokens),
+    outputTokens: admin.firestore.FieldValue.increment(outputTokens),
+    costUsd: admin.firestore.FieldValue.increment(costUsd),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, {merge: true}).catch((e) => logger.warn("ai_costs total write failed", {error: e.message}));
+}
+
+exports.generateTravelPlan = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [ANTHROPIC_API_KEY],
+      timeoutSeconds: 120,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Login required");
+
+      const {familyId, wizardData, freeTextPrompt, familyContext, regenerateSingleDay} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      if (!wizardData || typeof wizardData !== "object") {
+        throw new HttpsError("invalid-argument", "Missing required fields");
+      }
+      const {tripName, startDate, endDate, legs} = wizardData;
+      const isSingleDayRegeneration = regenerateSingleDay === true;
+      if (!tripName || !startDate || !endDate || !Array.isArray(legs)) {
+        throw new HttpsError("invalid-argument", "wizardData non valido.");
+      }
+      if (!isSingleDayRegeneration && legs.length === 0) {
+        throw new HttpsError("invalid-argument", "wizardData non valido: almeno una tappa richiesta.");
+      }
+
+      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
+      if (dailyLimit === 0) {
+        throw new HttpsError("permission-denied", "AI not available on free plan");
+      }
+      const plannedDayCount = plannedDayCountFromWizard(wizardData);
+      const travelMessageCost = travelMessageCostForPlannedDays(plannedDayCount);
+      const usageCount = await checkAndIncrementAIUsage(
+          familyId, uid, dailyLimit, travelMessageCost,
+      );
+
+      logger.info("generateTravelPlan request", {
+        uid, familyId, usageCount, dailyLimit, tripName, plannedDayCount, travelMessageCost,
+      });
+
+      const apiKey = ANTHROPIC_API_KEY.value();
+      if (!apiKey) {
+        logger.error("generateTravelPlan: ANTHROPIC_API_KEY secret non configurato");
+        throw new HttpsError("internal", "Configurazione AI non disponibile.");
+      }
+
+      const systemPrompt = buildTravelSystemPrompt(wizardData, familyContext, isSingleDayRegeneration);
+      const userMessage = buildTravelUserMessage(wizardData, freeTextPrompt, isSingleDayRegeneration);
+
+      let narrativeText;
+      let travelPlan = null;
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      try {
+        const fetch = (await import("node-fetch")).default;
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 8192,
+            system: systemPrompt,
+            messages: [{role: "user", content: userMessage}],
+          }),
+        });
+
+        if (res.status === 429) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Servizio AI temporaneamente sovraccarico. Riprova tra qualche secondo.",
+          );
+        }
+        if (!res.ok) {
+          const errText = await res.text();
+          logger.error("generateTravelPlan: Anthropic error", {status: res.status, body: errText});
+          throw new HttpsError("internal", "Errore dal servizio AI.");
+        }
+
+        const json = await res.json();
+        const rawText = json?.content?.[0]?.text ?? "";
+        if (!rawText) throw new HttpsError("internal", "Risposta AI non valida.");
+
+        const parsed = parseTravelPlanResponse(rawText);
+        narrativeText = parsed.narrativeText;
+        travelPlan = parsed.travelPlan;
+
+        inputTokens = json?.usage?.input_tokens || 0;
+        outputTokens = json?.usage?.output_tokens || 0;
+        trackAnthropicCosts(familyId, inputTokens, outputTokens);
+        logger.info("generateTravelPlan tokens", {
+          uid, familyId, inputTokens, outputTokens,
+          costUsd: ((inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0).toFixed(6),
+        });
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        logger.error("generateTravelPlan: fetch failed", {error: e.message});
+        throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
+      }
+
+      logger.info("generateTravelPlan success", {uid, familyId, hasPlan: !!travelPlan});
+      return {
+        travelPlan,
+        narrativeText,
+        usageToday: usageCount,
+        dailyLimit,
+        plannedDayCount,
+        messageCost: travelMessageCost,
+      };
+    },
+);
+
+/**
+ * @param {string} raw
+ * @return {{destinations: object[], profileSummary: string}|null}
+ */
+function parseTravelSuggestionsResponse(raw) {
+  let text = (raw || "").trim();
+  const fenced = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/i);
+  if (fenced) {
+    text = fenced[1].trim();
+  }
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && Array.isArray(parsed.destinations)) {
+      return {
+        destinations: parsed.destinations,
+        profileSummary: typeof parsed.profileSummary === "string" ? parsed.profileSummary : "",
+      };
+    }
+  } catch (e) {
+    logger.warn("parseTravelSuggestionsResponse failed", {error: e.message});
+  }
+  return null;
+}
+
+/**
+ * @param {object|null|undefined} travelProfile
+ * @return {string}
+ */
+function buildTravelSuggestionsSystemPrompt(travelProfile) {
+  const profile = travelProfile && typeof travelProfile === "object" ? travelProfile : {};
+  const styles = Array.isArray(profile.styles) ? profile.styles.join(", ") : "";
+  const pace = profile.pace || "";
+  const ageGroup = profile.ageGroup || "";
+  return `Sei un consulente di viaggi per famiglie italiane. Suggerisci destinazioni in Europa (e Mediterraneo) adatte al profilo.
+
+PROFILO UTENTE:
+- Stili: ${styles || "non specificati"}
+- Ritmo: ${pace || "non specificato"}
+- Fascia d'età: ${ageGroup || "non specificata"}
+
+Rispondi SOLO con JSON valido (nessun testo fuori dal JSON) nel formato:
+{
+  "profileSummary": "breve frase in italiano es. ritmo equilibrato, coppia",
+  "destinations": [
+    {
+      "id": "slug-unico",
+      "name": "Nome città",
+      "region": "Paese, area",
+      "tagline": "una riga teaser",
+      "whyForYou": "2-3 frasi perché è adatta al profilo",
+      "aiHeadline": "titolo breve card AI",
+      "estimatedCost": "~€1,100",
+      "durationDays": "4-6",
+      "bestTime": "Apr-Giu",
+      "bestTimeNote": "nota breve periodo migliore",
+      "isTopMatch": true,
+      "previewPlan": {
+        "trip": {
+          "estimatedTotalCost": 950,
+          "currency": "EUR",
+          "summary": "titolo breve del viaggio",
+          "budgetBreakdown": {
+            "hotels": 340,
+            "flights": 210,
+            "restaurants": 220,
+            "activities": 180
+          }
+        },
+        "dayPlans": [
+          {
+            "date": "2026-06-01",
+            "location": "Nome città",
+            "estimatedDailyCost": 160,
+            "morningStops": [
+              {
+                "time": "09:30",
+                "title": "Attività mattina",
+                "durationMinutes": 90,
+                "costLabel": "Gratis",
+                "category": "culture"
+              }
+            ],
+            "afternoonStops": [
+              {
+                "time": "14:00",
+                "title": "Attività pomeriggio",
+                "durationMinutes": 120,
+                "costLabel": "~35",
+                "category": "food"
+              }
+            ],
+            "eveningStops": [
+              {
+                "time": "19:30",
+                "title": "Cena",
+                "durationMinutes": 90,
+                "costLabel": "~45",
+                "category": "food"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+
+REGOLE:
+- Esattamente 3 destinazioni; la prima con isTopMatch true, le altre false.
+- Costi e durate realistici per viaggi da Italia.
+- Ogni destinazione DEVE includere previewPlan con 2-4 dayPlans e tappe strutturate (morningStops, afternoonStops, eveningStops) con time, title, durationMinutes, costLabel, category (flight|transport|food|hotel|culture|beach|shopping|other).
+- Le tappe food devono usare nomi reali di locali (trattoria/osteria/ristorante), non titoli generici come "Cena".
+- estimatedTotalCost in previewPlan.trip deve essere coerente con estimatedCost della card.
+- Tutto in italiano.`;
+}
+
+exports.suggestTravelDestinations = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [ANTHROPIC_API_KEY],
+      timeoutSeconds: 90,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Login required");
+
+      const {familyId, travelProfile} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+
+      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
+      if (dailyLimit === 0) {
+        throw new HttpsError("permission-denied", "AI not available on free plan");
+      }
+      const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, 1);
+
+      const apiKey = ANTHROPIC_API_KEY.value();
+      if (!apiKey) {
+        throw new HttpsError("internal", "Configurazione AI non disponibile.");
+      }
+
+      const systemPrompt = buildTravelSuggestionsSystemPrompt(travelProfile);
+      const userMessage = "Suggerisci 3 destinazioni personalizzate per questo profilo.";
+
+      try {
+        const fetch = (await import("node-fetch")).default;
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2048,
+            system: systemPrompt,
+            messages: [{role: "user", content: userMessage}],
+          }),
+        });
+
+        if (res.status === 429) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Servizio AI temporaneamente sovraccarico. Riprova tra qualche secondo.",
+          );
+        }
+        if (!res.ok) {
+          const errText = await res.text();
+          logger.error("suggestTravelDestinations: Anthropic error", {status: res.status, body: errText});
+          throw new HttpsError("internal", "Errore dal servizio AI.");
+        }
+
+        const json = await res.json();
+        const rawText = json?.content?.[0]?.text ?? "";
+        const parsed = parseTravelSuggestionsResponse(rawText);
+        if (!parsed || !parsed.destinations.length) {
+          throw new HttpsError("internal", "Risposta suggerimenti non valida.");
+        }
+
+        const inputTokens = json?.usage?.input_tokens || 0;
+        const outputTokens = json?.usage?.output_tokens || 0;
+        trackAnthropicCosts(familyId, inputTokens, outputTokens);
+
+        return {
+          destinations: parsed.destinations,
+          profileSummary: parsed.profileSummary,
+          usageToday: usageCount,
+          dailyLimit,
+        };
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        logger.error("suggestTravelDestinations failed", {error: e.message});
+        throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
+      }
+    },
+);
+
+/**
+ * Risolve URL foto Places (redirect) senza esporre la API key al client.
+ * @param {string} photoName
+ * @param {string} apiKey
+ * @return {Promise<string|null>}
+ */
+async function resolveGooglePlacePhotoUrl(photoName, apiKey) {
+  if (!photoName || !apiKey) return null;
+  const mediaUrl =
+    `https://places.googleapis.com/v1/${photoName}/media` +
+    `?maxWidthPx=800&skipHttpRedirect=true&key=${encodeURIComponent(apiKey)}`;
+  try {
+    const res = await fetch(mediaUrl);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.photoUri || null;
+  } catch (e) {
+    logger.warn("resolveGooglePlacePhotoUrl failed", {photoName, err: e.message});
+    return null;
+  }
+}
+
+/** Campi Text Search (Pro). Evitare reviews/editorialSummary qui (SKU Enterprise). */
+const PLACES_SEARCH_FIELD_MASK = [
+  "places.id",
+  "places.displayName",
+  "places.formattedAddress",
+  "places.location",
+  "places.rating",
+  "places.userRatingCount",
+  "places.photos",
+  "places.types",
+  "places.primaryType",
+  "places.primaryTypeDisplayName",
+  "places.googleMapsUri",
+].join(",");
+
+/** Dettaglio luogo localizzato (italiano) incluso recensioni e descrizione. */
+const PLACE_DETAILS_FIELD_MASK = [
+  "id",
+  "displayName",
+  "formattedAddress",
+  "location",
+  "rating",
+  "userRatingCount",
+  "photos",
+  "types",
+  "primaryType",
+  "primaryTypeDisplayName",
+  "googleMapsUri",
+  "reviews",
+  "reviews.publishTime",
+  "editorialSummary",
+].join(",");
+
+/** Etichette italiane per tipi Google (fallback se l'API non localizza). */
+const IT_PLACE_TYPE_LABELS = {
+  restaurant: "Ristorante",
+  food: "Ristorante",
+  meal_takeaway: "Asporto",
+  meal_delivery: "Consegna a domicilio",
+  cafe: "Caffè",
+  bar: "Bar",
+  bakery: "Panetteria",
+  hotel: "Hotel",
+  lodging: "Alloggio",
+  bed_and_breakfast: "Bed and breakfast",
+  guest_house: "Ospitalità",
+  hostel: "Ostello",
+  resort_hotel: "Resort",
+  motel: "Motel",
+  tourist_attraction: "Attrazione turistica",
+  museum: "Museo",
+  art_gallery: "Galleria d'arte",
+  park: "Parco",
+  church: "Chiesa",
+  shopping_mall: "Centro commerciale",
+  store: "Negozio",
+  supermarket: "Supermercato",
+  night_club: "Discoteca",
+  spa: "Spa",
+  gym: "Palestra",
+  beach: "Spiaggia",
+};
+
+const DEFAULT_PLACES_LANGUAGE_CODE = "it";
+const DEFAULT_PLACES_REGION_CODE = "IT";
+
+/**
+ * Lingua Places richiesta dal client (iOS/Android); default italiano.
+ * @param {string|undefined} raw
+ * @return {string}
+ */
+function resolvePlacesLanguageCode(raw) {
+  const code = (typeof raw === "string" ? raw : "").trim().toLowerCase();
+  if (code.startsWith("it")) return "it";
+  return DEFAULT_PLACES_LANGUAGE_CODE;
+}
+
+/**
+ * @param {string} languageCode
+ * @return {string}
+ */
+function placesAcceptLanguageHeader(languageCode) {
+  const code = resolvePlacesLanguageCode(languageCode);
+  return code === "it" ? "it-IT,it;q=0.9" : `${code};q=0.9`;
+}
+
+/**
+ * @param {string} languageCode
+ * @return {string|undefined}
+ */
+function placesRegionCode(languageCode) {
+  return resolvePlacesLanguageCode(languageCode) === "it" ?
+    DEFAULT_PLACES_REGION_CODE :
+    undefined;
+}
+
+/**
+ * Data recensione in forma relativa localizzata (es. «2 settimane fa»).
+ * @param {string|undefined} publishTime
+ * @param {string} languageCode
+ * @return {string}
+ */
+function formatRelativePublishTime(publishTime, languageCode) {
+  if (!publishTime) return "";
+  const date = new Date(publishTime);
+  if (Number.isNaN(date.getTime())) return "";
+  const locale = resolvePlacesLanguageCode(languageCode) === "it" ? "it-IT" : languageCode;
+  const diffMs = date.getTime() - Date.now();
+  try {
+    const rtf = new Intl.RelativeTimeFormat(locale, {numeric: "auto"});
+    const diffSec = Math.round(diffMs / 1000);
+    if (Math.abs(diffSec) < 60) return rtf.format(diffSec, "second");
+    const diffMin = Math.round(diffMs / 60000);
+    if (Math.abs(diffMin) < 60) return rtf.format(diffMin, "minute");
+    const diffHour = Math.round(diffMs / 3600000);
+    if (Math.abs(diffHour) < 24) return rtf.format(diffHour, "hour");
+    const diffDay = Math.round(diffMs / 86400000);
+    if (Math.abs(diffDay) < 30) return rtf.format(diffDay, "day");
+    const diffMonth = Math.round(diffMs / (86400000 * 30.4375));
+    if (Math.abs(diffMonth) < 12) return rtf.format(diffMonth, "month");
+    const diffYear = Math.round(diffMs / (86400000 * 365.25));
+    return rtf.format(diffYear, "year");
+  } catch (e) {
+    return "";
+  }
+}
+
+/**
+ * Query di ricerca dal più specifico al più generico.
+ * @param {string} placeName
+ * @param {string} locationContext
+ * @return {string[]}
+ */
+function buildPlaceSearchQueries(placeName, locationContext) {
+  const queries = [];
+  const ctx = (locationContext || "").trim();
+  if (ctx) {
+    queries.push(`${placeName}, ${ctx}, Italia`);
+    queries.push(`${placeName}, ${ctx}`);
+  }
+  queries.push(`${placeName}, Italia`);
+  queries.push(placeName);
+  const seen = new Set();
+  return queries.filter((q) => {
+    const key = q.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Text Search (New) — un singolo tentativo.
+ * @param {string} textQuery
+ * @param {string} apiKey
+ * @return {Promise<object|null>}
+ */
+async function googlePlacesSearchText(textQuery, apiKey, languageCode) {
+  const lang = resolvePlacesLanguageCode(languageCode);
+  const region = placesRegionCode(lang);
+  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": PLACES_SEARCH_FIELD_MASK,
+      "Accept-Language": placesAcceptLanguageHeader(lang),
+    },
+    body: JSON.stringify({
+      textQuery,
+      languageCode: lang,
+      ...(region ? {regionCode: region} : {}),
+      maxResultCount: 1,
+    }),
+  });
+
+  const bodyText = await res.text();
+  if (!res.ok) {
+    logger.warn("googlePlacesSearchText failed", {
+      textQuery,
+      status: res.status,
+      body: bodyText.slice(0, 500),
+    });
+    if (res.status === 401 || res.status === 403) {
+      const err = new Error("Google Places: chiave non valida o API non abilitata.");
+      err.code = "PLACES_API_ERROR";
+      throw err;
+    }
+    return null;
+  }
+
+  let json;
+  try {
+    json = JSON.parse(bodyText);
+  } catch (e) {
+    logger.warn("googlePlacesSearchText: invalid JSON", {textQuery, err: e.message});
+    return null;
+  }
+  return json?.places?.[0] || null;
+}
+
+/**
+ * @param {string} code
+ * @return {boolean}
+ */
+function isItalianLanguageCode(code) {
+  return (code || "").toLowerCase().startsWith("it");
+}
+
+/**
+ * @param {object|undefined} field
+ * @return {string}
+ */
+function localizedFieldText(field) {
+  return (field?.text || "").trim();
+}
+
+/**
+ * @param {object|undefined} field
+ * @return {string}
+ */
+function localizedFieldLanguage(field) {
+  return (field?.languageCode || "").toLowerCase();
+}
+
+/**
+ * Categoria/tipo luogo in italiano.
+ * @param {object} place
+ * @return {string}
+ */
+function italianCategoryFromPlace(place) {
+  const display = place.primaryTypeDisplayName;
+  const displayText = localizedFieldText(display);
+  const displayLang = localizedFieldLanguage(display);
+  if (displayText && (isItalianLanguageCode(displayLang) || !displayLang)) {
+    return displayText;
+  }
+  const primary = place.primaryType || (place.types && place.types[0]) || "";
+  if (primary && IT_PLACE_TYPE_LABELS[primary]) {
+    return IT_PLACE_TYPE_LABELS[primary];
+  }
+  if (primary) {
+    return primary
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return displayText || "Luogo di interesse";
+}
+
+/**
+ * Dettaglio Places (New) con languageCode=it.
+ * @param {string} placeResourceId
+ * @param {string} apiKey
+ * @return {Promise<object|null>}
+ */
+async function googlePlacesGetDetails(placeResourceId, apiKey, languageCode) {
+  if (!placeResourceId) return null;
+  const lang = resolvePlacesLanguageCode(languageCode);
+  const region = placesRegionCode(lang);
+  const resource = placeResourceId.startsWith("places/") ?
+    placeResourceId :
+    `places/${placeResourceId}`;
+  try {
+    const params = new URLSearchParams({languageCode: lang});
+    if (region) params.set("regionCode", region);
+    const detailsUrl =
+      `https://places.googleapis.com/v1/${resource}?${params.toString()}`;
+    const res = await fetch(detailsUrl, {
+      method: "GET",
+      headers: {
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": PLACE_DETAILS_FIELD_MASK,
+        "Accept-Language": placesAcceptLanguageHeader(lang),
+      },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      logger.warn("googlePlacesGetDetails failed", {
+        resource,
+        status: res.status,
+        body: body.slice(0, 400),
+      });
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    logger.warn("googlePlacesGetDetails error", {resource, err: e.message});
+    return null;
+  }
+}
+
+/**
+ * Traduce in batch i campi testuali non italiani del luogo.
+ * @param {object} fields
+ * @param {string} apiKey
+ * @return {Promise<object>}
+ */
+async function localizePlaceDisplayFields(fields, apiKey) {
+  const out = {...fields};
+  const pending = [];
+  const keys = [];
+
+  const queue = (key, value, lang) => {
+    const text = (value || "").trim();
+    if (!text) return;
+    if (lang && isItalianLanguageCode(lang)) return;
+    pending.push(text);
+    keys.push(key);
+  };
+
+  queue("name", fields.name, fields.nameLang);
+  queue("address", fields.address, fields.addressLang);
+  queue("category", fields.category, fields.categoryLang);
+  queue("about", fields.about, fields.aboutLang);
+
+  if (!pending.length) return out;
+
+  const translated = await translateTextsToItalian(pending, apiKey);
+  if (translated) {
+    keys.forEach((key, index) => {
+      if (translated[index]) out[key] = translated[index];
+    });
+  }
+  return out;
+}
+
+/**
+ * Testo recensione da tradurre: preferisce italiano, altrimenti testo più utile per traduzione.
+ * @param {object} review
+ * @return {{text: string, lang: string}}
+ */
+function pickReviewText(review) {
+  const localized = (review.text?.text || "").trim();
+  const localizedLang = (review.text?.languageCode || "").toLowerCase();
+  const original = (review.originalText?.text || "").trim();
+  const originalLang = (review.originalText?.languageCode || "").toLowerCase();
+
+  if (localized && isItalianLanguageCode(localizedLang)) {
+    return {text: localized, lang: localizedLang};
+  }
+  if (original && isItalianLanguageCode(originalLang)) {
+    return {text: original, lang: originalLang};
+  }
+  const fallback = localized || original;
+  const lang = localized ? localizedLang : originalLang;
+  return {text: fallback, lang};
+}
+
+/**
+ * @param {string} text
+ * @return {string}
+ */
+function decodeTranslationEntities(text) {
+  return (text || "")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, "\"")
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
+}
+
+/**
+ * Traduce in italiano (Cloud Translation API) se abilitata sulla stessa chiave progetto.
+ * @param {string[]} texts
+ * @param {string} apiKey
+ * @return {Promise<string[]|null>}
+ */
+async function translateTextsToItalian(texts, apiKey) {
+  const payload = texts.map((t) => (t || "").trim()).filter(Boolean);
+  if (!payload.length || !apiKey) return null;
+  try {
+    const res = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({q: payload, target: "it", format: "text"}),
+        },
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      logger.warn("translateTextsToItalian skipped (abilita Cloud Translation API)", {
+        status: res.status,
+        body: body.slice(0, 200),
+      });
+      return null;
+    }
+    const json = await res.json();
+    const out = (json?.data?.translations || []).map((t) =>
+      decodeTranslationEntities(t.translatedText || ""),
+    );
+    return out.length === payload.length ? out : null;
+  } catch (e) {
+    logger.debug("translateTextsToItalian failed", {err: e.message});
+    return null;
+  }
+}
+
+/**
+ * Recensioni in italiano: Places (languageCode=it) + traduzione opzionale.
+ * @param {object[]} rawReviews
+ * @param {string} apiKey
+ * @return {Promise<object[]>}
+ */
+async function buildItalianReviews(rawReviews, apiKey, languageCode) {
+  const lang = resolvePlacesLanguageCode(languageCode);
+  const slice = (rawReviews || []).slice(0, 5);
+  const drafts = slice.map((r, index) => {
+    const picked = pickReviewText(r);
+    const relativeFromPublish = formatRelativePublishTime(r.publishTime, lang);
+    return {
+      id: `review-${index}`,
+      authorName: r.authorAttribution?.displayName || "Utente Google",
+      text: picked.text,
+      rating: r.rating || 0,
+      relativeTime: relativeFromPublish ||
+        r.relativePublishTimeDescription || "",
+      profilePhotoUrl: r.authorAttribution?.photoUri || null,
+      lang: picked.lang,
+    };
+  }).filter((r) => r.text.length > 0);
+
+  const toTranslateIdx = [];
+  const toTranslateTexts = [];
+  const relativeIdx = [];
+  const relativeTexts = [];
+
+  drafts.forEach((d, i) => {
+    if (!isItalianLanguageCode(d.lang)) {
+      toTranslateIdx.push(i);
+      toTranslateTexts.push(d.text);
+    }
+    const rel = (d.relativeTime || "").trim();
+    if (rel && /\b(ago|week|month|year|day|hour|minute)\b/i.test(rel)) {
+      relativeIdx.push(i);
+      relativeTexts.push(rel);
+    }
+  });
+
+  if (toTranslateTexts.length > 0) {
+    const translated = await translateTextsToItalian(toTranslateTexts, apiKey);
+    if (translated) {
+      toTranslateIdx.forEach((draftIndex, j) => {
+        if (translated[j]) drafts[draftIndex].text = translated[j];
+      });
+    }
+  }
+
+  if (relativeTexts.length > 0) {
+    const translatedRel = await translateTextsToItalian(relativeTexts, apiKey);
+    if (translatedRel) {
+      relativeIdx.forEach((draftIndex, j) => {
+        if (translatedRel[j]) drafts[draftIndex].relativeTime = translatedRel[j];
+      });
+    }
+  }
+
+  return drafts.map(({lang, ...rest}) => rest);
+}
+
+/**
+ * Cerca un luogo su Google Places (New) e restituisce dettagli per la scheda viaggio.
+ * @param {string} placeName
+ * @param {string} locationContext
+ * @param {string} apiKey
+ * @return {Promise<object|null>}
+ */
+async function fetchGooglePlaceDetails(placeName, locationContext, apiKey, languageCode) {
+  const lang = resolvePlacesLanguageCode(languageCode);
+  const queries = buildPlaceSearchQueries(placeName, locationContext);
+  let place = null;
+
+  for (const textQuery of queries) {
+    const hit = await googlePlacesSearchText(textQuery, apiKey, lang);
+    if (hit) {
+      place = hit;
+      logger.info("fetchGooglePlaceDetails: match", {textQuery, placeId: hit.id});
+      break;
+    }
+  }
+
+  if (!place) return null;
+
+  const detailed = await googlePlacesGetDetails(place.id, apiKey, lang);
+  if (detailed) place = detailed;
+
+  const photoNames = (place.photos || []).slice(0, 10).map((p) => p.name).filter(Boolean);
+  const photoUrls = [];
+  for (const name of photoNames.slice(0, 6)) {
+    const url = await resolveGooglePlacePhotoUrl(name, apiKey);
+    if (url) photoUrls.push(url);
+  }
+
+  const reviews = await buildItalianReviews(place.reviews, apiKey, lang);
+
+  let name = localizedFieldText(place.displayName) || placeName;
+  let category = italianCategoryFromPlace(place);
+  let address = place.formattedAddress || "";
+  let about = localizedFieldText(place.editorialSummary);
+
+  const localized = await localizePlaceDisplayFields({
+    name,
+    nameLang: localizedFieldLanguage(place.displayName),
+    address,
+    addressLang: "",
+    category,
+    categoryLang: localizedFieldLanguage(place.primaryTypeDisplayName),
+    about,
+    aboutLang: localizedFieldLanguage(place.editorialSummary),
+  }, apiKey);
+
+  name = localized.name || name;
+  category = localized.category || category;
+  address = localized.address || address;
+  about = localized.about || about;
+
+  return {
+    placeId: place.id || "",
+    name,
+    category,
+    address,
+    latitude: place.location?.latitude ?? 0,
+    longitude: place.location?.longitude ?? 0,
+    rating: place.rating ?? null,
+    reviewCount: place.userRatingCount ?? 0,
+    about,
+    photoUrls,
+    reviews,
+    googleMapsUri: place.googleMapsUri || null,
+  };
+}
+
+const PLACES_AUTOCOMPLETE_FIELD_MASK = [
+  "suggestions.placePrediction.placeId",
+  "suggestions.placePrediction.text",
+  "suggestions.placePrediction.structuredFormat",
+].join(",");
+
+/**
+ * Autocomplete destinazioni viaggio (Places API New).
+ * @param {string} input
+ * @param {string} apiKey
+ * @return {Promise<object[]>}
+ */
+async function googlePlacesAutocomplete(input, apiKey, languageCode) {
+  const lang = resolvePlacesLanguageCode(languageCode);
+  const region = placesRegionCode(lang);
+  const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": PLACES_AUTOCOMPLETE_FIELD_MASK,
+      "Accept-Language": placesAcceptLanguageHeader(lang),
+    },
+    body: JSON.stringify({
+      input,
+      languageCode: lang,
+      ...(region ? {regionCode: region} : {}),
+    }),
+  });
+
+  const bodyText = await res.text();
+  if (!res.ok) {
+    logger.warn("googlePlacesAutocomplete failed", {
+      input,
+      status: res.status,
+      body: bodyText.slice(0, 400),
+    });
+    if (res.status === 401 || res.status === 403) {
+      const err = new Error("Google Places: chiave non valida o API non abilitata.");
+      err.code = "PLACES_API_ERROR";
+      throw err;
+    }
+    return [];
+  }
+
+  let json;
+  try {
+    json = JSON.parse(bodyText);
+  } catch (e) {
+    logger.warn("googlePlacesAutocomplete: invalid JSON", {input, err: e.message});
+    return [];
+  }
+
+  return (json?.suggestions || [])
+      .map((s) => s.placePrediction)
+      .filter(Boolean)
+      .slice(0, 6)
+      .map((prediction) => {
+        const main = prediction.structuredFormat?.mainText?.text ||
+          prediction.text?.text || "";
+        const secondary = prediction.structuredFormat?.secondaryText?.text || "";
+        return {
+          placeId: prediction.placeId || "",
+          title: main.trim(),
+          subtitle: secondary.trim(),
+        };
+      })
+      .filter((item) => item.title.length > 0);
+}
+
+exports.searchTravelDestinations = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [GOOGLE_PLACES_API_KEY],
+      timeoutSeconds: 20,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Login required");
+
+      const {familyId, query, languageCode} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      const input = typeof query === "string" ? query.trim() : "";
+      if (input.length < 2) {
+        return {suggestions: []};
+      }
+      const lang = resolvePlacesLanguageCode(languageCode);
+
+      const apiKey = GOOGLE_PLACES_API_KEY.value();
+      if (!apiKey) {
+        throw new HttpsError("failed-precondition", "Google Places non configurato.");
+      }
+
+      try {
+        const suggestions = await googlePlacesAutocomplete(input, apiKey, lang);
+        return {suggestions};
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        if (e && e.code === "PLACES_API_ERROR") {
+          throw new HttpsError(
+              "failed-precondition",
+              "Google Places non configurato correttamente (API o chiave).",
+          );
+        }
+        logger.error("searchTravelDestinations failed", {error: e.message});
+        throw new HttpsError("internal", "Impossibile cercare la destinazione.");
+      }
+    },
+);
+
+exports.getTravelPlaceDetails = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [GOOGLE_PLACES_API_KEY],
+      timeoutSeconds: 30,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Login required");
+
+      const {familyId, placeName, locationContext, languageCode} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      const name = typeof placeName === "string" ? placeName.trim() : "";
+      if (!name) {
+        throw new HttpsError("invalid-argument", "placeName è richiesto.");
+      }
+      const context = typeof locationContext === "string" ? locationContext.trim() : "";
+      const lang = resolvePlacesLanguageCode(languageCode);
+
+      const apiKey = GOOGLE_PLACES_API_KEY.value();
+      if (!apiKey) {
+        throw new HttpsError("failed-precondition", "Google Places non configurato.");
+      }
+
+      try {
+        const details = await fetchGooglePlaceDetails(name, context, apiKey, lang);
+        if (!details) {
+          logger.info("getTravelPlaceDetails: no match", {placeName: name, locationContext: context});
+          return {found: false};
+        }
+        return {found: true, place: details};
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        if (e && e.code === "PLACES_API_ERROR") {
+          throw new HttpsError(
+              "failed-precondition",
+              "Google Places non configurato correttamente (API o chiave).",
+          );
+        }
+        logger.error("getTravelPlaceDetails failed", {error: e.message});
+        throw new HttpsError("internal", "Impossibile recuperare i dettagli del luogo.");
+      }
     },
 );
 

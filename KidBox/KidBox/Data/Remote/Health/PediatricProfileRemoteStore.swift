@@ -21,6 +21,9 @@ struct RemotePediatricProfileDTO {
     let medicalNotes: String?
     let doctorName: String?
     let doctorPhone: String?
+    let doctorAddress: String?
+    let doctorWebsite: String?
+    let doctorOfficeHoursJSON: String?
     
     /// JSON-encoded [KBEmergencyContact]
     let emergencyContactsJSON: String?
@@ -82,6 +85,9 @@ final class PediatricProfileRemoteStore {
         data["medicalNotes"] = dto.medicalNotes ?? FieldValue.delete()
         data["doctorName"]   = dto.doctorName   ?? FieldValue.delete()
         data["doctorPhone"]  = dto.doctorPhone  ?? FieldValue.delete()
+        data["doctorAddress"] = dto.doctorAddress ?? FieldValue.delete()
+        data["doctorWebsite"] = dto.doctorWebsite ?? FieldValue.delete()
+        data["doctorOfficeHoursJSON"] = dto.doctorOfficeHoursJSON ?? FieldValue.delete()
         data["emergencyContactsJSON"] = dto.emergencyContactsJSON ?? FieldValue.delete()
         
         try await ref.setData(data, merge: true)
@@ -152,6 +158,9 @@ final class PediatricProfileRemoteStore {
                     medicalNotes:          data["medicalNotes"] as? String,
                     doctorName:            data["doctorName"]   as? String,
                     doctorPhone:           data["doctorPhone"]  as? String,
+                    doctorAddress:         data["doctorAddress"] as? String,
+                    doctorWebsite:         data["doctorWebsite"] as? String,
+                    doctorOfficeHoursJSON: data["doctorOfficeHoursJSON"] as? String,
                     emergencyContactsJSON: data["emergencyContactsJSON"] as? String,
                     isDeleted:             data["isDeleted"] as? Bool ?? false,
                     updatedAt:             (data["updatedAt"] as? Timestamp)?.dateValue(),

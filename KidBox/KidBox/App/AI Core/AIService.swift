@@ -53,6 +53,27 @@ struct AIResponse {
     var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) }
 }
 
+// MARK: - Travel plan
+
+struct TravelPlanRequest {
+    let wizardData: [String: Any]
+    let freeTextPrompt: String
+    let familyContext: [String: Any]
+    /// Rigenerazione di un solo giorno: la Cloud Function accetta `legs` minimi e 1 dayPlan.
+    var regenerateSingleDay: Bool = false
+}
+
+struct TravelPlanResponse {
+    let travelPlan: [String: Any]?
+    let narrativeText: String
+    let usageToday: Int
+    let dailyLimit: Int
+}
+
+struct TravelSuggestionsRequest {
+    let travelProfile: [String: Any]
+}
+
 // MARK: - Service
 
 /// Sends messages to the KidBox `askAI` Firebase Cloud Function.
@@ -64,9 +85,69 @@ final class AIService {
     static let shared = AIService()
     
     private lazy var functions = Functions.functions(region: "europe-west1")
+
+    /// Itinerario viaggio: risposta lenta (fino a ~2 min lato server).
+    private static let travelPlanClientTimeout: TimeInterval = 150
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
+    }
+
+    private func mapCallableError(_ error: NSError) -> AIServiceError {
+        if error.domain == NSURLErrorDomain {
+            switch error.code {
+            case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost:
+                return .networkError("Nessuna connessione. Controlla Wi‑Fi o dati mobili.")
+            case NSURLErrorTimedOut:
+                return .serverError("La richiesta ha impiegato troppo tempo. Riprova tra poco.")
+            default:
+                break
+            }
+        }
+
+        let message = error.localizedDescription
+        guard let code = FunctionsErrorCode(rawValue: error.code) else {
+            return .networkError(message)
+        }
+
+        switch code {
+        case .resourceExhausted:
+            return .rateLimitReached(message)
+        case .permissionDenied:
+            return .rateLimitReached(
+                message.isEmpty
+                    ? "Piano Pro o Max richiesto per la pianificazione AI."
+                    : message
+            )
+        case .unauthenticated:
+            return .serverError("Sessione scaduta. Effettua di nuovo il login.")
+        case .notFound, .unimplemented:
+            return .serverError(
+                "La funzione «generateTravelPlan» non è attiva su Firebase (regione europe-west1). " +
+                "Serve il deploy delle Cloud Functions, non un aggiornamento dell'app."
+            )
+        case .deadlineExceeded:
+            return .serverError("La generazione dell'itinerario ha impiegato troppo tempo. Riprova.")
+        case .invalidArgument:
+            return .serverError("Dati del viaggio non validi. Controlla nome, date e tappe.")
+        case .unavailable, .internal:
+            return .serverError("Servizio AI temporaneamente non disponibile.")
+        default:
+            KBLog.ai.kbError("mapCallableError unhandled code=\(code.rawValue) message=\(message)")
+            return .networkError(message)
+        }
+    }
+
+    private func jsonSafeCallablePayload(_ payload: [String: Any]) throws -> [String: Any] {
+        guard JSONSerialization.isValidJSONObject(payload) else {
+            KBLog.ai.kbError("jsonSafeCallablePayload: invalid JSON object")
+            throw AIServiceError.invalidResponse
+        }
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        guard let normalized = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw AIServiceError.invalidResponse
+        }
+        return normalized
     }
     
     // MARK: - FamilyId helper
@@ -124,7 +205,8 @@ final class AIService {
             }
             
             KBLog.ai.kbInfo("sendMessage succeeded replyLength=\(reply.count) usageToday=\(usageToday) dailyLimit=\(dailyLimit)")
-            
+            await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
+
             return AIResponse(
                 reply: reply,
                 usageToday: usageToday,
@@ -182,7 +264,8 @@ final class AIService {
             }
             
             KBLog.ai.kbInfo("fetchUsage succeeded usageToday=\(usageToday) dailyLimit=\(dailyLimit) familyId=\(familyId)")
-            
+            await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
+
             return AIResponse(
                 reply: "",
                 usageToday: usageToday,
@@ -208,6 +291,127 @@ final class AIService {
             default:
                 throw AIServiceError.networkError(message)
             }
+        }
+    }
+
+    // MARK: - Travel suggestions
+
+    func suggestTravelDestinations(
+        _ request: TravelSuggestionsRequest,
+        familyId: String
+    ) async throws -> TravelSuggestionsResponse {
+        await KBSubscriptionManager.shared.loadPlan()
+        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
+            throw AIServiceError.rateLimitReached("Piano Pro o Max richiesto per i suggerimenti AI.")
+        }
+        guard AISettings.shared.isEnabled else {
+            throw AIServiceError.notEnabled
+        }
+        guard !familyId.isEmpty else {
+            throw AIServiceError.missingFamilyId
+        }
+
+        let payload = try jsonSafeCallablePayload([
+            "familyId": familyId,
+            "travelProfile": request.travelProfile,
+        ])
+
+        let callable = functions.httpsCallable("suggestTravelDestinations")
+        callable.timeoutInterval = 90
+
+        do {
+            let result = try await callable.call(payload)
+            guard let data = result.data as? [String: Any],
+                  let rawList = data["destinations"] as? [[String: Any]] else {
+                throw AIServiceError.invalidResponse
+            }
+            let destinations = rawList.compactMap { TravelDestination(dictionary: $0) }
+            guard !destinations.isEmpty else { throw AIServiceError.invalidResponse }
+
+            let usageToday = data["usageToday"] as? Int ?? 0
+            let dailyLimit = data["dailyLimit"] as? Int ?? 0
+            await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
+
+            return TravelSuggestionsResponse(
+                destinations: destinations,
+                profileSummary: data["profileSummary"] as? String ?? "",
+                usageToday: usageToday,
+                dailyLimit: dailyLimit
+            )
+        } catch let error as NSError {
+            throw mapCallableError(error)
+        }
+    }
+
+    // MARK: - Travel plan
+
+    func generateTravelPlan(_ request: TravelPlanRequest, familyId: String) async throws -> TravelPlanResponse {
+        // Allinea il piano con Firestore (planOverride / families.plan) prima del gate client.
+        await KBSubscriptionManager.shared.loadPlan()
+        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
+            KBLog.ai.kbInfo("generateTravelPlan blocked: plan does not include AI")
+            throw AIServiceError.rateLimitReached(
+                "Piano Pro o Max richiesto. Verifica planOverride su families/\(familyId) in Firebase."
+            )
+        }
+        guard AISettings.shared.isEnabled else {
+            throw AIServiceError.notEnabled
+        }
+        guard !familyId.isEmpty else {
+            throw AIServiceError.missingFamilyId
+        }
+
+        KBLog.ai.kbInfo("generateTravelPlan started familyId=\(familyId)")
+
+        var callableFields: [String: Any] = [
+            "familyId": familyId,
+            "wizardData": request.wizardData,
+            "freeTextPrompt": request.freeTextPrompt,
+            "familyContext": request.familyContext,
+        ]
+        if request.regenerateSingleDay {
+            callableFields["regenerateSingleDay"] = true
+        }
+        let payload = try jsonSafeCallablePayload(callableFields)
+
+        let callable = functions.httpsCallable("generateTravelPlan")
+        callable.timeoutInterval = Self.travelPlanClientTimeout
+
+        do {
+            KBLog.ai.kbInfo("generateTravelPlan calling function timeout=\(Self.travelPlanClientTimeout)s regenerateSingleDay=\(request.regenerateSingleDay)")
+            NSLog("[KidBox][AI] generateTravelPlan → calling Firebase callable (timeout=\(Self.travelPlanClientTimeout)s, regenerateSingleDay=\(request.regenerateSingleDay))")
+            let startedAt = Date()
+            let result = try await callable.call(payload)
+            let elapsed = Date().timeIntervalSince(startedAt)
+            NSLog("[KidBox][AI] generateTravelPlan ← callable returned after \(String(format: "%.1f", elapsed))s")
+
+            guard let data = result.data as? [String: Any] else {
+                NSLog("[KidBox][AI] generateTravelPlan: invalid response (data not [String:Any])")
+                throw AIServiceError.invalidResponse
+            }
+
+            let usageToday = data["usageToday"] as? Int ?? 0
+            let dailyLimit = data["dailyLimit"] as? Int ?? 0
+            await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
+
+            let travelPlan = TravelJSONCoercion.travelPlan(data["travelPlan"])
+            let dayPlanCount = travelPlan.map { TravelJSONCoercion.dayPlans(from: $0).count } ?? 0
+            let narrativeLen = (data["narrativeText"] as? String ?? "").count
+            KBLog.ai.kbInfo(
+                "generateTravelPlan success dayPlans=\(dayPlanCount) narrativeLen=\(narrativeLen)"
+            )
+            NSLog("[KidBox][AI] generateTravelPlan SUCCESS dayPlans=\(dayPlanCount) narrativeLen=\(narrativeLen) usage=\(usageToday)/\(dailyLimit)")
+
+            return TravelPlanResponse(
+                travelPlan: travelPlan,
+                narrativeText: data["narrativeText"] as? String ?? "",
+                usageToday: usageToday,
+                dailyLimit: dailyLimit
+            )
+        } catch let error as NSError {
+            KBLog.ai.kbError("generateTravelPlan failed domain=\(error.domain) code=\(error.code) desc=\(error.localizedDescription)")
+            NSLog("[KidBox][AI] generateTravelPlan FAILED domain=\(error.domain) code=\(error.code) desc=\(error.localizedDescription) userInfo=\(error.userInfo)")
+            throw mapCallableError(error)
         }
     }
 }

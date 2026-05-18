@@ -474,8 +474,13 @@ final class AppCoordinator: ObservableObject {
             
         case .familyPhotos(familyId: let familyId):
             FamilyPhotosView(familyId: familyId)
-        case .photoAlbumDetail(familyId: let familyId, albumId: let albumId, albumTitle: let title):
-            PhotoAlbumDetailView(familyId: familyId, albumId: albumId, albumTitle: title)
+        case .photoAlbumDetail(familyId: let familyId, albumId: let albumId, albumTitle: let title, isTripAlbum: let isTripAlbum):
+            PhotoAlbumDetailView(
+                familyId: familyId,
+                albumId: albumId,
+                albumTitle: title,
+                showTripDedicatedBanner: isTripAlbum
+            )
             
         case .pediatricVisitDetail(familyId: let familyId, childId: let childId, visitId: let visitId):
             PediatricVisitDetailView(familyId: familyId, childId: childId, visitId: visitId)
@@ -522,6 +527,25 @@ final class AppCoordinator: ObservableObject {
             VehicleEventsListView(familyId: familyId, vehicleId: vehicleId)
         case .vehicleEventDetail(let familyId, let vehicleId, let eventId):
             VehicleEventDetailView(familyId: familyId, vehicleId: vehicleId, eventId: eventId)
+
+        case .travelList(let familyId):
+            TravelListView(familyId: familyId)
+        case .travelAllTrips(let familyId):
+            TravelAllTripsView(familyId: familyId)
+        case .travelTripDetail(let familyId, let tripId):
+            TravelDetailView(tripId: tripId, familyId: familyId)
+        case .travelDiscover(let familyId):
+            TravelDiscoverView(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "")
+        case .travelDestinationDetail(let familyId, let destinationId):
+            if let destination = TravelSuggestionCache.destination(familyId: familyId, destinationId: destinationId) {
+                TravelDestinationDetailView(destination: destination, familyId: familyId)
+            } else {
+                ContentUnavailableView(
+                    "Suggerimento non trovato",
+                    systemImage: "map",
+                    description: Text("Torna alla lista e riprova.")
+                )
+            }
         }
     }
     

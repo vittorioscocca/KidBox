@@ -167,7 +167,12 @@ enum ModelContainerProvider {
             KBHomeItem.self,
             KBHousePayment.self,
             KBVehicle.self,
-            KBVehicleEvent.self
+            KBVehicleEvent.self,
+            KBTrip.self,
+            KBTripLeg.self,
+            KBTripDayPlan.self,
+            KBTripExpense.self,
+            KBPackingItem.self
         ])
         
         let configuration: ModelConfiguration = {

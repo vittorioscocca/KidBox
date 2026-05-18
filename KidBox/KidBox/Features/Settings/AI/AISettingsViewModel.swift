@@ -44,12 +44,33 @@ final class AISettingsViewModel: ObservableObject {
     
     // MARK: - Init
     
+    private var usageObserver: NSObjectProtocol?
+
     init() {
         // Leggi cache locale immediatamente (UX istantanea)
         self.aiEnabled    = UserDefaults.standard.bool(forKey: LocalKeys.aiEnabled)
         self.consentGiven = UserDefaults.standard.bool(forKey: LocalKeys.consentGiven)
         self.consentDate  = UserDefaults.standard.object(forKey: LocalKeys.consentDate) as? Date
         KBLog.settings.kbDebug("AISettingsVM init cached aiEnabled=\(self.aiEnabled)")
+
+        usageObserver = NotificationCenter.default.addObserver(
+            forName: .aiUsageDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard let self,
+                  let usageToday = note.userInfo?["usageToday"] as? Int,
+                  let dailyLimit = note.userInfo?["dailyLimit"] as? Int else { return }
+            Task { @MainActor in
+                self.usage = AIResponse(reply: "", usageToday: usageToday, dailyLimit: dailyLimit)
+            }
+        }
+    }
+
+    deinit {
+        if let usageObserver {
+            NotificationCenter.default.removeObserver(usageObserver)
+        }
     }
     
     // MARK: - Load (sync con Firestore)

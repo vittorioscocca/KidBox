@@ -1,0 +1,47 @@
+// Travel Card — aggiungi questi match sotto `match /families/{familyId}` nelle regole
+// già deployate in produzione (calendarEvents, todos, documents, ecc.).
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isActiveMember(familyId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid))
+        && (
+          !('isDeleted' in get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data)
+          || get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.isDeleted == false
+        );
+    }
+
+    match /families/{familyId} {
+
+      // Travel Card
+      match /trips/{tripId} {
+        allow read, write: if isActiveMember(familyId);
+      }
+      match /trips/{tripId}/legs/{legId} {
+        allow read, write: if isActiveMember(familyId);
+      }
+      match /trips/{tripId}/dayPlans/{dayId} {
+        allow read, write: if isActiveMember(familyId);
+      }
+      match /trips/{tripId}/expenses/{expenseId} {
+        allow read, write: if isActiveMember(familyId);
+      }
+      match /trips/{tripId}/packingItems/{itemId} {
+        allow read, write: if isActiveMember(familyId);
+      }
+
+      // Scheda medica (bambino / familiare)
+      match /pediatricProfiles/{childId} {
+        allow read, write: if isActiveMember(familyId);
+      }
+
+    }
+  }
+}

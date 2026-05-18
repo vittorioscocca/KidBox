@@ -70,6 +70,7 @@ final class SyncCenter: ObservableObject {
     var housePaymentListener: ListenerRegistration?
     var vehicleListener: ListenerRegistration?
     var vehicleEventListener: ListenerRegistration?
+    var tripsListener: ListenerRegistration?
 
     let petRemote = PetRemoteStore()
     let petEventRemote = PetEventRemoteStore()
@@ -77,6 +78,7 @@ final class SyncCenter: ObservableObject {
     let housePaymentRemote = HousePaymentRemoteStore()
     let vehicleRemote = VehicleRemoteStore()
     let vehicleEventRemote = VehicleEventRemoteStore()
+    let tripRemote = TripRemoteStore()
     
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
@@ -151,6 +153,7 @@ final class SyncCenter: ObservableObject {
         stopExpensesRealtime()
         stopWalletRealtime()
         stopPasswordsRealtime()
+        stopTripsRealtime()
         
         Self._currentUserRevoked.send(familyId)
     }

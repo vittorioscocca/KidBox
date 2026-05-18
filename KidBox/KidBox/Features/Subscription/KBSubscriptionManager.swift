@@ -147,12 +147,15 @@ final class KBSubscriptionManager: ObservableObject {
             if !familyId.isEmpty {
                 let familySnap = try await db.collection("families").document(familyId).getDocument()
                 let data = familySnap.data()
-                if let raw = data?["planOverride"] as? String,
-                   !raw.isEmpty,
-                   let overridePlan = KBPlan(rawValue: raw) {
-                    plan = overridePlan.rawValue
+                let overrideRaw = (data?["planOverride"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased() ?? ""
+                if overrideRaw == KBPlan.pro.rawValue || overrideRaw == KBPlan.max.rawValue {
+                    plan = overrideRaw
                 } else {
-                    plan = data?["plan"] as? String ?? "free"
+                    plan = (data?["plan"] as? String)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .lowercased() ?? "free"
                 }
             }
             
@@ -325,9 +328,11 @@ final class KBSubscriptionManager: ObservableObject {
         
         guard let data = try? await db.collection("families").document(familyId).getDocument().data() else { return nil }
         
-        guard let raw = data["planOverride"] as? String,
-              !raw.isEmpty,
-              let plan = KBPlan(rawValue: raw) else { return nil }
+        let overrideRaw = (data["planOverride"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        guard overrideRaw == KBPlan.pro.rawValue || overrideRaw == KBPlan.max.rawValue,
+              let plan = KBPlan(rawValue: overrideRaw) else { return nil }
         
         KBLog.app.kbInfo("SubscriptionManager: planOverride trovato → \(plan.rawValue)")
         return plan

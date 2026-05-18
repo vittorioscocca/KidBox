@@ -200,7 +200,15 @@ enum PediatricAdvancedContextBuilder {
                 if let bg = p.bloodGroup,    !bg.isEmpty  { lines.append("Gruppo sanguigno: \(bg)") }
                 if let al = p.allergies,     !al.isEmpty  { lines.append("Allergie: \(al)") }
                 if let mn = p.medicalNotes,  !mn.isEmpty  { lines.append("Note mediche: \(mn)") }
-                if let dn = p.doctorName,    !dn.isEmpty  { lines.append("Pediatra: \(dn)") }
+                if let dn = p.doctorName, !dn.isEmpty {
+                    let label = input.isChild ? "Pediatra" : "Medico di riferimento"
+                    lines.append("\(label): \(dn)")
+                }
+                if let addr = p.doctorAddress, !addr.isEmpty { lines.append("Studio: \(addr)") }
+                if let site = p.doctorWebsite, !site.isEmpty { lines.append("Sito web medico: \(site)") }
+                for line in p.doctorOfficeHours.groupedOfficeHourDisplayLines {
+                    lines.append("Orario \(line)")
+                }
             }
             
         case .member(let name, let bd):
