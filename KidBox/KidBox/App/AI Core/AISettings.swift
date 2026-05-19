@@ -20,6 +20,7 @@ final class AISettings: ObservableObject {
         static let isEnabled    = "kb_ai_is_enabled"
         static let consentGiven = "kb_ai_consent_given"
         static let consentDate  = "kb_ai_consent_date"
+        static let healthContextSendPreference = "kb_ai_health_context_send_preference"
     }
     
     @Published var isEnabled: Bool {
@@ -33,11 +34,21 @@ final class AISettings: ObservableObject {
     @Published var consentDate: Date? {
         didSet { UserDefaults.standard.set(consentDate, forKey: UDKey.consentDate) }
     }
+
+    @Published var healthContextSendPreference: HealthContextSendPreference {
+        didSet {
+            UserDefaults.standard.set(healthContextSendPreference.rawValue, forKey: UDKey.healthContextSendPreference)
+        }
+    }
     
     private init() {
         self.isEnabled    = UserDefaults.standard.bool(forKey: UDKey.isEnabled)
         self.consentGiven = UserDefaults.standard.bool(forKey: UDKey.consentGiven)
         self.consentDate  = UserDefaults.standard.object(forKey: UDKey.consentDate) as? Date
+        let prefRaw = UserDefaults.standard.string(forKey: UDKey.healthContextSendPreference)
+        self.healthContextSendPreference = prefRaw
+            .flatMap(HealthContextSendPreference.init(rawValue:))
+            ?? .askEachTime
     }
     
     func recordConsent() {

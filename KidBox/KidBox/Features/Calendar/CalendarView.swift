@@ -664,6 +664,7 @@ struct CalendarEventFormView: View {
     @State private var showVisibilityLockedAlert = false
     /// Guards `populateFields()` so it only runs once (not again when returning from a navigation push).
     @State private var didPopulateFields = false
+    @FocusState private var focusedField: FormField?
     
     private var isNewEvent: Bool { event == nil }
     
@@ -720,124 +721,153 @@ struct CalendarEventFormView: View {
     ]
     
     private var canSave: Bool { !title.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private enum FormField: Hashable {
+        case title
+        case location
+        case notes
+
+        var scrollAnchorId: String {
+            switch self {
+            case .title: return "calendar-event-title"
+            case .location: return "calendar-event-location"
+            case .notes: return "calendar-event-notes"
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
             ZStack {
                 backgroundColor.ignoresSafeArea()
                 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        
-                        formCard {
-                            VStack(alignment: .leading, spacing: 8) {
-                                label("Titolo")
-                                TextField("Es. Visita pediatrica", text: $title)
-                                    .font(.body)
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            
+                            formCard {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    label("Titolo")
+                                    TextField("Es. Visita pediatrica", text: $title)
+                                        .font(.body)
+                                        .focused($focusedField, equals: .title)
+                                        .id(FormField.title.scrollAnchorId)
+                                }
+                                Divider()
+                                VStack(alignment: .leading, spacing: 4) {
+                                    label("Visibilità")
+                                    eventVisibilityChipRow
+                                }
+                                Divider()
+                                VStack(alignment: .leading, spacing: 8) {
+                                    label("Categoria")
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 8) {
+                                            ForEach(KBEventCategory.allCases) { cat in
+                                                categoryChip(cat)
+                                            }
+                                        }
+                                        .padding(.vertical, 2)
+                                    }
+                                }
                             }
-                            Divider()
-                            VStack(alignment: .leading, spacing: 4) {
-                                label("Visibilità")
-                                eventVisibilityChipRow
-                            }
-                            Divider()
-                            VStack(alignment: .leading, spacing: 8) {
-                                label("Categoria")
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(KBEventCategory.allCases) { cat in
-                                            categoryChip(cat)
+                            
+                            formCard {
+                                Toggle(isOn: $isAllDay) {
+                                    Label("Tutto il giorno", systemImage: "sun.max")
+                                        .foregroundStyle(primaryText)
+                                }
+                                .tint(buttonBg)
+                                
+                                Divider()
+                                
+                                if isAllDay {
+                                    datePicker("Data inizio", selection: $startDate, components: .date)
+                                    Divider()
+                                    datePicker("Data fine", selection: $endDate, components: .date)
+                                } else {
+                                    datePicker("Inizio", selection: $startDate, components: [.date, .hourAndMinute])
+                                    Divider()
+                                    datePicker("Fine", selection: $endDate, components: [.date, .hourAndMinute])
+                                }
+                                
+                                Divider()
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    label("Ricorrenza")
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 8) {
+                                            ForEach(KBEventRecurrence.allCases) { r in
+                                                recurrenceChip(r)
+                                            }
                                         }
                                     }
-                                    .padding(.vertical, 2)
                                 }
                             }
-                        }
-                        
-                        formCard {
-                            Toggle(isOn: $isAllDay) {
-                                Label("Tutto il giorno", systemImage: "sun.max")
-                                    .foregroundStyle(primaryText)
-                            }
-                            .tint(buttonBg)
                             
-                            Divider()
-                            
-                            if isAllDay {
-                                datePicker("Data inizio", selection: $startDate, components: .date)
-                                Divider()
-                                datePicker("Data fine", selection: $endDate, components: .date)
-                            } else {
-                                datePicker("Inizio", selection: $startDate, components: [.date, .hourAndMinute])
-                                Divider()
-                                datePicker("Fine", selection: $endDate, components: [.date, .hourAndMinute])
-                            }
-                            
-                            Divider()
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                label("Ricorrenza")
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(KBEventRecurrence.allCases) { r in
-                                            recurrenceChip(r)
+                            formCard {
+                                Toggle(isOn: $hasReminder) {
+                                    Label("Promemoria", systemImage: "bell")
+                                        .foregroundStyle(primaryText)
+                                }
+                                .tint(buttonBg)
+                                
+                                if hasReminder {
+                                    Divider()
+                                    Picker("Avviso", selection: $reminderIndex) {
+                                        ForEach(reminderOptions.indices, id: \.self) { i in
+                                            Text(reminderOptions[i].label).tag(i)
                                         }
                                     }
+                                    .pickerStyle(.menu)
                                 }
                             }
-                        }
-                        
-                        formCard {
-                            Toggle(isOn: $hasReminder) {
-                                Label("Promemoria", systemImage: "bell")
-                                    .foregroundStyle(primaryText)
-                            }
-                            .tint(buttonBg)
                             
-                            if hasReminder {
-                                Divider()
-                                Picker("Avviso", selection: $reminderIndex) {
-                                    ForEach(reminderOptions.indices, id: \.self) { i in
-                                        Text(reminderOptions[i].label).tag(i)
+                            formCard {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    label("Luogo")
+                                    HStack {
+                                        Image(systemName: "mappin.and.ellipse")
+                                            .foregroundStyle(secondaryText)
+                                        TextField("Indirizzo o luogo", text: $location)
+                                            .focused($focusedField, equals: .location)
+                                            .id(FormField.location.scrollAnchorId)
                                     }
                                 }
-                                .pickerStyle(.menu)
-                            }
-                        }
-                        
-                        formCard {
-                            VStack(alignment: .leading, spacing: 8) {
-                                label("Luogo")
-                                HStack {
-                                    Image(systemName: "mappin.and.ellipse")
-                                        .foregroundStyle(secondaryText)
-                                    TextField("Indirizzo o luogo", text: $location)
+                                Divider()
+                                VStack(alignment: .leading, spacing: 8) {
+                                    label("Note")
+                                    TextField("Aggiungi note…", text: $notes, axis: .vertical)
+                                        .lineLimit(3...)
+                                        .focused($focusedField, equals: .notes)
+                                        .id(FormField.notes.scrollAnchorId)
                                 }
                             }
-                            Divider()
-                            VStack(alignment: .leading, spacing: 8) {
-                                label("Note")
-                                TextField("Aggiungi note…", text: $notes, axis: .vertical)
-                                    .lineLimit(3...)
+                            
+                            Button(action: save) {
+                                Text(event == nil ? "Aggiungi evento" : "Salva modifiche")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(buttonFg)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 52)
+                                    .background(buttonBg.opacity(canSave ? 1 : 0.35), in: Capsule())
                             }
+                            .buttonStyle(.plain)
+                            .disabled(!canSave)
+                            .padding(.horizontal)
+                            
+                            Spacer().frame(height: focusedField == nil ? 20 : 280)
                         }
-                        
-                        Button(action: save) {
-                            Text(event == nil ? "Aggiungi evento" : "Salva modifiche")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(buttonFg)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(buttonBg.opacity(canSave ? 1 : 0.35), in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!canSave)
                         .padding(.horizontal)
-                        
-                        Spacer().frame(height: 20)
+                        .padding(.top, 16)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 16)
+                    .scrollDismissesKeyboard(.interactively)
+                    .onChange(of: focusedField) { _, field in
+                        guard let field else { return }
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            proxy.scrollTo(field.scrollAnchorId, anchor: .center)
+                        }
+                    }
                 }
             }
             .navigationTitle(event == nil ? "Nuovo evento" : "Modifica evento")

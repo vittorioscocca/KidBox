@@ -28,6 +28,7 @@ final class AISettingsViewModel: ObservableObject {
     @Published var infoText:      String? = nil
     @Published var usage:         AIResponse? = nil
     @Published var loadingUsage:  Bool    = false
+    @Published var healthContextSendPreference: HealthContextSendPreference = .askEachTime
     
     // MARK: - Dependencies
     
@@ -51,6 +52,7 @@ final class AISettingsViewModel: ObservableObject {
         self.aiEnabled    = UserDefaults.standard.bool(forKey: LocalKeys.aiEnabled)
         self.consentGiven = UserDefaults.standard.bool(forKey: LocalKeys.consentGiven)
         self.consentDate  = UserDefaults.standard.object(forKey: LocalKeys.consentDate) as? Date
+        self.healthContextSendPreference = aiSettings.healthContextSendPreference
         KBLog.settings.kbDebug("AISettingsVM init cached aiEnabled=\(self.aiEnabled)")
 
         usageObserver = NotificationCenter.default.addObserver(
@@ -148,6 +150,12 @@ final class AISettingsViewModel: ObservableObject {
         KBLog.settings.kbInfo("AISettingsVM consent revoked")
     }
     
+    func setHealthContextSendPreference(_ preference: HealthContextSendPreference) {
+        healthContextSendPreference = preference
+        aiSettings.healthContextSendPreference = preference
+        KBLog.settings.kbInfo("AISettingsVM healthContextSendPreference=\(preference.rawValue)")
+    }
+
     // MARK: - Usage
     
     func loadUsage() async {

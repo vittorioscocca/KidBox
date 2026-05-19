@@ -172,6 +172,35 @@ struct AISettingsView: View {
                 }
                 .task { await viewModel.loadUsage() }
             }
+
+            // MARK: - Chat salute (contesto AI)
+            if plan.includesAI && viewModel.aiEnabled {
+                Section {
+                    Picker(selection: Binding(
+                        get: { viewModel.healthContextSendPreference },
+                        set: { viewModel.setHealthContextSendPreference($0) }
+                    )) {
+                        ForEach(HealthContextSendPreference.allCases) { pref in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pref.displayName)
+                                Text(pref.detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .tag(pref)
+                        }
+                    } label: {
+                        Label("Contesto chat Salute", systemImage: "heart.text.clipboard")
+                    }
+                    .pickerStyle(.inline)
+                    .listRowBackground(cardBackground)
+                } header: {
+                    Text("Chat Salute AI")
+                } footer: {
+                    Text("Con profili sanitari molto ampi, KidBox può inviare tutti i referti o un riassunto. Puoi cambiare questa scelta in qualsiasi momento; se scegli «Chiedi ogni volta», vedrai il dialogo prima di ogni invio.")
+                        .font(.caption)
+                }
+            }
             
             // MARK: - Privacy / Consenso
             if plan.includesAI && viewModel.consentGiven, let date = viewModel.consentDate {
@@ -316,6 +345,7 @@ struct AISettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             viewModel.load()
+            viewModel.healthContextSendPreference = AISettings.shared.healthContextSendPreference
             Task { await subscriptionManager.loadPlan() }
         }
         .offerCodeRedemption(isPresented: $showOfferCodeRedemption) { result in

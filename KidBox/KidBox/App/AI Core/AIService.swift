@@ -48,6 +48,23 @@ struct AIResponse {
     let reply: String
     let usageToday: Int
     let dailyLimit: Int
+    /// Messaggi scalati sul contatore per questa richiesta (1 = contesto standard).
+    let messageUnitsConsumed: Int
+    let isLargeContext: Bool
+    
+    init(
+        reply: String,
+        usageToday: Int,
+        dailyLimit: Int,
+        messageUnitsConsumed: Int = 1,
+        isLargeContext: Bool = false
+    ) {
+        self.reply = reply
+        self.usageToday = usageToday
+        self.dailyLimit = dailyLimit
+        self.messageUnitsConsumed = messageUnitsConsumed
+        self.isLargeContext = isLargeContext
+    }
     
     var usageSummary: String { "\(usageToday)/\(dailyLimit) messaggi oggi" }
     var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) }
@@ -203,14 +220,20 @@ final class AIService {
                 KBLog.ai.kbError("sendMessage invalid response: missing expected fields")
                 throw AIServiceError.invalidResponse
             }
+            let messageUnitsConsumed = data["messageUnitsConsumed"] as? Int ?? 1
+            let isLargeContext = data["isLargeContext"] as? Bool ?? (messageUnitsConsumed > 1)
             
-            KBLog.ai.kbInfo("sendMessage succeeded replyLength=\(reply.count) usageToday=\(usageToday) dailyLimit=\(dailyLimit)")
+            KBLog.ai.kbInfo(
+                "sendMessage succeeded replyLength=\(reply.count) usageToday=\(usageToday) dailyLimit=\(dailyLimit) units=\(messageUnitsConsumed)"
+            )
             await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
 
             return AIResponse(
                 reply: reply,
                 usageToday: usageToday,
-                dailyLimit: dailyLimit
+                dailyLimit: dailyLimit,
+                messageUnitsConsumed: messageUnitsConsumed,
+                isLargeContext: isLargeContext
             )
             
         } catch let error as NSError {

@@ -217,7 +217,7 @@ enum HealthContextBuilder {
             let docs = (documentsByVisitId[visit.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = sanitizeExtractedText(doc.extractedText ?? "")
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(doc.extractedText)
                 guard !clean.isEmpty else { continue }
                 lines.append("Referto allegato (\(doc.title)):")
                 lines.append(clean)
@@ -245,14 +245,15 @@ enum HealthContextBuilder {
                 line += " — scadenza: \(formatDate(deadline))\(overdue ? " ⚠️ SCADUTA" : "")"
             }
             if let result = exam.resultText, !result.isEmpty {
-                line += " — Risultato: \(result)"
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(result)
+                if !clean.isEmpty { line += " — Risultato: \(clean)" }
             }
             lines.append(line)
             
             let docs = (documentsByExamId[exam.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = sanitizeExtractedText(doc.extractedText ?? "")
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(doc.extractedText)
                 guard !clean.isEmpty else { continue }
                 lines.append("  Referto (\(doc.title)):")
                 lines.append("  \(clean)")
@@ -271,13 +272,4 @@ enum HealthContextBuilder {
         return f.string(from: date)
     }
     
-    private static func sanitizeExtractedText(_ text: String) -> String {
-        text
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .joined(separator: "\n")
-    }
 }

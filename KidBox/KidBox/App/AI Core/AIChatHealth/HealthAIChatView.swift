@@ -110,10 +110,10 @@ private struct HealthAIChatBody: View {
             providerBadge
             Divider()
             
-            if vm.isLoadingContext {
+            if vm.isLoadingContext || vm.isPreparingCompactContext {
                 VStack(spacing: 12) {
                     ProgressView()
-                    Text("Preparazione contesto sanitario…")
+                    Text(vm.isPreparingCompactContext ? "Riassunto contesto sanitario…" : "Preparazione contesto sanitario…")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -126,6 +126,47 @@ private struct HealthAIChatBody: View {
             
             Divider()
             inputBar
+        }
+        .overlay(alignment: .top) {
+            if let notice = vm.contextNoticeToast {
+                contextNoticeToast(notice)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: vm.contextNoticeToast)
+        .confirmationDialog(
+            "Contesto sanitario ampio",
+            isPresented: $vm.showContextModeChoice,
+            titleVisibility: .visible
+        ) {
+            Button("Massima accuratezza (\(vm.estimatedMessageUnits) messaggi)") {
+                vm.confirmSend(mode: .fullAccuracy)
+            }
+            Button(
+                AIAskAIPayload.compactChoiceButtonLabel(
+                    askUnits: vm.estimatedCompactMessageUnits,
+                    setupUnits: vm.estimatedCompactSetupUnits
+                )
+            ) {
+                vm.confirmSend(mode: .compactSummary)
+            }
+            Button("Annulla", role: .cancel) {
+                vm.cancelPendingSend()
+            }
+        } message: {
+            Text(
+                AIAskAIPayload.choiceDialogMessage(
+                    fullUnits: vm.estimatedMessageUnits,
+                    compactAskUnits: vm.estimatedCompactMessageUnits,
+                    compactSetupUnits: vm.estimatedCompactSetupUnits,
+                    hasCompactCache: vm.hasCompactHealthContextCache
+                )
+            )
+        }
+        .onChange(of: vm.showContextModeChoice) { wasShown, isShown in
+            if wasShown && !isShown && !vm.pendingSendText.isEmpty {
+                vm.cancelPendingSend()
+            }
         }
     }
     
@@ -250,6 +291,11 @@ private struct HealthAIChatBody: View {
         VStack(spacing: 4) {
             if vm.dailyLimit > 0 {
                 HStack {
+                    if vm.estimatedMessageUnits > 1 {
+                        Text("Prossimo invio: \(vm.estimatedMessageUnits) messaggi")
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
                     Spacer()
                     Text("\(vm.usageToday)/\(vm.dailyLimit)")
                         .font(.caption2)
@@ -261,6 +307,9 @@ private struct HealthAIChatBody: View {
                 TextField("Fai una domanda…", text: $inputText, axis: .vertical)
                     .focused($isInputFocused)
                     .lineLimit(1...4)
+                    .onChange(of: inputText) { _, newValue in
+                        vm.refreshPayloadCostEstimate(pendingUserText: newValue)
+                    }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 20))
@@ -269,7 +318,7 @@ private struct HealthAIChatBody: View {
                     let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !text.isEmpty else { return }
                     inputText = ""
-                    Task { await vm.send(text: text) }
+                    vm.requestSend(text: text)
                 } label: {
                     Image(systemName: vm.isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
                         .font(.system(size: 32))
@@ -278,13 +327,42 @@ private struct HealthAIChatBody: View {
                             ? .secondary : accent
                         )
                 }
-                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
+                .disabled(
+                    inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    || vm.isLoading
+                    || vm.isPreparingCompactContext
+                )
             }
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
     }
     
+    private func contextNoticeToast(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+            Button {
+                vm.dismissContextNotice()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+    }
+
     // MARK: - Error banner
     
     @ViewBuilder

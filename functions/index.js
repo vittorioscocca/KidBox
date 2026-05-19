@@ -1103,6 +1103,9 @@ exports.notifyNewNote = onDocumentCreated(
 const {defineSecret} = require("firebase-functions/params");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
+const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
+const ANTHROPIC_INPUT_USD_PER_1M = 1.0;
+const ANTHROPIC_OUTPUT_USD_PER_1M = 5.0;
 
 /**
  * Returns today's date as YYYY-MM-DD in Europe/Rome timezone.
@@ -1182,6 +1185,31 @@ async function resolveAIDailyLimit(uid, familyId = null) {
   }
 }
 
+/** Caratteri payload (system + messages) considerati 1 messaggio sul contatore giornaliero. */
+const AI_STANDARD_PAYLOAD_CHARS = 50000;
+/** Limite assoluto anti-abuso / errori API (oltre questo si rifiuta la richiesta). */
+const AI_ABSOLUTE_MAX_PAYLOAD_CHARS = 500000;
+
+/**
+ * @param {Array<{content: string}>} messages
+ * @param {string} systemPrompt
+ * @return {number}
+ */
+function totalAskAIPayloadChars(messages, systemPrompt) {
+  const msgChars = messages.reduce((acc, m) => acc + (m.content?.length || 0), 0);
+  return msgChars + (systemPrompt?.length || 0);
+}
+
+/**
+ * Messaggi da scalare sul contatore: 1 fino a 50k caratteri, poi +1 ogni blocco da 50k.
+ * @param {number} totalChars
+ * @return {number}
+ */
+function askAIMessageUnitsForPayload(totalChars) {
+  const chars = Math.max(0, Math.floor(Number(totalChars)) || 0);
+  return Math.max(1, Math.ceil(chars / AI_STANDARD_PAYLOAD_CHARS));
+}
+
 /**
  * Checks the daily counter and increments it atomically.
  * Il contatore è per famiglia (family_{familyId}) così tutti i membri
@@ -1257,13 +1285,24 @@ exports.askAI = onCall(
         throw new HttpsError("invalid-argument", "familyId è richiesto.");
       }
 
-      const totalChars = messages.reduce((acc, m) => acc + m.content.length, 0) + systemPrompt.length;
-      if (totalChars > 50000) throw new HttpsError("invalid-argument", "Payload troppo grande.");
+      const totalChars = totalAskAIPayloadChars(messages, systemPrompt);
+      if (totalChars > AI_ABSOLUTE_MAX_PAYLOAD_CHARS) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Contesto troppo grande per l'assistente AI. Riduci i referti allegati o avvia una nuova conversazione.",
+        );
+      }
+
+      const messageUnits = askAIMessageUnitsForPayload(totalChars);
+      const isLargeContext = messageUnits > 1;
 
       const dailyLimit = await resolveAIDailyLimit(uid, familyId);
-      const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit);
+      const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, messageUnits);
 
-      logger.info("askAI request", {uid, familyId, usageCount, dailyLimit, msgCount: messages.length});
+      logger.info("askAI request", {
+        uid, familyId, usageCount, dailyLimit, msgCount: messages.length,
+        totalChars, messageUnits, isLargeContext,
+      });
 
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
@@ -1282,7 +1321,7 @@ exports.askAI = onCall(
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: ANTHROPIC_MODEL,
             max_tokens: 1024,
             system: systemPrompt,
             messages: messages.map((m) => ({role: m.role, content: m.content})),
@@ -1303,12 +1342,13 @@ exports.askAI = onCall(
         if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
 
         // ── Tracking costi Anthropic ────────────────────────────────────────
-        // Prezzi claude-sonnet-4 (aggiornare se cambiano):
-        //   Input:  $3.00 per 1M token
-        //   Output: $15.00 per 1M token
+        // Prezzi Claude Haiku 4.5 (aggiornare se cambiano):
+        //   Input:  $1.00 per 1M token
+        //   Output: $5.00 per 1M token
         const inputTokens = json?.usage?.input_tokens || 0;
         const outputTokens = json?.usage?.output_tokens || 0;
-        const costUsd = (inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0;
+        const costUsd = (inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M +
+          (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M;
 
         const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7); // YYYY-MM
         const costRef = admin.firestore()
@@ -1341,8 +1381,15 @@ exports.askAI = onCall(
         throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
       }
 
-      logger.info("askAI success", {uid, usageCount});
-      return {reply, usageToday: usageCount, dailyLimit};
+      logger.info("askAI success", {uid, usageCount, messageUnits});
+      return {
+        reply,
+        usageToday: usageCount,
+        dailyLimit,
+        messageUnitsConsumed: messageUnits,
+        isLargeContext,
+        totalPayloadChars: totalChars,
+      };
     },
 );
 
@@ -1730,7 +1777,8 @@ ${legsText}
  * @return {void}
  */
 function trackAnthropicCosts(familyId, inputTokens, outputTokens) {
-  const costUsd = (inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0;
+  const costUsd = (inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M +
+    (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M;
   const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7);
 
   const costRef = admin.firestore()
@@ -1820,7 +1868,7 @@ exports.generateTravelPlan = onCall(
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: ANTHROPIC_MODEL,
             max_tokens: 8192,
             system: systemPrompt,
             messages: [{role: "user", content: userMessage}],
@@ -1852,7 +1900,8 @@ exports.generateTravelPlan = onCall(
         trackAnthropicCosts(familyId, inputTokens, outputTokens);
         logger.info("generateTravelPlan tokens", {
           uid, familyId, inputTokens, outputTokens,
-          costUsd: ((inputTokens / 1000000) * 3.0 + (outputTokens / 1000000) * 15.0).toFixed(6),
+          costUsd: ((inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M +
+            (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M).toFixed(6),
         });
       } catch (e) {
         if (e instanceof HttpsError) throw e;
@@ -2028,7 +2077,7 @@ exports.suggestTravelDestinations = onCall(
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: ANTHROPIC_MODEL,
             max_tokens: 2048,
             system: systemPrompt,
             messages: [{role: "user", content: userMessage}],

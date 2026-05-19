@@ -33,6 +33,17 @@ final class HealthAIChatViewModel: ObservableObject {
     @Published var usageToday: Int = 0
     @Published var dailyLimit: Int = 0
     @Published var actionExecutionSummary: String? = nil
+    /// Unità messaggio stimate per la prossima richiesta (contesto ampio).
+    @Published private(set) var estimatedMessageUnits: Int = 1
+    /// Costo stimato della domanda con contesto sanitario già riassunto.
+    @Published private(set) var estimatedCompactMessageUnits: Int = 1
+    /// Costo una tantum per generare il riassunto (0 se già in cache nella sessione).
+    @Published private(set) var estimatedCompactSetupUnits: Int = 0
+    var hasCompactHealthContextCache: Bool { compactHealthContextCache != nil }
+    @Published var contextNoticeToast: String?
+    @Published var showContextModeChoice = false
+    @Published var pendingSendText = ""
+    @Published private(set) var isPreparingCompactContext = false
     
     // MARK: - Private
     
@@ -40,6 +51,8 @@ final class HealthAIChatViewModel: ObservableObject {
     private var conversation: KBAIConversation?
     private var systemPrompt: String = ""
     private var contextPrepared = false
+    private var compactHealthContextCache: (fingerprint: Int, summary: String)?
+    private var didShowLargeContextNotice = false
     
     private let compactionThreshold: Double = 0.60
     private var lastCompactionThreshold: Int = 0
@@ -122,8 +135,9 @@ final class HealthAIChatViewModel: ObservableObject {
             
             contextPrepared  = true
             isLoadingContext = false
+            refreshPayloadCostEstimate(pendingUserText: "")
             Task { await refreshUsage() }
-            KBLog.ai.kbInfo("HealthAIChatVM context ready chars=\(systemPrompt.count)")
+            KBLog.ai.kbInfo("HealthAIChatVM context ready chars=\(systemPrompt.count) units=\(estimatedMessageUnits)")
         } catch {
             isLoadingContext = false
             errorMessage = "Impossibile preparare il contesto sanitario."
@@ -144,6 +158,10 @@ final class HealthAIChatViewModel: ObservableObject {
             messages.removeAll()
             streamingMessageId = nil
             errorMessage = nil
+            compactHealthContextCache = nil
+            didShowLargeContextNotice = false
+            contextNoticeToast = nil
+            refreshPayloadCostEstimate(pendingUserText: "")
             KBLog.ai.kbInfo("HealthAIChatVM clearConversation OK")
         } catch {
             errorMessage = "Non sono riuscito a cancellare la conversazione."
@@ -155,41 +173,132 @@ final class HealthAIChatViewModel: ObservableObject {
         AIChatStreamingDelivery.finishReveal(messageId: messageId, streamingMessageId: &streamingMessageId)
     }
 
+    func refreshPayloadCostEstimate(pendingUserText: String) {
+        guard contextPrepared else { return }
+        syncCompactCacheValidity()
+        let convo = conversation
+        let payload = convo.map { buildPayloadMessages(conversation: $0) } ?? []
+        let prompt = convo.map { buildFinalSystemPrompt(conversation: $0) } ?? systemPrompt
+        let total = AIAskAIPayload.totalChars(
+            systemPrompt: prompt,
+            messages: payload,
+            pendingUserText: pendingUserText
+        )
+        let units = AIAskAIPayload.messageUnits(totalChars: total)
+        estimatedMessageUnits = units
+        estimatedCompactMessageUnits = estimateCompactAskMessageUnits(
+            conversation: convo,
+            pendingUserText: pendingUserText
+        )
+        estimatedCompactSetupUnits = estimateCompactSetupMessageUnits()
+        presentLargeContextNoticeIfNeeded(isLarge: AIAskAIPayload.isLargeContext(totalChars: total))
+    }
+
+    func dismissContextNotice() {
+        contextNoticeToast = nil
+    }
+
+    private func presentLargeContextNoticeIfNeeded(isLarge: Bool) {
+        guard isLarge, !didShowLargeContextNotice else { return }
+        didShowLargeContextNotice = true
+        let notice = AIAskAIPayload.transientLargeContextNotice()
+        contextNoticeToast = notice
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if contextNoticeToast == notice {
+                contextNoticeToast = nil
+            }
+        }
+    }
+
     // MARK: - Send
 
-    func send(text: String) async {
+    func requestSend(text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !isLoading else { return }
-        
-        if !contextPrepared { loadOrCreateConversation() }
-        
+        guard !trimmed.isEmpty, !isLoading, !isPreparingCompactContext else { return }
+        guard contextPrepared, conversation != nil else {
+            if isLoadingContext {
+                errorMessage = "Attendi il caricamento del contesto sanitario."
+            } else if !contextPrepared {
+                loadOrCreateConversation()
+                errorMessage = "Contesto sanitario in preparazione. Riprova tra un attimo."
+            } else {
+                errorMessage = "Conversazione non disponibile."
+            }
+            return
+        }
+        refreshPayloadCostEstimate(pendingUserText: trimmed)
+        if estimatedMessageUnits > 1 {
+            switch AISettings.shared.healthContextSendPreference {
+            case .askEachTime:
+                pendingSendText = trimmed
+                showContextModeChoice = true
+                return
+            case .fullAccuracy:
+                Task { await performSend(text: trimmed, mode: .fullAccuracy) }
+                return
+            case .compactSummary:
+                Task { await performSend(text: trimmed, mode: .compactSummary) }
+                return
+            }
+        }
+        Task { await performSend(text: trimmed, mode: .fullAccuracy) }
+    }
+
+    func cancelPendingSend() {
+        pendingSendText = ""
+        showContextModeChoice = false
+    }
+
+    func confirmSend(mode: HealthContextSendMode) {
+        let text = pendingSendText.trimmingCharacters(in: .whitespacesAndNewlines)
+        pendingSendText = ""
+        showContextModeChoice = false
+        guard !text.isEmpty else { return }
+        AISettings.shared.healthContextSendPreference = HealthContextSendPreference.from(sendMode: mode)
+        Task { await performSend(text: text, mode: mode) }
+    }
+
+    private func performSend(text: String, mode: HealthContextSendMode) async {
+        guard !text.isEmpty, !isLoading else { return }
         guard let conversation else {
             errorMessage = "Conversazione non disponibile."
             return
         }
-        
+
         errorMessage = nil
-        isLoading    = true
-        
+        isLoading = true
+
         do {
-            let userMessage = makeMessage(role: .user, text: trimmed)
+            let userMessage = makeMessage(role: .user, text: text)
             userMessage.conversation = conversation
             modelContext.insert(userMessage)
             try modelContext.save()
             messages.append(userMessage)
-            
-            let payloadMessages   = buildPayloadMessages(conversation: conversation)
-            let finalSystemPrompt = buildFinalSystemPrompt(conversation: conversation)
-            
-            KBLog.ai.kbInfo("HealthAIChatVM calling AIService payload=\(payloadMessages.count)")
-            
+
+            let payloadMessages = buildPayloadMessages(conversation: conversation)
+            let finalSystemPrompt = try await resolveSystemPrompt(
+                for: mode,
+                conversation: conversation
+            )
+            let payloadChars = AIAskAIPayload.totalChars(
+                systemPrompt: finalSystemPrompt,
+                messages: payloadMessages,
+                pendingUserText: ""
+            )
+            let units = AIAskAIPayload.messageUnits(totalChars: payloadChars)
+            KBLog.ai.kbInfo(
+                "HealthAIChatVM calling AIService mode=\(mode.rawValue) payload=\(payloadMessages.count) chars=\(payloadChars) units=\(units)"
+            )
+
             let response = try await AIService.shared.sendMessage(
                 messages: payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
-            
+            refreshPayloadCostEstimate(pendingUserText: "")
+
             let familyId = resolveFamilyId()
             let outcome = await KidBoxAIActionPipeline.processReply(
                 response.reply,
@@ -202,7 +311,7 @@ final class HealthAIChatViewModel: ObservableObject {
                 )
             )
             actionExecutionSummary = outcome.executionSummary
-            
+
             let assistantMessage = makeMessage(role: .assistant, text: outcome.displayText)
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
@@ -220,9 +329,107 @@ final class HealthAIChatViewModel: ObservableObject {
             )
         } catch {
             isLoading = false
+            isPreparingCompactContext = false
             errorMessage = error.localizedDescription
             KBLog.ai.kbError("HealthAIChatVM send FAILED: \(error)")
         }
+    }
+
+    private var healthContextFingerprint: Int { systemPrompt.count }
+
+    private func syncCompactCacheValidity() {
+        if compactHealthContextCache?.fingerprint != healthContextFingerprint {
+            compactHealthContextCache = nil
+        }
+    }
+
+    private func estimatedCompactSummaryLength() -> Int {
+        min(12_000, max(4_000, systemPrompt.count / 6))
+    }
+
+    private func estimateCompactAskMessageUnits(
+        conversation: KBAIConversation?,
+        pendingUserText: String
+    ) -> Int {
+        syncCompactCacheValidity()
+        let payload = conversation.map { buildPayloadMessages(conversation: $0) } ?? []
+        let summaryText: String
+        if let cache = compactHealthContextCache {
+            summaryText = cache.summary
+        } else {
+            summaryText = String(repeating: "·", count: estimatedCompactSummaryLength())
+        }
+        let prompt = compactSystemPrompt(
+            healthSummary: summaryText,
+            conversation: conversation
+        )
+        let total = AIAskAIPayload.totalChars(
+            systemPrompt: prompt,
+            messages: payload,
+            pendingUserText: pendingUserText
+        )
+        return AIAskAIPayload.messageUnits(totalChars: total)
+    }
+
+    private func estimateCompactSetupMessageUnits() -> Int {
+        syncCompactCacheValidity()
+        guard compactHealthContextCache == nil else { return 0 }
+        return AIAskAIPayload.messageUnits(
+            totalChars: systemPrompt.count
+                + HealthContextCompaction.summarizationSystemPrompt.count
+                + 256
+        )
+    }
+
+    private func compactSystemPrompt(
+        healthSummary: String,
+        conversation: KBAIConversation?
+    ) -> String {
+        var prompt = HealthContextCompaction.buildCompactSystemPrompt(
+            summary: healthSummary,
+            subjectName: subjectName
+        )
+        if let s = conversation?.summary?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty {
+            prompt += "\n\nRIASSUNTO CONVERSAZIONE PRECEDENTE\n\(s)"
+        }
+        return prompt
+    }
+
+    private func resolveSystemPrompt(
+        for mode: HealthContextSendMode,
+        conversation: KBAIConversation
+    ) async throws -> String {
+        switch mode {
+        case .fullAccuracy:
+            return buildFinalSystemPrompt(conversation: conversation)
+        case .compactSummary:
+            isPreparingCompactContext = true
+            defer { isPreparingCompactContext = false }
+            let summary = try await compactHealthContextSummary()
+            return compactSystemPrompt(healthSummary: summary, conversation: conversation)
+        }
+    }
+
+    private func compactHealthContextSummary() async throws -> String {
+        syncCompactCacheValidity()
+        if let cache = compactHealthContextCache {
+            return cache.summary
+        }
+        let response = try await AIService.shared.sendMessage(
+            messages: [
+                KBAIMessage(
+                    role: .user,
+                    content: "Comprimi il seguente contesto sanitario:\n\n\(systemPrompt)"
+                ),
+            ],
+            systemPrompt: HealthContextCompaction.summarizationSystemPrompt
+        )
+        let summary = response.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !summary.isEmpty else {
+            throw AIServiceError.serverError("Impossibile riassumere il contesto sanitario.")
+        }
+        compactHealthContextCache = (healthContextFingerprint, summary)
+        return summary
     }
     
     private func refreshUsage() async {

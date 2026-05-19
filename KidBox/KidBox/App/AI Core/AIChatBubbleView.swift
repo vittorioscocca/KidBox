@@ -196,35 +196,44 @@ struct AIChatBubbleView: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                if isUser {
-                    Text(displayText)
-                    .font(.body)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        bubbleBackground,
-                        in: UnevenRoundedRectangle(
-                            topLeadingRadius: 18,
-                            bottomLeadingRadius: 18,
-                            bottomTrailingRadius: 6,
-                            topTrailingRadius: 18
+                Group {
+                    if isUser {
+                        Text(displayText)
+                        .font(.body)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(
+                            bubbleBackground,
+                            in: UnevenRoundedRectangle(
+                                topLeadingRadius: 18,
+                                bottomLeadingRadius: 18,
+                                bottomTrailingRadius: 6,
+                                topTrailingRadius: 18
+                            )
                         )
-                    )
-                    .shadow(
-                        color: KBTheme.shadow(colorScheme),
-                        radius: 3,
-                        x: 0,
-                        y: 1
-                    )
-                    .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: .trailing)
-                } else {
-                    AIClaudeMarkdownText(text: displayText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 2)
-                    .animation(nil, value: revealedCount)
+                        .shadow(
+                            color: KBTheme.shadow(colorScheme),
+                            radius: 3,
+                            x: 0,
+                            y: 1
+                        )
+                        .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: .trailing)
+                    } else {
+                        AIClaudeMarkdownText(text: displayText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 2)
+                        .animation(nil, value: revealedCount)
+                    }
+                }
+                .contextMenu {
+                    if canCopyMessage {
+                        Button { copyMessageToPasteboard() } label: {
+                            Label("Copia messaggio", systemImage: "doc.on.doc")
+                        }
+                    }
                 }
                 
                 Text(timeString)
@@ -288,6 +297,16 @@ struct AIChatBubbleView: View {
 
     private var bubbleBackground: Color {
         isUser ? KBTheme.bubbleTint : KBTheme.cardBackground(colorScheme)
+    }
+
+    private var canCopyMessage: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func copyMessageToPasteboard() {
+        guard canCopyMessage else { return }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIPasteboard.general.string = AIChatMarkdownPlainText.forClipboard(text)
     }
     
     private var timeString: String {
