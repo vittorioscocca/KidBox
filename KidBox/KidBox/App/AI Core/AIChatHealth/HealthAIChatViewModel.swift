@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import Combine
+import FirebaseAuth
 
 // MARK: - ViewModel
 
@@ -49,10 +50,14 @@ final class HealthAIChatViewModel: ObservableObject {
     
     private let modelContext: ModelContext
     private var conversation: KBAIConversation?
+    /// Contesto standard (referti troncati) per caricamento rapido.
     private var systemPrompt: String = ""
+    /// Contesto completo per stima costi, massima accuratezza e riassunto compatto.
+    private var fullSystemPrompt: String = ""
     private var contextPrepared = false
     private var compactHealthContextCache: (fingerprint: Int, summary: String)?
     private var didShowLargeContextNotice = false
+    private var docsChangedCancellable: AnyCancellable?
     
     private let compactionThreshold: Double = 0.60
     private var lastCompactionThreshold: Int = 0
@@ -90,6 +95,10 @@ final class HealthAIChatViewModel: ObservableObject {
         vaccines=\(vaccines.count)
         """)
     }
+
+    deinit {
+        docsChangedCancellable?.cancel()
+    }
     
     // MARK: - Load
     
@@ -104,40 +113,20 @@ final class HealthAIChatViewModel: ObservableObject {
             messages     = convo.sortedMessages
             if convo.summary?.isEmpty == false { lastCompactionThreshold = 3 }
             
-            let allDocs = try modelContext.fetch(FetchDescriptor<KBDocument>())
-            
-            let documentsByExamId: [String: [KBDocument]] = Dictionary(
-                uniqueKeysWithValues: exams.map { exam in
-                    let tag = ExamAttachmentTag.make(exam.id)
-                    return (exam.id, allDocs.filter { !$0.isDeleted && $0.notes == tag })
-                }
-            )
-            
-            let documentsByVisitId: [String: [KBDocument]] = Dictionary(
-                uniqueKeysWithValues: visits.map { visit in
-                    let tag = VisitAttachmentTag.make(visit.id)
-                    return (visit.id, allDocs.filter { !$0.isDeleted && $0.notes == tag })
-                }
-            )
-            
-            systemPrompt = withFamilyMemory(
-                HealthContextBuilder.buildSystemPrompt(
-                    subjectName:        subjectName,
-                    subjectId:          subjectId,
-                    exams:              exams,
-                    visits:             visits,
-                    treatments:         treatments,
-                    vaccines:           vaccines,
-                    documentsByExamId:  documentsByExamId,
-                    documentsByVisitId: documentsByVisitId
-                )
-            )
+            try rebuildHealthSystemPrompts()
+            subscribeToHealthDocumentChanges()
+            Task { await syncHealthContextSendPreferenceFromRemote() }
             
             contextPrepared  = true
             isLoadingContext = false
             refreshPayloadCostEstimate(pendingUserText: "")
             Task { await refreshUsage() }
-            KBLog.ai.kbInfo("HealthAIChatVM context ready chars=\(systemPrompt.count) units=\(estimatedMessageUnits)")
+            KBLog.ai.kbInfo("""
+            HealthAIChatVM context ready \
+            standardChars=\(systemPrompt.count) \
+            fullChars=\(fullSystemPrompt.count) \
+            units=\(estimatedMessageUnits)
+            """)
         } catch {
             isLoadingContext = false
             errorMessage = "Impossibile preparare il contesto sanitario."
@@ -178,7 +167,7 @@ final class HealthAIChatViewModel: ObservableObject {
         syncCompactCacheValidity()
         let convo = conversation
         let payload = convo.map { buildPayloadMessages(conversation: $0) } ?? []
-        let prompt = convo.map { buildFinalSystemPrompt(conversation: $0) } ?? systemPrompt
+        let prompt = convo.map { buildFinalSystemPrompt(conversation: $0) } ?? fullSystemPrompt
         let total = AIAskAIPayload.totalChars(
             systemPrompt: prompt,
             messages: payload,
@@ -255,8 +244,12 @@ final class HealthAIChatViewModel: ObservableObject {
         pendingSendText = ""
         showContextModeChoice = false
         guard !text.isEmpty else { return }
-        AISettings.shared.healthContextSendPreference = HealthContextSendPreference.from(sendMode: mode)
-        Task { await performSend(text: text, mode: mode) }
+        let preference = HealthContextSendPreference.from(sendMode: mode)
+        AISettings.shared.healthContextSendPreference = preference
+        Task {
+            try? await NotificationManager.shared.setHealthContextSendPreference(preference)
+            await performSend(text: text, mode: mode)
+        }
     }
 
     private func performSend(text: String, mode: HealthContextSendMode) async {
@@ -335,7 +328,16 @@ final class HealthAIChatViewModel: ObservableObject {
         }
     }
 
-    private var healthContextFingerprint: Int { systemPrompt.count }
+    private var healthContextFingerprint: Int {
+        var hasher = Hasher()
+        hasher.combine(fullSystemPrompt.count)
+        hasher.combine(systemPrompt.count)
+        hasher.combine(exams.count)
+        hasher.combine(visits.count)
+        hasher.combine(treatments.count)
+        hasher.combine(vaccines.count)
+        return hasher.finalize()
+    }
 
     private func syncCompactCacheValidity() {
         if compactHealthContextCache?.fingerprint != healthContextFingerprint {
@@ -344,7 +346,7 @@ final class HealthAIChatViewModel: ObservableObject {
     }
 
     private func estimatedCompactSummaryLength() -> Int {
-        min(12_000, max(4_000, systemPrompt.count / 6))
+        min(12_000, max(4_000, fullSystemPrompt.count / 6))
     }
 
     private func estimateCompactAskMessageUnits(
@@ -375,7 +377,7 @@ final class HealthAIChatViewModel: ObservableObject {
         syncCompactCacheValidity()
         guard compactHealthContextCache == nil else { return 0 }
         return AIAskAIPayload.messageUnits(
-            totalChars: systemPrompt.count
+            totalChars: fullSystemPrompt.count
                 + HealthContextCompaction.summarizationSystemPrompt.count
                 + 256
         )
@@ -419,7 +421,7 @@ final class HealthAIChatViewModel: ObservableObject {
             messages: [
                 KBAIMessage(
                     role: .user,
-                    content: "Comprimi il seguente contesto sanitario:\n\n\(systemPrompt)"
+                    content: "Comprimi il seguente contesto sanitario:\n\n\(fullSystemPrompt)"
                 ),
             ],
             systemPrompt: HealthContextCompaction.summarizationSystemPrompt
@@ -524,7 +526,140 @@ final class HealthAIChatViewModel: ObservableObject {
     // MARK: - Payload building
     
     private func buildFinalSystemPrompt(conversation: KBAIConversation) -> String {
-        systemPrompt
+        let base = fullSystemPrompt.isEmpty ? systemPrompt : fullSystemPrompt
+        let summary = conversation.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let summary, !summary.isEmpty else { return base }
+        return base + "\n\nRIASSUNTO CONVERSAZIONE PRECEDENTE\n\(summary)"
+    }
+
+    private func rebuildHealthSystemPrompts() throws {
+        let familyId = resolveFamilyId()
+        let familyDocs: [KBDocument]
+        if familyId.isEmpty {
+            familyDocs = try modelContext.fetch(FetchDescriptor<KBDocument>())
+                .filter { !$0.isDeleted }
+        } else {
+            let fid = familyId
+            let descriptor = FetchDescriptor<KBDocument>(
+                predicate: #Predicate { doc in
+                    doc.familyId == fid && !doc.isDeleted
+                }
+            )
+            familyDocs = try modelContext.fetch(descriptor)
+        }
+
+        let documentsByExamId: [String: [KBDocument]] = Dictionary(
+            uniqueKeysWithValues: exams.map { exam in
+                (exam.id, familyDocs.filter { ExamAttachmentTag.matches($0, examId: exam.id) })
+            }
+        )
+        let documentsByVisitId: [String: [KBDocument]] = Dictionary(
+            uniqueKeysWithValues: visits.map { visit in
+                (visit.id, familyDocs.filter { VisitAttachmentTag.matches($0, visitId: visit.id) })
+            }
+        )
+        let documentsByTreatmentId: [String: [KBDocument]] = Dictionary(
+            uniqueKeysWithValues: treatments.map { treatment in
+                (treatment.id, familyDocs.filter { TreatmentAttachmentTag.matches($0, treatmentId: treatment.id) })
+            }
+        )
+
+        enqueuePendingHealthExtractions(in: familyDocs)
+
+        let builderArgs = (
+            subjectName: subjectName,
+            subjectId: subjectId,
+            exams: exams,
+            visits: visits,
+            treatments: treatments,
+            vaccines: vaccines,
+            documentsByExamId: documentsByExamId,
+            documentsByVisitId: documentsByVisitId,
+            documentsByTreatmentId: documentsByTreatmentId
+        )
+
+        let standardBase = HealthContextBuilder.buildSystemPrompt(
+            subjectName: builderArgs.subjectName,
+            subjectId: builderArgs.subjectId,
+            exams: builderArgs.exams,
+            visits: builderArgs.visits,
+            treatments: builderArgs.treatments,
+            vaccines: builderArgs.vaccines,
+            documentsByExamId: builderArgs.documentsByExamId,
+            documentsByVisitId: builderArgs.documentsByVisitId,
+            documentsByTreatmentId: builderArgs.documentsByTreatmentId,
+            refertoMaxChars: HealthAiDocumentText.standardRefertoMaxChars
+        )
+        let fullBase = HealthContextBuilder.buildSystemPrompt(
+            subjectName: builderArgs.subjectName,
+            subjectId: builderArgs.subjectId,
+            exams: builderArgs.exams,
+            visits: builderArgs.visits,
+            treatments: builderArgs.treatments,
+            vaccines: builderArgs.vaccines,
+            documentsByExamId: builderArgs.documentsByExamId,
+            documentsByVisitId: builderArgs.documentsByVisitId,
+            documentsByTreatmentId: builderArgs.documentsByTreatmentId,
+            refertoMaxChars: nil
+        )
+
+        systemPrompt = withFamilyMemory(standardBase)
+        fullSystemPrompt = withFamilyMemory(fullBase)
+        if fullSystemPrompt.isEmpty { fullSystemPrompt = systemPrompt }
+    }
+
+    private func subscribeToHealthDocumentChanges() {
+        let familyId = resolveFamilyId()
+        guard !familyId.isEmpty else { return }
+        docsChangedCancellable?.cancel()
+        docsChangedCancellable = SyncCenter.shared.docsChanged
+            .filter { $0 == familyId }
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, self.contextPrepared else { return }
+                do {
+                    try self.rebuildHealthSystemPrompts()
+                    self.refreshPayloadCostEstimate(pendingUserText: "")
+                    KBLog.ai.kbDebug(
+                        "HealthAIChatVM context rebuilt after docsChanged fullChars=\(self.fullSystemPrompt.count)"
+                    )
+                } catch {
+                    KBLog.ai.kbError("HealthAIChatVM rebuild after docsChanged FAILED: \(error)")
+                }
+            }
+    }
+
+    private func enqueuePendingHealthExtractions(in docs: [KBDocument]) {
+        let updatedBy = Auth.auth().currentUser?.uid ?? "health-ai-chat"
+        for doc in docs where needsHealthExtraction(doc) {
+            DocumentTextExtractionCoordinator.shared.enqueueExtraction(
+                for: doc,
+                updatedBy: updatedBy,
+                modelContext: modelContext
+            )
+        }
+    }
+
+    private func syncHealthContextSendPreferenceFromRemote() async {
+        let remote = await NotificationManager.shared.fetchHealthContextSendPreference()
+        if AISettings.shared.healthContextSendPreference != remote {
+            AISettings.shared.healthContextSendPreference = remote
+            KBLog.ai.kbInfo("HealthAIChatVM synced healthContextSendPreference=\(remote.rawValue)")
+        }
+    }
+
+    private func needsHealthExtraction(_ doc: KBDocument) -> Bool {
+        guard !doc.isDeleted else { return false }
+        let isHealthAttachment =
+            exams.contains { ExamAttachmentTag.matches(doc, examId: $0.id) }
+            || visits.contains { VisitAttachmentTag.matches(doc, visitId: $0.id) }
+            || treatments.contains { TreatmentAttachmentTag.matches(doc, treatmentId: $0.id) }
+        guard isHealthAttachment else { return false }
+        if doc.extractionStatus == .completed, doc.hasExtractedText { return false }
+        return doc.extractionStatus == .none
+            || doc.extractionStatus == .pending
+            || doc.extractionStatus == .failed
+            || !doc.hasExtractedText
     }
     
     private func buildPayloadMessages(conversation: KBAIConversation) -> [KBAIMessage] {

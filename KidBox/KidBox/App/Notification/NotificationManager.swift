@@ -812,6 +812,36 @@ extension NotificationManager {
         
         KBLog.settings.kbInfo("AI enabled preference saved to Firestore: \(enabled)")
     }
+
+    // MARK: - Health context send preference (chat Salute)
+
+    func fetchHealthContextSendPreference() async -> HealthContextSendPreference {
+        guard let uid = Auth.auth().currentUser?.uid else { return .askEachTime }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let aiPrefs = snap.get("aiPrefs") as? [String: Any],
+               let raw = aiPrefs["healthContextSendPreference"] as? String {
+                return HealthContextSendPreference.fromFirestoreValue(raw)
+            }
+            return .askEachTime
+        } catch {
+            KBLog.settings.kbError("fetchHealthContextSendPreference failed: \(error.localizedDescription)")
+            return .askEachTime
+        }
+    }
+
+    func setHealthContextSendPreference(_ preference: HealthContextSendPreference) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        try await db.collection("users").document(uid).setData([
+            "aiPrefs": [
+                "healthContextSendPreference": preference.firestoreValue,
+                "healthContextSendPreferenceUpdatedAt": FieldValue.serverTimestamp(),
+            ],
+        ], merge: true)
+
+        KBLog.settings.kbInfo("healthContextSendPreference saved: \(preference.firestoreValue)")
+    }
 }
 
 //

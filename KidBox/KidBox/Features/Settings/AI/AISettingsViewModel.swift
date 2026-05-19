@@ -88,8 +88,14 @@ final class AISettingsViewModel: ObservableObject {
             if aiEnabled != remote { aiEnabled = remote }
             UserDefaults.standard.set(remote, forKey: LocalKeys.aiEnabled)
             aiSettings.isEnabled = remote
+
+            let healthPref = await notifications.fetchHealthContextSendPreference()
+            if healthContextSendPreference != healthPref {
+                healthContextSendPreference = healthPref
+            }
+            aiSettings.healthContextSendPreference = healthPref
             
-            KBLog.settings.kbInfo("AISettingsVM remote aiEnabled=\(remote)")
+            KBLog.settings.kbInfo("AISettingsVM remote aiEnabled=\(remote) healthContext=\(healthPref.rawValue)")
         }
     }
     
@@ -154,6 +160,14 @@ final class AISettingsViewModel: ObservableObject {
         healthContextSendPreference = preference
         aiSettings.healthContextSendPreference = preference
         KBLog.settings.kbInfo("AISettingsVM healthContextSendPreference=\(preference.rawValue)")
+        Task {
+            do {
+                try await notifications.setHealthContextSendPreference(preference)
+            } catch {
+                infoText = error.localizedDescription
+                KBLog.settings.kbError("AISettingsVM healthContext sync failed: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Usage

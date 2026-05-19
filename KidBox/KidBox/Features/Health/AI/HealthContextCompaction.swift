@@ -53,6 +53,26 @@ enum HealthContextSendPreference: String, CaseIterable, Identifiable {
         case .compactSummary: return .compactSummary
         }
     }
+
+    /// Valore canonico su Firestore (`users/{uid}.aiPrefs`), allineato ad Android.
+    var firestoreValue: String {
+        switch self {
+        case .askEachTime: return "ask_each_time"
+        case .fullAccuracy: return "full_accuracy"
+        case .compactSummary: return "compact_summary"
+        }
+    }
+
+    static func fromFirestoreValue(_ value: String?) -> HealthContextSendPreference {
+        guard let value, !value.isEmpty else { return .askEachTime }
+        if let local = HealthContextSendPreference(rawValue: value) { return local }
+        switch value {
+        case "ask_each_time": return .askEachTime
+        case "full_accuracy": return .fullAccuracy
+        case "compact_summary": return .compactSummary
+        default: return .askEachTime
+        }
+    }
 }
 
 enum HealthContextCompaction {

@@ -20,7 +20,9 @@ enum HealthContextBuilder {
         treatments: [KBTreatment],
         vaccines: [KBVaccine],
         documentsByExamId: [String: [KBDocument]] = [:],
-        documentsByVisitId: [String: [KBDocument]] = [:]
+        documentsByVisitId: [String: [KBDocument]] = [:],
+        documentsByTreatmentId: [String: [KBDocument]] = [:],
+        refertoMaxChars: Int? = HealthAiDocumentText.standardRefertoMaxChars
     ) -> String {
         
         KBLog.ai.kbInfo("""
@@ -69,20 +71,35 @@ enum HealthContextBuilder {
         }
         
         // ── Cure attive ──────────────────────────────────────────────────────
-        appendTreatments(treatments, to: &lines)
+        appendTreatments(
+            treatments,
+            documentsByTreatmentId: documentsByTreatmentId,
+            refertoMaxChars: refertoMaxChars,
+            to: &lines
+        )
         
         // ── Vaccini ──────────────────────────────────────────────────────────
         appendVaccines(vaccines, to: &lines)
         
         // ── Visite (più recenti prima) ───────────────────────────────────────
         let sortedVisits = visits.sorted { $0.date > $1.date }
-        appendVisits(sortedVisits, documentsByVisitId: documentsByVisitId, to: &lines)
+        appendVisits(
+            sortedVisits,
+            documentsByVisitId: documentsByVisitId,
+            refertoMaxChars: refertoMaxChars,
+            to: &lines
+        )
         
         // ── Esami ────────────────────────────────────────────────────────────
         let sortedExams = exams.sorted {
             ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture)
         }
-        appendExams(sortedExams, documentsByExamId: documentsByExamId, to: &lines)
+        appendExams(
+            sortedExams,
+            documentsByExamId: documentsByExamId,
+            refertoMaxChars: refertoMaxChars,
+            to: &lines
+        )
         
         // ── Chiusura ─────────────────────────────────────────────────────────
         lines.append("\n--- FINE CONTESTO SALUTE ---")
@@ -101,7 +118,12 @@ enum HealthContextBuilder {
     
     // MARK: - Treatments
     
-    private static func appendTreatments(_ treatments: [KBTreatment], to lines: inout [String]) {
+    private static func appendTreatments(
+        _ treatments: [KBTreatment],
+        documentsByTreatmentId: [String: [KBDocument]],
+        refertoMaxChars: Int?,
+        to lines: inout [String]
+    ) {
         guard !treatments.isEmpty else { return }
         
         lines.append("\n--- CURE ATTIVE (\(treatments.count)) ---")
@@ -117,6 +139,18 @@ enum HealthContextBuilder {
             }
             if let notes = t.notes, !notes.isEmpty { line += " — \(notes)" }
             lines.append(line)
+            
+            let docs = (documentsByTreatmentId[t.id] ?? [])
+                .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
+            for doc in docs {
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
+                    doc.extractedText,
+                    maxChars: refertoMaxChars
+                )
+                guard !clean.isEmpty else { continue }
+                lines.append("  Referto allegato (\(doc.title)):")
+                lines.append("  \(clean)")
+            }
         }
         KBLog.ai.kbDebug("HealthContextBuilder treatments appended count=\(treatments.count)")
     }
@@ -162,6 +196,7 @@ enum HealthContextBuilder {
     private static func appendVisits(
         _ visits: [KBMedicalVisit],
         documentsByVisitId: [String: [KBDocument]],
+        refertoMaxChars: Int?,
         to lines: inout [String]
     ) {
         guard !visits.isEmpty else { return }
@@ -217,7 +252,10 @@ enum HealthContextBuilder {
             let docs = (documentsByVisitId[visit.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = HealthAiDocumentText.prepareExtractedTextForAI(doc.extractedText)
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
+                    doc.extractedText,
+                    maxChars: refertoMaxChars
+                )
                 guard !clean.isEmpty else { continue }
                 lines.append("Referto allegato (\(doc.title)):")
                 lines.append(clean)
@@ -231,6 +269,7 @@ enum HealthContextBuilder {
     private static func appendExams(
         _ exams: [KBMedicalExam],
         documentsByExamId: [String: [KBDocument]],
+        refertoMaxChars: Int?,
         to lines: inout [String]
     ) {
         guard !exams.isEmpty else { return }
@@ -245,7 +284,10 @@ enum HealthContextBuilder {
                 line += " — scadenza: \(formatDate(deadline))\(overdue ? " ⚠️ SCADUTA" : "")"
             }
             if let result = exam.resultText, !result.isEmpty {
-                let clean = HealthAiDocumentText.prepareExtractedTextForAI(result)
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
+                    result,
+                    maxChars: refertoMaxChars
+                )
                 if !clean.isEmpty { line += " — Risultato: \(clean)" }
             }
             lines.append(line)
@@ -253,7 +295,10 @@ enum HealthContextBuilder {
             let docs = (documentsByExamId[exam.id] ?? [])
                 .filter { $0.extractionStatus == .completed && $0.hasExtractedText }
             for doc in docs {
-                let clean = HealthAiDocumentText.prepareExtractedTextForAI(doc.extractedText)
+                let clean = HealthAiDocumentText.prepareExtractedTextForAI(
+                    doc.extractedText,
+                    maxChars: refertoMaxChars
+                )
                 guard !clean.isEmpty else { continue }
                 lines.append("  Referto (\(doc.title)):")
                 lines.append("  \(clean)")
