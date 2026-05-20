@@ -52,20 +52,25 @@ struct AIResponse {
     let messageUnitsConsumed: Int
     let isLargeContext: Bool
     
+    /// Caratteri payload inviati (se restituiti dalla Cloud Function).
+    let totalPayloadChars: Int?
+
     init(
         reply: String,
         usageToday: Int,
         dailyLimit: Int,
         messageUnitsConsumed: Int = 1,
-        isLargeContext: Bool = false
+        isLargeContext: Bool = false,
+        totalPayloadChars: Int? = nil
     ) {
         self.reply = reply
         self.usageToday = usageToday
         self.dailyLimit = dailyLimit
         self.messageUnitsConsumed = messageUnitsConsumed
         self.isLargeContext = isLargeContext
+        self.totalPayloadChars = totalPayloadChars
     }
-    
+
     var usageSummary: String { "\(usageToday)/\(dailyLimit) messaggi oggi" }
     var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) }
 }
@@ -105,6 +110,8 @@ final class AIService {
 
     /// Itinerario viaggio: risposta lenta (fino a ~2 min lato server).
     private static let travelPlanClientTimeout: TimeInterval = 150
+    /// Cartella clinica Sonnet: allineato a `timeoutSeconds: 120` su askAI.
+    private static let clinicalRecordClientTimeout: TimeInterval = 120
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
@@ -144,7 +151,7 @@ final class AIService {
                 "Serve il deploy delle Cloud Functions, non un aggiornamento dell'app."
             )
         case .deadlineExceeded:
-            return .serverError("La generazione dell'itinerario ha impiegato troppo tempo. Riprova.")
+            return .serverError("La richiesta AI ha impiegato troppo tempo. Riprova con una connessione stabile.")
         case .invalidArgument:
             return .serverError("Dati del viaggio non validi. Controlla nome, date e tappe.")
         case .unavailable, .internal:
@@ -180,9 +187,11 @@ final class AIService {
     // MARK: - Send message
     
     /// Sends the conversation to the AI and returns the assistant reply.
+    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server (solo cartella clinica); `nil` = Haiku (chat Salute, visite, esami, ecc.).
     func sendMessage(
         messages: [KBAIMessage],
-        systemPrompt: String
+        systemPrompt: String,
+        purpose: String? = nil
     ) async throws -> AIResponse {
         
         guard AISettings.shared.isEnabled else {
@@ -195,9 +204,9 @@ final class AIService {
             throw AIServiceError.missingFamilyId
         }
         
-        KBLog.ai.kbInfo("sendMessage started messagesCount=\(messages.count) familyId=\(familyId)")
+        KBLog.ai.kbInfo("sendMessage started messagesCount=\(messages.count) familyId=\(familyId) purpose=\(purpose ?? "default")")
         
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "messages": messages.map { [
                 "role": $0.role.rawValue,
                 "content": $0.content
@@ -205,11 +214,20 @@ final class AIService {
             "systemPrompt": systemPrompt,
             "familyId": familyId
         ]
+        if let purpose, !purpose.isEmpty {
+            payload["purpose"] = purpose
+        }
         
-        KBLog.ai.kbDebug("Calling Firebase Function askAI payloadMessagesCount=\(messages.count)")
+        let callable = functions.httpsCallable("askAI")
+        if purpose == "clinicalRecord" {
+            callable.timeoutInterval = Self.clinicalRecordClientTimeout
+        }
+        KBLog.ai.kbDebug(
+            "Calling Firebase Function askAI payloadMessagesCount=\(messages.count) timeout=\(callable.timeoutInterval)s"
+        )
         
         do {
-            let result = try await functions.httpsCallable("askAI").call(payload)
+            let result = try await callable.call(payload)
             
             guard
                 let data = result.data as? [String: Any],
@@ -222,9 +240,10 @@ final class AIService {
             }
             let messageUnitsConsumed = data["messageUnitsConsumed"] as? Int ?? 1
             let isLargeContext = data["isLargeContext"] as? Bool ?? (messageUnitsConsumed > 1)
-            
+            let totalPayloadChars = data["totalPayloadChars"] as? Int
+
             KBLog.ai.kbInfo(
-                "sendMessage succeeded replyLength=\(reply.count) usageToday=\(usageToday) dailyLimit=\(dailyLimit) units=\(messageUnitsConsumed)"
+                "sendMessage succeeded replyLength=\(reply.count) usageToday=\(usageToday) dailyLimit=\(dailyLimit) units=\(messageUnitsConsumed) payloadChars=\(totalPayloadChars ?? -1)"
             )
             await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
 
@@ -233,32 +252,13 @@ final class AIService {
                 usageToday: usageToday,
                 dailyLimit: dailyLimit,
                 messageUnitsConsumed: messageUnitsConsumed,
-                isLargeContext: isLargeContext
+                isLargeContext: isLargeContext,
+                totalPayloadChars: totalPayloadChars
             )
             
         } catch let error as NSError {
-            let message = error.localizedDescription
-            let code = FunctionsErrorCode(rawValue: error.code)
-            
-            KBLog.ai.kbError("sendMessage failed firebaseCode=\(error.code) description=\(message)")
-            
-            switch code {
-            case .resourceExhausted:
-                KBLog.ai.kbInfo("sendMessage mapped to rateLimitReached")
-                throw AIServiceError.rateLimitReached(message)
-                
-            case .unauthenticated:
-                KBLog.ai.kbInfo("sendMessage mapped to unauthenticated session error")
-                throw AIServiceError.serverError("Sessione scaduta. Effettua di nuovo il login.")
-                
-            case .unavailable, .internal:
-                KBLog.ai.kbInfo("sendMessage mapped to temporary server unavailable")
-                throw AIServiceError.serverError("Servizio AI temporaneamente non disponibile.")
-                
-            default:
-                KBLog.ai.kbInfo("sendMessage mapped to networkError")
-                throw AIServiceError.networkError(message)
-            }
+            KBLog.ai.kbError("sendMessage failed firebaseCode=\(error.code) description=\(error.localizedDescription)")
+            throw mapCallableError(error)
         }
     }
     

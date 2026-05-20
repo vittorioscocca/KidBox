@@ -7,7 +7,20 @@
       "Bash(git -C:*)",
       "Bash(find /Users/vscocca/KidBox/KidBoxAndroid -type f \\\\\\( -name \"*AI*\" -o -name \"*askAI*\" -o -name \"*Claude*\" -o -name \"*anthropic*\" \\\\\\) 2>/dev/null)",
       "Bash(find /Users/vscocca/KidBox* -type f -name \"FamilyMemoryService.kt\" 2>/dev/null)",
-      "Bash(find /Users/vscocca/KidBox* -type f -name \"KBMemoryFactEntity.kt\")"
+      "Bash(find /Users/vscocca/KidBox* -type f -name \"KBMemoryFactEntity.kt\")",
+      "Bash(find /Users/vscocca/KidBoxAndroid -type f -name \"*.kt\" | xargs grep -l -i \"agent\\\\|claude\\\\|openai\\\\|gemini\\\\|AI\\\\|LLM\\\\|chat\" 2>/dev/null | head -30)",
+      "Bash(mkdir -p /Users/vscocca/KidBox/KidboxLanding/public)",
+      "Bash(firebase deploy *)",
+      "WebFetch(domain:vittorioscocca.github.io)",
+      "WebFetch(domain:www.guidapsicologi.it)",
+      "WebFetch(domain:www.pexels.com)",
+      "Bash(gh api *)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/wiki/vittorioscocca/KidBox/Subscription-Model-%E2%80%94-KidBox.md\")",
+      "Bash(brew install *)",
+      "Bash(pdftotext \"/Users/vscocca/Downloads/cartella_clinica_efw85HN41nb1rmslevC3wkFpVUo1 \\(2\\).pdf\" -)",
+      "Bash(mdls -name kMDItemTextContent \"/Users/vscocca/Downloads/cartella_clinica_efw85HN41nb1rmslevC3wkFpVUo1 \\(2\\).pdf\")",
+      "Bash(python3 -c ' *)",
+      "Bash(pip3 install *)"
     ]
   }
 }

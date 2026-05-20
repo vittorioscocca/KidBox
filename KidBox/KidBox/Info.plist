@@ -50,6 +50,10 @@
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>KidBox usa i contatti per permetterti di condividere un contatto in chat.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>KidBox legge passi, peso, frequenza cardiaca, pressione, ossigeno, fitness cardio, ECG e allenamenti da Apple Salute.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>KidBox non scrive dati in Apple Salute.</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

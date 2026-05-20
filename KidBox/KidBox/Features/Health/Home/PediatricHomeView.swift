@@ -247,12 +247,28 @@ struct PediatricHomeView: View {
                         coordinator.navigate(to: .pediatricExams(familyId: familyId, childId: childId))
                     }
                     moduleCard(
+                        title: "Apple App Salute",
+                        subtitle: "Passi, cuore, pressione, O₂, ECG",
+                        systemImage: "heart.text.square.fill",
+                        tint: Color(red: 0.95, green: 0.35, blue: 0.45)
+                    ) {
+                        coordinator.navigate(to: .appleHealthApp(familyId: familyId, childId: childId))
+                    }
+                    moduleCard(
                         title: "Scheda Medica",
                         subtitle: "Allergie, pediatra",
                         systemImage: "doc.text.fill",
                         tint: Color(red: 0.4, green: 0.75, blue: 0.65)
                     ) {
                         coordinator.navigate(to: .pediatricMedicalRecord(familyId: familyId, childId: childId))
+                    }
+                    moduleCard(
+                        title: "Cartella clinica",
+                        subtitle: "Riepilogo ed esporta PDF",
+                        systemImage: "folder.fill",
+                        tint: Color(red: 0.45, green: 0.55, blue: 0.9)
+                    ) {
+                        coordinator.navigate(to: .pediatricClinicalRecord(familyId: familyId, childId: childId))
                     }
                     moduleCard(
                         title: "Storico Salute",

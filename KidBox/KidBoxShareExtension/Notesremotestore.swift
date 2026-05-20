@@ -72,6 +72,8 @@ final class NotesRemoteStore {
             "schemaVersion": 1,
             "titleEnc": titleEnc,
             "bodyEnc": bodyEnc,
+            "visibilityScope": "family",
+            "visibilityMemberIds": [] as [String],
             "isDeleted": false,
             "createdBy": uid,
             "createdByName": displayName,

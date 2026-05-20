@@ -172,6 +172,7 @@ final class FamilyLeaveService {
         SyncCenter.shared.stopChildrenRealtime()
         SyncCenter.shared.stopFamilyBundleRealtime()
         SyncCenter.shared.stopDocumentsRealtime()
+        SyncCenter.shared.stopNotesRealtime()
         
         try LocalDataWiper.wipeFamily(familyId: familyId, context: modelContext)
         try modelContext.save()

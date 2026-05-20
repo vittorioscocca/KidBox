@@ -36,7 +36,8 @@ struct NoteDetailView: View {
     @State private var isDirty            = false
     @State private var note: KBNote?      = nil
     @State private var bodyFocusTrigger: UUID? = nil
-    @State private var isSharePresented   = false
+    @State private var shareItem: ShareItem?
+    @State private var isViewActive       = false
     @State private var isVisibilitySheetPresented = false
     @State private var showVisibilityLockedAlert = false
     @State private var selectedVisibilityScope = KBVisibilityScope.family
@@ -94,6 +95,7 @@ struct NoteDetailView: View {
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear  {
+            isViewActive = true
             loadOrCreate()
             if focusBodyOnAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -106,11 +108,15 @@ struct NoteDetailView: View {
                 await CountersService.shared.reset(familyId: familyId, field: .notes)
             }
         }
-        .onDisappear { handleDisappear() }
+        .onDisappear {
+            isViewActive = false
+            handleDisappear()
+        }
         
         // ✅ Ascolta aggiornamenti da SwiftData (es. listener realtime che aggiorna la nota)
         //    MA li applica all'UI solo se non stiamo editando (isDirty = false).
         .onChange(of: noteRemoteVersion) { _, _ in
+            guard isViewActive else { return }
             guard let n = queriedNotes.first else { return }
             if isDirty {
                 // Editing in corso: salva la versione remota per dopo, non sovrascrivere
@@ -129,7 +135,7 @@ struct NoteDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
-                    Button { isSharePresented = true } label: {
+                    Button { presentShareSheet() } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
                     .disabled(titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
@@ -141,11 +147,9 @@ struct NoteDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $isSharePresented) {
-            let title = titleText.trimmingCharacters(in: .whitespacesAndNewlines)
-            let body  = bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines)
-            let text  = [title, body].filter { !$0.isEmpty }.joined(separator: "\n\n")
-            ShareSheet(items: [text]).ignoresSafeArea()
+        .sheet(item: $shareItem) { item in
+            ShareSheet(items: [item.text])
+                .ignoresSafeArea()
         }
         .sheet(isPresented: $isVisibilitySheetPresented) {
             VisibilityPickerSheet(
@@ -248,9 +252,22 @@ struct NoteDetailView: View {
     
     // MARK: - Disappear
     
+    private func presentShareSheet() {
+        let title = titleText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let body  = bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines)
+        let text  = [title, body].filter { !$0.isEmpty }.joined(separator: "\n\n")
+        guard !text.isEmpty else { return }
+        // Evita di pubblicare stato durante un ciclo di update della view (es. sync in uscita).
+        Task { @MainActor in
+            shareItem = ShareItem(text: text)
+        }
+    }
+
     private func handleDisappear() {
-        if isDirty {
-            // L'utente ha modificato: salva le modifiche locali
+        guard isDirty else { return }
+        let shouldSave = true
+        Task { @MainActor in
+            guard shouldSave, isDirty else { return }
             commitSave()
         }
         // Non applicare il pendingRemote: se l'utente ha salvato,
@@ -302,7 +319,12 @@ struct NoteDetailView: View {
 
 }
 
-// MARK: - ShareSheet
+// MARK: - Share
+
+private struct ShareItem: Identifiable {
+    let id = UUID()
+    let text: String
+}
 
 private struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]

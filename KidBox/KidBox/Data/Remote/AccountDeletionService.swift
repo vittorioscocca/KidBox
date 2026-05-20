@@ -49,6 +49,7 @@ final class AccountDeletionService {
         SyncCenter.shared.stopChildrenRealtime()
         SyncCenter.shared.stopFamilyBundleRealtime()
         SyncCenter.shared.stopDocumentsRealtime()
+        SyncCenter.shared.stopNotesRealtime()
         
         try LocalDataWiper.wipeAll(context: modelContext)
         

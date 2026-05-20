@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Termini di Servizio · KidBox</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Meta Pixel -->
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '25962552233393986');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=25962552233393986&ev=PageView&noscript=1"/></noscript>
+  <!-- Fine Meta Pixel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #fdf7f0; --c-bg2: #f5ebe0; --c-surface: #ffffff;
+      --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
+      --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
+      --c-accent-l: #fdf0e4; --shadow: 0 2px 20px rgba(180,100,30,0.08);
+      --radius-lg: 24px; --radius-md: 16px; --c-nav-bg: rgba(253,247,240,0.92);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #18110a; --c-bg2: #221810; --c-surface: #2a1e14;
+        --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
+        --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
+        --c-accent-l: rgba(240,144,80,0.12); --shadow: 0 2px 20px rgba(0,0,0,0.3);
+        --c-nav-bg: rgba(24,17,10,0.92);
+      }
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.7; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: var(--c-nav-bg); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: var(--c-text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo em { font-style: normal; color: var(--c-accent); }
+    .nav-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 500; color: var(--c-muted);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-back:hover { color: var(--c-accent); }
+
+    main { max-width: 740px; margin: 0 auto; padding: 112px 24px 80px; }
+
+    .page-hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--c-border);
+      margin-bottom: 48px;
+    }
+    .section-label {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--c-accent); margin-bottom: 12px;
+    }
+    h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .updated {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--c-muted);
+      background: var(--c-accent-l); padding: 5px 14px;
+      border-radius: 50px; border: 1px solid rgba(232,131,58,0.2);
+    }
+
+    h2 {
+      font-size: 1.1rem; font-weight: 700;
+      margin: 40px 0 12px; color: var(--c-text);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2::before {
+      content: ''; display: block; width: 3px; height: 18px;
+      background: var(--c-accent); border-radius: 2px; flex-shrink: 0;
+    }
+    p { color: var(--c-muted); font-weight: 300; margin-bottom: 14px; line-height: 1.75; }
+    ul { color: var(--c-muted); font-weight: 300; padding-left: 0; margin-bottom: 14px; list-style: none; }
+    ul li {
+      padding: 7px 0 7px 20px; position: relative;
+      border-bottom: 1px solid var(--c-border); font-size: 0.95rem;
+    }
+    ul li:last-child { border-bottom: none; }
+    ul li::before { content: '→'; position: absolute; left: 0; color: var(--c-accent); font-weight: 600; font-size: 0.8rem; top: 9px; }
+
+    .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 28px; }
+    .plan-card {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); padding: 22px 20px;
+      box-shadow: var(--shadow); text-align: center;
+    }
+    .plan-card h3 { font-size: 0.9rem; font-weight: 600; color: var(--c-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .plan-card .price { font-size: 1.6rem; font-weight: 700; color: var(--c-accent); letter-spacing: -0.02em; }
+    .plan-card .price span { font-size: 0.75rem; font-weight: 400; color: var(--c-muted); }
+    .plan-card p { font-size: 0.82rem; color: var(--c-muted); margin: 8px 0 0; }
+
+    .highlight-box {
+      background: var(--c-accent-l);
+      border: 1px solid rgba(232,131,58,0.2);
+      border-left: 3px solid var(--c-accent);
+      border-radius: var(--radius-md);
+      padding: 20px 24px; margin: 24px 0;
+    }
+    .highlight-box p { margin: 0; color: var(--c-text); font-weight: 400; }
+
+    .contact-block {
+      margin-top: 48px; padding: 28px 32px;
+      background: var(--c-surface); border-radius: var(--radius-md);
+      border: 1px solid var(--c-border); box-shadow: var(--shadow);
+    }
+    .contact-block h2 { margin-top: 0; }
+    .contact-block a { color: var(--c-accent); text-decoration: none; font-weight: 500; }
+    .contact-block a:hover { color: var(--c-accent2); }
+
+    footer {
+      border-top: 1px solid var(--c-border);
+      padding: 36px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      max-width: 740px; margin: 40px auto 0;
+    }
+    footer p { font-size: 0.83rem; color: var(--c-muted); }
+    footer a { color: var(--c-muted); text-decoration: none; margin-left: 20px; font-size: 0.83rem; transition: color .2s; }
+    footer a:hover { color: var(--c-accent); }
+
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; }
+      main { padding: 100px 20px 60px; }
+      .plan-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="icon.png" alt="KidBox">
+      Kid<em>Box</em>
+    </a>
+    <a class="nav-back" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Torna alla home
+    </a>
+  </nav>
+
+  <main>
+    <div class="page-hero">
+      <span class="section-label">Legale</span>
+      <h1>Termini di Servizio</h1>
+      <span class="updated">Ultimo aggiornamento: 27 febbraio 2026 · Versione 1.0</span>
+    </div>
+
+    <p>L'app KidBox richiede l'accettazione dei presenti Termini. Il documento regola il rapporto tra utente e piattaforma, definendo diritti e obblighi.</p>
+    <p><strong>Fornitore:</strong> Vittorio Scocca &nbsp;·&nbsp; <a style="color:var(--c-accent)" href="mailto:support@kidbox.app">support@kidbox.app</a></p>
+
+    <h2>Accettazione dei Termini</h2>
+    <p>Il download, l'installazione e l'uso dell'app comportano l'accettazione automatica dei presenti Termini e della Privacy Policy. L'uso continuato dopo eventuali modifiche costituisce accettazione delle versioni aggiornate.</p>
+
+    <h2>Descrizione del Servizio</h2>
+    <ul>
+      <li>Gestione familiare: calendario, to-do list, routine, note</li>
+      <li>Tracciamento salute bambini: visite, farmaci, vaccini, crescita</li>
+      <li>Chat e archivio documenti condivisi</li>
+      <li>Assistente AI (piani a pagamento)</li>
+      <li>Condivisione posizione e tracciamento spese</li>
+    </ul>
+
+    <h2>Account Utente</h2>
+    <p>L'accesso richiede email, Apple ID, Google o Facebook. L'utente è responsabile della sicurezza delle proprie credenziali e deve contattare il supporto in caso di accesso non autorizzato.</p>
+
+    <h2>Piani e Abbonamenti</h2>
+    <div class="plan-grid">
+      <div class="plan-card">
+        <h3>Gratuito</h3>
+        <div class="price">€0</div>
+        <p>Funzionalità base per iniziare</p>
+      </div>
+      <div class="plan-card">
+        <h3>KidBox Pro</h3>
+        <div class="price">€4,99<span>/mese</span></div>
+        <p>5 GB · 20 messaggi AI</p>
+      </div>
+      <div class="plan-card">
+        <h3>KidBox Max</h3>
+        <div class="price">€9,99<span>/mese</span></div>
+        <p>20 GB · 100 messaggi AI</p>
+      </div>
+    </div>
+    <p>Gli abbonamenti si rinnovano automaticamente e sono gestibili tramite App Store.</p>
+
+    <h2>Utilizzo Consentito</h2>
+    <ul>
+      <li>Rispettare le leggi vigenti</li>
+      <li>Non abusare del servizio</li>
+      <li>Utilizzare contenuti propri con il relativo consenso</li>
+      <li>Non condividere dati di minori senza adeguata autorizzazione</li>
+    </ul>
+
+    <h2>Assistente AI</h2>
+    <div class="highlight-box">
+      <p>L'AI è fornito da Anthropic PBC. Le risposte dell'AI sono informazioni di carattere generale e <strong>non costituiscono pareri medici, legali o professionali</strong>. KidBox sconsiglia di prendere decisioni importanti basandosi esclusivamente su queste risposte.</p>
+    </div>
+
+    <h2>Cancellazione Account</h2>
+    <p>L'account è eliminabile in qualsiasi momento dall'app tramite <strong>Profilo → Elimina account</strong>. L'operazione rimuove tutti i dati in modo permanente e irreversibile.</p>
+
+    <h2>Limitazione di Responsabilità</h2>
+    <p>L'app è fornita "così com'è" senza garanzie esplicite o implicite. KidBox declina ogni responsabilità per danni indiretti o conseguenziali derivanti dall'uso del servizio.</p>
+
+    <h2>Modifiche ai Termini</h2>
+    <p>Gli aggiornamenti vengono pubblicati su questa pagina con relativa data. Le modifiche sostanziali comportano notifiche in-app.</p>
+
+    <div class="contact-block">
+      <h2>Contatti</h2>
+      <p><strong>Supporto:</strong> <a href="mailto:support@kidbox.app">support@kidbox.app</a></p>
+      <p><strong>Questioni legali:</strong> <a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 KidBox · Vittorio Scocca</p>
+    <div>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Termini</a>
+      <a href="data-deletion.html">Supporto</a>
+    </div>
+  </footer>
+</body>
+</html>

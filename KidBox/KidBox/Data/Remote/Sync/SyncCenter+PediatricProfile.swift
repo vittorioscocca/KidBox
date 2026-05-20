@@ -101,6 +101,7 @@ extension SyncCenter {
                             medicalNotes: dto.medicalNotes,
                             doctorName:  dto.doctorName,
                             doctorPhone: dto.doctorPhone,
+                            doctorEmail: dto.doctorEmail,
                             doctorAddress: dto.doctorAddress,
                             doctorWebsite: dto.doctorWebsite,
                             updatedAt:   remoteStamp,
@@ -146,6 +147,7 @@ extension SyncCenter {
         local.medicalNotes  = dto.medicalNotes
         local.doctorName    = dto.doctorName
         local.doctorPhone   = dto.doctorPhone
+        local.doctorEmail   = dto.doctorEmail
         local.doctorAddress = dto.doctorAddress
         local.doctorWebsite = dto.doctorWebsite
         local.updatedAt     = dto.updatedAt ?? local.updatedAt
@@ -203,6 +205,7 @@ extension SyncCenter {
             medicalNotes: profile.medicalNotes,
             doctorName: profile.doctorName,
             doctorPhone: profile.doctorPhone,
+            doctorEmail: profile.doctorEmail,
             doctorAddress: profile.doctorAddress,
             doctorWebsite: profile.doctorWebsite,
             doctorOfficeHoursJSON: officeHoursJSON,

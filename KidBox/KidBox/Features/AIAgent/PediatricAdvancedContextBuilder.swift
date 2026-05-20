@@ -204,6 +204,7 @@ enum PediatricAdvancedContextBuilder {
                     let label = input.isChild ? "Pediatra" : "Medico di riferimento"
                     lines.append("\(label): \(dn)")
                 }
+                if let mail = p.doctorEmail, !mail.isEmpty { lines.append("Email medico: \(mail)") }
                 if let addr = p.doctorAddress, !addr.isEmpty { lines.append("Studio: \(addr)") }
                 if let site = p.doctorWebsite, !site.isEmpty { lines.append("Sito web medico: \(site)") }
                 for line in p.doctorOfficeHours.groupedOfficeHourDisplayLines {

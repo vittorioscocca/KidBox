@@ -37,8 +37,14 @@ struct PediatricMedicalRecordView: View {
     @State private var showContactPicker = false
     @State private var showContactsPermissionAlert = false
     @State private var showReferenceDoctorForm = false
+    @State private var linkedBirthDate = Date()
+    @State private var hasHealthLink = false
 
     private let bloodGroups = ["Non specificato", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+
+    private var linkedAgeDescription: String {
+        KBHealthAgeFormatting.ageDescription(from: linkedBirthDate)
+    }
 
     private var isChild: Bool {
         children.contains { $0.id == childId }
@@ -61,6 +67,27 @@ struct PediatricMedicalRecordView: View {
 
     var body: some View {
         Form {
+            Section {
+                DatePicker(
+                    "Data di nascita",
+                    selection: $linkedBirthDate,
+                    displayedComponents: .date
+                )
+                Text("Età: \(linkedAgeDescription)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Età")
+            } footer: {
+                if hasHealthLink {
+                    Text("Data importata da Apple Salute. Puoi correggerla qui: verrà salvata sul profilo e nella scheda.")
+                        .font(.caption)
+                } else {
+                    Text("Imposta la data di nascita del bambino. Collega Apple Salute per importarla automaticamente.")
+                        .font(.caption)
+                }
+            }
+
             Section("Gruppo sanguigno") {
                 Picker("Gruppo sanguigno", selection: $bloodGroup) {
                     ForEach(bloodGroups, id: \.self) { Text($0).tag($0) }
@@ -261,6 +288,7 @@ struct PediatricMedicalRecordView: View {
             medicalNotes = ""
             doctorDraft = ReferenceDoctorDraft()
             contacts = []
+            applyHealthLinkToScheda()
             return
         }
 
@@ -270,11 +298,55 @@ struct PediatricMedicalRecordView: View {
         medicalNotes = p.medicalNotes ?? ""
         doctorDraft = ReferenceDoctorDraft(
             name: p.doctorName ?? "",
+            email: p.doctorEmail ?? "",
             address: p.doctorAddress ?? "",
             website: p.doctorWebsite ?? "",
             officeHours: p.doctorOfficeHours
         )
         contacts = p.emergencyContacts
+        applyHealthLinkToScheda()
+    }
+
+    /// Gruppo sanguigno da Salute; data di nascita prioritaria dall'abbinamento Apple Salute.
+    private func applyHealthLinkToScheda() {
+        let linked = KBHealthLinkStore.load(childId: childId)
+        hasHealthLink = linked != nil
+
+        if let linked {
+            let profileBlood = normalizedBloodGroup(profile?.bloodGroup)
+            if profileBlood == "Non specificato",
+               let bg = linked.bloodGroup,
+               bloodGroups.contains(bg) {
+                bloodGroup = bg
+            }
+
+            if let dob = linked.birthDate {
+                linkedBirthDate = dob
+                return
+            }
+        }
+
+        if let child = children.first, let dob = child.birthDate {
+            linkedBirthDate = dob
+        }
+    }
+
+    private func persistBirthDate(uid: String, now: Date) {
+        if let child = children.first {
+            child.birthDate = linkedBirthDate
+            child.updatedAt = now
+            child.updatedBy = uid
+        }
+
+        var snapshot = KBHealthLinkStore.load(childId: childId) ?? KBHealthImportSnapshot(syncedAt: now)
+        snapshot.birthDate = linkedBirthDate
+        snapshot.syncedAt = now
+        KBHealthLinkStore.save(snapshot, childId: childId)
+
+        try? modelContext.save()
+        if let child = children.first {
+            Task { try? await ChildSyncService().upsert(child: child) }
+        }
     }
 
     private func applyFormToProfile(_ p: KBPediatricProfile, uid: String, now: Date) {
@@ -283,6 +355,7 @@ struct PediatricMedicalRecordView: View {
         p.allergies = allergies.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         p.medicalNotes = medicalNotes.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         p.doctorName = trimmedDoctorName.nilIfEmpty
+        p.doctorEmail = doctorDraft.email.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         p.doctorAddress = doctorDraft.address.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         p.doctorWebsite = doctorDraft.website.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         p.doctorOfficeHours = doctorDraft.officeHours
@@ -321,6 +394,7 @@ struct PediatricMedicalRecordView: View {
         }
 
         applyFormToProfile(activeProfile, uid: uid, now: now)
+        persistBirthDate(uid: uid, now: now)
 
         do {
             try modelContext.save()
@@ -393,6 +467,18 @@ private struct ReferenceDoctorSummaryCard: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(draft.name)
                 .font(.body.weight(.semibold))
+            if !draft.email.isEmpty {
+                if let url = URL(string: "mailto:\(draft.email)") {
+                    Link(destination: url) {
+                        Label(draft.email, systemImage: "envelope.fill")
+                            .font(.subheadline)
+                    }
+                } else {
+                    Label(draft.email, systemImage: "envelope.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
             if !draft.address.isEmpty {
                 Label(draft.address, systemImage: "mappin.and.ellipse")
                     .font(.subheadline)

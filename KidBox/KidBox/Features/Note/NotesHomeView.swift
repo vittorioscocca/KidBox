@@ -111,7 +111,6 @@ struct NotesHomeView: View {
             .navigationTitle("Note")
             .searchable(text: $searchQuery, prompt: "Cerca nelle note")
             .onAppear {
-                SyncCenter.shared.startNotesRealtime(familyId: familyId, modelContext: modelContext)
                 loadPinned()
                 BadgeManager.shared.activeSections.insert("notes")
                 Task { @MainActor in
@@ -143,7 +142,6 @@ struct NotesHomeView: View {
                 }
             }
             .onDisappear {
-                SyncCenter.shared.stopNotesRealtime()
                 BadgeManager.shared.activeSections.remove("notes")
             }
             .toolbar {

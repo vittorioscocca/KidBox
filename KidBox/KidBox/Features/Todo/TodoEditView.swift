@@ -162,7 +162,15 @@ struct TodoEditView: View {
                 
                 Section {
                     TextField("Titolo", text: $title)
-                    TextField("Note", text: $notes)
+                }
+
+                Section {
+                    TodoNotesEditor(text: $notes)
+                } header: {
+                    Text("Note")
+                } footer: {
+                    Text("Usa «Punto elenco» per righe con bullet; le note sono visibili anche nella lista.")
+                        .font(.caption)
                 }
                 
                 Section("Scadenza") {

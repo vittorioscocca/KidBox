@@ -200,10 +200,13 @@ struct TodoSmartListView: View {
                             .foregroundStyle(.red)
                     }
                 }
+
+                TodoNotesPreviewText(notes: todo.notes)
             }
             
             Spacer()
         }
+        .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onTapGesture {
             editingTodoId = todo.id

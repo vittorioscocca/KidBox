@@ -143,6 +143,7 @@ final class SyncCenter: ObservableObject {
         stopChildrenRealtime()
         stopFamilyBundleRealtime()
         stopDocumentsRealtime()
+        stopNotesRealtime()
         stopTreatmentsRealtime()
         stopVisitsRealtime()
         stopPediatricProfileRealtime()

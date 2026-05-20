@@ -46,6 +46,7 @@ enum KBVisibilityScope {
         case family:
             return true
         case members:
+            if createdBy == currentUid { return true }
             return memberIds.contains(currentUid)
         case onlyCreator:
             return createdBy == currentUid

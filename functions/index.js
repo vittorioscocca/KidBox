@@ -1103,9 +1103,43 @@ exports.notifyNewNote = onDocumentCreated(
 const {defineSecret} = require("firebase-functions/params");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
-const ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const ANTHROPIC_INPUT_USD_PER_1M = 1.0;
-const ANTHROPIC_OUTPUT_USD_PER_1M = 5.0;
+/** Chat, note, todo e task non clinici. */
+const ANTHROPIC_MODEL_DEFAULT = "claude-haiku-4-5-20251001";
+const ANTHROPIC_INPUT_USD_PER_1M_HAIKU = 1.0;
+const ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU = 5.0;
+/**
+ * Cartella clinica + PDF: richiede ragionamento contestuale (non summarization).
+ * NON usare Haiku — confonde date GG/MM con pressione e fonde lesioni distinte.
+ */
+const ANTHROPIC_MODEL_CLINICAL_RECORD = "claude-sonnet-4-5";
+const ANTHROPIC_INPUT_USD_PER_1M_SONNET = 3.0;
+const ANTHROPIC_OUTPUT_USD_PER_1M_SONNET = 15.0;
+const CLINICAL_RECORD_MAX_TOKENS = 4096;
+
+/** Regole server aggiunte al system prompt cartella clinica (affiancano il prompt client). */
+const CLINICAL_RECORD_SYSTEM_RULES = `
+VINCOLI SERVER (cartella clinica):
+Prosa narrativa continua per ogni sezione: vietati bullet, trattini elenco, elenchi numerati.
+NON inferire valori assenti nei dati. Date GG/MM non sono pressione arteriosa.
+Lesioni distinte per tipo, sede e mm. Confronto temporale solo con ≥2 misure della stessa entità.
+Se manca un dato: "Non sono disponibili misurazioni per questo parametro".
+Se tendi a elencare, riformula con "inoltre", "mentre", "al contrario".
+UNITÀ FARMACI: compresse/capsule → mg o mcg (mai ml); liquidi orali → ml; iniettabili → mg/ml o UI (es. Ezetimibe 10 mg, NON 10 ml).
+TRANSAMINASI+STATINA: se terapia sospesa e rialzo GOT/GPT nello stesso periodo, esplicita il nesso causale in prosa.
+NO sezione standalone PRESSIONE ARTERIOSA: i dati PA solo in CARDIOLOGIA.
+Se >4 misure PA nello stesso anno: range min-max, ultimo valore, tendenza (non elencare tutte).
+APPLE HEALTH: sezione opzionale con disclaimer wearable consumer; FC a riposo, VO2, minuti attività, SpO2 notturna, passi, HRV; fasce età per VO2; sintesi attività fisica.
+`.trim();
+
+/**
+ * Sonnet solo per generazione cartella clinica (non chat Salute: visite, esami, home).
+ * Il client deve inviare purpose esplicito; niente euristica su testo/prompt.
+ * @param {object} data body della callable
+ * @return {boolean}
+ */
+function isClinicalRecordAskAI(data) {
+  return data?.purpose === "clinicalRecord";
+}
 
 /**
  * Returns today's date as YYYY-MM-DD in Europe/Rome timezone.
@@ -1262,13 +1296,13 @@ exports.askAI = onCall(
       region: "europe-west1",
       invoker: "public",
       secrets: [ANTHROPIC_API_KEY],
-      timeoutSeconds: 60,
+      timeoutSeconds: 120,
     },
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
 
-      const {messages, systemPrompt, familyId} = request.data || {};
+      const {messages, systemPrompt, familyId, purpose} = request.data || {};
 
       if (!Array.isArray(messages) || messages.length === 0) {
         throw new HttpsError("invalid-argument", "messages è richiesto.");
@@ -1299,9 +1333,22 @@ exports.askAI = onCall(
       const dailyLimit = await resolveAIDailyLimit(uid, familyId);
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, messageUnits);
 
+      const clinicalRecord = isClinicalRecordAskAI({purpose});
+      const anthropicModel = clinicalRecord ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
+      const maxTokens = clinicalRecord ? CLINICAL_RECORD_MAX_TOKENS : 1024;
+      const effectiveSystemPrompt = clinicalRecord ?
+        `${systemPrompt.trim()}\n\n${CLINICAL_RECORD_SYSTEM_RULES}` :
+        systemPrompt;
+      const inputUsdPer1M = clinicalRecord ?
+        ANTHROPIC_INPUT_USD_PER_1M_SONNET :
+        ANTHROPIC_INPUT_USD_PER_1M_HAIKU;
+      const outputUsdPer1M = clinicalRecord ?
+        ANTHROPIC_OUTPUT_USD_PER_1M_SONNET :
+        ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU;
+
       logger.info("askAI request", {
         uid, familyId, usageCount, dailyLimit, msgCount: messages.length,
-        totalChars, messageUnits, isLargeContext,
+        totalChars, messageUnits, isLargeContext, clinicalRecord, anthropicModel,
       });
 
       const apiKey = ANTHROPIC_API_KEY.value();
@@ -1321,9 +1368,9 @@ exports.askAI = onCall(
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: ANTHROPIC_MODEL,
-            max_tokens: 1024,
-            system: systemPrompt,
+            model: anthropicModel,
+            max_tokens: maxTokens,
+            system: effectiveSystemPrompt,
             messages: messages.map((m) => ({role: m.role, content: m.content})),
           }),
         });
@@ -1342,13 +1389,10 @@ exports.askAI = onCall(
         if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
 
         // ── Tracking costi Anthropic ────────────────────────────────────────
-        // Prezzi Claude Haiku 4.5 (aggiornare se cambiano):
-        //   Input:  $1.00 per 1M token
-        //   Output: $5.00 per 1M token
         const inputTokens = json?.usage?.input_tokens || 0;
         const outputTokens = json?.usage?.output_tokens || 0;
-        const costUsd = (inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M +
-          (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M;
+        const costUsd = (inputTokens / 1000000) * inputUsdPer1M +
+          (outputTokens / 1000000) * outputUsdPer1M;
 
         const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7); // YYYY-MM
         const costRef = admin.firestore()
@@ -1374,14 +1418,20 @@ exports.askAI = onCall(
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, {merge: true}).catch((e) => logger.warn("ai_costs total write failed", {error: e.message}));
 
-        logger.info("askAI tokens", {uid, familyId, inputTokens, outputTokens, costUsd: costUsd.toFixed(6)});
+        logger.info("askAI tokens", {
+          uid, familyId, inputTokens, outputTokens,
+          costUsd: costUsd.toFixed(6), clinicalRecord, model: anthropicModel,
+        });
       } catch (e) {
         if (e instanceof HttpsError) throw e;
         logger.error("askAI: fetch failed", {error: e.message});
         throw new HttpsError("internal", "Impossibile contattare il servizio AI.");
       }
 
-      logger.info("askAI success", {uid, usageCount, messageUnits});
+      logger.info("askAI success", {
+        uid, usageCount, messageUnits, clinicalRecord,
+        totalPayloadChars: totalChars,
+      });
       return {
         reply,
         usageToday: usageCount,
@@ -1389,6 +1439,7 @@ exports.askAI = onCall(
         messageUnitsConsumed: messageUnits,
         isLargeContext,
         totalPayloadChars: totalChars,
+        purpose: clinicalRecord ? "clinicalRecord" : undefined,
       };
     },
 );
@@ -1776,9 +1827,15 @@ ${legsText}
  * @param {number} outputTokens
  * @return {void}
  */
-function trackAnthropicCosts(familyId, inputTokens, outputTokens) {
-  const costUsd = (inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M +
-    (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M;
+function trackAnthropicCosts(
+    familyId,
+    inputTokens,
+    outputTokens,
+    inputUsdPer1M = ANTHROPIC_INPUT_USD_PER_1M_HAIKU,
+    outputUsdPer1M = ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU,
+) {
+  const costUsd = (inputTokens / 1000000) * inputUsdPer1M +
+    (outputTokens / 1000000) * outputUsdPer1M;
   const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7);
 
   const costRef = admin.firestore()
@@ -1868,7 +1925,7 @@ exports.generateTravelPlan = onCall(
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: ANTHROPIC_MODEL,
+            model: ANTHROPIC_MODEL_DEFAULT,
             max_tokens: 8192,
             system: systemPrompt,
             messages: [{role: "user", content: userMessage}],
@@ -1900,8 +1957,8 @@ exports.generateTravelPlan = onCall(
         trackAnthropicCosts(familyId, inputTokens, outputTokens);
         logger.info("generateTravelPlan tokens", {
           uid, familyId, inputTokens, outputTokens,
-          costUsd: ((inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M +
-            (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M).toFixed(6),
+          costUsd: ((inputTokens / 1000000) * ANTHROPIC_INPUT_USD_PER_1M_HAIKU +
+            (outputTokens / 1000000) * ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU).toFixed(6),
         });
       } catch (e) {
         if (e instanceof HttpsError) throw e;
@@ -2077,7 +2134,7 @@ exports.suggestTravelDestinations = onCall(
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: ANTHROPIC_MODEL,
+            model: ANTHROPIC_MODEL_DEFAULT,
             max_tokens: 2048,
             system: systemPrompt,
             messages: [{role: "user", content: userMessage}],

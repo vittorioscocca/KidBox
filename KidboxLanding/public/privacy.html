@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy · KidBox</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Meta Pixel -->
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '25962552233393986');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=25962552233393986&ev=PageView&noscript=1"/></noscript>
+  <!-- Fine Meta Pixel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #fdf7f0; --c-bg2: #f5ebe0; --c-surface: #ffffff;
+      --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
+      --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
+      --c-accent-l: #fdf0e4; --shadow: 0 2px 20px rgba(180,100,30,0.08);
+      --radius-lg: 24px; --radius-md: 16px; --c-nav-bg: rgba(253,247,240,0.92);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #18110a; --c-bg2: #221810; --c-surface: #2a1e14;
+        --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
+        --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
+        --c-accent-l: rgba(240,144,80,0.12); --shadow: 0 2px 20px rgba(0,0,0,0.3);
+        --c-nav-bg: rgba(24,17,10,0.92);
+      }
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.7; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: var(--c-nav-bg); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: var(--c-text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo em { font-style: normal; color: var(--c-accent); }
+    .nav-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 500; color: var(--c-muted);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-back:hover { color: var(--c-accent); }
+
+    main { max-width: 740px; margin: 0 auto; padding: 112px 24px 80px; }
+
+    .page-hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--c-border);
+      margin-bottom: 48px;
+    }
+    .section-label {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--c-accent); margin-bottom: 12px;
+    }
+    h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .updated {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--c-muted);
+      background: var(--c-accent-l); padding: 5px 14px;
+      border-radius: 50px; border: 1px solid rgba(232,131,58,0.2);
+    }
+
+    h2 {
+      font-size: 1.1rem; font-weight: 700;
+      margin: 40px 0 12px; color: var(--c-text);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2::before {
+      content: ''; display: block; width: 3px; height: 18px;
+      background: var(--c-accent); border-radius: 2px; flex-shrink: 0;
+    }
+    p { color: var(--c-muted); font-weight: 300; margin-bottom: 14px; line-height: 1.75; }
+    ul { color: var(--c-muted); font-weight: 300; padding-left: 0; margin-bottom: 14px; list-style: none; }
+    ul li {
+      padding: 7px 0 7px 20px; position: relative;
+      border-bottom: 1px solid var(--c-border); font-size: 0.95rem;
+    }
+    ul li:last-child { border-bottom: none; }
+    ul li::before { content: '→'; position: absolute; left: 0; color: var(--c-accent); font-weight: 600; font-size: 0.8rem; top: 9px; }
+
+    .highlight-box {
+      background: var(--c-accent-l);
+      border: 1px solid rgba(232,131,58,0.2);
+      border-left: 3px solid var(--c-accent);
+      border-radius: var(--radius-md);
+      padding: 20px 24px; margin: 24px 0;
+    }
+    .highlight-box p { margin: 0; color: var(--c-text); font-weight: 400; }
+
+    .contact-block {
+      margin-top: 48px; padding: 28px 32px;
+      background: var(--c-surface); border-radius: var(--radius-md);
+      border: 1px solid var(--c-border); box-shadow: var(--shadow);
+    }
+    .contact-block h2 { margin-top: 0; }
+    .contact-block a { color: var(--c-accent); text-decoration: none; font-weight: 500; }
+    .contact-block a:hover { color: var(--c-accent2); }
+
+    footer {
+      border-top: 1px solid var(--c-border);
+      padding: 36px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      max-width: 740px; margin: 40px auto 0;
+    }
+    footer p { font-size: 0.83rem; color: var(--c-muted); }
+    footer a { color: var(--c-muted); text-decoration: none; margin-left: 20px; font-size: 0.83rem; transition: color .2s; }
+    footer a:hover { color: var(--c-accent); }
+
+    @media (max-width: 768px) { nav { padding: 14px 20px; } main { padding: 100px 20px 60px; } }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="icon.png" alt="KidBox">
+      Kid<em>Box</em>
+    </a>
+    <a class="nav-back" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Torna alla home
+    </a>
+  </nav>
+
+  <main>
+    <div class="page-hero">
+      <span class="section-label">Legale</span>
+      <h1>Privacy Policy</h1>
+      <span class="updated">Ultimo aggiornamento: 27 febbraio 2026 · GDPR compliant</span>
+    </div>
+
+    <p>KidBox è un'applicazione pensata per la gestione condivisa di informazioni familiari — chat, documenti, note, attività e salute dei bambini. Questa informativa spiega in modo trasparente quali dati trattiamo, perché e con chi li condividiamo.</p>
+    <p><strong>Titolare del trattamento:</strong> KidBox — Vittorio Scocca &nbsp;·&nbsp; <a style="color:var(--c-accent)" href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
+
+    <h2>Dati che raccogliamo</h2>
+    <ul>
+      <li><strong>Dati account:</strong> email, nome/alias, foto profilo, credenziali di accesso</li>
+      <li><strong>Dati famiglia e contenuti:</strong> chat, note, documenti, media, eventi calendario, to-do, spese, dati sanitari dei bambini</li>
+      <li><strong>Dati tecnici:</strong> token notifiche e log di sicurezza senza informazioni identificabili</li>
+      <li><strong>Dati di posizione:</strong> solo quando la condivisione posizione è attivata esplicitamente</li>
+    </ul>
+
+    <h2>Perché utilizziamo i dati</h2>
+    <ul>
+      <li>Accesso e autenticazione</li>
+      <li>Erogazione delle funzionalità principali</li>
+      <li>Notifiche e aggiornamenti del servizio</li>
+      <li>Sicurezza e miglioramento continuo</li>
+    </ul>
+
+    <h2>Condivisione dei dati</h2>
+    <p>KidBox utilizza provider tecnici selezionati per erogare il servizio. <strong>Non vendiamo i tuoi dati.</strong> I provider includono Google Firebase, Meta, Apple e Google Auth.</p>
+
+    <h2>Assistente AI & Anthropic</h2>
+    <div class="highlight-box">
+      <p>I dati inviati ad Anthropic includono le tue domande e il contesto familiare necessario per rispondere (nomi, eventi, dati sanitari). È richiesto il <strong>consenso esplicito</strong> prima del primo utilizzo — revocabile in qualsiasi momento dalle impostazioni dell'app.</p>
+    </div>
+
+    <h2>Conservazione dei dati</h2>
+    <p>I dati vengono conservati per il tempo strettamente necessario all'erogazione del servizio. Alla cancellazione dell'account tutti i dati associati vengono eliminati in modo permanente.</p>
+
+    <h2>Cancellazione account</h2>
+    <p>Puoi eliminare il tuo account in qualsiasi momento dalle impostazioni dell'app: <strong>Profilo → Elimina account</strong>. Consulta la nostra <a style="color:var(--c-accent)" href="data-deletion.html">pagina di eliminazione dati</a> per i dettagli.</p>
+
+    <h2>Diritti dell'utente</h2>
+    <ul>
+      <li>Accesso ai propri dati</li>
+      <li>Rettifica di informazioni non accurate</li>
+      <li>Cancellazione (diritto all'oblio)</li>
+      <li>Revoca dei consensi specifici</li>
+      <li>Portabilità dei dati</li>
+    </ul>
+
+    <h2>Sicurezza</h2>
+    <p>KidBox implementa crittografia end-to-end e misure di autenticazione avanzate per proteggere i dati della tua famiglia.</p>
+
+    <div class="contact-block">
+      <h2>Contatti</h2>
+      <p>Per qualsiasi domanda sulla privacy scrivi a <a href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 KidBox · Vittorio Scocca</p>
+    <div>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Termini</a>
+      <a href="data-deletion.html">Supporto</a>
+    </div>
+  </footer>
+</body>
+</html>

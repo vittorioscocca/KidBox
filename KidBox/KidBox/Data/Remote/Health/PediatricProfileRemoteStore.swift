@@ -21,6 +21,7 @@ struct RemotePediatricProfileDTO {
     let medicalNotes: String?
     let doctorName: String?
     let doctorPhone: String?
+    let doctorEmail: String?
     let doctorAddress: String?
     let doctorWebsite: String?
     let doctorOfficeHoursJSON: String?
@@ -85,6 +86,7 @@ final class PediatricProfileRemoteStore {
         data["medicalNotes"] = dto.medicalNotes ?? FieldValue.delete()
         data["doctorName"]   = dto.doctorName   ?? FieldValue.delete()
         data["doctorPhone"]  = dto.doctorPhone  ?? FieldValue.delete()
+        data["doctorEmail"]  = dto.doctorEmail  ?? FieldValue.delete()
         data["doctorAddress"] = dto.doctorAddress ?? FieldValue.delete()
         data["doctorWebsite"] = dto.doctorWebsite ?? FieldValue.delete()
         data["doctorOfficeHoursJSON"] = dto.doctorOfficeHoursJSON ?? FieldValue.delete()
@@ -158,6 +160,7 @@ final class PediatricProfileRemoteStore {
                     medicalNotes:          data["medicalNotes"] as? String,
                     doctorName:            data["doctorName"]   as? String,
                     doctorPhone:           data["doctorPhone"]  as? String,
+                    doctorEmail:           data["doctorEmail"]  as? String,
                     doctorAddress:         data["doctorAddress"] as? String,
                     doctorWebsite:         data["doctorWebsite"] as? String,
                     doctorOfficeHoursJSON: data["doctorOfficeHoursJSON"] as? String,

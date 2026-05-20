@@ -28,6 +28,7 @@ final class KBPediatricProfile {
     // MARK: - Medico / pediatra di riferimento
     var doctorName: String?
     var doctorPhone: String?
+    var doctorEmail: String?
     var doctorAddress: String?
     var doctorWebsite: String?
     var doctorOfficeHoursData: Data? = nil
@@ -51,6 +52,7 @@ final class KBPediatricProfile {
         medicalNotes: String? = nil,
         doctorName: String? = nil,
         doctorPhone: String? = nil,
+        doctorEmail: String? = nil,
         doctorAddress: String? = nil,
         doctorWebsite: String? = nil,
         updatedAt: Date = Date(),
@@ -64,6 +66,7 @@ final class KBPediatricProfile {
         self.medicalNotes = medicalNotes
         self.doctorName  = doctorName
         self.doctorPhone = doctorPhone
+        self.doctorEmail = doctorEmail
         self.doctorAddress = doctorAddress
         self.doctorWebsite = doctorWebsite
         self.updatedAt   = updatedAt

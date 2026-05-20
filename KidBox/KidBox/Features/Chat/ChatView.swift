@@ -1204,25 +1204,27 @@ private struct ChatConversationView: View {
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
             
         case .note(let title, let body):
-            coordinator.navigate(to: .notesHome(familyId: familyId))
-            Task { @MainActor in
-                let uid = Auth.auth().currentUser?.uid ?? ""
-                let displayName = Auth.auth().currentUser?.displayName ?? ""
-                let note = KBNote(
-                    familyId: familyId,
-                    title: title,
-                    body: body,
-                    createdBy: uid,
-                    createdByName: displayName,
-                    updatedBy: uid,
-                    updatedByName: displayName
-                )
-                note.syncState = .pendingUpsert
-                modelContext.insert(note)
-                try? modelContext.save()
-                let store = NotesRemoteStore()
-                try? await store.upsert(note: note)
-            }
+            let noteId = UUID().uuidString
+            let uid = Auth.auth().currentUser?.uid ?? ""
+            let displayName = Auth.auth().currentUser?.displayName ?? ""
+            let note = KBNote(
+                id: noteId,
+                familyId: familyId,
+                title: title,
+                body: body,
+                createdBy: uid,
+                createdByName: displayName,
+                updatedBy: uid,
+                updatedByName: displayName
+            )
+            note.syncState = .pendingUpsert
+            modelContext.insert(note)
+            try? modelContext.save()
+            SyncCenter.shared.enqueueNoteUpsert(
+                noteId: noteId, familyId: familyId, modelContext: modelContext
+            )
+            SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            coordinator.navigate(to: .noteDetail(familyId: familyId, noteId: noteId))
             
         case .document(let mediaURL, let fileName):
             coordinator.navigate(to: .documentsHome)

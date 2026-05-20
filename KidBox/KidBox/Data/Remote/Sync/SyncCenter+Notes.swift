@@ -236,28 +236,45 @@ extension SyncCenter {
     
     // Fetch one-shot delle note da Firestore (per deep link da push)
     func fetchNotesOnce(familyId: String, modelContext: ModelContext) async {
+        let maxAttempts = 6
+        for attempt in 1...maxAttempts {
+            let applied = await fetchNotesOnceAttempt(familyId: familyId, modelContext: modelContext)
+            if applied { return }
+            KBLog.sync.kbDebug("fetchNotesOnce retry attempt=\(attempt) familyId=\(familyId)")
+            try? await Task.sleep(nanoseconds: 400_000_000)
+        }
+    }
+
+    private func fetchNotesOnceAttempt(
+        familyId: String,
+        modelContext: ModelContext
+    ) async -> Bool {
         await withCheckedContinuation { continuation in
             var resolved = false
-            _ = notesRemote.listenNotes(
+            var listener: ListenerRegistration?
+            listener = notesRemote.listenNotes(
                 familyId: familyId,
                 onChange: { [weak self] changes in
                     guard let self, !resolved else { return }
+                    guard !changes.isEmpty else { return }
                     resolved = true
                     self.applyNotesInbound(changes: changes, familyId: familyId, modelContext: modelContext)
-                    continuation.resume()
+                    listener?.remove()
+                    continuation.resume(returning: true)
                 },
                 onError: { _ in
                     guard !resolved else { return }
                     resolved = true
-                    continuation.resume()
+                    listener?.remove()
+                    continuation.resume(returning: false)
                 }
             )
-            // Timeout di sicurezza: 5 secondi
             Task {
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
                 guard !resolved else { return }
                 resolved = true
-                continuation.resume()
+                listener?.remove()
+                continuation.resume(returning: false)
             }
         }
     }

@@ -7,6 +7,7 @@ import SwiftUI
 
 struct ReferenceDoctorDraft: Equatable {
     var name: String = ""
+    var email: String = ""
     var address: String = ""
     var website: String = ""
     var officeHours: [KBDoctorOfficeHourSlot] = []
@@ -20,6 +21,7 @@ struct ReferenceDoctorFormView: View {
     let onSave: (ReferenceDoctorDraft) -> Void
 
     @State private var name = ""
+    @State private var email = ""
     @State private var address = ""
     @State private var website = ""
     @State private var officeHours: [KBDoctorOfficeHourSlot] = []
@@ -37,6 +39,10 @@ struct ReferenceDoctorFormView: View {
             Form {
                 Section("Dati medico") {
                     TextField("Nome e cognome", text: $name)
+                    TextField("Email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                     TextField("Indirizzo studio", text: $address, axis: .vertical)
                         .lineLimit(2...4)
                     TextField("Sito web (opzionale)", text: $website)
@@ -88,6 +94,7 @@ struct ReferenceDoctorFormView: View {
                         onSave(
                             ReferenceDoctorDraft(
                                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
                                 address: address.trimmingCharacters(in: .whitespacesAndNewlines),
                                 website: website.trimmingCharacters(in: .whitespacesAndNewlines),
                                 officeHours: officeHours
@@ -100,6 +107,7 @@ struct ReferenceDoctorFormView: View {
             }
             .onAppear {
                 name = initial.name
+                email = initial.email
                 address = initial.address
                 website = initial.website
                 officeHours = initial.officeHours

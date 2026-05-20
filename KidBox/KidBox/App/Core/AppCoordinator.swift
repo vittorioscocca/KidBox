@@ -458,6 +458,8 @@ final class AppCoordinator: ObservableObject {
             PediatricHomeView(familyId: familyId, childId: childId)
         case .pediatricMedicalRecord(familyId: let familyId, childId: let childId):
             PediatricMedicalRecordView(familyId: familyId, childId: childId)
+        case .appleHealthApp(familyId: let familyId, childId: let childId):
+            AppleHealthAppView(familyId: familyId, childId: childId)
         case .pediatricVisits(familyId: let familyId, childId: let childId):
             PediatricVisitsView(familyId: familyId, childId: childId)
         case .pediatricVaccines(familyId: let familyId, childId: let childId):
@@ -490,6 +492,8 @@ final class AppCoordinator: ObservableObject {
             PediatricExamDetailView(familyId: familyId, childId: childId, examId: examId)
         case .pediatricTimeline(familyId: let familyId, childId: let childId):
             PediatricTimelineDestinationView(familyId: familyId, childId: childId)
+        case .pediatricClinicalRecord(familyId: let familyId, childId: let childId):
+            ClinicalRecordView(familyId: familyId, childId: childId)
         case .expensesHome(familyId: let familyId):
             ExpensesHomeView(familyId: familyId)
         case .expenseDetail(familyId: let familyId, expenseId: let expenseId):
@@ -698,6 +702,26 @@ final class AppCoordinator: ObservableObject {
             }
             if !alreadyInStack { navigate(to: .familyPhotos(familyId: familyId)) }
             KBLog.sync.kbInfo("handleIncomingShare encryptedMedia: alreadyInStack=\(alreadyInStack) familyId=\(familyId) path=\(filePath)")
+
+        case "note":
+            let familyId: String
+            if let fid = activeFamilyId {
+                familyId = fid
+            } else if let fid = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "activeFamilyId"), !fid.isEmpty {
+                KBLog.sync.kbInfo("handleIncomingShare note: activeFamilyId nil, fallback AppGroup fid=\(fid)")
+                familyId = fid
+            } else {
+                KBLog.sync.kbError("handleIncomingShare note: activeFamilyId nil — abort")
+                return
+            }
+            pendingShareText = text.isEmpty ? title : text
+            let alreadyInNotes = path.contains {
+                if case .notesHome(let fid) = $0 { return fid == familyId }
+                return false
+            }
+            if !alreadyInNotes { navigate(to: .notesHome(familyId: familyId)) }
+            KBLog.sync.kbInfo("handleIncomingShare note: familyId=\(familyId)")
             
         default:
             break
@@ -860,12 +884,15 @@ final class AppCoordinator: ObservableObject {
         KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")
         
         Task { @MainActor in
-            await SyncCenter.shared.fetchNotesOnce(familyId: familyId, modelContext: modelContext)
-            
             let nid = noteId
             let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
             let currentUid = Auth.auth().currentUser?.uid
-            let found = (try? modelContext.fetch(desc).first)
+            var found = (try? modelContext.fetch(desc).first)
+
+            if found == nil || !(found?.isVisible(to: currentUid) ?? false) {
+                await SyncCenter.shared.fetchNotesOnce(familyId: familyId, modelContext: modelContext)
+                found = try? modelContext.fetch(desc).first
+            }
             
             path.removeAll()
             if let found, found.isVisible(to: currentUid) {

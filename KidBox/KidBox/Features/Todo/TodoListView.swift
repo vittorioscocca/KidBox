@@ -325,11 +325,13 @@ struct TodoListView: View {
                         Spacer(minLength: 0)
                     }
                 }
+
+                TodoNotesPreviewText(notes: todo.notes)
             }
             
             Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isHighlighted ? Color.yellow.opacity(0.18) : Color.clear)

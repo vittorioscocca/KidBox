@@ -9,9 +9,15 @@
 import Foundation
 
 enum HealthContextBuilder {
-    
+
+    /// Chat Salute include azioni pianificazione (to-do, spesa, calendario). Cartella clinica: solo dati sanitari.
+    enum Purpose {
+        case healthChat
+        case clinicalRecord
+    }
+
     // MARK: - Main entry point
-    
+
     static func buildSystemPrompt(
         subjectName: String,
         subjectId: String,
@@ -22,33 +28,46 @@ enum HealthContextBuilder {
         documentsByExamId: [String: [KBDocument]] = [:],
         documentsByVisitId: [String: [KBDocument]] = [:],
         documentsByTreatmentId: [String: [KBDocument]] = [:],
-        refertoMaxChars: Int? = HealthAiDocumentText.standardRefertoMaxChars
+        refertoMaxChars: Int? = HealthAiDocumentText.standardRefertoMaxChars,
+        healthSnapshot: KBHealthImportSnapshot? = nil,
+        subjectBirthDate: Date? = nil,
+        visitsForWearableContext: [KBMedicalVisit] = [],
+        purpose: Purpose = .healthChat
     ) -> String {
         
         KBLog.ai.kbInfo("""
         HealthContextBuilder start \
+        purpose=\(purpose) \
         subjectId=\(subjectId) \
         exams=\(exams.count) \
         visits=\(visits.count) \
         treatments=\(treatments.count) \
         vaccines=\(vaccines.count)
         """)
-        
+
         var lines: [String] = []
-        
-        // ── Ruolo e regole ───────────────────────────────────────────────────
-        lines.append("""
-        Sei un assistente medico informativo integrato nell'app KidBox, pensata per genitori.
-        Il tuo ruolo è offrire una visione d'insieme chiara e comprensibile della salute della persona.
-        
-        REGOLE IMPORTANTI:
-        - Se l'utente chiede una diagnosi o un parere clinico vincolante, ricordagli gentilmente, dopo aver dato il to parere,  di consultare il proprio medico.
-        - Usa un linguaggio semplice, adatto a un genitore non esperto.
-        - Puoi aiutare a capire cure in corso, vaccini, visite recenti, esami in attesa e referti allegati.
-        - Se nei documenti ci sono testi estratti, usali per contestualizzare meglio.
-        - Se un testo estratto sembra incompleto o ambiguo, dillo esplicitamente.
-        - Rispondi sempre in italiano.
-        """)
+
+        switch purpose {
+        case .healthChat:
+            lines.append("""
+            Sei un assistente medico informativo integrato nell'app KidBox, pensata per genitori.
+            Il tuo ruolo è offrire una visione d'insieme chiara e comprensibile della salute della persona.
+
+            REGOLE IMPORTANTI:
+            - Se l'utente chiede una diagnosi o un parere clinico vincolante, ricordagli gentilmente, dopo aver dato il to parere,  di consultare il proprio medico.
+            - Usa un linguaggio semplice, adatto a un genitore non esperto.
+            - Puoi aiutare a capire cure in corso, vaccini, visite recenti, esami in attesa e referti allegati.
+            - Se nei documenti ci sono testi estratti, usali per contestualizzare meglio.
+            - Se un testo estratto sembra incompleto o ambiguo, dillo esplicitamente.
+            - Rispondi sempre in italiano.
+            """)
+        case .clinicalRecord:
+            lines.append("""
+            CONTESTO DATI CLINICI KidBox (solo salute: visite, esami, cure, vaccini, referti allegati).
+            NON usare né menzionare: veicoli, garage, casa, animali domestici, lista spesa, to-do generici, calendario famiglia, viaggi.
+            Usa esclusivamente i dati sotto per integrare la cartella clinica.
+            """)
+        }
         
         // ── Profilo persona ──────────────────────────────────────────────────
         lines.append("\n--- PROFILO ---")
@@ -100,16 +119,30 @@ enum HealthContextBuilder {
             refertoMaxChars: refertoMaxChars,
             to: &lines
         )
+
+        if purpose == .clinicalRecord, let health = healthSnapshot {
+            ClinicalRecordAppleHealthNarrative.appendToPrompt(
+                health,
+                sourceLabel: "Apple Salute",
+                birthDate: subjectBirthDate,
+                visits: visitsForWearableContext,
+                into: &lines
+            )
+        }
         
-        // ── Chiusura ─────────────────────────────────────────────────────────
-        lines.append("\n--- FINE CONTESTO SALUTE ---")
-        lines.append("Rispondi alle domande usando le informazioni sopra.")
-        lines.append(PlanningAIActionBlock.promptSection)
-        lines.append("""
-        
-        Quando il genitore chiede di aggiungere to-do, note, eventi in calendario (es. prossima visita), \
-        articoli in lista spesa o promemoria, usa il blocco azioni per eseguire l'operazione nell'app.
-        """)
+        switch purpose {
+        case .healthChat:
+            lines.append("\n--- FINE CONTESTO SALUTE ---")
+            lines.append("Rispondi alle domande usando le informazioni sopra.")
+            lines.append(PlanningAIActionBlock.promptSection)
+            lines.append("""
+            
+            Quando il genitore chiede di aggiungere to-do, note, eventi in calendario (es. prossima visita), \
+            articoli in lista spesa o promemoria, usa il blocco azioni per eseguire l'operazione nell'app.
+            """)
+        case .clinicalRecord:
+            lines.append("\n--- FINE DATI CLINICI ---")
+        }
         
         let prompt = lines.joined(separator: "\n")
         KBLog.ai.kbInfo("HealthContextBuilder end chars=\(prompt.count)")

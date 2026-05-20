@@ -55,6 +55,7 @@ enum Route: Hashable {
     case pediatricChildSelector(familyId: String)
     case pediatricHome(familyId: String, childId: String)
     case pediatricMedicalRecord(familyId: String, childId: String)
+    case appleHealthApp(familyId: String, childId: String)
     case pediatricVisits(familyId: String, childId: String)
     case pediatricVisitDetail(familyId: String, childId: String, visitId: String)
     case pediatricVaccines(familyId: String, childId: String)
@@ -63,6 +64,7 @@ enum Route: Hashable {
     case pediatricExams(familyId: String, childId: String)
     case examDetail(familyId: String, childId: String, examId: String)
     case pediatricTimeline(familyId: String, childId: String)
+    case pediatricClinicalRecord(familyId: String, childId: String)
     
     // MARK: - Note
     case notesHome(familyId: String)

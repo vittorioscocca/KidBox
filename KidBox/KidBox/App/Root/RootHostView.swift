@@ -278,6 +278,7 @@ struct RootHostView: View {
                 SyncCenter.shared.stopMembersRealtime()
                 SyncCenter.shared.stopChildrenRealtime()
                 SyncCenter.shared.stopDocumentsRealtime()
+                SyncCenter.shared.stopNotesRealtime()
                 SyncCenter.shared.stopTreatmentsRealtime()
                 SyncCenter.shared.stopExpensesRealtime()
                 SyncCenter.shared.stopWalletRealtime()
@@ -324,6 +325,7 @@ struct RootHostView: View {
             SyncCenter.shared.stopMembersRealtime()
             SyncCenter.shared.stopChildrenRealtime()
             SyncCenter.shared.stopDocumentsRealtime()
+            SyncCenter.shared.stopNotesRealtime()
             SyncCenter.shared.stopTreatmentsRealtime()
             SyncCenter.shared.stopExpensesRealtime()
             SyncCenter.shared.stopWalletRealtime()
@@ -361,6 +363,12 @@ struct RootHostView: View {
         
         KBLog.sync.kbDebug("startDocumentsRealtime familyId=\(familyId)")
         SyncCenter.shared.startDocumentsRealtime(
+            familyId: familyId,
+            modelContext: modelContext
+        )
+
+        KBLog.sync.kbDebug("startNotesRealtime familyId=\(familyId)")
+        SyncCenter.shared.startNotesRealtime(
             familyId: familyId,
             modelContext: modelContext
         )
