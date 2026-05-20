@@ -14,59 +14,195 @@ import OSLog
 /// Logs are structured, filterable in Console.app, and privacy-aware.
 ///
 /// - Important: Avoid logging personally identifiable information (PII).
-///   Use `.private` when logging user-generated data.
+///   Use `writeToFile: false` on kb* calls when the message contains sensitive data.
 enum KBLog {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "it.vittorioscocca.kidbox"
-    static let app = Logger(subsystem: subsystem, category: "app")
-    static let navigation = Logger(subsystem: subsystem, category: "navigation")
-    static let data = Logger(subsystem: subsystem, category: "data")
-    static let persistence = Logger(subsystem: subsystem, category: "persistence")
-    static let sync = Logger(subsystem: subsystem, category: "sync")
-    static let home = Logger(subsystem: subsystem, category: "home")
-    static let routine = Logger(subsystem: subsystem, category: "routine")
-    static let calendar = Logger(subsystem: subsystem, category: "calendar")
-    static let todo = Logger(subsystem: subsystem, category: "todo")
-    static let auth = Logger(subsystem: subsystem, category: "auth")
-    static let storage = Logger(subsystem: subsystem, category: "storage")
-    static let ui = Logger(subsystem: subsystem, category: "ui")
-    static let settings = Logger(subsystem: subsystem, category: "settings")
-    static let crypto = Logger(subsystem: subsystem, category: "crypto")
-    static let security = Logger(subsystem: subsystem, category: "security")
-    static let ai = Logger(subsystem: subsystem, category: "ai")
-    
+
+    static let app = KBLoggingLogger(category: "app", subsystem: subsystem)
+    static let navigation = KBLoggingLogger(category: "navigation", subsystem: subsystem)
+    static let data = KBLoggingLogger(category: "data", subsystem: subsystem)
+    static let persistence = KBLoggingLogger(category: "persistence", subsystem: subsystem)
+    static let sync = KBLoggingLogger(category: "sync", subsystem: subsystem)
+    static let home = KBLoggingLogger(category: "home", subsystem: subsystem)
+    static let routine = KBLoggingLogger(category: "routine", subsystem: subsystem)
+    static let calendar = KBLoggingLogger(category: "calendar", subsystem: subsystem)
+    static let todo = KBLoggingLogger(category: "todo", subsystem: subsystem)
+    static let auth = KBLoggingLogger(category: "auth", subsystem: subsystem)
+    static let storage = KBLoggingLogger(category: "storage", subsystem: subsystem)
+    static let ui = KBLoggingLogger(category: "ui", subsystem: subsystem)
+    static let settings = KBLoggingLogger(category: "settings", subsystem: subsystem)
+    static let crypto = KBLoggingLogger(category: "crypto", subsystem: subsystem)
+    static let security = KBLoggingLogger(category: "security", subsystem: subsystem)
+    static let ai = KBLoggingLogger(category: "ai", subsystem: subsystem)
 }
 
-import OSLog
+/// Logger con categoria nota per OSLog e file di supporto.
+struct KBLoggingLogger: Sendable {
+    private let osLogger: Logger
+    let category: String
 
-extension Logger {
-    
+    init(category: String, subsystem: String) {
+        self.category = category
+        self.osLogger = Logger(subsystem: subsystem, category: category)
+    }
+
     nonisolated func kbDebug(
         _ message: String,
         file: String = #fileID,
         function: String = #function,
-        line: Int = #line
+        line: Int = #line,
+        writeToFile: Bool = true
     ) {
         let filename = file.split(separator: "/").last.map(String.init) ?? file
-        self.debug("[\(filename):\(function):\(line)] \(message)")
+        osLogger.debug("[\(filename):\(function):\(line)] \(message)")
+        if writeToFile {
+            KBFileLogger.shared.append(
+                level: .debug,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
+        }
     }
-    
+
     nonisolated func kbInfo(
         _ message: String,
         file: String = #fileID,
         function: String = #function,
-        line: Int = #line
+        line: Int = #line,
+        writeToFile: Bool = true
     ) {
         let filename = file.split(separator: "/").last.map(String.init) ?? file
-        self.info("[\(filename):\(function):\(line)] \(message)")
+        osLogger.info("[\(filename):\(function):\(line)] \(message)")
+        if writeToFile {
+            KBFileLogger.shared.append(
+                level: .info,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
+        }
     }
-    
+
+    nonisolated func kbWarning(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        let filename = file.split(separator: "/").last.map(String.init) ?? file
+        osLogger.warning("[\(filename):\(function):\(line)] \(message)")
+        if writeToFile {
+            KBFileLogger.shared.append(
+                level: .warning,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
+        }
+    }
+
     nonisolated func kbError(
         _ message: String,
         file: String = #fileID,
         function: String = #function,
-        line: Int = #line
+        line: Int = #line,
+        writeToFile: Bool = true
     ) {
         let filename = file.split(separator: "/").last.map(String.init) ?? file
-        self.error("[\(filename):\(function):\(line)] \(message)")
+        osLogger.error("[\(filename):\(function):\(line)] \(message)")
+        if writeToFile {
+            KBFileLogger.shared.append(
+                level: .error,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
+        }
+    }
+
+    nonisolated func kbCrash(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        let filename = file.split(separator: "/").last.map(String.init) ?? file
+        osLogger.fault("[\(filename):\(function):\(line)] \(message)")
+        if writeToFile {
+            KBFileLogger.shared.append(
+                level: .crash,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
+        }
+    }
+}
+
+// MARK: - Legacy Logger extensions (redirect to app category)
+
+extension Logger {
+
+    nonisolated func kbDebug(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        KBLog.app.kbDebug(message, file: file, function: function, line: line, writeToFile: writeToFile)
+    }
+
+    nonisolated func kbInfo(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        KBLog.app.kbInfo(message, file: file, function: function, line: line, writeToFile: writeToFile)
+    }
+
+    nonisolated func kbWarning(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        KBLog.app.kbWarning(message, file: file, function: function, line: line, writeToFile: writeToFile)
+    }
+
+    nonisolated func kbError(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        KBLog.app.kbError(message, file: file, function: function, line: line, writeToFile: writeToFile)
+    }
+
+    nonisolated func kbCrash(
+        _ message: String,
+        file: String = #fileID,
+        function: String = #function,
+        line: Int = #line,
+        writeToFile: Bool = true
+    ) {
+        KBLog.app.kbCrash(message, file: file, function: function, line: line, writeToFile: writeToFile)
     }
 }

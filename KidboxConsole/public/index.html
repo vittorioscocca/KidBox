@@ -11,7 +11,7 @@
 import { initializeApp }          from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs }
+import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, query, orderBy }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 import { getFunctions, httpsCallable }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-functions.js';
@@ -68,6 +68,8 @@ function handleAuth(user) {
     document.getElementById('screen-dash').style.display  = 'block';
     document.getElementById('user-email').textContent     = user.email;
     loadAll();
+    initTickets();
+    checkAdminNotifStatus();
   } else {
     document.getElementById('screen-login').style.display = 'flex';
     document.getElementById('screen-dash').style.display  = 'none';
@@ -150,6 +152,142 @@ function drawPie(canvasId, slices) {
   ctx.arc(cx,cy,r*0.55,0,Math.PI*2);
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#fff';
   ctx.fill();
+}
+
+// ── TICKET / CRASH REPORTS ────────────────
+let _ticketUnsub = null;
+
+function initTickets() {
+  if (_ticketUnsub) _ticketUnsub();
+  const q = query(collection(db, 'cases'), orderBy('createdAt', 'desc'));
+  _ticketUnsub = onSnapshot(q, snap => {
+    const cases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const newC  = cases.filter(c => c.status === 'new').length;
+    const taken = cases.filter(c => c.status === 'taken').length;
+    const resolved = cases.filter(c => c.status === 'resolved').length;
+    setVal('ticket-new',      newC);
+    setVal('ticket-taken',    taken);
+    setVal('ticket-resolved', resolved);
+    // badge topbar
+    const badge = document.getElementById('ticket-badge');
+    if (badge) { badge.textContent = newC > 0 ? newC : ''; badge.style.display = newC > 0 ? 'inline-flex' : 'none'; }
+    renderTicketTable(cases);
+  }, err => console.error('tickets snapshot error', err));
+}
+
+function renderTicketTable(cases) {
+  const tbody = document.getElementById('ticket-tbody');
+  if (!tbody) return;
+  if (cases.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Nessun ticket 🎉</td></tr>';
+    return;
+  }
+  const severityColor = { critical:'#f06060', high:'#f09050', medium:'#e8c44a', low:'#3bbf80' };
+  const statusLabel   = { new:'🔴 Nuovo', taken:'🟡 In carico', resolved:'🟢 Risolto' };
+  tbody.innerHTML = cases.map(c => {
+    const ts = c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('it-IT') : '—';
+    const sev = c.severity || 'medium';
+    const st  = c.status || 'new';
+    return `<tr>
+      <td><span style="background:${severityColor[sev]}22;color:${severityColor[sev]};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${sev.toUpperCase()}</span></td>
+      <td><span style="font-size:11px;opacity:.6">${c.platform||'—'}</span></td>
+      <td style="font-family:var(--mono);font-size:11px">${c.affectedModule||'—'}</td>
+      <td style="max-width:260px;font-size:12px">${c.summary||'—'}</td>
+      <td style="font-size:11px;opacity:.7">${c.appVersion||'—'}</td>
+      <td><span style="font-size:12px">${statusLabel[st]||st}</span>${c.assignedTo ? `<div style="font-size:10px;opacity:.5;margin-top:2px">${c.assignedTo}</div>` : ''}</td>
+      <td style="font-size:11px;opacity:.6">${ts}</td>
+      <td style="white-space:nowrap">
+        ${st === 'new'    ? `<button class="btn-sm" onclick="ticketAction('take','${c.id}')">Prendi</button> ` : ''}
+        ${st === 'taken'  ? `<button class="btn-sm btn-accent" onclick="ticketAction('resolve','${c.id}')">Risolvi</button> ` : ''}
+        ${st === 'resolved' ? `<button class="btn-sm" onclick="ticketAction('delete','${c.id}')" style="color:#f06060">🗑</button>` : ''}
+        ${st === 'new'    ? `<button class="btn-sm" onclick="ticketAction('delete','${c.id}')" style="color:#f06060;margin-left:4px">🗑</button>` : ''}
+        <button class="btn-sm" onclick="ticketDetail('${c.id}')" style="margin-left:2px">🔍</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function ticketAction(action, caseId) {
+  try {
+    if (action === 'take')    await httpsCallable(functions, 'takeCase')({ caseId });
+    if (action === 'resolve') {
+      const notes = prompt('Note sulla risoluzione (opzionale):') || '';
+      await httpsCallable(functions, 'resolveCase')({ caseId, notes });
+    }
+    if (action === 'delete') {
+      if (!confirm('Eliminare definitivamente questo ticket?')) return;
+      await httpsCallable(functions, 'deleteCase')({ caseId });
+    }
+  } catch(e) { showErr('Errore azione ticket: ' + e.message); }
+}
+
+async function ticketDetail(caseId) {
+  try {
+    const snap = await getDoc(doc(db, 'cases', caseId));
+    if (!snap.exists()) { alert('Ticket non trovato'); return; }
+    const c = snap.data();
+    // Prova a leggere i raw logs dal crash_report collegato
+    let rawLogs = '(nessun log disponibile)';
+    if (c.reportId) {
+      try {
+        const rSnap = await getDoc(doc(db, 'crash_reports', c.reportId));
+        if (rSnap.exists()) rawLogs = rSnap.data().rawLogs || rawLogs;
+      } catch {}
+    }
+    const modal = document.getElementById('ticket-modal');
+    document.getElementById('modal-title').textContent   = c.affectedModule || 'Dettaglio';
+    document.getElementById('modal-summary').textContent = c.summary || '—';
+    document.getElementById('modal-detail').textContent  = c.detail  || '—';
+    document.getElementById('modal-device').textContent  = `${c.platform||'—'} ${c.osVersion||''} · ${c.device||''} · v${c.appVersion||'—'}`;
+    document.getElementById('modal-logs').textContent    = rawLogs.slice(0, 8000);
+    document.getElementById('modal-caseid').textContent  = caseId;
+    modal.style.display = 'flex';
+  } catch(e) { showErr('Errore dettaglio: ' + e.message); }
+}
+
+// ── ADMIN NOTIFICHE ──────────────────────
+async function toggleAdminNotif(btn) {
+  if (!auth?.currentUser) { showErr('Devi essere loggato'); return; }
+  btn.disabled = true;
+  try {
+    const cfgSnap = await getDoc(doc(db, 'admin', 'config'));
+    const uid = auth.currentUser.uid;
+    const isRegistered = cfgSnap.exists() &&
+      (cfgSnap.data().notifyUids || []).includes(uid);
+
+    if (isRegistered) {
+      await httpsCallable(functions, 'unregisterAdminNotifications')({});
+      btn.textContent = '🔕 Notifiche';
+      btn.style.opacity = '.5';
+      alert('Rimosso dalle notifiche push critical.');
+    } else {
+      await httpsCallable(functions, 'registerAdminNotifications')({});
+      btn.textContent = '🔔 Notifiche ✓';
+      btn.style.opacity = '1';
+      btn.classList.add('btn-accent');
+      alert('✅ Registrato! Riceverai una push su iOS/Android per ogni ticket critical.');
+    }
+  } catch(e) { showErr('Errore notifiche: ' + e.message); }
+  finally { btn.disabled = false; }
+}
+
+async function checkAdminNotifStatus() {
+  if (!auth?.currentUser) return;
+  try {
+    const cfgSnap = await getDoc(doc(db, 'admin', 'config'));
+    const uid = auth.currentUser.uid;
+    const isReg = cfgSnap.exists() &&
+      (cfgSnap.data().notifyUids || []).includes(uid);
+    const btn = document.getElementById('btn-notif');
+    if (!btn) return;
+    if (isReg) {
+      btn.textContent = '🔔 Notifiche ✓';
+      btn.classList.add('btn-accent');
+    } else {
+      btn.textContent = '🔕 Notifiche';
+      btn.style.opacity = '.6';
+    }
+  } catch {}
 }
 
 // ── load ──────────────────────────────────
@@ -453,6 +591,14 @@ h2{font-size:22px;font-weight:600;margin-bottom:6px;letter-spacing:-.4px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .topbar-right{display:flex;align-items:center;gap:10px}
 .badge-month{font-family:var(--mono);font-size:10px;color:var(--color-dim);background:var(--color-muted);padding:4px 9px;border-radius:5px;border:1px solid var(--color-brd)}
+/* TICKET */
+.ticket-badge{background:#f06060;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;margin-left:4px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-box{background:#1a1a1a;border:1px solid var(--color-brd);border-radius:14px;padding:28px;width:90%;max-width:780px;max-height:85vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--color-dim);font-size:18px;cursor:pointer}
+.modal-logs{background:#111;border:1px solid var(--color-brd);border-radius:8px;padding:14px;font-family:var(--mono);font-size:10px;color:#9ef;white-space:pre-wrap;max-height:320px;overflow-y:auto;margin-top:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+/* END TICKET */
 .btn-sm{background:var(--color-muted);border:1px solid var(--color-brd);color:var(--color-text);padding:7px 14px;border-radius:7px;font-family:var(--sans);font-weight:500;font-size:12px;cursor:pointer;transition:background .15s}
 .btn-sm:hover{background:var(--color-dim-line)}
 .btn-sm:disabled{opacity:.4;cursor:not-allowed}
@@ -592,6 +738,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <a href="https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1" target="_blank" class="btn-sm" style="text-decoration:none">💰 Billing</a>
       <span class="badge-month" id="month-badge">—</span>
       <span class="user-chip" id="user-email"></span>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-dim)">🐛<span class="ticket-badge" id="ticket-badge"></span></span>
+      <button class="btn-sm" id="btn-notif" onclick="toggleAdminNotif(this)" title="Attiva/disattiva notifiche push per ticket critical">🔔 Notifiche</button>
       <button class="btn-sm btn-accent" id="btn-refresh">↻ Aggiorna</button>
       <button class="btn-sm" id="btn-reset-all" onclick="resetStorageAll(this)">↺ Reset Storage</button>
       <button class="btn-sm" id="btn-logout">Esci</button>
@@ -794,6 +942,68 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       </table>
     </div>
     <div style="height:52px"></div>
+
+    <!-- TICKET & BUG REPORT -->
+    <div class="sec-title" style="margin-top:40px">🐛 Ticket & Bug Report</div>
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-lbl">Nuovi</div>
+        <div class="card-val" id="ticket-new" style="color:#f06060">—</div>
+        <div class="card-sub">da prendere in carico</div>
+      </div>
+      <div class="card">
+        <div class="card-lbl">In carico</div>
+        <div class="card-val" id="ticket-taken" style="color:#e8c44a">—</div>
+        <div class="card-sub">in lavorazione</div>
+      </div>
+      <div class="card">
+        <div class="card-lbl">Risolti</div>
+        <div class="card-val" id="ticket-resolved" style="color:#3bbf80">—</div>
+        <div class="card-sub">eliminati dopo 7gg</div>
+      </div>
+    </div>
+
+    <div class="tcard">
+      <div class="tcard-hdr">Casi aperti <span class="sub">(aggiornamento in tempo reale)</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Gravità</th>
+            <th>Piattaforma</th>
+            <th>Modulo</th>
+            <th>Descrizione</th>
+            <th>Versione</th>
+            <th>Stato</th>
+            <th>Data</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="ticket-tbody">
+          <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETTAGLIO TICKET -->
+<div class="modal-overlay" id="ticket-modal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('ticket-modal').style.display='none'">✕</button>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-orange);margin-bottom:6px">Dettaglio Ticket</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px" id="modal-title">—</div>
+    <div style="font-size:11px;color:var(--color-dim);margin-bottom:16px" id="modal-device">—</div>
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px">Descrizione</div>
+    <div style="font-size:12px;opacity:.8;margin-bottom:14px" id="modal-summary">—</div>
+    <div style="font-size:12px;font-weight:600;margin-bottom:4px">Causa tecnica</div>
+    <div style="font-size:12px;opacity:.8;margin-bottom:14px;font-family:var(--mono)" id="modal-detail">—</div>
+    <div style="font-size:12px;font-weight:600;margin-bottom:6px">Log grezzi</div>
+    <div class="modal-logs" id="modal-logs"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+      <button class="btn-sm btn-accent" onclick="ticketAction('resolve', document.getElementById('modal-caseid').textContent); document.getElementById('ticket-modal').style.display='none'">✓ Segna risolto</button>
+      <button class="btn-sm" onclick="ticketAction('take', document.getElementById('modal-caseid').textContent)">Prendi in carico</button>
+      <span style="font-size:10px;opacity:.4;font-family:var(--mono);margin-left:auto" id="modal-caseid"></span>
+    </div>
   </div>
 </div>
 

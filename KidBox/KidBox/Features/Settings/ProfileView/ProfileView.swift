@@ -113,6 +113,7 @@ struct ProfileView: View {
     @State private var savedFamilyAddress: String = ""
     @State private var savedAvatarHash: Int = 0
     @State private var showLogoutConfirm = false
+    @AppStorage("kb_log_reporting_enabled") private var automaticErrorReports = false
     
     @StateObject private var addressCompleter = AddressSearchCompleter()
     @StateObject private var locationService = OneShotLocationService()
@@ -139,6 +140,9 @@ struct ProfileView: View {
                     
                     // MARK: - Abbonamento
                     subscriptionCard
+                    
+                    // MARK: - Privacy / supporto
+                    privacySupportCard
                     
                     // MARK: - Azioni
                     actionsCard
@@ -567,6 +571,36 @@ struct ProfileView: View {
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
     }
     
+    // MARK: - Privacy / Supporto
+
+    private var privacySupportCard: some View {
+        VStack(spacing: 0) {
+            sectionHeader(icon: "hand.raised.fill", title: "Privacy e supporto")
+            Toggle(isOn: $automaticErrorReports) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Invia report errori automatici")
+                        .font(.system(size: 16, weight: .medium))
+                    Text("Report anonimo su anomalie tecniche per migliorare l'app. Nessun dato personale o familiare.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .onChange(of: automaticErrorReports) { _, enabled in
+                CrashAnalyzer.isAutomaticReportingEnabled = enabled
+                if enabled {
+                    CrashAnalyzer.hasBeenAskedForReporting = true
+                }
+            }
+        }
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
+        .onAppear {
+            automaticErrorReports = CrashAnalyzer.isAutomaticReportingEnabled
+        }
+    }
+
     // MARK: - Actions Card
     
     private var actionsCard: some View {

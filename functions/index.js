@@ -1103,6 +1103,7 @@ exports.notifyNewNote = onDocumentCreated(
 const {defineSecret} = require("firebase-functions/params");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 /** Chat, note, todo e task non clinici. */
 const ANTHROPIC_MODEL_DEFAULT = "claude-haiku-4-5-20251001";
 const ANTHROPIC_INPUT_USD_PER_1M_HAIKU = 1.0;
@@ -4044,4 +4045,347 @@ exports.notifyUpcomingWalletTickets = onSchedule(
 
       logger.info("notifyUpcomingWalletTickets: complete", {total24h, total2h});
     },
+);
+
+/**
+ * @param {string} logs
+ * @return {string}
+ */
+function buildCrashLogAnalysisPrompt(logs) {
+  return `Sei un analizzatore di log per l'app KidBox Android.
+Analizza i log e rispondi SOLO con JSON valido:
+{
+  "hasIssues": true/false,
+  "issues": [
+    {
+      "type": "crash|error|malfunction|warning",
+      "severity": "critical|high|medium|low",
+      "category": "sync|auth|data|ui|ai|storage|navigation",
+      "affectedModule": "nome classe o funzione",
+      "summary": "descrizione breve max 120 caratteri in italiano",
+      "detail": "causa tecnica probabile",
+      "firstOccurrence": "timestamp",
+      "occurrences": numero
+    }
+  ]
+}
+Log: ${logs}`;
+}
+
+exports.analyzeLogs = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [GEMINI_API_KEY],
+      timeoutSeconds: 120,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) {
+        throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      }
+
+      const logs = request.data?.logs;
+      if (typeof logs !== "string" || logs.trim().length === 0) {
+        throw new HttpsError("invalid-argument", "logs è richiesto.");
+      }
+      if (logs.length > 200 * 1024) {
+        throw new HttpsError("invalid-argument", "logs troppo grande.");
+      }
+
+      const apiKey = GEMINI_API_KEY.value();
+      if (!apiKey) {
+        logger.error("analyzeLogs: GEMINI_API_KEY secret non configurato");
+        throw new HttpsError("failed-precondition", "Servizio analisi log non configurato.");
+      }
+
+      const {GoogleGenerativeAI} = require("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({model: "gemini-1.5-flash"});
+      const result = await model.generateContent(buildCrashLogAnalysisPrompt(logs));
+      const text = result?.response?.text?.() ?? "";
+      if (!text) {
+        throw new HttpsError("internal", "Risposta vuota dal modello.");
+      }
+      return text;
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRASH REPORTING — gestione ticket da log iOS/Android
+// ─────────────────────────────────────────────────────────────────────────────
+
+const db = admin.firestore();
+
+/**
+ * Trigger: nuovo crash_report → crea o aggiorna caso in /cases
+ */
+exports.onNewCrashReport = onDocumentCreated(
+  { document: "crash_reports/{reportId}", region: "europe-west1" },
+  async (event) => {
+    const report = event.data.data();
+    const reportId = event.params.reportId;
+    if (!report || !report.issues || report.issues.length === 0) return;
+
+    for (const issue of report.issues) {
+      if (!issue.affectedModule) continue;
+
+      // Deduplication: stesso modulo + piattaforma nelle ultime 24h non risolto
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const existing = await db.collection("cases")
+        .where("affectedModule", "==", issue.affectedModule)
+        .where("platform", "==", report.platform)
+        .where("status", "in", ["new", "taken"])
+        .where("createdAt", ">", admin.firestore.Timestamp.fromDate(since))
+        .limit(1)
+        .get();
+
+      if (!existing.empty) {
+        await existing.docs[0].ref.update({
+          occurrences: admin.firestore.FieldValue.increment(1),
+          lastSeenAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastReportId: reportId,
+        });
+        logger.info("onNewCrashReport: aggiornato caso esistente", { module: issue.affectedModule });
+        continue;
+      }
+
+      // Crea nuovo caso
+      await db.collection("cases").add({
+        reportId,
+        platform: report.platform || "unknown",
+        appVersion: report.appVersion || "—",
+        osVersion: report.osVersion || "—",
+        device: report.device || "—",
+        type: issue.type || "error",
+        severity: issue.severity || "medium",
+        category: issue.category || "app",
+        affectedModule: issue.affectedModule,
+        summary: issue.summary || "Nessuna descrizione",
+        detail: issue.detail || "",
+        status: "new",
+        occurrences: 1,
+        assignedTo: null,
+        notes: "",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: admin.firestore.FieldValue.serverTimestamp(),
+        resolvedAt: null,
+        lastReportId: reportId,
+      });
+      logger.info("onNewCrashReport: creato nuovo caso", { module: issue.affectedModule, severity: issue.severity });
+    }
+  },
+);
+
+/**
+ * Trigger: caso risolto → elimina raw logs, schedula cleanup
+ */
+exports.onCaseStatusChange = onDocumentWritten(
+  { document: "cases/{caseId}", region: "europe-west1" },
+  async (event) => {
+    const before = event.data.before.exists ? event.data.before.data() : null;
+    const after  = event.data.after.exists  ? event.data.after.data()  : null;
+    if (!before || !after) return;
+    if (before.status === after.status) return;
+
+    if (after.status === "resolved") {
+      // Segna resolvedAt
+      await event.data.after.ref.update({
+        resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      // Elimina i raw logs dal crash_report collegato
+      if (after.reportId) {
+        try {
+          await db.collection("crash_reports").doc(after.reportId).delete();
+          logger.info("onCaseStatusChange: crash_report eliminato", { reportId: after.reportId });
+        } catch (e) {
+          logger.warn("onCaseStatusChange: impossibile eliminare crash_report", { err: e.message });
+        }
+      }
+    }
+  },
+);
+
+/**
+ * Callable: prendi in carico un caso (status → taken)
+ */
+exports.takeCase = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+    const { caseId } = request.data;
+    if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
+    await db.collection("cases").doc(caseId).update({
+      status: "taken",
+      assignedTo: request.auth.token.email || request.auth.uid,
+      takenAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { ok: true };
+  },
+);
+
+/**
+ * Callable: risolvi un caso (status → resolved)
+ */
+exports.resolveCase = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+    const { caseId, notes } = request.data;
+    if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
+    await db.collection("cases").doc(caseId).update({
+      status: "resolved",
+      resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      notes: notes || "",
+      assignedTo: request.auth.token.email || request.auth.uid,
+    });
+    return { ok: true };
+  },
+);
+
+/**
+ * Callable: elimina un caso manualmente
+ */
+exports.deleteCase = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+    const { caseId } = request.data;
+    if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
+    const snap = await db.collection("cases").doc(caseId).get();
+    if (snap.exists && snap.data().reportId) {
+      try { await db.collection("crash_reports").doc(snap.data().reportId).delete(); } catch {}
+    }
+    await db.collection("cases").doc(caseId).delete();
+    return { ok: true };
+  },
+);
+
+/**
+ * Cron giornaliero: elimina i casi risolti da più di 7 giorni
+ */
+exports.cleanupResolvedCases = onSchedule(
+  { schedule: "every 24 hours", region: "europe-west1" },
+  async () => {
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const snap = await db.collection("cases")
+      .where("status", "==", "resolved")
+      .where("resolvedAt", "<=", admin.firestore.Timestamp.fromDate(cutoff))
+      .get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    logger.info("cleanupResolvedCases: eliminati", { count: snap.size });
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICA PUSH ADMIN — ticket critical
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Trigger: nuovo caso critical → push a tutti gli admin registrati
+ */
+exports.notifyCriticalCase = onDocumentCreated(
+  { document: "cases/{caseId}", region: "europe-west1" },
+  async (event) => {
+    const c = event.data.data();
+    if (!c || c.severity !== "critical") return;
+
+    // Leggi uid admin da /admin/config
+    const cfgSnap = await db.collection("admin").doc("config").get();
+    if (!cfgSnap.exists) {
+      logger.warn("notifyCriticalCase: /admin/config non trovato");
+      return;
+    }
+    const notifyUids = cfgSnap.data().notifyUids || [];
+    if (notifyUids.length === 0) return;
+
+    // Raccogli tutti i FCM token degli admin
+    const tokens = [];
+    for (const uid of notifyUids) {
+      const tSnap = await db.collection("users").doc(uid)
+        .collection("fcmTokens").get();
+      tSnap.forEach(t => { if (t.get("token")) tokens.push(t.get("token")); });
+    }
+    if (tokens.length === 0) {
+      logger.warn("notifyCriticalCase: nessun token FCM admin trovato");
+      return;
+    }
+
+    const platform = c.platform === "ios" ? "🍎 iOS" : "🤖 Android";
+    const payload = {
+      tokens,
+      notification: {
+        title: `🚨 Ticket Critical — ${c.affectedModule || "Unknown"}`,
+        body: `${platform} · ${c.summary || "Nessuna descrizione"}`,
+      },
+      data: {
+        type: "critical_case",
+        caseId: event.params.caseId,
+        affectedModule: c.affectedModule || "",
+        platform: c.platform || "",
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default",
+          channelId: "critical_alerts",
+        },
+      },
+    };
+
+    const result = await admin.messaging().sendEachForMulticast(payload);
+    logger.info("notifyCriticalCase: push inviata", {
+      success: result.successCount,
+      failure: result.failureCount,
+      module: c.affectedModule,
+    });
+  },
+);
+
+/**
+ * Callable: registra l'utente corrente come admin destinatario notifiche
+ */
+exports.registerAdminNotifications = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+    const uid = request.auth.uid;
+    const email = request.auth.token.email || "";
+
+    await db.collection("admin").doc("config").set({
+      notifyUids: admin.firestore.FieldValue.arrayUnion(uid),
+      [`adminEmails.${uid}`]: email,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    logger.info("registerAdminNotifications: registrato", { uid, email });
+    return { ok: true, uid, email };
+  },
+);
+
+/**
+ * Callable: rimuovi l'utente corrente dagli admin notifiche
+ */
+exports.unregisterAdminNotifications = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+    const uid = request.auth.uid;
+
+    await db.collection("admin").doc("config").set({
+      notifyUids: admin.firestore.FieldValue.arrayRemove(uid),
+    }, { merge: true });
+
+    return { ok: true };
+  },
 );

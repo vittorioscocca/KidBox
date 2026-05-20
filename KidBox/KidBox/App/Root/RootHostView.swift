@@ -73,6 +73,7 @@ struct RootHostView: View {
     
     @State private var revokedFamilyName: String?
     @State private var showRevokedAlert = false
+    @ObservedObject private var crashReportPrompt = CrashReportPromptCenter.shared
     
     // MARK: - View
     
@@ -82,6 +83,10 @@ struct RootHostView: View {
                 .navigationDestination(for: Route.self) {
                     coordinator.makeDestination(for: $0)
                 }
+        }
+        .task(id: coordinator.isAuthenticated) {
+            guard coordinator.isAuthenticated else { return }
+            await CrashAnalyzer.analyzeIfNeeded()
         }
         .task(id: resolvedActiveFamilyId) {
             guard let fid = resolvedActiveFamilyId else { return }
@@ -254,6 +259,17 @@ struct RootHostView: View {
                 try? await Task.sleep(nanoseconds: 2_200_000_000)
                 coordinator.globalBannerMessage = nil
             }
+        }
+        .alert(item: $crashReportPrompt.activePrompt) { prompt in
+            let label = prompt.issueCount == 1 ? "anomalia tecnica" : "anomalie tecniche"
+            return Alert(
+                title: Text("Aiutaci a migliorare KidBox"),
+                message: Text(
+                    "Abbiamo rilevato \(prompt.issueCount) \(label). Puoi inviarci un report anonimo per aiutarci a risolvere il problema? Non verranno inviati dati personali o familiari."
+                ),
+                primaryButton: .default(Text("Invia report"), action: prompt.onSend),
+                secondaryButton: .cancel(Text("No grazie"), action: prompt.onDecline)
+            )
         }
     }
     

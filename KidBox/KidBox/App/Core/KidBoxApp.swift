@@ -25,6 +25,7 @@ struct KidBoxApp: App {
     @State private var lastForegroundMaintenanceAt: Date?
     
     init() {
+        KBFileLogger.shared.performStartupMaintenance()
         KBLog.app.kbInfo("KidBoxApp init")
         let container = ModelContainerProvider.makeContainer(inMemory: false)
         self.modelContainer = container

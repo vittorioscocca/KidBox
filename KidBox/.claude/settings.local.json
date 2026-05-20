@@ -20,7 +20,13 @@
       "Bash(pdftotext \"/Users/vscocca/Downloads/cartella_clinica_efw85HN41nb1rmslevC3wkFpVUo1 \\(2\\).pdf\" -)",
       "Bash(mdls -name kMDItemTextContent \"/Users/vscocca/Downloads/cartella_clinica_efw85HN41nb1rmslevC3wkFpVUo1 \\(2\\).pdf\")",
       "Bash(python3 -c ' *)",
-      "Bash(pip3 install *)"
+      "Bash(pip3 install *)",
+      "Bash(firebase functions:secrets:set GEMINI_API_KEY)",
+      "Bash(firebase functions:secrets:access GEMINI_API_KEY)",
+      "Bash(npm ci *)",
+      "Bash(npm install *)",
+      "Bash(firebase functions:delete onNewCrashReport --region europe-west1 --force)",
+      "Bash(firebase functions:delete onCaseStatusChange takeCase resolveCase deleteCase cleanupResolvedCases --region europe-west1 --force)"
     ]
   }
 }
