@@ -70,6 +70,7 @@ enum LocalDataWiper {
             try delete(KBHousePayment.self, familyId: fid, context: context)
             try delete(KBVehicleEvent.self, familyId: fid, context: context)
             try delete(KBVehicle.self, familyId: fid, context: context)
+            try delete(KBGeofence.self, familyId: fid, context: context)
             
             // Children (relationship-based)
             try deleteChildren(familyId: fid, context: context)

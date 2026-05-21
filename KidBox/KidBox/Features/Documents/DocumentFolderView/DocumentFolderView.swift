@@ -79,9 +79,11 @@ struct DocumentFolderView: View {
     @State var showCamera = false
     @State var cameraImage: UIImage?
     
-    // Child scope
+    // Child scope — figlio della famiglia di questa cartella, non della prima in DB.
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
-    var activeChildId: String? { families.first?.children.first?.id }
+    var activeChildId: String? {
+        families.first(where: { $0.id == familyId })?.children.first?.id
+    }
     
     @Query private var visibilityMembers: [KBFamilyMember]
     

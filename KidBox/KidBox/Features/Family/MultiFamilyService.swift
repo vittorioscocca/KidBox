@@ -51,8 +51,9 @@ final class MultiFamilyService {
         )
         modelContext.insert(family)
 
+        // id = uid: allineato a Firestore members/{uid} e al listener SyncCenter.
         let member = KBFamilyMember(
-            id: "\(familyId)_\(uid)",
+            id: uid,
             familyId: familyId,
             userId: uid,
             role: "owner",
@@ -64,6 +65,14 @@ final class MultiFamilyService {
             updatedAt: now
         )
         modelContext.insert(member)
+        // Rimuovi eventuali righe legacy (id = "{familyId}_{uid}") dalla stessa famiglia.
+        let legacyId = "\(familyId)_\(uid)"
+        let legacyDesc = FetchDescriptor<KBFamilyMember>(
+            predicate: #Predicate { $0.id == legacyId && $0.familyId == familyId }
+        )
+        if let legacy = try? modelContext.fetch(legacyDesc).first {
+            modelContext.delete(legacy)
+        }
         try modelContext.save()
 
         let capturedName = trimmedName
@@ -81,7 +90,6 @@ final class MultiFamilyService {
             try? await db.collection("families").document(familyId).setData(familyData)
 
             let memberData: [String: Any] = [
-                "id": "\(familyId)_\(uid)",
                 "familyId": familyId,
                 "userId": uid,
                 "uid": uid,

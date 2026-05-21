@@ -1141,3 +1141,21 @@ final class AppCoordinator: ObservableObject {
         }
     }
 }
+
+// MARK: - Active family resolution (multi-family)
+
+/// Risolve la famiglia da mostrare: prima `AppCoordinator.activeFamilyId`, poi fallback SwiftData.
+enum ActiveFamilyResolver {
+    static func family(from families: [KBFamily], activeFamilyId: String?) -> KBFamily? {
+        if let id = activeFamilyId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !id.isEmpty,
+           let match = families.first(where: { $0.id == id }) {
+            return match
+        }
+        return families.first
+    }
+
+    static func familyId(from families: [KBFamily], activeFamilyId: String?) -> String {
+        family(from: families, activeFamilyId: activeFamilyId)?.id ?? ""
+    }
+}

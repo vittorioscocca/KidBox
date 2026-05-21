@@ -34,6 +34,7 @@ struct ChatView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var coordinator: AppCoordinator
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     
     private var backgroundColor: Color {
@@ -50,24 +51,34 @@ struct ChatView: View {
     @State private var galleryReplyMessage: KBChatMessage? = nil
     @State private var galleryDeleteRequest: GalleryDeleteRequest? = nil
     
-    private var familyId: String { families.first?.id ?? "" }
+    private var activeFamily: KBFamily? {
+        ActiveFamilyResolver.family(from: families, activeFamilyId: coordinator.activeFamilyId)
+    }
+    
+    private var activeFamilyId: String { activeFamily?.id ?? "" }
+    
+    private var chatNavigationTitle: String {
+        let name = activeFamily?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return name.isEmpty ? "Chat famiglia" : "Chat \(name)"
+    }
     
     var body: some View {
         Group {
-            if familyId.isEmpty {
+            if activeFamilyId.isEmpty {
                 emptyNoFamily
             } else {
                 ChatConversationView(
-                    familyId: familyId,
+                    familyId: activeFamilyId,
                     searchText: searchText,
                     showClearConfirm: $showClearConfirm,
                     goToMessageId: $galleryGoToMessageId,
                     replyFromGallery: $galleryReplyMessage,
                     deleteFromGallery: $galleryDeleteRequest
                 )
+                .id(activeFamilyId)
             }
         }
-        .navigationTitle("Chat famiglia")
+        .navigationTitle(chatNavigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -113,7 +124,7 @@ struct ChatView: View {
         )
         .sheet(isPresented: $showMediaGallery) {
             ChatMediaGalleryView(
-                familyId: familyId,
+                familyId: activeFamilyId,
                 onGoToMessage: { msgId in
                     showMediaGallery = false
                     galleryGoToMessageId = msgId

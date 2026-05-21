@@ -127,7 +127,8 @@ struct FamilySwitcherView: View {
         let service = MultiFamilyService(modelContext: modelContext, coordinator: coordinator)
         Task {
             do {
-                _ = try await service.createEmptyFamily(name: trimmed)
+                let familyId = try await service.createEmptyFamily(name: trimmed)
+                service.switchToFamily(familyId)
                 showCreateSheet = false
                 newFamilyName = ""
             } catch {

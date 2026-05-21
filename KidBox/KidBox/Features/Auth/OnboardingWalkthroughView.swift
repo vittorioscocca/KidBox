@@ -238,7 +238,8 @@ struct OnboardingWalkthroughView: View {
                             cardBackground: cardBackground,
                             accentColor:    currentAccent,
                             iconColor:      currentIconColor,
-                            modelContext:   modelContext
+                            modelContext:   modelContext,
+                            coordinator:    coordinator
                         )
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
@@ -914,19 +915,28 @@ private struct InviteOnboardingCard: View {
     let accentColor:    Color
     let iconColor:      Color
     let modelContext:   ModelContext
+    let coordinator:    AppCoordinator
     
     @StateObject private var vm: InviteCodeViewModel
     @State private var didGenerate = false
     @State private var didCopy     = false
     
-    init(cardBackground: Color, accentColor: Color, iconColor: Color, modelContext: ModelContext) {
+    init(
+        cardBackground: Color,
+        accentColor: Color,
+        iconColor: Color,
+        modelContext: ModelContext,
+        coordinator: AppCoordinator
+    ) {
         self.cardBackground = cardBackground
         self.accentColor    = accentColor
         self.iconColor      = iconColor
         self.modelContext   = modelContext
+        self.coordinator    = coordinator
         _vm = StateObject(wrappedValue: InviteCodeViewModel(
             remote: InviteRemoteStore(),
-            modelContext: modelContext
+            modelContext: modelContext,
+            coordinator: coordinator
         ))
     }
     

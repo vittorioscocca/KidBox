@@ -409,6 +409,14 @@ final class SyncCenter: ObservableObject {
                             local.updatedBy = dto.updatedBy ?? local.updatedBy
                         }
                     } else {
+                        // Rimuovi riga legacy (id = "{familyId}_{uid}") se esiste per lo stesso userId.
+                        if let stale = allLocal.first(where: {
+                            $0.familyId == fid && $0.userId == dto.userId && $0.id != dto.id
+                        }) {
+                            modelContext.delete(stale)
+                            localById.removeValue(forKey: stale.id)
+                        }
+                        
                         let now = Date()
                         
                         // FIX: anche alla prima creazione del record locale, usa il nome

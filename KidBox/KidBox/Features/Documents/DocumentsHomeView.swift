@@ -21,7 +21,9 @@ struct DocumentsHomeView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     
-    private var familyId: String { families.first?.id ?? "" }
+    private var familyId: String {
+        ActiveFamilyResolver.familyId(from: families, activeFamilyId: coordinator.activeFamilyId)
+    }
     
     var body: some View {
         Group {
@@ -38,7 +40,7 @@ struct DocumentsHomeView: View {
             BadgeManager.shared.activeSections.insert("documents")
             KBLog.ui.kbInfo("DocumentsHomeView appeared familyId=\(familyId.isEmpty ? "EMPTY" : familyId)")
         }
-        .onChange(of: families.first?.id) { _, newValue in
+        .onChange(of: coordinator.activeFamilyId) { _, newValue in
             let fid = newValue ?? ""
             KBLog.ui.kbInfo("DocumentsHomeView active family changed familyId=\(fid.isEmpty ? "EMPTY" : fid)")
         }

@@ -156,6 +156,15 @@ struct FamilyLocationView: View {
         }
         .navigationTitle("Posizione")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    GeofenceListView(familyId: familyId)
+                } label: {
+                    Label("Zone di arrivo", systemImage: "mappin.and.ellipse")
+                }
+            }
+        }
         .onAppear {
             BadgeManager.shared.activeSections.insert("location")
             viewModel.start()

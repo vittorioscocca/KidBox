@@ -145,11 +145,12 @@ struct KidBoxApp: App {
                                 modelContext: modelContainer.mainContext
                             )
                             
-                        case .chat:
-                            KBLog.navigation.kbInfo("Deep link -> open chat")
-                            // ✅ Reset badge chat
+                        case .chat(let familyId):
+                            KBLog.navigation.kbInfo("Deep link -> open chat familyId=\(familyId)")
+                            coordinator.setActiveFamily(familyId)
                             Task { @MainActor in
                                 BadgeManager.shared.clearChat()
+                                await CountersService.shared.reset(familyId: familyId, field: .chat)
                             }
                             coordinator.navigate(to: .chat)
                             

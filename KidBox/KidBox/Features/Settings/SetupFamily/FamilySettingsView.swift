@@ -85,8 +85,10 @@ struct FamilySettingsView: View {
     
     private var activeMembers: [KBFamilyMember] {
         guard let fid = family?.id else { return [] }
+        var seen = Set<String>()
         return members
             .filter { $0.familyId == fid && !$0.isDeleted }
+            .filter { seen.insert($0.userId).inserted }
             .sorted { displayLabel(for: $0) < displayLabel(for: $1) }
     }
     

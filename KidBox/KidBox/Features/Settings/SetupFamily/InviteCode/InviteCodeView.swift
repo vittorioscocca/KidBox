@@ -12,9 +12,10 @@ import OSLog
 /// Screen that generates and shows an invite QR code for the current family.
 struct InviteCodeView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var coordinator: AppCoordinator
     
     var body: some View {
-        InviteCodeViewBody(modelContext: modelContext)
+        InviteCodeViewBody(modelContext: modelContext, coordinator: coordinator)
             .navigationTitle("Invita genitore")
             .navigationBarTitleDisplayMode(.inline)
     }
@@ -22,6 +23,7 @@ struct InviteCodeView: View {
 
 private struct InviteCodeViewBody: View {
     let modelContext: ModelContext
+    let coordinator: AppCoordinator
     @StateObject private var vm: InviteCodeViewModel
     @Environment(\.colorScheme) private var colorScheme
     
@@ -41,11 +43,13 @@ private struct InviteCodeViewBody: View {
     
     @State private var didLogAppear = false
     
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, coordinator: AppCoordinator) {
         self.modelContext = modelContext
+        self.coordinator = coordinator
         _vm = StateObject(wrappedValue: InviteCodeViewModel(
             remote: InviteRemoteStore(),
-            modelContext: modelContext
+            modelContext: modelContext,
+            coordinator: coordinator
         ))
     }
     

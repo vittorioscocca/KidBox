@@ -60,7 +60,9 @@ struct TodoHomeView: View {
         return String(s.prefix(8))
     }()
     
-    private var activeFamily: KBFamily? { families.first }
+    private var activeFamily: KBFamily? {
+        ActiveFamilyResolver.family(from: families, activeFamilyId: coordinator.activeFamilyId)
+    }
     private var activeChild: KBChild? { activeFamily?.children.first }
     
     private var familyId: String { activeFamily?.id ?? "" }
@@ -171,8 +173,18 @@ struct TodoHomeView: View {
         }
         .onDisappear {
             BadgeManager.shared.activeSections.remove("todos")
-            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime (reset didStartRealtime)")
+            didStartRealtime = false
+            SyncCenter.shared.stopTodoListRealtime()
+            SyncCenter.shared.stopTodoRealtime()
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime")
         }
+        .onChange(of: coordinator.activeFamilyId) { _, _ in
+            didStartRealtime = false
+            SyncCenter.shared.stopTodoListRealtime()
+            SyncCenter.shared.stopTodoRealtime()
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] activeFamilyId changed -> reset realtime familyId=\(familyId)")
+        }
+        .id("\(familyId)-\(childId)")
         .sheet(isPresented: $showListEditor) {
             listEditorSheet
                 .onAppear {

@@ -23,11 +23,17 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     /// True appena l'utente attiva la condivisione (fix chicken-and-egg):
     /// consente di inviare lat/lon anche prima che il listener ci includa.
     @Published private(set) var sharingRequested: Bool = false
+
+    @Published var geofences: [KBGeofence] = []
     
     // MARK: - Private
     
     private let remote = LocationRemoteStore()
     private var listener: ListenerRegistration?
+
+    private var geofenceMonitor: GeofenceMonitorService?
+    private var geofenceListener: ListenerRegistration?
+    private let geofenceRemote = GeofenceRemoteStore()
     
     private let locationManager = CLLocationManager()
     private let familyId: String
@@ -57,15 +63,22 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     
     func start() {
         listen()
+        listenGeofences()
         requestAuthorizationIfNeeded()
         // Se l'app è stata rilanciata in background da significant location changes,
         // ripristina il tracking se eravamo in sharing
         resumeIfNeeded()
+        syncGeofenceMonitor()
     }
     
     func stop() {
         listener?.remove()
         listener = nil
+
+        geofenceListener?.remove()
+        geofenceListener = nil
+        geofenceMonitor?.stopMonitoring()
+        geofenceMonitor = nil
         
         expiryTask?.cancel()
         expiryTask = nil
@@ -88,6 +101,96 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             }
         }
     }
+
+    private func listenGeofences() {
+        geofenceListener?.remove()
+        geofenceListener = geofenceRemote.listen(
+            familyId: familyId,
+            onChange: { [weak self] changes in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.applyGeofenceChanges(changes)
+                }
+            },
+            onError: { error in
+                KBLog.sync.kbError("FamilyLocation geofence listener: \(error.localizedDescription)")
+            }
+        )
+    }
+
+    private func applyGeofenceChanges(_ changes: [GeofenceRemoteChange]) {
+        guard !changes.isEmpty else { return }
+
+        var byId = Dictionary(uniqueKeysWithValues: geofences.map { ($0.id, $0) })
+
+        for change in changes {
+            switch change {
+            case .upsert(let dto):
+                if dto.isDeleted {
+                    byId.removeValue(forKey: dto.id)
+                } else {
+                    byId[dto.id] = geofence(from: dto)
+                }
+            case .remove(let id):
+                byId.removeValue(forKey: id)
+            }
+        }
+
+        geofences = byId.values.sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+        syncGeofenceMonitor()
+    }
+
+    private func geofence(from dto: GeofenceRemoteDTO) -> KBGeofence {
+        KBGeofence(
+            id: dto.id,
+            familyId: dto.familyId,
+            name: dto.name,
+            emoji: dto.emoji,
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+            radius: dto.radius,
+            notifyOnArrive: dto.notifyOnArrive,
+            notifyOnLeave: dto.notifyOnLeave,
+            notifyMembers: dto.notifyMembers,
+            monitoredMemberIds: dto.monitoredMemberIds,
+            isActive: dto.isActive,
+            createdBy: dto.createdBy ?? "",
+            createdAt: dto.createdAt ?? Date(),
+            updatedAt: dto.updatedAt ?? Date(),
+            isDeleted: dto.isDeleted
+        )
+    }
+
+    // MARK: - Geofence monitoring
+
+    /// La zona si applica al telefono dell'utente corrente se `monitoredMemberIds` è vuoto o contiene il suo uid.
+    private func geofenceAppliesToCurrentUser(_ geofence: KBGeofence) -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return false }
+        let monitored = geofence.monitoredMemberIds
+        if monitored.isEmpty { return true }
+        return monitored.contains(uid)
+    }
+
+    private func syncGeofenceMonitor() {
+        if sharingRequested || isSharing {
+            if geofenceMonitor == nil {
+                geofenceMonitor = GeofenceMonitorService(
+                    familyId: familyId,
+                    uid: Auth.auth().currentUser?.uid ?? "",
+                    displayName: myCurrentDisplayName
+                )
+            }
+            let active = geofences.filter { geofence in
+                geofence.isActive && !geofence.isDeleted && geofenceAppliesToCurrentUser(geofence)
+            }
+            geofenceMonitor?.startMonitoring(geofences: active)
+        } else {
+            geofenceMonitor?.stopMonitoring()
+            geofenceMonitor = nil
+        }
+    }
     
     /// Dopo relaunch (o quando non abbiamo appena premuto un bottone),
     /// riallinea lo stato UI in base a ciò che Firestore dice su "me".
@@ -96,7 +199,10 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         
         // Se l'utente ha appena premuto "condividi" in questa sessione,
         // non sovrascriviamo il suo stato locale col listener (evita flicker).
-        if sharingRequested { return }
+        if sharingRequested {
+            syncGeofenceMonitor()
+            return
+        }
         
         guard let me = sharedUsers.first(where: { $0.id == uid }) else {
             // Non risulto in sharing lato remote
@@ -106,6 +212,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             
             expiryTask?.cancel()
             expiryTask = nil
+            syncGeofenceMonitor()
             return
         }
         
@@ -129,6 +236,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             expiryTask = nil
         }
         startLocationUpdatesIfPossible()
+        syncGeofenceMonitor()
     }
     
     // MARK: - Actions
@@ -164,6 +272,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         }
         
         startLocationUpdatesIfPossible()
+        syncGeofenceMonitor()
     }
     
     func startTemporary(hours: Int, displayName: String) async {
@@ -197,6 +306,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         
         scheduleExpiryStopIfNeeded()
         startLocationUpdatesIfPossible()
+        syncGeofenceMonitor()
     }
     
     func stopSharing() async {
@@ -218,6 +328,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         await remote.stopSharing(familyId: familyId, uid: uid)
         
         stopLocationUpdates()
+        syncGeofenceMonitor()
     }
     
     // MARK: - FIX: aggiorna il nome mentre la condivisione è attiva
@@ -251,6 +362,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         clearLocationDefaults()
         setBadge(active: false)
         stopLocationUpdates()
+        syncGeofenceMonitor()
     }
     
     // MARK: - Temporary expiry timer

@@ -39,8 +39,7 @@ struct StorageUsageView: View {
     }
     
     private var familyId: String {
-        if let fid = coordinator.activeFamilyId, !fid.isEmpty { return fid }
-        return families.first?.id ?? ""
+        ActiveFamilyResolver.familyId(from: families, activeFamilyId: coordinator.activeFamilyId)
     }
     
     // MARK: - Body

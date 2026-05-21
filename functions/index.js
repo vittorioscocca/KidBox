@@ -234,6 +234,64 @@ async function getUserTokensIfEnabled(uid, prefField) {
   return tokens;
 }
 
+/**
+ * Returns all FCM tokens for a user (no preference filter).
+ * @param {string} uid
+ * @return {Promise<string[]>}
+ */
+async function getTokensForUser(uid) {
+  const userRef = admin.firestore().collection("users").doc(uid);
+  const tokensSnap = await userRef.collection("fcmTokens").get();
+  const tokens = [];
+  tokensSnap.forEach((t) => {
+    const tok = t.get("token");
+    if (tok) tokens.push(tok);
+  });
+  return tokens;
+}
+
+/**
+ * Removes invalid FCM token documents after a multicast send.
+ * @param {string} uid
+ * @param {string[]} tokens
+ * @param {import("firebase-admin/messaging").SendResponse[]} responses
+ * @return {Promise<void>}
+ */
+async function pruneInvalidFcmTokens(uid, tokens, responses) {
+  const invalidCodes = new Set([
+    "messaging/registration-token-not-registered",
+    "messaging/invalid-registration-token",
+  ]);
+
+  const userRef = admin.firestore().collection("users").doc(uid);
+  const tokensSnap = await userRef.collection("fcmTokens").get();
+  const tokenToRef = new Map();
+  tokensSnap.forEach((t) => {
+    const tok = t.get("token");
+    if (tok) tokenToRef.set(tok, t.ref);
+  });
+
+  const batch = admin.firestore().batch();
+  let removed = 0;
+
+  responses.forEach((resp, i) => {
+    if (resp.success) return;
+    const code = resp.error?.code || "";
+    if (!invalidCodes.has(code)) return;
+    const tok = tokens[i];
+    const ref = tokenToRef.get(tok);
+    if (ref) {
+      batch.delete(ref);
+      removed++;
+    }
+  });
+
+  if (removed > 0) {
+    await batch.commit();
+    logger.info("pruneInvalidFcmTokens: removed stale tokens", {uid, removed});
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DOCUMENTI
 // ─────────────────────────────────────────────────────────────────────────────
@@ -839,6 +897,160 @@ exports.expireTemporaryLocations = onSchedule(
       }
 
       logger.info("expireTemporaryLocations: completed expired=" + i);
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GEOFENCE — arrivo / partenza zona
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.onGeofenceEvent = onDocumentCreated(
+    {
+      document: "families/{familyId}/geofenceEvents/{eventId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const geofenceEventId = event.params.eventId;
+
+      const eventData = event.data ? event.data.data() : null;
+      if (!eventData) {
+        logger.warn("onGeofenceEvent: missing event data", {familyId, geofenceEventId});
+        return;
+      }
+
+      const geofenceId = eventData.geofenceId;
+      const senderUid = eventData.uid;
+      const displayName = (eventData.displayName || "").trim() || "Qualcuno";
+      const transitionType = eventData.type;
+
+      if (!geofenceId || !senderUid) {
+        logger.warn("onGeofenceEvent: missing geofenceId or uid", {familyId, geofenceEventId});
+        return;
+      }
+
+      if (transitionType !== "arrive" && transitionType !== "leave") {
+        logger.warn("onGeofenceEvent: invalid type", {familyId, geofenceEventId, transitionType});
+        return;
+      }
+
+      logger.info("onGeofenceEvent triggered", {familyId, geofenceEventId, geofenceId, senderUid, transitionType});
+
+      const geofenceSnap = await admin.firestore()
+          .collection("families").doc(familyId)
+          .collection("geofences").doc(geofenceId)
+          .get();
+
+      if (!geofenceSnap.exists) {
+        logger.info("onGeofenceEvent: geofence not found", {familyId, geofenceId});
+        return;
+      }
+
+      const geofence = geofenceSnap.data() || {};
+
+      if (geofence.isDeleted === true || geofence.isActive === false) {
+        logger.info("onGeofenceEvent: geofence inactive or deleted", {familyId, geofenceId});
+        return;
+      }
+
+      if (transitionType === "arrive" && geofence.notifyOnArrive === false) {
+        logger.info("onGeofenceEvent: notifyOnArrive disabled", {familyId, geofenceId});
+        return;
+      }
+
+      if (transitionType === "leave" && geofence.notifyOnLeave === false) {
+        logger.info("onGeofenceEvent: notifyOnLeave disabled", {familyId, geofenceId});
+        return;
+      }
+
+      const geofenceName = (geofence.name || "").trim() || "una zona";
+      const notifyMembers = Array.isArray(geofence.notifyMembers) ? geofence.notifyMembers : [];
+
+      let targetUids = [];
+
+      if (notifyMembers.length === 0) {
+        const membersSnap = await admin.firestore()
+            .collection("families").doc(familyId)
+            .collection("members")
+            .get();
+
+        if (membersSnap.empty) {
+          logger.warn("onGeofenceEvent: members subcollection is empty", {familyId});
+          return;
+        }
+
+        targetUids = membersSnap.docs
+            .map((d) => d.id)
+            .filter((uid) => uid && uid !== senderUid);
+      } else {
+        targetUids = notifyMembers.filter((uid) => uid && uid !== senderUid);
+      }
+
+      if (targetUids.length === 0) {
+        logger.info("onGeofenceEvent: no notification targets", {familyId, geofenceId});
+        return;
+      }
+
+      const title = transitionType === "arrive" ?
+        `${displayName} è arrivato` :
+        `${displayName} è partito`;
+
+      const body = transitionType === "arrive" ?
+        `a ${geofenceName}` :
+        `da ${geofenceName}`;
+
+      const messagesToSend = [];
+
+      for (const uid of targetUids) {
+        const tokens = await getTokensForUser(uid);
+        if (tokens.length === 0) continue;
+
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "location"});
+
+        messagesToSend.push({
+          uid,
+          tokens,
+          notification: {title, body},
+          data: {
+            type: "geofenceEvent",
+            familyId,
+            geofenceId,
+            geofenceEventId,
+          },
+          apns: {payload: {aps: {sound: "default", badge}}},
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("onGeofenceEvent: no per-user notifications to send", {familyId, geofenceId});
+        return;
+      }
+
+      let totalSuccess = 0;
+      let totalFailure = 0;
+
+      for (const msg of messagesToSend) {
+        const result = await admin.messaging().sendEachForMulticast({
+          tokens: msg.tokens,
+          notification: msg.notification,
+          data: msg.data,
+          apns: msg.apns,
+        });
+
+        totalSuccess += result.successCount;
+        totalFailure += result.failureCount;
+
+        await pruneInvalidFcmTokens(msg.uid, msg.tokens, result.responses);
+      }
+
+      logger.info("onGeofenceEvent: send result", {
+        familyId,
+        geofenceId,
+        geofenceEventId,
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        userTargets: messagesToSend.length,
+      });
     },
 );
 

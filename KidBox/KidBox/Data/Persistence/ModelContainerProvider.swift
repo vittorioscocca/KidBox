@@ -172,7 +172,8 @@ enum ModelContainerProvider {
             KBTripLeg.self,
             KBTripDayPlan.self,
             KBTripExpense.self,
-            KBPackingItem.self
+            KBPackingItem.self,
+            KBGeofence.self
         ])
         
         let configuration: ModelConfiguration = {

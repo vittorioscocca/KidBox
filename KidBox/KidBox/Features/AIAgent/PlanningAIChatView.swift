@@ -72,9 +72,11 @@ struct PlanningAIChatView: View {
     @Query private var allProfiles:  [KBPediatricProfile]
     @Query(sort: \KBMedicalExam.updatedAt, order: .reverse) private var allExamsAdv: [KBMedicalExam]
     
-    private var family:     KBFamily? { families.first }
-    private var familyId:   String    { family?.id ?? "" }
-    private var familyName: String    { family?.name ?? "Famiglia" }
+    private var family: KBFamily? {
+        ActiveFamilyResolver.family(from: families, activeFamilyId: coordinator.activeFamilyId)
+    }
+    private var familyId: String { family?.id ?? "" }
+    private var familyName: String { family?.name ?? "Famiglia" }
     
     // ── Derived collections ───────────────────────────────────────
     
@@ -298,7 +300,6 @@ struct PlanningAIChatView: View {
         .task(id: familyId) {
             guard KBSubscriptionManager.shared.currentPlan.includesAI else { return }
             guard !familyId.isEmpty else { return }
-            guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
                 familyId:               familyId,
                 familyName:             familyName,

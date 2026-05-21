@@ -20,13 +20,15 @@ final class InviteCodeViewModel: ObservableObject {
     
     private let remote: InviteRemoteStore
     private let modelContext: ModelContext
+    private let coordinator: AppCoordinator
     
-    init(remote: InviteRemoteStore, modelContext: ModelContext) {
+    init(remote: InviteRemoteStore, modelContext: ModelContext, coordinator: AppCoordinator) {
         self.remote = remote
         self.modelContext = modelContext
+        self.coordinator = coordinator
     }
     
-    /// Generates an invite for the currently active (first) local family.
+    /// Generates an invite for the currently active family ([AppCoordinator.activeFamilyId]).
     ///
     /// Output:
     /// - `code`: classic membership invite code (server-side, collision-safe).
@@ -43,15 +45,7 @@ final class InviteCodeViewModel: ObservableObject {
         KBLog.sync.kbInfo("InviteCodeVM: generateInviteCode started")
         
         do {
-            // Fetch the first available family (current app model: single active family).
-            let families = try modelContext.fetch(FetchDescriptor<KBFamily>())
-            guard let family = families.first else {
-                errorMessage = "Nessuna family trovata."
-                KBLog.sync.kbError("InviteCodeVM: no local family found")
-                return
-            }
-            
-            let familyId = family.id
+            let familyId = try resolveInviteFamilyId()
             KBLog.sync.kbInfo("InviteCodeVM: using familyId=\(familyId)")
             
             // 1) Create membership invite code (classic join)
@@ -78,9 +72,33 @@ final class InviteCodeViewModel: ObservableObject {
             KBLog.sync.kbInfo("InviteCodeVM: qr payload ready familyId=\(familyId) inviteId=\(invite.inviteId)")
             
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = (error as NSError).localizedDescription
             KBLog.sync.kbError("InviteCodeVM: generateInviteCode failed: \(error.localizedDescription)")
         }
+    }
+    
+    private func resolveInviteFamilyId() throws -> String {
+        if let activeId = coordinator.activeFamilyId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !activeId.isEmpty {
+            let descriptor = FetchDescriptor<KBFamily>(
+                predicate: #Predicate { $0.id == activeId }
+            )
+            if try modelContext.fetch(descriptor).first != nil {
+                return activeId
+            }
+            KBLog.sync.kbWarning("InviteCodeVM: activeFamilyId=\(activeId) not in local DB, fallback")
+        }
+        let sorted = FetchDescriptor<KBFamily>(
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        guard let family = try modelContext.fetch(sorted).first else {
+            throw NSError(
+                domain: "KidBox",
+                code: -3,
+                userInfo: [NSLocalizedDescriptionKey: "Nessuna family trovata."]
+            )
+        }
+        return family.id
     }
     
     /// Copies the membership invite code (not the QR payload) to the clipboard.

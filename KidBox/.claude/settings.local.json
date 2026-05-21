@@ -35,7 +35,8 @@
       "Bash(node -e ' *)",
       "Bash(grep -v \"^$\")",
       "Bash(firebase firestore:delete --recursive crash_reports --project kidbox-42cd7)",
-      "Bash(firebase use *)"
+      "Bash(firebase use *)",
+      "Bash(xargs cat)"
     ]
   }
 }

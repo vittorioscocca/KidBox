@@ -69,8 +69,7 @@ struct HomeView: View {
     private let heroService = FamilyHeroPhotoService()
     
     private var activeFamily: KBFamily? {
-        families.first { $0.id == coordinator.activeFamilyId }
-        ?? families.first
+        ActiveFamilyResolver.family(from: families, activeFamilyId: coordinator.activeFamilyId)
     }
     private var hasFamily: Bool { activeFamily != nil }
     private var activeFamilyId: String { activeFamily?.id ?? "" }

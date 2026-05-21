@@ -619,6 +619,7 @@ struct TreatmentAttachmentsSection: View {
     let treatment: KBTreatment
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var coordinator: AppCoordinator
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
     
     @Query private var attachments: [KBDocument]
@@ -640,7 +641,7 @@ struct TreatmentAttachmentsSection: View {
     private var effectiveFamilyId: String {
         let local = treatment.familyId.trimmingCharacters(in: .whitespacesAndNewlines)
         if !local.isEmpty { return local }
-        return families.first?.id ?? ""
+        return ActiveFamilyResolver.familyId(from: families, activeFamilyId: coordinator.activeFamilyId)
     }
     
     init(treatment: KBTreatment) {

@@ -1,47 +1,144 @@
-// Travel Card — aggiungi questi match sotto `match /families/{familyId}` nelle regole
-// già deployate in produzione (calendarEvents, todos, documents, ecc.).
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── ADMIN ──────────────────────────────────────────────
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid == "efw85HN41nb1rmslevC3wkFpVUo1";
+    }
+
+    // ── APP HELPERS ────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isActiveMember(familyId) {
+    // Verifica se l'utente è un membro ATTIVO (non cancellato)
+    function isMember(familyId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid))
-        && (
-          !('isDeleted' in get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data)
-          || get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.isDeleted == false
-        );
+        && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.isDeleted != true;
     }
 
+    function isOwner(familyId) {
+      return isSignedIn() && (
+        (resource != null && resource.data.ownerUid == request.auth.uid) ||
+        get(/databases/$(database)/documents/families/$(familyId)).data.ownerUid == request.auth.uid
+      );
+    }
+
+    function isMemberOrOwner(familyId) {
+      return isOwner(familyId) || isMember(familyId);
+    }
+
+    // ── ADMIN: lettura globale, nessuna scrittura ──────────
+    match /{document=**} {
+      allow read:  if isAdmin();
+      allow write: if false;
+    }
+
+    // ── USERS ──────────────────────────────────────────────
+    match /users/{uid} {
+      allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+
+      match /memberships/{familyId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      match /fcmTokens/{tokenId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // ── FAMILIES ───────────────────────────────────────────
     match /families/{familyId} {
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
 
-      // Travel Card
-      match /trips/{tripId} {
-        allow read, write: if isActiveMember(familyId);
-      }
-      match /trips/{tripId}/legs/{legId} {
-        allow read, write: if isActiveMember(familyId);
-      }
-      match /trips/{tripId}/dayPlans/{dayId} {
-        allow read, write: if isActiveMember(familyId);
-      }
-      match /trips/{tripId}/expenses/{expenseId} {
-        allow read, write: if isActiveMember(familyId);
-      }
-      match /trips/{tripId}/packingItems/{itemId} {
-        allow read, write: if isActiveMember(familyId);
+      allow read, update, delete: if isMemberOrOwner(familyId);
+
+      match /members/{uid} {
+        allow create, update, delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
+        allow get:  if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
+        allow list: if isMemberOrOwner(familyId);
       }
 
-      // Scheda medica (bambino / familiare)
-      match /pediatricProfiles/{childId} {
-        allow read, write: if isActiveMember(familyId);
+      match /invites/{inviteId} {
+        allow read, create: if isSignedIn();
+        allow update: if isSignedIn()
+          && resource.data.usedAt == null
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['usedAt', 'usedBy']);
+        allow delete: if isMemberOrOwner(familyId);
       }
 
+      match /counters/{uid} {
+        allow get: if isSignedIn()
+          && request.auth.uid == uid
+          && isMemberOrOwner(familyId);
+        allow create, update, delete: if false;
+      }
+
+      // ── Zone di arrivo (geofence) ─────────────────────────
+      match /geofences/{geofenceId} {
+        allow read: if isMemberOrOwner(familyId);
+        allow create, update: if isMemberOrOwner(familyId);
+        allow delete: if isOwner(familyId);
+      }
+
+      // Eventi arrive/leave: append-only dal client; push via Cloud Function (admin SDK)
+      match /geofenceEvents/{eventId} {
+        allow read: if isMemberOrOwner(familyId);
+        allow create: if isMemberOrOwner(familyId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.type in ['arrive', 'leave']
+          && request.resource.data.geofenceId is string
+          && request.resource.data.geofenceId.size() > 0
+          && request.resource.data.displayName is string
+          && request.resource.data.keys().hasAll([
+            'geofenceId', 'uid', 'displayName', 'type', 'timestamp'
+          ]);
+        allow update, delete: if false;
+      }
+
+      // Altre sottocollezioni (esclusi geofences/geofenceEvents — regole dedicate sopra)
+      match /{subpath=**} {
+        allow read: if isMemberOrOwner(familyId);
+        allow write: if isMemberOrOwner(familyId)
+          && subpath[0] != 'geofences'
+          && subpath[0] != 'geofenceEvents';
+      }
+    }
+
+    // ── INVITES (codici testuali flat) ─────────────────────────
+    match /invites/{code} {
+      allow read, create: if isSignedIn();
+      allow update: if isSignedIn()
+        && resource.data.usedAt == null
+        && request.resource.data.diff(resource.data).affectedKeys()
+         .hasOnly(['usedAt', 'usedBy']);
+      allow delete: if false;
+    }
+
+    // ── CRASH REPORTS (log anonimi, opt-in utente) ──
+    match /crash_reports/{reportId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.platform in ['ios', 'android']
+        && request.resource.data.status == 'new'
+        && request.resource.data.keys().hasAll([
+          'platform', 'appVersion', 'osVersion', 'device',
+          'issues', 'rawLogs', 'createdAt', 'status', 'userId'
+        ])
+        && request.resource.data.rawLogs is string
+        && request.resource.data.rawLogs.size() <= 51200
+        && request.resource.data.issues is list;
+      allow read, update, delete: if false;
+    }
+
+    // ── DIAGNOSTICS ────────────────────────────────────────
+    match /diagnostics/{doc} {
+      allow read, write: if true;
     }
   }
 }
