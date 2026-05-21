@@ -1436,14 +1436,79 @@ async function resolveAIDailyLimit(uid, familyId = null) {
 const AI_STANDARD_PAYLOAD_CHARS = 50000;
 /** Limite assoluto anti-abuso / errori API (oltre questo si rifiuta la richiesta). */
 const AI_ABSOLUTE_MAX_PAYLOAD_CHARS = 500000;
+/** Vision: max blocchi immagine per messaggio (content Array). */
+const AI_MAX_IMAGE_BLOCKS_PER_MESSAGE = 5;
+/** Vision: max byte immagine decodificata (base64 → ~length * 0.75). */
+const AI_MAX_IMAGE_DECODED_BYTES = 5_000_000;
 
 /**
- * @param {Array<{content: string}>} messages
+ * Conta caratteri testuali in content (String o Array multimodale Anthropic).
+ * I blocchi immagine non entrano nel conteggio caratteri / rate limit payload.
+ * @param {string|Array<object>} content
+ * @return {number}
+ */
+function askAIContentCharCount(content) {
+  if (typeof content === "string") return content.length;
+  if (!Array.isArray(content)) return 0;
+  return content.reduce((acc, block) => {
+    if (block?.type === "text" && typeof block.text === "string") {
+      return acc + block.text.length;
+    }
+    return acc;
+  }, 0);
+}
+
+/**
+ * Valida un blocco content Anthropic (testo o immagine base64).
+ * @param {object} block
+ * @return {boolean}
+ */
+function isValidAskAIContentBlock(block) {
+  if (!block || typeof block !== "object") return false;
+  if (block.type === "text") {
+    return typeof block.text === "string";
+  }
+  if (block.type === "image") {
+    const src = block.source;
+    if (!src || typeof src !== "object" || src.type !== "base64") return false;
+    if (typeof src.media_type !== "string" || !src.media_type.startsWith("image/")) {
+      return false;
+    }
+    if (typeof src.data !== "string" || src.data.length === 0) return false;
+    return src.data.length * 0.75 <= AI_MAX_IMAGE_DECODED_BYTES;
+  }
+  return false;
+}
+
+/**
+ * content: String (legacy) oppure Array di blocchi {type:text} / {type:image, source:...}.
+ * @param {string|Array<object>} content
+ * @return {boolean}
+ */
+function validateAskAIMessageContent(content) {
+  if (typeof content === "string") return true;
+  if (!Array.isArray(content) || content.length === 0) return false;
+  let imageBlocks = 0;
+  let hasText = false;
+  for (const block of content) {
+    if (!isValidAskAIContentBlock(block)) return false;
+    if (block.type === "image") imageBlocks += 1;
+    if (block.type === "text" && block.text.trim().length > 0) hasText = true;
+  }
+  if (imageBlocks > AI_MAX_IMAGE_BLOCKS_PER_MESSAGE) return false;
+  return hasText || imageBlocks > 0;
+}
+
+/**
+ * @param {Array<{role: string, content: string|Array<object>}>} messages
  * @param {string} systemPrompt
  * @return {number}
  */
 function totalAskAIPayloadChars(messages, systemPrompt) {
-  const msgChars = messages.reduce((acc, m) => acc + (m.content?.length || 0), 0);
+  const msgChars = messages.reduce(
+      (acc, m) => acc + askAIContentCharCount(m.content),
+      0,
+  );
   return msgChars + (systemPrompt?.length || 0);
 }
 
@@ -1521,10 +1586,17 @@ exports.askAI = onCall(
         throw new HttpsError("invalid-argument", "messages è richiesto.");
       }
       const validRoles = ["user", "assistant"];
-      const allValid = messages.every(
-          (m) => typeof m.role === "string" && typeof m.content === "string" && validRoles.includes(m.role),
-      );
-      if (!allValid) throw new HttpsError("invalid-argument", "messages non valido.");
+      const allValid = messages.every((m) => {
+        if (typeof m.role !== "string" || !validRoles.includes(m.role)) return false;
+        return validateAskAIMessageContent(m.content);
+      });
+      if (!allValid) {
+        throw new HttpsError(
+            "invalid-argument",
+            "messages non valido: content deve essere stringa o array di blocchi text/image " +
+            `(max ${AI_MAX_IMAGE_BLOCKS_PER_MESSAGE} immagini, max 5MB ciascuna).`,
+        );
+      }
       if (typeof systemPrompt !== "string" || systemPrompt.trim().length === 0) {
         throw new HttpsError("invalid-argument", "systemPrompt è richiesto.");
       }

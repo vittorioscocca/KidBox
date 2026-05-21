@@ -421,6 +421,8 @@ final class AppCoordinator: ObservableObject {
             TodoHomeView()
         case .settings:
             SettingsView()
+        case .supportChat:
+            SupportChatView()
         case .familySettings:
             FamilySettingsView()
         case .inviteCode:

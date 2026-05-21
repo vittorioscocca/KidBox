@@ -27,6 +27,7 @@ service cloud.firestore {
       );
     }
 
+    // Owner incluso: evita permission denied se lo snapshot members è vuoto/in ritardo.
     function isMemberOrOwner(familyId) {
       return isOwner(familyId) || isMember(familyId);
     }
@@ -118,6 +119,55 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
          .hasOnly(['usedAt', 'usedBy']);
       allow delete: if false;
+    }
+
+    // ── SUPPORT TICKETS (Assistente & Supporto) ──
+    match /support_tickets/{ticketId} {
+      function supportTicketRequiredKeys() {
+        return [
+          'id', 'familyId', 'uid', 'userEmail', 'type', 'title', 'summary',
+          'conversation', 'images', 'platform', 'appVersion', 'osVersion',
+          'device', 'status', 'createdAt',
+        ];
+      }
+
+      function validSupportTicketData() {
+        return request.resource.data.uid == request.auth.uid
+          && request.resource.data.familyId is string
+          && isMemberOrOwner(request.resource.data.familyId)
+          && request.resource.data.type in ['question', 'bug', 'suggestion']
+          && request.resource.data.status == 'new'
+          && request.resource.data.platform in ['ios', 'android']
+          && request.resource.data.keys().hasAll(supportTicketRequiredKeys())
+          && request.resource.data.conversation is list
+          && request.resource.data.images is list
+          && request.resource.data.images.size() <= 5
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.summary is string
+          && request.resource.data.summary.size() <= 2000
+          && (
+            !('rawLogs' in request.resource.data)
+            || (
+              request.resource.data.rawLogs is string
+              && request.resource.data.rawLogs.size() <= 51200
+            )
+          );
+      }
+
+      allow create: if isSignedIn() && validSupportTicketData();
+
+      allow update: if isAdmin()
+        || (isSignedIn()
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.familyId == resource.data.familyId
+          && validSupportTicketData());
+
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+
+      allow delete: if isAdmin();
     }
 
     // ── CRASH REPORTS (log anonimi, opt-in utente) ──

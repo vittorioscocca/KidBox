@@ -96,6 +96,12 @@ struct TravelSuggestionsRequest {
     let travelProfile: [String: Any]
 }
 
+/// Messaggio askAI: `content` può essere `String` o array di blocchi Anthropic (vision).
+struct AIMessagePayload {
+    let role: String
+    let content: Any
+}
+
 // MARK: - Service
 
 /// Sends messages to the KidBox `askAI` Firebase Cloud Function.
@@ -193,31 +199,47 @@ final class AIService {
         systemPrompt: String,
         purpose: String? = nil
     ) async throws -> AIResponse {
-        
+        let payloadMessages = messages.map {
+            AIMessagePayload(role: $0.role.rawValue, content: $0.content)
+        }
+        return try await sendMessages(
+            messages: payloadMessages,
+            systemPrompt: systemPrompt,
+            purpose: purpose,
+        )
+    }
+
+    /// Chiamata askAI con content String o blocchi multimodali (vision).
+    func sendMessages(
+        messages: [AIMessagePayload],
+        systemPrompt: String,
+        purpose: String? = nil
+    ) async throws -> AIResponse {
+
         guard AISettings.shared.isEnabled else {
             KBLog.ai.kbInfo("sendMessage blocked: AI assistant disabled")
             throw AIServiceError.notEnabled
         }
-        
+
         guard let familyId = currentFamilyId else {
             KBLog.ai.kbError("sendMessage blocked: missing familyId")
             throw AIServiceError.missingFamilyId
         }
-        
-        KBLog.ai.kbInfo("sendMessage started messagesCount=\(messages.count) familyId=\(familyId) purpose=\(purpose ?? "default")")
-        
+
+        KBLog.ai.kbInfo("sendMessages started messagesCount=\(messages.count) familyId=\(familyId) purpose=\(purpose ?? "default")")
+
         var payload: [String: Any] = [
             "messages": messages.map { [
-                "role": $0.role.rawValue,
-                "content": $0.content
+                "role": $0.role,
+                "content": $0.content,
             ] },
             "systemPrompt": systemPrompt,
-            "familyId": familyId
+            "familyId": familyId,
         ]
         if let purpose, !purpose.isEmpty {
             payload["purpose"] = purpose
         }
-        
+
         let callable = functions.httpsCallable("askAI")
         if purpose == "clinicalRecord" {
             callable.timeoutInterval = Self.clinicalRecordClientTimeout
@@ -225,10 +247,11 @@ final class AIService {
         KBLog.ai.kbDebug(
             "Calling Firebase Function askAI payloadMessagesCount=\(messages.count) timeout=\(callable.timeoutInterval)s"
         )
-        
+
         do {
-            let result = try await callable.call(payload)
-            
+            let safePayload = try jsonSafeCallablePayload(payload)
+            let result = try await callable.call(safePayload)
+
             guard
                 let data = result.data as? [String: Any],
                 let reply = data["reply"] as? String,
@@ -253,9 +276,9 @@ final class AIService {
                 dailyLimit: dailyLimit,
                 messageUnitsConsumed: messageUnitsConsumed,
                 isLargeContext: isLargeContext,
-                totalPayloadChars: totalPayloadChars
+                totalPayloadChars: totalPayloadChars,
             )
-            
+
         } catch let error as NSError {
             KBLog.ai.kbError("sendMessage failed firebaseCode=\(error.code) description=\(error.localizedDescription)")
             throw mapCallableError(error)

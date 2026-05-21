@@ -33,7 +33,8 @@ enum Route: Hashable {
     case calendar(familyId: String, highlightEventId: String? = nil)
     case todo
     case settings
-    
+    case supportChat
+
     case profile
     case familySettings
     case inviteCode

@@ -158,6 +158,24 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(cardBackground)
+
+            NavigationLink {
+                SupportChatView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "lifepreserver.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Assistente & Supporto")
+                            .foregroundStyle(.primary)
+                        Text("Domande, problemi e suggerimenti")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .listRowBackground(cardBackground)
         }
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom, spacing: 0) {
