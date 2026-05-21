@@ -66,8 +66,8 @@ enum FamilyKeychainStore {
         
         guard status == errSecSuccess else {
             if status != errSecItemNotFound {
-                KBLog.security.error(
-                    "Keychain load failed for familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public), status=\(status)"
+                KBLog.security.kbError(
+                    "Keychain load failed for familyId=\(familyId) userId=\(userId), status=\(status)"
                 )
             }
             return nil
@@ -77,8 +77,8 @@ enum FamilyKeychainStore {
             let data = item as? Data,
             data.count == 32
         else {
-            KBLog.security.error(
-                "Keychain load invalid data length for familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public)"
+            KBLog.security.kbError(
+                "Keychain load invalid data length for familyId=\(familyId) userId=\(userId)"
             )
             return nil
         }
@@ -127,8 +127,8 @@ enum FamilyKeychainStore {
         let status = SecItemAdd(addQuery as CFDictionary, nil)
         
         guard status == errSecSuccess else {
-            KBLog.security.error(
-                "Keychain save failed for familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public), status=\(status)"
+            KBLog.security.kbError(
+                "Keychain save failed for familyId=\(familyId) userId=\(userId), status=\(status)"
             )
             throw NSError(
                 domain: "KidBox.Keychain",
@@ -137,8 +137,8 @@ enum FamilyKeychainStore {
             )
         }
         
-        KBLog.security.info(
-            "Master key saved and synced to iCloud Keychain for familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public)"
+        KBLog.security.kbInfo(
+            "Master key saved and synced to iCloud Keychain for familyId=\(familyId) userId=\(userId)"
         )
 
         NotificationCenter.default.post(name: .kidBoxFamilyKeyDidChange, object: nil)

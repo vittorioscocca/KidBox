@@ -72,18 +72,18 @@ struct CreateCategorySheet: View {
         
         let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else {
-            KBLog.data.debug("CreateCategorySheet save blocked: empty title")
+            KBLog.data.kbDebug("CreateCategorySheet save blocked: empty title")
             return
         }
         guard !familyId.isEmpty else {
-            KBLog.data.error("CreateCategorySheet save blocked: empty familyId")
+            KBLog.data.kbError("CreateCategorySheet save blocked: empty familyId")
             return
         }
         
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         
-        KBLog.data.info("CreateCategorySheet save started familyId=\(familyId, privacy: .public) title=\(t, privacy: .public)")
+        KBLog.data.kbInfo("CreateCategorySheet save started familyId=\(familyId) title=\(t)")
         
         do {
             // sortOrder semplice: append in fondo
@@ -109,7 +109,7 @@ struct CreateCategorySheet: View {
             // 1) LOCAL
             modelContext.insert(cat)
             try modelContext.save()
-            KBLog.data.info("CreateCategorySheet local saved categoryId=\(cat.id, privacy: .public) sortOrder=\(nextOrder)")
+            KBLog.data.kbInfo("CreateCategorySheet local saved categoryId=\(cat.id) sortOrder=\(nextOrder)")
             
             // 2) OUTBOX + FLUSH (sync su Firestore)
             SyncCenter.shared.enqueueDocumentCategoryUpsert(
@@ -117,21 +117,21 @@ struct CreateCategorySheet: View {
                 familyId: cat.familyId,
                 modelContext: modelContext
             )
-            KBLog.sync.debug("CreateCategorySheet enqueued category upsert categoryId=\(cat.id, privacy: .public)")
+            KBLog.sync.kbDebug("CreateCategorySheet enqueued category upsert categoryId=\(cat.id)")
             
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
-            KBLog.sync.debug("CreateCategorySheet flushGlobal requested familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbDebug("CreateCategorySheet flushGlobal requested familyId=\(familyId)")
             
             dismissAndDone()
             
         } catch {
             self.error = error.localizedDescription
-            KBLog.data.error("CreateCategorySheet save failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("CreateCategorySheet save failed: \(error.localizedDescription)")
         }
     }
     
     private func dismissAndDone() {
-        KBLog.ui.debug("CreateCategorySheet dismissAndDone")
+        KBLog.ui.kbDebug("CreateCategorySheet dismissAndDone")
         dismiss()
         onDone()
     }

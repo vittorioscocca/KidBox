@@ -50,7 +50,7 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
             generator.notificationOccurred(.success)
             
             // Non loggare `value`: può contenere segreti (inviteId/secret ecc.)
-            KBLog.navigation.info("QRCodeScannerView detected QR (redacted)")
+            KBLog.navigation.kbInfo("QRCodeScannerView detected QR (redacted)")
             
             parent.onCode(value)
         }
@@ -61,7 +61,7 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
     }
     
     func makeUIViewController(context: Context) -> UIViewController {
-        KBLog.navigation.debug("QRCodeScannerView makeUIViewController")
+        KBLog.navigation.kbDebug("QRCodeScannerView makeUIViewController")
         
         let viewController = UIViewController()
         viewController.view.backgroundColor = .black
@@ -69,24 +69,24 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
         let captureSession = AVCaptureSession()
         
         guard let videoDevice = AVCaptureDevice.default(for: .video) else {
-            KBLog.navigation.error("QRCodeScannerView: no video device available")
+            KBLog.navigation.kbError("QRCodeScannerView: no video device available")
             return viewController
         }
         
         guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
-            KBLog.navigation.error("QRCodeScannerView: cannot create video input")
+            KBLog.navigation.kbError("QRCodeScannerView: cannot create video input")
             return viewController
         }
         
         guard captureSession.canAddInput(videoInput) else {
-            KBLog.navigation.error("QRCodeScannerView: cannot add video input to session")
+            KBLog.navigation.kbError("QRCodeScannerView: cannot add video input to session")
             return viewController
         }
         captureSession.addInput(videoInput)
         
         let metadataOutput = AVCaptureMetadataOutput()
         guard captureSession.canAddOutput(metadataOutput) else {
-            KBLog.navigation.error("QRCodeScannerView: cannot add metadata output to session")
+            KBLog.navigation.kbError("QRCodeScannerView: cannot add metadata output to session")
             return viewController
         }
         captureSession.addOutput(metadataOutput)
@@ -100,7 +100,7 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
         viewController.view.layer.addSublayer(previewLayer)
         
         captureSession.startRunning()
-        KBLog.navigation.info("QRCodeScannerView session started")
+        KBLog.navigation.kbInfo("QRCodeScannerView session started")
         
         // Manteniamo viva la sessione per la lifetime del VC
         objc_setAssociatedObject(

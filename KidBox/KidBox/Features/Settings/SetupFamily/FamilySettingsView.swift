@@ -127,13 +127,13 @@ struct FamilySettingsView: View {
         }
         .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
             guard let fid = family?.id, fid == revokedFamilyId else { return }
-            KBLog.sync.info("FamilySettingsView: currentUserRevoked received familyId=\(revokedFamilyId, privacy: .public)")
+            KBLog.sync.kbInfo("FamilySettingsView: currentUserRevoked received familyId=\(revokedFamilyId)")
             Task { @MainActor in
                 let service = FamilyLeaveService(modelContext: modelContext)
                 do {
                     try service.wipeFamilyLocalOnly(familyId: revokedFamilyId)
                 } catch {
-                    KBLog.sync.error("FamilySettingsView: post-revoke local wipe failed: \(error.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("FamilySettingsView: post-revoke local wipe failed: \(error.localizedDescription)")
                 }
                 coordinator.setActiveFamily(nil)
                 coordinator.resetToRoot()
@@ -254,7 +254,7 @@ struct FamilySettingsView: View {
             trailingSystemImage: "pencil",
             trailingAction: {
                 guard let family else { return }
-                KBLog.navigation.debug("FamilySettingsView: tap editFamily familyId=\(family.id, privacy: .public)")
+                KBLog.navigation.kbDebug("FamilySettingsView: tap editFamily familyId=\(family.id)")
                 coordinator.navigate(
                     to: .editFamily(
                         familyId: family.id,
@@ -328,7 +328,7 @@ struct FamilySettingsView: View {
                 systemImage: "qrcode",
                 style: .primary,
                 action: {
-                    KBLog.navigation.debug("FamilySettingsView: tap inviteCode")
+                    KBLog.navigation.kbDebug("FamilySettingsView: tap inviteCode")
                     coordinator.navigate(to: .inviteCode)
                 }
             )
@@ -339,7 +339,7 @@ struct FamilySettingsView: View {
                 systemImage: "key.fill",
                 style: .secondary,
                 action: {
-                    KBLog.navigation.debug("FamilySettingsView: tap joinFamily")
+                    KBLog.navigation.kbDebug("FamilySettingsView: tap joinFamily")
                     coordinator.navigate(to: .joinFamily)
                 }
             )
@@ -354,7 +354,7 @@ struct FamilySettingsView: View {
             style: .danger,
             action: {
                 guard let fid = family?.id else { return }
-                KBLog.navigation.info("FamilySettingsView: tap leave familyId=\(fid, privacy: .public)")
+                KBLog.navigation.kbInfo("FamilySettingsView: tap leave familyId=\(fid)")
                 if activeMembers.count <= 1 {
                     showOwnerAloneDeleteConfirm = true
                 } else if !isOwner {
@@ -384,7 +384,7 @@ struct FamilySettingsView: View {
                 systemImage: "plus.circle.fill",
                 style: .primary,
                 action: {
-                    KBLog.navigation.debug("FamilySettingsView: tap setupFamily")
+                    KBLog.navigation.kbDebug("FamilySettingsView: tap setupFamily")
                     coordinator.navigate(to: .setupFamily)
                 }
             )
@@ -395,7 +395,7 @@ struct FamilySettingsView: View {
                 systemImage: "key.fill",
                 style: .secondary,
                 action: {
-                    KBLog.navigation.debug("FamilySettingsView: tap joinFamily (no family)")
+                    KBLog.navigation.kbDebug("FamilySettingsView: tap joinFamily (no family)")
                     coordinator.navigate(to: .joinFamily)
                 }
             )
@@ -407,14 +407,14 @@ struct FamilySettingsView: View {
     @MainActor
     private func leaveFamily() async {
         guard let familyId = family?.id else { return }
-        KBLog.sync.info("FamilySettingsView: leaving familyId=\(familyId, privacy: .public)")
+        KBLog.sync.kbInfo("FamilySettingsView: leaving familyId=\(familyId)")
         do {
             let service = FamilyLeaveService(modelContext: modelContext)
             try await service.leaveFamily(familyId: familyId)
-            KBLog.sync.info("FamilySettingsView: leave OK familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbInfo("FamilySettingsView: leave OK familyId=\(familyId)")
             coordinator.resetToRoot()
         } catch {
-            KBLog.sync.error("FamilySettingsView: leave FAILED familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("FamilySettingsView: leave FAILED familyId=\(familyId) err=\(error.localizedDescription)")
             let message = error.localizedDescription.lowercased()
             if message.contains("unico membro") {
                 showOwnerAloneDeleteConfirm = true
@@ -452,14 +452,14 @@ struct FamilySettingsView: View {
     @MainActor
     private func revokeAccess(member: KBFamilyMember) async {
         guard let familyId = family?.id else { return }
-        KBLog.sync.info("FamilySettingsView: revoking uid=\(member.userId, privacy: .public)")
+        KBLog.sync.kbInfo("FamilySettingsView: revoking uid=\(member.userId)")
         do {
             let service = FamilyRevokeService(modelContext: modelContext)
             try await service.revokeMember(familyId: familyId, targetUid: member.userId)
-            KBLog.sync.info("FamilySettingsView: revoke OK uid=\(member.userId, privacy: .public)")
+            KBLog.sync.kbInfo("FamilySettingsView: revoke OK uid=\(member.userId)")
             memberToRevoke = nil
         } catch {
-            KBLog.sync.error("FamilySettingsView: revoke FAILED err=\(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("FamilySettingsView: revoke FAILED err=\(error.localizedDescription)")
             revokeError = error.localizedDescription
             memberToRevoke = nil
         }
@@ -499,7 +499,7 @@ struct FamilySettingsView: View {
             guard member.displayName != name else { return }
             member.displayName = name
             try? modelContext.save()
-            KBLog.sync.debug("FamilySettings: updated local member displayName=\(name, privacy: .public)")
+            KBLog.sync.kbDebug("FamilySettings: updated local member displayName=\(name)")
         }
         
         Task {
@@ -511,9 +511,9 @@ struct FamilySettingsView: View {
                         "displayName": name,
                         "updatedAt": Timestamp(date: Date())
                     ], merge: true)
-                KBLog.sync.debug("FamilySettings: updated remote member displayName=\(name, privacy: .public)")
+                KBLog.sync.kbDebug("FamilySettings: updated remote member displayName=\(name)")
             } catch {
-                KBLog.sync.error("FamilySettings: remote member name update failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.sync.kbError("FamilySettings: remote member name update failed: \(error.localizedDescription)")
             }
         }
     }

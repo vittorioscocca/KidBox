@@ -42,11 +42,11 @@ extension DocumentFolderViewModel {
     func mergePDFs(orderedDocs: [KBDocument], title: String, modelContext: ModelContext) async {
         guard orderedDocs.count >= 2 else {
             errorText = "Seleziona almeno 2 PDF per unirli."
-            KBLog.data.error("DocumentFolderViewModel mergePDFs: insufficient PDFs count=\(orderedDocs.count)")
+            KBLog.data.kbError("DocumentFolderViewModel mergePDFs: insufficient PDFs count=\(orderedDocs.count)")
             return
         }
         
-        KBLog.data.info("DocumentFolderViewModel mergePDFs started count=\(orderedDocs.count) title=\(title)")
+        KBLog.data.kbInfo("DocumentFolderViewModel mergePDFs started count=\(orderedDocs.count) title=\(title)")
         
         isUploading = true
         uploadCurrentName = "Unione PDF in corso…"
@@ -60,7 +60,7 @@ extension DocumentFolderViewModel {
         do {
             // 1) Merge in user-chosen order
             let mergedData = try await PDFMergeService.merge(docs: orderedDocs, modelContext: modelContext)
-            KBLog.data.info("DocumentFolderViewModel mergePDFs merge OK bytes=\(mergedData.count)")
+            KBLog.data.kbInfo("DocumentFolderViewModel mergePDFs merge OK bytes=\(mergedData.count)")
             
             // 2) Write to a named temp URL so uploadSingleFileFromData infers MIME correctly
             let tempURL = FileManager.default.temporaryDirectory
@@ -79,7 +79,7 @@ extension DocumentFolderViewModel {
             )
             
             if ok {
-                KBLog.data.info("DocumentFolderViewModel mergePDFs upload OK")
+                KBLog.data.kbInfo("DocumentFolderViewModel mergePDFs upload OK")
                 uploadDone = 1
                 uploadFailures = 0
                 exitSelectionMode()
@@ -90,12 +90,12 @@ extension DocumentFolderViewModel {
             } else {
                 uploadFailures = 1
                 errorText = "Caricamento del PDF unito non riuscito."
-                KBLog.data.error("DocumentFolderViewModel mergePDFs upload failed")
+                KBLog.data.kbError("DocumentFolderViewModel mergePDFs upload failed")
             }
             
         } catch {
             errorText = error.localizedDescription
-            KBLog.data.error("DocumentFolderViewModel mergePDFs error: \(error.localizedDescription)")
+            KBLog.data.kbError("DocumentFolderViewModel mergePDFs error: \(error.localizedDescription)")
         }
     }
 }

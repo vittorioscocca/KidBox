@@ -24,7 +24,7 @@ extension UIApplication {
             let windowScene = connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
             let root = windowScene.keyWindow?.rootViewController
         else {
-            KBLog.navigation.debug("topMostViewController: no active windowScene/rootViewController")
+            KBLog.navigation.kbDebug("topMostViewController: no active windowScene/rootViewController")
             return nil
         }
         

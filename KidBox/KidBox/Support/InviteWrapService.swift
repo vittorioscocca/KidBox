@@ -36,14 +36,14 @@ struct InviteWrapService {
     /// TTL consigliato: 24h
     func createInvite(familyId: String, ttlSeconds: TimeInterval = 24 * 3600) async throws -> Result {
         guard let uid = Auth.auth().currentUser?.uid else {
-            KBLog.auth.error("Invite create failed: not authenticated")
+            KBLog.auth.kbError("Invite create failed: not authenticated")
             throw NSError(domain: "KidBox.Invite", code: -1, userInfo: [
                 NSLocalizedDescriptionKey: "Not authenticated"
             ])
         }
         
         guard !familyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            KBLog.security.error("Invite create failed: empty familyId")
+            KBLog.security.kbError("Invite create failed: empty familyId")
             throw NSError(domain: "KidBox.Invite", code: -2, userInfo: [
                 NSLocalizedDescriptionKey: "familyId vuoto"
             ])
@@ -61,19 +61,19 @@ struct InviteWrapService {
                 if let recovered = await FamilyKeyEscrowService.recover(familyId: familyId, userId: uid) {
                     try FamilyKeychainStore.saveFamilyKey(recovered, familyId: familyId, userId: uid)
                     familyKey = recovered
-                    KBLog.security.info("Family master key recovered from escrow for familyId=\(familyId, privacy: .public)")
+                    KBLog.security.kbInfo("Family master key recovered from escrow for familyId=\(familyId)")
                 } else {
                     let raw = InviteCrypto.randomBytes(32)
                     let created = SymmetricKey(data: raw)
                     try FamilyKeychainStore.saveFamilyKey(created, familyId: familyId, userId: uid)
                     familyKey = created
-                    KBLog.security.info("Family master key created for familyId=\(familyId, privacy: .public)")
+                    KBLog.security.kbInfo("Family master key created for familyId=\(familyId)")
                 }
             }
             // Always ensure an up-to-date escrow backup exists for this user
             await FamilyKeyEscrowService.backup(key: familyKey, familyId: familyId, userId: uid)
         } catch {
-            KBLog.security.error("Family master key ensure failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.security.kbError("Family master key ensure failed: \(error.localizedDescription)")
             throw error
         }
         
@@ -88,7 +88,7 @@ struct InviteWrapService {
             let wrapKey = InviteCrypto.deriveWrapKey(secret: secret, salt: salt, familyId: familyId)
             wrapped = try InviteCrypto.wrapFamilyKey(familyKey: familyKey, wrapKey: wrapKey)
         } catch {
-            KBLog.security.error("Invite wrap failed inviteId=\(inviteId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            KBLog.security.kbError("Invite wrap failed inviteId=\(inviteId): \(error.localizedDescription)")
             throw error
         }
         
@@ -119,7 +119,7 @@ struct InviteWrapService {
                 "usedBy": NSNull()
             ], merge: false)
         } catch {
-            KBLog.sync.error("Invite Firestore write failed inviteId=\(inviteId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("Invite Firestore write failed inviteId=\(inviteId): \(error.localizedDescription)")
             throw error
         }
         
@@ -127,7 +127,7 @@ struct InviteWrapService {
         let secretB64url = secret.base64url()
         let qrPayload = "kidbox://join?familyId=\(familyId)&inviteId=\(inviteId)&secret=\(secretB64url)"
         
-        KBLog.security.info("Invite created inviteId=\(inviteId, privacy: .public) familyId=\(familyId, privacy: .public)")
+        KBLog.security.kbInfo("Invite created inviteId=\(inviteId) familyId=\(familyId)")
         
         return Result(
             inviteId: inviteId,

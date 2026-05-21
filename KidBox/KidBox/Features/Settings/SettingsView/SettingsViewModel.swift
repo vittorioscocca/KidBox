@@ -54,52 +54,52 @@ final class SettingsViewModel: ObservableObject {
     init() {
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
         self.notifyOnNewDocs = cached
-        KBLog.settings.debug("SettingsVM init cached notifyOnNewDocs=\(cached, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewDocs=\(cached)")
         
         let cachedChat = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewMessages) as? Bool ?? true
         self.notifyOnNewMessages = cachedChat
-        KBLog.settings.debug("SettingsVM init cached notifyOnNewMessages=\(cachedChat, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewMessages=\(cachedChat)")
         
         let cachedLoc = UserDefaults.standard.object(forKey: LocalKeys.notifyOnLocationSharing) as? Bool ?? false
         self.notifyOnLocationSharing = cachedLoc
-        KBLog.settings.debug("SettingsVM init cached notifyOnLocationSharing=\(cachedLoc, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnLocationSharing=\(cachedLoc)")
         
         let cachedTodos = UserDefaults.standard.object(forKey: LocalKeys.notifyOnTodos) as? Bool ?? true
         self.notifyOnTodos = cachedTodos
-        KBLog.settings.debug("SettingsVM init cached notifyOnTodos=\(cachedTodos, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnTodos=\(cachedTodos)")
         
         let cachedGrocery = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewGroceryItem) as? Bool ?? true
         self.notifyOnNewGroceryItem = cachedGrocery
-        KBLog.settings.debug("SettingsVM init cached notifyOnNewGroceryItem=\(cachedGrocery, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewGroceryItem=\(cachedGrocery)")
         
         let cachedNote = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewNote) as? Bool ?? true
         self.notifyOnNewNote = cachedNote
-        KBLog.settings.debug("SettingsVM init cached notifyOnNewNote=\(cachedNote, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewNote=\(cachedNote)")
         
         let cachedExpense = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewExpense) as? Bool ?? true
         self.notifyOnNewExpense = cachedExpense
-        KBLog.settings.debug("SettingsVM init cached notifyOnNewExpense=\(cachedExpense, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewExpense=\(cachedExpense)")
 
         let cachedWalletNew = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewWalletTicket) as? Bool ?? true
         self.notifyOnNewWalletTicket = cachedWalletNew
-        KBLog.settings.debug("SettingsVM init cached notifyOnNewWalletTicket=\(cachedWalletNew, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewWalletTicket=\(cachedWalletNew)")
 
         let cachedWalletReminder = UserDefaults.standard.object(forKey: LocalKeys.notifyOnWalletReminder) as? Bool ?? true
         self.notifyOnWalletReminder = cachedWalletReminder
-        KBLog.settings.debug("SettingsVM init cached notifyOnWalletReminder=\(cachedWalletReminder, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnWalletReminder=\(cachedWalletReminder)")
 
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
         self.audioTranscriptionEnabled = cachedTranscription
-        KBLog.settings.debug("SettingsVM init cached audioTranscriptionEnabled=\(cachedTranscription, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached audioTranscriptionEnabled=\(cachedTranscription)")
         
         let rawAppearance = UserDefaults.standard.string(forKey: LocalKeys.appearanceMode) ?? AppearanceMode.system.rawValue
         self.appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
-        KBLog.settings.debug("SettingsVM init cached appearanceMode=\(rawAppearance, privacy: .public)")
+        KBLog.settings.kbDebug("SettingsVM init cached appearanceMode=\(rawAppearance)")
     }
     
     // MARK: - Load
     func load() {
-        KBLog.settings.debug("SettingsVM load requested")
+        KBLog.settings.kbDebug("SettingsVM load requested")
         
         let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
         if notifyOnNewDocs != cached { notifyOnNewDocs = cached }
@@ -132,27 +132,27 @@ final class SettingsViewModel: ObservableObject {
             UserDefaults.standard.set(remoteTodo, forKey: LocalKeys.notifyOnTodos)
             
             let remoteGrocery = await notifications.fetchNotifyOnNewGroceryItemPreference()
-            KBLog.settings.info("SettingsVM fetch remote grocery pref=\(remoteGrocery, privacy: .public)")
+            KBLog.settings.kbInfo("SettingsVM fetch remote grocery pref=\(remoteGrocery)")
             if notifyOnNewGroceryItem != remoteGrocery { notifyOnNewGroceryItem = remoteGrocery }
             UserDefaults.standard.set(remoteGrocery, forKey: LocalKeys.notifyOnNewGroceryItem)
             
             let remoteNote = await notifications.fetchNotifyOnNewNotePreference()
-            KBLog.settings.info("SettingsVM fetch remote note pref=\(remoteNote, privacy: .public)")
+            KBLog.settings.kbInfo("SettingsVM fetch remote note pref=\(remoteNote)")
             if notifyOnNewNote != remoteNote { notifyOnNewNote = remoteNote }
             UserDefaults.standard.set(remoteNote, forKey: LocalKeys.notifyOnNewNote)
             
             let remoteExpense = await notifications.fetchNotifyOnNewExpensePreference()
-            KBLog.settings.info("SettingsVM fetch remote expense pref=\(remoteExpense, privacy: .public)")
+            KBLog.settings.kbInfo("SettingsVM fetch remote expense pref=\(remoteExpense)")
             if notifyOnNewExpense != remoteExpense { notifyOnNewExpense = remoteExpense }
             UserDefaults.standard.set(remoteExpense, forKey: LocalKeys.notifyOnNewExpense)
 
             let remoteWalletNew = await notifications.fetchNotifyOnNewWalletTicketPreference()
-            KBLog.settings.info("SettingsVM fetch remote walletNew pref=\(remoteWalletNew, privacy: .public)")
+            KBLog.settings.kbInfo("SettingsVM fetch remote walletNew pref=\(remoteWalletNew)")
             if notifyOnNewWalletTicket != remoteWalletNew { notifyOnNewWalletTicket = remoteWalletNew }
             UserDefaults.standard.set(remoteWalletNew, forKey: LocalKeys.notifyOnNewWalletTicket)
 
             let remoteWalletReminder = await notifications.fetchNotifyOnWalletReminderPreference()
-            KBLog.settings.info("SettingsVM fetch remote walletReminder pref=\(remoteWalletReminder, privacy: .public)")
+            KBLog.settings.kbInfo("SettingsVM fetch remote walletReminder pref=\(remoteWalletReminder)")
             if notifyOnWalletReminder != remoteWalletReminder { notifyOnWalletReminder = remoteWalletReminder }
             UserDefaults.standard.set(remoteWalletReminder, forKey: LocalKeys.notifyOnWalletReminder)
         }
@@ -161,7 +161,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - User actions
     
     func toggleNotifyOnNewDocs(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnNewDocs enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewDocs enabled=\(enabled)")
         infoText = nil
         notifyOnNewDocs = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewDocs)
@@ -174,7 +174,7 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnNewDocs = false
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnNewDocs)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnNewDocs failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewDocs failed: \(error.localizedDescription)")
             }
         }
     }
@@ -207,7 +207,7 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnLocationSharing = false
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnLocationSharing)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnLocationSharing failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnLocationSharing failed: \(error.localizedDescription)")
             }
         }
     }
@@ -231,7 +231,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Shopping toggle
     
     func toggleNotifyOnNewGroceryItem(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnNewGroceryItem enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewGroceryItem enabled=\(enabled)")
         notifyOnNewGroceryItem = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewGroceryItem)
         
@@ -243,7 +243,7 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnNewGroceryItem = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewGroceryItem)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnNewGroceryItem failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewGroceryItem failed: \(error.localizedDescription)")
             }
         }
     }
@@ -251,7 +251,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Notes toggle
     
     func toggleNotifyOnNewNote(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnNewNote enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewNote enabled=\(enabled)")
         notifyOnNewNote = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewNote)
         
@@ -263,7 +263,7 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnNewNote = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewNote)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnNewNote failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewNote failed: \(error.localizedDescription)")
             }
         }
     }
@@ -271,7 +271,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Expense toggle
     
     func toggleNotifyOnNewExpense(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnNewExpense enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewExpense enabled=\(enabled)")
         notifyOnNewExpense = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewExpense)
         
@@ -283,7 +283,7 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnNewExpense = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewExpense)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnNewExpense failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewExpense failed: \(error.localizedDescription)")
             }
         }
     }
@@ -291,7 +291,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Wallet toggles
 
     func toggleNotifyOnNewWalletTicket(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnNewWalletTicket enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewWalletTicket enabled=\(enabled)")
         notifyOnNewWalletTicket = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewWalletTicket)
 
@@ -303,13 +303,13 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnNewWalletTicket = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewWalletTicket)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnNewWalletTicket failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewWalletTicket failed: \(error.localizedDescription)")
             }
         }
     }
 
     func toggleNotifyOnWalletReminder(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleNotifyOnWalletReminder enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnWalletReminder enabled=\(enabled)")
         notifyOnWalletReminder = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnWalletReminder)
 
@@ -327,7 +327,7 @@ final class SettingsViewModel: ObservableObject {
                 notifyOnWalletReminder = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnWalletReminder)
                 infoText = error.localizedDescription
-                KBLog.settings.error("SettingsVM setNotifyOnWalletReminder failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnWalletReminder failed: \(error.localizedDescription)")
             }
         }
     }
@@ -338,7 +338,7 @@ final class SettingsViewModel: ObservableObject {
     /// Non richiede chiamate di rete — la preferenza è letta direttamente
     /// da `ChatViewModel` prima di avviare la trascrizione.
     func toggleAudioTranscription(_ enabled: Bool) {
-        KBLog.settings.info("SettingsVM toggleAudioTranscription enabled=\(enabled, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM toggleAudioTranscription enabled=\(enabled)")
         audioTranscriptionEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.audioTranscriptionEnabled)
         infoText = enabled ? "Trascrizione vocale attiva." : "Trascrizione vocale disattivata."
@@ -349,7 +349,7 @@ final class SettingsViewModel: ObservableObject {
     /// Salva il tema scelto in UserDefaults e lo propaga al coordinator
     /// che applica `.preferredColorScheme` alla root dell'app.
     func setAppearanceMode(_ mode: AppearanceMode, coordinator: AppCoordinator) {
-        KBLog.settings.info("SettingsVM setAppearanceMode mode=\(mode.rawValue, privacy: .public)")
+        KBLog.settings.kbInfo("SettingsVM setAppearanceMode mode=\(mode.rawValue)")
         appearanceMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: LocalKeys.appearanceMode)
         coordinator.setAppearanceMode(mode)

@@ -31,18 +31,18 @@ enum QRCodeGenerator {
         filter.correctionLevel = "M" // medium error correction (balanced density/resilience)
         
         guard let output = filter.outputImage else {
-            KBLog.ui.error("QRCodeGenerator: outputImage is nil")
+            KBLog.ui.kbError("QRCodeGenerator: outputImage is nil")
             return nil
         }
         
         let transformed = output.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         
         guard let cgImage = context.createCGImage(transformed, from: transformed.extent) else {
-            KBLog.ui.error("QRCodeGenerator: createCGImage failed extent=\(String(describing: transformed.extent), privacy: .public)")
+            KBLog.ui.kbError("QRCodeGenerator: createCGImage failed extent=\(String(describing: transformed.extent))")
             return nil
         }
         
-        KBLog.ui.debug("QRCodeGenerator: generated image scale=\(scale, privacy: .public)")
+        KBLog.ui.kbDebug("QRCodeGenerator: generated image scale=\(scale)")
         return UIImage(cgImage: cgImage)
     }
 }

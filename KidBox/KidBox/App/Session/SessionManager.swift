@@ -27,12 +27,12 @@ final class SessionManager: ObservableObject {
                 if let user {
                     self.isAuthenticated = true
                     self.uid = user.uid
-                    KBLog.auth.info("Auth state: logged in uid=\(user.uid, privacy: .public)")
+                    KBLog.auth.kbInfo("Auth state: logged in uid=\(user.uid)")
                     self.upsertUserProfile(from: user, modelContext: modelContext)
                 } else {
                     self.isAuthenticated = false
                     self.uid = nil
-                    KBLog.auth.info("Auth state: logged out")
+                    KBLog.auth.kbInfo("Auth state: logged out")
                 }
             }
         }
@@ -51,16 +51,16 @@ final class SessionManager: ObservableObject {
                 existing.email = user.email
                 existing.displayName = user.displayName
                 existing.updatedAt = Date()
-                KBLog.data.debug("UserProfile updated uid=\(uid, privacy: .public)")
+                KBLog.data.kbDebug("UserProfile updated uid=\(uid)")
             } else {
                 let profile = KBUserProfile(uid: uid, email: user.email, displayName: user.displayName)
                 modelContext.insert(profile)
-                KBLog.data.debug("UserProfile created uid=\(uid, privacy: .public)")
+                KBLog.data.kbDebug("UserProfile created uid=\(uid)")
             }
             
             try modelContext.save()
         } catch {
-            KBLog.data.error("UserProfile upsert failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("UserProfile upsert failed: \(error.localizedDescription)")
         }
     }
 }

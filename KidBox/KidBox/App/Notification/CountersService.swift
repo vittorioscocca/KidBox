@@ -43,9 +43,9 @@ final class CountersService {
                 "updatedAt": FieldValue.serverTimestamp(),
             ], merge: true)
             
-            KBLog.sync.debug("Counters reset ok familyId=\(familyId, privacy: .public) field=\(field.rawValue, privacy: .public)")
+            KBLog.sync.kbDebug("Counters reset ok familyId=\(familyId) field=\(field.rawValue)")
         } catch {
-            KBLog.sync.error("Counters reset FAILED familyId=\(familyId, privacy: .public) field=\(field.rawValue, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("Counters reset FAILED familyId=\(familyId) field=\(field.rawValue) err=\(error.localizedDescription)")
         }
     }
 }

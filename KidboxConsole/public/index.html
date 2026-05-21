@@ -105,7 +105,7 @@ const EUR_RATE = 0.92;
 const AI_DELTA_USD    = 0.5268;       // USD non tracciati — aggiorna quando serve
 const STORAGE_DELTA_B = 0;
 
-function fmtEur(n)  { return n==null ? '—' : '€'+Number(n*EUR_RATE).toFixed(4); }
+function fmtEur(n)  { return n==null ? '—' : '€'+Number(n*EUR_RATE).toFixed(2).replace('.',','); }
 function fmtUsd(n)  { return fmtEur(n); }
 
 function monthKey() { return new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Rome'}).slice(0,7); }
@@ -171,6 +171,8 @@ function initTickets() {
     // badge topbar
     const badge = document.getElementById('ticket-badge');
     if (badge) { badge.textContent = newC > 0 ? newC : ''; badge.style.display = newC > 0 ? 'inline-flex' : 'none'; }
+    const navBadge = document.getElementById('nav-ticket-badge');
+    if (navBadge) { navBadge.textContent = newC > 0 ? newC : ''; navBadge.style.display = newC > 0 ? 'inline-flex' : 'none'; }
     renderTicketTable(cases);
   }, err => console.error('tickets snapshot error', err));
 }
@@ -207,7 +209,7 @@ function renderTicketTable(cases) {
   }).join('');
 }
 
-async function ticketAction(action, caseId) {
+window.ticketAction = async function ticketAction(action, caseId) {
   try {
     if (action === 'take')    await httpsCallable(functions, 'takeCase')({ caseId });
     if (action === 'resolve') {
@@ -221,7 +223,7 @@ async function ticketAction(action, caseId) {
   } catch(e) { showErr('Errore azione ticket: ' + e.message); }
 }
 
-async function ticketDetail(caseId) {
+window.ticketDetail = async function ticketDetail(caseId) {
   try {
     const snap = await getDoc(doc(db, 'cases', caseId));
     if (!snap.exists()) { alert('Ticket non trovato'); return; }
@@ -246,48 +248,46 @@ async function ticketDetail(caseId) {
 }
 
 // ── ADMIN NOTIFICHE ──────────────────────
-async function toggleAdminNotif(btn) {
+window.toggleAdminNotif = async function toggleAdminNotif(btn) {
   if (!auth?.currentUser) { showErr('Devi essere loggato'); return; }
   btn.disabled = true;
+  btn.textContent = '⏳';
   try {
-    const cfgSnap = await getDoc(doc(db, 'admin', 'config'));
-    const uid = auth.currentUser.uid;
-    const isRegistered = cfgSnap.exists() &&
-      (cfgSnap.data().notifyUids || []).includes(uid);
-
-    if (isRegistered) {
-      await httpsCallable(functions, 'unregisterAdminNotifications')({});
-      btn.textContent = '🔕 Notifiche';
-      btn.style.opacity = '.5';
-      alert('Rimosso dalle notifiche push critical.');
-    } else {
-      await httpsCallable(functions, 'registerAdminNotifications')({});
-      btn.textContent = '🔔 Notifiche ✓';
-      btn.style.opacity = '1';
-      btn.classList.add('btn-accent');
-      alert('✅ Registrato! Riceverai una push su iOS/Android per ogni ticket critical.');
-    }
-  } catch(e) { showErr('Errore notifiche: ' + e.message); }
-  finally { btn.disabled = false; }
+    // Registra direttamente — la function server-side gestisce tutto
+    const result = await httpsCallable(functions, 'registerAdminNotifications')({});
+    console.log('registerAdminNotifications result:', result);
+    btn.textContent = '🔔 Notifiche ✓';
+    btn.style.opacity = '1';
+    btn.classList.add('btn-accent');
+    btn.style.background = '';
+    alert('✅ Registrato!\nRiceverai una push su iPhone/iPad per ogni ticket critical.\n\nUID: ' + auth.currentUser.uid);
+  } catch(e) {
+    console.error('toggleAdminNotif error:', e);
+    btn.textContent = '🔔 Notifiche';
+    showErr('Errore registrazione notifiche: ' + (e.message || JSON.stringify(e)));
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function checkAdminNotifStatus() {
   if (!auth?.currentUser) return;
+  const btn = document.getElementById('btn-notif');
+  if (!btn) return;
   try {
-    const cfgSnap = await getDoc(doc(db, 'admin', 'config'));
-    const uid = auth.currentUser.uid;
-    const isReg = cfgSnap.exists() &&
-      (cfgSnap.data().notifyUids || []).includes(uid);
-    const btn = document.getElementById('btn-notif');
-    if (!btn) return;
-    if (isReg) {
+    // Usa la callable function (admin SDK server-side bypassa le rules)
+    const result = await httpsCallable(functions, 'checkAdminNotifStatus')({});
+    if (result.data?.registered) {
       btn.textContent = '🔔 Notifiche ✓';
       btn.classList.add('btn-accent');
     } else {
-      btn.textContent = '🔕 Notifiche';
-      btn.style.opacity = '.6';
+      btn.textContent = '🔔 Notifiche';
+      btn.classList.remove('btn-accent');
     }
-  } catch {}
+  } catch(e) {
+    // checkAdminNotifStatus non esiste ancora sul server — ignora silenziosamente
+    console.warn('checkAdminNotifStatus:', e.message);
+  }
 }
 
 // ── load ──────────────────────────────────
@@ -312,10 +312,22 @@ async function loadAll() {
   }
 }
 
+let _usersCache = [];
 async function loadUsers() {
   try {
     const snap = await getDocs(collection(db,'users'));
     setVal('stat-users', fmtNum(snap.size));
+    _usersCache = snap.docs.map(d => ({
+      uid:   d.id,
+      email: d.data().email || '',
+      fid:   d.data().familyId || d.data().activeFamilyId || '',
+    })).filter(u => u.email).sort((a,b) => a.email.localeCompare(b.email));
+    // Popola il menù a tendina
+    const sel = document.getElementById('override-email');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Seleziona utente…</option>' +
+        _usersCache.map(u => `<option value="${u.uid}" data-fid="${u.fid}">${u.email}</option>`).join('');
+    }
   } catch { setVal('stat-users','N/A'); }
 }
 
@@ -338,10 +350,25 @@ async function loadFamilies() {
       const d    = fdoc.data();
       const ov   = d.planOverride;
       const plan = (ov === 'pro' || ov === 'max') ? ov : (d.plan || 'free');
-      let storageBytes=0, aiToday=0;
+      let storageBytes=0, aiToday=0, ownerEmail='—';
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
       try { const ad=await getDoc(doc(db,'ai_usage',`family_${fid}`,'daily',tdk)); if(ad.exists()) aiToday=ad.data().count||0; } catch {}
-      return { fid, plan, storageBytes, aiToday, updatedAt: fdoc.data().updatedAt?.toDate() };
+      // Trova email del proprietario dalla subcollection members
+      try {
+        const membSnap = await getDocs(collection(db,'families',fid,'members'));
+        // Cerca prima role=owner, poi il primo membro
+        let ownerUid = null;
+        membSnap.forEach(m => {
+          const md = m.data();
+          if (md.role === 'owner' || md.role === 'admin') ownerUid = m.id;
+        });
+        if (!ownerUid && !membSnap.empty) ownerUid = membSnap.docs[0].id;
+        if (ownerUid) {
+          const usnap = await getDoc(doc(db,'users',ownerUid));
+          if (usnap.exists()) ownerEmail = usnap.data().email || '—';
+        }
+      } catch {}
+      return { fid, plan, storageBytes, aiToday, ownerEmail, updatedAt: fdoc.data().updatedAt?.toDate() };
     }));
     rows.push(...res);
   }
@@ -365,17 +392,22 @@ async function loadFamilies() {
   // tabella
   const tbody = document.getElementById('fam-tbody');
   tbody.innerHTML = rows.length===0
-    ? '<tr><td colspan="5" class="empty">Nessuna famiglia trovata</td></tr>'
-    : rows.sort((a,b)=>b.storageBytes-a.storageBytes).map(r=>`
+    ? '<tr><td colspan="6" class="empty">Nessuna famiglia trovata</td></tr>'
+    : rows.sort((a,b)=>b.storageBytes-a.storageBytes).map(r=>{
+        const email = r.ownerEmail || '—';
+        const emailShort = email.length > 30 ? email.slice(0,28)+'…' : email;
+        return `
         <tr>
-          <td class="mono dim" style="cursor:pointer" title="Clicca per copiare nel form override"
-            onclick="document.getElementById('override-family-id').value='${String(r.fid).replace(/'/g, "\\'")}';document.getElementById('override-family-id').scrollIntoView({behavior:'smooth'})">
-            ${r.fid.slice(0,20)}…</td>
+          <td class="mono dim" style="cursor:pointer;font-size:11px" title="${r.fid}"
+            onclick="selectOverrideUser('','${email.replace(/'/g,"\\'")}','${String(r.fid).replace(/'/g,"\\'")}');document.getElementById('section-plans').scrollIntoView({behavior:'smooth'})">
+            ${r.fid.slice(0,18)}…</td>
+          <td class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
           <td><span class="badge badge-${r.plan}">${r.plan}</span></td>
           <td class="mono">${fmtBytes(r.storageBytes)}</td>
           <td class="mono ${r.aiToday>0?'hi':''}">${r.aiToday}</td>
           <td class="dim">${r.updatedAt?r.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
 
   // bars storage
   const topSt = [...rows].sort((a,b)=>b.storageBytes-a.storageBytes).slice(0,8);
@@ -458,6 +490,28 @@ window.resetStorageAll = async function(btn) {
   }
 }
 
+// ── OVERRIDE UTENTE SELECT ────────────────────────────────────
+window.onOverrideUserSelect = function(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const fid = opt ? (opt.dataset.fid || '') : '';
+  document.getElementById('override-family-id').value = fid;
+  document.getElementById('override-family-resolved').textContent = fid ? 'Family ID: ' + fid : (sel.value ? '⚠ Nessun Family ID trovato' : '');
+};
+
+window.selectOverrideUser = function(uid, email, fid) {
+  // Chiamato dal click sulla riga famiglie — seleziona nel dropdown
+  const sel = document.getElementById('override-email');
+  if (!sel) return;
+  for (const opt of sel.options) {
+    if (opt.dataset.fid === fid || opt.textContent.trim() === email) {
+      sel.value = opt.value;
+      break;
+    }
+  }
+  document.getElementById('override-family-id').value = fid;
+  document.getElementById('override-family-resolved').textContent = fid ? 'Family ID: ' + fid : '⚠ Nessun Family ID trovato';
+};
+
 window.setPlanOverride = async function() {
   const familyId = document.getElementById('override-family-id').value.trim();
   const plan     = document.getElementById('override-plan').value;
@@ -465,7 +519,7 @@ window.setPlanOverride = async function() {
   const btn      = document.getElementById('btn-override');
   const res        = document.getElementById('override-result');
 
-  if (!familyId) { res.textContent = '⚠ Inserisci un Family ID'; res.className='override-msg err'; return; }
+  if (!familyId) { res.textContent = '⚠ Seleziona un utente dalla lista'; res.className='override-msg err'; return; }
 
   btn.disabled = true;
   btn.textContent = '…';
@@ -475,9 +529,11 @@ window.setPlanOverride = async function() {
   try {
     const fn = httpsCallable(functions, 'setFamilyPlanOverride');
     await fn({ familyId, plan: plan === 'none' ? null : plan, note });
+    const sel = document.getElementById('override-email');
+    const emailLabel = sel?.options[sel.selectedIndex]?.text || familyId;
     res.textContent = plan === 'none'
-      ? `✓ Override rimosso per ${familyId}`
-      : `✓ Piano ${plan.toUpperCase()} assegnato a ${familyId}`;
+      ? `✓ Override rimosso per ${emailLabel}`
+      : `✓ Piano ${plan.toUpperCase()} assegnato a ${emailLabel}`;
     res.className = 'override-msg ok';
     loadAll();
   } catch(e) {
@@ -749,7 +805,18 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
   <div class="main">
     <div class="err-box" id="err-box"></div>
 
+    <!-- NAV RAPIDA -->
+    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+      <a href="#section-users"   class="btn-sm" style="text-decoration:none">👥 Utenti</a>
+      <a href="#section-ai"      class="btn-sm" style="text-decoration:none">🤖 AI & Costi</a>
+      <a href="#section-storage" class="btn-sm" style="text-decoration:none">💾 Storage</a>
+      <a href="#section-plans"   class="btn-sm" style="text-decoration:none">💳 Piani</a>
+      <a href="#section-tickets" class="btn-sm btn-accent" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">🐛 Ticket <span id="nav-ticket-badge" style="background:rgba(255,255,255,0.3);border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></a>
+      <a href="#section-families" class="btn-sm" style="text-decoration:none">📋 Famiglie</a>
+    </div>
+
     <!-- UTENTI & FAMIGLIE -->
+    <div id="section-users"></div>
     <div class="sec-title">👥 Utenti & Famiglie</div>
     <div class="grid-4">
       <div class="card">
@@ -775,6 +842,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     </div>
 
     <!-- AI -->
+    <div id="section-ai"></div>
     <div class="sec-title">🤖 AI — <span id="ai-month-lbl">—</span></div>
     <div class="grid-4">
       <div class="card">
@@ -800,6 +868,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     </div>
 
     <!-- STORAGE & COSTO TOTALE -->
+    <div id="section-storage"></div>
     <div class="sec-title">💾 Storage & Costi</div>
     <div class="grid-3">
       <div class="card">
@@ -893,19 +962,25 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     </div>
 
     <!-- GESTIONE PIANI OVERRIDE -->
+    <div id="section-plans"></div>
     <div class="sec-title">🎁 Gestione Piani — Override Amministrativo</div>
     <div class="card" style="max-width:620px">
         <div class="card-lbl">Assegna piano gratuito a una famiglia</div>
         <p class="card-sub" style="margin-bottom:16px;line-height:1.6">
-            Copia il Family ID dalla tabella qui sotto. L'override ha priorità assoluta su StoreKit
+            Cerca l'utente per email. L'override ha priorità assoluta su StoreKit
             e non viene mai sovrascritto dall'app. Scegli <strong>— Rimuovi override</strong> per
             ripristinare il comportamento normale (StoreKit).
         </p>
 
         <div style="display:flex;flex-direction:column;gap:10px">
             <div class="field" style="margin:0">
-                <label>Family ID</label>
-                <input id="override-family-id" placeholder="Incolla il Family ID dalla tabella…" style="width:100%;font-family:var(--mono);font-size:11px" />
+                <label>Utente</label>
+                <select id="override-email" onchange="onOverrideUserSelect(this)"
+                  style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none">
+                  <option value="">— Seleziona utente…</option>
+                </select>
+                <div id="override-family-resolved" style="font-size:11px;font-family:var(--mono);color:var(--color-dim);margin-top:4px;min-height:16px"></div>
+                <input type="hidden" id="override-family-id" />
             </div>
 
             <div style="display:flex;gap:10px">
@@ -933,17 +1008,19 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     </div>
 
     <!-- TABELLA FAMIGLIE -->
+    <div id="section-families"></div>
     <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
     <div class="tcard">
       <div class="tcard-hdr">Famiglie <span class="sub">(max 60 · ordinate per storage)</span></div>
       <table>
-        <thead><tr><th>Family ID</th><th>Piano</th><th>Storage</th><th>AI oggi</th><th>Aggiornato</th></tr></thead>
-        <tbody id="fam-tbody"><tr><td colspan="5" class="empty">Caricamento…</td></tr></tbody>
+        <thead><tr><th>Family ID</th><th>Email</th><th>Piano</th><th>Storage</th><th>AI oggi</th><th>Aggiornato</th></tr></thead>
+        <tbody id="fam-tbody"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>
       </table>
     </div>
     <div style="height:52px"></div>
 
     <!-- TICKET & BUG REPORT -->
+    <div id="section-tickets"></div>
     <div class="sec-title" style="margin-top:40px">🐛 Ticket & Bug Report</div>
     <div class="grid-3" style="margin-bottom:16px">
       <div class="card">

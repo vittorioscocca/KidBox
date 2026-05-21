@@ -28,7 +28,7 @@ final class AvatarRemoteStore {
         guard let resized = resized(data: imageData, maxSide: 256),
               let jpegData = resized.jpegData(compressionQuality: 0.8)
         else {
-            KBLog.app.error("AvatarRemoteStore: resize/jpeg conversion failed")
+            KBLog.app.kbError("AvatarRemoteStore: resize/jpeg conversion failed")
             return nil
         }
         
@@ -49,11 +49,11 @@ final class AvatarRemoteStore {
                 .document(uid)
                 .setData(["avatarURL": urlString], merge: true)
             
-            KBLog.app.info("AvatarRemoteStore: uploaded avatar for uid=\(uid, privacy: .public)")
+            KBLog.app.kbInfo("AvatarRemoteStore: uploaded avatar for uid=\(uid)")
             return urlString
             
         } catch {
-            KBLog.app.error("AvatarRemoteStore upload failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("AvatarRemoteStore upload failed: \(error.localizedDescription)")
             return nil
         }
     }
@@ -87,7 +87,7 @@ extension AvatarRemoteStore {
         guard let resized = resized(data: imageData, maxSide: 256),
               let jpegData = resized.jpegData(compressionQuality: 0.8)
         else {
-            KBLog.app.error("AvatarRemoteStore: resize/jpeg conversion failed (user)")
+            KBLog.app.kbError("AvatarRemoteStore: resize/jpeg conversion failed (user)")
             return nil
         }
         
@@ -107,10 +107,10 @@ extension AvatarRemoteStore {
                     "updatedAt": Timestamp(date: Date())
                 ], merge: true)
             
-            KBLog.app.info("AvatarRemoteStore: uploaded USER avatar uid=\(uid, privacy: .public)")
+            KBLog.app.kbInfo("AvatarRemoteStore: uploaded USER avatar uid=\(uid)")
             return urlString
         } catch {
-            KBLog.app.error("AvatarRemoteStore USER upload failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("AvatarRemoteStore USER upload failed: \(error.localizedDescription)")
             return nil
         }
     }

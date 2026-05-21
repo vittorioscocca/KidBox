@@ -72,7 +72,7 @@ private struct InviteCodeViewBody: View {
                             Label("Condividi QR", systemImage: "square.and.arrow.up")
                         }
                         .onTapGesture {
-                            KBLog.navigation.debug("InviteCode: tap ShareLink")
+                            KBLog.navigation.kbDebug("InviteCode: tap ShareLink")
                         }
                     }
                     .padding(.vertical, 12)
@@ -125,12 +125,12 @@ private struct InviteCodeViewBody: View {
         .onAppear {
             guard !didLogAppear else { return }
             didLogAppear = true
-            KBLog.navigation.debug("InviteCode: appeared")
+            KBLog.navigation.kbDebug("InviteCode: appeared")
         }
     }
     
     private func generateInvite() {
-        KBLog.navigation.debug("InviteCode: tap Generate QR (busy=\(vm.isBusy, privacy: .public))")
+        KBLog.navigation.kbDebug("InviteCode: tap Generate QR (busy=\(vm.isBusy))")
         Task { await vm.generateInviteCode() }
     }
 }

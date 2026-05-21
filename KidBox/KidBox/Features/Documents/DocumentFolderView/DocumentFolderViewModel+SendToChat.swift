@@ -22,7 +22,7 @@ extension DocumentFolderViewModel {
     /// 4. Naviga alla chat — `ChatView` intercetta la proprietà e chiama `sendDocument(url:)`
     @MainActor
     func sendToChat(doc: KBDocument, modelContext: ModelContext, coordinator: AppCoordinator) async {
-        KBLog.data.info("DocumentFolderViewModel sendToChat started docId=\(doc.id) title=\(doc.title)")
+        KBLog.data.kbInfo("DocumentFolderViewModel sendToChat started docId=\(doc.id) title=\(doc.title)")
         
         isDownloading = true
         downloadCurrentName = doc.title.isEmpty ? doc.fileName : doc.title
@@ -39,14 +39,14 @@ extension DocumentFolderViewModel {
             
             // Rinomina con il titolo utente così in chat appare il nome corretto
             let namedURL = try Self.namedURL(from: rawURL, doc: doc)
-            KBLog.data.info("DocumentFolderViewModel sendToChat ready fileName=\(namedURL.lastPathComponent)")
+            KBLog.data.kbInfo("DocumentFolderViewModel sendToChat ready fileName=\(namedURL.lastPathComponent)")
             
             coordinator.pendingChatDocumentURL = namedURL
             coordinator.navigate(to: .chat)
             
         } catch {
             errorText = "Impossibile preparare il documento: \(error.localizedDescription)"
-            KBLog.data.error("DocumentFolderViewModel sendToChat failed docId=\(doc.id): \(error.localizedDescription)")
+            KBLog.data.kbError("DocumentFolderViewModel sendToChat failed docId=\(doc.id): \(error.localizedDescription)")
         }
     }
     
@@ -83,7 +83,7 @@ extension DocumentFolderViewModel {
         let namedURL = subdir.appendingPathComponent(fileName)
         try FileManager.default.copyItem(at: rawURL, to: namedURL)
         
-        KBLog.data.debug("namedURL \(rawURL.lastPathComponent) → \(namedURL.lastPathComponent)")
+        KBLog.data.kbDebug("namedURL \(rawURL.lastPathComponent) → \(namedURL.lastPathComponent)")
         return namedURL
     }
 }

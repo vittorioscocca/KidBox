@@ -140,7 +140,7 @@ struct MergePDFSheet: View {
         isMerging = true
         defer { isMerging = false }
         
-        KBLog.data.info("MergePDFSheet startMerge count=\(orderedDocs.count) title=\(finalTitle)")
+        KBLog.data.kbInfo("MergePDFSheet startMerge count=\(orderedDocs.count) title=\(finalTitle)")
         
         // Pass orderedDocs (user's chosen order) and title to the ViewModel.
         await onMerge(orderedDocs, finalTitle)

@@ -238,7 +238,7 @@ struct SetupFamilyView: View {
                     .swipeActions {
                         if drafts.count > 1 {
                             Button(role: .destructive) {
-                                KBLog.data.info("SetupFamilyView: remove draft childDraftId=\(d.id, privacy: .public)")
+                                KBLog.data.kbInfo("SetupFamilyView: remove draft childDraftId=\(d.id)")
                                 removeDraft(id: d.id)
                             } label: {
                                 Label("Elimina", systemImage: "trash")
@@ -250,7 +250,7 @@ struct SetupFamilyView: View {
                 Divider().padding(.vertical, 6)
                 
                 Button(action: {
-                    KBLog.data.info("SetupFamilyView: add draft")
+                    KBLog.data.kbInfo("SetupFamilyView: add draft")
                     addDraft()
                 }) {
                     HStack(spacing: 10) {
@@ -285,8 +285,8 @@ struct SetupFamilyView: View {
                 } else {
                     ForEach(rows, id: \.id) { r in
                         Button {
-                            KBLog.navigation.info(
-                                "SetupFamilyView: open EditChild familyId=\(family.id, privacy: .public) childId=\(r.id, privacy: .public)"
+                            KBLog.navigation.kbInfo(
+                                "SetupFamilyView: open EditChild familyId=\(family.id) childId=\(r.id)"
                             )
                             coordinator.navigate(to: .editChild(familyId: family.id, childId: r.id))
                         } label: {
@@ -316,8 +316,8 @@ struct SetupFamilyView: View {
                         .buttonStyle(.plain)
                         .swipeActions {
                             Button(role: .destructive) {
-                                KBLog.data.info(
-                                    "SetupFamilyView: delete child requested familyId=\(family.id, privacy: .public) childId=\(r.id, privacy: .public)"
+                                KBLog.data.kbInfo(
+                                    "SetupFamilyView: delete child requested familyId=\(family.id) childId=\(r.id)"
                                 )
                                 deleteChild(by: r.id, familyId: family.id)
                             } label: {
@@ -330,7 +330,7 @@ struct SetupFamilyView: View {
                 Divider().padding(.vertical, 6)
                 
                 Button {
-                    KBLog.data.info("SetupFamilyView: create empty child then open edit familyId=\(family.id, privacy: .public)")
+                    KBLog.data.kbInfo("SetupFamilyView: create empty child then open edit familyId=\(family.id)")
                     createChildAndOpenEdit(familyId: family.id)
                 } label: {
                     HStack(spacing: 10) {
@@ -358,7 +358,7 @@ struct SetupFamilyView: View {
         
         guard case let .edit(family, _) = mode else { return }
         familyName = family.name
-        KBLog.data.info("SetupFamilyView hydrate (edit) familyId=\(family.id, privacy: .public)")
+        KBLog.data.kbInfo("SetupFamilyView hydrate (edit) familyId=\(family.id)")
     }
     
     // MARK: - Actions
@@ -371,10 +371,10 @@ struct SetupFamilyView: View {
         
         switch mode {
         case .create:
-            KBLog.data.info("SetupFamilyView primaryAction: create")
+            KBLog.data.kbInfo("SetupFamilyView primaryAction: create")
             await createFamilyWithDrafts()
         case let .edit(family, _):
-            KBLog.data.info("SetupFamilyView primaryAction: update family name familyId=\(family.id, privacy: .public)")
+            KBLog.data.kbInfo("SetupFamilyView primaryAction: update family name familyId=\(family.id)")
             await updateFamilyNameOnly(family: family)
         }
     }
@@ -383,13 +383,13 @@ struct SetupFamilyView: View {
     private func createFamilyWithDrafts() async {
         guard let uid = Auth.auth().currentUser?.uid else {
             errorText = "Utente non autenticato."
-            KBLog.auth.error("SetupFamilyView create: not authenticated")
+            KBLog.auth.kbError("SetupFamilyView create: not authenticated")
             return
         }
         
         guard let first = drafts.first else {
             errorText = "Inserisci almeno un figlio."
-            KBLog.data.error("SetupFamilyView create: missing first draft")
+            KBLog.data.kbError("SetupFamilyView create: missing first draft")
             return
         }
         
@@ -404,15 +404,15 @@ struct SetupFamilyView: View {
             
             let familyId = created.familyId
             
-            KBLog.crypto.info("Creating master key for familyId=\(familyId, privacy: .public)")
+            KBLog.crypto.kbInfo("Creating master key for familyId=\(familyId)")
             do {
                 let masterKey = InviteCrypto.randomBytes(32)
                 let key = CryptoKit.SymmetricKey(data: masterKey)
                 try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
-                KBLog.crypto.info("Master key saved to Keychain familyId=\(familyId, privacy: .public)")
+                KBLog.crypto.kbInfo("Master key saved to Keychain familyId=\(familyId)")
             } catch {
-                KBLog.crypto.error(
-                    "Master key creation failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                KBLog.crypto.kbError(
+                    "Master key creation failed familyId=\(familyId) err=\(error.localizedDescription)"
                 )
                 errorText = "Errore nella creazione della chiave: \(error.localizedDescription)"
                 return
@@ -435,31 +435,31 @@ struct SetupFamilyView: View {
                 do {
                     try modelContext.save()
                 } catch {
-                    KBLog.data.error(
-                        "SetupFamilyView create: save extra child failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                    KBLog.data.kbError(
+                        "SetupFamilyView create: save extra child failed childId=\(child.id) err=\(error.localizedDescription)"
                     )
                 }
                 
                 Task {
                     do {
                         try await ChildSyncService().upsert(child: child)
-                        KBLog.sync.info(
-                            "SetupFamilyView create: extra child upserted childId=\(child.id, privacy: .public) familyId=\(familyId, privacy: .public)"
+                        KBLog.sync.kbInfo(
+                            "SetupFamilyView create: extra child upserted childId=\(child.id) familyId=\(familyId)"
                         )
                     } catch {
-                        KBLog.sync.error(
-                            "SetupFamilyView create: extra child upsert failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                        KBLog.sync.kbError(
+                            "SetupFamilyView create: extra child upsert failed childId=\(child.id) err=\(error.localizedDescription)"
                         )
                     }
                 }
             }
             
-            KBLog.data.info("SetupFamilyView create completed familyId=\(familyId, privacy: .public)")
+            KBLog.data.kbInfo("SetupFamilyView create completed familyId=\(familyId)")
             dismiss()
             
         } catch {
             errorText = error.localizedDescription
-            KBLog.data.error("SetupFamilyView create failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("SetupFamilyView create failed: \(error.localizedDescription)")
         }
     }
     
@@ -474,18 +474,18 @@ struct SetupFamilyView: View {
         
         do {
             try modelContext.save()
-            KBLog.data.info("SetupFamilyView update: SwiftData save OK familyId=\(family.id, privacy: .public)")
+            KBLog.data.kbInfo("SetupFamilyView update: SwiftData save OK familyId=\(family.id)")
         } catch {
             errorText = "SwiftData save failed: \(error.localizedDescription)"
-            KBLog.data.error(
-                "SetupFamilyView update: SwiftData save failed familyId=\(family.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.data.kbError(
+                "SetupFamilyView update: SwiftData save failed familyId=\(family.id) err=\(error.localizedDescription)"
             )
             return
         }
         
         SyncCenter.shared.enqueueFamilyBundleUpsert(familyId: family.id, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
-        KBLog.sync.info("SetupFamilyView update: enqueued+flush familyId=\(family.id, privacy: .public)")
+        KBLog.sync.kbInfo("SetupFamilyView update: enqueued+flush familyId=\(family.id)")
         
         dismiss()
     }
@@ -508,7 +508,7 @@ struct SetupFamilyView: View {
     @MainActor
     private func createChildAndOpenEdit(familyId: String) {
         guard let uid = Auth.auth().currentUser?.uid else {
-            KBLog.auth.error("SetupFamilyView create child: not authenticated")
+            KBLog.auth.kbError("SetupFamilyView create child: not authenticated")
             return
         }
         
@@ -528,11 +528,11 @@ struct SetupFamilyView: View {
         
         do {
             try modelContext.save()
-            KBLog.data.info("SetupFamilyView: local child created childId=\(child.id, privacy: .public) familyId=\(familyId, privacy: .public)")
+            KBLog.data.kbInfo("SetupFamilyView: local child created childId=\(child.id) familyId=\(familyId)")
         } catch {
             errorText = error.localizedDescription
-            KBLog.data.error(
-                "SetupFamilyView: local child create failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.data.kbError(
+                "SetupFamilyView: local child create failed familyId=\(familyId) err=\(error.localizedDescription)"
             )
             return
         }
@@ -540,10 +540,10 @@ struct SetupFamilyView: View {
         Task {
             do {
                 try await ChildSyncService().upsert(child: child)
-                KBLog.sync.info("SetupFamilyView: child upserted childId=\(child.id, privacy: .public)")
+                KBLog.sync.kbInfo("SetupFamilyView: child upserted childId=\(child.id)")
             } catch {
-                KBLog.sync.error(
-                    "SetupFamilyView: child upsert failed childId=\(child.id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                KBLog.sync.kbError(
+                    "SetupFamilyView: child upsert failed childId=\(child.id) err=\(error.localizedDescription)"
                 )
             }
         }
@@ -558,9 +558,9 @@ struct SetupFamilyView: View {
             if let child = try modelContext.fetch(desc).first {
                 modelContext.delete(child)
                 try modelContext.save()
-                KBLog.data.info("SetupFamilyView: local child deleted childId=\(childId, privacy: .public)")
+                KBLog.data.kbInfo("SetupFamilyView: local child deleted childId=\(childId)")
             } else {
-                KBLog.data.info("SetupFamilyView: child not found for delete childId=\(childId, privacy: .public)")
+                KBLog.data.kbInfo("SetupFamilyView: child not found for delete childId=\(childId)")
             }
             
             Task {
@@ -570,17 +570,17 @@ struct SetupFamilyView: View {
                         childId: childId,
                         updatedBy: Auth.auth().currentUser?.uid
                     )
-                    KBLog.sync.info("SetupFamilyView: remote child soft-delete OK childId=\(childId, privacy: .public)")
+                    KBLog.sync.kbInfo("SetupFamilyView: remote child soft-delete OK childId=\(childId)")
                 } catch {
-                    KBLog.sync.error(
-                        "SetupFamilyView: remote child soft-delete failed childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+                    KBLog.sync.kbError(
+                        "SetupFamilyView: remote child soft-delete failed childId=\(childId) err=\(error.localizedDescription)"
                     )
                 }
             }
             
         } catch {
             errorText = error.localizedDescription
-            KBLog.data.error("SetupFamilyView: delete child failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("SetupFamilyView: delete child failed: \(error.localizedDescription)")
         }
     }
 }

@@ -19,7 +19,7 @@ struct JoinFamilyView: View {
             .navigationTitle("Entra con codice")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                KBLog.ui.debug("JoinFamilyView appeared")
+                KBLog.ui.kbDebug("JoinFamilyView appeared")
             }
     }
 }
@@ -64,14 +64,14 @@ private struct JoinFamilyViewBody: View {
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
                     .onChange(of: vm.code) { _, newValue in
-                        KBLog.ui.debug("JoinFamilyView code changed len=\(newValue.count, privacy: .public)")
+                        KBLog.ui.kbDebug("JoinFamilyView code changed len=\(newValue.count)")
                     }
             }
             .listRowBackground(cardBackground)
             
             Button {
                 showScanner = true
-                KBLog.ui.info("JoinFamilyView: open QR scanner")
+                KBLog.ui.kbInfo("JoinFamilyView: open QR scanner")
             } label: {
                 Label("Scansiona QR code", systemImage: "qrcode.viewfinder")
             }
@@ -81,41 +81,41 @@ private struct JoinFamilyViewBody: View {
                     onDetected: { raw in
                         Task {
                             do {
-                                KBLog.ui.info("JoinFamilyView: QR scanned (processing)")
+                                KBLog.ui.kbInfo("JoinFamilyView: QR scanned (processing)")
                                 
-                                KBLog.sync.info("JoinFamilyView: unwrap master key from encrypted invite (start)")
+                                KBLog.sync.kbInfo("JoinFamilyView: unwrap master key from encrypted invite (start)")
                                 try await JoinWrapService().join(usingQRPayload: raw)
-                                KBLog.sync.info("JoinFamilyView: master key saved to Keychain (ok)")
+                                KBLog.sync.kbInfo("JoinFamilyView: master key saved to Keychain (ok)")
                                 
-                                KBLog.sync.debug("JoinFamilyView: extract membership code from QR payload")
+                                KBLog.sync.kbDebug("JoinFamilyView: extract membership code from QR payload")
                                 guard let code = JoinPayloadParser.extractCode(from: raw) else {
                                     showScanner = false
                                     vm.errorMessage = "QR valido ma senza codice invito."
-                                    KBLog.sync.error("JoinFamilyView: QR missing membership code")
+                                    KBLog.sync.kbError("JoinFamilyView: QR missing membership code")
                                     return
                                 }
                                 
-                                KBLog.sync.info("JoinFamilyView: membership code extracted len=\(code.count, privacy: .public)")
+                                KBLog.sync.kbInfo("JoinFamilyView: membership code extracted len=\(code.count)")
                                 
                                 vm.code = code
                                 showScanner = false
                                 
                                 try? await Task.sleep(nanoseconds: 500_000_000)
                                 
-                                KBLog.sync.info("JoinFamilyView: starting membership join")
+                                KBLog.sync.kbInfo("JoinFamilyView: starting membership join")
                                 await vm.join()
-                                KBLog.sync.info("JoinFamilyView: join completed")
+                                KBLog.sync.kbInfo("JoinFamilyView: join completed")
                                 
                             } catch {
                                 showScanner = false
                                 vm.errorMessage = error.localizedDescription
-                                KBLog.sync.error("JoinFamilyView: join failed \(error.localizedDescription, privacy: .public)")
+                                KBLog.sync.kbError("JoinFamilyView: join failed \(error.localizedDescription)")
                             }
                         }
                     },
                     onClose: {
                         showScanner = false
-                        KBLog.ui.debug("JoinFamilyView: QR scanner closed")
+                        KBLog.ui.kbDebug("JoinFamilyView: QR scanner closed")
                     }
                 )
             }
@@ -142,14 +142,14 @@ private struct JoinFamilyViewBody: View {
                     }
                     .listRowBackground(cardBackground)
                     Button("Continua") {
-                        KBLog.navigation.info("JoinFamilyView: continue -> resetToRoot")
+                        KBLog.navigation.kbInfo("JoinFamilyView: continue -> resetToRoot")
                         coordinator.resetToRoot()
                     }
                     .listRowBackground(cardBackground)
                 }
             } else {
                 Button(vm.isBusy ? "Ingresso…" : "Entra") {
-                    KBLog.sync.info("JoinFamilyView: join button tapped")
+                    KBLog.sync.kbInfo("JoinFamilyView: join button tapped")
                     Task { await vm.join() }
                 }
                 .disabled(vm.isBusy || vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -159,7 +159,7 @@ private struct JoinFamilyViewBody: View {
         .scrollContentBackground(.hidden)
         .background(backgroundColor)
         .onAppear {
-            KBLog.ui.debug("JoinFamilyViewBody appeared")
+            KBLog.ui.kbDebug("JoinFamilyViewBody appeared")
         }
     }
     
@@ -184,7 +184,7 @@ private struct JoinFamilyViewBody: View {
                     }
                 }
                 .onAppear {
-                    KBLog.ui.debug("QRScannerSheet appeared")
+                    KBLog.ui.kbDebug("QRScannerSheet appeared")
                 }
             }
         }

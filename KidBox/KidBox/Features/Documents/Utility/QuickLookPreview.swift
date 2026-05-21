@@ -24,7 +24,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     // MARK: - UIViewControllerRepresentable
     
     func makeUIViewController(context: Context) -> UINavigationController {
-        KBLog.ui.debug("QuickLookPreview makeUIViewController urls=\(urls.count) initialIndex=\(initialIndex)")
+        KBLog.ui.kbDebug("QuickLookPreview makeUIViewController urls=\(urls.count) initialIndex=\(initialIndex)")
         
         let ql = QLPreviewController()
         ql.dataSource = context.coordinator
@@ -41,7 +41,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     
     func updateUIViewController(_ nav: UINavigationController, context: Context) {
         guard let ql = nav.viewControllers.first as? QLPreviewController else {
-            KBLog.ui.error("QuickLookPreview updateUIViewController: missing QLPreviewController")
+            KBLog.ui.kbError("QuickLookPreview updateUIViewController: missing QLPreviewController")
             return
         }
         
@@ -52,7 +52,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         if context.coordinator.urls == urls {
             if ql.currentPreviewItemIndex != idx {
                 ql.currentPreviewItemIndex = idx
-                KBLog.ui.debug("QuickLookPreview updated index only index=\(idx)")
+                KBLog.ui.kbDebug("QuickLookPreview updated index only index=\(idx)")
             }
             return
         }
@@ -63,7 +63,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
             ql.currentPreviewItemIndex = idx
         }
         
-        KBLog.ui.debug("QuickLookPreview updated urls=\(urls.count) index=\(idx)")
+        KBLog.ui.kbDebug("QuickLookPreview updated urls=\(urls.count) index=\(idx)")
     }
     
     func makeCoordinator() -> Coordinator {
@@ -85,7 +85,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         init(urls: [URL]) {
             self.urls = urls
             super.init()
-            KBLog.ui.debug("QuickLookPreview.Coordinator init urls=\(urls.count)")
+            KBLog.ui.kbDebug("QuickLookPreview.Coordinator init urls=\(urls.count)")
         }
         
         func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
@@ -94,7 +94,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         
         func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
             guard index >= 0, index < urls.count else {
-                KBLog.ui.error("QuickLookPreview previewItemAt out-of-bounds index=\(index) count=\(self.urls.count)")
+                KBLog.ui.kbError("QuickLookPreview previewItemAt out-of-bounds index=\(index) count=\(self.urls.count)")
                 return NSURL(fileURLWithPath: "/") // defensive fallback; should never happen
             }
             return urls[index] as NSURL
@@ -102,11 +102,11 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         
         // Optional delegate hooks (kept minimal, useful for tracing lifecycle)
         func previewControllerWillDismiss(_ controller: QLPreviewController) {
-            KBLog.ui.debug("QuickLookPreview willDismiss")
+            KBLog.ui.kbDebug("QuickLookPreview willDismiss")
         }
         
         func previewControllerDidDismiss(_ controller: QLPreviewController) {
-            KBLog.ui.debug("QuickLookPreview didDismiss")
+            KBLog.ui.kbDebug("QuickLookPreview didDismiss")
         }
     }
 }

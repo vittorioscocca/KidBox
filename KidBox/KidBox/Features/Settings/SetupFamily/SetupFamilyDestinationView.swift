@@ -53,12 +53,12 @@ struct SetupFamilyDestinationView: View {
             let hasChild  = (child != nil)
             
             if hasFamily && hasChild {
-                KBLog.navigation.info(
-                    "SetupFamilyDestinationView: open EDIT familyId=\(familyId, privacy: .public) childId=\(childId, privacy: .public)"
+                KBLog.navigation.kbInfo(
+                    "SetupFamilyDestinationView: open EDIT familyId=\(familyId) childId=\(childId)"
                 )
             } else {
-                KBLog.navigation.info(
-                    "SetupFamilyDestinationView: fallback CREATE (missing family=\(!hasFamily), child=\(!hasChild)) familyId=\(familyId, privacy: .public) childId=\(childId, privacy: .public)"
+                KBLog.navigation.kbInfo(
+                    "SetupFamilyDestinationView: fallback CREATE (missing family=\(!hasFamily), child=\(!hasChild)) familyId=\(familyId) childId=\(childId)"
                 )
             }
         }
@@ -72,8 +72,8 @@ struct SetupFamilyDestinationView: View {
             let desc = FetchDescriptor<KBFamily>(predicate: #Predicate { $0.id == fid })
             return try modelContext.fetch(desc).first
         } catch {
-            KBLog.data.error(
-                "SetupFamilyDestinationView: fetchFamily failed familyId=\(id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.data.kbError(
+                "SetupFamilyDestinationView: fetchFamily failed familyId=\(id) err=\(error.localizedDescription)"
             )
             return nil
         }
@@ -85,8 +85,8 @@ struct SetupFamilyDestinationView: View {
             let desc = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == cid })
             return try modelContext.fetch(desc).first
         } catch {
-            KBLog.data.error(
-                "SetupFamilyDestinationView: fetchChild failed childId=\(id, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.data.kbError(
+                "SetupFamilyDestinationView: fetchChild failed childId=\(id) err=\(error.localizedDescription)"
             )
             return nil
         }

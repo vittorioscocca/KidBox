@@ -23,7 +23,7 @@ final class JoinFamilyViewModel: ObservableObject {
     init(service: FamilyJoinService, coordinator: AppCoordinator) {
         self.service = service
         self.coordinator = coordinator
-        KBLog.auth.debug("JoinFamilyViewModel init")
+        KBLog.auth.kbDebug("JoinFamilyViewModel init")
     }
     
     /// Attempts to join a family using the current `code`.
@@ -33,28 +33,28 @@ final class JoinFamilyViewModel: ObservableObject {
     func join() async {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         guard !trimmed.isEmpty else {
-            KBLog.auth.debug("JoinFamilyViewModel join skipped: empty code")
+            KBLog.auth.kbDebug("JoinFamilyViewModel join skipped: empty code")
             return
         }
         
         // Log only metadata (length), not the code.
-        KBLog.sync.info("JoinFamilyViewModel join start codeLen=\(trimmed.count, privacy: .public)")
+        KBLog.sync.kbInfo("JoinFamilyViewModel join start codeLen=\(trimmed.count)")
         
         isBusy = true
         errorMessage = nil
         didJoin = false
         defer {
             isBusy = false
-            KBLog.sync.debug("JoinFamilyViewModel join end didJoin=\(self.didJoin, privacy: .public)")
+            KBLog.sync.kbDebug("JoinFamilyViewModel join end didJoin=\(self.didJoin)")
         }
         
         do {
             try await service.joinFamily(code: trimmed, coordinator: coordinator)
             didJoin = true
-            KBLog.sync.info("JoinFamilyViewModel join OK")
+            KBLog.sync.kbInfo("JoinFamilyViewModel join OK")
         } catch {
             errorMessage = error.localizedDescription
-            KBLog.sync.error("JoinFamilyViewModel join failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("JoinFamilyViewModel join failed: \(error.localizedDescription)")
         }
     }
 }

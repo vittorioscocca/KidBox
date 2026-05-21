@@ -36,11 +36,11 @@ struct DocumentsHomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             BadgeManager.shared.activeSections.insert("documents")
-            KBLog.ui.info("DocumentsHomeView appeared familyId=\(familyId.isEmpty ? "EMPTY" : familyId, privacy: .public)")
+            KBLog.ui.kbInfo("DocumentsHomeView appeared familyId=\(familyId.isEmpty ? "EMPTY" : familyId)")
         }
         .onChange(of: families.first?.id) { _, newValue in
             let fid = newValue ?? ""
-            KBLog.ui.info("DocumentsHomeView active family changed familyId=\(fid.isEmpty ? "EMPTY" : fid, privacy: .public)")
+            KBLog.ui.kbInfo("DocumentsHomeView active family changed familyId=\(fid.isEmpty ? "EMPTY" : fid)")
         }
         .onDisappear(){
             BadgeManager.shared.activeSections.remove("documents")
@@ -59,7 +59,7 @@ struct DocumentsHomeView: View {
                 .font(.headline)
             
             Button("Vai a Family") {
-                KBLog.ui.info("DocumentsHomeView CTA tap: navigate to familySettings")
+                KBLog.ui.kbInfo("DocumentsHomeView CTA tap: navigate to familySettings")
                 coordinator.navigate(to: .familySettings)
             }
             .buttonStyle(.borderedProminent)

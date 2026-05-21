@@ -28,6 +28,6 @@ final class AppState: ObservableObject {
     @Published var selectedChildId: String?
     
     init() {
-        KBLog.app.debug("AppState initialized")
+        KBLog.app.kbDebug("AppState initialized")
     }
 }

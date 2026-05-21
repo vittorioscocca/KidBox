@@ -19,6 +19,7 @@ final class KBFileLogger: @unchecked Sendable {
     }
 
     private let queue = DispatchQueue(label: "it.vittorioscocca.kidbox.filelogger", qos: .utility)
+    private let syncIOLock = NSLock()
     private let maxFileBytes = 500 * 1024
     private let retentionDays = 3
 
@@ -51,9 +52,26 @@ final class KBFileLogger: @unchecked Sendable {
     // MARK: - Public API
 
     func performStartupMaintenance() {
+        warmUpForCrashLogging()
         queue.async { [self] in
             self.rotateAndTrimLocked()
         }
+    }
+
+    /// Inizializza path e directory prima degli handler di crash.
+    func warmUpForCrashLogging() {
+        syncIOLock.lock()
+        defer { syncIOLock.unlock() }
+        _ = logFileURL
+    }
+
+    /// Scrittura sincrona e bloccante (handler segnali / fine processo).
+    func appendSync(_ line: String) {
+        let sanitized = sanitizeMessage(line)
+        guard !sanitized.isEmpty else { return }
+        syncIOLock.lock()
+        defer { syncIOLock.unlock() }
+        appendLineLocked(sanitized)
     }
 
     func append(
@@ -79,6 +97,11 @@ final class KBFileLogger: @unchecked Sendable {
             self.appendLineLocked(line)
             self.enforceMaxSizeLocked()
         }
+    }
+
+    /// Attende il completamento delle scritture in coda (es. prima di un crash di test).
+    func flush() {
+        queue.sync { }
     }
 
     func readLogs() -> String {

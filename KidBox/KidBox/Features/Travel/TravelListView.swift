@@ -100,7 +100,7 @@ struct TravelListView: View {
                                 ForEach(recentTrips) { trip in
                                     let legs = legsByTripId[trip.id] ?? []
                                     Button {
-                                        KBLog.navigation.debug("TravelList: open trip id=\(trip.id, privacy: .public)")
+                                        KBLog.navigation.kbDebug("TravelList: open trip id=\(trip.id)")
                                         coordinator.navigate(to: .travelTripDetail(familyId: familyId, tripId: trip.id))
                                     } label: {
                                         TravelTripCardView(trip: trip, legs: legs)

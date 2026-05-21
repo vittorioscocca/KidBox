@@ -15,7 +15,7 @@ enum FirebaseBootstrap {
     /// Configures Firebase once at app startup.
     static func configureIfNeeded() {
         guard FirebaseApp.app() == nil else {
-            KBLog.app.debug("Firebase already configured")
+            KBLog.app.kbDebug("Firebase already configured")
             return
         }
         
@@ -24,11 +24,11 @@ enum FirebaseBootstrap {
         
         guard let path = Bundle.main.path(forResource: plistName, ofType: "plist"),
               let options = FirebaseOptions(contentsOfFile: path) else {
-            KBLog.app.fault("Missing Firebase plist: \(plistName, privacy: .public).plist")
+            KBLog.app.kbCrash("Missing Firebase plist: \(plistName).plist")
             return
         }
         
         FirebaseApp.configure(options: options)
-        KBLog.app.info("Firebase configured using \(plistName, privacy: .public)")
+        KBLog.app.kbInfo("Firebase configured using \(plistName)")
     }
 }

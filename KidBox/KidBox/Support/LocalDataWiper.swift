@@ -82,9 +82,9 @@ enum LocalDataWiper {
             // Filesystem cache
             try wipeLocalFiles(familyId: fid)
             
-            KBLog.persistence.info("Local wipe completed for familyId=\(fid, privacy: .public)")
+            KBLog.persistence.kbInfo("Local wipe completed for familyId=\(fid)")
         } catch {
-            KBLog.persistence.error("Local wipe failed for familyId=\(fid, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            KBLog.persistence.kbError("Local wipe failed for familyId=\(fid): \(error.localizedDescription)")
             throw error
         }
     }
@@ -122,9 +122,9 @@ enum LocalDataWiper {
             try delete(KBEvent.self, familyId: fid, context: context)
             try delete(KBDoseLog.self, familyId: fid, context: context)
             try context.save()
-            KBLog.persistence.info("wipeJoinStaleData completed familyId=\(fid, privacy: .public)")
+            KBLog.persistence.kbInfo("wipeJoinStaleData completed familyId=\(fid)")
         } catch {
-            KBLog.persistence.error("wipeJoinStaleData failed familyId=\(fid, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            KBLog.persistence.kbError("wipeJoinStaleData failed familyId=\(fid): \(error.localizedDescription)")
             throw error
         }
     }
@@ -150,9 +150,9 @@ enum LocalDataWiper {
             try deleteAll(KBUserProfile.self, context: context)
             
             try context.save()
-            KBLog.persistence.info("Local FULL wipe completed")
+            KBLog.persistence.kbInfo("Local FULL wipe completed")
         } catch {
-            KBLog.persistence.error("Local FULL wipe failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.persistence.kbError("Local FULL wipe failed: \(error.localizedDescription)")
             throw error
         }
     }

@@ -60,7 +60,7 @@ final class LocationRemoteStore {
                     "lastUpdateAt": FieldValue.serverTimestamp()
                 ], merge: true)
         } catch {
-            KBLog.app.error("LocationRemoteStore updateLocation failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("LocationRemoteStore updateLocation failed: \(error.localizedDescription)")
         }
     }
     
@@ -85,7 +85,7 @@ final class LocationRemoteStore {
                     "lastUpdateAt": FieldValue.serverTimestamp()
                 ], merge: true)
         } catch {
-            KBLog.app.error("LocationRemoteStore updateDisplayName failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("LocationRemoteStore updateDisplayName failed: \(error.localizedDescription)")
         }
     }
     

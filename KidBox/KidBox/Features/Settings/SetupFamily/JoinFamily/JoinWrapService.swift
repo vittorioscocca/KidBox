@@ -46,7 +46,7 @@ struct JoinWrapService {
               comps.scheme == "kidbox",
               comps.host == "join",
               let items = comps.queryItems else {
-            KBLog.sync.debug("JoinWrapService parse failed: invalid URL components")
+            KBLog.sync.kbDebug("JoinWrapService parse failed: invalid URL components")
             return nil
         }
         
@@ -58,11 +58,11 @@ struct JoinWrapService {
               let inviteId = get("inviteId"),
               let secretStr = get("secret"),
               let secret = Data.fromBase64url(secretStr) else {
-            KBLog.sync.debug("JoinWrapService parse failed: missing fields")
+            KBLog.sync.kbDebug("JoinWrapService parse failed: missing fields")
             return nil
         }
         
-        KBLog.sync.info("JoinWrapService parse OK familyId=\(familyId, privacy: .public) inviteId=\(inviteId, privacy: .public)")
+        KBLog.sync.kbInfo("JoinWrapService parse OK familyId=\(familyId) inviteId=\(inviteId)")
         return ParsedPayload(familyId: familyId, inviteId: inviteId, secret: secret)
     }
     
@@ -79,11 +79,11 @@ struct JoinWrapService {
     /// - Important: Avoid logging secrets, ciphertexts, or raw payloads.
     func join(usingQRPayload raw: String) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
-            KBLog.sync.error("JoinWrapService join failed: not authenticated")
+            KBLog.sync.kbError("JoinWrapService join failed: not authenticated")
             throw NSError(domain: "KidBox.Join", code: -1)
         }
         guard let parsed = parse(payload: raw) else {
-            KBLog.sync.error("JoinWrapService join failed: invalid payload")
+            KBLog.sync.kbError("JoinWrapService join failed: invalid payload")
             throw JoinInviteError.invalidPayload
         }
         
@@ -97,7 +97,7 @@ struct JoinWrapService {
             .collection("invites")
             .document(inviteId)
         
-        KBLog.sync.info("JoinWrapService join start familyId=\(familyId, privacy: .public) inviteId=\(inviteId, privacy: .public)")
+        KBLog.sync.kbInfo("JoinWrapService join start familyId=\(familyId) inviteId=\(inviteId)")
         
         // Transaction: validate + mark used
         let result: Any? = try await Firestore.firestore().runTransaction { txn, errorPointer -> Any? in
@@ -141,7 +141,7 @@ struct JoinWrapService {
         
         // ✅ Cast result to [String: Any]
         guard let data = result as? [String: Any] else {
-            KBLog.sync.error("JoinWrapService join failed: transaction returned no data familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbError("JoinWrapService join failed: transaction returned no data familyId=\(familyId)")
             throw JoinInviteError.invalidPayload
         }
         
@@ -156,7 +156,7 @@ struct JoinWrapService {
             let nonce = Data(base64Encoded: nonceB64),
             let tag = Data(base64Encoded: tagB64)
         else {
-            KBLog.sync.error("JoinWrapService join failed: missing wrapped key fields familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbError("JoinWrapService join failed: missing wrapped key fields familyId=\(familyId)")
             throw JoinInviteError.invalidPayload
         }
         
@@ -167,29 +167,29 @@ struct JoinWrapService {
 
             // Save in Keychain
             try FamilyKeychainStore.saveFamilyKey(familyKey, familyId: familyId, userId: uid)
-            KBLog.sync.info("JoinWrapService master key saved familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbInfo("JoinWrapService master key saved familyId=\(familyId)")
 
             // Backup to Firestore escrow so the key survives account switches / reinstalls
             await FamilyKeyEscrowService.backup(key: familyKey, familyId: familyId, userId: uid)
 
         } catch {
-            KBLog.sync.error("JoinWrapService unwrap/save failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("JoinWrapService unwrap/save failed familyId=\(familyId) err=\(error.localizedDescription)")
             throw error
         }
         
         // delete invite (best effort)
         do {
             try await docRef.delete()
-            KBLog.sync.debug("JoinWrapService invite deleted inviteId=\(inviteId, privacy: .public)")
+            KBLog.sync.kbDebug("JoinWrapService invite deleted inviteId=\(inviteId)")
         } catch {
-            KBLog.sync.debug("JoinWrapService invite delete failed (best effort) inviteId=\(inviteId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbDebug("JoinWrapService invite delete failed (best effort) inviteId=\(inviteId) err=\(error.localizedDescription)")
         }
         
         // Verify key presence (do NOT print)
         if FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local") != nil {
-            KBLog.sync.info("JoinWrapService keychain verify OK familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbInfo("JoinWrapService keychain verify OK familyId=\(familyId)")
         } else {
-            KBLog.sync.error("JoinWrapService keychain verify FAILED familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbError("JoinWrapService keychain verify FAILED familyId=\(familyId)")
         }
     }
 }

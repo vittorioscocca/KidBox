@@ -26,6 +26,7 @@ struct KidBoxApp: App {
     
     init() {
         KBFileLogger.shared.performStartupMaintenance()
+        KBCrashHandler.install()
         KBLog.app.kbInfo("KidBoxApp init")
         let container = ModelContainerProvider.makeContainer(inMemory: false)
         self.modelContainer = container

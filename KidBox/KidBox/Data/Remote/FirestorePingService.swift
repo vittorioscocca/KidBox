@@ -20,10 +20,10 @@ final class FirestorePingService {
             "client": "KidBox"
         ], merge: true) { error in
             if let error {
-                KBLog.sync.error("Firestore ping failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.sync.kbError("Firestore ping failed: \(error.localizedDescription)")
                 completion(.failure(error))
             } else {
-                KBLog.sync.info("Firestore ping OK")
+                KBLog.sync.kbInfo("Firestore ping OK")
                 completion(.success(()))
             }
         }

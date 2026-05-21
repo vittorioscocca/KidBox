@@ -39,7 +39,7 @@ extension DocumentFolderViewModel {
         let targets = docs ?? selectedShareableDocs
         guard !targets.isEmpty else { return [] }
         
-        KBLog.data.info("DocumentFolderViewModel prepareShareURLs started count=\(targets.count)")
+        KBLog.data.kbInfo("DocumentFolderViewModel prepareShareURLs started count=\(targets.count)")
         
         isDownloading = true
         downloadCurrentName = "Preparazione condivisione…"
@@ -56,19 +56,19 @@ extension DocumentFolderViewModel {
         for (i, doc) in targets.enumerated() {
             downloadCurrentName = doc.title.isEmpty ? doc.fileName : doc.title
             downloadProgress = Double(i) / Double(targets.count)
-            KBLog.data.debug("DocumentFolderViewModel prepareShareURLs downloading docId=\(doc.id)")
+            KBLog.data.kbDebug("DocumentFolderViewModel prepareShareURLs downloading docId=\(doc.id)")
             do {
                 let rawURL = try await DocumentLocalCache.downloadToLocal(doc: doc, modelContext: modelContext)
                 // Rinomina con il titolo utente prima di passare allo share sheet
                 let namedURL = try Self.namedURL(from: rawURL, doc: doc)
                 urls.append(namedURL)
             } catch {
-                KBLog.data.error("DocumentFolderViewModel prepareShareURLs failed docId=\(doc.id): \(error.localizedDescription)")
+                KBLog.data.kbError("DocumentFolderViewModel prepareShareURLs failed docId=\(doc.id): \(error.localizedDescription)")
             }
         }
         
         downloadProgress = 1.0
-        KBLog.data.info("DocumentFolderViewModel prepareShareURLs done count=\(urls.count)/\(targets.count)")
+        KBLog.data.kbInfo("DocumentFolderViewModel prepareShareURLs done count=\(urls.count)/\(targets.count)")
         return urls
     }
     

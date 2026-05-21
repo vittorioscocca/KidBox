@@ -34,7 +34,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnNewDocs },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnNewDocs set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnNewDocs set=\(newValue)")
                         vm.notifyOnNewDocs = newValue
                         vm.toggleNotifyOnNewDocs(newValue)
                     }
@@ -58,7 +58,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnLocationSharing },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnLocationSharing set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnLocationSharing set=\(newValue)")
                         vm.notifyOnLocationSharing = newValue
                         vm.toggleNotifyOnLocationSharing(newValue)
                     }
@@ -82,7 +82,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnNewGroceryItem },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnNewGroceryItem set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnNewGroceryItem set=\(newValue)")
                         vm.toggleNotifyOnNewGroceryItem(newValue)
                     }
                 )
@@ -96,7 +96,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnNewNote },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnNewNote set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnNewNote set=\(newValue)")
                         vm.toggleNotifyOnNewNote(newValue)
                     }
                 )
@@ -110,7 +110,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnNewExpense },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnNewExpense set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnNewExpense set=\(newValue)")
                         vm.toggleNotifyOnNewExpense(newValue)
                     }
                 )
@@ -124,7 +124,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnNewWalletTicket },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnNewWalletTicket set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnNewWalletTicket set=\(newValue)")
                         vm.toggleNotifyOnNewWalletTicket(newValue)
                     }
                 )
@@ -138,7 +138,7 @@ struct NotificationSettingsView: View {
                 isOn: Binding(
                     get: { vm.notifyOnWalletReminder },
                     set: { newValue in
-                        KBLog.settings.info("Toggle notifyOnWalletReminder set=\(newValue, privacy: .public)")
+                        KBLog.settings.kbInfo("Toggle notifyOnWalletReminder set=\(newValue)")
                         vm.toggleNotifyOnWalletReminder(newValue)
                     }
                 )
@@ -165,9 +165,9 @@ struct NotificationSettingsView: View {
         .background(backgroundColor)
         .navigationTitle("Notifiche")
         .task {
-            KBLog.settings.debug("NotificationSettingsView task start")
+            KBLog.settings.kbDebug("NotificationSettingsView task start")
             vm.load()
-            KBLog.settings.debug("NotificationSettingsView task end")
+            KBLog.settings.kbDebug("NotificationSettingsView task end")
         }
     }
 }

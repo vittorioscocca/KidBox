@@ -53,7 +53,7 @@ enum AutoFillSnapshotWriter {
         do {
             try SharedFamilyKey.saveMirroredFamilyKey(sym)
         } catch {
-            KBLog.security.error("AutoFill mirror key save failed: \(error.localizedDescription)")
+            KBLog.security.kbError("AutoFill mirror key save failed: \(error.localizedDescription)")
         }
 
         let snapshot = buildSnapshot(familyId: familyId, currentUid: uid, modelContext: modelContext)

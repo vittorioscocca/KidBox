@@ -413,7 +413,7 @@ final class ChatRemoteStore {
                 "updatedAt": FieldValue.serverTimestamp()
             ], merge: true)
         } catch {
-            KBLog.sync.error("ChatRemoteStore setTyping failed: \(error.localizedDescription)")
+            KBLog.sync.kbError("ChatRemoteStore setTyping failed: \(error.localizedDescription)")
         }
     }
     

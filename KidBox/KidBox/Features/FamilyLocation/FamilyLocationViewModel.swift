@@ -158,7 +158,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
                 expiresAt: nil
             )
         } catch {
-            KBLog.app.error("FamilyLocation startRealtime failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("FamilyLocation startRealtime failed: \(error.localizedDescription)")
             rollbackSharingUI()
             return
         }
@@ -190,7 +190,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
                 expiresAt: expires
             )
         } catch {
-            KBLog.app.error("FamilyLocation startTemporary failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("FamilyLocation startTemporary failed: \(error.localizedDescription)")
             rollbackSharingUI()
             return
         }
@@ -230,7 +230,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         guard trimmed != myCurrentDisplayName else { return } // nessun cambiamento, evita write inutile
         
         myCurrentDisplayName = trimmed
-        KBLog.app.debug("FamilyLocation updateDisplayName -> \(trimmed, privacy: .public)")
+        KBLog.app.kbDebug("FamilyLocation updateDisplayName -> \(trimmed)")
         
         guard isSharing, let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
         
@@ -274,7 +274,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
                 return // cancellato
             }
             
-            KBLog.app.error("FamilyLocation temporary sharing expired -> auto stop")
+            KBLog.app.kbError("FamilyLocation temporary sharing expired -> auto stop")
             await self?.stopSharing()
         }
     }
@@ -293,7 +293,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         case .authorizedAlways:
             break
         case .restricted, .denied:
-            KBLog.app.error("Location permission denied/restricted")
+            KBLog.app.kbError("Location permission denied/restricted")
         @unknown default:
             break
         }
@@ -324,7 +324,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             
         case .restricted, .denied:
             shouldStartLocationUpdates = false
-            KBLog.app.error("Cannot start location updates: permission denied")
+            KBLog.app.kbError("Cannot start location updates: permission denied")
             
         @unknown default:
             shouldStartLocationUpdates = false
@@ -343,7 +343,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         // applyRemoteStateForMeIfNeeded() viene già chiamato dal listener Firestore
         // appena arriva il primo snapshot — non serve fare altro qui.
         // Il listener è già partito in start() → listen().
-        KBLog.app.debug("FamilyLocation: resumeIfNeeded — listener will restore state")
+        KBLog.app.kbDebug("FamilyLocation: resumeIfNeeded — listener will restore state")
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -361,7 +361,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
                 startLocationUpdatesIfPossible()
             }
         case .denied, .restricted:
-            KBLog.app.error("Location authorization denied/restricted")
+            KBLog.app.kbError("Location authorization denied/restricted")
         default:
             break
         }
@@ -399,7 +399,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        KBLog.app.error("Location update failed: \(error.localizedDescription, privacy: .public)")
+        KBLog.app.kbError("Location update failed: \(error.localizedDescription)")
     }
     
     // MARK: - UserDefaults persistence (per AppDelegate background relaunch)
@@ -436,7 +436,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
                 try await UNUserNotificationCenter.current()
                     .setBadgeCount(active ? 1 : 0)
             } catch {
-                KBLog.app.error("FamilyLocation setBadge failed: \(error.localizedDescription, privacy: .public)")
+                KBLog.app.kbError("FamilyLocation setBadge failed: \(error.localizedDescription)")
             }
         }
     }

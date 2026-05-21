@@ -37,6 +37,7 @@ enum CrashAnalyzer {
         static let lastRun = "kb_crash_analysis_last_run"
         static let reportingEnabled = "kb_log_reporting_enabled"
         static let reportingAsked = "kb_log_reporting_asked"
+        static let pendingCrashReport = "kb_crash_report_pending"
     }
 
     private static let minLogBytes = 2 * 1024
@@ -55,23 +56,68 @@ enum CrashAnalyzer {
         set { UserDefaults.standard.set(newValue, forKey: Keys.reportingAsked) }
     }
 
+    /// Impostato al crash (handler segnali / test) — fino a upload riuscito non applicare throttle.
+    static func markPendingCrashReport() {
+        UserDefaults.standard.set(true, forKey: Keys.pendingCrashReport)
+    }
+
+    static var hasPendingCrashReport: Bool {
+        UserDefaults.standard.bool(forKey: Keys.pendingCrashReport)
+    }
+
+    /// Solo per test / toggle report: rimuove il throttle delle 6 ore.
+    static func clearAnalysisThrottle() {
+        UserDefaults.standard.removeObject(forKey: Keys.lastRun)
+    }
+
     // MARK: - Entry point
 
-    static func analyzeIfNeeded() async {
-        guard Auth.auth().currentUser != nil else { return }
+    /// - Parameter force: ignora il throttle (es. toggle report appena attivato).
+    static func analyzeIfNeeded(force: Bool = false) async {
+        guard Auth.auth().currentUser != nil else {
+            KBLog.app.kbDebug("CrashAnalyzer: skip (utente non autenticato)")
+            return
+        }
 
         let rawLogs = KBFileLogger.shared.readLogs()
         let logBytes = rawLogs.utf8.count
-        guard logBytes >= minLogBytes else { return }
+        let crashInLogs = containsCrashMarkers(rawLogs)
 
-        if let lastRun = UserDefaults.standard.object(forKey: Keys.lastRun) as? Date,
+        guard logBytes >= minLogBytes else {
+            KBLog.app.kbDebug("CrashAnalyzer: skip (log file \(logBytes) B < \(minLogBytes) B)")
+            return
+        }
+
+        let pending = hasPendingCrashReport
+        let shouldUploadCrash = (crashInLogs || pending) && isAutomaticReportingEnabled
+        let bypassThrottle = force || shouldUploadCrash
+
+        if !bypassThrottle,
+           let lastRun = UserDefaults.standard.object(forKey: Keys.lastRun) as? Date,
            Date().timeIntervalSince(lastRun) < throttleInterval {
+            KBLog.app.kbInfo(
+                "CrashAnalyzer: skip throttle (ultima=\(lastRun), pending=\(pending), crashInLogs=\(crashInLogs), reporting=\(isAutomaticReportingEnabled))"
+            )
+            return
+        }
+
+        KBLog.app.kbInfo(
+            "CrashAnalyzer: avvio analisi (\(logBytes) B, reporting=\(isAutomaticReportingEnabled), crashInLogs=\(crashInLogs), pending=\(pending))"
+        )
+
+        if shouldUploadCrash {
+            KBLog.app.kbInfo("CrashAnalyzer: crash pending → upload diretto (senza FM)")
+            let issues = crashInLogs
+                ? buildFallbackIssues(from: rawLogs)
+                : [pendingCrashIssue()]
+            await uploadToFirestore(issues: issues, rawLogs: rawLogs)
             return
         }
 
         if #available(iOS 18.1, *) {
-            await analyzeWithFoundationModels(rawLogs: rawLogs)
+            await analyzeWithFoundationModels(rawLogs: rawLogs, allowCrashFallback: false)
         } else {
+            KBLog.app.kbWarning("CrashAnalyzer: skip upload (iOS < 18.1, Foundation Models non disponibile)")
             markAnalysisRun()
         }
     }
@@ -79,20 +125,33 @@ enum CrashAnalyzer {
     // MARK: - Foundation Models
 
     @available(iOS 18.1, *)
-    private static func analyzeWithFoundationModels(rawLogs: String) async {
+    private static func analyzeWithFoundationModels(rawLogs: String, allowCrashFallback: Bool) async {
         #if canImport(FoundationModels)
         do {
             let session = LanguageModelSession()
             let response = try await session.respond(to: buildPrompt(rawLogs: rawLogs))
             let parsed = try parseAnalysisResponse(response.content)
-            if !parsed.hasIssues {
-                markAnalysisRun()
+            if parsed.hasIssues {
+                await requestPermissionAndUpload(issues: parsed.issues, rawLogs: rawLogs)
                 return
             }
-            await requestPermissionAndUpload(issues: parsed.issues, rawLogs: rawLogs)
-        } catch {
-            KBLog.app.kbWarning("CrashAnalyzer: analisi on-device non riuscita: \(error.localizedDescription)")
+            if allowCrashFallback && isAutomaticReportingEnabled {
+                KBLog.app.kbInfo("CrashAnalyzer: FM senza issues → upload fallback (crash nei log)")
+                await uploadToFirestore(issues: buildFallbackIssues(from: rawLogs), rawLogs: rawLogs)
+                return
+            }
+            KBLog.app.kbInfo("CrashAnalyzer: nessun problema rilevato nei log")
             markAnalysisRun()
+        } catch {
+            if allowCrashFallback && isAutomaticReportingEnabled {
+                KBLog.app.kbWarning(
+                    "CrashAnalyzer: FM fallita (\(error.localizedDescription)) → upload fallback (crash nei log)"
+                )
+                await uploadToFirestore(issues: buildFallbackIssues(from: rawLogs), rawLogs: rawLogs)
+            } else {
+                KBLog.app.kbWarning("CrashAnalyzer: analisi on-device non riuscita: \(error.localizedDescription)")
+                markAnalysisRun()
+            }
         }
         #else
         markAnalysisRun()
@@ -101,7 +160,8 @@ enum CrashAnalyzer {
 
     @available(iOS 18.1, *)
     private static func buildPrompt(rawLogs: String) -> String {
-        """
+        let tail = truncateLogs(rawLogs, maxBytes: 32 * 1024)
+        return """
         Sei un analizzatore di log per l'app KidBox. Analizza i log e \
         rispondi SOLO con JSON valido, nessun testo aggiuntivo:
         {
@@ -119,8 +179,8 @@ enum CrashAnalyzer {
             }
           ]
         }
-        Log da analizzare:
-        \(rawLogs)
+        Log da analizzare (ultime righe):
+        \(tail)
         """
     }
 
@@ -144,7 +204,8 @@ enum CrashAnalyzer {
             return
         }
 
-        if hasBeenAskedForReporting {
+        if hasBeenAskedForReporting && !isAutomaticReportingEnabled {
+            KBLog.app.kbDebug("CrashAnalyzer: skip upload (report automatici disattivati)")
             markAnalysisRun()
             return
         }
@@ -179,10 +240,11 @@ enum CrashAnalyzer {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
 
         var payload: [String: Any] = [
-            "platform": "ios",
+            "platform": KBDeviceInfo.platform,
             "appVersion": version,
-            "osVersion": UIDevice.current.systemVersion,
-            "device": UIDevice.current.model,
+            "osVersion": KBDeviceInfo.osVersionDescription,
+            "device": KBDeviceInfo.deviceDescription,
+            "deviceMachine": KBDeviceInfo.machineIdentifier,
             "issues": issues.map { issue in
                 [
                     "type": issue.type,
@@ -205,14 +267,71 @@ enum CrashAnalyzer {
             try await Firestore.firestore().collection("crash_reports").addDocument(data: payload)
             KBFileLogger.shared.clearLogs()
             markAnalysisRun()
+            clearPendingCrashReport()
             KBLog.app.kbInfo("Crash report inviato: \(issues.count) issues")
         } catch {
             KBLog.app.kbError("CrashAnalyzer: upload Firestore fallito: \(error.localizedDescription)")
-            markAnalysisRun()
+            // Non impostare throttle: al prossimo avvio si riprova.
         }
     }
 
     // MARK: - Helpers
+
+    private static func containsCrashMarkers(_ logs: String) -> Bool {
+        logs.contains("[CRASH]") ||
+        logs.contains("Fatal error") ||
+        logs.contains("TEST: crash") ||
+        logs.contains("SIGABRT")
+    }
+
+    private static func pendingCrashIssue() -> IssueReport {
+        IssueReport(
+            type: "crash",
+            severity: "critical",
+            category: "ui",
+            affectedModule: "unknown",
+            summary: "Crash segnalato; log locali già troncati",
+            detail: "kb_crash_report_pending era attivo ma i marker non erano più nel file di log",
+            firstOccurrence: "",
+            occurrences: 1
+        )
+    }
+
+    private static func clearPendingCrashReport() {
+        UserDefaults.standard.removeObject(forKey: Keys.pendingCrashReport)
+    }
+
+    private static func buildFallbackIssues(from rawLogs: String) -> [IssueReport] {
+        let crashLines = rawLogs
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+            .filter { line in
+                line.contains("[CRASH]") ||
+                line.contains("Fatal error") ||
+                line.contains("TEST: crash")
+            }
+        let excerpt = crashLines.suffix(5).joined(separator: " | ")
+        let module = crashLines.last.flatMap { line -> String? in
+            if let open = line.range(of: "["),
+               let close = line.range(of: ":", range: open.upperBound..<line.endIndex) {
+                return String(line[open.upperBound..<close.lowerBound])
+            }
+            return nil
+        } ?? "unknown"
+
+        return [
+            IssueReport(
+                type: "crash",
+                severity: "critical",
+                category: "ui",
+                affectedModule: module,
+                summary: "Crash rilevato nei log dell'app",
+                detail: excerpt.isEmpty ? "Segnale di crash presente nel file di log" : excerpt,
+                firstOccurrence: "",
+                occurrences: max(1, crashLines.count)
+            ),
+        ]
+    }
 
     private static func markAnalysisRun() {
         UserDefaults.standard.set(Date(), forKey: Keys.lastRun)

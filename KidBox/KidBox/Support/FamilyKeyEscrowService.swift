@@ -48,7 +48,7 @@ enum FamilyKeyEscrowService {
     ///   - userId:   Firebase UID of the current user (used for key derivation and doc ID).
     static func backup(key: SymmetricKey, familyId: String, userId: String) async {
         guard !familyId.isEmpty, !userId.isEmpty else {
-            KBLog.security.error("KeyEscrow backup skipped: empty familyId or userId")
+            KBLog.security.kbError("KeyEscrow backup skipped: empty familyId or userId")
             return
         }
         do {
@@ -68,12 +68,12 @@ enum FamilyKeyEscrowService {
                 .collection("memberKeyBackups").document(userId)
                 .setData(data)
 
-            KBLog.security.info(
-                "KeyEscrow backup OK familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public)"
+            KBLog.security.kbInfo(
+                "KeyEscrow backup OK familyId=\(familyId) userId=\(userId)"
             )
         } catch {
-            KBLog.security.error(
-                "KeyEscrow backup failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.security.kbError(
+                "KeyEscrow backup failed familyId=\(familyId) err=\(error.localizedDescription)"
             )
         }
     }
@@ -88,7 +88,7 @@ enum FamilyKeyEscrowService {
     ///   - userId:   Firebase UID of the current user.
     static func recover(familyId: String, userId: String) async -> SymmetricKey? {
         guard !familyId.isEmpty, !userId.isEmpty else {
-            KBLog.security.error("KeyEscrow recover skipped: empty familyId or userId")
+            KBLog.security.kbError("KeyEscrow recover skipped: empty familyId or userId")
             return nil
         }
         do {
@@ -106,8 +106,8 @@ enum FamilyKeyEscrowService {
                 let nonce     = Data(base64Encoded: nonceB64),
                 let tag       = Data(base64Encoded: tagB64)
             else {
-                KBLog.security.info(
-                    "KeyEscrow recover: no backup found familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public)"
+                KBLog.security.kbInfo(
+                    "KeyEscrow recover: no backup found familyId=\(familyId) userId=\(userId)"
                 )
                 return nil
             }
@@ -117,14 +117,14 @@ enum FamilyKeyEscrowService {
                 cipher: cipher, nonce: nonce, tag: tag, wrapKey: escrowKey
             )
 
-            KBLog.security.info(
-                "KeyEscrow recover OK familyId=\(familyId, privacy: .public) userId=\(userId, privacy: .public)"
+            KBLog.security.kbInfo(
+                "KeyEscrow recover OK familyId=\(familyId) userId=\(userId)"
             )
             return familyKey
 
         } catch {
-            KBLog.security.error(
-                "KeyEscrow recover failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.security.kbError(
+                "KeyEscrow recover failed familyId=\(familyId) err=\(error.localizedDescription)"
             )
             return nil
         }
@@ -142,24 +142,24 @@ enum FamilyKeyEscrowService {
         if FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: userId) != nil {
             return true
         }
-        KBLog.security.info(
-            "KeyEscrow key missing locally, trying escrow recovery familyId=\(familyId, privacy: .public)"
+        KBLog.security.kbInfo(
+            "KeyEscrow key missing locally, trying escrow recovery familyId=\(familyId)"
         )
         guard let recovered = await recover(familyId: familyId, userId: userId) else {
-            KBLog.security.error(
-                "KeyEscrow escrow recovery failed (no backup) familyId=\(familyId, privacy: .public)"
+            KBLog.security.kbError(
+                "KeyEscrow escrow recovery failed (no backup) familyId=\(familyId)"
             )
             return false
         }
         do {
             try FamilyKeychainStore.saveFamilyKey(recovered, familyId: familyId, userId: userId)
-            KBLog.security.info(
-                "KeyEscrow escrow recovery OK familyId=\(familyId, privacy: .public)"
+            KBLog.security.kbInfo(
+                "KeyEscrow escrow recovery OK familyId=\(familyId)"
             )
             return true
         } catch {
-            KBLog.security.error(
-                "KeyEscrow save failed familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)"
+            KBLog.security.kbError(
+                "KeyEscrow save failed familyId=\(familyId) err=\(error.localizedDescription)"
             )
             return false
         }

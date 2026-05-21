@@ -176,10 +176,10 @@ struct HomeView: View {
                         isBusy: isUploadingHero
                     ) {
                         if hasFamily {
-                            KBLog.navigation.debug("Home: tap hero -> open picker familyId=\(activeFamilyId, privacy: .public)")
+                            KBLog.navigation.kbDebug("Home: tap hero -> open picker familyId=\(activeFamilyId)")
                             showHeroPicker = true
                         } else {
-                            KBLog.navigation.debug("Home: tap hero without family -> go FamilySettings")
+                            KBLog.navigation.kbDebug("Home: tap hero without family -> go FamilySettings")
                             coordinator.navigate(to: .familySettings)
                         }
                     }
@@ -192,7 +192,7 @@ struct HomeView: View {
                     
                     if showInvite {
                         InviteCardView {
-                            KBLog.navigation.debug("Home: tap InviteCard -> inviteCode")
+                            KBLog.navigation.kbDebug("Home: tap InviteCard -> inviteCode")
                             coordinator.navigate(to: .inviteCode)
                         }
                     }
@@ -225,7 +225,7 @@ struct HomeView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    KBLog.navigation.debug("Home: tap Settings")
+                    KBLog.navigation.kbDebug("Home: tap Settings")
                     coordinator.navigate(to: .settings)
                 } label: {
                     Image(systemName: "gearshape")
@@ -249,7 +249,7 @@ struct HomeView: View {
         .onChange(of: pickedHeroItem) { _, newItem in
             guard let newItem else { return }
             guard !isUploadingHero else { return }
-            KBLog.sync.debug("Home: hero picker item selected -> prepare crop")
+            KBLog.sync.kbDebug("Home: hero picker item selected -> prepare crop")
             Task { await prepareHeroCrop(item: newItem) }
             Task { await bootstrapMyAvatarIfNeeded() }
         }
@@ -264,13 +264,13 @@ struct HomeView: View {
                 initialCrop: initialCrop,
                 isUploading: isUploadingHero,
                 onCancel: {
-                    KBLog.sync.debug("Home: hero crop canceled")
+                    KBLog.sync.kbDebug("Home: hero crop canceled")
                     showHeroCropper = false
                     pendingHeroImageData = nil
                     pickedHeroItem = nil
                 },
                 onSave: { crop in
-                    KBLog.sync.debug("Home: hero crop save tapped -> upload")
+                    KBLog.sync.kbDebug("Home: hero crop save tapped -> upload")
                     Task { await uploadHeroWithCrop(crop: crop) }
                 }
             )
@@ -307,9 +307,9 @@ struct HomeView: View {
             profile.avatarData = data
             profile.updatedAt = Date()
             try? modelContext.save()
-            KBLog.app.debug("Profile: avatar downloaded bytes=\(data.count, privacy: .public)")
+            KBLog.app.kbDebug("Profile: avatar downloaded bytes=\(data.count)")
         } catch {
-            KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("Profile: avatar download failed: \(error.localizedDescription)")
         }
     }
     
@@ -339,32 +339,32 @@ struct HomeView: View {
     private func navigate(to destination: HomeDestination) {
         switch destination {
         case .familySettings:
-            KBLog.navigation.debug("Home: navigate -> familySettings")
+            KBLog.navigation.kbDebug("Home: navigate -> familySettings")
             coordinator.navigate(to: .familySettings)
         case .profile:
-            KBLog.navigation.debug("Home: navigate -> profile")
+            KBLog.navigation.kbDebug("Home: navigate -> profile")
             coordinator.navigate(to: .profile)
         case .settings:
-            KBLog.navigation.debug("Home: navigate -> settings")
+            KBLog.navigation.kbDebug("Home: navigate -> settings")
             coordinator.navigate(to: .settings)
         case .inviteCode:
-            KBLog.navigation.debug("Home: navigate -> inviteCode")
+            KBLog.navigation.kbDebug("Home: navigate -> inviteCode")
             coordinator.navigate(to: .inviteCode)
         case .calendar(let familyId):
             guard hasFamily else {
-                KBLog.navigation.debug("Home: navigation blocked (no family) -> FamilySettings")
+                KBLog.navigation.kbDebug("Home: navigation blocked (no family) -> FamilySettings")
                 coordinator.navigate(to: .familySettings)
                 return
             }
-            KBLog.navigation.debug("Home: navigate -> calendar(familyId: \(familyId))")
+            KBLog.navigation.kbDebug("Home: navigate -> calendar(familyId: \(familyId))")
             coordinator.resetToRoot()
             coordinator.navigate(to: .calendar(familyId: familyId))
         default:
             if hasFamily {
-                KBLog.navigation.debug("Home: navigate -> \(String(describing: destination), privacy: .public)")
+                KBLog.navigation.kbDebug("Home: navigate -> \(String(describing: destination))")
                 coordinator.navigate(to: destination.route)
             } else {
-                KBLog.navigation.debug("Home: navigation blocked (no family) -> FamilySettings")
+                KBLog.navigation.kbDebug("Home: navigation blocked (no family) -> FamilySettings")
                 coordinator.navigate(to: .familySettings)
             }
         }
@@ -377,17 +377,17 @@ struct HomeView: View {
         heroUploadError = nil
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
-                KBLog.sync.error("Home: hero picker loadTransferable returned nil")
+                KBLog.sync.kbError("Home: hero picker loadTransferable returned nil")
                 pickedHeroItem = nil
                 return
             }
             pendingHeroImageData = data
             showHeroCropper = true
-            KBLog.sync.info("Home: hero bytes loaded -> cropper opened (bytes=\(data.count, privacy: .public))")
+            KBLog.sync.kbInfo("Home: hero bytes loaded -> cropper opened (bytes=\(data.count))")
         } catch {
             heroUploadError = error.localizedDescription
             pickedHeroItem = nil
-            KBLog.sync.error("Home: hero bytes load failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("Home: hero bytes load failed: \(error.localizedDescription)")
         }
     }
     
@@ -396,21 +396,21 @@ struct HomeView: View {
     @MainActor
     private func uploadHeroWithCrop(crop: HeroCrop) async {
         guard let familyId = activeFamily?.id, !familyId.isEmpty else {
-            KBLog.sync.error("Home: uploadHeroWithCrop aborted (no familyId)")
+            KBLog.sync.kbError("Home: uploadHeroWithCrop aborted (no familyId)")
             return
         }
         guard let data = pendingHeroImageData else {
-            KBLog.sync.error("Home: uploadHeroWithCrop aborted (no pending image data)")
+            KBLog.sync.kbError("Home: uploadHeroWithCrop aborted (no pending image data)")
             return
         }
         guard !isUploadingHero else { return }
         
         isUploadingHero = true
         heroUploadError = nil
-        KBLog.sync.info("Home: hero upload started familyId=\(familyId, privacy: .public) bytes=\(data.count, privacy: .public)")
+        KBLog.sync.kbInfo("Home: hero upload started familyId=\(familyId) bytes=\(data.count)")
         defer {
             isUploadingHero = false
-            KBLog.sync.debug("Home: hero upload finished (busy=false)")
+            KBLog.sync.kbDebug("Home: hero upload finished (busy=false)")
         }
         
         do {
@@ -428,20 +428,20 @@ struct HomeView: View {
                 family.heroPhotoOffsetY = crop.offsetY
                 do {
                     try modelContext.save()
-                    KBLog.sync.info("Home: hero local update saved familyId=\(familyId, privacy: .public)")
+                    KBLog.sync.kbInfo("Home: hero local update saved familyId=\(familyId)")
                 } catch {
-                    KBLog.sync.error("Home: hero local update failed: \(error.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("Home: hero local update failed: \(error.localizedDescription)")
                 }
             }
             
             pendingHeroImageData = nil
             pickedHeroItem = nil
             showHeroCropper = false
-            KBLog.sync.info("Home: hero upload OK familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbInfo("Home: hero upload OK familyId=\(familyId)")
             
         } catch {
             heroUploadError = error.localizedDescription
-            KBLog.sync.error("Home: hero upload FAILED familyId=\(familyId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("Home: hero upload FAILED familyId=\(familyId) err=\(error.localizedDescription)")
         }
     }
 }
@@ -650,7 +650,7 @@ private struct HomeCardGrid: View {
         case .note:
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Note", subtitle: "Appunti veloci", systemImage: "note.text", tint: .yellow) {
-                    KBLog.navigation.debug("Home: tap Notes")
+                    KBLog.navigation.kbDebug("Home: tap Notes")
                     FABUsageTracker.shared.record("note")
                     // reset badge note prima di navigare
                     Task { @MainActor in
@@ -669,7 +669,7 @@ private struct HomeCardGrid: View {
         case .todo:
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "To-Do", subtitle: "Lista condivisa", systemImage: "checklist", tint: .blue) {
-                    KBLog.navigation.debug("Home: tap Todo")
+                    KBLog.navigation.kbDebug("Home: tap Todo")
                     FABUsageTracker.shared.record("todo")
                     onNavigate(.todo)
                 }
@@ -683,7 +683,7 @@ private struct HomeCardGrid: View {
         case .shopping:
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Lista della Spesa", subtitle: "Lista condivisa", systemImage: "cart.fill", tint: .green) {
-                    KBLog.navigation.debug("Home: tap Shopping")
+                    KBLog.navigation.kbDebug("Home: tap Shopping")
                     FABUsageTracker.shared.record("grocery")
                     // reset badge spesa prima di navigare
                     Task { @MainActor in
@@ -702,7 +702,7 @@ private struct HomeCardGrid: View {
         case .calendar:
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Calendario", subtitle: "Eventi e affidamenti", systemImage: "calendar", tint: .purple) {
-                    KBLog.navigation.debug("Home: tap Calendar")
+                    KBLog.navigation.kbDebug("Home: tap Calendar")
                     FABUsageTracker.shared.record("event")
                     onNavigate(.calendar(familyId: familyId))
                 }
@@ -715,7 +715,7 @@ private struct HomeCardGrid: View {
             
         case .care:
             HomeCardView(title: "Salute", subtitle: "Health tracker", systemImage: "heart.fill", tint: .red) {
-                KBLog.navigation.debug("Home: tap Care")
+                KBLog.navigation.kbDebug("Home: tap Care")
                 FABUsageTracker.shared.record("health")
                 onNavigate(.pediatric(familyId: familyId, childId: ""))
             }
@@ -723,7 +723,7 @@ private struct HomeCardGrid: View {
         case .chat:
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Chat", subtitle: "Messaggi famiglia", systemImage: "message.fill", tint: .green) {
-                    KBLog.navigation.debug("Home: tap Chat")
+                    KBLog.navigation.kbDebug("Home: tap Chat")
                     FABUsageTracker.shared.record("chat")
                     onNavigate(.chat)
                 }
@@ -737,7 +737,7 @@ private struct HomeCardGrid: View {
         case .documents:
             ZStack(alignment: .topTrailing) {
                 HomeCardView(title: "Documenti", subtitle: "Carte importanti", systemImage: "doc.text", tint: .orange) {
-                    KBLog.navigation.debug("Home: tap Documents")
+                    KBLog.navigation.kbDebug("Home: tap Documents")
                     FABUsageTracker.shared.record("documents")
                     onNavigate(.document)
                 }
@@ -750,7 +750,7 @@ private struct HomeCardGrid: View {
             
         case .expenses:
             HomeCardView(title: "Spese", subtitle: "Rette, visite, extra", systemImage: "eurosign.circle", tint: .mint) {
-                KBLog.navigation.debug("Home: tap Expenses")
+                KBLog.navigation.kbDebug("Home: tap Expenses")
                 FABUsageTracker.shared.record("expense")
                 Task {
                     BadgeManager.shared.clearExpenses()
@@ -768,7 +768,7 @@ private struct HomeCardGrid: View {
             
         case .wallet:
             HomeCardView(title: "Wallet", subtitle: "Biglietti e prenotazioni", systemImage: "ticket.fill", tint: .indigo) {
-                KBLog.navigation.debug("Home: tap Wallet")
+                KBLog.navigation.kbDebug("Home: tap Wallet")
                 FABUsageTracker.shared.record("wallet")
                 Task {
                     BadgeManager.shared.clearWallet()
@@ -792,7 +792,7 @@ private struct HomeCardGrid: View {
                 systemImage: "key.fill",
                 tint: Color(hex: "#5E5CE6") ?? .blue
             ) {
-                KBLog.navigation.debug("Home: tap Passwords")
+                KBLog.navigation.kbDebug("Home: tap Passwords")
                 FABUsageTracker.shared.record("passwords")
                 onNavigate(.passwords(familyId: familyId))
             }
@@ -807,7 +807,7 @@ private struct HomeCardGrid: View {
         case .location:
             ZStack {
                 HomeCardView(title: "Posizione", subtitle: "Dove sono tutti", systemImage: "location.fill", tint: .cyan) {
-                    KBLog.navigation.debug("Home: tap FamilyLocation")
+                    KBLog.navigation.kbDebug("Home: tap FamilyLocation")
                     onNavigate(.familyLocation(familyId: familyId))
                 }
                 
@@ -832,33 +832,33 @@ private struct HomeCardGrid: View {
             
         case .photos:
             HomeCardView(title: "Foto e video", subtitle: "Album condiviso", systemImage: "photo.stack.fill", tint: .pink) {
-                KBLog.navigation.debug("Home: tap FamilyPhotos")
+                KBLog.navigation.kbDebug("Home: tap FamilyPhotos")
                 onNavigate(.familyPhotos(familyId: familyId))
             }
             
         case .family:
             HomeCardView(title: "Family", subtitle: "Membri e inviti", systemImage: "person.2.fill", tint: .teal) {
-                KBLog.navigation.debug("Home: tap FamilySettings")
+                KBLog.navigation.kbDebug("Home: tap FamilySettings")
                 onNavigate(.familySettings)
             }
             
         case .pets:
             HomeCardView(title: "Animali", subtitle: "Cure e promemoria", systemImage: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange) {
-                KBLog.navigation.debug("Home: tap Pets")
+                KBLog.navigation.kbDebug("Home: tap Pets")
                 FABUsageTracker.shared.record("pets")
                 onNavigate(.pets(familyId: familyId))
             }
 
         case .homeItems:
             HomeCardView(title: "Casa", subtitle: "Garanzie e manutenzioni", systemImage: "house.fill", tint: Color(hex: "#8B6914") ?? .brown) {
-                KBLog.navigation.debug("Home: tap HomeItems")
+                KBLog.navigation.kbDebug("Home: tap HomeItems")
                 FABUsageTracker.shared.record("home_items")
                 onNavigate(.homeItems(familyId: familyId))
             }
 
         case .vehicles:
             HomeCardView(title: "Garage", subtitle: "Auto e scadenze", systemImage: "car.fill", tint: Color(hex: "#1A1A1A") ?? .primary) {
-                KBLog.navigation.debug("Home: tap Vehicles")
+                KBLog.navigation.kbDebug("Home: tap Vehicles")
                 FABUsageTracker.shared.record("vehicles")
                 onNavigate(.vehicles(familyId: familyId))
             }
@@ -873,7 +873,7 @@ private struct HomeCardGrid: View {
                         systemImage: travelAI ? "suitcase.fill" : "lock.fill",
                         tint: travelAI ? .teal : .gray
                     ) {
-                        KBLog.navigation.debug("Home: tap Travel")
+                        KBLog.navigation.kbDebug("Home: tap Travel")
                         if travelAI {
                             onNavigate(.travel(familyId: familyId))
                         } else if subscriptionManager.isFamilyOwner {
@@ -905,7 +905,7 @@ private struct HomeCardGrid: View {
                     systemImage: aiAvailable ? "brain.head.profile" : "lock.fill",
                     tint: aiAvailable ? .purple : .gray
                 ) {
-                    KBLog.navigation.debug("Home: tap AskExpert")
+                    KBLog.navigation.kbDebug("Home: tap AskExpert")
                     if aiAvailable {
                         onNavigate(.askExpert)
                     } else if subscriptionManager.isFamilyOwner {

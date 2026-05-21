@@ -26,7 +26,16 @@
       "Bash(npm ci *)",
       "Bash(npm install *)",
       "Bash(firebase functions:delete onNewCrashReport --region europe-west1 --force)",
-      "Bash(firebase functions:delete onCaseStatusChange takeCase resolveCase deleteCase cleanupResolvedCases --region europe-west1 --force)"
+      "Bash(firebase functions:delete onCaseStatusChange takeCase resolveCase deleteCase cleanupResolvedCases --region europe-west1 --force)",
+      "Bash(firebase functions:list)",
+      "Bash(firebase functions:log --only onNewCrashReport -n 20)",
+      "Bash(firebase functions:log --only onNewCrashReport -n 30)",
+      "Bash(firebase firestore:indexes)",
+      "Bash(firebase functions:log --only onNewCrashReport -n 5)",
+      "Bash(node -e ' *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(firebase firestore:delete --recursive crash_reports --project kidbox-42cd7)",
+      "Bash(firebase use *)"
     ]
   }
 }

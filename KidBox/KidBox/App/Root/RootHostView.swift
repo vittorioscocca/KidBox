@@ -186,7 +186,7 @@ struct RootHostView: View {
         }
         // Espulsione: wipa i dati locali e torna al root da qualsiasi view.
         .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in
-            KBLog.sync.info("RootHostView: currentUserRevoked familyId=\(revokedFamilyId, privacy: .public)")
+            KBLog.sync.kbInfo("RootHostView: currentUserRevoked familyId=\(revokedFamilyId)")
             
             
             // Recupera nome famiglia prima del wipe
@@ -214,15 +214,15 @@ struct RootHostView: View {
                 do {
                     let service = FamilyLeaveService(modelContext: modelContext)
                     try await service.leaveFamily(familyId: revokedFamilyId)
-                    KBLog.sync.info("RootHostView: post-revoke wipe OK")
+                    KBLog.sync.kbInfo("RootHostView: post-revoke wipe OK")
                 } catch {
-                    KBLog.sync.error("RootHostView: post-revoke leaveFamily failed: \(error.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("RootHostView: post-revoke leaveFamily failed: \(error.localizedDescription)")
                     do {
                         let service = FamilyLeaveService(modelContext: modelContext)
                         try service.wipeFamilyLocalOnly(familyId: revokedFamilyId)
-                        KBLog.sync.info("RootHostView: fallback local wipe OK")
+                        KBLog.sync.kbInfo("RootHostView: fallback local wipe OK")
                     } catch {
-                        KBLog.sync.error("RootHostView: fallback local wipe failed: \(error.localizedDescription, privacy: .public)")
+                        KBLog.sync.kbError("RootHostView: fallback local wipe failed: \(error.localizedDescription)")
                     }
                 }
                 coordinator.setActiveFamily(nil)

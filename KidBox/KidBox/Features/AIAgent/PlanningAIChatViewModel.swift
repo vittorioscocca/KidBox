@@ -183,39 +183,46 @@ final class PlanningAIChatViewModel: ObservableObject {
     
     // MARK: - Load
     
-    func loadOrCreateConversation() {
+    func loadOrCreateConversation() async {
         guard !isLoadingContext else { return }
         isLoadingContext = true
         errorMessage     = nil
-        
+        defer { isLoadingContext = false }
+
         do {
             let convo    = try fetchOrCreateConversation()
             conversation = convo
             messages     = convo.sortedMessages
             if convo.summary?.isEmpty == false { lastCompactionThreshold = 3 }
-            
+
             try refreshPlanningSystemPrompt()
-            
-            contextPrepared  = true
-            isLoadingContext = false
+
+            contextPrepared = true
             KBLog.ai.kbInfo("PlanningAIChatVM context ready chars=\(systemPrompt.count)")
         } catch {
-            isLoadingContext = false
-            errorMessage     = "Impossibile preparare il contesto di pianificazione."
+            errorMessage = "Impossibile preparare il contesto di pianificazione."
             KBLog.ai.kbError("PlanningAIChatVM loadOrCreate error: \(error)")
         }
     }
 
-    /// Inietta il briefing AI come primo messaggio assistente (es. tap notifica mattutina).
-    func injectInitialAssistantMessageIfNeeded(_ text: String) {
+    /// Inietta il briefing AI come messaggio assistente (es. tap notifica mattutina).
+    /// Con `force: true` inserisce anche se la conversazione ha già messaggi (salta solo duplicati identici).
+    func injectInitialAssistantMessageIfNeeded(_ text: String, force: Bool = false) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         guard let conversation else {
             KBLog.ai.kbDebug("PlanningAIChatVM inject skipped: no conversation")
             return
         }
-        guard messages.isEmpty else {
+        if !force && !messages.isEmpty {
             KBLog.ai.kbDebug("PlanningAIChatVM inject skipped: messages not empty")
+            return
+        }
+        if messages.contains(where: {
+            $0.role == .assistant &&
+            $0.content.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed
+        }) {
+            KBLog.ai.kbDebug("PlanningAIChatVM inject skipped: duplicate briefing")
             return
         }
 
@@ -224,7 +231,7 @@ final class PlanningAIChatViewModel: ObservableObject {
         conversation.messages.append(assistant)
         messages.append(assistant)
         try? modelContext.save()
-        KBLog.ai.kbInfo("PlanningAIChatVM injected initial briefing chars=\(trimmed.count)")
+        KBLog.ai.kbInfo("PlanningAIChatVM injected briefing chars=\(trimmed.count) force=\(force)")
     }
     
     func finishStreaming(messageId: String) {

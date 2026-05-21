@@ -113,7 +113,6 @@ struct ProfileView: View {
     @State private var savedFamilyAddress: String = ""
     @State private var savedAvatarHash: Int = 0
     @State private var showLogoutConfirm = false
-    @AppStorage("kb_log_reporting_enabled") private var automaticErrorReports = false
     
     @StateObject private var addressCompleter = AddressSearchCompleter()
     @StateObject private var locationService = OneShotLocationService()
@@ -140,9 +139,6 @@ struct ProfileView: View {
                     
                     // MARK: - Abbonamento
                     subscriptionCard
-                    
-                    // MARK: - Privacy / supporto
-                    privacySupportCard
                     
                     // MARK: - Azioni
                     actionsCard
@@ -305,7 +301,7 @@ struct ProfileView: View {
             
             if isDirty {
                 Button(action: {
-                    KBLog.auth.debug("Profile: tap Save")
+                    KBLog.auth.kbDebug("Profile: tap Save")
                     saveProfile()
                 }) {
                     Label("Salva modifiche", systemImage: "checkmark.circle.fill")
@@ -422,7 +418,7 @@ struct ProfileView: View {
                 Divider().padding(.horizontal, 16)
                 
                 Button {
-                    KBLog.app.debug("Profile: tap Detect Address")
+                    KBLog.app.kbDebug("Profile: tap Detect Address")
                     detectFamilyAddress()
                 } label: {
                     HStack(spacing: 8) {
@@ -571,36 +567,6 @@ struct ProfileView: View {
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - Privacy / Supporto
-
-    private var privacySupportCard: some View {
-        VStack(spacing: 0) {
-            sectionHeader(icon: "hand.raised.fill", title: "Privacy e supporto")
-            Toggle(isOn: $automaticErrorReports) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Invia report errori automatici")
-                        .font(.system(size: 16, weight: .medium))
-                    Text("Report anonimo su anomalie tecniche per migliorare l'app. Nessun dato personale o familiare.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .onChange(of: automaticErrorReports) { _, enabled in
-                CrashAnalyzer.isAutomaticReportingEnabled = enabled
-                if enabled {
-                    CrashAnalyzer.hasBeenAskedForReporting = true
-                }
-            }
-        }
-        .background(cardBackground, in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.06), radius: 10, x: 0, y: 4)
-        .onAppear {
-            automaticErrorReports = CrashAnalyzer.isAutomaticReportingEnabled
-        }
-    }
-
     // MARK: - Actions Card
     
     private var actionsCard: some View {
@@ -778,7 +744,7 @@ struct ProfileView: View {
         let user = Auth.auth().currentUser
         email = user?.email ?? ""
         lastLoginAt = user?.metadata.lastSignInDate
-        KBLog.auth.debug("ProfileView appeared authed=\((user != nil), privacy: .public)")
+        KBLog.auth.kbDebug("ProfileView appeared authed=\((user != nil))")
     }
     
     private func loadLocalProfile() {
@@ -856,7 +822,7 @@ struct ProfileView: View {
             profile.updatedAt      = Date()
             
             try modelContext.save()
-            KBLog.auth.info("Profile saved (local) uid=\(uid, privacy: .public)")
+            KBLog.auth.kbInfo("Profile saved (local) uid=\(uid)")
             
             saveErrorText = nil
             showSaveSuccessAlert = true
@@ -883,9 +849,9 @@ struct ProfileView: View {
                             "email":         profile.email ?? "",
                             "updatedAt":     Timestamp(date: Date())
                         ], merge: true)
-                    KBLog.app.debug("Profile: saved to users/\(uid, privacy: .public)")
+                    KBLog.app.kbDebug("Profile: saved to users/\(uid)")
                 } catch {
-                    KBLog.app.error("Profile: users/\(uid, privacy: .public) save failed: \(error.localizedDescription, privacy: .public)")
+                    KBLog.app.kbError("Profile: users/\(uid) save failed: \(error.localizedDescription)")
                 }
                 
                 if let avatarData = profile.avatarData {
@@ -900,7 +866,7 @@ struct ProfileView: View {
                             .collection("users").document(uid)
                             .setData(["avatarURL": avatarURL ?? "", "updatedAt": Timestamp(date: Date())], merge: true)
                     } catch {
-                        KBLog.app.error("Profile: avatar upload failed: \(error.localizedDescription, privacy: .public)")
+                        KBLog.app.kbError("Profile: avatar upload failed: \(error.localizedDescription)")
                     }
                 }
                 
@@ -926,14 +892,14 @@ struct ProfileView: View {
                             }
                         }
                     } catch {
-                        KBLog.app.error("Profile: remote member name update failed: \(error.localizedDescription, privacy: .public)")
+                        KBLog.app.kbError("Profile: remote member name update failed: \(error.localizedDescription)")
                     }
                 }
             }
         } catch {
             saveErrorText = error.localizedDescription
             showSaveErrorAlert = true
-            KBLog.auth.error("Profile save FAILED: \(error.localizedDescription, privacy: .public)")
+            KBLog.auth.kbError("Profile save FAILED: \(error.localizedDescription)")
         }
     }
     
@@ -946,7 +912,7 @@ struct ProfileView: View {
     private func signOut() {
         Task { @MainActor in
             await coordinator.signOut(modelContext: modelContext)
-            KBLog.auth.info("Logout OK")
+            KBLog.auth.kbInfo("Logout OK")
         }
     }
     
@@ -972,7 +938,7 @@ struct ProfileView: View {
                     let data = try await avatarRemoteStore.downloadAvatar(uid: uid, familyId: familyId)
                     await MainActor.run { avatarData = data }
                 } catch {
-                    KBLog.app.error("Profile: avatar download failed: \(error.localizedDescription, privacy: .public)")
+                    KBLog.app.kbError("Profile: avatar download failed: \(error.localizedDescription)")
                 }
             }
             await MainActor.run {
@@ -990,7 +956,7 @@ struct ProfileView: View {
                 recomputeDirty()
             }
         } catch {
-            KBLog.app.error("Profile: users/\(uid, privacy: .public) load failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.app.kbError("Profile: users/\(uid) load failed: \(error.localizedDescription)")
         }
     }
 }

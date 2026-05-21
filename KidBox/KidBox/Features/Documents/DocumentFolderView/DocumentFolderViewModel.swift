@@ -138,12 +138,12 @@ final class DocumentFolderViewModel: ObservableObject {
     init(familyId: String, folderId: String?) {
         self.familyId = familyId
         self.folderId = folderId
-        KBLog.data.debug("DocumentFolderVM init familyId=\(familyId, privacy: .public) folderId=\((folderId ?? "nil"), privacy: .public)")
+        KBLog.data.kbDebug("DocumentFolderVM init familyId=\(familyId) folderId=\((folderId ?? "nil"))")
     }
     
     func bind(modelContext: ModelContext) {
         self.modelContext = modelContext
-        KBLog.data.debug("DocumentFolderVM bind modelContext set")
+        KBLog.data.kbDebug("DocumentFolderVM bind modelContext set")
     }
     
     // MARK: - Sorting
@@ -434,7 +434,7 @@ final class DocumentFolderViewModel: ObservableObject {
             SyncCenter.shared.enqueueDocumentUpsert(documentId: doc.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             reload()
-            KBLog.data.info("moveDocument ok docId=\(doc.id) destId=\(destId ?? "root")")
+            KBLog.data.kbInfo("moveDocument ok docId=\(doc.id) destId=\(destId ?? "root")")
             
             // ✅ Scrittura Firestore immediata — non aspetta il SyncCenter
             let dto = RemoteDocumentDTO(
@@ -456,9 +456,9 @@ final class DocumentFolderViewModel: ObservableObject {
             Task.detached(priority: .userInitiated) {
                 do {
                     try await DocumentRemoteStore().upsert(dto: dto)
-                    await MainActor.run { KBLog.data.info("moveDocument Firestore direct write OK docId=\(doc.id)") }
+                    await MainActor.run { KBLog.data.kbInfo("moveDocument Firestore direct write OK docId=\(doc.id)") }
                 } catch {
-                    await MainActor.run { KBLog.data.error("moveDocument Firestore direct write failed: \(error.localizedDescription)") }
+                    await MainActor.run { KBLog.data.kbError("moveDocument Firestore direct write failed: \(error.localizedDescription)") }
                 }
             }
         } catch {
@@ -511,7 +511,7 @@ final class DocumentFolderViewModel: ObservableObject {
             SyncCenter.shared.enqueueDocumentUpsert(documentId: copy.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             reload()
-            KBLog.data.info("copyDocument ok srcId=\(doc.id) newId=\(newId) destId=\(destId ?? "root")")
+            KBLog.data.kbInfo("copyDocument ok srcId=\(doc.id) newId=\(newId) destId=\(destId ?? "root")")
             
             // ✅ Scrittura Firestore immediata — garantisce sync sull'altro account
             let dto = RemoteDocumentDTO(
@@ -533,9 +533,9 @@ final class DocumentFolderViewModel: ObservableObject {
             Task.detached(priority: .userInitiated) {
                 do {
                     try await DocumentRemoteStore().upsert(dto: dto)
-                    await MainActor.run { KBLog.data.info("copyDocument Firestore direct write OK newId=\(newId)") }
+                    await MainActor.run { KBLog.data.kbInfo("copyDocument Firestore direct write OK newId=\(newId)") }
                 } catch {
-                    await MainActor.run { KBLog.data.error("copyDocument Firestore direct write failed: \(error.localizedDescription)") }
+                    await MainActor.run { KBLog.data.kbError("copyDocument Firestore direct write failed: \(error.localizedDescription)") }
                 }
             }
         } catch {
@@ -576,7 +576,7 @@ final class DocumentFolderViewModel: ObservableObject {
             SyncCenter.shared.enqueueDocumentCategoryUpsert(categoryId: folder.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             reload()
-            KBLog.data.info("moveFolder ok folderId=\(folder.id) destId=\(destId ?? "root")")
+            KBLog.data.kbInfo("moveFolder ok folderId=\(folder.id) destId=\(destId ?? "root")")
             
             // ✅ Scrittura Firestore immediata
             let dto = RemoteDocumentCategoryDTO(
@@ -588,9 +588,9 @@ final class DocumentFolderViewModel: ObservableObject {
             Task.detached(priority: .userInitiated) {
                 do {
                     try await DocumentCategoryRemoteStore().upsert(dto: dto)
-                    await MainActor.run { KBLog.data.info("moveFolder Firestore direct write OK folderId=\(folder.id)") }
+                    await MainActor.run { KBLog.data.kbInfo("moveFolder Firestore direct write OK folderId=\(folder.id)") }
                 } catch {
-                    await MainActor.run { KBLog.data.error("moveFolder Firestore direct write failed: \(error.localizedDescription)") }
+                    await MainActor.run { KBLog.data.kbError("moveFolder Firestore direct write failed: \(error.localizedDescription)") }
                 }
             }
         } catch {
@@ -635,7 +635,7 @@ final class DocumentFolderViewModel: ObservableObject {
             SyncCenter.shared.enqueueDocumentCategoryUpsert(categoryId: copy.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             reload()
-            KBLog.data.info("copyFolder ok srcId=\(folder.id) newId=\(newId) destId=\(destId ?? "root")")
+            KBLog.data.kbInfo("copyFolder ok srcId=\(folder.id) newId=\(newId) destId=\(destId ?? "root")")
             
             // ✅ Scrittura Firestore immediata — garantisce sync sull'altro account
             let dto = RemoteDocumentCategoryDTO(
@@ -647,9 +647,9 @@ final class DocumentFolderViewModel: ObservableObject {
             Task.detached(priority: .userInitiated) {
                 do {
                     try await DocumentCategoryRemoteStore().upsert(dto: dto)
-                    await MainActor.run { KBLog.data.info("copyFolder Firestore direct write OK newId=\(newId)") }
+                    await MainActor.run { KBLog.data.kbInfo("copyFolder Firestore direct write OK newId=\(newId)") }
                 } catch {
-                    await MainActor.run { KBLog.data.error("copyFolder Firestore direct write failed: \(error.localizedDescription)") }
+                    await MainActor.run { KBLog.data.kbError("copyFolder Firestore direct write failed: \(error.localizedDescription)") }
                 }
             }
         } catch {

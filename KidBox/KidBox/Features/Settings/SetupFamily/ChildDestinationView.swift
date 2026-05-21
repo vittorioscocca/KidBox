@@ -31,13 +31,13 @@ struct ChildDestinationView: View {
             let child = try modelContext.fetch(desc).first
             
             if child == nil {
-                KBLog.data.info("ChildDestinationView: child not found id=\(cid, privacy: .public)")
+                KBLog.data.kbInfo("ChildDestinationView: child not found id=\(cid)")
             } else {
-                KBLog.data.debug("ChildDestinationView: child resolved id=\(cid, privacy: .public)")
+                KBLog.data.kbDebug("ChildDestinationView: child resolved id=\(cid)")
             }
             return child
         } catch {
-            KBLog.data.error("ChildDestinationView: fetch failed id=\(id, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("ChildDestinationView: fetch failed id=\(id) err=\(error.localizedDescription)")
             return nil
         }
     }
@@ -134,13 +134,13 @@ struct EditChildView: View {
     @MainActor private func save() {
         let childId = child.id
         let familyId = child.familyId ?? ""
-        KBLog.data.info("EditChildView: save requested childId=\(childId, privacy: .public) familyId=\(familyId, privacy: .public)")
+        KBLog.data.kbInfo("EditChildView: save requested childId=\(childId) familyId=\(familyId)")
         
         let trimmed = child.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             errorMessage = "Inserisci un nome."
             showError = true
-            KBLog.data.info("EditChildView: save blocked (empty name) childId=\(childId, privacy: .public)")
+            KBLog.data.kbInfo("EditChildView: save blocked (empty name) childId=\(childId)")
             return
         }
         child.name = trimmed
@@ -148,14 +148,14 @@ struct EditChildView: View {
         
         do {
             try modelContext.save()
-            KBLog.data.info("EditChildView: local save OK childId=\(childId, privacy: .public)")
+            KBLog.data.kbInfo("EditChildView: local save OK childId=\(childId)")
             
             Task {
                 do {
                     try await ChildSyncService().upsert(child: child)
-                    KBLog.sync.info("EditChildView: remote upsert OK childId=\(childId, privacy: .public)")
+                    KBLog.sync.kbInfo("EditChildView: remote upsert OK childId=\(childId)")
                 } catch {
-                    KBLog.sync.error("EditChildView: remote upsert FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("EditChildView: remote upsert FAILED childId=\(childId) err=\(error.localizedDescription)")
                 }
             }
             
@@ -163,7 +163,7 @@ struct EditChildView: View {
         } catch {
             errorMessage = error.localizedDescription
             showError = true
-            KBLog.data.error("EditChildView: local save FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("EditChildView: local save FAILED childId=\(childId) err=\(error.localizedDescription)")
         }
     }
     
@@ -171,12 +171,12 @@ struct EditChildView: View {
         let childId = child.id
         let familyId = child.familyId ?? ""
         let updatedBy = Auth.auth().currentUser?.uid
-        KBLog.data.info("EditChildView: delete requested childId=\(childId, privacy: .public) familyId=\(familyId, privacy: .public)")
+        KBLog.data.kbInfo("EditChildView: delete requested childId=\(childId) familyId=\(familyId)")
         
         do {
             modelContext.delete(child)
             try modelContext.save()
-            KBLog.data.info("EditChildView: local delete OK childId=\(childId, privacy: .public)")
+            KBLog.data.kbInfo("EditChildView: local delete OK childId=\(childId)")
             
             Task {
                 do {
@@ -185,13 +185,13 @@ struct EditChildView: View {
                         childId: childId,
                         updatedBy: updatedBy
                     )
-                    KBLog.sync.info("EditChildView: remote softDelete OK childId=\(childId, privacy: .public)")
+                    KBLog.sync.kbInfo("EditChildView: remote softDelete OK childId=\(childId)")
                 } catch {
                     await MainActor.run {
                         errorMessage = "Eliminazione remota fallita: \(error.localizedDescription)"
                         showError = true
                     }
-                    KBLog.sync.error("EditChildView: remote softDelete FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+                    KBLog.sync.kbError("EditChildView: remote softDelete FAILED childId=\(childId) err=\(error.localizedDescription)")
                 }
             }
             
@@ -199,7 +199,7 @@ struct EditChildView: View {
         } catch {
             errorMessage = "Errore locale: \(error.localizedDescription)"
             showError = true
-            KBLog.data.error("EditChildView: local delete FAILED childId=\(childId, privacy: .public) err=\(error.localizedDescription, privacy: .public)")
+            KBLog.data.kbError("EditChildView: local delete FAILED childId=\(childId) err=\(error.localizedDescription)")
         }
     }
 }

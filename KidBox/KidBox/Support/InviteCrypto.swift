@@ -40,7 +40,7 @@ enum InviteCrypto {
         }
         
         if status != errSecSuccess {
-            KBLog.security.error("SecRandomCopyBytes failed status=\(status)")
+            KBLog.security.kbError("SecRandomCopyBytes failed status=\(status)")
         }
         
         return data
@@ -92,7 +92,7 @@ enum InviteCrypto {
                 tag: sealed.tag
             )
         } catch {
-            KBLog.security.error("wrapFamilyKey failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.security.kbError("wrapFamilyKey failed: \(error.localizedDescription)")
             throw error
         }
     }
@@ -122,7 +122,7 @@ enum InviteCrypto {
             let plaintext = try AES.GCM.open(sealed, using: wrapKey)
             return SymmetricKey(data: plaintext)
         } catch {
-            KBLog.security.error("unwrapFamilyKey failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.security.kbError("unwrapFamilyKey failed: \(error.localizedDescription)")
             throw error
         }
     }
@@ -157,7 +157,7 @@ extension Data {
         
         let data = Data(base64Encoded: str)
         if data == nil {
-            KBLog.security.error("fromBase64url failed: invalid base64url input")
+            KBLog.security.kbError("fromBase64url failed: invalid base64url input")
         }
         return data
     }

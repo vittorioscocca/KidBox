@@ -21,7 +21,7 @@ enum JoinPayloadParser {
     static func extractCode(from raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        KBLog.sync.debug("JoinPayloadParser extractCode start payloadLen=\(trimmed.count, privacy: .public)")
+        KBLog.sync.kbDebug("JoinPayloadParser extractCode start payloadLen=\(trimmed.count)")
         
         // Case 1️⃣: kidbox://join?...&code=XXXX
         if let comps = URLComponents(string: trimmed),
@@ -29,7 +29,7 @@ enum JoinPayloadParser {
            let code = items.first(where: { $0.name.lowercased() == "code" })?.value,
            !code.isEmpty {
             
-            KBLog.sync.info("JoinPayloadParser code extracted from URL payload")
+            KBLog.sync.kbInfo("JoinPayloadParser code extracted from URL payload")
             return code
         }
         
@@ -39,11 +39,11 @@ enum JoinPayloadParser {
            trimmed.range(of: "://") == nil,
            trimmed.contains("?") == false {
             
-            KBLog.sync.info("JoinPayloadParser code extracted from plain payload")
+            KBLog.sync.kbInfo("JoinPayloadParser code extracted from plain payload")
             return trimmed
         }
         
-        KBLog.sync.debug("JoinPayloadParser no valid code found")
+        KBLog.sync.kbDebug("JoinPayloadParser no valid code found")
         return nil
     }
 }

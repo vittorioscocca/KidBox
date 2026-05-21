@@ -295,8 +295,9 @@ struct PlanningAIChatView: View {
             UpgradeSheetView()
                 .environmentObject(KBSubscriptionManager.shared)
         }
-        .task {
+        .task(id: familyId) {
             guard KBSubscriptionManager.shared.currentPlan.includesAI else { return }
+            guard !familyId.isEmpty else { return }
             guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
                 familyId:               familyId,
@@ -333,17 +334,20 @@ struct PlanningAIChatView: View {
                 modelContext:           modelContext
             )
             vm = newVM
-            newVM.loadOrCreateConversation()
+            await Task.yield()
+            await newVM.loadOrCreateConversation()
 
             let healthInsight = HealthPatternAnalyzerService.shared.consumeUnreadInsightIfNeeded(
                 familyId: familyId,
                 modelContext: modelContext
             )
+            let notifSeed = NotificationManager.shared.takePendingPlanningInitialMessage()
             let seed = healthInsight
                 ?? initialMessage
-                ?? NotificationManager.shared.takePendingPlanningInitialMessage()
+                ?? notifSeed
             if let seed, !seed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                newVM.injectInitialAssistantMessageIfNeeded(seed)
+                let forceInject = notifSeed != nil || initialMessage != nil
+                newVM.injectInitialAssistantMessageIfNeeded(seed, force: forceInject)
             }
         }
     }
@@ -576,9 +580,6 @@ private struct PlanningAIChatInnerView: View {
         }
         .sheet(isPresented: $showAISettings) {
             NavigationStack { AISettingsView() }
-        }
-        .onAppear {
-            vm.loadOrCreateConversation()
         }
     }
     

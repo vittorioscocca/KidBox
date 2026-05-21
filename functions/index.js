@@ -4131,14 +4131,20 @@ exports.onNewCrashReport = onDocumentCreated(
       if (!issue.affectedModule) continue;
 
       // Deduplication: stesso modulo + piattaforma nelle ultime 24h non risolto
+      // Se l'indice non è ancora pronto, salta la dedup e crea un nuovo caso
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const existing = await db.collection("cases")
-        .where("affectedModule", "==", issue.affectedModule)
-        .where("platform", "==", report.platform)
-        .where("status", "in", ["new", "taken"])
-        .where("createdAt", ">", admin.firestore.Timestamp.fromDate(since))
-        .limit(1)
-        .get();
+      let existing = { empty: true };
+      try {
+        existing = await db.collection("cases")
+          .where("affectedModule", "==", issue.affectedModule)
+          .where("platform", "==", report.platform)
+          .where("status", "in", ["new", "taken"])
+          .where("createdAt", ">", admin.firestore.Timestamp.fromDate(since))
+          .limit(1)
+          .get();
+      } catch (dedupErr) {
+        logger.warn("onNewCrashReport: dedup query fallita (indice non pronto?), creo nuovo caso", { error: dedupErr.message });
+      }
 
       if (!existing.empty) {
         await existing.docs[0].ref.update({
@@ -4370,6 +4376,20 @@ exports.registerAdminNotifications = onCall(
 
     logger.info("registerAdminNotifications: registrato", { uid, email });
     return { ok: true, uid, email };
+  },
+);
+
+/**
+ * Callable: verifica se l'utente corrente è registrato per le notifiche admin
+ */
+exports.checkAdminNotifStatus = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+    const uid = request.auth.uid;
+    const cfgSnap = await db.collection("admin").doc("config").get();
+    const notifyUids = cfgSnap.exists ? (cfgSnap.data().notifyUids || []) : [];
+    return { registered: notifyUids.includes(uid), uid };
   },
 );
 

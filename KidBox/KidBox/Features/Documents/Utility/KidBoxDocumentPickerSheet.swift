@@ -96,17 +96,17 @@ struct KidBoxDocumentPickerSheet: View {
         isLoading = true
         defer { isLoading = false }
         
-        KBLog.data.info("KidBoxDocumentPickerSheet pick docId=\(doc.id) title=\(doc.title)")
+        KBLog.data.kbInfo("KidBoxDocumentPickerSheet pick docId=\(doc.id) title=\(doc.title)")
         
         do {
             let rawURL   = try await DocumentLocalCache.downloadToLocal(doc: doc, modelContext: modelContext)
             let namedURL = try namedURL(from: rawURL, doc: doc)
-            KBLog.data.info("KidBoxDocumentPickerSheet pick ready fileName=\(namedURL.lastPathComponent)")
+            KBLog.data.kbInfo("KidBoxDocumentPickerSheet pick ready fileName=\(namedURL.lastPathComponent)")
             dismiss()
             onPick(namedURL)
         } catch {
             errorText = "Impossibile aprire il documento: \(error.localizedDescription)"
-            KBLog.data.error("KidBoxDocumentPickerSheet pick failed docId=\(doc.id): \(error.localizedDescription)")
+            KBLog.data.kbError("KidBoxDocumentPickerSheet pick failed docId=\(doc.id): \(error.localizedDescription)")
         }
     }
     
@@ -314,7 +314,7 @@ private struct KidBoxFolderPickerLevel: View {
                 docs = docs.filter { Self.docIsPdf($0) }
             }
         } catch {
-            KBLog.data.error("KidBoxFolderPickerLevel loadContent failed: \(error.localizedDescription)")
+            KBLog.data.kbError("KidBoxFolderPickerLevel loadContent failed: \(error.localizedDescription)")
         }
     }
 

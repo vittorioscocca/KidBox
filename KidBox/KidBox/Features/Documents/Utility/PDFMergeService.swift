@@ -51,20 +51,20 @@ enum PDFMergeService {
     ) async throws -> Data {
         guard !docs.isEmpty else { throw MergeError.noPDFsSelected }
         
-        KBLog.data.info("PDFMergeService merge started count=\(docs.count)")
+        KBLog.data.kbInfo("PDFMergeService merge started count=\(docs.count)")
         
         var tempURLs: [URL] = []
         defer {
             // Clean up all temp files regardless of success/failure
             for url in tempURLs {
                 try? FileManager.default.removeItem(at: url)
-                KBLog.data.debug("PDFMergeService cleanup tempURL=\(url.lastPathComponent)")
+                KBLog.data.kbDebug("PDFMergeService cleanup tempURL=\(url.lastPathComponent)")
             }
         }
         
         // 1) Download & decrypt each doc
         for doc in docs {
-            KBLog.data.debug("PDFMergeService downloading docId=\(doc.id)")
+            KBLog.data.kbDebug("PDFMergeService downloading docId=\(doc.id)")
             let tempURL = try await DocumentLocalCache.downloadToLocal(doc: doc, modelContext: modelContext)
             tempURLs.append(tempURL)
         }
@@ -75,7 +75,7 @@ enum PDFMergeService {
         for (index, tempURL) in tempURLs.enumerated() {
             guard let pdfDoc = PDFDocument(url: tempURL) else {
                 let docName = docs[safe: index]?.fileName ?? tempURL.lastPathComponent
-                KBLog.data.error("PDFMergeService invalid PDF docName=\(docName)")
+                KBLog.data.kbError("PDFMergeService invalid PDF docName=\(docName)")
                 throw MergeError.invalidPDF(docName)
             }
             
@@ -83,22 +83,22 @@ enum PDFMergeService {
                 guard let page = pdfDoc.page(at: pageIndex) else { continue }
                 merged.insert(page, at: merged.pageCount)
             }
-            KBLog.data.debug("PDFMergeService appended pages=\(pdfDoc.pageCount) from docIndex=\(index)")
+            KBLog.data.kbDebug("PDFMergeService appended pages=\(pdfDoc.pageCount) from docIndex=\(index)")
         }
         
         guard merged.pageCount > 0 else {
-            KBLog.data.error("PDFMergeService result has 0 pages")
+            KBLog.data.kbError("PDFMergeService result has 0 pages")
             throw MergeError.noPages
         }
         
         // 3) Serialize to Data
         // PDFDocument.dataRepresentation() returns nil only in degenerate cases
         guard let data = merged.dataRepresentation() else {
-            KBLog.data.error("PDFMergeService dataRepresentation() returned nil")
+            KBLog.data.kbError("PDFMergeService dataRepresentation() returned nil")
             throw MergeError.saveFailed
         }
         
-        KBLog.data.info("PDFMergeService merge completed pages=\(merged.pageCount) bytes=\(data.count)")
+        KBLog.data.kbInfo("PDFMergeService merge completed pages=\(merged.pageCount) bytes=\(data.count)")
         return data
     }
 }

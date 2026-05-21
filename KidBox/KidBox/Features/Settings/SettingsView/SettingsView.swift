@@ -56,7 +56,7 @@ struct SettingsView: View {
             .listRowBackground(cardBackground)
             
             Button {
-                KBLog.navigation.debug("Settings -> Family settings tap")
+                KBLog.navigation.kbDebug("Settings -> Family settings tap")
                 coordinator.navigate(to: .familySettings)
             } label: {
                 HStack(spacing: 12) {
@@ -106,6 +106,24 @@ struct SettingsView: View {
                         .frame(width: 22)
                     Text("Notifiche")
                         .foregroundStyle(.primary)
+                }
+            }
+            .listRowBackground(cardBackground)
+
+            NavigationLink {
+                PrivacySettingsView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "hand.raised.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Privacy")
+                            .foregroundStyle(.primary)
+                        Text("Report errori e log tecnici")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .listRowBackground(cardBackground)

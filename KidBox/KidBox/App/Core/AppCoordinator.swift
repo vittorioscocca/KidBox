@@ -159,7 +159,7 @@ final class AppCoordinator: ObservableObject {
         // Restore persisted appearance mode.
         let rawAppearance = UserDefaults.standard.string(forKey: Self.appearanceModeKey) ?? AppearanceMode.system.rawValue
         appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
-        KBLog.settings.debug("AppCoordinator init appearanceMode=\(rawAppearance, privacy: .public)")
+        KBLog.settings.kbDebug("AppCoordinator init appearanceMode=\(rawAppearance)")
         KBLog.navigation.kbInfo("hasSeenOnboarding = \(UserDefaults.standard.bool(forKey: "hasSeenOnboarding"))")
     }
     
@@ -169,7 +169,7 @@ final class AppCoordinator: ObservableObject {
     /// Chiamato da `SettingsViewModel.setAppearanceMode(_:coordinator:)`.
     func setAppearanceMode(_ mode: AppearanceMode) {
         guard appearanceMode != mode else { return }
-        KBLog.settings.info("AppCoordinator setAppearanceMode mode=\(mode.rawValue, privacy: .public)")
+        KBLog.settings.kbInfo("AppCoordinator setAppearanceMode mode=\(mode.rawValue)")
         appearanceMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: Self.appearanceModeKey)
     }
@@ -245,7 +245,7 @@ final class AppCoordinator: ObservableObject {
                 if let user {
                     let isEmailProvider = user.providerData.contains { $0.providerID == "password" }
                     if isEmailProvider && !user.isEmailVerified {
-                        KBLog.auth.info("Email not verified for uid=\(user.uid) — signing out")
+                        KBLog.auth.kbInfo("Email not verified for uid=\(user.uid) — signing out")
                         await KidBoxLocalNotificationsCleanup.cancelAllScheduledAccountReminders()
                         try? Auth.auth().signOut()
                         KBSubscriptionManager.shared.resetOnSignOut()

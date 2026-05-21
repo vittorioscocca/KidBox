@@ -9,6 +9,13 @@ import SwiftUI
 import SwiftData
 import FirebaseAuth
 
+#if DEBUG
+/// Test pipeline log / crash report. Imposta `false` dopo la verifica.
+private enum NotesCrashLogTest {
+    static let forceCrashOnOpen = false
+}
+#endif
+
 struct NotesHomeView: View {
     let familyId: String
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -111,6 +118,14 @@ struct NotesHomeView: View {
             .navigationTitle("Note")
             .searchable(text: $searchQuery, prompt: "Cerca nelle note")
             .onAppear {
+                #if DEBUG
+                if NotesCrashLogTest.forceCrashOnOpen {
+                    CrashAnalyzer.markPendingCrashReport()
+                    KBLog.ui.kbCrash("TEST: crash intenzionale all'apertura Note (verifica KBFileLogger / CrashAnalyzer)")
+                    KBFileLogger.shared.flush()
+                    fatalError("TEST: NotesHomeView crash")
+                }
+                #endif
                 loadPinned()
                 BadgeManager.shared.activeSections.insert("notes")
                 Task { @MainActor in

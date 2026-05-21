@@ -40,33 +40,33 @@ final class InviteCodeViewModel: ObservableObject {
         errorMessage = nil
         defer { isBusy = false }
         
-        KBLog.sync.info("InviteCodeVM: generateInviteCode started")
+        KBLog.sync.kbInfo("InviteCodeVM: generateInviteCode started")
         
         do {
             // Fetch the first available family (current app model: single active family).
             let families = try modelContext.fetch(FetchDescriptor<KBFamily>())
             guard let family = families.first else {
                 errorMessage = "Nessuna family trovata."
-                KBLog.sync.error("InviteCodeVM: no local family found")
+                KBLog.sync.kbError("InviteCodeVM: no local family found")
                 return
             }
             
             let familyId = family.id
-            KBLog.sync.info("InviteCodeVM: using familyId=\(familyId, privacy: .public)")
+            KBLog.sync.kbInfo("InviteCodeVM: using familyId=\(familyId)")
             
             // 1) Create membership invite code (classic join)
-            KBLog.sync.info("InviteCodeVM: creating membership code")
+            KBLog.sync.kbInfo("InviteCodeVM: creating membership code")
             let newCode = try await remote.createInviteCode(familyId: familyId)
             code = newCode
-            KBLog.sync.info("InviteCodeVM: membership code created code=\(newCode, privacy: .public)")
+            KBLog.sync.kbInfo("InviteCodeVM: membership code created code=\(newCode)")
             
             // 2) Create crypto-wrapped invite (includes encryption key material)
-            KBLog.sync.info("InviteCodeVM: creating encrypted invite")
+            KBLog.sync.kbInfo("InviteCodeVM: creating encrypted invite")
             let invite = try await InviteWrapService().createInvite(
                 familyId: familyId,
                 ttlSeconds: 24 * 3600
             )
-            KBLog.sync.info("InviteCodeVM: encrypted invite created inviteId=\(invite.inviteId, privacy: .public)")
+            KBLog.sync.kbInfo("InviteCodeVM: encrypted invite created inviteId=\(invite.inviteId)")
             
             // 3) QR payload contains BOTH:
             //    - crypto invite payload (familyId, inviteId, secret, etc.)
@@ -75,11 +75,11 @@ final class InviteCodeViewModel: ObservableObject {
             // Security note:
             // - Do NOT log secrets / full QR payload. Only log metadata.
             qrPayload = invite.qrPayload + "&code=\(newCode)"
-            KBLog.sync.info("InviteCodeVM: qr payload ready familyId=\(familyId, privacy: .public) inviteId=\(invite.inviteId, privacy: .public)")
+            KBLog.sync.kbInfo("InviteCodeVM: qr payload ready familyId=\(familyId) inviteId=\(invite.inviteId)")
             
         } catch {
             errorMessage = error.localizedDescription
-            KBLog.sync.error("InviteCodeVM: generateInviteCode failed: \(error.localizedDescription, privacy: .public)")
+            KBLog.sync.kbError("InviteCodeVM: generateInviteCode failed: \(error.localizedDescription)")
         }
     }
     
@@ -88,12 +88,12 @@ final class InviteCodeViewModel: ObservableObject {
     /// - Note: This is a UI convenience; the QR flow should be preferred for key transfer.
     func copyToClipboard() {
         guard let code else {
-            KBLog.sync.debug("InviteCodeVM: copyToClipboard ignored (no code)")
+            KBLog.sync.kbDebug("InviteCodeVM: copyToClipboard ignored (no code)")
             return
         }
 #if canImport(UIKit)
         UIPasteboard.general.string = code
-        KBLog.sync.info("InviteCodeVM: code copied to clipboard")
+        KBLog.sync.kbInfo("InviteCodeVM: code copied to clipboard")
 #endif
     }
     
