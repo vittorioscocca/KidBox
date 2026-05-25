@@ -141,10 +141,18 @@ struct NoteDetailView: View {
                     .disabled(titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                               bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     
-                    Button { saveAndDismiss() } label: {
-                        Image(systemName: "checkmark").font(.headline)
+                    // Il tasto conferma compare solo quando ci sono modifiche non
+                    // salvate (isDirty). Al tap salviamo e ripristiniamo lo stato
+                    // pulito, così il bottone scompare finché l'utente non
+                    // riedita la nota.
+                    if isDirty {
+                        Button { saveAndDismiss() } label: {
+                            Image(systemName: "checkmark").font(.headline)
+                        }
+                        .transition(.opacity)
                     }
                 }
+                .animation(.easeInOut(duration: 0.15), value: isDirty)
             }
         }
         .sheet(item: $shareItem) { item in

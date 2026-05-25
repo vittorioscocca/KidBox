@@ -44,18 +44,26 @@ final class NotificationService: UNNotificationServiceExtension {
 
         let userInfo = request.content.userInfo
 
-        // Only handle our own chat pushes.
-        guard (userInfo["type"] as? String) == "new_chat_message" else {
+        // Only handle our own chat pushes. Le menzioni usano lo stesso payload
+        // di un messaggio normale ma con `type == "chat_mention"`: la NSE deve
+        // decrittare comunque il `textEnc` e, se presente, sovrascrivere il
+        // titolo per evidenziare che si tratta di una citazione diretta.
+        let type = (userInfo["type"] as? String) ?? ""
+        guard type == "new_chat_message" || type == "chat_mention" else {
             log.info("Non-chat push — passing through unchanged")
             contentHandler(best)
             return
         }
+        let isMention = type == "chat_mention"
 
         let msgType = userInfo["msgType"] as? String ?? "text"
 
         // Non-text messages: the Cloud Function already set the correct emoji body.
         guard msgType == "text" else {
-            log.info("Non-text chat push msgType=\(msgType) — passing through")
+            log.info("Non-text chat push msgType=\(msgType) isMention=\(isMention) — passing through")
+            if isMention {
+                applyMentionTitleIfNeeded(best, userInfo: userInfo)
+            }
             contentHandler(best)
             return
         }
@@ -107,9 +115,15 @@ final class NotificationService: UNNotificationServiceExtension {
             if let senderName = userInfo["senderName"] as? String, !senderName.isEmpty {
                 best.title = senderName
             }
+            if isMention {
+                applyMentionTitleIfNeeded(best, userInfo: userInfo)
+            }
         } catch {
             log.error("Decrypt failed: \(error.localizedDescription, privacy: .public)")
             applyFallback(best, userInfo: userInfo)
+            if isMention {
+                applyMentionTitleIfNeeded(best, userInfo: userInfo)
+            }
         }
 
         contentHandler(best)
@@ -133,5 +147,22 @@ final class NotificationService: UNNotificationServiceExtension {
         if let fb = userInfo["fallbackBody"] as? String, !fb.isEmpty {
             content.body = fb
         }
+    }
+
+    /// Per le push di tipo `chat_mention` il Cloud Function manda comunque il
+    /// `senderName` nella `alert.title` per non perdere l'identità del mittente
+    /// quando la NSE non riesce a decrittare; qui prefissiamo il titolo con
+    /// l'avviso che si tratta di una menzione esplicita.
+    private func applyMentionTitleIfNeeded(
+        _ content: UNMutableNotificationContent,
+        userInfo: [AnyHashable: Any]
+    ) {
+        let senderName = (userInfo["senderName"] as? String) ?? ""
+        if !senderName.isEmpty {
+            content.title = "\(senderName) ti ha menzionato"
+        } else {
+            content.title = "Sei stato menzionato"
+        }
+        content.subtitle = "Menzione in chat"
     }
 }

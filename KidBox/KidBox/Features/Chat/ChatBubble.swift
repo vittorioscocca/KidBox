@@ -112,7 +112,13 @@ struct ChatBubble: View {
         
         let text = message.text ?? ""
         self.cachedLinkURL = Self.extractFirstURL(from: text)
-        self.cachedHighlightedText = Self.buildHighlightedText(text, searchText: searchText)
+        self.cachedHighlightedText = Self.buildHighlightedText(
+            text,
+            searchText: searchText,
+            mentions: message.mentions,
+            currentUID: currentUID,
+            isOwn: isOwn
+        )
         self.cachedTimeString = Self.timeFormatter.string(from: message.createdAt)
         if let rt = repliedTo, rt.type == .text {
             let rt = (rt.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1178,8 +1184,42 @@ struct ChatBubble: View {
         types: NSTextCheckingResult.CheckingType.link.rawValue
     )
     
-    static func buildHighlightedText(_ text: String, searchText: String) -> AttributedString {
+    static func buildHighlightedText(
+        _ text: String,
+        searchText: String,
+        mentions: [ChatMention] = [],
+        currentUID: String = "",
+        isOwn: Bool = false
+    ) -> AttributedString {
         var attr = AttributedString(text)
+        // 1) Mention highlighting — applicato prima della ricerca così che
+        //    l'eventuale background giallo della ricerca si sovrapponga al
+        //    foreground delle menzioni.
+        if !mentions.isEmpty {
+            // Match dei display name più lunghi prima per evitare collisioni
+            // (es. "Mario" vs "Mario Rossi").
+            let ordered = mentions.sorted { $0.displayName.count > $1.displayName.count }
+            for mention in ordered {
+                let token = "@\(mention.displayName)"
+                guard !token.isEmpty else { continue }
+                var searchRange = text.startIndex..<text.endIndex
+                while let range = text.range(of: token, options: [.literal], range: searchRange),
+                      let attrRange = Range(range, in: attr) {
+                    let mentionsMe = !currentUID.isEmpty && mention.uid == currentUID
+                    attr[attrRange].font = .body.weight(.semibold)
+                    if mentionsMe {
+                        // Quando il messaggio cita l'utente corrente, lo
+                        // evidenziamo in modo più marcato per attirare l'attenzione.
+                        attr[attrRange].backgroundColor = KBTheme.bubbleTint.opacity(isOwn ? 0.25 : 0.35)
+                        attr[attrRange].foregroundColor = isOwn ? .white : KBTheme.bubbleTint
+                    } else {
+                        attr[attrRange].foregroundColor = isOwn ? .white : KBTheme.bubbleTint
+                    }
+                    searchRange = range.upperBound..<text.endIndex
+                }
+            }
+        }
+        // 2) Search-text highlighting.
         guard !searchText.isEmpty else { return attr }
         let lower = text.lowercased()
         let query = searchText.lowercased()

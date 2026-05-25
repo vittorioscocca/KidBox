@@ -87,6 +87,10 @@ final class AppCoordinator: ObservableObject {
     /// URL temporaneo decriptato di un documento da inviare in chat.
     /// Impostato da DocumentFolderViewModel.sendToChat, consumato da ChatView.
     @Published var pendingChatDocumentURL: URL? = nil
+
+    /// ID del messaggio chat da evidenziare allo scroll, impostato da una notifica di menzione.
+    /// Consumato da ChatView all'apertura.
+    @Published var pendingChatMentionMessageId: String? = nil
     
     // MARK: - Appearance
     
@@ -182,7 +186,11 @@ final class AppCoordinator: ObservableObject {
     }
     
     // MARK: - Active family management
-    
+
+    /// Sottoscrizione Combine usata da `switchFamilyIfNeededThenNavigate(to:action:)`
+    /// per attendere il primo cambio di `rootDataRefreshToken` dopo lo switch famiglia.
+    private var familySwitchWaitCancellable: AnyCancellable?
+
     /// Sets the active family explicitly (e.g. after join or user-initiated family switch).
     ///
     /// - Parameter familyId: The family to make active. Pass `nil` to clear.
@@ -220,7 +228,56 @@ final class AppCoordinator: ObservableObject {
             sharedDefaults?.removeObject(forKey: "activeFamilyId")
         }
     }
-    
+
+    // MARK: - Deep link family switch
+
+    /// Esegue lo switch alla famiglia indicata se diversa da quella attiva,
+    /// attende il rebuild della root (`rootDataRefreshToken` cambia) e quindi
+    /// invoca `action`. Se la famiglia è già attiva, esegue `action` subito.
+    ///
+    /// Pensato per i deep link da notifiche push multi-famiglia:
+    /// `setActiveFamily(.., force: true)` triggera `resetToRoot()` che azzera
+    /// il `path` e ricostruisce `RootHostView`; qualsiasi `navigate(to:)`
+    /// emesso prima del rebuild verrebbe scartato. Aspettiamo il bump del
+    /// token e diamo a SwiftUI un breve frame per montare i nuovi listener.
+    func switchFamilyIfNeededThenNavigate(
+        to familyId: String,
+        action: @escaping () -> Void,
+    ) {
+        if activeFamilyId == familyId {
+            KBLog.navigation.kbDebug("[DeepLink] family already active familyId=\(familyId), navigate immediately")
+            action()
+            return
+        }
+
+        let previousFamilyId = activeFamilyId ?? "nil"
+        let currentToken = rootDataRefreshToken
+        KBLog.navigation.kbInfo("[DeepLink] family switch required: \(previousFamilyId) → \(familyId), waiting for root rebuild")
+
+        familySwitchWaitCancellable?.cancel()
+        familySwitchWaitCancellable = $rootDataRefreshToken
+            .dropFirst()
+            .filter { $0 != currentToken }
+            .first()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                KBLog.navigation.kbInfo("[DeepLink] root rebuilt, executing deep link action familyId=\(familyId)")
+                self.familySwitchWaitCancellable?.cancel()
+                self.familySwitchWaitCancellable = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    action()
+                }
+            }
+
+        setActiveFamily(familyId, force: true)
+        // `force: true` con stesso id passa dal ramo veloce: in quel caso il token
+        // non cambia, quindi ricaviamo manualmente il bump tramite resetToRoot().
+        if rootDataRefreshToken == currentToken {
+            resetToRoot()
+        }
+    }
+
     // MARK: - Session listener
     
     /// Starts the FirebaseAuth session listener.

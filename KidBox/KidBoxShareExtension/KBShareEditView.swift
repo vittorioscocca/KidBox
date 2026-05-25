@@ -1169,7 +1169,8 @@ struct KBShareEditView: View {
             mediaFileSize: nil,
             mediaGroupURLsJSON: nil,
             mediaGroupTypesJSON: nil,
-            contactPayloadJSON: nil
+            contactPayloadJSON: nil,
+            mentionsJSON: nil
         )
     }
     

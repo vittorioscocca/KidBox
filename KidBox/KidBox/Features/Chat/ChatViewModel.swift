@@ -424,6 +424,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             if let grpTypes = dto.mediaGroupTypesJSON { existing.mediaGroupTypesJSON = grpTypes }
             if let payload = dto.contactPayloadJSON { existing.contactPayloadJSON = payload }
             existing.reactionsJSON = dto.reactionsJSON
+            existing.mentionsJSON  = dto.mentionsJSON
             existing.readBy        = Array(Set(existing.readBy + dto.readBy))
             // isDeletedForEveryone is signalled by dto.isDeleted (softDelete sets this on Firestore).
             // Once a message is a tombstone it stays a tombstone.
@@ -462,6 +463,7 @@ final class ChatViewModel: NSObject, ObservableObject {
             msg.contactPayloadJSON  = dto.contactPayloadJSON
             msg.replyToId = dto.replyToId;
             msg.reactionsJSON = dto.reactionsJSON
+            msg.mentionsJSON  = dto.mentionsJSON
             msg.readByJSON = dto.readByJSON;
             msg.syncState = .synced;
             msg.lastSyncError = nil
@@ -483,10 +485,67 @@ final class ChatViewModel: NSObject, ObservableObject {
         guard !trimmed.isEmpty, !isSending else { return }
         if isEditing { commitEditing(); return }
         let replyId = replyingToMessageId
+        let mentions = pendingMentions(in: trimmed)
         inputText = ""
+        pendingMentionCandidates.removeAll()
         UserDefaults.standard.removeObject(forKey: draftKey) // ← pulisci il draft
-        if replyId != nil { send(type: .text, text: trimmed, replyToId: replyId); cancelReply() }
-        else { send(type: .text, text: trimmed) }
+        if replyId != nil {
+            send(type: .text, text: trimmed, replyToId: replyId, mentions: mentions)
+            cancelReply()
+        } else {
+            send(type: .text, text: trimmed, mentions: mentions)
+        }
+    }
+
+    // MARK: - Mentions
+
+    /// Membri della famiglia che possono essere citati. Aggiornato dalla view
+    /// ogni volta che cambia la lista dei `KBFamilyMember` per la famiglia
+    /// attiva (escluso il sender corrente).
+    @Published var mentionCandidates: [ChatMentionCandidate] = []
+
+    /// `true` se la chat ha più di due partecipanti (escluso il sender) — usata
+    /// per gating dell'UI di selezione menzioni.
+    var canMention: Bool { mentionCandidates.count >= 2 }
+
+    /// Candidati associati ai placeholder `@displayName` confermati dall'utente
+    /// nel composer. Vengono consumati al primo invio.
+    private var pendingMentionCandidates: [ChatMentionCandidate] = []
+
+    /// Registra una menzione confermata dall'utente nel composer. Viene chiamata
+    /// dalla `ChatInputBar` quando l'utente tocca un candidato nel suggester.
+    func registerMention(_ candidate: ChatMentionCandidate) {
+        if !pendingMentionCandidates.contains(where: { $0.uid == candidate.uid && $0.displayName == candidate.displayName }) {
+            pendingMentionCandidates.append(candidate)
+        }
+    }
+
+    /// Estrae l'elenco delle menzioni effettivamente presenti nel testo finale.
+    /// - Filtra i candidati il cui `@displayName` non appare più nel testo
+    ///   (l'utente potrebbe aver cancellato il token dopo averlo selezionato).
+    /// - Aggiunge eventuali `@DisplayName` digitati manualmente che corrispondono
+    ///   esattamente a un membro presente in `mentionCandidates`.
+    private func pendingMentions(in text: String) -> [ChatMention] {
+        var resolved: [ChatMention] = []
+        var seen = Set<String>()
+        // 1) Candidati confermati dall'utente, verificati nel testo finale.
+        for cand in pendingMentionCandidates {
+            let token = "@\(cand.displayName)"
+            guard text.contains(token), !seen.contains(cand.uid) else { continue }
+            resolved.append(ChatMention(uid: cand.uid, displayName: cand.displayName))
+            seen.insert(cand.uid)
+        }
+        // 2) Match implicito su candidati noti (es. paste o digitazione completa
+        //    senza passare dal picker). Preferenza ai displayName più lunghi per
+        //    evitare collisioni tipo "Mario" vs "Mario Rossi".
+        let candidatesByLength = mentionCandidates.sorted { $0.displayName.count > $1.displayName.count }
+        for cand in candidatesByLength {
+            let token = "@\(cand.displayName)"
+            guard text.contains(token), !seen.contains(cand.uid) else { continue }
+            resolved.append(ChatMention(uid: cand.uid, displayName: cand.displayName))
+            seen.insert(cand.uid)
+        }
+        return resolved
     }
     
     func startEditing(_ message: KBChatMessage) {
@@ -1166,13 +1225,14 @@ final class ChatViewModel: NSObject, ObservableObject {
     
     // MARK: - Send core
     
-    private func send(type: KBChatMessageType, text: String? = nil) {
+    private func send(type: KBChatMessageType, text: String? = nil, mentions: [ChatMention] = []) {
         guard let modelContext else { return }
         let uid = Auth.auth().currentUser?.uid ?? "local"; let senderName = senderDisplayName()
         let messageId = UUID().uuidString; let now = Date()
         isSending = true
         let msg = KBChatMessage(id: messageId, familyId: familyId, senderId: uid, senderName: senderName,
                                 type: type, text: text, createdAt: now)
+        if !mentions.isEmpty { msg.mentions = mentions }
         msg.syncState = .pendingUpsert; modelContext.insert(msg); try? modelContext.save(); reloadLocal()
         Task {
             let dto = makeDTO(from: msg)
@@ -1187,7 +1247,7 @@ final class ChatViewModel: NSObject, ObservableObject {
         }
     }
     
-    private func send(type: KBChatMessageType, text: String? = nil, replyToId: String?) {
+    private func send(type: KBChatMessageType, text: String? = nil, replyToId: String?, mentions: [ChatMention] = []) {
         guard let modelContext else { return }
         let uid = Auth.auth().currentUser?.uid ?? "local"; let senderName = senderDisplayName()
         let messageId = UUID().uuidString; let now = Date()
@@ -1195,6 +1255,7 @@ final class ChatViewModel: NSObject, ObservableObject {
         let msg = KBChatMessage(id: messageId, familyId: familyId, senderId: uid, senderName: senderName,
                                 type: type, text: text, createdAt: now)
         msg.replyToId = replyToId; msg.syncState = .pendingUpsert
+        if !mentions.isEmpty { msg.mentions = mentions }
         modelContext.insert(msg); try? modelContext.save(); reloadLocal()
         Task {
             let dto = makeDTO(from: msg)
@@ -1609,7 +1670,8 @@ final class ChatViewModel: NSObject, ObservableObject {
             mediaFileSize: msg.mediaFileSize,
             mediaGroupURLsJSON:  msg.mediaGroupURLsJSON,
             mediaGroupTypesJSON: msg.mediaGroupTypesJSON,
-            contactPayloadJSON:  msg.contactPayloadJSON
+            contactPayloadJSON:  msg.contactPayloadJSON,
+            mentionsJSON:        msg.mentionsJSON
         )
     }
     

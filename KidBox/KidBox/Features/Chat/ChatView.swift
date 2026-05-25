@@ -426,6 +426,7 @@ private struct ChatConversationView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
     @StateObject private var viewModel: ChatViewModel
+    @Query private var familyMembers: [KBFamilyMember]
     @State private var dayGroups: [ChatDayGroup] = []
     @FocusState private var isInputFocused: Bool
     @State private var messageForSave: KBChatMessage? = nil
@@ -463,6 +464,26 @@ private struct ChatConversationView: View {
             .onChange(of: goToMessageId) { _, msgId in handleGalleryGoToMessage(msgId) }
             .onChange(of: replyFromGallery) { _, msg in handleGalleryReply(msg) }
             .onChange(of: deleteFromGallery) { _, req in handleGalleryDelete(req) }
+            .onChange(of: familyMembers.map { "\($0.userId)|\($0.displayName ?? "")" }) { _, _ in
+                refreshMentionCandidates()
+            }
+            .onAppear { refreshMentionCandidates() }
+    }
+
+    /// Calcola la lista di candidati alle menzioni a partire dai `KBFamilyMember`
+    /// attivi della famiglia, escludendo l'utente corrente (non ha senso citare
+    /// se stessi). Mantiene l'ordine alfabetico per stabilità del picker.
+    private func refreshMentionCandidates() {
+        let myUID = Auth.auth().currentUser?.uid ?? ""
+        let candidates: [ChatMentionCandidate] = familyMembers
+            .filter { !$0.userId.isEmpty && $0.userId != myUID }
+            .compactMap { member in
+                let name = (member.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !name.isEmpty else { return nil }
+                return ChatMentionCandidate(uid: member.userId, displayName: name, photoURL: member.photoURL)
+            }
+            .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+        viewModel.mentionCandidates = candidates
     }
     
     // Media picker
@@ -528,6 +549,13 @@ private struct ChatConversationView: View {
         self._replyFromGallery = replyFromGallery
         _viewModel = StateObject(wrappedValue: ChatViewModel(familyId: familyId))
         self._deleteFromGallery = deleteFromGallery
+        // Filtra i membri della famiglia attiva — solo non eliminati, così il
+        // picker delle menzioni mostra solo chi effettivamente fa parte della chat.
+        _familyMembers = Query(
+            filter: #Predicate<KBFamilyMember> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }
+        )
     }
     
     // MARK: - Body
@@ -637,6 +665,20 @@ private struct ChatConversationView: View {
             coordinator.pendingShareVideoPath = nil
             let url = URL(fileURLWithPath: path)
             Task { await viewModel.sendVideo(from: url) }
+        }
+        .task(id: coordinator.pendingChatMentionMessageId) {
+            guard let msgId = coordinator.pendingChatMentionMessageId else { return }
+            // Aspetta che i messaggi siano caricati e la lista sia montata.
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            coordinator.pendingChatMentionMessageId = nil
+            await MainActor.run {
+                searchScrollTarget = msgId
+                highlightedMessageId = msgId
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                    if highlightedMessageId == msgId { highlightedMessageId = nil }
+                }
+            }
         }
         .task(id: coordinator.pendingChatDocumentURL) {
             guard let url = coordinator.pendingChatDocumentURL else { return }
@@ -1666,7 +1708,11 @@ private struct ChatConversationView: View {
     // MARK: - Input bar
     
     private var inputBar: some View {
-        ChatInputBar(
+        // Le menzioni sono utili solo nelle famiglie con più di due partecipanti
+        // (sender + almeno due altri membri). Sotto questa soglia il picker
+        // resta vuoto e l'input bar si comporta come prima.
+        let candidates = viewModel.canMention ? viewModel.mentionCandidates : []
+        return ChatInputBar(
             text: $viewModel.inputText,
             isRecording: viewModel.isRecording,
             isRecordingLocked: viewModel.isRecordingLocked,
@@ -1697,7 +1743,9 @@ private struct ChatConversationView: View {
             },
             onContactTap: { showContactPicker = true },
             onTextChange: { viewModel.userIsTyping() },
-            onLocationTap: { showLocationSheet = true }
+            onLocationTap: { showLocationSheet = true },
+            mentionCandidates: candidates,
+            onMentionPicked: { viewModel.registerMention($0) }
         )
         .focused($isInputFocused)
         .sheet(isPresented: $showLocationSheet) {

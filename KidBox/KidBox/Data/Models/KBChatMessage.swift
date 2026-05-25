@@ -70,6 +70,11 @@ final class KBChatMessage {
     
     var reactionsJSON: String?
     var readByJSON: String?
+
+    // MARK: - Mentions
+    /// JSON array `[{ "uid": "...", "displayName": "..." }]` con i membri citati.
+    /// Vuoto/nil se il messaggio non contiene `@menzioni`.
+    var mentionsJSON: String?
     
     // MARK: - Transcript
     
@@ -146,6 +151,25 @@ final class KBChatMessage {
             } else if let data = try? JSONEncoder().encode(newValue),
                       let json = String(data: data, encoding: .utf8) {
                 readByJSON = json
+            }
+        }
+    }
+
+    /// Lista decodificata delle menzioni associate al messaggio.
+    var mentions: [ChatMention] {
+        get {
+            guard let json = mentionsJSON,
+                  let data = json.data(using: .utf8),
+                  let decoded = try? JSONDecoder().decode([ChatMention].self, from: data)
+            else { return [] }
+            return decoded
+        }
+        set {
+            if newValue.isEmpty {
+                mentionsJSON = nil
+            } else if let data = try? JSONEncoder().encode(newValue),
+                      let json = String(data: data, encoding: .utf8) {
+                mentionsJSON = json
             }
         }
     }
@@ -273,6 +297,7 @@ final class KBChatMessage {
         self.replyToId                = nil
         self.reactionsJSON            = nil
         self.readByJSON               = nil
+        self.mentionsJSON             = nil
         self.mediaGroupURLsJSON       = nil
         self.mediaGroupTypesJSON      = nil
         self.contactPayloadJSON       = nil

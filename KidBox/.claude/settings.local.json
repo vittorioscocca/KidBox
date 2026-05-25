@@ -36,7 +36,9 @@
       "Bash(grep -v \"^$\")",
       "Bash(firebase firestore:delete --recursive crash_reports --project kidbox-42cd7)",
       "Bash(firebase use *)",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(find /Users/vscocca/KidBoxAndroid -name \"*.kt\" 2>/dev/null | xargs grep -l -i \"notification\\\\|push\\\\|family\\\\|switch\" 2>/dev/null | head -20)",
+      "Bash(grep \"\\\\.swift$\")"
     ]
   }
 }

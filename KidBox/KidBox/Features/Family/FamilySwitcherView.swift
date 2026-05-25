@@ -14,6 +14,7 @@ struct FamilySwitcherView: View {
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
 
     @State private var showCreateSheet = false
+    @State private var showJoinSheet = false
     @State private var newFamilyName = ""
     @State private var isCreating = false
     @State private var errorMessage: String?
@@ -44,6 +45,17 @@ struct FamilySwitcherView: View {
                         Label("Crea nuova famiglia", systemImage: "plus")
                     }
                 }
+
+                Section {
+                    Button {
+                        showJoinSheet = true
+                    } label: {
+                        Label("Entra in una famiglia", systemImage: "qrcode.viewfinder")
+                    }
+                } footer: {
+                    Text("Scansiona il QR di chi vuole invitarti o inserisci il codice a 6 cifre.")
+                        .font(.caption)
+                }
             }
             .navigationTitle("Le tue famiglie")
             .navigationBarTitleDisplayMode(.inline)
@@ -54,6 +66,10 @@ struct FamilySwitcherView: View {
             }
             .sheet(isPresented: $showCreateSheet) {
                 createFamilySheet
+            }
+            .sheet(isPresented: $showJoinSheet) {
+                JoinFamilyView()
+                    .environmentObject(coordinator)
             }
             .alert(
                 "Errore",

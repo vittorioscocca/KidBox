@@ -40,6 +40,8 @@ struct RemoteChatMessageDTO {
     let mediaGroupURLsJSON: String?
     let mediaGroupTypesJSON: String?
     let contactPayloadJSON: String?
+    /// JSON array `[{"uid":"...","displayName":"..."}]` con i membri citati nel testo.
+    let mentionsJSON: String?
     
     /// Decodifica readByJSON → array di UID
     var readBy: [String] {
@@ -112,6 +114,20 @@ final class ChatRemoteStore {
         if let grpURLs  = dto.mediaGroupURLsJSON       { data["mediaGroupURLsJSON"]  = grpURLs }
         if let grpTypes = dto.mediaGroupTypesJSON      { data["mediaGroupTypesJSON"] = grpTypes }
         if let contactPayloadJSON = dto.contactPayloadJSON { data["contactPayloadJSON"] = contactPayloadJSON }
+
+        // Mentions: serializziamo come array di mappe `{uid, displayName}`
+        // così le Cloud Functions le possono leggere direttamente senza decodifica JSON.
+        // Includiamo anche `mentionedUids` come array piatto per indici/filtri lato server.
+        if let mentionsJSON = dto.mentionsJSON,
+           let mentionsData = mentionsJSON.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([ChatMention].self, from: mentionsData),
+           !decoded.isEmpty {
+            data["mentions"] = decoded.map { ["uid": $0.uid, "displayName": $0.displayName] }
+            data["mentionedUids"] = decoded.map { $0.uid }
+        } else {
+            data["mentions"] = FieldValue.delete()
+            data["mentionedUids"] = FieldValue.delete()
+        }
         
         // NOTA: readBy NON viene scritto qui — è gestito esclusivamente
         // da markAsRead() tramite FieldValue.arrayUnion, per evitare sovrascritture.
@@ -271,6 +287,7 @@ final class ChatRemoteStore {
             }()
             
             let deletedFor = data["deletedFor"] as? [String] ?? []
+            let mentionsJSON = decodeMentionsJSON(from: data)
             
             return RemoteChatMessageDTO(
                 id:                   doc.documentID,
@@ -297,7 +314,8 @@ final class ChatRemoteStore {
                 // NUOVO ↓
                 mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]   as? String,
                 mediaGroupTypesJSON:  data["mediaGroupTypesJSON"]  as? String,
-                contactPayloadJSON:   data["contactPayloadJSON"]   as? String
+                contactPayloadJSON:   data["contactPayloadJSON"]   as? String,
+                mentionsJSON:         mentionsJSON
             )
         }
         
@@ -357,6 +375,7 @@ final class ChatRemoteStore {
                         
                         // ✅ deletedFor: array di UID per cui il messaggio è nascosto
                         let deletedFor = data["deletedFor"] as? [String] ?? []
+                        let mentionsJSON = decodeMentionsJSON(from: data)
                         
                         let dto = RemoteChatMessageDTO(
                             id:                   doc.documentID,
@@ -383,7 +402,8 @@ final class ChatRemoteStore {
                             // NUOVO ↓
                             mediaGroupURLsJSON:   data["mediaGroupURLsJSON"]  as? String,
                             mediaGroupTypesJSON:  data["mediaGroupTypesJSON"] as? String,
-                            contactPayloadJSON:   data["contactPayloadJSON"]  as? String
+                            contactPayloadJSON:   data["contactPayloadJSON"]  as? String,
+                            mentionsJSON:         mentionsJSON
                         )
                         return .upsert(dto)
                     }
@@ -444,4 +464,21 @@ private extension Array {
             Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }
+}
+
+/// Converte il campo `mentions` di Firestore (array di mappe `{uid, displayName}`)
+/// nel JSON locale `[{"uid":"...","displayName":"..."}]`. Restituisce `nil` se
+/// non sono presenti menzioni decodificabili così da non scrivere un valore vuoto
+/// nel modello locale.
+private func decodeMentionsJSON(from data: [String: Any]) -> String? {
+    guard let raw = data["mentions"] as? [[String: Any]] else { return nil }
+    let items: [ChatMention] = raw.compactMap { dict in
+        guard let uid = dict["uid"] as? String, !uid.isEmpty else { return nil }
+        let display = dict["displayName"] as? String ?? ""
+        return ChatMention(uid: uid, displayName: display)
+    }
+    guard !items.isEmpty,
+          let encoded = try? JSONEncoder().encode(items),
+          let json = String(data: encoded, encoding: .utf8) else { return nil }
+    return json
 }

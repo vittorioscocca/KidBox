@@ -356,6 +356,7 @@ exports.notifyNewDocument = onDocumentCreated(
           notification: {title, body},
           data: {type: "new_document", familyId, docId},
           apns: {payload: {aps: {sound: "default", badge}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -510,6 +511,16 @@ exports.notifyNewChatMessage = onDocumentCreated(
         default: body = "Nuovo messaggio";
       }
 
+      // ── Menzioni ────────────────────────────────────────────────────────
+      // I client salvano `mentionedUids` come array piatto degli UID citati
+      // con `@` e `mentions` come array di mappe {uid, displayName}.
+      // I destinatari menzionati ricevono una push dedicata (type=chat_mention)
+      // con un titolo diverso; gli altri ricevono la push standard.
+      const mentionedUids = Array.isArray(msgData.mentionedUids) ?
+        msgData.mentionedUids.filter((u) => typeof u === "string" && u && u !== senderUid) :
+        [];
+      const mentionedSet = new Set(mentionedUids);
+
       const messagesToSend = [];
 
       for (const uid of memberUids) {
@@ -517,8 +528,11 @@ exports.notifyNewChatMessage = onDocumentCreated(
         if (tokens.length === 0) continue;
 
         const badge = await incrementCounterAndGetBadge({familyId, uid, field: "chat"});
+        const isMention = mentionedSet.has(uid);
+        const pushType = isMention ? "chat_mention" : "new_chat_message";
+        const title = isMention ? `${senderName} ti ha menzionato` : senderName;
         const data = {
-          type: "new_chat_message",
+          type: pushType,
           familyId,
           messageId,
           senderId: senderUid,
@@ -529,10 +543,11 @@ exports.notifyNewChatMessage = onDocumentCreated(
         if (typeof msgData.textEnc === "string" && msgData.textEnc.length > 0) {
           data.textEnc = msgData.textEnc;
         }
+        if (isMention) data.isMention = "1";
 
         messagesToSend.push({
           tokens,
-          notification: {title: senderName, body},
+          notification: {title, body},
           data,
           apns: {
             payload: {
@@ -540,14 +555,15 @@ exports.notifyNewChatMessage = onDocumentCreated(
                 // mutable-content tells iOS to invoke the Notification Service Extension
                 // so it can decrypt textEnc client-side before the notification is displayed.
                 "mutable-content": 1,
-                alert: {title: senderName, body},
+                alert: {title, body},
                 sound: "default",
                 badge,
               },
             },
           },
           android: {
-            notification: {sound: "default"},
+            priority: "high",
+            notification: {sound: "default", channelId: "family_updates"},
           },
         });
       }
@@ -824,6 +840,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
             expiresAt: expiresAt ? String(expiresAt.seconds || "") : "",
           },
           apns: {payload: {aps: {sound: "default", badge}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -1018,6 +1035,7 @@ exports.onGeofenceEvent = onDocumentCreated(
             geofenceEventId,
           },
           apns: {payload: {aps: {sound: "default", badge}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -1112,6 +1130,7 @@ exports.notifyTodoAssigned = onDocumentWritten(
         notification: {title: "Nuovo To-Do", body: after.title || "Hai un nuovo promemoria"},
         data: {type: notificationType, familyId, childId: after.childId || "", listId: after.listId || "", todoId},
         apns: {payload: {aps: {sound: "default", badge}}},
+        android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
       };
 
       const result = await admin.messaging().sendEachForMulticast(payload);
@@ -1214,6 +1233,7 @@ exports.notifyNewGroceryItem = onDocumentCreated(
           notification: {title, body},
           data: {type: "new_grocery_item", familyId, itemId},
           apns: {payload: {aps: {sound: "default", badge}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -1288,6 +1308,7 @@ exports.notifyNewNote = onDocumentCreated(
           notification: {title, body},
           data: {type: "new_note", familyId, noteId},
           apns: {payload: {aps: {sound: "default", badge}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -3266,6 +3287,7 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
           notification: {title, body},
           data: {type: "new_calendar_event", familyId, eventId},
           apns: {payload: {aps: {sound: "default", badge}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -3346,7 +3368,7 @@ exports.notifyNewExpense = onDocumentCreated(
           notification: {title, body},
           data: {type: "new_expense", familyId, expenseId},
           apns: {payload: {aps: {badge, sound: "default"}}},
-          android: {notification: {sound: "default"}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -4183,7 +4205,7 @@ exports.notifyNewWalletTicket = onDocumentCreated(
           notification: {title, body},
           data: {type: "new_wallet_ticket", familyId, ticketId},
           apns: {payload: {aps: {badge, sound: "default"}}},
-          android: {notification: {sound: "default"}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
         });
       }
 
@@ -4294,7 +4316,7 @@ exports.notifyUpcomingWalletTickets = onSchedule(
             notification: {title, body},
             data: {type: "wallet_ticket_reminder", familyId, ticketId, window: windowType},
             apns: {payload: {aps: {sound: "default"}}},
-            android: {notification: {sound: "default"}},
+            android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
           });
         }
 

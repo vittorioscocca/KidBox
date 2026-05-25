@@ -139,133 +139,146 @@ struct KidBoxApp: App {
                                 BadgeManager.shared.clearDocuments()
                                 await CountersService.shared.reset(familyId: familyId, field: .documents)
                             }
-                            coordinator.openDocumentFromPush(
-                                familyId: familyId,
-                                docId: docId,
-                                modelContext: modelContainer.mainContext
-                            )
-                            
-                        case .chat(let familyId):
-                            KBLog.navigation.kbInfo("Deep link -> open chat familyId=\(familyId)")
-                            coordinator.setActiveFamily(familyId)
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openDocumentFromPush(
+                                    familyId: familyId,
+                                    docId: docId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
+
+                        case .chat(let familyId, let messageId):
+                            KBLog.navigation.kbInfo("Deep link -> open chat familyId=\(familyId) messageId=\(messageId ?? "nil")")
                             Task { @MainActor in
                                 BadgeManager.shared.clearChat()
                                 await CountersService.shared.reset(familyId: familyId, field: .chat)
                             }
-                            coordinator.navigate(to: .chat)
-                            
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.pendingChatMentionMessageId = messageId
+                                coordinator.navigate(to: .chat)
+                            }
+
                         case .familyLocation(familyId: let familyId):
                             KBLog.navigation.kbInfo("Deep link -> open family location")
-                            coordinator.setActiveFamily(familyId)
                             // ✅ Reset badge location (se presente)
                             Task { @MainActor in
                                 BadgeManager.shared.clearLocation()
                                 await CountersService.shared.reset(familyId: familyId, field: .location)
                             }
-                            coordinator.navigate(to: .familyLocation(familyId: familyId))
-                            
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.navigate(to: .familyLocation(familyId: familyId))
+                            }
+
                         case .todo(familyId: let familyId, childId: let childId, listId: let listId, todoId: let todoId):
                             KBLog.navigation.kbInfo("[DeepLink] todo -> openTodoFromPush listId=\(listId) todoId=\(todoId)")
-                            coordinator.setActiveFamily(familyId)
                             // ✅ Reset badge todo
                             Task { @MainActor in
                                 BadgeManager.shared.clearTodos()
                                 await CountersService.shared.reset(familyId: familyId, field: .todos)
                             }
-                            coordinator.openTodoFromPush(
-                                familyId:    familyId,
-                                childId:     childId,
-                                listId:      listId,
-                                todoId:      todoId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openTodoFromPush(
+                                    familyId:    familyId,
+                                    childId:     childId,
+                                    listId:      listId,
+                                    todoId:      todoId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                         case .groceryItem(let familyId, _):
                             KBLog.navigation.kbInfo("Deep link -> open shopping list")
-                            coordinator.setActiveFamily(familyId)
                             // ✅ Reset badge spesa
                             Task { @MainActor in
                                 BadgeManager.shared.clearShopping()
                                 await CountersService.shared.reset(familyId: familyId, field: .shopping)
                             }
-                            coordinator.navigate(to: .shoppingList(familyId: familyId))
-                            
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.navigate(to: .shoppingList(familyId: familyId))
+                            }
+
                         case .note(let familyId, let noteId):
                             KBLog.navigation.kbInfo("Deep link -> open note noteId=\(noteId)")
-                            coordinator.setActiveFamily(familyId)
                             // ✅ Reset badge note
                             Task { @MainActor in
                                 BadgeManager.shared.clearNotes()
                                 await CountersService.shared.reset(familyId: familyId, field: .notes)
                             }
-                            coordinator.openNoteFromPush(
-                                familyId: familyId,
-                                noteId: noteId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openNoteFromPush(
+                                    familyId: familyId,
+                                    noteId: noteId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                         case .calendarEvent(let familyId, let eventId):
                             KBLog.navigation.kbInfo("Deep link -> open calendar eventId=\(eventId)")
-                            coordinator.setActiveFamily(familyId)
                             Task { @MainActor in
                                 BadgeManager.shared.clearCalendar()
                                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
                             }
-                            coordinator.openCalendarEventFromPush(
-                                familyId: familyId,
-                                eventId: eventId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openCalendarEventFromPush(
+                                    familyId: familyId,
+                                    eventId: eventId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                         case .pediatricVisit(let familyId, let childId, let visitId):
                             KBLog.navigation.kbInfo("Deep link -> open pediatric visit visitId=\(visitId)")
-                            coordinator.setActiveFamily(familyId)
-                            coordinator.openVisitFromPush(
-                                familyId: familyId,
-                                childId: childId,
-                                visitId: visitId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openVisitFromPush(
+                                    familyId: familyId,
+                                    childId: childId,
+                                    visitId: visitId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                             // ── promemoria cura ────────────────────────────
                         case .treatmentReminder(let familyId, let childId, let treatmentId):
                             KBLog.navigation.kbInfo("Deep link -> open treatment treatmentId=\(treatmentId)")
-                            coordinator.setActiveFamily(familyId)
-                            coordinator.openTreatmentFromPush(
-                                familyId: familyId,
-                                childId: childId,
-                                treatmentId: treatmentId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openTreatmentFromPush(
+                                    familyId: familyId,
+                                    childId: childId,
+                                    treatmentId: treatmentId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                             // ── promemoria esame ───────────────────────────
                         case .examReminder(let familyId, let childId, let examId):
                             KBLog.navigation.kbInfo("Deep link -> open exam examId=\(examId)")
-                            coordinator.setActiveFamily(familyId)
-                            coordinator.openExamFromPush(
-                                familyId: familyId,
-                                childId: childId,
-                                examId: examId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openExamFromPush(
+                                    familyId: familyId,
+                                    childId: childId,
+                                    examId: examId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                         case .expense(let familyId, let expenseId):
                             KBLog.navigation.kbInfo("Deep link -> open expense expenseId=\(expenseId)")
-                            coordinator.setActiveFamily(familyId)
                             // ✅ Reset badge spese
                             Task { @MainActor in
                                 BadgeManager.shared.clearExpenses()
                                 await CountersService.shared.reset(familyId: familyId, field: .expenses)
                             }
-                            coordinator.navigate(to: .expenseDetail(familyId: familyId, expenseId: expenseId))
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.navigate(to: .expenseDetail(familyId: familyId, expenseId: expenseId))
+                            }
                             NotificationManager.shared.consumeDeepLink()
-                            
+
                         case .askExpert:
                             KBLog.navigation.kbInfo("Deep link -> open planning AI chat (weekly summary)")
                             coordinator.navigate(to: .askExpert)
@@ -273,28 +286,31 @@ struct KidBoxApp: App {
 
                         case .walletTicket(let familyId, let ticketId):
                             KBLog.navigation.kbInfo("Deep link -> open wallet ticket ticketId=\(ticketId)")
-                            coordinator.setActiveFamily(familyId)
                             Task { @MainActor in
                                 BadgeManager.shared.clearWallet()
                                 await CountersService.shared.reset(familyId: familyId, field: .wallet)
                             }
-                            coordinator.openWalletTicketFromPush(
-                                familyId: familyId,
-                                ticketId: ticketId,
-                                modelContext: modelContainer.mainContext
-                            )
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openWalletTicketFromPush(
+                                    familyId: familyId,
+                                    ticketId: ticketId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
                             NotificationManager.shared.consumeDeepLink()
 
                         case .passwordExpiry(let familyId, let entryId):
                             KBLog.navigation.kbInfo("Deep link -> password detail entryId=\(entryId)")
-                            coordinator.setActiveFamily(familyId)
-                            coordinator.navigate(to: .passwordDetail(familyId: familyId, entryId: entryId))
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.navigate(to: .passwordDetail(familyId: familyId, entryId: entryId))
+                            }
                             NotificationManager.shared.consumeDeepLink()
 
                         case .passwordSecurity(let familyId):
                             KBLog.navigation.kbInfo("Deep link -> password security")
-                            coordinator.setActiveFamily(familyId)
-                            coordinator.navigate(to: .passwordsSecurity(familyId: familyId))
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.navigate(to: .passwordsSecurity(familyId: familyId))
+                            }
                             NotificationManager.shared.consumeDeepLink()
                         }
                         notifications.consumeDeepLink()

@@ -23,7 +23,15 @@ struct ChatInputBar: View {
     let onContactTap: () -> Void
     let onTextChange: () -> Void
     let onLocationTap: () -> Void
-    
+
+    /// Candidati selezionabili nel picker `@menzione`. Vuoto se la famiglia ha
+    /// al massimo due partecipanti (sender incluso) o se non sono disponibili
+    /// nomi visualizzati: in quel caso il picker viene nascosto.
+    var mentionCandidates: [ChatMentionCandidate] = []
+    /// Callback invocata quando l'utente tocca un candidato nel suggester. Riceve
+    /// il candidato selezionato (i.e. la coppia uid + displayName).
+    var onMentionPicked: ((ChatMentionCandidate) -> Void)? = nil
+
     @Environment(\.colorScheme) private var colorScheme
     
     @State private var dragOffset: CGSize = .zero
@@ -49,24 +57,126 @@ struct ChatInputBar: View {
     }
     
     var body: some View {
-        ZStack(alignment: .top) {
-            normalBar
-                .opacity(isRecording ? 0.05 : 1)
-            
-            if isRecordingLocked {
-                lockedRecordingBar
-                    .frame(maxWidth: .infinity)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            } else if isRecording {
-                recordingBar
-                    .frame(maxWidth: .infinity)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+        VStack(spacing: 0) {
+            if let suggestions = activeMentionSuggestions, !suggestions.isEmpty {
+                mentionSuggesterView(suggestions: suggestions)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            ZStack(alignment: .top) {
+                normalBar
+                    .opacity(isRecording ? 0.05 : 1)
+
+                if isRecordingLocked {
+                    lockedRecordingBar
+                        .frame(maxWidth: .infinity)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                } else if isRecording {
+                    recordingBar
+                        .frame(maxWidth: .infinity)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
         }
         .frame(maxWidth: .infinity)
         .background(backgroundColor)
         .animation(.easeInOut(duration: 0.2), value: isRecording)
         .animation(.easeInOut(duration: 0.2), value: isRecordingLocked)
+        .animation(.easeInOut(duration: 0.15), value: activeMentionSuggestions?.map { $0.uid })
+    }
+
+    // MARK: - Mention suggester
+
+    /// Estrae la query corrente per il picker delle menzioni.
+    /// Logica: se l'ultimo token che inizia con `@` (preceduto da inizio testo o spazio)
+    /// non contiene spazi, lo trattiamo come query attiva e mostriamo i candidati
+    /// filtrati. Se la query corrisponde esattamente a un candidato il picker si chiude.
+    private var activeMentionQuery: (range: Range<String.Index>, query: String)? {
+        guard !mentionCandidates.isEmpty, !isRecording, !isRecordingLocked else { return nil }
+        guard let atIndex = text.lastIndex(of: "@") else { return nil }
+        // Il `@` deve essere a inizio testo o preceduto da whitespace/newline.
+        if atIndex > text.startIndex {
+            let prev = text[text.index(before: atIndex)]
+            if !prev.isWhitespace && !prev.isNewline { return nil }
+        }
+        let queryStart = text.index(after: atIndex)
+        let query = String(text[queryStart..<text.endIndex])
+        // Spazi/newline chiudono la query.
+        if query.contains(where: { $0.isWhitespace || $0.isNewline }) { return nil }
+        return (atIndex..<text.endIndex, query)
+    }
+
+    private var activeMentionSuggestions: [ChatMentionCandidate]? {
+        guard let active = activeMentionQuery else { return nil }
+        let q = active.query.lowercased()
+        let filtered: [ChatMentionCandidate] = q.isEmpty
+            ? mentionCandidates
+            : mentionCandidates.filter { $0.displayName.lowercased().contains(q) }
+        // Se c'è un match esatto consideriamo la menzione completa e chiudiamo il picker.
+        if filtered.count == 1,
+           filtered[0].displayName.lowercased() == q { return nil }
+        return Array(filtered.prefix(6))
+    }
+
+    @ViewBuilder
+    private func mentionSuggesterView(suggestions: [ChatMentionCandidate]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(suggestions) { candidate in
+                Button {
+                    insertMention(candidate)
+                } label: {
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle()
+                                .fill(tint.opacity(0.18))
+                                .frame(width: 28, height: 28)
+                            Text(initials(for: candidate.displayName))
+                                .font(.caption.bold())
+                                .foregroundStyle(tint)
+                        }
+                        Text(candidate.displayName)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: 0)
+                        Image(systemName: "at")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                if candidate.id != suggestions.last?.id {
+                    Divider().padding(.leading, 52)
+                }
+            }
+        }
+        .background(fieldBackground)
+        .overlay(
+            Rectangle()
+                .frame(height: 0.5)
+                .foregroundStyle(Color.primary.opacity(0.08)),
+            alignment: .top
+        )
+    }
+
+    private func insertMention(_ candidate: ChatMentionCandidate) {
+        guard let active = activeMentionQuery else { return }
+        // Sostituisce `@partial` con `@DisplayName ` (con spazio finale per
+        // permettere di continuare a digitare e separare la menzione dal testo).
+        var replaced = text
+        replaced.replaceSubrange(active.range, with: "@\(candidate.displayName) ")
+        text = replaced
+        onMentionPicked?(candidate)
+        onTextChange()
+    }
+
+    private func initials(for name: String) -> String {
+        let parts = name
+            .split(whereSeparator: { $0.isWhitespace })
+            .prefix(2)
+            .compactMap { $0.first.map(String.init) }
+        return parts.joined().uppercased()
     }
 }
 

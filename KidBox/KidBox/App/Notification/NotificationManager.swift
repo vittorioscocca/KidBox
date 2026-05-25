@@ -70,7 +70,7 @@ final class NotificationManager: NSObject, ObservableObject {
     /// Supported deep links triggered from push notifications.
     enum DeepLink: Equatable {
         case document(familyId: String, docId: String)
-        case chat(familyId: String)
+        case chat(familyId: String, messageId: String?)
         case familyLocation(familyId: String)
         case todo(familyId: String, childId: String, listId: String, todoId: String)
         case groceryItem(familyId: String, itemId: String)
@@ -159,9 +159,10 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .document(familyId: familyId, docId: docId)
             KBLog.auth.kbInfo("DeepLink set for document")
             
-        } else if type == "new_chat_message" {
+        } else if type == "new_chat_message" || type == "chat_mention" {
             guard let familyId = userInfo["familyId"] as? String else { return }
-            pendingDeepLink = .chat(familyId: familyId)
+            let messageId = userInfo["messageId"] as? String
+            pendingDeepLink = .chat(familyId: familyId, messageId: messageId)
             
         } else if type == "location_sharing_started" || type == "location_sharing_stopped" {
             guard let familyId = userInfo["familyId"] as? String else {
