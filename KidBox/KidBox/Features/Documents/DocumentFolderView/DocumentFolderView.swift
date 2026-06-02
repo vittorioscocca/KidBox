@@ -69,6 +69,7 @@ struct DocumentFolderView: View {
     @State private var showDeleteSelectedConfirm = false
     @State private var showStorageUpgrade = false
     @State private var showMergePDFSheet = false
+    @State private var showUnlockPDFSheet = false
     @State private var shareURLsPayload: ShareURLsPayload?
     @State private var isSendingToChat = false
     
@@ -200,6 +201,7 @@ struct DocumentFolderView: View {
         .background(backgroundColor)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isSelecting)
         .animation(.easeInOut(duration: 0.15), value: viewModel.canMergeSelectedAsPDF)
+        .animation(.easeInOut(duration: 0.15), value: viewModel.canUnlockSelectedAsPDF)
     }
     
     // MARK: - Header
@@ -893,6 +895,20 @@ private extension DocumentFolderView {
                         Divider().frame(height: 40)
                     }
                     
+                    // ── Sblocca PDF (solo se 1 PDF selezionato) ───────────
+                    if viewModel.canUnlockSelectedAsPDF {
+                        Button { showUnlockPDFSheet = true } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "lock.open.fill").font(.title3)
+                                Text("Sblocca").font(.caption2)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        }
+                        .foregroundStyle(.orange).buttonStyle(.plain)
+                        
+                        Divider().frame(height: 40)
+                    }
+                    
                     // ── Condividi ────────────────────────────────────────
                     Button {
                         Task {
@@ -1132,8 +1148,14 @@ private extension DocumentFolderView {
                     }
                 }
             // Preview
-                .sheet(item: previewItemBinding) { item in
-                    QuickLookPreview(urls: [item.url], initialIndex: 0)
+                .fullScreenCover(item: previewItemBinding) { item in
+                    QuickLookPreview(
+                        urls: [item.url],
+                        initialIndex: 0,
+                        onFinished: { previewItemBinding.wrappedValue = nil }
+                    )
+                    .ignoresSafeArea()
+                    .allowsAllOrientationsWhileVisible()
                 }
             // Camera
                 .sheet(isPresented: view.$showCamera) { view.cameraSheet }
@@ -1155,6 +1177,19 @@ private extension DocumentFolderView {
                 .sheet(isPresented: view.$showMergePDFSheet) {
                     MergePDFSheet(docs: view.viewModel.selectedPDFDocs) { orderedDocs, title in
                         await view.viewModel.mergePDFs(orderedDocs: orderedDocs, title: title, modelContext: view.modelContext)
+                    }
+                }
+            // Sblocca PDF ── singolo PDF selezionato
+                .sheet(isPresented: view.$showUnlockPDFSheet) {
+                    if let doc = view.viewModel.singleSelectedPDFDoc {
+                        UnlockPDFSheet(doc: doc) { sourceDoc, password, title in
+                            await view.viewModel.unlockPDF(
+                                doc: sourceDoc,
+                                password: password,
+                                title: title,
+                                modelContext: view.modelContext
+                            )
+                        }
                     }
                 }
             // Condividi documenti verso l'esterno

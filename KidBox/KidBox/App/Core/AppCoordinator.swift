@@ -411,6 +411,7 @@ final class AppCoordinator: ObservableObject {
 
                     KBLog.auth.kbInfo("Auth state changed: logged out")
                     FamilyMemoryService.shared.clearFirestoreLoadCache()
+                    FamilyKeychainStore.clearKeyCache()
                     self.setActiveFamily(nil)
                     self.resetToRoot()
                 }
@@ -1193,6 +1194,7 @@ final class AppCoordinator: ObservableObject {
             try Auth.auth().signOut()
             KBLog.auth.kbInfo("Firebase sign-out OK")
             KBSubscriptionManager.shared.resetOnSignOut()
+            FamilyKeychainStore.clearKeyCache()
             setActiveFamily(nil)
             resetToRoot()
         } catch {

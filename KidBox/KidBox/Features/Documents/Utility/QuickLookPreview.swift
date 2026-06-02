@@ -20,7 +20,11 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     // MARK: - Input
     let urls: [URL]
     let initialIndex: Int
-    
+    /// Chiamato quando l'utente tocca "Fine" in QuickLook. Necessario quando il preview è
+    /// presentato in `fullScreenCover` per riportare a `nil` il binding di presentazione
+    /// (altrimenti la cover si chiude ma lo stato resta "presentato").
+    var onFinished: (() -> Void)? = nil
+
     // MARK: - UIViewControllerRepresentable
     
     func makeUIViewController(context: Context) -> UINavigationController {
@@ -67,7 +71,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(urls: urls)
+        Coordinator(urls: urls, onFinished: onFinished)
     }
     
     // MARK: - Helpers
@@ -81,9 +85,11 @@ struct QuickLookPreview: UIViewControllerRepresentable {
     
     final class Coordinator: NSObject, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
         var urls: [URL]
-        
-        init(urls: [URL]) {
+        let onFinished: (() -> Void)?
+
+        init(urls: [URL], onFinished: (() -> Void)? = nil) {
             self.urls = urls
+            self.onFinished = onFinished
             super.init()
             KBLog.ui.kbDebug("QuickLookPreview.Coordinator init urls=\(urls.count)")
         }
@@ -107,6 +113,7 @@ struct QuickLookPreview: UIViewControllerRepresentable {
         
         func previewControllerDidDismiss(_ controller: QLPreviewController) {
             KBLog.ui.kbDebug("QuickLookPreview didDismiss")
+            onFinished?()
         }
     }
 }

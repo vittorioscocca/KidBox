@@ -279,9 +279,17 @@ struct KidBoxApp: App {
                             }
                             NotificationManager.shared.consumeDeepLink()
 
-                        case .askExpert:
-                            KBLog.navigation.kbInfo("Deep link -> open planning AI chat (weekly summary)")
-                            coordinator.navigate(to: .askExpert)
+                        case .askExpert(let familyId):
+                            KBLog.navigation.kbInfo("Deep link -> open planning AI chat (AI summary) familyId=\(familyId ?? "nil")")
+                            // La chat AI usa la famiglia attiva: se il contenuto è di un'altra
+                            // famiglia, switcha PRIMA di navigare (mirror degli altri deep link).
+                            if let familyId, !familyId.isEmpty {
+                                coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                    coordinator.navigate(to: .askExpert)
+                                }
+                            } else {
+                                coordinator.navigate(to: .askExpert)
+                            }
                             NotificationManager.shared.consumeDeepLink()
 
                         case .walletTicket(let familyId, let ticketId):

@@ -81,8 +81,10 @@ final class NotificationManager: NSObject, ObservableObject {
         case examReminder(familyId: String, childId: String, examId: String)
         case expense(familyId: String, expenseId: String)
         case walletTicket(familyId: String, ticketId: String)
-        /// Apre PlanningAIChatView — usato dalla sintesi settimanale AI
-        case askExpert
+        /// Apre PlanningAIChatView — usato da sintesi settimanale / briefing / health pattern AI.
+        /// `familyId` è la famiglia per cui il contenuto è stato generato: serve a switchare
+        /// alla famiglia giusta prima di aprire la chat (la chat usa la famiglia attiva).
+        case askExpert(familyId: String?)
         /// Notifica locale promemoria scadenza password (T-30 / T-7 / T-1).
         case passwordExpiry(familyId: String, entryId: String)
         /// Notifica locale aggregata dopo scan sicurezza password.
@@ -268,20 +270,20 @@ final class NotificationManager: NSObject, ObservableObject {
         } else if type == "weekly_summary" {
             pendingPlanningInitialMessage = (userInfo["fullText"] as? String)
                 ?? WeeklySummaryService.shared.lastSummaryText
-            pendingDeepLink = .askExpert
-            KBLog.auth.kbInfo("DeepLink set for weeklySummary → askExpert")
+            pendingDeepLink = .askExpert(familyId: userInfo["familyId"] as? String)
+            KBLog.auth.kbInfo("DeepLink set for weeklySummary → askExpert familyId=\(userInfo["familyId"] as? String ?? "nil")")
 
         } else if type == "daily_briefing" {
             pendingPlanningInitialMessage = (userInfo["fullText"] as? String)
                 ?? DailyBriefingService.shared.lastBriefingText
-            pendingDeepLink = .askExpert
-            KBLog.auth.kbInfo("DeepLink set for dailyBriefing → askExpert")
+            pendingDeepLink = .askExpert(familyId: userInfo["familyId"] as? String)
+            KBLog.auth.kbInfo("DeepLink set for dailyBriefing → askExpert familyId=\(userInfo["familyId"] as? String ?? "nil")")
 
         } else if type == "health_pattern" {
             pendingPlanningInitialMessage = (userInfo["fullText"] as? String)
                 ?? HealthPatternAnalyzerService.shared.lastInsightText
-            pendingDeepLink = .askExpert
-            KBLog.auth.kbInfo("DeepLink set for healthPattern → askExpert")
+            pendingDeepLink = .askExpert(familyId: userInfo["familyId"] as? String)
+            KBLog.auth.kbInfo("DeepLink set for healthPattern → askExpert familyId=\(userInfo["familyId"] as? String ?? "nil")")
 
         } else if type == "new_wallet_ticket" || type == "wallet_ticket_reminder" {
             guard

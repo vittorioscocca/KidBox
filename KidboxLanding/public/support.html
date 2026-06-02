@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eliminazione Dati · KidBox</title>
+  <title>Supporto · KidBox</title>
   <link rel="icon" type="image/png" href="icon.png">
   <!-- Meta Pixel -->
   <script>
@@ -27,7 +27,7 @@
       --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
       --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
       --c-accent-l: #fdf0e4; --c-green: #2e9e6b; --c-green-l: #edfaf4;
-      --c-red: #d63b3b; --c-red-l: #fff0f0;
+      --c-blue: #2b7cb8; --c-blue-l: rgba(43,124,184,0.08);
       --shadow: 0 2px 20px rgba(180,100,30,0.08); --shadow-lg: 0 8px 48px rgba(180,100,30,0.14);
       --radius-lg: 24px; --radius-md: 16px; --c-nav-bg: rgba(253,247,240,0.92);
     }
@@ -37,7 +37,7 @@
         --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
         --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
         --c-accent-l: rgba(240,144,80,0.12); --c-green: #3bbf80; --c-green-l: rgba(59,191,128,0.1);
-        --c-red: #f06060; --c-red-l: rgba(240,96,96,0.1);
+        --c-blue: #5ba3d9; --c-blue-l: rgba(91,163,217,0.1);
         --shadow: 0 2px 20px rgba(0,0,0,0.3); --shadow-lg: 0 8px 48px rgba(0,0,0,0.4);
         --c-nav-bg: rgba(24,17,10,0.92);
       }
@@ -51,7 +51,11 @@
       background: var(--c-nav-bg); backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--c-border);
     }
-    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: var(--c-text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em;
+      color: var(--c-text); text-decoration: none;
+    }
     .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
     .nav-logo-name { display: inline; font-size: 0; }
     .nav-logo-name span { font-size: 1.2rem; }
@@ -89,6 +93,44 @@
     }
     p { color: var(--c-muted); font-weight: 300; margin-bottom: 14px; line-height: 1.75; }
 
+    /* Hero card */
+    .hero-card {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg); padding: 36px;
+      box-shadow: var(--shadow-lg); margin-bottom: 32px;
+      position: relative; overflow: hidden;
+    }
+    .hero-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--c-accent), var(--c-accent2));
+    }
+    .hero-card-icon {
+      font-size: 2.8rem; margin-bottom: 16px; display: block;
+    }
+    .hero-card h2 {
+      font-size: 1.4rem; margin: 0 0 10px;
+    }
+    .hero-card h2::before { display: none; }
+    .hero-card p { font-size: 1rem; margin-bottom: 0; }
+
+    /* Feature list */
+    .feature-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .feature-item {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 20px 22px;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow);
+      transition: border-color .2s;
+    }
+    .feature-item:hover { border-color: rgba(232,131,58,0.25); }
+    .feature-icon {
+      font-size: 1.4rem; flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--c-accent-l); display: flex; align-items: center; justify-content: center;
+    }
+    .feature-text strong { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; color: var(--c-text); }
+    .feature-text span { font-size: 0.88rem; color: var(--c-muted); font-weight: 300; line-height: 1.6; }
+
     /* Steps */
     .steps { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
     .step {
@@ -103,61 +145,31 @@
       width: 30px; height: 30px; border-radius: 50%;
       background: var(--c-accent); color: #fff;
       font-size: 0.8rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
     }
     .step-text strong { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
     .step-text span { font-size: 0.85rem; color: var(--c-muted); font-weight: 300; }
 
-    /* Warning */
-    .warning-box {
-      background: var(--c-red-l); border: 1px solid rgba(214,59,59,0.2);
-      border-left: 3px solid var(--c-red);
+    /* Info box */
+    .info-box {
+      background: var(--c-blue-l); border: 1px solid rgba(43,124,184,0.18);
+      border-left: 3px solid var(--c-blue);
       border-radius: var(--radius-md); padding: 16px 20px; margin: 20px 0;
       display: flex; align-items: flex-start; gap: 12px;
     }
-    .warning-box p { color: var(--c-red); margin: 0; font-size: 0.9rem; font-weight: 400; }
+    .info-box p { color: var(--c-blue); margin: 0; font-size: 0.9rem; font-weight: 400; }
+    @media (prefers-color-scheme: dark) {
+      .info-box p { color: var(--c-blue); }
+    }
 
-    /* Email box */
-    .email-box {
-      background: var(--c-surface); border: 1px solid var(--c-border);
-      border-radius: var(--radius-md); padding: 28px 28px;
-      box-shadow: var(--shadow); margin: 16px 0;
+    /* Green box */
+    .green-box {
+      background: var(--c-green-l); border: 1px solid rgba(46,158,107,0.18);
+      border-left: 3px solid var(--c-green);
+      border-radius: var(--radius-md); padding: 16px 20px; margin: 20px 0;
+      display: flex; align-items: flex-start; gap: 12px;
     }
-    .email-box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
-    .email-box p { font-size: 0.9rem; margin-bottom: 16px; }
-    .email-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 11px 24px; background: var(--c-accent); color: #fff;
-      border-radius: 50px; font-weight: 600; font-size: 0.9rem;
-      text-decoration: none; transition: background .2s, transform .2s;
-      box-shadow: 0 4px 14px rgba(232,131,58,0.3);
-    }
-    .email-btn:hover { background: var(--c-accent2); transform: translateY(-1px); }
-
-    /* Deleted list */
-    .deleted-list { list-style: none; padding: 0; margin: 16px 0; }
-    .deleted-list li {
-      display: flex; align-items: center; gap: 12px;
-      padding: 11px 16px;
-      background: var(--c-surface); border: 1px solid var(--c-border);
-      border-radius: var(--radius-md); margin-bottom: 8px;
-      font-size: 0.92rem; color: var(--c-muted); font-weight: 300;
-      box-shadow: var(--shadow);
-    }
-    .deleted-list li .x { color: var(--c-red); font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
-
-    /* Support grid */
-    .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
-    .support-card {
-      background: var(--c-surface); border: 1px solid var(--c-border);
-      border-radius: var(--radius-md); padding: 24px;
-      box-shadow: var(--shadow); transition: border-color .2s;
-    }
-    .support-card:hover { border-color: rgba(232,131,58,0.25); }
-    .support-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
-    .support-card p { font-size: 0.85rem; margin-bottom: 12px; }
-    .support-card a { color: var(--c-accent); text-decoration: none; font-weight: 500; font-size: 0.88rem; }
-    .support-card a:hover { color: var(--c-accent2); }
+    .green-box p { color: var(--c-green); margin: 0; font-size: 0.9rem; font-weight: 400; }
 
     footer {
       border-top: 1px solid var(--c-border);
@@ -173,7 +185,6 @@
     @media (max-width: 768px) {
       nav { padding: 14px 20px; }
       main { padding: 100px 20px 60px; }
-      .support-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -191,13 +202,55 @@
 
   <main>
     <div class="page-hero">
-      <span class="section-label">Account</span>
-      <h1>Eliminazione Dati</h1>
-      <p class="intro">Hai il pieno controllo sui tuoi dati. Puoi eliminare il tuo account e tutti i contenuti associati in qualsiasi momento — direttamente dall'app o contattando il supporto.</p>
+      <span class="section-label">Aiuto</span>
+      <h1>Supporto</h1>
+      <p class="intro">Hai un problema, una domanda o un suggerimento? Il supporto di KidBox è integrato direttamente nell'app — niente email, niente form esterni.</p>
     </div>
 
-    <h2>Elimina dall'app</h2>
-    <p>Il modo più rapido, disponibile direttamente sul tuo dispositivo:</p>
+    <div class="hero-card">
+      <span class="hero-card-icon">💬</span>
+      <h2>Chat di supporto con AI</h2>
+      <p>Apri una chat diretta con l'assistente AI di KidBox direttamente dalle <strong>Impostazioni</strong>. Descrivi il problema a parole tue, allega fino a 5 screenshot per mostrare cosa non va, e l'assistente capisce di cosa hai bisogno.</p>
+    </div>
+
+    <h2>Come funziona</h2>
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">✍️</div>
+        <div class="feature-text">
+          <strong>Descrivi a parole tue</strong>
+          <span>Nessun form da compilare. Scrivi semplicemente cosa sta succedendo — l'AI capisce il contesto e sa già come aiutarti.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🖼️</div>
+        <div class="feature-text">
+          <strong>Allega fino a 5 screenshot</strong>
+          <span>Mostra esattamente cosa non va. Gli screenshot aiutano l'assistente a identificare il problema senza bisogno di lunghe spiegazioni.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-text">
+          <strong>Rilevamento automatico dei bug</strong>
+          <span>Se l'assistente rileva un bug, ti chiede il consenso per allegare automaticamente i log di sistema — così il team ha già tutto il necessario per investigare.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📨</div>
+        <div class="feature-text">
+          <strong>Invia come ticket con un tap</strong>
+          <span>Alla fine della chat puoi inviare la conversazione come ticket di supporto. Arriva direttamente al team senza passaggi intermedi.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="green-box">
+      <span>✅</span>
+      <p>I log di sistema vengono allegati <strong>solo con il tuo consenso esplicito</strong> e non contengono mai dati personali o contenuti della tua famiglia.</p>
+    </div>
+
+    <h2>Come aprire la chat di supporto</h2>
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
@@ -205,53 +258,21 @@
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <div class="step-text"><strong>Vai su Profilo</strong><span>Tocca l'icona in basso a destra</span></div>
+        <div class="step-text"><strong>Vai su Impostazioni</strong><span>Tocca l'icona ⚙️ in basso a destra</span></div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <div class="step-text"><strong>Scorri in fondo</strong><span>Tocca "Elimina account"</span></div>
+        <div class="step-text"><strong>Tocca "Supporto"</strong><span>Si apre la chat con l'assistente AI</span></div>
       </div>
       <div class="step">
         <div class="step-num">4</div>
-        <div class="step-text"><strong>Conferma l'eliminazione</strong><span>Il processo è immediato e irreversibile</span></div>
+        <div class="step-text"><strong>Descrivi il problema e invia</strong><span>Il team riceve il ticket e ti risponde il prima possibile</span></div>
       </div>
     </div>
 
-    <div class="warning-box">
-      <span>⚠️</span>
-      <p>L'eliminazione dell'account è <strong>permanente e irreversibile</strong>. Tutti i dati verranno rimossi immediatamente.</p>
-    </div>
-
-    <h2>Richiedi via email</h2>
-    <p>Se non riesci ad accedere all'app, inviaci una richiesta. Elaboriamo le richieste entro 30 giorni.</p>
-    <div class="email-box">
-      <h3>Scrivi al supporto</h3>
-      <p>Includi l'indirizzo email associato al tuo account KidBox.</p>
-      <a class="email-btn" href="mailto:support@kidbox.app?subject=Richiesta eliminazione account KidBox">
-        ✉️ &nbsp;Scrivi a support@kidbox.app
-      </a>
-    </div>
-
-    <h2>Cosa viene eliminato</h2>
-    <ul class="deleted-list">
-      <li><span class="x">✕</span> Dati account (email, nome, foto, credenziali)</li>
-      <li><span class="x">✕</span> Contenuti familiari (chat, note, documenti, foto, calendario, to-do, spese)</li>
-      <li><span class="x">✕</span> Dati sanitari (visite, farmaci, vaccini, esami, profili pediatrici)</li>
-      <li><span class="x">✕</span> Preferenze, impostazioni e memoria AI</li>
-    </ul>
-    <p style="font-size:0.85rem">⚠️ I contenuti condivisi con altri membri della famiglia restano visibili agli altri fino a quando non li eliminano.</p>
-
-    <h2>Abbonamenti attivi</h2>
-    <p>L'eliminazione dell'account <strong>non cancella automaticamente</strong> gli abbonamenti attivi. Prima di procedere, annulla l'abbonamento da <strong>Impostazioni iPhone → Il tuo nome → Abbonamenti → KidBox</strong>.</p>
-
-    <h2>Hai bisogno di aiuto?</h2>
-    <p>Per qualsiasi domanda sull'eliminazione dei dati o sulla tua privacy, contattaci via email o usa la <a href="support.html" style="color:var(--c-accent);font-weight:500;text-decoration:none">chat di supporto integrata nell'app</a>.</p>
-    <div class="email-box">
-      <h3>Privacy & Legale</h3>
-      <p>Questioni relative ai dati personali, GDPR e diritti degli utenti.</p>
-      <a class="email-btn" href="mailto:ing.vittorioscocca@gmail.com">
-        ✉️ &nbsp;Scrivi a ing.vittorioscocca@gmail.com
-      </a>
+    <div class="info-box">
+      <span>ℹ️</span>
+      <p>La chat di supporto è disponibile per tutti gli utenti KidBox, inclusi gli utenti con piano gratuito.</p>
     </div>
   </main>
 

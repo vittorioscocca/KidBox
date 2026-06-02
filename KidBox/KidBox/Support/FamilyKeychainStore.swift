@@ -27,9 +27,36 @@ import OSLog
 ///   - Nessun `print`
 ///   - Log solo in caso di errore o condizioni anomale
 enum FamilyKeychainStore {
-    
+
     private static let service = "KidBox"
-    
+
+    // MARK: - In-memory cache
+    //
+    // La master key è stabile per (userId, familyId). Senza cache, ogni `decrypt`
+    // (titolo/username/password di ogni voce, a ogni render della lista) eseguiva una
+    // query Keychain sincrona `SecItemCopyMatching` con `kSecAttrSynchronizableAny`
+    // (iCloud) sul main thread → centinaia di letture per refresh → UI bloccata.
+    // Caching in memoria: la chiave non cambia durante la sessione; viene aggiornata
+    // su `saveFamilyKey` e azzerata su logout via `clearKeyCache()`.
+    private static let cacheLock = NSLock()
+    private static var keyCache: [String: SymmetricKey] = [:]
+
+    private static func cachedKey(for account: String) -> SymmetricKey? {
+        cacheLock.lock(); defer { cacheLock.unlock() }
+        return keyCache[account]
+    }
+
+    private static func storeInCache(_ key: SymmetricKey, for account: String) {
+        cacheLock.lock(); defer { cacheLock.unlock() }
+        keyCache[account] = key
+    }
+
+    /// Svuota la cache in memoria delle master key. Chiamare al logout / cambio account.
+    static func clearKeyCache() {
+        cacheLock.lock(); defer { cacheLock.unlock() }
+        keyCache.removeAll()
+    }
+
     /// Costruisce la chiave Keychain univoca per un utente + famiglia
     ///
     /// - Parameters:
@@ -51,7 +78,10 @@ enum FamilyKeychainStore {
     /// - Note: Ricerca automaticamente tra i dispositivi sincronizzati via iCloud Keychain.
     static func loadFamilyKey(familyId: String, userId: String) -> SymmetricKey? {
         let account = keychainKey(for: familyId, userId: userId)
-        
+
+        // Cache hit: evita la query Keychain sincrona (causa del freeze nella lista Password).
+        if let cached = cachedKey(for: account) { return cached }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -82,8 +112,10 @@ enum FamilyKeychainStore {
             )
             return nil
         }
-        
-        return SymmetricKey(data: data)
+
+        let symmetricKey = SymmetricKey(data: data)
+        storeInCache(symmetricKey, for: account)
+        return symmetricKey
     }
     
     /// Salva (o sovrascrive) la master key per una famiglia + utente corrente con sincronizzazione iCloud.
@@ -137,6 +169,8 @@ enum FamilyKeychainStore {
             )
         }
         
+        storeInCache(key, for: account)
+
         KBLog.security.kbInfo(
             "Master key saved and synced to iCloud Keychain for familyId=\(familyId) userId=\(userId)"
         )

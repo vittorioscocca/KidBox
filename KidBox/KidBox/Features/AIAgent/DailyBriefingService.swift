@@ -37,8 +37,8 @@ final class DailyBriefingService {
         modelContext: ModelContext,
         forcedFamilyId: String? = nil
     ) async {
-        _ = forcedFamilyId
         _ = modelContext
+        let familyId = forcedFamilyId ?? ""
 
         guard isEnabled else {
             KBLog.ai.kbDebug("DailyBriefingService: disabled by user preference")
@@ -55,13 +55,13 @@ final class DailyBriefingService {
         guard today != lastDay else {
             KBLog.ai.kbDebug("DailyBriefingService: briefing already generated for \(today)")
             if let text = UserDefaults.standard.string(forKey: Keys.lastText) {
-                await scheduleLocalNotification(briefingText: text, familyName: familyName)
+                await scheduleLocalNotification(briefingText: text, familyName: familyName, familyId: familyId)
             }
             return
         }
 
         KBLog.ai.kbInfo("DailyBriefingService: generating briefing for \(today)")
-        await generateAndSchedule(input: input, familyName: familyName, dateKey: today)
+        await generateAndSchedule(input: input, familyName: familyName, dateKey: today, familyId: familyId)
     }
 
     var lastBriefingText: String? {
@@ -78,7 +78,8 @@ final class DailyBriefingService {
     private func generateAndSchedule(
         input: PlanningContextInput,
         familyName: String,
-        dateKey: String
+        dateKey: String,
+        familyId: String
     ) async {
         let systemPrompt = buildDailyBriefingPrompt(familyName: familyName)
         let userMessage = buildDailyDataMessage(input: input)
@@ -97,7 +98,7 @@ final class DailyBriefingService {
             UserDefaults.standard.set(dateKey, forKey: Keys.lastISODate)
             UserDefaults.standard.set(text, forKey: Keys.lastText)
 
-            await scheduleLocalNotification(briefingText: text, familyName: familyName)
+            await scheduleLocalNotification(briefingText: text, familyName: familyName, familyId: familyId)
         } catch {
             KBLog.ai.kbError("DailyBriefingService: generation failed \(error.localizedDescription)")
         }
@@ -220,7 +221,8 @@ final class DailyBriefingService {
 
     private func scheduleLocalNotification(
         briefingText: String,
-        familyName: String
+        familyName: String,
+        familyId: String
     ) async {
         let center = UNUserNotificationCenter.current()
 
@@ -248,10 +250,12 @@ final class DailyBriefingService {
             ?? "Il tuo briefing del giorno è pronto."
         content.body = firstLine
         content.sound = .default
-        content.userInfo = [
+        var info: [String: Any] = [
             "type": "daily_briefing",
             "fullText": String(briefingText.prefix(500))
         ]
+        if !familyId.isEmpty { info["familyId"] = familyId }
+        content.userInfo = info
 
         var dc = DateComponents()
         dc.hour = 8

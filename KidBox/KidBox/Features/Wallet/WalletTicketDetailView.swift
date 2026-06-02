@@ -78,13 +78,25 @@ struct WalletTicketDetailView: View {
         }
         .navigationTitle("Dettaglio biglietto")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showPDF) {
-            if let pdfData {
-                WalletPDFViewer(pdfData: pdfData)
-            } else {
-                Text("Nessun PDF disponibile")
-                    .padding()
+        .fullScreenCover(isPresented: $showPDF) {
+            NavigationStack {
+                Group {
+                    if let pdfData {
+                        WalletPDFViewer(pdfData: pdfData)
+                    } else {
+                        Text("Nessun PDF disponibile")
+                            .padding()
+                    }
+                }
+                .navigationTitle("Biglietto")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Chiudi") { showPDF = false }
+                    }
+                }
             }
+            .allowsAllOrientationsWhileVisible()
         }
         .overlay {
             if isLoadingPDF {

@@ -11,8 +11,17 @@ import Combine
 
 /// Monitora ingressi/uscite dalle zone di arrivo e scrive eventi su Firestore.
 /// Le notifiche push ai membri sono gestite dalla Cloud Function `onGeofenceEvent`.
+///
+/// È un **singleton a vita-app**: un solo `CLLocationManager` il cui delegate resta vivo
+/// anche dopo che iOS rilancia l'app in background per un attraversamento di zona. Le
+/// regioni `CLCircularRegion` persistono a livello OS tra i lanci, quindi questa istanza
+/// (ricreata all'avvio) riceve comunque gli eventi `didEnter/ExitRegion`.
+/// Il contesto (familyId/uid/displayName) viene persistito su `UserDefaults` così l'evento
+/// è attribuibile anche se la schermata Posizione non è mai stata aperta in questa sessione.
 @MainActor
 final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManagerDelegate {
+
+    static let shared = GeofenceMonitorService()
 
     // MARK: - Published
 
@@ -23,24 +32,47 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
     private let remoteEvent = GeofenceRemoteEvent()
     private let locationManager = CLLocationManager()
 
-    private let familyId: String
-    private let uid: String
-    private let displayName: String
+    /// Contesto di attribuzione, mutabile e persistito (vedi [configure] / [restoreFromDefaults]).
+    private var familyId: String = ""
+    private var uid: String = ""
+    private var displayName: String = "Utente"
 
     /// Metadati locale per regioni attive (identifier = geofence.id).
     private var monitoredGeofences: [String: MonitoredGeofenceState] = [:]
 
     // MARK: - Init
 
-    init(familyId: String, uid: String, displayName: String) {
-        self.familyId = familyId
-        self.uid = uid
-        self.displayName = displayName
+    private override init() {
         super.init()
 
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         locationManager.pausesLocationUpdatesAutomatically = false
+
+        restoreFromDefaults()
+    }
+
+    // MARK: - Context
+
+    /// Imposta il contesto corrente e lo persiste, così l'AppDelegate (al relaunch) può
+    /// attribuire gli eventi region anche con condivisione live spenta.
+    func configure(familyId: String, uid: String, displayName: String) {
+        self.familyId = familyId
+        self.uid = uid
+        self.displayName = displayName.isEmpty ? "Utente" : displayName
+
+        let defaults = UserDefaults.standard
+        defaults.set(familyId, forKey: KBLocationDefaults.geofenceFamilyId)
+        defaults.set(uid, forKey: KBLocationDefaults.geofenceUid)
+        defaults.set(self.displayName, forKey: KBLocationDefaults.geofenceDisplayName)
+    }
+
+    /// Carica il contesto da `UserDefaults` (chiamato all'init/avvio app).
+    func restoreFromDefaults() {
+        let defaults = UserDefaults.standard
+        if let fid = defaults.string(forKey: KBLocationDefaults.geofenceFamilyId) { familyId = fid }
+        if let u = defaults.string(forKey: KBLocationDefaults.geofenceUid) { uid = u }
+        if let n = defaults.string(forKey: KBLocationDefaults.geofenceDisplayName), !n.isEmpty { displayName = n }
     }
 
     // MARK: - Monitoring control
@@ -163,16 +195,25 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
     }
 
     private func handleRegionEvent(geofenceId: String, type: GeofenceTransitionType) {
-        guard let state = monitoredGeofences[geofenceId] else {
-            KBLog.app.kbDebug("GeofenceMonitorService: unknown region id=\(geofenceId)")
-            return
+        // Dopo un relaunch in background lo stato locale `monitoredGeofences` è vuoto
+        // (le regioni sono però ancora registrate a livello OS). In quel caso ci fidiamo
+        // di `notifyOnEntry/notifyOnExit` impostati sulla regione: iOS consegna solo le
+        // transizioni richieste, e la Cloud Function ricontrolla comunque i flag sul doc.
+        if let state = monitoredGeofences[geofenceId] {
+            switch type {
+            case .arrive:
+                guard state.notifyOnArrive else { return }
+            case .leave:
+                guard state.notifyOnLeave else { return }
+            }
         }
 
-        switch type {
-        case .arrive:
-            guard state.notifyOnArrive else { return }
-        case .leave:
-            guard state.notifyOnLeave else { return }
+        if familyId.isEmpty || uid.isEmpty {
+            restoreFromDefaults()
+        }
+        guard !familyId.isEmpty, !uid.isEmpty else {
+            KBLog.app.kbDebug("GeofenceMonitorService: no context for region id=\(geofenceId), skip")
+            return
         }
 
         KBLog.app.kbInfo(

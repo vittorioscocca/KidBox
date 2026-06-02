@@ -55,6 +55,21 @@ final class AppDelegate: NSObject,
     /// dopo che è stata terminata dall'utente, poi il ViewModel prende il controllo.
     private var backgroundLocationManager: CLLocationManager?
     private static let passwordSecurityRefreshTaskId = "it.vittorioscocca.kidbox.password-security-refresh"
+
+    // MARK: - Orientation
+
+    /// Maschera orientamenti supportati, dinamica. L'app è portrait-only su iPhone, ma
+    /// l'anteprima documenti/PDF (QuickLook / PDFKit) la imposta temporaneamente a `.all`
+    /// così il documento ruota con il dispositivo, poi `AppOrientation.reset()` ripristina.
+    static var supportedOrientations: UIInterfaceOrientationMask =
+        UIDevice.current.userInterfaceIdiom == .pad ? .all : .portrait
+
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        AppDelegate.supportedOrientations
+    }
     
     // MARK: - App lifecycle
     
@@ -121,7 +136,14 @@ final class AppDelegate: NSObject,
             KBLog.app.kbInfo("App relaunched by iOS for background location event")
             setupBackgroundLocationManager()
         }
-        
+
+        // 📍 Geofence: istanzia il singleton così il suo CLLocationManager delegate è vivo
+        // ad ogni avvio e riceve gli eventi didEnter/ExitRegion delle regioni già registrate
+        // a livello OS (che persistono tra i lanci), anche senza aprire la schermata Posizione.
+        MainActor.assumeIsolated {
+            GeofenceMonitorService.shared.restoreFromDefaults()
+        }
+
         return true
     }
 

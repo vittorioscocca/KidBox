@@ -82,7 +82,11 @@ final class WeeklySummaryService {
             KBLog.ai.kbDebug("WeeklySummaryService: summary already generated for week \(currentWeek)")
             // Assicura che la notifica locale sia schedulata anche se il testo esiste già
             if let text = UserDefaults.standard.string(forKey: Keys.lastText) {
-                await scheduleLocalNotification(summaryText: text, familyName: familyName)
+                await scheduleLocalNotification(
+                    summaryText: text,
+                    familyName: familyName,
+                    familyId: forcedFamilyId ?? Self.resolveFamilyId(from: input)
+                )
             }
             return
         }
@@ -229,7 +233,11 @@ final class WeeklySummaryService {
             UserDefaults.standard.set(text,    forKey: Keys.lastText)
             
             // Schedula notifica
-            await scheduleLocalNotification(summaryText: text, familyName: familyName)
+            await scheduleLocalNotification(
+                summaryText: text,
+                familyName: familyName,
+                familyId: Self.resolveFamilyId(from: input)
+            )
             
         } catch {
             KBLog.ai.kbError("WeeklySummaryService: generation failed \(error.localizedDescription)")
@@ -374,7 +382,8 @@ final class WeeklySummaryService {
     
     private func scheduleLocalNotification(
         summaryText: String,
-        familyName:  String
+        familyName:  String,
+        familyId:    String
     ) async {
         let center = UNUserNotificationCenter.current()
         
@@ -399,10 +408,12 @@ final class WeeklySummaryService {
         ?? "Il tuo recap settimanale è pronto."
         content.body       = firstLine
         content.sound      = .default
-        content.userInfo   = [
+        var info: [String: Any] = [
             "type":     "weekly_summary",
             "fullText": String(summaryText.prefix(500)) // tronca per payload limite APNs
         ]
+        if !familyId.isEmpty { info["familyId"] = familyId }
+        content.userInfo = info
         
         // Trigger: prossimo lunedì alle 08:00
         var dc          = DateComponents()
@@ -443,5 +454,5 @@ final class WeeklySummaryService {
 
 extension NotificationManager.DeepLink {
     /// Deep link dedicato alla sintesi settimanale — apre PlanningAIChatView
-    static var weeklySummary: NotificationManager.DeepLink { .askExpert }
+    static var weeklySummary: NotificationManager.DeepLink { .askExpert(familyId: nil) }
 }

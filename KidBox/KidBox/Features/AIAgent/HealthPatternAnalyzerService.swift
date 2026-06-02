@@ -45,7 +45,7 @@ final class HealthPatternAnalyzerService {
         guard month != lastMonth else {
             KBLog.ai.kbDebug("HealthPatternAnalyzer: already analyzed for month \(month)")
             if let text = lastInsightText {
-                await scheduleLocalNotification(insightText: text, familyName: familyName, monthKey: month)
+                await scheduleLocalNotification(insightText: text, familyName: familyName, monthKey: month, familyId: familyId)
             }
             return
         }
@@ -103,7 +103,8 @@ final class HealthPatternAnalyzerService {
             await scheduleLocalNotification(
                 insightText: text,
                 familyName: familyName,
-                monthKey: month
+                monthKey: month,
+                familyId: familyId
             )
         } catch {
             KBLog.ai.kbError("HealthPatternAnalyzer: analysis failed \(error.localizedDescription)")
@@ -472,7 +473,8 @@ final class HealthPatternAnalyzerService {
     private func scheduleLocalNotification(
         insightText: String,
         familyName: String,
-        monthKey: String
+        monthKey: String,
+        familyId: String
     ) async {
         let center = UNUserNotificationCenter.current()
 
@@ -502,10 +504,12 @@ final class HealthPatternAnalyzerService {
         content.title = "🔍 Pattern salute · \(familyName)"
         content.body = firstLine
         content.sound = .default
-        content.userInfo = [
+        var info: [String: Any] = [
             "type": "health_pattern",
             "fullText": String(insightText.prefix(500)),
         ]
+        if !familyId.isEmpty { info["familyId"] = familyId }
+        content.userInfo = info
 
         var dc = DateComponents()
         dc.day = 1

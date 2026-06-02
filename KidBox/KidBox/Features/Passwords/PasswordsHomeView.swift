@@ -9,6 +9,19 @@
 import SwiftUI
 import SwiftData
 import FirebaseAuth
+import CryptoKit
+
+/// Dati minimi e `Sendable` per calcolare i warning sicurezza off-main (vedi
+/// `PasswordsHomeView.computeWarningEntryIds`). Evita di toccare le `@Model` SwiftData
+/// fuori dal main actor.
+struct PasswordWarningSnapshot: Sendable {
+    let id: String
+    let familyId: String
+    let visibility: String
+    let createdBy: String
+    let passwordCipher: Data
+    let pwnedCount: Int?
+}
 
 private struct PasswordSection: Identifiable {
     let id: String
@@ -292,7 +305,23 @@ struct PasswordsHomeView: View {
             }
         }
         .task(id: warningSignature) {
-            warningEntryIdsCache = computeWarningEntryIds()
+            // Snapshot Sendable costruiti sul main actor (le @Model SwiftData non sono
+            // thread-safe); il lavoro pesante (decrypt + forza + duplicati) gira off-main.
+            let uid = currentUid
+            let snapshots: [PasswordWarningSnapshot] = visibleEntries.map {
+                PasswordWarningSnapshot(
+                    id: $0.id,
+                    familyId: $0.familyId,
+                    visibility: $0.visibility,
+                    createdBy: $0.createdBy,
+                    passwordCipher: $0.passwordCipher,
+                    pwnedCount: $0.pwnedCount
+                )
+            }
+            let result = await Task.detached(priority: .utility) {
+                PasswordsHomeView.computeWarningEntryIds(snapshots: snapshots, uid: uid)
+            }.value
+            warningEntryIdsCache = result
         }
         .onAppear {
             PasswordsHomeBadgeAck.acknowledgeCurrent(entries: entries, familyId: familyId, currentUid: currentUid)
@@ -552,17 +581,37 @@ struct PasswordsHomeView: View {
             .joined(separator: "|")
     }
     
-    private func computeWarningEntryIds() -> Set<String> {
-        let compromised = Set(visibleEntries.filter { ($0.pwnedCount ?? 0) > 0 }.map(\.id))
-        let weak = Set(visibleEntries.filter {
-            guard let plain = try? $0.decryptPassword() else { return false }
-            return PasswordStrength.evaluate(plain).level <= .weak
-        }.map(\.id))
-        let duplicate = Set(
-            DuplicateDetector(entries: visibleEntries, currentUid: currentUid)
-                .allDuplicateClusters()
-                .flatMap { $0.map(\.id) }
-        )
+    /// Calcola gli id con warning sicurezza (compromesse / deboli / duplicate) a partire da
+    /// snapshot Sendable. `nonisolated` così può girare in un `Task.detached` senza bloccare
+    /// il main thread su librerie password grandi.
+    nonisolated static func computeWarningEntryIds(
+        snapshots: [PasswordWarningSnapshot],
+        uid: String?
+    ) -> Set<String> {
+        var compromised: Set<String> = []
+        var weak: Set<String> = []
+        var clustersByHash: [String: [String]] = [:]
+
+        for snap in snapshots {
+            if (snap.pwnedCount ?? 0) > 0 { compromised.insert(snap.id) }
+
+            guard let plain = try? PasswordCypher.decrypt(
+                snap.passwordCipher,
+                familyId: snap.familyId,
+                visibility: snap.visibility,
+                createdBy: snap.createdBy,
+                familyKeyUserId: uid
+            ), !plain.isEmpty else { continue }
+
+            if PasswordStrength.evaluate(plain).level <= .weak {
+                weak.insert(snap.id)
+            }
+            let digest = SHA256.hash(data: Data(plain.utf8))
+            let hex = digest.map { String(format: "%02x", $0) }.joined()
+            clustersByHash[hex, default: []].append(snap.id)
+        }
+
+        let duplicate = Set(clustersByHash.values.filter { $0.count > 1 }.flatMap { $0 })
         return compromised.union(weak).union(duplicate)
     }
 

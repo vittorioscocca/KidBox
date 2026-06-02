@@ -31,7 +31,6 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     private let remote = LocationRemoteStore()
     private var listener: ListenerRegistration?
 
-    private var geofenceMonitor: GeofenceMonitorService?
     private var geofenceListener: ListenerRegistration?
     private let geofenceRemote = GeofenceRemoteStore()
     
@@ -77,9 +76,9 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
 
         geofenceListener?.remove()
         geofenceListener = nil
-        geofenceMonitor?.stopMonitoring()
-        geofenceMonitor = nil
-        
+        // NON fermiamo il monitoraggio geofence: deve restare attivo in background/app chiusa.
+        // Le regioni sono gestite dal singleton GeofenceMonitorService.shared.
+
         expiryTask?.cancel()
         expiryTask = nil
         
@@ -173,23 +172,24 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         return monitored.contains(uid)
     }
 
+    /// Monitoraggio geofence INDIPENDENTE dalla condivisione live: una zona applicata a una
+    /// persona deve generare arrivo/uscita anche con lo sharing spento. Usa il singleton
+    /// `GeofenceMonitorService.shared` (un solo CLLocationManager a vita-app).
     private func syncGeofenceMonitor() {
-        if sharingRequested || isSharing {
-            if geofenceMonitor == nil {
-                geofenceMonitor = GeofenceMonitorService(
-                    familyId: familyId,
-                    uid: Auth.auth().currentUser?.uid ?? "",
-                    displayName: myCurrentDisplayName
-                )
-            }
-            let active = geofences.filter { geofence in
-                geofence.isActive && !geofence.isDeleted && geofenceAppliesToCurrentUser(geofence)
-            }
-            geofenceMonitor?.startMonitoring(geofences: active)
-        } else {
-            geofenceMonitor?.stopMonitoring()
-            geofenceMonitor = nil
+        let uid = Auth.auth().currentUser?.uid ?? ""
+        let active = geofences.filter { geofence in
+            geofence.isActive && !geofence.isDeleted && geofenceAppliesToCurrentUser(geofence)
         }
+        guard !uid.isEmpty, !active.isEmpty else {
+            GeofenceMonitorService.shared.stopMonitoring()
+            return
+        }
+        GeofenceMonitorService.shared.configure(
+            familyId: familyId,
+            uid: uid,
+            displayName: myCurrentDisplayName
+        )
+        GeofenceMonitorService.shared.startMonitoring(geofences: active)
     }
     
     /// Dopo relaunch (o quando non abbiamo appena premuto un bottone),
