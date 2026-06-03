@@ -53,7 +53,11 @@ struct RootGateView: View {
             } else if !coordinator.isAuthenticated {
                 LoginView()
             } else if shouldShowHome {
+                #if targetEnvironment(macCatalyst)
+                MacShellView()
+                #else
                 HomeView()
+                #endif
             } else {
                 OnboardingWalkthroughView {
                     coordinator.completeOnboarding()

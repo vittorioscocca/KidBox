@@ -183,7 +183,7 @@ struct PediatricVisitsView: View {
         .sheet(isPresented: $showAIConsent) {
             AIConsentSheet { showAIChat = true }
         }
-        .sheet(isPresented: $showAIChat) {
+        .sheetOrMacPush(isPresented: $showAIChat) {
             PediatricVisitsAIChatView(
                 subjectName:     aiSubjectName,
                 visibleVisits:   aiSelectedVisits,

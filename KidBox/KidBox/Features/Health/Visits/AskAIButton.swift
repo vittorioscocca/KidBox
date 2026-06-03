@@ -28,7 +28,7 @@ struct AskAIButton: View {
         .sheet(isPresented: $showConsent) {
             AIConsentSheet { showChat = true }
         }
-        .sheet(isPresented: $showChat) {
+        .sheetOrMacPush(isPresented: $showChat) {
             MedicalAIChatView(visit: visit, child: child)
         }
     }

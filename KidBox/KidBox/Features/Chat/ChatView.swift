@@ -122,7 +122,7 @@ struct ChatView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Cerca messaggi"
         )
-        .sheet(isPresented: $showMediaGallery) {
+        .sheetOrMacPush(isPresented: $showMediaGallery, hideMacNavBar: true) {
             ChatMediaGalleryView(
                 familyId: activeFamilyId,
                 onGoToMessage: { msgId in

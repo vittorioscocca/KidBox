@@ -36,6 +36,8 @@ struct DragSelectOverlay: ViewModifier {
     let cellSize:   CGFloat
     /// Gap tra le celle.
     let spacing:    CGFloat
+    /// Numero di colonne della griglia.
+    var columns:    Int = 3
     /// Numero totale di elementi nella griglia.
     let itemCount:  Int
     /// Chiede al parent se l'elemento all'indice dato è selezionato.
@@ -107,9 +109,10 @@ struct DragSelectOverlay: ViewModifier {
     
     /// Converte un punto nell'overlay nell'indice piatto della griglia (0-based).
     private func cellIndex(at point: CGPoint) -> Int? {
-        let col   = Int(point.x / (cellSize + spacing)).clamped(to: 0...2)
+        let lastCol = max(0, columns - 1)
+        let col   = Int(point.x / (cellSize + spacing)).clamped(to: 0...lastCol)
         let row   = Int(point.y / (cellSize + spacing))
-        let index = row * 3 + col
+        let index = row * columns + col
         guard index >= 0, index < itemCount else { return nil }
         return index
     }

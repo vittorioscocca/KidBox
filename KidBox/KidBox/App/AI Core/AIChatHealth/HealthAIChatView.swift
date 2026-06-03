@@ -29,7 +29,7 @@ struct HealthAIChatView: View {
     @State private var inputText      = ""
     
     var body: some View {
-        NavigationStack {
+        ModalNavContainer {
             Group {
                 if let vm = viewModel {
                     HealthAIChatBody(vm: vm, inputText: $inputText)
@@ -48,9 +48,11 @@ struct HealthAIChatView: View {
             .navigationTitle("Salute di \(subjectName)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                #if !targetEnvironment(macCatalyst)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi") { dismiss() }
                 }
+                #endif
                 if let vm = viewModel, !vm.messages.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {

@@ -26,7 +26,7 @@ struct PediatricVisitsAIChatView: View {
     @State private var inputText      = ""
     
     var body: some View {
-        NavigationStack {
+        ModalNavContainer {
             Group {
                 if let vm = viewModel {
                     PediatricVisitsAIChatBody(vm: vm, inputText: $inputText)
@@ -44,9 +44,11 @@ struct PediatricVisitsAIChatView: View {
             .navigationTitle("Chiedi all'AI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                #if !targetEnvironment(macCatalyst)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi") { dismiss() }
                 }
+                #endif
                 if let vm = viewModel, !vm.messages.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {

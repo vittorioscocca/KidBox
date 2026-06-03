@@ -39,7 +39,7 @@ struct ExamsAskAIButton: View {
         .sheet(isPresented: $showConsent) {
             AIConsentSheet { showChat = true }
         }
-        .sheet(isPresented: $showChat) {
+        .sheetOrMacPush(isPresented: $showChat) {
             PediatricExamsAIChatView(subjectName: subjectName, scope: scope)
         }
     }

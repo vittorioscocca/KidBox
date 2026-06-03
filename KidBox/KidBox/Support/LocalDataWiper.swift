@@ -82,7 +82,8 @@ enum LocalDataWiper {
             
             // Filesystem cache
             try wipeLocalFiles(familyId: fid)
-            
+            PhotoPreviewCache.clearAll()
+
             KBLog.persistence.kbInfo("Local wipe completed for familyId=\(fid)")
         } catch {
             KBLog.persistence.kbError("Local wipe failed for familyId=\(fid): \(error.localizedDescription)")
@@ -151,6 +152,7 @@ enum LocalDataWiper {
             try deleteAll(KBUserProfile.self, context: context)
             
             try context.save()
+            PhotoPreviewCache.clearAll()
             KBLog.persistence.kbInfo("Local FULL wipe completed")
         } catch {
             KBLog.persistence.kbError("Local FULL wipe failed: \(error.localizedDescription)")

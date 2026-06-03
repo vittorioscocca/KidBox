@@ -29,7 +29,7 @@ struct PediatricExamsAIChatView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        ModalNavContainer {
             Group {
                 if let vm = viewModel {
                     ExamsAIChatBody(vm: vm, inputText: $inputText)
@@ -47,9 +47,11 @@ struct PediatricExamsAIChatView: View {
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                #if !targetEnvironment(macCatalyst)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi") { dismiss() }
                 }
+                #endif
                 if let vm = viewModel, !vm.messages.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {

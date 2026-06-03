@@ -104,7 +104,7 @@ struct FamilyPhotosView: View {
     }
     
     @State private var tab: PhotoTab = .library
-    @State private var grouping: PhotoGrouping = .day
+    @State private var grouping: PhotoGrouping = .all
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isUploading = false
     @State private var uploadProgress: Double = 0
@@ -128,6 +128,13 @@ struct FamilyPhotosView: View {
     @State private var showCamera = false
     @State private var showStorageUpgrade = false
     @State private var showPhotoPickerGated = false
+    /// When entering Months from a Year card, scroll to this month section.
+    @State private var pendingScrollTarget: Date?
+    /// Target tile size (pt) for the dense grid. Columns are derived from it, so
+    /// the layout adapts to the available width (3 cols on iPhone, more on Mac).
+    @State private var thumbTarget: CGFloat = 124
+    /// Committed target at the start of the current pinch.
+    @State private var pinchAnchorTarget: CGFloat = 124
     
     private var photos: [KBFamilyPhoto] { vm.photos }
     private var albums: [KBPhotoAlbum]  { vm.albums }
@@ -225,6 +232,8 @@ struct FamilyPhotosView: View {
             .task {
                 vm.bind(modelContext: modelContext)
                 SyncCenter.shared.startPhotosRealtime(familyId: familyId, modelContext: modelContext)
+                // Mantieni la cache anteprime entro un budget ragionevole.
+                Task.detached(priority: .utility) { PhotoPreviewCache.trim() }
             }
             .onDisappear {
                 SyncCenter.shared.stopPhotosRealtime()
@@ -301,15 +310,6 @@ struct FamilyPhotosView: View {
                     } label: {
                         Text("Seleziona").font(.subheadline)
                     }
-                    Menu {
-                        ForEach(PhotoGrouping.allCases) { g in
-                            Button {
-                                withAnimation(.snappy) { grouping = g }
-                            } label: {
-                                Label(g.label, systemImage: grouping == g ? "checkmark" : "")
-                            }
-                        }
-                    } label: { Image(systemName: "slider.horizontal.3") }
                 } else {
                     if !albums.isEmpty {
                         Button {
@@ -355,39 +355,326 @@ struct FamilyPhotosView: View {
         if photos.isEmpty {
             emptyLibrary
         } else {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    ForEach(groupedPhotos, id: \.key) { group in
-                        Section {
-                            photoGrid(group.photos).padding(.bottom, 4)
-                        } header: {
-                            Text(group.label)
-                                .font(.system(size: 15, weight: .semibold))
-                                .padding(.horizontal, 16).padding(.vertical, 7)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.ultraThinMaterial)
+            ZStack(alignment: .bottom) {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        Group {
+                            // In selezione usiamo sempre la griglia fitta (drag-select affidabile).
+                            if isSelectMode {
+                                photoGrid(sortedPhotos, columns: resolvedColumns)
+                                    .gesture(zoomGesture)
+                            } else {
+                                switch grouping {
+                                case .all:
+                                    photoGrid(sortedPhotos, columns: resolvedColumns)
+                                        .gesture(zoomGesture)
+                                case .year:  yearsLayout
+                                case .month: mosaicSections(photoGroups(for: .month))
+                                case .day:   mosaicSections(photoGroups(for: .day))
+                                }
+                            }
+                        }
+                        .padding(.bottom, isSelectMode ? 24 : 86)
+                        .background(
+                            GeometryReader { geo in
+                                Color.clear.preference(key: GridWidthKey.self, value: geo.size.width)
+                            }
+                        )
+                        .onPreferenceChange(GridWidthKey.self) { w in
+                            if w > 0 && w != gridWidth { gridWidth = w }
+                        }
+                    }
+                    .id(fullscreenPhoto == nil ? "grid-active" : "grid-covered")
+                    .onChange(of: pendingScrollTarget) { _, target in
+                        guard let target else { return }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            withAnimation(.snappy) { proxy.scrollTo(target, anchor: .top) }
+                            pendingScrollTarget = nil
                         }
                     }
                 }
-                .padding(.bottom, 24)
-                .background(
-                    GeometryReader { geo in
-                        Color.clear.preference(key: GridWidthKey.self, value: geo.size.width)
-                    }
-                )
-                .onPreferenceChange(GridWidthKey.self) { w in
-                    if w > 0 && w != gridWidth { gridWidth = w }
-                }
+
+                if !isSelectMode { groupingBar }
             }
-            .id(fullscreenPhoto == nil ? "grid-active" : "grid-covered")
         }
     }
+
+    /// All photos, newest first (used for "Tutto" and selection grid).
+    private var sortedPhotos: [KBFamilyPhoto] {
+        photos.sorted { $0.takenAt > $1.takenAt }
+    }
+
+    /// Effective layout width: full width on iPhone/iPad, capped and centered on
+    /// wide Mac windows so tiles never become huge.
+    private var layoutWidth: CGFloat {
+        min(gridWidth, 720)
+    }
+
+    /// Columns for the dense grid, derived from the target tile size so the
+    /// layout adapts to the available width.
+    private var resolvedColumns: Int {
+        max(3, Int((layoutWidth / thumbTarget).rounded()))
+    }
+
+    /// Pinch to change grid density (iOS-Photos style): zoom in → larger tiles
+    /// (fewer columns); zoom out → smaller tiles (more columns).
+    private var zoomGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { scale in
+                let proposed = pinchAnchorTarget * scale
+                let clamped = min(220, max(84, proposed))
+                if abs(clamped - thumbTarget) > 0.5 {
+                    withAnimation(.snappy(duration: 0.18)) { thumbTarget = clamped }
+                }
+            }
+            .onEnded { _ in pinchAnchorTarget = thumbTarget }
+    }
+
+    // MARK: - Floating grouping bar (Anni · Mesi · Giorni · Tutto)
+
+    private var groupingBar: some View {
+        HStack(spacing: 4) {
+            ForEach([PhotoGrouping.year, .month, .day, .all]) { g in
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { grouping = g }
+                } label: {
+                    Text(g.label)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(grouping == g ? Color.primary : Color.secondary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .background {
+                            if grouping == g {
+                                Capsule().fill(Color.primary.opacity(0.12))
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(.primary.opacity(0.08)))
+        .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        .padding(.bottom, 14)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    // MARK: - Years layout (one large cover per year)
+
+    private var yearsLayout: some View {
+        let groups = photoGroups(for: .year)
+        let w = layoutWidth
+        return LazyVStack(spacing: 16) {
+            ForEach(groups, id: \.key) { group in
+                let cover = group.photos.first
+                Button {
+                    if let cover {
+                        let c = Calendar.current.dateComponents([.year, .month], from: cover.takenAt)
+                        pendingScrollTarget = Calendar.current.date(from: c)
+                    }
+                    withAnimation(.snappy(duration: 0.2)) { grouping = .month }
+                } label: {
+                    ZStack(alignment: .bottomLeading) {
+                        Group {
+                            if let cover {
+                                PhotoThumbnailCell(
+                                    photo: cover,
+                                    familyId: familyId,
+                                    userId: uid,
+                                    videoDurationSeconds: nil,
+                                    isVideo: cover.isVideo,
+                                    displaySize: w - 24
+                                )
+                            } else {
+                                coverImage(cover)
+                            }
+                        }
+                        .frame(width: w - 24, height: (w - 24) * 0.62)
+                        .clipped()
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.55)],
+                            startPoint: .center, endPoint: .bottom
+                        )
+                        Text(group.label)
+                            .font(.system(size: 30, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.4), radius: 4, y: 1)
+                            .padding(18)
+                    }
+                    .frame(width: w - 24, height: (w - 24) * 0.62)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func coverImage(_ photo: KBFamilyPhoto?) -> some View {
+        if let photo, let td = photo.thumbnailData, let img = UIImage(data: td) {
+            Image(uiImage: img).resizable().scaledToFill()
+        } else {
+            Color.secondary.opacity(0.15)
+        }
+    }
+
+    // MARK: - Mosaic sections (Mesi / Giorni)
+
+    @ViewBuilder
+    private func mosaicSections(_ groups: [PhotoGroup]) -> some View {
+        LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+            ForEach(groups, id: \.key) { group in
+                Section {
+                    mosaic(group.photos).padding(.bottom, 10)
+                } header: {
+                    Text(group.label)
+                        .font(.system(size: 20, weight: .bold))
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.ultraThinMaterial)
+                }
+                .id(group.key)
+            }
+        }
+        .frame(maxWidth: layoutWidth)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Builds an iOS-Photos-like mosaic from a flat photo list, cycling through
+    /// a few block shapes (feature + stack, pair, triple) for visual variety.
+    @ViewBuilder
+    private func mosaic(_ items: [KBFamilyPhoto]) -> some View {
+        let s: CGFloat = 2
+        let w = layoutWidth - s * 2        // small side margin
+        let blocks = mosaicBlocks(items)
+        VStack(spacing: s) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block.kind {
+                case .featureLeft, .featureRight:
+                    let leftW = (w - s) * 0.64
+                    let rightW = w - s - leftW
+                    let h = leftW
+                    let smallH = (h - s) / 2
+                    HStack(spacing: s) {
+                        if block.kind == .featureRight {
+                            featureStack(block, rightW: rightW, smallH: smallH)
+                            if let big = block.photos.first {
+                                mediaTile(big, width: leftW, height: h)
+                            }
+                        } else {
+                            if let big = block.photos.first {
+                                mediaTile(big, width: leftW, height: h)
+                            }
+                            featureStack(block, rightW: rightW, smallH: smallH)
+                        }
+                    }
+                case .pair:
+                    let cw = (w - s) / 2
+                    let h = cw * 0.78
+                    HStack(spacing: s) {
+                        ForEach(block.photos, id: \.stableGridId) { p in
+                            mediaTile(p, width: cw, height: h)
+                        }
+                    }
+                case .triple:
+                    let cw = (w - s * 2) / 3
+                    HStack(spacing: s) {
+                        ForEach(block.photos, id: \.stableGridId) { p in
+                            mediaTile(p, width: cw, height: cw)
+                        }
+                    }
+                case .single:
+                    if let p = block.photos.first {
+                        mediaTile(p, width: w, height: w * 0.66)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, s)
+    }
+
+    @ViewBuilder
+    private func featureStack(_ block: MosaicBlock, rightW: CGFloat, smallH: CGFloat) -> some View {
+        VStack(spacing: 2) {
+            ForEach(Array(block.photos.dropFirst().prefix(2)), id: \.stableGridId) { p in
+                mediaTile(p, width: rightW, height: smallH)
+            }
+        }
+    }
+
+    /// A single reusable media tile used across the mosaic layouts.
+    private func mediaTile(_ photo: KBFamilyPhoto, width: CGFloat, height: CGFloat) -> some View {
+        PhotoThumbnailCell(
+            photo: photo,
+            familyId: familyId,
+            userId: uid,
+            videoDurationSeconds: photo.videoDurationSeconds,
+            isVideo: photo.isVideo,
+            displaySize: max(width, height)
+        )
+        .frame(width: width, height: height)
+        .clipped()
+        .overlay(alignment: .bottomTrailing) {
+            if photo.isVideo, let secs = photo.videoDurationSeconds {
+                Text(PhotoThumbnailCell.formatDuration(secs))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 4).padding(.vertical, 2)
+                    .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 4))
+                    .padding(4)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { fullscreenPhoto = photo }
+        .contextMenu {
+            Button { Task { await sendToChat(photo) } } label: {
+                Label("Invia in chat", systemImage: "bubble.left.and.bubble.right")
+            }
+            Divider()
+            Button(role: .destructive) { softDeletePhoto(photo) } label: {
+                Label("Elimina", systemImage: "trash")
+            }
+        }
+    }
+
+    /// Splits a photo list into mosaic blocks using a repeating pattern.
+    private func mosaicBlocks(_ items: [KBFamilyPhoto]) -> [MosaicBlock] {
+        let pattern: [(MosaicBlock.Kind, Int)] = [
+            (.featureLeft, 3), (.pair, 2), (.triple, 3), (.featureRight, 3), (.pair, 2)
+        ]
+        var blocks: [MosaicBlock] = []
+        var i = 0
+        var p = 0
+        while i < items.count {
+            let remaining = items.count - i
+            let (kind, count) = pattern[p % pattern.count]
+            if remaining >= count {
+                blocks.append(MosaicBlock(kind: kind, photos: Array(items[i..<i + count])))
+                i += count
+            } else {
+                // Tail shorter than the next shape: render it cleanly with no gaps.
+                let tailKind: MosaicBlock.Kind = (remaining == 1) ? .single : .pair
+                blocks.append(MosaicBlock(kind: tailKind, photos: Array(items[i..<items.count])))
+                i = items.count
+            }
+            p += 1
+        }
+        return blocks
+    }
     
-    private func photoGrid(_ items: [KBFamilyPhoto]) -> some View {
+    private func photoGrid(_ items: [KBFamilyPhoto], columns: Int = 3) -> some View {
         let spacing: CGFloat = 2
-        let cellSize = floor((gridWidth - spacing * 2) / 3)
-        let cols = Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: 3)
-        let rows = Int(ceil(Double(items.count) / 3.0))
+        let n = max(1, columns)
+        let cellSize = floor((layoutWidth - spacing * CGFloat(n - 1)) / CGFloat(n))
+        let cols = Array(repeating: GridItem(.fixed(cellSize), spacing: spacing), count: n)
+        let rows = Int(ceil(Double(items.count) / Double(n)))
         let gridHeight = CGFloat(rows) * cellSize + CGFloat(max(rows - 1, 0)) * spacing
         
         return ZStack(alignment: .topLeading) {
@@ -399,7 +686,8 @@ struct FamilyPhotosView: View {
                         familyId: familyId,
                         userId: uid,
                         videoDurationSeconds: photo.videoDurationSeconds,
-                        isVideo: photo.isVideo
+                        isVideo: photo.isVideo,
+                        displaySize: cellSize
                     )
                     .frame(width: cellSize, height: cellSize)
                     .clipped()
@@ -464,6 +752,7 @@ struct FamilyPhotosView: View {
                 isActive:   isSelectMode,
                 cellSize:   cellSize,
                 spacing:    spacing,
+                columns:    n,
                 itemCount:  items.count,
                 isSelected: { index in selectedIds.contains(items[index].id) },
                 onToggle:   { index in
@@ -473,24 +762,22 @@ struct FamilyPhotosView: View {
                 }
             ))
         }
+        .frame(maxWidth: .infinity)
     }
-    
+
     // MARK: - Albums
     
     @ViewBuilder
     private var albumsContent: some View {
         let hPad: CGFloat = 16
         let spacing: CGFloat = 14
-        let cellW = floor((UIScreen.main.bounds.width - hPad * 2 - spacing) / 2)
-        
+        // Adaptive: ~2 colonne su iPhone, di più su iPad/Mac, senza card giganti.
+        let columns = [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: spacing)]
+
         ScrollView {
-            LazyVGrid(
-                columns: [GridItem(.fixed(cellW), spacing: spacing),
-                          GridItem(.fixed(cellW), spacing: spacing)],
-                spacing: spacing
-            ) {
+            LazyVGrid(columns: columns, spacing: spacing) {
                 Button { showCreateAlbum = true } label: {
-                    AlbumCreateCard(cellWidth: cellW)
+                    AlbumCreateCard()
                 }
                 .buttonStyle(.plain)
                 .opacity(isAlbumSelectMode ? 0 : 1)
@@ -502,8 +789,7 @@ struct FamilyPhotosView: View {
                     
                     AlbumCard(album: album,
                               previewPhotos: Array(albumPhotos.prefix(1)),
-                              photoCount: albumPhotos.count,
-                              cellWidth: cellW)
+                              photoCount: albumPhotos.count)
                     .overlay {
                         if isAlbumSelectMode {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -794,10 +1080,10 @@ struct FamilyPhotosView: View {
     
     // MARK: - Grouped photos
     
-    private var groupedPhotos: [PhotoGroup] {
+    private func photoGroups(for grouping: PhotoGrouping) -> [PhotoGroup] {
         let cal = Calendar.current
         let fmt = DateFormatter(); fmt.locale = kbDeviceLocale()
-        
+
         func group(keyFor: (KBFamilyPhoto) -> Date, labelFor: (Date) -> String) -> [PhotoGroup] {
             var dict: [Date: [KBFamilyPhoto]] = [:]
             photos.forEach { dict[keyFor($0), default: []].append($0) }
@@ -806,8 +1092,10 @@ struct FamilyPhotosView: View {
                            photos: dict[date]!.sorted { $0.takenAt > $1.takenAt })
             }
         }
-        
+
         switch grouping {
+        case .all:
+            return [PhotoGroup(key: .distantFuture, label: "Tutto", photos: sortedPhotos)]
         case .day:
             fmt.dateFormat = "EEEE d MMMM yyyy"
             return group(keyFor: { cal.startOfDay(for: $0.takenAt) }) { fmt.string(from: $0).capitalized }
@@ -1237,14 +1525,19 @@ struct PhotoThumbnailCell: View {
     let userId: String
     let videoDurationSeconds: Double?
     let isVideo: Bool
-    
+    /// Lato della tessera in punti. Se grande, si carica un'anteprima più nitida.
+    var displaySize: CGFloat = 0
+
+    @State private var hiRes: UIImage?
+
     var body: some View {
         ZStack {
             Color.secondary.opacity(0.12)
-            
-            if let td = photo.thumbnailData, let img = UIImage(data: td) {
-                // Thumbnail già in memoria (max 200 px, pochi KB).
-                // Nessun download, nessuna allocazione GPU grande.
+
+            if let hiRes {
+                Image(uiImage: hiRes).resizable().scaledToFill()
+            } else if let td = photo.thumbnailData, let img = UIImage(data: td) {
+                // Thumbnail in memoria (pochi KB): mostrato subito.
                 Image(uiImage: img)
                     .resizable()
                     .scaledToFill()
@@ -1257,10 +1550,62 @@ struct PhotoThumbnailCell: View {
         }
         .clipped()
         .contentShape(Rectangle())
-        // Nessun .task: non scarichiamo nulla nella griglia.
-        // Il file completo viene scaricato solo in PhotoFullscreenView.load().
+        .task(id: previewBucket) { await loadHiResIfNeeded() }
     }
-    
+
+    // MARK: - Higher-resolution preview (on demand, disk-cached)
+
+    /// Scala in pixel del display (2x è una stima sicura su Mac Catalyst).
+    private var displayScale: CGFloat {
+        #if targetEnvironment(macCatalyst)
+        return 2
+        #else
+        return UIScreen.main.scale
+        #endif
+    }
+
+    /// Bucket di risoluzione richiesto (0 = nessun upgrade, usa il thumbnail).
+    /// Si attiva solo per tessere abbastanza grandi (Anni, feature mosaico, zoom),
+    /// così iPhone e la griglia fitta non scaricano nulla.
+    private var previewBucket: Int {
+        guard !isVideo, displaySize >= 150, !photo.storagePath.isEmpty || photo.localPath != nil else { return 0 }
+        let px = displaySize * displayScale
+        if px <= 280 { return 0 }
+        if px <= 520 { return 512 }
+        if px <= 820 { return 800 }
+        return 1200
+    }
+
+    private func loadHiResIfNeeded() async {
+        let bucket = previewBucket
+        guard bucket > 0 else { await MainActor.run { hiRes = nil }; return }
+
+        // 1) Cache su disco delle anteprime medie.
+        if let cached = PhotoPreviewCache.load(photoId: photo.id, bucket: bucket) {
+            await MainActor.run { hiRes = cached }
+            return
+        }
+
+        // 2) Sorgente: originale locale se presente, altrimenti download (una volta).
+        var source: Data?
+        if let lp = photo.localPath,
+           FileManager.default.fileExists(atPath: lp),
+           let d = try? Data(contentsOf: URL(fileURLWithPath: lp)) {
+            source = d
+        } else if !photo.storagePath.isEmpty {
+            source = try? await SyncCenter.photoRemote.download(
+                storagePath: photo.storagePath, familyId: familyId, userId: userId
+            )
+        }
+
+        guard let src = source,
+              let down = PhotoRemoteStore.makeThumbnail(from: src, maxDimension: CGFloat(bucket)),
+              let img = UIImage(data: down) else { return }
+
+        PhotoPreviewCache.store(down, photoId: photo.id, bucket: bucket)
+        await MainActor.run { hiRes = img }
+    }
+
     static func formatDuration(_ seconds: Double) -> String {
         let total = Int(seconds)
         let h = total / 3600
@@ -1277,8 +1622,7 @@ private struct AlbumCard: View {
     let album: KBPhotoAlbum
     let previewPhotos: [KBFamilyPhoto]
     let photoCount: Int
-    let cellWidth: CGFloat
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack {
@@ -1290,30 +1634,30 @@ private struct AlbumCard: View {
                     Image(systemName: "rectangle.stack.fill").font(.largeTitle).foregroundStyle(.quaternary)
                 }
             }
-            .frame(width: cellWidth, height: cellWidth)
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             Text(album.title).font(.subheadline.weight(.semibold)).lineLimit(1)
             Text("\(photoCount) foto").font(.caption).foregroundStyle(.secondary)
         }
-        .frame(width: cellWidth)
+        .frame(maxWidth: .infinity)
     }
 }
 
 private struct AlbumCreateCard: View {
-    let cellWidth: CGFloat
-    
     var body: some View {
         VStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.secondary.opacity(0.12))
-                .frame(width: cellWidth, height: cellWidth)
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
                 .overlay(
                     Image(systemName: "plus").font(.system(size: 28, weight: .light)).foregroundStyle(.secondary)
                 )
             Text("Nuovo album").font(.subheadline.weight(.semibold))
             Text(" ").font(.caption)
         }
-        .frame(width: cellWidth)
+        .frame(maxWidth: .infinity)
     }
 }
 // MARK: - FullscreenMediaCell
@@ -1404,6 +1748,61 @@ private struct VideoPlayerCell: UIViewControllerRepresentable {
     }
 }
 
+// MARK: - PhotoPreviewCache
+// Cache su disco per le anteprime a risoluzione media generate on-demand.
+// Chiave: photoId + bucket di risoluzione. I file vivono nella Caches dir.
+
+enum PhotoPreviewCache {
+    private static var dir: URL {
+        let d = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("KBPhotoPreviews", isDirectory: true)
+        try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
+        return d
+    }
+
+    private static func fileURL(_ photoId: String, _ bucket: Int) -> URL {
+        dir.appendingPathComponent("\(photoId)_\(bucket).jpg")
+    }
+
+    static func load(photoId: String, bucket: Int) -> UIImage? {
+        guard let data = try? Data(contentsOf: fileURL(photoId, bucket)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    static func store(_ data: Data, photoId: String, bucket: Int) {
+        try? data.write(to: fileURL(photoId, bucket), options: .atomic)
+    }
+
+    /// Rimuove l'intera cache delle anteprime (logout / uscita famiglia).
+    static func clearAll() {
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    /// Sfratta le anteprime più vecchie quando la cache supera il budget.
+    /// È solo una cache: i file rimossi vengono rigenerati on-demand.
+    static func trim(maxBytes: Int = 200 * 1024 * 1024) {
+        let fm = FileManager.default
+        guard let urls = try? fm.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey]
+        ) else { return }
+
+        var files: [(url: URL, size: Int, date: Date)] = urls.map { u in
+            let v = try? u.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+            return (u, v?.fileSize ?? 0, v?.contentModificationDate ?? .distantPast)
+        }
+        var total = files.reduce(0) { $0 + $1.size }
+        guard total > maxBytes else { return }
+
+        files.sort { $0.date < $1.date }   // più vecchi prima
+        for f in files {
+            if total <= maxBytes { break }
+            try? fm.removeItem(at: f.url)
+            total -= f.size
+        }
+    }
+}
+
 // MARK: - GridWidthKey
 
 private struct GridWidthKey: PreferenceKey {
@@ -1420,11 +1819,23 @@ enum PhotoTab: String, CaseIterable, Identifiable {
 }
 
 enum PhotoGrouping: String, CaseIterable, Identifiable {
-    case day, month, year
+    case year, month, day, all
     var id: Self { self }
     var label: String {
-        switch self { case .day: "Giorno"; case .month: "Mese"; case .year: "Anno" }
+        switch self {
+        case .year:  "Anni"
+        case .month: "Mesi"
+        case .day:   "Giorni"
+        case .all:   "Tutto"
+        }
     }
 }
 
 struct PhotoGroup { let key: Date; let label: String; let photos: [KBFamilyPhoto] }
+
+/// A single block in the iOS-Photos-like mosaic layout.
+struct MosaicBlock {
+    enum Kind { case featureLeft, featureRight, pair, triple, single }
+    let kind: Kind
+    let photos: [KBFamilyPhoto]
+}

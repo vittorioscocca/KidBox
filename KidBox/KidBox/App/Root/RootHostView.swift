@@ -76,14 +76,30 @@ struct RootHostView: View {
     @ObservedObject private var crashReportPrompt = CrashReportPromptCenter.shared
     
     // MARK: - View
-    
-    var body: some View {
+
+    /// Root container.
+    ///
+    /// - iOS/iPadOS: the classic `NavigationStack` driven by `coordinator.path`.
+    /// - Mac Catalyst: no outer stack here — `makeRootView()` resolves to
+    ///   `MacShellView`, which provides its own `NavigationSplitView` + detail
+    ///   `NavigationStack`. Wrapping it again would create a duplicate
+    ///   `navigationDestination(for: Route.self)`.
+    @ViewBuilder
+    private var rootContent: some View {
+        #if targetEnvironment(macCatalyst)
+        coordinator.makeRootView()
+        #else
         NavigationStack(path: $coordinator.path) {
             coordinator.makeRootView()
                 .navigationDestination(for: Route.self) {
                     coordinator.makeDestination(for: $0)
                 }
         }
+        #endif
+    }
+
+    var body: some View {
+        rootContent
         .task(id: coordinator.isAuthenticated) {
             guard coordinator.isAuthenticated else { return }
             await CrashAnalyzer.analyzeIfNeeded()
