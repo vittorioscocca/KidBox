@@ -75,10 +75,15 @@
 			</dict>
 		</dict>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>it.vittorioscocca.kidbox.password-security-refresh</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 		<string>location</string>
+		<string>fetch</string>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
