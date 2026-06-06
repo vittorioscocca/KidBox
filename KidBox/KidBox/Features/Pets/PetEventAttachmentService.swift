@@ -52,7 +52,7 @@ final class PetEventAttachmentService {
         let folder = KBDocumentCategory(
             id: rootId,
             familyId: familyId,
-            title: "Animali",
+            title: "Animali domestici",
             sortOrder: 87,
             parentId: nil,
             updatedBy: uid,
@@ -375,7 +375,7 @@ struct PetEventAttachmentsSection: View {
                     }
                 }
             }
-            Text("Visibili anche in Documenti › Animali")
+            Text("Visibili anche in Documenti › Animali domestici")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

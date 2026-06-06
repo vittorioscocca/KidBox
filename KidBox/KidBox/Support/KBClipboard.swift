@@ -17,6 +17,12 @@ enum KBClipboard {
     @MainActor
     static func copy(_ string: String, expiresIn: TimeInterval, localOnly: Bool) {
         let pb = UIPasteboard.general
+        #if targetEnvironment(macCatalyst)
+        // Su Mac Catalyst l'opzione `localOnly` con `setItems` non viene
+        // propagata in modo affidabile alla pasteboard di sistema (NSPasteboard),
+        // quindi l'incolla non funziona. Scriviamo direttamente la stringa.
+        pb.string = string
+        #else
         if localOnly {
             pb.setItems(
                 [[UTType.plainText.identifier: string]],
@@ -25,6 +31,7 @@ enum KBClipboard {
         } else {
             pb.string = string
         }
+        #endif
         let snapshot = string
         DispatchQueue.main.asyncAfter(deadline: .now() + expiresIn) {
             if pb.string == snapshot {

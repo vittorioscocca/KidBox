@@ -65,6 +65,19 @@ struct RootGateView: View {
                 }
             }
         }
+        // Su Mac Catalyst i Button che non dichiarano uno stile usano lo stile
+        // `.automatic`, reso come un riquadro grigio/traslucido arrotondato
+        // (il "bezel" AppKit) che appare dietro i pulsanti circolari/a pillola
+        // — vedi FAB, chevron, pill posizione. Impostando `.plain` come stile
+        // di default per tutto l'albero, solo i pulsanti che si affidano allo
+        // stile di default (quelli col bezel) cambiano: i pulsanti con uno
+        // `.buttonStyle` esplicito lo sovrascrivono e restano invariati.
+        // Disabilitiamo anche l'hover effect rettangolare del puntatore.
+        // Sheet e fullScreenCover ereditano l'ambiente.
+        #if targetEnvironment(macCatalyst)
+        .buttonStyle(.plain)
+        .hoverEffectDisabled()
+        #endif
         .onAppear {
             KBLog.navigation.kbDebug("RootGateView appeared")
         }

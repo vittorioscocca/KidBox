@@ -81,7 +81,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .wallet:    return "Wallet"
         case .passwords: return "Password"
         case .location:  return "Posizione"
-        case .pets:      return "Animali"
+        case .pets:      return "Animali domestici"
         case .homeItems: return "Casa"
         case .vehicles:  return "Garage"
         case .travel:    return "Viaggi"
@@ -196,22 +196,43 @@ struct MacShellView: View {
     private var families: [KBFamily]
 
     @State private var selection: MacSection? = .dashboard
+    @State private var searchText: String = ""
 
     private var resolvedFamilyId: String? {
         coordinator.activeFamilyId ?? families.first?.id
     }
 
+    /// Sections matching the current search query (case/diacritic-insensitive).
+    private func filtered(_ sections: [MacSection]) -> [MacSection] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return sections }
+        return sections.filter {
+            $0.title.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+        }
+    }
+
     var body: some View {
         NavigationSplitView {
+            let mainResults = filtered(MacSection.main)
+            let accountResults = filtered(MacSection.account)
             List(selection: $selection) {
-                Section {
-                    ForEach(MacSection.main) { sidebarRow($0) }
-                }
-                Section("Account") {
-                    ForEach(MacSection.account) { sidebarRow($0) }
+                if mainResults.isEmpty && accountResults.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                } else {
+                    if !mainResults.isEmpty {
+                        Section {
+                            ForEach(mainResults) { sidebarRow($0) }
+                        }
+                    }
+                    if !accountResults.isEmpty {
+                        Section("Account") {
+                            ForEach(accountResults) { sidebarRow($0) }
+                        }
+                    }
                 }
             }
             .listStyle(.sidebar)
+            .searchable(text: $searchText, placement: .sidebar, prompt: "Cerca sezione")
             .navigationTitle("KidBox")
             .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
         } detail: {

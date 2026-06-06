@@ -62,7 +62,7 @@ extension KBExpenseCategory {
         ("intrattenimento", "Intrattenimento","gamecontroller.fill",    "#607D8B"),
         ("viaggi",          "Viaggi",         "airplane",               "#03A9F4"),
         ("elettronica",     "Elettronica",    "desktopcomputer",        "#3F51B5"),
-        ("animali",         "Animali",        "pawprint.fill",          "#8BC34A"),
+        ("animali",         "Animali domestici", "pawprint.fill",       "#8BC34A"),
         ("altro",           "Altro",          "ellipsis.circle.fill",   "#9E9E9E"),
     ]
     

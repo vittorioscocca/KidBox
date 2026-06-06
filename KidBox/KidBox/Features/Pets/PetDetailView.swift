@@ -88,11 +88,11 @@ struct PetDetailView: View {
                     .padding()
                 }
             } else {
-                ContentUnavailableView("Animale non trovato", systemImage: "pawprint")
+                ContentUnavailableView("Animale domestico non trovato", systemImage: "pawprint")
             }
         }
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle(pet?.name ?? "Animale")
+        .navigationTitle(pet?.name ?? "Animale domestico")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {

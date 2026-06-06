@@ -64,7 +64,7 @@ struct TreatmentDetailView: View {
         }
         let pid = treatment.petId
         let d = FetchDescriptor<KBPet>(predicate: #Predicate<KBPet> { $0.id == pid })
-        return (try? modelContext.fetch(d).first?.name) ?? "Animale"
+        return (try? modelContext.fetch(d).first?.name) ?? "Animale domestico"
     }
     private var totalDays: Int {
         guard treatment.isLongTerm else { return treatment.durationDays }

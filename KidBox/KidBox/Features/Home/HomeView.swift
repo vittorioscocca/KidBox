@@ -842,7 +842,7 @@ private struct HomeCardGrid: View {
             }
             
         case .pets:
-            HomeCardView(title: "Animali", subtitle: "Cure e promemoria", systemImage: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange) {
+            HomeCardView(title: "Animali domestici", subtitle: "Cure e promemoria", systemImage: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange) {
                 KBLog.navigation.kbDebug("Home: tap Pets")
                 FABUsageTracker.shared.record("pets")
                 onNavigate(.pets(familyId: familyId))

@@ -66,7 +66,7 @@ struct PetsHomeView: View {
             }
         }
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle("Animali")
+        .navigationTitle("Animali domestici")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -97,13 +97,13 @@ struct PetsHomeView: View {
             Image(systemName: "pawprint.fill")
                 .font(.system(size: 52))
                 .foregroundStyle(accentOrange)
-            Text("Nessun animale ancora")
+            Text("Nessun animale domestico ancora")
                 .font(.custom("Nunito", size: 18).weight(.semibold))
                 .foregroundStyle(titleInk)
             Button {
                 showAddSheet = true
             } label: {
-                Text("Aggiungi animale")
+                Text("Aggiungi animale domestico")
                     .font(.custom("Nunito", size: 16).weight(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)

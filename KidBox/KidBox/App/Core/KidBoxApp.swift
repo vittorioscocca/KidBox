@@ -392,7 +392,7 @@ struct KidBoxApp: App {
                                 let petDesc = FetchDescriptor<KBPet>(
                                     predicate: #Predicate { $0.id == pid }
                                 )
-                                displayName = (try? context.fetch(petDesc).first?.name) ?? "Animale"
+                                displayName = (try? context.fetch(petDesc).first?.name) ?? "Animale domestico"
                             }
                             TreatmentNotificationManager.rescheduleIfNeeded(
                                 treatment: treatment,

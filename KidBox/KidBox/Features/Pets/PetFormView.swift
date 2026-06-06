@@ -81,7 +81,7 @@ struct PetFormView: View {
             }
             .scrollContentBackground(.hidden)
             .background(backgroundColor)
-            .navigationTitle(existingPet == nil ? "Nuovo animale" : "Modifica animale")
+            .navigationTitle(existingPet == nil ? "Nuovo animale domestico" : "Modifica animale domestico")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
