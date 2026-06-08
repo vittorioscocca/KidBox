@@ -13,7 +13,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Verifica se l'utente è un membro ATTIVO (non cancellato)
     function isMember(familyId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid))
@@ -27,7 +26,6 @@ service cloud.firestore {
       );
     }
 
-    // Owner incluso: evita permission denied se lo snapshot members è vuoto/in ritardo.
     function isMemberOrOwner(familyId) {
       return isOwner(familyId) || isMember(familyId);
     }
@@ -47,6 +45,11 @@ service cloud.firestore {
       }
 
       match /fcmTokens/{tokenId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+
+      // ── CHAT AI (private per-utente, sync cross-device) ────
+      match /aiConversations/{conversationId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
       }
     }
@@ -87,7 +90,6 @@ service cloud.firestore {
         allow delete: if isOwner(familyId);
       }
 
-      // Eventi arrive/leave: append-only dal client; push via Cloud Function (admin SDK)
       match /geofenceEvents/{eventId} {
         allow read: if isMemberOrOwner(familyId);
         allow create: if isMemberOrOwner(familyId)
@@ -102,7 +104,6 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      // Altre sottocollezioni (esclusi geofences/geofenceEvents — regole dedicate sopra)
       match /{subpath=**} {
         allow read: if isMemberOrOwner(familyId);
         allow write: if isMemberOrOwner(familyId)
@@ -111,17 +112,17 @@ service cloud.firestore {
       }
     }
 
-    // ── INVITES (codici testuali flat) ─────────────────────────
+    // ── INVITES (codici testuali flat) ─────────────────────
     match /invites/{code} {
       allow read, create: if isSignedIn();
       allow update: if isSignedIn()
         && resource.data.usedAt == null
         && request.resource.data.diff(resource.data).affectedKeys()
-         .hasOnly(['usedAt', 'usedBy']);
+          .hasOnly(['usedAt', 'usedBy']);
       allow delete: if false;
     }
 
-    // ── SUPPORT TICKETS (Assistente & Supporto) ──
+    // ── SUPPORT TICKETS (Assistente & Supporto) ───────────
     match /support_tickets/{ticketId} {
       function supportTicketRequiredKeys() {
         return [
@@ -170,7 +171,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── CRASH REPORTS (log anonimi, opt-in utente) ──
+    // ── CRASH REPORTS (log anonimi, opt-in utente) ────────
     match /crash_reports/{reportId} {
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid

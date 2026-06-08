@@ -31,6 +31,7 @@ final class MedicalAIChatViewModel: ObservableObject {
     
     private var conversation: KBAIConversation?
     private var systemPrompt: String = ""
+    private var aiChatChangedCancellable: AnyCancellable?
     
     // MARK: - Summary config
     
@@ -54,6 +55,7 @@ final class MedicalAIChatViewModel: ObservableObject {
     func loadOrCreateConversation() {
         KBLog.ai.kbInfo("loadOrCreateConversation started visitId=\(visit.id)")
         
+        subscribeToAIChatSync()
         Task { @MainActor in
             if loadExistingConversationIfReady() {
                 KBLog.ai.kbInfo("Existing conversation fast-loaded, starting silent context refresh")
@@ -69,6 +71,26 @@ final class MedicalAIChatViewModel: ObservableObject {
         }
     }
     
+    /// Ricarica i messaggi quando la sync cross-device aggiorna lo storico.
+    private func subscribeToAIChatSync() {
+        aiChatChangedCancellable?.cancel()
+        aiChatChangedCancellable = SyncCenter.shared.aiChatChanged
+            .debounce(for: .milliseconds(200), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !self.isLoading, self.streamingMessageId == nil else { return }
+                let visitId = self.visit.id
+                let providerRaw = AIProvider.claude.rawValue
+                let descriptor = FetchDescriptor<KBAIConversation>(
+                    predicate: #Predicate { $0.visitId == visitId },
+                    sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                )
+                guard let convo = (try? self.modelContext.fetch(descriptor))?
+                    .first(where: { $0.providerRaw == providerRaw }) else { return }
+                self.conversation = convo
+                self.messages = convo.sortedMessages
+            }
+    }
+
     @discardableResult
     private func loadExistingConversationIfReady() -> Bool {
         let visitId = visit.id
@@ -213,7 +235,8 @@ final class MedicalAIChatViewModel: ObservableObject {
         conversation.messages.append(userMsg)
         messages.append(userMsg)
         saveContext()
-        
+        SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+
         isLoading = true
 
         do {
@@ -254,6 +277,7 @@ final class MedicalAIChatViewModel: ObservableObject {
             )
             try await compactIfNeeded(conversation: conversation)
             saveContext()
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
 
             KBLog.ai.kbInfo("send completed totalMessagesCount=\(messages.count)")
 
@@ -292,6 +316,10 @@ final class MedicalAIChatViewModel: ObservableObject {
 
         KBLog.ai.kbInfo("Conversation cleared, recreating conversation")
         loadOrCreateConversation()
+        // Propaga lo svuotamento agli altri dispositivi (stesso remoteDocId).
+        if let convo = self.conversation {
+            SyncCenter.shared.pushAIConversation(convo, modelContext: modelContext)
+        }
     }
     
     // MARK: - Compaction

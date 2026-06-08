@@ -36,7 +36,14 @@ final class KBAIConversation {
     var visitId: String
     var providerRaw: String
     var createdAt: Date
-    
+
+    /// Owner of the conversation (Firebase uid). AI chats are private per-user,
+    /// sincronizzate solo tra i dispositivi dello stesso utente.
+    var ownerUserId: String = ""
+
+    /// Last modification timestamp — used for cross-device Last-Writer-Wins sync.
+    var updatedAt: Date = Date()
+
     // Summary / compression
     var summary: String?
     var summaryUpdatedAt: Date?
@@ -66,7 +73,9 @@ final class KBAIConversation {
         childId: String,
         visitId: String,
         provider: AIProvider,
+        ownerUserId: String = "",
         createdAt: Date = Date(),
+        updatedAt: Date = Date(),
         summary: String? = nil,
         summaryUpdatedAt: Date? = nil,
         summarizedMessageCount: Int = 0
@@ -76,9 +85,23 @@ final class KBAIConversation {
         self.childId = childId
         self.visitId = visitId
         self.providerRaw = provider.rawValue
+        self.ownerUserId = ownerUserId
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
         self.summary = summary
         self.summaryUpdatedAt = summaryUpdatedAt
         self.summarizedMessageCount = summarizedMessageCount
+    }
+
+    /// Deterministic Firestore document id derived from the conversation scope
+    /// (provider + visit/scope id), so every device dello stesso utente scrive
+    /// sullo stesso documento e le conversazioni convergono.
+    var remoteDocId: String {
+        let raw = "\(providerRaw)__\(visitId)"
+        // Firestore doc id non può contenere "/" e ha un limite pratico di
+        // lunghezza: sostituiamo i caratteri problematici.
+        return raw
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "..", with: "_")
     }
 }

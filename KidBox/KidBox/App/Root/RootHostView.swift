@@ -322,6 +322,7 @@ struct RootHostView: View {
                 SyncCenter.shared.stopVehiclesRealtime()
                 SyncCenter.shared.stopVehicleEventsRealtime()
                 SyncCenter.shared.stopTripsRealtime()
+                SyncCenter.shared.stopAIChatRealtime()
                 startedFamilyId = nil
                 KBLog.sync.kbDebug("Realtime listeners stopped and startedFamilyId cleared")
             } else {
@@ -369,6 +370,7 @@ struct RootHostView: View {
             SyncCenter.shared.stopVehiclesRealtime()
             SyncCenter.shared.stopVehicleEventsRealtime()
             SyncCenter.shared.stopTripsRealtime()
+            SyncCenter.shared.stopAIChatRealtime()
         } else {
             KBLog.sync.kbInfo("Starting realtime listeners for familyId=\(familyId)")
         }
@@ -477,5 +479,11 @@ struct RootHostView: View {
             familyId: familyId,
             modelContext: modelContext
         )
+
+        // Chat AI: private per-utente (non legate alla famiglia). Avvia il
+        // listener + riconciliazione storico così le conversazioni sono visibili
+        // su tutti i dispositivi dello stesso utente.
+        KBLog.sync.kbDebug("startAIChatRealtime")
+        SyncCenter.shared.startAIChatRealtime(modelContext: modelContext)
     }
 }

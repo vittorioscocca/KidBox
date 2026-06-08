@@ -79,7 +79,11 @@ final class SyncCenter: ObservableObject {
     let vehicleRemote = VehicleRemoteStore()
     let vehicleEventRemote = VehicleEventRemoteStore()
     let tripRemote = TripRemoteStore()
-    
+
+    // AI chat (per-user, private). Vedi SyncCenter+AIChat.swift
+    var aiChatListener: ListenerRegistration?
+    let aiChatRemote = AIChatRemoteStore()
+
     /// When true, outbound flush/apply should avoid re-creating data while wiping.
     private(set) var isWipingLocalData = false
     

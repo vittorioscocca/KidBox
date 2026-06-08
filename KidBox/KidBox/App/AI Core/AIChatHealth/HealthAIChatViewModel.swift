@@ -58,6 +58,7 @@ final class HealthAIChatViewModel: ObservableObject {
     private var compactHealthContextCache: (fingerprint: Int, summary: String)?
     private var didShowLargeContextNotice = false
     private var docsChangedCancellable: AnyCancellable?
+    private var aiChatChangedCancellable: AnyCancellable?
     
     private let compactionThreshold: Double = 0.60
     private var lastCompactionThreshold: Int = 0
@@ -115,6 +116,7 @@ final class HealthAIChatViewModel: ObservableObject {
             
             try rebuildHealthSystemPrompts()
             subscribeToHealthDocumentChanges()
+            subscribeToAIChatSync()
             Task { await syncHealthContextSendPreferenceFromRemote() }
             
             contextPrepared  = true
@@ -144,6 +146,7 @@ final class HealthAIChatViewModel: ObservableObject {
             conversation.summaryUpdatedAt       = nil
             conversation.summarizedMessageCount = 0
             try modelContext.save()
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
             messages.removeAll()
             streamingMessageId = nil
             errorMessage = nil
@@ -268,6 +271,7 @@ final class HealthAIChatViewModel: ObservableObject {
             modelContext.insert(userMessage)
             try modelContext.save()
             messages.append(userMessage)
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
 
             let payloadMessages = buildPayloadMessages(conversation: conversation)
             let finalSystemPrompt = try await resolveSystemPrompt(
@@ -320,6 +324,7 @@ final class HealthAIChatViewModel: ObservableObject {
                 messagesInSession: response.usageToday,
                 dailyLimit: response.dailyLimit
             )
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
         } catch {
             isLoading = false
             isPreparingCompactContext = false
@@ -606,6 +611,24 @@ final class HealthAIChatViewModel: ObservableObject {
         systemPrompt = withFamilyMemory(standardBase)
         fullSystemPrompt = withFamilyMemory(fullBase)
         if fullSystemPrompt.isEmpty { fullSystemPrompt = systemPrompt }
+    }
+
+    /// Ricarica i messaggi quando la sync cross-device aggiorna lo storico.
+    private func subscribeToAIChatSync() {
+        aiChatChangedCancellable?.cancel()
+        aiChatChangedCancellable = SyncCenter.shared.aiChatChanged
+            .debounce(for: .milliseconds(200), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !self.isLoading, self.streamingMessageId == nil else { return }
+                do {
+                    let convo = try self.fetchOrCreateConversation()
+                    self.conversation = convo
+                    self.messages = convo.sortedMessages
+                    KBLog.ai.kbDebug("HealthAIChatVM messages reloaded after aiChat sync count=\(self.messages.count)")
+                } catch {
+                    KBLog.ai.kbError("HealthAIChatVM reload after aiChat sync FAILED: \(error)")
+                }
+            }
     }
 
     private func subscribeToHealthDocumentChanges() {

@@ -31,7 +31,8 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
     
     private let compactionThreshold: Double = 0.60
     private var lastCompactionThreshold: Int = 0
-    
+    private var aiChatChangedCancellable: AnyCancellable?
+
     // MARK: - Published
     
     @Published var messages: [KBAIMessage] = []
@@ -109,10 +110,11 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
                 )
             )
             
+            subscribeToAIChatSync()
             contextPrepared = true
             isLoadingContext = false
             Task { await refreshUsage() }
-            
+
             KBLog.ai.kbInfo("loadOrCreateConversation END systemPromptChars=\(systemPrompt.count)")
         } catch {
             isLoadingContext = false
@@ -150,9 +152,10 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             conversation.summary = nil
             conversation.summaryUpdatedAt = nil
             conversation.summarizedMessageCount = 0
-            
+
             try modelContext.save()
-            
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+
             messages.removeAll()
             streamingMessageId = nil
             errorMessage = nil
@@ -202,7 +205,8 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
             modelContext.insert(userMessage)
             try modelContext.save()
             messages.append(userMessage)
-            
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+
             KBLog.ai.kbInfo("user message saved id=\(userMessage.id)")
             
             let payloadMessages = buildPayloadMessages(conversation: conversation)
@@ -250,6 +254,7 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
                 messagesInSession: response.usageToday,
                 dailyLimit: response.dailyLimit
             )
+            SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
 
             KBLog.ai.kbInfo("assistant message saved id=\(assistantMessage.id)")
         } catch {
@@ -271,6 +276,23 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
     
     // MARK: - Conversation
     
+    /// Ricarica i messaggi quando la sync cross-device aggiorna lo storico.
+    private func subscribeToAIChatSync() {
+        aiChatChangedCancellable?.cancel()
+        aiChatChangedCancellable = SyncCenter.shared.aiChatChanged
+            .debounce(for: .milliseconds(200), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !self.isLoading, self.streamingMessageId == nil else { return }
+                do {
+                    let convo = try self.fetchOrCreateConversation()
+                    self.conversation = convo
+                    self.messages = convo.sortedMessages
+                } catch {
+                    KBLog.ai.kbError("VisitsAIChatVM reload after aiChat sync FAILED: \(error)")
+                }
+            }
+    }
+
     private func fetchOrCreateConversation() throws -> KBAIConversation {
         KBLog.ai.kbInfo("fetchOrCreateConversation scopeId=\(scopeId)")
         
