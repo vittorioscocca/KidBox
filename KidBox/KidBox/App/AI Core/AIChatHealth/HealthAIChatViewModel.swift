@@ -571,6 +571,9 @@ final class HealthAIChatViewModel: ObservableObject {
 
         enqueuePendingHealthExtractions(in: familyDocs)
 
+        // Carica lo snapshot Apple Health persistito (nil se non collegato o non importato).
+        let appleHealthSnapshot = KBHealthLinkStore.load(childId: subjectId)
+
         let builderArgs = (
             subjectName: subjectName,
             subjectId: subjectId,
@@ -593,7 +596,9 @@ final class HealthAIChatViewModel: ObservableObject {
             documentsByExamId: builderArgs.documentsByExamId,
             documentsByVisitId: builderArgs.documentsByVisitId,
             documentsByTreatmentId: builderArgs.documentsByTreatmentId,
-            refertoMaxChars: HealthAiDocumentText.standardRefertoMaxChars
+            refertoMaxChars: HealthAiDocumentText.standardRefertoMaxChars,
+            healthSnapshot: appleHealthSnapshot,
+            visitsForWearableContext: visits
         )
         let fullBase = HealthContextBuilder.buildSystemPrompt(
             subjectName: builderArgs.subjectName,
@@ -605,7 +610,9 @@ final class HealthAIChatViewModel: ObservableObject {
             documentsByExamId: builderArgs.documentsByExamId,
             documentsByVisitId: builderArgs.documentsByVisitId,
             documentsByTreatmentId: builderArgs.documentsByTreatmentId,
-            refertoMaxChars: nil
+            refertoMaxChars: nil,
+            healthSnapshot: appleHealthSnapshot,
+            visitsForWearableContext: visits
         )
 
         systemPrompt = withFamilyMemory(standardBase)

@@ -16,6 +16,10 @@ enum AIAskAIPayload {
     /// Limite assoluto lato server (anti-abuso).
     static let absoluteMaxChars = 500_000
 
+    /// Unità minime per la cartella clinica (Sonnet ~3× Haiku + niente caching).
+    /// Parity con `CLINICAL_RECORD_MIN_UNITS` in `functions/index.js`.
+    static let clinicalRecordMinUnits = 3
+
     static func totalChars(systemPrompt: String, messages: [KBAIMessage], pendingUserText: String = "") -> Int {
         let history = messages.reduce(0) { $0 + $1.content.count }
         let pending = pendingUserText.trimmingCharacters(in: .whitespacesAndNewlines).count
@@ -29,6 +33,12 @@ enum AIAskAIPayload {
 
     static func isLargeContext(totalChars: Int) -> Bool {
         messageUnits(totalChars: totalChars) > 1
+    }
+
+    /// Unità per la cartella clinica: minimo fisso `clinicalRecordMinUnits`,
+    /// oppure le unità del payload se il contesto è molto grande.
+    static func clinicalRecordMessageUnits(totalChars: Int) -> Int {
+        max(clinicalRecordMinUnits, messageUnits(totalChars: totalChars))
     }
 
     /// Testo da mostrare sopra l'input quando il contesto supera lo standard.

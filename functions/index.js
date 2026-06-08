@@ -1349,6 +1349,9 @@ const ANTHROPIC_MODEL_CLINICAL_RECORD = "claude-sonnet-4-5";
 const ANTHROPIC_INPUT_USD_PER_1M_SONNET = 3.0;
 const ANTHROPIC_OUTPUT_USD_PER_1M_SONNET = 15.0;
 const CLINICAL_RECORD_MAX_TOKENS = 4096;
+// Unità minime scalate dal limite giornaliero per una generazione cartella clinica.
+// Sonnet costa ~3× Haiku per token + niente caching (one-shot) → costo fisso più alto.
+const CLINICAL_RECORD_MIN_UNITS = 3;
 
 /** Regole server aggiunte al system prompt cartella clinica (affiancano il prompt client). */
 const CLINICAL_RECORD_SYSTEM_RULES = `
@@ -1544,6 +1547,49 @@ function askAIMessageUnitsForPayload(totalChars) {
 }
 
 /**
+ * Avvolge il system prompt in un blocco `text` con `cache_control: ephemeral`.
+ * Anthropic prompt caching è un prefix-match: render order tools → system →
+ * messages. Mettendo il breakpoint sull'ultimo blocco system, tools+system
+ * vengono cachati insieme. Le chat (specie Salute) rimandano lo stesso grosso
+ * system prompt/contesto a ogni turno → cache read ~0.1× input invece di 1×.
+ * Sotto il prefisso minimo cacheable (~4096 token su Haiku) non casha
+ * silenziosamente: nessun costo extra, quindi è safe applicarlo sempre.
+ * @param {string} systemPrompt
+ * @return {Array<object>}
+ */
+function cacheableSystem(systemPrompt) {
+  return [{
+    type: "text",
+    text: systemPrompt,
+    cache_control: {type: "ephemeral"},
+  }];
+}
+
+/**
+ * Aggiunge un breakpoint di cache sull'ultimo blocco dell'ultimo messaggio,
+ * così a ogni turno l'intero storico conversazione precedente diventa un
+ * prefisso cachato (pattern multi-turn). Normalizza il content a array di
+ * blocchi quando è una stringa. Non muta l'input originale.
+ * @param {Array<{role: string, content: string|Array<object>}>} messages
+ * @return {Array<object>}
+ */
+function messagesWithCacheBreakpoint(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return messages;
+  const out = messages.map((m) => ({role: m.role, content: m.content}));
+  const last = out[out.length - 1];
+  const blocks = typeof last.content === "string" ?
+    [{type: "text", text: last.content}] :
+    last.content.map((b) => ({...b}));
+  if (blocks.length === 0) return out;
+  blocks[blocks.length - 1] = {
+    ...blocks[blocks.length - 1],
+    cache_control: {type: "ephemeral"},
+  };
+  last.content = blocks;
+  return out;
+}
+
+/**
  * Checks the daily counter and increments it atomically.
  * Il contatore è per famiglia (family_{familyId}) così tutti i membri
  * condividono il limite giornaliero del piano famiglia.
@@ -1633,13 +1679,21 @@ exports.askAI = onCall(
         );
       }
 
-      const messageUnits = askAIMessageUnitsForPayload(totalChars);
+      const clinicalRecord = isClinicalRecordAskAI({purpose});
+
+      // Unità base calcolate sulla dimensione del payload.
+      const payloadUnits = askAIMessageUnitsForPayload(totalChars);
+      // La cartella clinica gira su Sonnet (~3× il costo per token di Haiku) e
+      // non beneficia del prompt caching (chiamata one-shot): la facciamo costare
+      // un minimo fisso di unità per riflettere il costo reale a prescindere dal payload.
+      const messageUnits = clinicalRecord ?
+        Math.max(CLINICAL_RECORD_MIN_UNITS, payloadUnits) :
+        payloadUnits;
       const isLargeContext = messageUnits > 1;
 
       const dailyLimit = await resolveAIDailyLimit(uid, familyId);
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, messageUnits);
 
-      const clinicalRecord = isClinicalRecordAskAI({purpose});
       const anthropicModel = clinicalRecord ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
       const maxTokens = clinicalRecord ? CLINICAL_RECORD_MAX_TOKENS : 1024;
       const effectiveSystemPrompt = clinicalRecord ?
@@ -1676,8 +1730,16 @@ exports.askAI = onCall(
           body: JSON.stringify({
             model: anthropicModel,
             max_tokens: maxTokens,
-            system: effectiveSystemPrompt,
-            messages: messages.map((m) => ({role: m.role, content: m.content})),
+            // Prompt caching SOLO per le chat (multi-turno): breakpoint su system
+            // (tools+system) e sull'ultimo messaggio (storico) → input ripetuto a
+            // ~0.1× su cache hit. La cartella clinica è one-shot su Sonnet: il
+            // write premium (1.25×) senza re-read sarebbe uno spreco → niente cache.
+            system: clinicalRecord ?
+              effectiveSystemPrompt :
+              cacheableSystem(effectiveSystemPrompt),
+            messages: clinicalRecord ?
+              messages.map((m) => ({role: m.role, content: m.content})) :
+              messagesWithCacheBreakpoint(messages),
           }),
         });
 
@@ -1695,9 +1757,16 @@ exports.askAI = onCall(
         if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
 
         // ── Tracking costi Anthropic ────────────────────────────────────────
+        // `input_tokens` è il solo resto NON cachato. Con prompt caching il
+        // costo reale pesa: input pieno 1×, cache read ~0.1×, cache write 1.25×.
         const inputTokens = json?.usage?.input_tokens || 0;
         const outputTokens = json?.usage?.output_tokens || 0;
-        const costUsd = (inputTokens / 1000000) * inputUsdPer1M +
+        const cacheReadTokens = json?.usage?.cache_read_input_tokens || 0;
+        const cacheWriteTokens = json?.usage?.cache_creation_input_tokens || 0;
+        const costUsd =
+          (inputTokens / 1000000) * inputUsdPer1M +
+          (cacheReadTokens / 1000000) * inputUsdPer1M * 0.1 +
+          (cacheWriteTokens / 1000000) * inputUsdPer1M * 1.25 +
           (outputTokens / 1000000) * outputUsdPer1M;
 
         const monthKey = new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"}).slice(0, 7); // YYYY-MM
@@ -1726,6 +1795,9 @@ exports.askAI = onCall(
 
         logger.info("askAI tokens", {
           uid, familyId, inputTokens, outputTokens,
+          cacheReadTokens, cacheWriteTokens,
+          cacheHitRatio: (inputTokens + cacheReadTokens) > 0 ?
+            (cacheReadTokens / (inputTokens + cacheReadTokens)).toFixed(2) : "0",
           costUsd: costUsd.toFixed(6), clinicalRecord, model: anthropicModel,
         });
       } catch (e) {

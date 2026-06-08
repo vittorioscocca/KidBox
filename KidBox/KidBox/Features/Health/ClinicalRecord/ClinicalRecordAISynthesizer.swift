@@ -56,7 +56,8 @@ enum ClinicalRecordAISynthesizer {
             messages: [KBAIMessage(role: .user, content: userContent)]
         )
         let total = base + serverRulesOverheadChars
-        let units = AIAskAIPayload.messageUnits(totalChars: total)
+        // Cartella clinica: minimo fisso (Sonnet ~3× Haiku), parity server.
+        let units = AIAskAIPayload.clinicalRecordMessageUnits(totalChars: total)
         return (total, units, AIAskAIPayload.isLargeContext(totalChars: total))
     }
 

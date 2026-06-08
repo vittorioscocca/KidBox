@@ -8,7 +8,7 @@
 
 KidBox è un'app iOS **per la gestione condivisa della vita di famiglia**: chat E2E, documenti crittografati, note ricche, calendario, foto/video di famiglia, salute pediatrica (visite, esami, terapie, vaccini), wallet di biglietti, password manager, viaggi, spese, posizioni in tempo reale, animali domestici, casa e veicoli. Target utenti: **genitori e nuclei familiari** che vogliono un'unica app privata e crittografata per coordinare la vita quotidiana.
 
-- **Bundle identifier**: `it.vittorioscocca.KidBox` — versione marketing **1.1.5**, build **63**, deployment target **iOS 26.2**, Swift 5.0, target device family iPhone + iPad.
+- **Bundle identifier**: `it.vittorioscocca.KidBox` — versione marketing **1.1.6**, build **65**, deployment target **iOS 26.2**, Swift 5.0, target device family iPhone + iPad. Gira anche come app **Mac Catalyst** con una shell desktop dedicata (sidebar + split view, vedi §6.7).
 - **CFBundleDisplayName**: `KidBox` (impostato in `INFOPLIST_KEY_CFBundleDisplayName` nel `project.pbxproj`).
 - **URL scheme** principali: `kidbox://` (routing interno `share`, `control/open-family-photos-camera`), `com.googleusercontent.apps.52613538008-...` (Google Sign-In), `fb25962552233393986` (Facebook SDK).
 - **Tipo esportato**: `it.vittorioscocca.kidbox.kbpw` (estensioni `.kbpw` / `.txt` per export password).
@@ -98,7 +98,7 @@ I 5 target di estensione vivono come fratelli in `/Users/vscocca/KidBox/KidBox/`
 
 ### Cartelle critiche
 
-- **`Data/Remote/Sync/`** — il cuore del sync: `SyncCenter.swift` (~1460 righe) + 23 extension `SyncCenter+<Dominio>.swift` (Calendar, Children, DocumentCategories, DocumentsEvents, Expenses, FamilyBundle, Grocery, HomeItems, HousePayments, MedicalExams, Notes, Passwords, PediatricProfile, Pets, Treatments, Trips, Vaccines, Vehicles, Visits, Wallet, photos) + `KBSyncOp`, `KBSyncState`, `SyncEntityType`.
+- **`Data/Remote/Sync/`** — il cuore del sync: `SyncCenter.swift` (~1460 righe) + 24 extension `SyncCenter+<Dominio>.swift` (AIChat, Calendar, Children, DocumentCategories, DocumentsEvents, Expenses, FamilyBundle, Grocery, HomeItems, HousePayments, MedicalExams, Notes, Passwords, PediatricProfile, Pets, Treatments, Trips, Vaccines, Vehicles, Visits, Wallet, photos) + `KBSyncOp`, `KBSyncState`, `SyncEntityType`. **Nota**: `SyncCenter+AIChat` è l'unico che NON sincronizza sotto `families/...` ma sotto `users/{uid}/aiConversations` (chat AI private per-utente, vedi §AI).
 - **`Data/Models/`** — 45 entità `@Model final class`, prefisso `KB` sistematico (eccezioni: `PasswordEntry`/`PasswordGroup` per coerenza con `AuthenticationServices`, `SharedUserLocation` come DTO Codable).
 - **`Features/Health/`** — la più ricca: `Home/`, `AppleHealth/`, `ClinicalRecord/` (28 file, generazione cartella clinica AI + PDF), `MedicalRecord/`, `Visits/`, `Exames/`, `Treatments/`, `Vaccines/`, `Shared/`, `AI/`, `KBHealthCalendarService.swift`.
 
@@ -238,6 +238,7 @@ L'app è in transizione da Combine puro a `async/await`:
 - **`users/{uid}`** — solo il proprietario può read/create/update/delete (rules righe 42-43). Campi: `email`, `displayName`, `photoURL`, `avatarURL`, `plan` (`"free"|"pro"|"max"`), `notificationPrefs` (mappa con `notifyOnNewDocs`, `notifyOnNewMessages`, `notifyOnLocationSharing`, `notifyOnTodoAssigned`, `notifyOnNewGroceryItem`, `notifyOnNewNote`, `notifyOnNewCalendarEvent`, `notifyOnNewExpense`, `notifyOnNewWalletTicket`, `notifyOnWalletReminder`, `aiEnabled`), `aiPrefs` (`healthContextSendPreference`, `healthContextSendPreferenceUpdatedAt`).
 - **`users/{uid}/memberships/{familyId}`** — solo proprietario. Campi: `familyId`, `role` (`"owner"|"member"`), `createdAt`. Sorgente di verità per la CF `deleteAccount`.
 - **`users/{uid}/fcmTokens/{tokenId}`** — `{token, platform: "ios", updatedAt}`, scritti da `NotificationManager.persistFCMToken`.
+- **`users/{uid}/aiConversations/{docId}`** — chat AI **private per-utente**, sincronizzate solo tra i device dello stesso utente (`AIChatRemoteStore`). `docId` deterministico sullo scope (provider + visitId); messaggi incorporati come array, merge LWW su `updatedAt`. Vedi §AI per i dettagli.
 - **`families/{familyId}`** — `create` se `request.resource.data.ownerUid == request.auth.uid`; `read/update/delete` se `isMemberOrOwner`. Campi: `name`, `ownerUid`, `plan`/`planOverride` (impostato solo dalla CF `setFamilyPlanOverride`), `planOverrideNote`/`SetAt`/`SetBy`, `heroPhotoURL`, `heroPhotoUpdatedAt`, `heroPhotoScale`, `heroPhotoOffsetX/Y`, `createdAt`, `updatedAt`, `updatedBy`.
 - **`invites/{code}`** flat (codici a 6 caratteri da `Support/InviteCodeGenerator.swift`) — `read/create` per qualsiasi signed-in; `update` solo se `usedAt == null` e la diff tocca solo `usedAt`/`usedBy`.
 - **`support_tickets/{ticketId}`** — `create` se `validSupportTicketData()`; campi obbligatori validati: `id, familyId, uid, userEmail, type ∈ {question,bug,suggestion}, title (≤200), summary (≤2000), conversation: list, images: list (≤5), platform ∈ {ios,android}, appVersion, osVersion, device, status == "new", createdAt`. Costruito da `SupportTicketFirestorePayload.buildDocumentData`.
@@ -432,7 +433,7 @@ NavigationStack(path: $coordinator.path) {
 ```
 
 - **Nessuna `TabView`** di sezione principale: la "home" è semplicemente `HomeView` con una griglia di card draggabili (`Features/Home/HomeView.swift:569-954`, `HomeCardGrid`). L'unica `TabView` nell'app è dentro `Features/Travel/TravelPlaceDetailView.swift:97` per il carosello immagini di un place — UI locale, non root navigation.
-- **Nessuna `NavigationView`** legacy. **Nessuna `NavigationSplitView`** — l'app non è ottimizzata per iPad/Mac multi-colonna.
+- **Nessuna `NavigationView`** legacy. Su iPhone/iPad l'app usa il singolo `NavigationStack` a colonna unica. La **`NavigationSplitView`** esiste **solo su Mac Catalyst** (`App/Root/MacShellView.swift`, compilato dentro `#if targetEnvironment(macCatalyst)`); su iOS/iPadOS la UI resta invariata a colonna unica (vedi §6.7).
 - Dentro alcuni sheet/full-screen modali si annidano altri `NavigationStack` isolati (es. `DocumentFolderView`, `FamilySettingsView`, `SupportChatView`, `CalendarView`).
 
 ### 6.2 Coordinator unico
@@ -519,6 +520,19 @@ Gestiti in `KidBoxApp.onOpenURL` (`App/Core/KidBoxApp.swift:71-111`):
 - **Condivisione live in background**: `AppDelegate.setupBackgroundLocationManager()` usa `startMonitoringSignificantLocationChanges()`; al relaunch in background iOS chiama `didUpdateLocations`, che scrive su Firestore via `LocationRemoteStore` leggendo uid/familyId/displayName dai `UserDefaults` (chiavi `KBLocationDefaults`), gate su `isSharing`.
 - **Geofence (arrivo/uscita zona)**: `Features/FamilyLocation/GeofenceMonitorService.swift` è un **singleton a vita-app** (`static let shared`) con un solo `CLLocationManager` il cui delegate resta vivo a ogni avvio → riceve `didEnter/ExitRegion` anche dopo un relaunch in background (le `CLCircularRegion` persistono a livello OS tra i lanci). Il monitoraggio è **indipendente** dalla condivisione live (`FamilyLocationViewModel.syncGeofenceMonitor()` non è più gated su `sharingRequested/isSharing`). Il contesto (familyId/uid/displayName) è persistito nei `UserDefaults` (chiavi `geofence*` in `KBLocationDefaults`) per attribuire correttamente gli eventi; `AppDelegate.didFinishLaunching` istanzia `GeofenceMonitorService.shared` (via `MainActor.assumeIsolated`). Gli eventi vengono scritti su `families/{familyId}/geofenceEvents/{eventId}` → Cloud Function `onGeofenceEvent` invia le push ai membri.
 
+### 6.7 Shell desktop Mac Catalyst
+
+L'app gira anche come **Mac Catalyst**. Tutto il codice desktop-specifico vive in `App/Root/` dentro `#if targetEnvironment(macCatalyst)`, quindi **la UI iPhone/iPad è completamente intatta**.
+
+- **`App/Root/MacShellView.swift`** (~352 righe) — root su Mac. È una `NavigationSplitView` con:
+  - **sidebar persistente** guidata dall'enum `MacSection` (l'ordine dei case = ordine in sidebar): `dashboard, calendar, todo, notes, shopping, photos, health, chat, documents, expenses, wallet, passwords, location, pets, homeItems, vehicles, travel, assistant` + gruppo Account (`family, profile, settings`). Il mapping sezione→view rispecchia le card della Home grid (titoli/icone/colori coerenti).
+  - **colonna detail** che ospita un proprio `NavigationStack` legato a `coordinator.path`, così il drill-down (es. aprire il dettaglio di una nota) continua a funzionare via `coordinator.navigate(to:)` riusando lo stesso `AppCoordinator.makeDestination(for:)` di iOS/iPad.
+  - sul Mac la Home grid è ridondante (la sostituisce la sidebar): la sezione `dashboard` mostra `MacDashboardView` al posto di `HomeView`.
+- **`App/Root/MacPresentation.swift`** — adatta le presentazioni modali al desktop:
+  - `View.sheetOrMacPush(isPresented:hideMacNavBar:content:)` — su iOS presenta una `.sheet`, su Mac fa `navigationDestination(isPresented:)` (push in-place nel `NavigationStack`). Usato per chat AI e gallerie media/link/documenti della chat.
+  - `ModalNavContainer` — avvolge il contenuto in un `NavigationStack` solo su iOS (dove la view è modale e serve un proprio contesto di navigazione); su Mac no, per evitare una nav bar duplicata.
+- **Entry point**: `App/Root/RootGateView.swift:56` istanzia `MacShellView()` sotto `#if targetEnvironment(macCatalyst)`; `RootHostView` salta il suo `NavigationStack` a colonna unica sul Mac (delega a `MacShellView`).
+
 ---
 
 ## 7. Modelli dati
@@ -579,6 +593,7 @@ Tutti i modelli sono `@Model final class`, persistenti, con `@Attribute(.unique)
 
 - `Data/AIMessage/KBAIConversation.swift` — `id, familyId, childId, visitId, providerRaw (AIProvider .claude|.openai), createdAt, summary?, summaryUpdatedAt?, summarizedMessageCount`. `@Relationship(deleteRule: .cascade, inverse: \KBAIMessage.conversation) var messages: [KBAIMessage]`.
 - `Data/AIMessage/KBAIMessage.swift`.
+- **Sync cross-device delle chat AI** (`Data/Remote/RemoteStores/AIChatRemoteStore.swift` + `Data/Remote/Sync/SyncCenter+AIChat.swift`): le conversazioni AI sono **private per-utente** e vengono sincronizzate solo tra i device dello stesso utente sotto `users/{uid}/aiConversations/{docId}` (nessun membro famiglia le vede). L'id del documento è **deterministico** sullo scope (provider + visitId), così ogni device converge sullo stesso documento; i messaggi sono incorporati come array nel documento, con merge a livello di conversazione **Last-Writer-Wins su `updatedAt`** (propaga anche "pulisci chat" e la compattazione `summary`). `SyncCenter.startAIChatRealtime(modelContext:)` avvia il listener + riconciliazione una-tantum (pull + backfill); `SyncCenter.aiChatChanged` notifica i ViewModel delle chat aperte di ricaricare da SwiftData.
 - `Data/Models/KBMemoryFact.swift` — fatti persistenti (`content, categoryRaw (MemoryFactCategory), sourceConversationId?`).
 
 #### Chat di famiglia
@@ -714,6 +729,46 @@ Estensioni per dominio (firme `start/stop/enqueue/process/apply` simili):
 - Sotto-cartelle: `AIChatExams/`, `AIChatVisits/`, `AIChatHealth/`.
 - `AIConsentSheet.swift`.
 - `Kbsaveclassifier.swift` — classifier locale per categorizzare i fatti da salvare in `KBMemoryFact`.
+
+#### Chat AI Salute — costruzione contesto (`AIChatHealth/`)
+
+- **`HealthAIChatViewModel.swift`** — ViewModel principale della chat. In `rebuildHealthSystemPrompts()`:
+  1. Carica lo snapshot Apple Health persistito: `KBHealthLinkStore.load(childId: subjectId)` (nil se non collegato).
+  2. Chiama `HealthContextBuilder.buildSystemPrompt(…, healthSnapshot:, visitsForWearableContext:)` per entrambi i prompt (standard con referti troncati, full con referti completi).
+  3. Gestisce la **compattazione** (`compactIfNeeded`, soglia 60% del limite giornaliero): azzera `conversation.messages`, inserisce un messaggio di summary e aggiorna `conversation.summary`.
+- **`Features/Health/Home/HealthContextBuilder.swift`** — assembla il system prompt AI. Sezioni: istruzioni role, profilo, cure attive (+ referti), vaccini, visite (+ referti), esami (+ referti). Se `healthSnapshot != nil` appende la sezione wearable via `ClinicalRecordAppleHealthNarrative.appendToPrompt` — **sia per `healthChat` che per `clinicalRecord`** (il guard era solo su `clinicalRecord`: rimosso).
+- **`Features/Health/ClinicalRecord/ClinicalRecordAppleHealthNarrative.swift`** — narrativa wearable (FC a riposo, VO₂ max, passi, workout, ECG) condivisa tra chat salute e cartella clinica PDF.
+- **`Support/Health/KBHealthLinkStore.swift`** — carica/salva `KBHealthImportSnapshot` su `UserDefaults` per `childId`. Usato da `HealthAIChatViewModel` (chat) e da `ClinicalRecordGenerator` (PDF).
+
+### 8.8-bis Sistema messaggi / token AI
+
+KidBox astrae i token Anthropic dietro un'unità chiamata **"messaggio"**. L'utente vede un budget giornaliero (Pro 30, Max 100, Free 0); il server traduce ogni richiesta in N unità e le scala dal contatore famiglia.
+
+**Token Anthropic → unità KidBox**
+
+Le unità **non** si basano sui token reali ma sulla **dimensione del payload in caratteri** (`AIAskAIPayload`, `App/AI Core/AIAskAIPayload.swift`):
+
+| Costante | Valore | Significato |
+|---|---|---|
+| `standardChars` | 50.000 | 1 unità messaggio = 50k caratteri di payload (system + storico + nuovo testo) |
+| `absoluteMaxChars` | 500.000 | hard limit anti-abuso: oltre → errore client e server |
+| `clinicalRecordMinUnits` | 3 | minimo fisso per la cartella clinica (Sonnet ~3× Haiku, no caching) |
+
+`messageUnits(totalChars) = max(1, ceil(totalChars / 50.000))`. Per la cartella clinica: `clinicalRecordMessageUnits = max(3, messageUnits)`.
+
+**Flusso di conteggio**
+
+1. **Client pre-check** (`ClinicalRecordAISynthesizer.estimatePayload`, `HealthAIChatViewModel.estimatedMessageUnits`): stima le unità *prima* dell'invio. Se superano le rimanenti → blocca con messaggio (`ClinicalRecordAIError.quotaWouldExceed`) senza chiamare il server.
+2. **Server enforcement** (`functions/index.js` `askAI`): ricalcola `messageUnits` sul payload effettivo, applica il minimo cartella clinica, poi `checkAndIncrementAIUsage(familyId, uid, dailyLimit, messageUnits)` in transazione atomica su `ai_usage/family_{fid}/daily/{day}.count`. Se l'incremento supera il limite → `resource-exhausted`.
+3. **Costo reale tracciato** (`ai_costs`): il server calcola il costo USD dai token Anthropic effettivi (input/cache-read/cache-write/output) e lo scrive su `ai_costs/{monthKey}` per la console admin. **Le unità ≠ il costo**: le unità sono il "prezzo" mostrato all'utente, `ai_costs` è il costo reale per te.
+
+**Modelli per purpose** (decisi server-side):
+- `clinicalRecord` → **Sonnet 4.5** (più caro, scala min 3 unità).
+- `support` (`Features/Settings/Support/SupportChatViewModel.swift`, `purpose: "support"`), chat salute/visite/esami e default → **Haiku 4.5**.
+
+**Contesto ampio & compattazione**: quando il contesto salute supera `standardChars`, l'utente può scegliere tra contesto pieno (più unità) o riassunto compatto (`HealthContextCompaction`). Vedi `AIAskAIPayload.choiceDialogMessage`. La compattazione conversazione (`compactIfNeeded`, 60% del limite) riduce lo storico per contenere le unità nei turni successivi.
+
+> ⚠️ **Parity obbligatoria**: `standardChars` (50k), `clinicalRecordMinUnits` (3) e `absoluteMaxChars` (500k) sono duplicati in iOS (`AIAskAIPayload`), Android (`AIAskAIPayload.kt`) e server (`functions/index.js`: `AI_STANDARD_PAYLOAD_CHARS`, `CLINICAL_RECORD_MIN_UNITS`, `AI_ABSOLUTE_MAX_PAYLOAD_CHARS`). Se cambi un valore, **allinea tutti e tre** o il pre-check client diverge dal conteggio server.
 
 ### 8.9 Logging / Crash
 

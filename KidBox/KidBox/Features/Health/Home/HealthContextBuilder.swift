@@ -120,7 +120,7 @@ enum HealthContextBuilder {
             to: &lines
         )
 
-        if purpose == .clinicalRecord, let health = healthSnapshot {
+        if let health = healthSnapshot {
             ClinicalRecordAppleHealthNarrative.appendToPrompt(
                 health,
                 sourceLabel: "Apple Salute",
