@@ -42,6 +42,9 @@ struct NoteDetailView: View {
     @State private var showVisibilityLockedAlert = false
     @State private var selectedVisibilityScope = KBVisibilityScope.family
     @State private var selectedVisibilityMemberIds: Set<String> = []
+
+    /// Store per il bridge RichTextView ↔ toolbar Mac Catalyst
+    @StateObject private var richTextStore = NoteRichTextStore()
     
     // ✅ Versione remota ricevuta mentre editing è attivo:
     //    tenuta da parte e applicata solo quando si esce senza salvare.
@@ -84,7 +87,8 @@ struct NoteDetailView: View {
                 //    ignoresSafeArea(.keyboard) impedisce a SwiftUI di shrinkare il frame
                 //    quando compare la tastiera — altrimenti la tv perde altezza e non scrolla.
                 RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
-                             focusTrigger: bodyFocusTrigger)
+                             focusTrigger: bodyFocusTrigger,
+                             store: richTextStore)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 12)
                 .ignoresSafeArea(.keyboard)
@@ -94,6 +98,11 @@ struct NoteDetailView: View {
         }
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
+        #if targetEnvironment(macCatalyst)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            MacNoteFormattingBar(store: richTextStore)
+        }
+        #endif
         .onAppear  {
             isViewActive = true
             loadOrCreate()
@@ -138,17 +147,15 @@ struct NoteDetailView: View {
                     Button { presentShareSheet() } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
+                    .buttonStyle(.plain)
                     .disabled(titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                               bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    
-                    // Il tasto conferma compare solo quando ci sono modifiche non
-                    // salvate (isDirty). Al tap salviamo e ripristiniamo lo stato
-                    // pulito, così il bottone scompare finché l'utente non
-                    // riedita la nota.
+
                     if isDirty {
                         Button { saveAndDismiss() } label: {
                             Image(systemName: "checkmark").font(.headline)
                         }
+                        .buttonStyle(.plain)
                         .transition(.opacity)
                     }
                 }
@@ -326,6 +333,130 @@ struct NoteDetailView: View {
     }
 
 }
+
+// MARK: - Mac Catalyst Formatting Bar
+
+#if targetEnvironment(macCatalyst)
+/// Barra di formattazione fissa in basso per Mac Catalyst (sostituisce inputAccessoryView).
+private struct MacNoteFormattingBar: View {
+    @ObservedObject var store: NoteRichTextStore
+    @State private var showStylePanel = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 0) {
+                // Aa — stili testo (popover)
+                Button {
+                    showStylePanel.toggle()
+                } label: {
+                    Text("Aa")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(showStylePanel ? Color.accentColor : Color.primary.opacity(0.80))
+                        .frame(width: 46, height: 36)
+                        .background {
+                            if showStylePanel { Capsule().fill(Color.accentColor.opacity(0.13)) }
+                        }
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showStylePanel, arrowEdge: .bottom) {
+                    macStylePanel
+                }
+                .onChange(of: store.toolbarModel.isExpanded) { _, newVal in
+                    if !newVal { showStylePanel = false }
+                }
+
+                sep
+
+                // Formattazione inline
+                fmtIcon("bold",          on: store.toolbarModel.isBold)          { store.execute(.bold) }
+                fmtIcon("italic",        on: store.toolbarModel.isItalic)        { store.execute(.italic) }
+                fmtIcon("underline",     on: store.toolbarModel.isUnderline)     { store.execute(.underline) }
+                fmtIcon("strikethrough", on: store.toolbarModel.isStrikethrough) { store.execute(.strikethrough) }
+
+                sep
+
+                // Liste
+                fmtIcon("list.bullet",
+                         on: store.toolbarModel.activeList == .bullet)    { store.execute(.bullet) }
+                fmtIcon("list.number",
+                         on: store.toolbarModel.activeList == .number)    { store.execute(.number) }
+                fmtIcon(store.toolbarModel.activeList == .checklist ? "checkmark.circle.fill" : "checkmark.circle",
+                         on: store.toolbarModel.activeList == .checklist) { store.execute(.checklist) }
+
+                sep
+
+                // Indentazione
+                fmtIcon("decrease.indent", on: false) { store.execute(.indentLess) }
+                fmtIcon("increase.indent", on: false) { store.execute(.indentMore) }
+
+                Spacer()
+            }
+            .frame(height: 44)
+            .padding(.horizontal, 8)
+            .background(.ultraThinMaterial)
+        }
+    }
+
+    // MARK: - Style popover content
+
+    private var macStylePanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Stile testo")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.tertiary)
+                .textCase(.uppercase)
+                .kerning(0.7)
+
+            HStack(spacing: 8) {
+                styleCard("T", "Intestazione", .bold,     22) { store.execute(.heading);    showStylePanel = false }
+                styleCard("T", "Sottoint.",    .semibold, 17) { store.execute(.subheading); showStylePanel = false }
+                styleCard("T", "Corpo",        .regular,  14) { store.execute(.body);       showStylePanel = false }
+            }
+        }
+        .padding(14)
+        .frame(width: 300)
+    }
+
+    private func styleCard(_ preview: String, _ label: String,
+                           _ weight: Font.Weight, _ size: CGFloat,
+                           action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Text(preview).font(.system(size: size, weight: weight)).foregroundStyle(Color.primary)
+                Text(label).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.055)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private func fmtIcon(_ sf: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: sf)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(on ? Color.accentColor : Color.primary.opacity(0.72))
+                .frame(width: 36, height: 36)
+                .background {
+                    if on { RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.accentColor.opacity(0.13)) }
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var sep: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.10))
+            .frame(width: 0.33, height: 18)
+            .padding(.horizontal, 4)
+    }
+}
+#endif
 
 // MARK: - Share
 

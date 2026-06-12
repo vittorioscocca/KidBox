@@ -60,6 +60,10 @@ struct KidBoxApp: App {
                     .environmentObject(subscriptionManager)
                     .environment(\.locale, kbDeviceLocale())
                     .environment(\.calendar, kbDeviceCalendar())
+                // ── Mac Catalyst: rimuove lo sfondo ovale automatico da tutti i Button
+                #if targetEnvironment(macCatalyst)
+                    .buttonStyle(.plain)
+                #endif
                 // ── Tema chiaro / scuro / sistema ──────────────────────────
                     .preferredColorScheme(coordinator.appearanceMode.colorScheme)
                     .onReceive(NotificationCenter.default.publisher(for: .kidBoxFamilyKeyDidChange)) { _ in

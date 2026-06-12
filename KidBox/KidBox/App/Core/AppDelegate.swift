@@ -82,7 +82,16 @@ final class AppDelegate: NSObject,
         
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
-        
+
+        // ── Mac Catalyst: rimuove il background ovale automatico dai BarButtonItem ──
+        // Su Mac Catalyst i ToolbarItem SwiftUI vengono bridgati a UIBarButtonItem
+        // e UIKit aggiunge automaticamente un background pillola. Impostiamo
+        // backgroundImage vuota via UIBarButtonItemAppearance per rimuoverlo.
+        #if targetEnvironment(macCatalyst)
+        configureMacCatalystButtonAppearance()
+        #endif
+        // ─────────────────────────────────────────────────────────────────────────
+
         // ── Registra le categorie di notifica con azioni rapide ────────────
         // Deve essere chiamato il prima possibile, prima di impostare il delegate,
         // così iOS conosce già le categorie quando arriva la prima notifica.
@@ -370,6 +379,51 @@ final class AppDelegate: NSObject,
         KBLog.auth.kbError("APNs registration failed: \(error.localizedDescription)")
     }
     
+    // MARK: - Mac Catalyst appearance
+
+    #if targetEnvironment(macCatalyst)
+    private func configureMacCatalystButtonAppearance() {
+        // Rimuove il background pillola/ovale dai UIBarButtonItem in tutte
+        // le navigation bar. Usiamo un'immagine vuota come background per
+        // ogni stato: questo azzera il rendering automatico del rettangolo
+        // arrotondato che Mac Catalyst aggiunge di default.
+        let noImage = UIImage()
+        let itemAppearance = UIBarButtonItemAppearance(style: .plain)
+        itemAppearance.normal.backgroundImage           = noImage
+        itemAppearance.highlighted.backgroundImage      = noImage
+        itemAppearance.disabled.backgroundImage         = noImage
+        itemAppearance.focused.backgroundImage          = noImage
+
+        let doneAppearance = UIBarButtonItemAppearance(style: .done)
+        doneAppearance.normal.backgroundImage           = noImage
+        doneAppearance.highlighted.backgroundImage      = noImage
+        doneAppearance.disabled.backgroundImage         = noImage
+        doneAppearance.focused.backgroundImage          = noImage
+
+        // Applica a tutte le varianti di UINavigationBarAppearance
+        for appearance in [
+            UINavigationBar.appearance().standardAppearance,
+            UINavigationBar.appearance().compactAppearance,
+            UINavigationBar.appearance().scrollEdgeAppearance
+        ].compactMap({ $0 }) {
+            appearance.buttonAppearance     = itemAppearance
+            appearance.doneButtonAppearance = doneAppearance
+            appearance.backButtonAppearance = itemAppearance
+        }
+
+        // Configura anche le appearance di default usate quando non è stata
+        // impostata esplicitamente una scrollEdge/compact appearance.
+        let defaultAppearance = UINavigationBarAppearance()
+        defaultAppearance.configureWithDefaultBackground()
+        defaultAppearance.buttonAppearance     = itemAppearance
+        defaultAppearance.doneButtonAppearance = doneAppearance
+        defaultAppearance.backButtonAppearance = itemAppearance
+        UINavigationBar.appearance().standardAppearance    = defaultAppearance
+        UINavigationBar.appearance().compactAppearance     = defaultAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance  = defaultAppearance
+    }
+    #endif
+
     // MARK: - FCM registration token
     
     func messaging(

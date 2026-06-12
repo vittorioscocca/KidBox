@@ -21,10 +21,17 @@ final class AISettings: ObservableObject {
         static let consentGiven = "kb_ai_consent_given"
         static let consentDate  = "kb_ai_consent_date"
         static let healthContextSendPreference = "kb_ai_health_context_send_preference"
+        static let documentIntelligenceEnabled = "kb_ai_document_intelligence_enabled"
     }
-    
+
     @Published var isEnabled: Bool {
         didSet { UserDefaults.standard.set(isEnabled, forKey: UDKey.isEnabled) }
+    }
+
+    /// Opt-in esplicito: analizza i documenti importati con Claude (vision) e
+    /// propone azioni cross-feature. Disattivo di default; consuma messaggi AI.
+    @Published var documentIntelligenceEnabled: Bool {
+        didSet { UserDefaults.standard.set(documentIntelligenceEnabled, forKey: UDKey.documentIntelligenceEnabled) }
     }
     
     @Published var consentGiven: Bool {
@@ -49,6 +56,7 @@ final class AISettings: ObservableObject {
         self.healthContextSendPreference = prefRaw
             .flatMap(HealthContextSendPreference.init(rawValue:))
             ?? .askEachTime
+        self.documentIntelligenceEnabled = UserDefaults.standard.bool(forKey: UDKey.documentIntelligenceEnabled)
     }
     
     func recordConsent() {
@@ -62,6 +70,7 @@ final class AISettings: ObservableObject {
         isEnabled    = false
         consentGiven = false
         consentDate  = nil
+        documentIntelligenceEnabled = false
         log.info("AISettings: reset")
     }
 }

@@ -226,66 +226,9 @@ final class RichTextAccessoryView: UIToolbar {
     }
     
     // MARK: - Refresh stato toolbar
-    
+
     func refreshFromTextView() {
         guard let tv = textView else { return }
-        let attr = tv.attributedText ?? NSAttributedString()
-        let sel  = tv.selectedRange
-        
-        if sel.length > 0, attr.length > 0 {
-            let safeLoc = max(0, min(sel.location, attr.length - 1))
-            let safeLen = max(0, min(sel.length, attr.length - safeLoc))
-            let range   = NSRange(location: safeLoc, length: safeLen)
-            model.isBold          = rangeHasFontTrait(attr, range: range, trait: .traitBold)
-            model.isItalic        = rangeHasFontTrait(attr, range: range, trait: .traitItalic)
-            model.isUnderline     = rangeHasAttrNonZero(attr, range: range, key: .underlineStyle)
-            model.isStrikethrough = rangeHasAttrNonZero(attr, range: range, key: .strikethroughStyle)
-            model.activeList      = listState(attributed: attr, caret: safeLoc)
-        } else {
-            let font   = (tv.typingAttributes[.font] as? UIFont) ?? UIFont.preferredFont(forTextStyle: .body)
-            let traits = font.fontDescriptor.symbolicTraits
-            model.isBold          = traits.contains(.traitBold)
-            model.isItalic        = traits.contains(.traitItalic)
-            model.isUnderline     = ((tv.typingAttributes[.underlineStyle]     as? Int) ?? 0) != 0
-            model.isStrikethrough = ((tv.typingAttributes[.strikethroughStyle] as? Int) ?? 0) != 0
-            let caret = max(0, min(sel.location, max(0, attr.length - 1)))
-            model.activeList = listState(attributed: attr, caret: caret)
-        }
-    }
-    
-    // MARK: - Helpers
-    
-    private func rangeHasFontTrait(_ attr: NSAttributedString, range: NSRange,
-                                   trait: UIFontDescriptor.SymbolicTraits) -> Bool {
-        var has = true
-        attr.enumerateAttribute(.font, in: range) { value, _, stop in
-            let f = (value as? UIFont) ?? UIFont.preferredFont(forTextStyle: .body)
-            if !f.fontDescriptor.symbolicTraits.contains(trait) { has = false; stop.pointee = true }
-        }
-        return has
-    }
-    
-    private func rangeHasAttrNonZero(_ attr: NSAttributedString, range: NSRange,
-                                     key: NSAttributedString.Key) -> Bool {
-        var has = true
-        attr.enumerateAttribute(key, in: range) { value, _, stop in
-            if ((value as? Int) ?? 0) == 0 { has = false; stop.pointee = true }
-        }
-        return has
-    }
-    
-    private func listState(attributed: NSAttributedString,
-                           caret: Int) -> RichTextToolbarModel.ActiveList {
-        guard attributed.length > 0 else { return .none }
-        let idx  = max(0, min(caret, attributed.length - 1))
-        let ns   = attributed.string as NSString
-        let para = ns.paragraphRange(for: NSRange(location: idx, length: 0))
-        guard para.length > 0 else { return .none }
-        let snip = ns.substring(with: NSRange(location: para.location,
-                                              length: min(10, para.length)))
-        if snip.hasPrefix("○") || snip.hasPrefix("◉")                     { return .checklist }
-        if snip.hasPrefix("•")                                              { return .bullet }
-        if snip.range(of: #"^\d+\. "#, options: .regularExpression) != nil { return .number }
-        return .none
+        NoteRichTextStore.refresh(model, from: tv)
     }
 }

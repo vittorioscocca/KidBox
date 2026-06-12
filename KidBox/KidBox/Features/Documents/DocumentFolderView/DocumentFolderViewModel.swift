@@ -66,6 +66,19 @@ final class DocumentFolderViewModel: ObservableObject {
     
     // preview
     @Published var previewURL: URL?
+
+    // MARK: - Document Intelligence
+    @Published var isAnalyzingDocument = false
+    @Published var docIntelPayload: DocIntelPayload?
+
+    /// Wrapper Identifiable per presentare la sheet di conferma azioni.
+    struct DocIntelPayload: Identifiable {
+        let id = UUID()
+        let result: DocIntelResult
+        let documentId: String
+        let children: [DocumentIntelligenceService.ChildRef]
+        let vehicles: [DocumentIntelligenceService.VehicleRef]
+    }
     
     // Photo Library
     @Published var showPhotoLibrary = false
@@ -926,7 +939,7 @@ final class DocumentFolderViewModel: ObservableObject {
         } catch { return false }
     }
     
-    func uploadSingleFileConcurrent(_ url: URL, childId: String?) async -> Bool {
+    func uploadSingleFileConcurrent(_ url: URL, childId: String?, analyzeAfter: Bool = false) async -> Bool {
         guard let modelContext else { return false }
         do {
             let okScope = url.startAccessingSecurityScopedResource()
@@ -969,6 +982,10 @@ final class DocumentFolderViewModel: ObservableObject {
                     l.downloadURL = downloadURL; l.storagePath = uploadedPath
                     l.syncState = .synced; l.lastSyncError = nil; l.updatedAt = Date(); l.updatedBy = uid
                     try? modelContext.save()
+                }
+                if analyzeAfter {
+                    await maybeRunDocumentIntelligence(
+                        plaintext: plaintext, fileName: fileName, mimeType: mime, documentId: documentId)
                 }
                 return true
             } catch {
@@ -1083,8 +1100,68 @@ final class DocumentFolderViewModel: ObservableObject {
         } catch { errorText = error.localizedDescription }
     }
     
+    // MARK: - Document Intelligence trigger
+
+    /// Se la feature è attiva, analizza il documento appena importato e, se trova
+    /// azioni, popola `docIntelPayload` per mostrare la sheet di conferma.
+    func maybeRunDocumentIntelligence(plaintext: Data, fileName: String, mimeType: String, documentId: String) async {
+        guard AISettings.shared.isEnabled, AISettings.shared.documentIntelligenceEnabled else { return }
+        guard let modelContext else { return }
+
+        let fid = familyId
+        let allChildren = (try? modelContext.fetch(FetchDescriptor<KBChild>())) ?? []
+        let children = allChildren
+            .filter { $0.familyId == fid }
+            .map { DocumentIntelligenceService.ChildRef(id: $0.id, name: $0.name) }
+        let allVehicles = (try? modelContext.fetch(
+            FetchDescriptor<KBVehicle>(predicate: #Predicate { $0.familyId == fid && !$0.isDeleted })
+        )) ?? []
+        let vehicles = allVehicles.map { v -> DocumentIntelligenceService.VehicleRef in
+            let label = [v.name, v.brand, v.model].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+            return DocumentIntelligenceService.VehicleRef(id: v.id, label: label.isEmpty ? v.name : label)
+        }
+
+        isAnalyzingDocument = true
+        let result = await DocumentIntelligenceService.analyze(
+            data: plaintext, fileName: fileName, mimeType: mimeType,
+            children: children, vehicles: vehicles
+        )
+        isAnalyzingDocument = false
+
+        guard let result, !result.actions.isEmpty else {
+            KBLog.ai.kbInfo("DocIntel: nessuna azione proposta per \(fileName)")
+            return
+        }
+        docIntelPayload = DocIntelPayload(
+            result: result, documentId: documentId, children: children, vehicles: vehicles
+        )
+    }
+
     // MARK: - Open / Preview
-    
+
+    /// Build a temp URL whose filename is the user-facing name (title + original
+    /// extension), placed inside a unique subdirectory to avoid collisions.
+    /// Avoids exposing the internal `{docId}_` prefix in Quick Look / "Save to Files".
+    @discardableResult
+    private static func writePreviewFile(_ data: Data, doc: KBDocument) throws -> URL {
+        let ext = (doc.fileName as NSString).pathExtension
+        let baseName = doc.title.isEmpty
+            ? (doc.fileName as NSString).deletingPathExtension
+            : doc.title
+        let safeName = baseName
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let fileName = ext.isEmpty ? safeName : "\(safeName).\(ext)"
+
+        let subdir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: subdir, withIntermediateDirectories: true)
+        let url = subdir.appendingPathComponent(fileName.isEmpty ? doc.id : fileName)
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
     func open(_ doc: KBDocument) {
         guard let modelContext else { return }
         errorText = nil
@@ -1112,9 +1189,7 @@ final class DocumentFolderViewModel: ObservableObject {
                         userId: userId
                     )
                     KBLog.storage.kbInfo("DocVM open: decrypted bytes=\(plainData.count) docId=\(doc.id)")
-                    let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("\(doc.id)_\(doc.fileName)")
-                    try plainData.write(to: tempURL, options: .atomic)
+                    let tempURL = try Self.writePreviewFile(plainData, doc: doc)
                     KBLog.storage.kbInfo("DocVM open: preview ready from cache docId=\(doc.id)")
                     previewURL = tempURL; return
                 } catch {
@@ -1207,9 +1282,7 @@ final class DocumentFolderViewModel: ObservableObject {
                 userId: Auth.auth().currentUser?.uid ?? "local"
             )
             KBLog.storage.kbInfo("DocVM downloadToLocal: decrypted bytes=\(finalData.count) docId=\(doc.id)")
-            let previewTmp = FileManager.default.temporaryDirectory
-                .appendingPathComponent("\(doc.id)_\(doc.fileName)")
-            try finalData.write(to: previewTmp, options: .atomic)
+            let previewTmp = try Self.writePreviewFile(finalData, doc: doc)
             await endDownloadingWithMinimumDelay(start: start)
             return previewTmp
         } catch {
@@ -1359,7 +1432,7 @@ final class DocumentFolderViewModel: ObservableObject {
                         guard let self else { return false }
                         await semaphore.wait()
                         await MainActor.run { self.uploadCurrentName = url.lastPathComponent }
-                        let ok = await self.uploadSingleFileConcurrent(url, childId: activeChildId)
+                        let ok = await self.uploadSingleFileConcurrent(url, childId: activeChildId, analyzeAfter: urls.count == 1)
                         await MainActor.run { self.uploadDone += 1; if !ok { self.uploadFailures += 1 } }
                         await semaphore.signal(); return ok
                     }

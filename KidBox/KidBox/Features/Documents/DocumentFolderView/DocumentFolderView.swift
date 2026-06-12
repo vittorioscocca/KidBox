@@ -991,6 +991,25 @@ private extension DocumentFolderView {
     }
     
     @ViewBuilder
+    var analyzingOverlay: some View {
+        if viewModel.isAnalyzingDocument {
+            ZStack {
+                Color.black.opacity(0.10).ignoresSafeArea()
+                VStack(spacing: 10) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.title2)
+                        .foregroundStyle(KBTheme.tint)
+                    ProgressView()
+                    Text("Analisi del documento…").font(.subheadline).foregroundStyle(.secondary)
+                    Text("L'AI sta leggendo le pagine").font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(16).background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder
     var downloadingOverlay: some View {
         if viewModel.isDownloading {
             ZStack {
@@ -1196,6 +1215,18 @@ private extension DocumentFolderView {
                 .sheet(item: view.$shareURLsPayload) { payload in
                     ActivitySheet(items: payload.urls)
                 }
+            // Document Intelligence — conferma azioni proposte dall'AI
+                .sheet(item: view.$viewModel.docIntelPayload) { payload in
+                    DocumentIntelligenceSheet(
+                        payload: payload,
+                        familyId: view.familyId,
+                        modelContext: view.modelContext,
+                        onDone: {
+                            view.viewModel.docIntelPayload = nil
+                            view.viewModel.reload()
+                        }
+                    )
+                }
             // Photo library
                 .photosPicker(
                     isPresented: view.$viewModel.showPhotoLibrary,
@@ -1214,7 +1245,7 @@ private extension DocumentFolderView {
         private func applyOverlayAndNav<V: View>(_ content: V) -> some View {
             content
                 .overlay {
-                    ZStack { view.uploadingOverlay; view.downloadingOverlay }
+                    ZStack { view.uploadingOverlay; view.downloadingOverlay; view.analyzingOverlay }
                 }
                 .fileImporter(
                     isPresented: view.$showImporter,

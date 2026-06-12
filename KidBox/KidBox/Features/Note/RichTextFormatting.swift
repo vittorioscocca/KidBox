@@ -4,6 +4,83 @@
 //
 
 import UIKit
+import Combine
+
+// MARK: - Store (bridge RichTextView ↔ toolbar esterna, es. Mac Catalyst)
+
+/// Condiviso tra RichTextView e la toolbar Mac: espone la UITextView e lo stato
+/// di formattazione in modo osservabile da SwiftUI.
+final class NoteRichTextStore: ObservableObject {
+    weak var textView: UITextView?
+    let toolbarModel = RichTextToolbarModel()
+
+    func execute(_ cmd: RichTextCommand) {
+        guard let tv = textView else { return }
+        RichTextFormatter.toggle(cmd, in: tv)
+        tv.delegate?.textViewDidChange?(tv)
+        NoteRichTextStore.refresh(toolbarModel, from: tv)
+    }
+
+    func refreshModel() {
+        guard let tv = textView else { return }
+        NoteRichTextStore.refresh(toolbarModel, from: tv)
+    }
+
+    /// Logica di refresh condivisa (usata anche da RichTextAccessoryView).
+    static func refresh(_ model: RichTextToolbarModel, from tv: UITextView) {
+        let attr = tv.attributedText ?? NSAttributedString()
+        let sel  = tv.selectedRange
+
+        func hasTrait(_ trait: UIFontDescriptor.SymbolicTraits, in range: NSRange) -> Bool {
+            guard attr.length > 0 else { return false }
+            var has = true
+            attr.enumerateAttribute(.font, in: range) { val, _, stop in
+                let f = (val as? UIFont) ?? UIFont.preferredFont(forTextStyle: .body)
+                if !f.fontDescriptor.symbolicTraits.contains(trait) { has = false; stop.pointee = true }
+            }
+            return has
+        }
+        func hasAttr(_ key: NSAttributedString.Key, in range: NSRange) -> Bool {
+            guard attr.length > 0 else { return false }
+            var has = true
+            attr.enumerateAttribute(key, in: range) { val, _, stop in
+                if ((val as? Int) ?? 0) == 0 { has = false; stop.pointee = true }
+            }
+            return has
+        }
+        func listState(caret: Int) -> RichTextToolbarModel.ActiveList {
+            guard attr.length > 0 else { return .none }
+            let idx  = max(0, min(caret, attr.length - 1))
+            let ns   = attr.string as NSString
+            let para = ns.paragraphRange(for: NSRange(location: idx, length: 0))
+            guard para.length > 0 else { return .none }
+            let snip = ns.substring(with: NSRange(location: para.location, length: min(10, para.length)))
+            if snip.hasPrefix("○") || snip.hasPrefix("◉")                     { return .checklist }
+            if snip.hasPrefix("•")                                              { return .bullet }
+            if snip.range(of: #"^\d+\. "#, options: .regularExpression) != nil { return .number }
+            return .none
+        }
+
+        if sel.length > 0, attr.length > 0 {
+            let loc = max(0, min(sel.location, attr.length - 1))
+            let len = max(0, min(sel.length, attr.length - loc))
+            let range = NSRange(location: loc, length: len)
+            model.isBold          = hasTrait(.traitBold,   in: range)
+            model.isItalic        = hasTrait(.traitItalic, in: range)
+            model.isUnderline     = hasAttr(.underlineStyle,     in: range)
+            model.isStrikethrough = hasAttr(.strikethroughStyle, in: range)
+            model.activeList      = listState(caret: loc)
+        } else {
+            let font   = (tv.typingAttributes[.font] as? UIFont) ?? UIFont.preferredFont(forTextStyle: .body)
+            let traits = font.fontDescriptor.symbolicTraits
+            model.isBold          = traits.contains(.traitBold)
+            model.isItalic        = traits.contains(.traitItalic)
+            model.isUnderline     = ((tv.typingAttributes[.underlineStyle]     as? Int) ?? 0) != 0
+            model.isStrikethrough = ((tv.typingAttributes[.strikethroughStyle] as? Int) ?? 0) != 0
+            model.activeList      = listState(caret: max(0, min(sel.location, max(0, attr.length - 1))))
+        }
+    }
+}
 
 // MARK: - Commands
 

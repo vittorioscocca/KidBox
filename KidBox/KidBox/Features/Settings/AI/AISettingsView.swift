@@ -271,6 +271,24 @@ struct AISettingsView: View {
                 }
             }
             
+            // MARK: - Document Intelligence
+            if plan.includesAI && viewModel.consentGiven {
+                Section("Analisi documenti") {
+                    Toggle(isOn: Binding(
+                        get: { AISettings.shared.documentIntelligenceEnabled },
+                        set: { AISettings.shared.documentIntelligenceEnabled = $0 }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label("Smista automaticamente i documenti", systemImage: "doc.text.magnifyingglass")
+                            Text("Quando importi un documento, l'AI lo legge e propone azioni (spese, eventi, scadenze, salute). Consuma messaggi AI: 1 per pagina analizzata.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(cardBackground)
+                }
+            }
+
             // MARK: - Come funziona
             Section("Come funziona") {
                 infoRow(icon: "lock.shield.fill", color: .green,

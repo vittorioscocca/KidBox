@@ -1464,10 +1464,17 @@ const AI_ABSOLUTE_MAX_PAYLOAD_CHARS = 500000;
 const AI_MAX_IMAGE_BLOCKS_PER_MESSAGE = 5;
 /** Vision: max byte immagine decodificata (base64 → ~length * 0.75). */
 const AI_MAX_IMAGE_DECODED_BYTES = 5_000_000;
+/**
+ * Costo in "caratteri equivalenti" di un blocco immagine sul contatore.
+ * Pari a AI_STANDARD_PAYLOAD_CHARS → ogni immagine = 1 messaggio scalato.
+ * Serve a far pagare la vision (es. Document Intelligence: 1 unità per pagina).
+ */
+const AI_IMAGE_CHAR_EQUIVALENT = AI_STANDARD_PAYLOAD_CHARS;
 
 /**
- * Conta caratteri testuali in content (String o Array multimodale Anthropic).
- * I blocchi immagine non entrano nel conteggio caratteri / rate limit payload.
+ * Conta caratteri testuali in content (String o Array multimodale Anthropic),
+ * più un costo fisso per ogni blocco immagine così che la vision sia conteggiata
+ * sul rate limit payload (1 immagine ≈ 1 messaggio).
  * @param {string|Array<object>} content
  * @return {number}
  */
@@ -1477,6 +1484,9 @@ function askAIContentCharCount(content) {
   return content.reduce((acc, block) => {
     if (block?.type === "text" && typeof block.text === "string") {
       return acc + block.text.length;
+    }
+    if (block?.type === "image") {
+      return acc + AI_IMAGE_CHAR_EQUIVALENT;
     }
     return acc;
   }, 0);

@@ -38,7 +38,11 @@
       "Bash(firebase use *)",
       "Bash(xargs cat)",
       "Bash(find /Users/vscocca/KidBoxAndroid -name \"*.kt\" 2>/dev/null | xargs grep -l -i \"notification\\\\|push\\\\|family\\\\|switch\" 2>/dev/null | head -20)",
-      "Bash(grep \"\\\\.swift$\")"
+      "Bash(grep \"\\\\.swift$\")",
+      "Bash(xcodebuild -scheme KidBox -destination 'generic/platform=iOS' build -quiet)",
+      "Bash(xcodebuild -scheme KidBox -destination 'generic/platform=iOS' build)",
+      "Read(//Users/vscocca/KidBox/functions/**)",
+      "Bash(node --check index.js)"
     ]
   }
 }

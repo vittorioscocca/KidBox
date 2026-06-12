@@ -64,10 +64,17 @@ struct CalendarView: View {
     }
     
     @State private var selectedDate = Date()
-    @State private var showAddSheet = false
+    @State private var addSheetDate: AddSheetDate?
     @State private var editingEvent: KBCalendarEvent?
     @State private var viewMode: CalendarViewMode = .month
-    
+
+    /// Wrapper Identifiable per presentare la sheet "nuovo evento" con `.sheet(item:)`,
+    /// così la data iniziale viene letta sempre fresca (evita lo stale di `isPresented`).
+    private struct AddSheetDate: Identifiable {
+        let id = UUID()
+        let date: Date
+    }
+
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
@@ -112,15 +119,17 @@ struct CalendarView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showAddSheet = true } label: {
+                Button {
+                    addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
+                } label: {
                     Image(systemName: "plus")
                 }
             }
         }
-        .sheet(isPresented: $showAddSheet) {
+        .sheet(item: $addSheetDate) { wrapper in
             CalendarEventFormView(
                 familyId: familyId,
-                initialDate: sharePrefillDate ?? selectedDate,
+                initialDate: wrapper.date,
                 event: nil,
                 prefillTitle: sharePrefillTitle
             )
@@ -138,7 +147,7 @@ struct CalendarView: View {
             sharePrefillDate  = draft.startDate
             if let d = draft.startDate { selectedDate = d }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                showAddSheet = true
+                addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
             }
         }
         .onAppear {
@@ -155,7 +164,7 @@ struct CalendarView: View {
                 sharePrefillTitle = pending
                 coordinator.pendingShareText = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    showAddSheet = true
+                    addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
                 }
             }
             if let draft = coordinator.pendingShareEventDraft {
@@ -165,7 +174,7 @@ struct CalendarView: View {
                 sharePrefillDate  = draft.startDate
                 if let d = draft.startDate { selectedDate = d }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    showAddSheet = true
+                    addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
                 }
             }
         }

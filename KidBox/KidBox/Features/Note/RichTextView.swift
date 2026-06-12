@@ -36,6 +36,8 @@ struct RichTextView: UIViewRepresentable {
     var placeholder: String  = ""
     var baseFont: UIFont     = .preferredFont(forTextStyle: .body)
     var focusTrigger: UUID?  = nil   // cambia valore per richiedere il focus
+    /// Store opzionale per Mac Catalyst: registra la UITextView e riflette lo stato
+    var store: NoteRichTextStore? = nil
     
     func makeUIView(context: Context) -> UITextView {
         let tv = RichUITextView()
@@ -84,10 +86,14 @@ struct RichTextView: UIViewRepresentable {
         tapGR.delegate = context.coordinator
         tv.addGestureRecognizer(tapGR)
         accessory.attach(to: tv)
-        
+
+        // Registra nel store esterno (Mac Catalyst)
+        store?.textView = tv
+        context.coordinator.store = store
+
         // ✅ Keyboard observers per aggiornare contentInset e scrollare il cursore in vista
         context.coordinator.registerKeyboardObservers(for: tv)
-        
+
         return tv
     }
     
@@ -95,6 +101,10 @@ struct RichTextView: UIViewRepresentable {
         context.coordinator.isProgrammaticUpdate = true
         defer { context.coordinator.isProgrammaticUpdate = false }
         
+        // Aggiorna riferimento store (potrebbe cambiare tra un update e l'altro)
+        context.coordinator.store = store
+        if let store { store.textView = uiView }
+
         // Focus richiesto dal titolo (tasto Avanti)
         if let trigger = focusTrigger, trigger != context.coordinator.lastFocusTrigger {
             context.coordinator.lastFocusTrigger = trigger
@@ -135,6 +145,8 @@ struct RichTextView: UIViewRepresentable {
         let parent: RichTextView
         var isProgrammaticUpdate = false
         var lastFocusTrigger: UUID? = nil
+        /// Riferimento allo store esterno (Mac Catalyst)
+        weak var store: NoteRichTextStore?
         // ℹ️ Visibile dal `RichTextView` così che `makeUIView` possa marcare lo
         //    stato "placeholder attivo" al primo setup (altrimenti
         //    `textViewDidBeginEditing` non pulisce il testo placeholder e la
@@ -167,11 +179,13 @@ struct RichTextView: UIViewRepresentable {
             guard !isProgrammaticUpdate, !isShowingPlaceholder else { return }
             parent.html = textView.attributedText.toHTML() ?? ""
             (textView.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
+            store?.refreshModel()
         }
-        
+
         func textViewDidChangeSelection(_ textView: UITextView) {
             guard !isProgrammaticUpdate else { return }
             (textView.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
+            store?.refreshModel()
         }
         
         // MARK: Checklist tap
