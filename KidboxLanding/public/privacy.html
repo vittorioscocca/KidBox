@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <script>!function(){var p=localStorage.getItem('kidbox_lang');if(p==='it')return;var f=location.pathname.split('/').pop()||'index.html';if(p==='en'||(navigator.language||'it').toLowerCase().indexOf('it')!==0)location.replace(f.replace('.html','-en.html'))}();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy · KidBox</title>
   <link rel="icon" type="image/png" href="icon.png">
@@ -135,17 +136,24 @@
       <img src="icon.png" alt="KidBox">
       <span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
     </a>
-    <a class="nav-back" href="index.html">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Torna alla home
-    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="nav-back" href="index.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Torna alla home
+      </a>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;">
+        <a href="privacy.html" onclick="localStorage.setItem('kidbox_lang','it')" style="color:var(--c-accent);text-decoration:none;">IT</a>
+        <span style="color:var(--c-muted)">|</span>
+        <a href="privacy-en.html" onclick="localStorage.setItem('kidbox_lang','en')" style="color:var(--c-muted);text-decoration:none;">EN</a>
+      </div>
+    </div>
   </nav>
 
   <main>
     <div class="page-hero">
       <span class="section-label">Legale</span>
       <h1>Privacy Policy</h1>
-      <span class="updated">Ultimo aggiornamento: 27 febbraio 2026 · GDPR compliant</span>
+      <span class="updated">Ultimo aggiornamento: 15 giugno 2026 · GDPR compliant</span>
     </div>
 
     <p>KidBox è un'applicazione pensata per la gestione condivisa di informazioni familiari — chat, documenti, note, attività e salute dei bambini. Questa informativa spiega in modo trasparente quali dati trattiamo, perché e con chi li condividiamo.</p>
@@ -153,10 +161,19 @@
 
     <h2>Dati che raccogliamo</h2>
     <ul>
-      <li><strong>Dati account:</strong> email, nome/alias, foto profilo, credenziali di accesso</li>
+      <li><strong>Informazioni personali:</strong> email, nome/alias, foto profilo, credenziali di accesso, data di nascita</li>
+      <li><strong>Contatti (Contacts):</strong> nomi e numeri di telefono dei contatti familiari e di emergenza inseriti dall'utente</li>
       <li><strong>Dati famiglia e contenuti:</strong> chat, note, documenti, media, eventi calendario, to-do, spese, dati sanitari dei bambini</li>
       <li><strong>Dati tecnici:</strong> token notifiche e log di sicurezza senza informazioni identificabili</li>
       <li><strong>Dati di posizione:</strong> solo quando la condivisione posizione è attivata esplicitamente</li>
+    </ul>
+
+    <h2>Base giuridica del trattamento (GDPR Art. 6)</h2>
+    <p>Il trattamento dei tuoi dati personali si basa sulle seguenti basi giuridiche:</p>
+    <ul>
+      <li><strong>Esecuzione del contratto (Art. 6.1.b):</strong> dati necessari per erogare le funzionalità dell'app (account, contenuti familiari, posizione, notifiche)</li>
+      <li><strong>Consenso (Art. 6.1.a):</strong> dati sanitari trattati tramite Health Connect e funzionalità AI — consenso esplicito richiesto e revocabile in qualsiasi momento</li>
+      <li><strong>Interesse legittimo (Art. 6.1.f):</strong> sicurezza del servizio, prevenzione frodi, log tecnici</li>
     </ul>
 
     <h2>Perché utilizziamo i dati</h2>
@@ -167,8 +184,24 @@
       <li>Sicurezza e miglioramento continuo</li>
     </ul>
 
-    <h2>Condivisione dei dati</h2>
-    <p>KidBox utilizza provider tecnici selezionati per erogare il servizio. <strong>Non vendiamo i tuoi dati.</strong> I provider includono Google Firebase, Meta, Apple e Google Auth.</p>
+    <h2>Dati di posizione</h2>
+    <p>KidBox può raccogliere la <strong>posizione precisa</strong> del dispositivo (GPS) quando la funzione di condivisione posizione familiare è attivata esplicitamente dall'utente. La posizione può essere raccolta anche in background per il funzionamento dei geofence familiari, previa esplicita autorizzazione. I dati di posizione sono trasmessi a Google Firebase e non vengono condivisi con terze parti per scopi pubblicitari.</p>
+
+    <h2>Identificatori dispositivo</h2>
+    <p>KidBox raccoglie l'<strong>identificatore del dispositivo</strong> (Firebase Instance ID / FCM token) per l'invio di notifiche push. Il Facebook Login SDK può raccogliere l'advertising ID del dispositivo a fini di attribuzione delle installazioni e campagne pubblicitarie. Consulta la <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Privacy Policy di Meta</a> per dettagli.</p>
+
+    <h2>Dati sensibili</h2>
+    <p>KidBox tratta <strong>dati sanitari</strong> (parametri vitali, farmaci, visite mediche, dati di fitness da Health Connect) classificati come dati sensibili ai sensi del GDPR Art. 9. Questi dati sono raccolti esclusivamente su consenso esplicito dell'utente, conservati in modo cifrato su Google Firebase, e non vengono condivisi con terze parti salvo il caso in cui l'utente attivi la funzione AI (vedi sezione Assistente AI). I dati sanitari non vengono mai utilizzati per finalità pubblicitarie.</p>
+
+    <h2>Condivisione dei dati con terze parti</h2>
+    <p><strong>Non vendiamo i tuoi dati.</strong> I dati vengono condivisi esclusivamente con i seguenti provider tecnici per l'erogazione del servizio:</p>
+    <ul>
+      <li><strong>Google Firebase</strong> (Firestore, Storage, Auth, Functions, Messaging) — archiviazione, autenticazione, notifiche push. <a style="color:var(--c-accent)" href="https://firebase.google.com/support/privacy" target="_blank">Privacy Policy</a></li>
+      <li><strong>Anthropic</strong> — elaborazione AI su consenso esplicito (domande + contesto familiare/sanitario selezionato dall'utente). <a style="color:var(--c-accent)" href="https://www.anthropic.com/privacy" target="_blank">Privacy Policy</a></li>
+      <li><strong>Meta (Facebook)</strong> — Facebook Login SDK per autenticazione e attribuzione campagne pubblicitarie (advertising ID). <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Privacy Policy</a></li>
+      <li><strong>Google Maps Platform</strong> — visualizzazione mappe e geocodifica indirizzi. <a style="color:var(--c-accent)" href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a></li>
+      <li><strong>Google Play Billing</strong> — gestione abbonamenti e acquisti in-app. <a style="color:var(--c-accent)" href="https://policies.google.com/privacy" target="_blank">Privacy Policy</a></li>
+    </ul>
 
     <h2>Assistente AI & Anthropic</h2>
     <div class="highlight-box">
@@ -181,13 +214,20 @@
     <h2>Cancellazione account</h2>
     <p>Puoi eliminare il tuo account in qualsiasi momento dalle impostazioni dell'app: <strong>Profilo → Elimina account</strong>. Consulta la nostra <a style="color:var(--c-accent)" href="data-deletion.html">pagina di eliminazione dati</a> per i dettagli.</p>
 
-    <h2>Diritti dell'utente</h2>
+    <h2>Responsabile della protezione dei dati (DPO)</h2>
+    <p>Il titolare del trattamento svolge anche le funzioni di referente per la protezione dei dati. Per qualsiasi richiesta relativa ai tuoi dati personali contatta: <a style="color:var(--c-accent)" href="mailto:ing.vittorioscocca@gmail.com">ing.vittorioscocca@gmail.com</a></p>
+
+    <h2>Diritti dell'utente (GDPR Art. 15-22)</h2>
+    <p>Hai il diritto di <strong>richiedere la cancellazione dei tuoi dati personali</strong> in qualsiasi momento (diritto all'oblio, GDPR Art. 17). Puoi esercitare i seguenti diritti contattandoci o direttamente dall'app:</p>
     <ul>
-      <li>Accesso ai propri dati</li>
-      <li>Rettifica di informazioni non accurate</li>
-      <li>Cancellazione (diritto all'oblio)</li>
-      <li>Revoca dei consensi specifici</li>
-      <li>Portabilità dei dati</li>
+      <li>Accesso ai propri dati (Art. 15)</li>
+      <li>Rettifica di informazioni non accurate (Art. 16)</li>
+      <li>Cancellazione dei dati — diritto all'oblio (Art. 17)</li>
+      <li>Limitazione del trattamento (Art. 18)</li>
+      <li>Portabilità dei dati (Art. 20)</li>
+      <li>Opposizione al trattamento (Art. 21)</li>
+      <li>Revoca dei consensi specifici in qualsiasi momento</li>
+      <li>Diritto di proporre reclamo all'autorità di controllo — <strong>Garante per la protezione dei dati personali</strong> (<a style="color:var(--c-accent)" href="https://www.garanteprivacy.it" target="_blank">garanteprivacy.it</a>)</li>
     </ul>
 
     <h2>Sicurezza</h2>

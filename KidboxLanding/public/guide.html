@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <script>!function(){var p=localStorage.getItem('kidbox_lang');if(p==='it')return;var f=location.pathname.split('/').pop()||'index.html';if(p==='en'||(navigator.language||'it').toLowerCase().indexOf('it')!==0)location.replace(f.replace('.html','-en.html'))}();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Guida KidBox · Come usare l'app</title>
   <link rel="icon" type="image/png" href="icon.png">
@@ -248,10 +249,17 @@
       <img src="icon.png" alt="KidBox">
       <span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
     </a>
-    <a class="nav-back" href="index.html">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Torna alla home
-    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="nav-back" href="index.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Torna alla home
+      </a>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;">
+        <a href="guide.html" onclick="localStorage.setItem('kidbox_lang','it')" style="color:var(--c-accent);text-decoration:none;">IT</a>
+        <span style="color:var(--c-muted)">|</span>
+        <a href="guide-en.html" onclick="localStorage.setItem('kidbox_lang','en')" style="color:var(--c-muted);text-decoration:none;">EN</a>
+      </div>
+    </div>
   </nav>
 
   <div class="page-wrap">

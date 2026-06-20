@@ -354,7 +354,9 @@ struct GeofenceEditView: View {
                     .monospacedDigit()
             }
 
-            Slider(value: $radius, in: 50...1000, step: 10)
+            // Min 100 m: sotto soglia il geofencing è inaffidabile (parità con il
+            // floor lato Android e con GeofenceMonitorService.minRadiusMeters).
+            Slider(value: $radius, in: 100...1000, step: 10)
                 .disabled(!isOwner)
         }
         .padding(14)

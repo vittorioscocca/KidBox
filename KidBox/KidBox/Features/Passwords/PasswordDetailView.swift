@@ -20,6 +20,7 @@ struct PasswordDetailView: View {
 
     @Query private var queriedEntries: [PasswordEntry]
     @Query private var familyPasswordEntries: [PasswordEntry]
+    @Query private var members: [KBFamilyMember]
 
     @State private var isPasswordVisible = false
     @State private var showEditSheet = false
@@ -43,6 +44,10 @@ struct PasswordDetailView: View {
         _familyPasswordEntries = Query(
             filter: #Predicate<PasswordEntry> { $0.familyId == fid && $0.deletedAt == nil },
             sort: [SortDescriptor(\PasswordEntry.updatedAt, order: .reverse)]
+        )
+        _members = Query(
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && !$0.isDeleted },
+            sort: \.displayName
         )
     }
 
@@ -174,11 +179,40 @@ struct PasswordDetailView: View {
         return t.isEmpty ? "Dettaglio" : t
     }
 
+    /// Etichetta visibilità allineata ad Android: per `members` mostra "Condiviso con …"
+    /// al creatore e "Condiviso da …" al destinatario.
+    private func memberName(for userId: String) -> String? {
+        members.first { $0.userId == userId }?.displayName?.nilIfEmpty
+    }
+
+    private func visibilityLabel(for e: PasswordEntry) -> String {
+        switch PasswordEntry.normalizedPasswordVisibility(e.visibility) {
+        case KBVisibilityScope.onlyCreator:
+            return "🔒 Solo io"
+        case KBVisibilityScope.members:
+            if e.createdBy == currentUid {
+                // Sono il creatore: mostro con chi ho condiviso.
+                let names = e.visibilityMemberIds.compactMap { memberName(for: $0) }
+                return names.isEmpty
+                    ? "👥 Condiviso con membri della famiglia"
+                    : "👥 Condiviso con \(names.joined(separator: ", "))"
+            } else {
+                // Sono un destinatario: mostro chi me l'ha condivisa.
+                if let creator = memberName(for: e.createdBy) {
+                    return "👥 Condiviso da \(creator)"
+                }
+                return "👥 Condiviso da un membro della famiglia"
+            }
+        default:
+            return "👨‍👩‍👧 Condiviso in famiglia"
+        }
+    }
+
     @ViewBuilder
     private func scrollContent(e: PasswordEntry) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(KBVisibilityScope.chipLabel(for: PasswordEntry.normalizedPasswordVisibility(e.visibility)))
+                Text(visibilityLabel(for: e))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(KBTheme.secondaryText(colorScheme))
 

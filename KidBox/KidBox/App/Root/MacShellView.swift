@@ -190,6 +190,7 @@ enum MacSection: String, CaseIterable, Identifiable {
 struct MacShellView: View {
 
     @EnvironmentObject private var coordinator: AppCoordinator
+    @Environment(\.modelContext) private var modelContext
 
     /// Fallback resolution of the active family (mirrors RootHostView logic).
     @Query(sort: \KBFamily.updatedAt, order: .reverse)
@@ -197,9 +198,14 @@ struct MacShellView: View {
 
     @State private var selection: MacSection? = .dashboard
     @State private var searchText: String = ""
+    @State private var showFamilySwitcher = false
 
     private var resolvedFamilyId: String? {
         coordinator.activeFamilyId ?? families.first?.id
+    }
+
+    private var activeFamily: KBFamily? {
+        families.first { $0.id == resolvedFamilyId }
     }
 
     /// Sections matching the current search query (case/diacritic-insensitive).
@@ -213,6 +219,45 @@ struct MacShellView: View {
 
     var body: some View {
         NavigationSplitView {
+            // ── Family switcher ──────────────────────────────────────────────
+            Button {
+                showFamilySwitcher = true
+            } label: {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.accentColor.opacity(0.15))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(activeFamily?.name ?? "Seleziona famiglia")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text("Cambia famiglia")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showFamilySwitcher) {
+                FamilySwitcherView()
+                    .environmentObject(coordinator)
+            }
+
+            Divider()
+
             let mainResults = filtered(MacSection.main)
             let accountResults = filtered(MacSection.account)
             List(selection: $selection) {
@@ -235,6 +280,10 @@ struct MacShellView: View {
             .searchable(text: $searchText, placement: .sidebar, prompt: "Cerca sezione")
             .navigationTitle("KidBox")
             .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
+            // Quando cambia la famiglia attiva, aggiorna il detail column
+            .onChange(of: resolvedFamilyId) { _, _ in
+                coordinator.path.removeAll()
+            }
         } detail: {
             NavigationStack(path: $coordinator.path) {
                 rootDetail

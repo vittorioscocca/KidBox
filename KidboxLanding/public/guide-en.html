@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidBox Guide · How to use the app</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+
+  <!-- Meta Pixel -->
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '25962552233393986');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=25962552233393986&ev=PageView&noscript=1"/></noscript>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #fdf7f0; --c-bg2: #f5ebe0; --c-surface: #ffffff;
+      --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
+      --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
+      --c-accent-l: #fdf0e4; --shadow: 0 2px 20px rgba(180,100,30,0.08);
+      --shadow-lg: 0 8px 48px rgba(180,100,30,0.14);
+      --radius-lg: 24px; --radius-md: 16px; --radius-sm: 10px;
+      --c-nav-bg: rgba(253,247,240,0.92);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #18110a; --c-bg2: #221810; --c-surface: #2a1e14;
+        --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
+        --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
+        --c-accent-l: rgba(240,144,80,0.12); --shadow: 0 2px 20px rgba(0,0,0,0.3);
+        --shadow-lg: 0 8px 48px rgba(0,0,0,0.4);
+        --c-nav-bg: rgba(24,17,10,0.92);
+        --c-green: #3bbf80; --c-red: #f06060;
+      }
+
+      .screenshot-frame.empty { background: #2a1e14; border-color: rgba(255,180,100,0.15); }
+      .screenshot-placeholder { color: rgba(245,237,227,0.4); }
+      .sidebar { border-right-color: rgba(255,180,100,0.1); }
+      .step-item { background: var(--c-surface); border-color: rgba(255,180,100,0.1); }
+      .tip-box { background: rgba(240,144,80,0.1); border-color: rgba(240,144,80,0.15); border-left-color: var(--c-accent); }
+      .tip-box p { color: var(--c-text); }
+      .coming-soon { background: var(--c-bg2); color: var(--c-muted); }
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.6; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: var(--c-nav-bg); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: var(--c-text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo-name { display: inline; font-size: 0; }
+    .nav-logo-name span { font-size: 1.2rem; }
+    .nav-logo-name span.accent { color: var(--c-accent); }
+    .nav-back { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: var(--c-muted); text-decoration: none; transition: color .2s; }
+    .nav-back:hover { color: var(--c-accent); }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-top: 68px;
+      min-height: 100vh;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position: sticky; top: 68px;
+      height: calc(100vh - 68px);
+      overflow-y: auto;
+      padding: 28px 24px 28px 0;
+      border-right: 1px solid var(--c-border);
+    }
+    .sidebar-title {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--c-accent);
+      margin-bottom: 16px; padding-left: 16px;
+    }
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav li a {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: var(--radius-sm);
+      font-size: 0.82rem; font-weight: 500; color: var(--c-muted);
+      text-decoration: none; transition: background .15s, color .15s;
+    }
+    .sidebar-nav li a:hover { background: var(--c-accent-l); color: var(--c-accent2); }
+    .sidebar-nav li a.active { background: var(--c-accent-l); color: var(--c-accent2); font-weight: 600; }
+    .sidebar-nav li a .icon { font-size: 1rem; flex-shrink: 0; }
+
+    /* ── CONTENT ── */
+    .content { padding: 48px 56px 100px; }
+
+    /* ── PAGE HERO ── */
+    .page-hero { margin-bottom: 64px; }
+    .section-label { display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--c-accent); margin-bottom: 12px; }
+    h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .page-intro { font-size: 1.05rem; color: var(--c-muted); font-weight: 300; max-width: 580px; line-height: 1.7; }
+
+    /* ── FEATURE SECTION ── */
+    .feature-section {
+      margin-bottom: 80px;
+      padding-top: 24px;
+      border-top: 1px solid var(--c-border);
+    }
+    .feature-section:first-of-type { border-top: none; }
+    .feature-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 12px;
+    }
+    .feature-emoji { font-size: 2rem; }
+    .feature-section h2 {
+      font-size: 1.6rem; font-weight: 700;
+      letter-spacing: -0.02em; color: var(--c-text);
+    }
+    .feature-desc {
+      font-size: 1rem; color: var(--c-muted);
+      font-weight: 300; line-height: 1.75;
+      max-width: 620px; margin-bottom: 32px;
+    }
+
+    /* ── STEPS ── */
+    .steps-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+    .step-item {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 18px 20px;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow);
+    }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--c-accent); color: #fff;
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-item strong { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 3px; }
+    .step-item p { font-size: 0.85rem; color: var(--c-muted); font-weight: 300; margin: 0; }
+
+    /* ── SCREENSHOT GRID ── */
+    .screenshots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .screenshot-item { display: flex; flex-direction: column; gap: 10px; }
+    .screenshot-frame {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      aspect-ratio: 9/19.5;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .screenshot-frame img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .screenshot-frame.empty {
+      background: var(--c-bg2);
+      border: 2px dashed rgba(180,120,60,0.2);
+    }
+    .screenshot-placeholder {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--c-muted); text-align: center; padding: 20px;
+    }
+    .screenshot-placeholder .ph-icon { font-size: 2rem; opacity: .4; }
+    .screenshot-placeholder p { font-size: 0.75rem; font-weight: 300; opacity: .6; }
+    .screenshot-caption {
+      font-size: 0.78rem; color: var(--c-muted);
+      font-weight: 400; text-align: center; line-height: 1.4;
+    }
+
+    /* ── TIP BOX ── */
+    .tip-box {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 16px 20px;
+      background: var(--c-accent-l);
+      border: 1px solid rgba(232,131,58,0.2);
+      border-left: 3px solid var(--c-accent);
+      border-radius: var(--radius-md);
+      margin: 24px 0;
+    }
+    .tip-box p { font-size: 0.88rem; color: var(--c-text); font-weight: 400; margin: 0; line-height: 1.6; }
+
+    /* ── COMING SOON ── */
+    .coming-soon {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--c-muted);
+      background: var(--c-bg2); border: 1px solid var(--c-border);
+      padding: 3px 10px; border-radius: 50px; margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--c-border);
+      padding: 36px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      max-width: 1200px; margin: 0 auto;
+    }
+    footer p { font-size: 0.83rem; color: var(--c-muted); }
+    footer a { color: var(--c-muted); text-decoration: none; margin-left: 20px; font-size: 0.83rem; transition: color .2s; }
+    footer a:hover { color: var(--c-accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .page-wrap { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .content { padding: 32px 20px 80px; }
+    }
+    @media (max-width: 768px) { nav { padding: 14px 20px; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-logo" href="index-en.html">
+      <img src="icon.png" alt="KidBox">
+      <span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
+    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="nav-back" href="index-en.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to home
+      </a>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;">
+        <a href="guide.html" onclick="localStorage.setItem('kidbox_lang','it')" style="color:var(--c-muted);text-decoration:none;">IT</a>
+        <span style="color:var(--c-muted)">|</span>
+        <a href="guide-en.html" onclick="localStorage.setItem('kidbox_lang','en')" style="color:var(--c-accent);text-decoration:none;">EN</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <p class="sidebar-title">Contents</p>
+      <ul class="sidebar-nav">
+        <li><a href="#onboarding" class="icon">🚀</a><a href="#onboarding">First login</a></li>
+        <li><a href="#home"><span class="icon">🏡</span> Home &amp; Dashboard</a></li>
+        <li><a href="#chat"><span class="icon">💬</span> Family chat</a></li>
+        <li><a href="#ai"><span class="icon">🧠</span> AI agents</a></li>
+        <li><a href="#salute"><span class="icon">🩺</span> Health &amp; Paediatrics</a></li>
+        <li><a href="#calendario"><span class="icon">📅</span> Calendar</a></li>
+        <li><a href="#todo"><span class="icon">✅</span> Todo &amp; Routines</a></li>
+        <li><a href="#spese"><span class="icon">💰</span> Expenses</a></li>
+        <li><a href="#wallet"><span class="icon">🎟️</span> Wallet</a></li>
+        <li><a href="#documenti"><span class="icon">📄</span> Documents</a></li>
+        <li><a href="#fotovideo"><span class="icon">📸</span> Photos &amp; Videos</a></li>
+        <li><a href="#password"><span class="icon">🔐</span> Passwords</a></li>
+        <li><a href="#spesa"><span class="icon">🛒</span> Shopping list</a></li>
+        <li><a href="#note"><span class="icon">📝</span> Notes</a></li>
+        <li><a href="#casa"><span class="icon">🏠</span> Home</a></li>
+        <li><a href="#garage"><span class="icon">🚗</span> Garage</a></li>
+        <li><a href="#animali"><span class="icon">🐾</span> Pets</a></li>
+        <li><a href="#posizione"><span class="icon">📍</span> Shared location</a></li>
+        <li><a href="#profilo"><span class="icon">👤</span> Profile &amp; Settings</a></li>
+      </ul>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <div class="page-hero">
+        <span class="section-label">User manual</span>
+        <h1>How to use KidBox</h1>
+        <p class="page-intro">Everything you need to get the most out of KidBox — feature by feature, with app screenshots.</p>
+
+        <div class="tip-box" style="margin-top: 28px;">
+          <span>🧠</span>
+          <p><strong>Have a question about how a feature works?</strong> Ask the AI Assistant directly inside the app — it knows KidBox in detail and can guide you step by step on anything.</p>
+        </div>
+
+        <div class="tip-box" style="margin-top: 12px;">
+          <span>🛟</span>
+          <p><strong>Support handled by an AI agent.</strong> If something isn't working or you need help, the built-in support agent tries to resolve the issue in real time. If the situation requires human intervention, it guides you step by step to send an email to the KidBox team — whether it's a <strong>malfunction</strong>, a <strong>request for new features</strong> or a <strong>service not available</strong>.</p>
+        </div>
+
+        <div class="tip-box" style="margin-top: 12px;">
+          <span>📊</span>
+          <p><strong>Automatic malfunction reports.</strong> To help us improve the app, KidBox can send anonymous reports in case of errors or abnormal behaviour — <strong>only with your explicit authorisation</strong>. You can enable or disable this option at any time from <strong>Profile → Settings → Privacy → Diagnostic reports</strong>.</p>
+        </div>
+      </div>
+
+      <!-- ONBOARDING -->
+      <div class="feature-section" id="onboarding">
+        <div class="feature-header">
+          <span class="feature-emoji">🚀</span>
+          <h2>First login</h2>
+        </div>
+        <p class="feature-desc">From registration to your first configured family — it only takes a few minutes. You can sign in with Google, Apple, Facebook or email.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Download KidBox from the App Store</strong>
+              <p>Search for "KidBox" or use the direct link on the main page. The app is free — some advanced features require a Pro or Max plan.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Choose how to sign in</strong>
+              <p>On the login screen you can choose between Google, Apple, Facebook or email + password. If you use "Sign in with Apple" your email address stays private.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Discover the main features</strong>
+              <p>On first login a series of introductory screens shows you what you can do with KidBox: chat, documents, health and expenses all in one place.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Create or join a family</strong>
+              <p>You can create a new family and invite your partner (or other relatives) via link or code, or enter a code received from someone to join their family.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Complete your profile</strong>
+              <p>Add your name, photo and basic information. You can do this now or skip it and return later from Profile → Settings.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>To invite your partner, go to <strong>Profile → Family → Invite member</strong>. They will receive a notification with a direct link to join your family.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Login.png" alt="KidBox Login">
+            </div>
+            <p class="screenshot-caption">Sign in with Google, Apple, Facebook or email</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wizard/Wizard1.png" alt="Onboarding 1">
+            </div>
+            <p class="screenshot-caption">Your family, in one app</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wizard/Wizard2.png" alt="Onboarding 2">
+            </div>
+            <p class="screenshot-caption">Shared memories with your partner</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wizard/Wizard3.png" alt="Onboarding 3">
+            </div>
+            <p class="screenshot-caption">Health, expenses and much more</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wizard/Wizard4.png" alt="Onboarding 4">
+            </div>
+            <p class="screenshot-caption">Create or join a family</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wizard/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 12.10.10.png" alt="Onboarding 5">
+            </div>
+            <p class="screenshot-caption">Set up your profile</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOME -->
+      <div class="feature-section" id="home">
+        <div class="feature-header">
+          <span class="feature-emoji">🏡</span>
+          <h2>Home &amp; Dashboard</h2>
+        </div>
+        <p class="feature-desc">The main KidBox screen is your control centre: a quick overview of everything that matters for the family today — events, reminders, health and AI agent notifications.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Today's overview</strong>
+              <p>When you open the app you immediately see today's events, upcoming to-dos and any updates from family members. Everything in a single scroll, without having to open section by section.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Interactive cards</strong>
+              <p>Every card on the home screen is tappable and takes you directly to the corresponding section. Tap an event card to open the calendar, a health card for the child's profile details, and so on.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>AI agent notifications</strong>
+              <p>If La Mente Proattiva has detected something important — an upcoming deadline, a vaccine due, a reminder — you'll find it highlighted on the home screen with a dedicated orange card.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Quick navigation</strong>
+              <p>Use the bottom bar to move between the main sections: Home, Chat, AI, Health, and the "More" menu to access Calendar, Todo, Expenses, Wallet, Documents and Passwords.</p>
+            </div>
+          </div>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Home/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.37.07.png" alt="KidBox Home">
+            </div>
+            <p class="screenshot-caption">Main dashboard with today's overview</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Home/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.37.14.png" alt="KidBox Home detail">
+            </div>
+            <p class="screenshot-caption">Interactive cards and family updates</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="feature-section" id="chat">
+        <div class="feature-header">
+          <span class="feature-emoji">💬</span>
+          <h2>Family chat</h2>
+        </div>
+        <p class="feature-desc">Encrypted private and group messages, visible only to your family members. You can share text, photos, documents and location.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Chat section</strong>
+              <p>Tap the 💬 icon in the bottom bar. You'll immediately find the family group chat and private conversations with each member.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Write a message</strong>
+              <p>Tap the desired chat, type in the field at the bottom and press Send. Messages arrive in real time with a push notification on all family members' devices.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Share photos, files or location</strong>
+              <p>Tap the <strong>+</strong> icon next to the text field to attach photos from the library, take a photo, send a document or share your real-time location.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Create new conversations</strong>
+              <p>Tap <strong>+</strong> at the top right to open a private chat with a specific family member or to create a new themed group.</p>
+            </div>
+          </div>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Chat list</p></div>
+            </div>
+            <p class="screenshot-caption">Conversations list</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Group chat</p></div>
+            </div>
+            <p class="screenshot-caption">Family group chat</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Media sharing</p></div>
+            </div>
+            <p class="screenshot-caption">Photo and file sharing</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div class="feature-section" id="ai">
+        <div class="feature-header">
+          <span class="feature-emoji">🧠</span>
+          <h2>AI agents</h2>
+        </div>
+        <p class="feature-desc">KidBox has four AI agents who know your family: L'Assistente di Famiglia, Il Consulente di Salute, Il Pianificatore di Viaggi and La Mente Proattiva.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Access the AI agents</strong>
+              <p>Tap the 🧠 icon in the bottom bar. You'll find the four available agents — each specialises in a different area of family life.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Choose the right agent and ask your question</strong>
+              <p>Write in natural language, as you would in a message. For example: <em>"Which vaccines does Sofia still need?"</em> or <em>"Create a shopping list for the weekend"</em> or <em>"Plan a weekend in Rome for 4 people"</em>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Let the AI act</strong>
+              <p>The agents don't just answer — they can create calendar events, add to-dos, record a medical visit or fill in a note. Every action is shown before it's carried out.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Receive the morning briefing</strong>
+              <p>La Mente Proattiva sends you a summary every morning of the day's commitments, upcoming deadlines and personalised reminders for the whole family.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>The AI agents remember previous conversations and learn your family's habits over time. The more you use them, the more accurate they become.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Family assistant</p></div>
+            </div>
+            <p class="screenshot-caption">L'Assistente di Famiglia</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>AI chat</p></div>
+            </div>
+            <p class="screenshot-caption">Conversation with the AI</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Automatic actions</p></div>
+            </div>
+            <p class="screenshot-caption">Actions carried out by the AI</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Morning briefing</p></div>
+            </div>
+            <p class="screenshot-caption">Morning briefing</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEALTH -->
+      <div class="feature-section" id="salute">
+        <div class="feature-header">
+          <span class="feature-emoji">🩺</span>
+          <h2>Health &amp; Paediatrics</h2>
+        </div>
+        <p class="feature-desc">Track medical visits, tests, vaccines, treatments and reports for every family member. The AI helps you interpret data in plain language.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Health section</strong>
+              <p>Tap the 🩺 icon in the bottom bar. You'll find an overview with the health profiles of every family member — children and adults shown separately.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add a medical visit</strong>
+              <p>Tap <strong>+ New visit</strong>, select the family member, enter date, specialist, diagnosis and notes. You can attach the report as a PDF or photo.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Record vaccines and medications</strong>
+              <p>In the <strong>Vaccines</strong> section you'll find the vaccination schedule showing vaccines already done and those still due. For medications you can set reminders for administration.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Ask the AI to interpret the data</strong>
+              <p>Tap the <strong>Ask the AI</strong> button to receive plain-language explanations of tests or to find out whether the report values are within normal range. The AI has access to the family's medical history to provide context.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>⚠️</span>
+          <p>AI responses are informational and do not replace the advice of a doctor. For any clinical concern always consult your paediatrician or GP.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Health home</p></div>
+            </div>
+            <p class="screenshot-caption">Health overview</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Medical visits</p></div>
+            </div>
+            <p class="screenshot-caption">Medical visits</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>Vaccines</p></div>
+            </div>
+            <p class="screenshot-caption">Vaccine record</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame empty">
+              <div class="screenshot-placeholder"><span class="ph-icon">📱</span><p>AI health advisor</p></div>
+            </div>
+            <p class="screenshot-caption">AI health advisor</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="feature-section" id="calendario">
+        <div class="feature-header">
+          <span class="feature-emoji">📅</span>
+          <h2>Calendar</h2>
+        </div>
+        <p class="feature-desc">All family commitments in a single shared calendar, synchronized in real time across all devices. Each member has their own colour, so at a glance you know whose event it is.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Calendar</strong>
+              <p>Access the Calendar from the "More" menu in the bottom bar. The default view is monthly — days with events are marked with a coloured dot for each family member involved.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Switch between views</strong>
+              <p>You can switch from the <strong>monthly</strong> to the <strong>weekly</strong> or <strong>daily</strong> view by tapping the buttons at the top. The daily view shows the precise times of all the day's commitments in a timeline.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Create a new event</strong>
+              <p>Tap <strong>+</strong> at the top right or long-press on a day. Enter the title, date, start and end time, location and an optional description. Select which family members to include in the event — they will receive a notification.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Set reminders and recurrences</strong>
+              <p>For each event you can add one or more reminders (e.g. 1 day before, 2 hours before, 15 minutes before). If the event repeats — weekly training, monthly meeting — activate the recurrence and KidBox will manage it automatically.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Edit or delete an event</strong>
+              <p>Tap an event to open the detail, then tap <strong>Edit</strong> to change the time, participants or other details. For recurring events you can choose whether to modify only the selected one or all future occurrences.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">6</div>
+            <div>
+              <strong>Ask the AI to manage the calendar</strong>
+              <p>In L'Assistente di Famiglia you can say <em>"Add a dentist appointment for Sofia on Friday at 4:30 pm"</em> or <em>"What do I have on this week?"</em> — the AI creates, reads and organises events for you.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Events created in the <strong>Health</strong> section (medical visits, vaccines) automatically appear in the calendar with a dedicated 🩺 icon — everything is connected.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Calendario/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.09.04.png" alt="Calendar monthly view">
+            </div>
+            <p class="screenshot-caption">Monthly view with family events</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Calendario/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.09.10.png" alt="Calendar weekly view">
+            </div>
+            <p class="screenshot-caption">Weekly view with timeline</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Calendario/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.09.17.png" alt="Create event">
+            </div>
+            <p class="screenshot-caption">Create new event</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Calendario/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.09.41.png" alt="Event detail">
+            </div>
+            <p class="screenshot-caption">Event detail and edit</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Calendario/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.10.08.png" alt="Reminders and recurrences">
+            </div>
+            <p class="screenshot-caption">Reminders and recurring events</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TODO -->
+      <div class="feature-section" id="todo">
+        <div class="feature-header">
+          <span class="feature-emoji">✅</span>
+          <h2>Todo &amp; Routines</h2>
+        </div>
+        <p class="feature-desc">Shared to-do lists and daily routines for the whole family. Each task can be assigned to a specific member, with a deadline and reminder — and the AI can create and manage them for you on simple request.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Todo section</strong>
+              <p>Access Todo from the "More" menu in the bottom bar. You'll find the active lists divided by category: personal tasks, shared family tasks and the shopping list.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Create a new list</strong>
+              <p>Tap <strong>+ New list</strong>, assign a name and choose an identifying colour or emoji. You can create separate themed lists: "Shopping", "DIY", "Kids' school", "Household chores".</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Add tasks and assign them</strong>
+              <p>Tap <strong>+</strong> inside a list, write the task and optionally assign it to a family member, add a deadline and a reminder. The person assigned receives a push notification.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Tick and manage tasks</strong>
+              <p>Tap the circle to the left of each task to mark it as completed — it disappears from the active list but stays in the archive. Long-press a task to edit, move or delete it.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Create and activate Routines</strong>
+              <p>Routines are sequences of tasks that repeat every day (e.g. "Kids' morning routine": breakfast → school bag → teeth → leave). Create the routine, add the steps in the correct order and activate it — every morning it will reset automatically to start again.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">6</div>
+            <div>
+              <strong>Use the shared shopping list</strong>
+              <p>The shopping list is shared in real time with the whole family. If your partner adds an item while you're already at the supermarket, you see it appear instantly. Tick items off as you put them in the trolley.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Tell the AI: <em>"Add milk, bread and eggs to the shopping list"</em> or <em>"Create an evening routine for the kids with bath, pyjamas and story"</em> — the AI does it in a second without you having to open the section.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.52.17.png" alt="Todo list">
+            </div>
+            <p class="screenshot-caption">Main Todo list</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.52.30.png" alt="Todo list detail">
+            </div>
+            <p class="screenshot-caption">Task list detail</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.53.08.png" alt="New task">
+            </div>
+            <p class="screenshot-caption">Add new task</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.53.48.png" alt="Assign task">
+            </div>
+            <p class="screenshot-caption">Assign to a family member</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.53.57.png" alt="Routines">
+            </div>
+            <p class="screenshot-caption">Daily routines management</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.54.04.png" alt="Routine steps">
+            </div>
+            <p class="screenshot-caption">Morning routine steps</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/To-Do/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.54.11.png" alt="Shopping list">
+            </div>
+            <p class="screenshot-caption">Shared shopping list</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPENSES -->
+      <div class="feature-section" id="spese">
+        <div class="feature-header">
+          <span class="feature-emoji">💰</span>
+          <h2>Expenses</h2>
+        </div>
+        <p class="feature-desc">Track all family expenses, broken down by category and by member. Analyse monthly trends, monitor the budget and ask the AI to give you a financial overview of the family.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Expenses section</strong>
+              <p>Access Expenses from the "More" menu in the bottom bar. You'll immediately see the current month's summary: total spent, breakdown by category and each family member's contribution.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add an expense</strong>
+              <p>Tap <strong>+</strong> at the top right, enter the amount and choose the category — Groceries, Health, Education, Home, Transport, Leisure and others. Add a descriptive note and, if you like, photograph the receipt as an attachment to keep everything documented.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Assign the expense to a member</strong>
+              <p>Each expense can be attributed to a specific family member. This allows you to understand who is spending what and have a clear picture of individual spending versus the family total.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Analyse the monthly statistics</strong>
+              <p>Scroll down in the main screen to see the charts by category and the month-on-month trend. You can navigate between previous months to compare periods and identify where the family spends most.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Ask the AI for an analysis</strong>
+              <p>L'Assistente di Famiglia has access to your real spending data and can answer questions like <em>"How much did we spend in May?"</em>, <em>"Which category do we spend most on?"</em> or <em>"Compare April and May spending"</em> — in seconds, without any calculations.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>You can also record an expense directly from the AI: <em>"I just spent €45 at the supermarket"</em> — the assistant categorises it and saves it automatically in the Expenses section.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Spese/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.13.05.png" alt="Expenses dashboard">
+            </div>
+            <p class="screenshot-caption">Monthly expenses overview</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Spese/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.13.10.png" alt="Add expense">
+            </div>
+            <p class="screenshot-caption">Add new expense</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Spese/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.13.15.png" alt="Expense categories">
+            </div>
+            <p class="screenshot-caption">Expenses broken down by category</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Spese/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.13.21.png" alt="Monthly statistics">
+            </div>
+            <p class="screenshot-caption">Statistics and monthly trends</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- WALLET -->
+      <div class="feature-section" id="wallet">
+        <div class="feature-header">
+          <span class="feature-emoji">🎟️</span>
+          <h2>Wallet</h2>
+        </div>
+        <p class="feature-desc">Loyalty cards, tickets, subscriptions and coupons — all in one place, shared with the family. No more physical cards left at home or tickets to hunt down in your emails.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Wallet</strong>
+              <p>Access the Wallet from the "More" menu in the bottom bar. You'll find all saved cards and tickets, organised by category: Loyalty cards, Tickets, Subscriptions, Coupons.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add a card or ticket</strong>
+              <p>Tap <strong>+</strong> at the top right and choose the type of item to add. You can scan the barcode or QR code directly with the camera or enter the code manually. Assign a name and, if you like, an icon to recognise it instantly.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Use the card at the point of payment</strong>
+              <p>Tap the card or ticket to open the full-screen detail with the barcode or QR code clearly visible — ready to be scanned at the till. The screen stays active until you close the view.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Share with the whole family</strong>
+              <p>Every Wallet item is automatically visible to all family members. So your partner can also show the loyalty card from their phone, or the kids can use the cinema ticket without you having to send it every time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Manage and archive</strong>
+              <p>Long-press an item to edit it, move it to a different category or archive it when it's no longer needed — for example a ticket for an event that has already happened. Archived items remain accessible but don't appear in the main list.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Ideal for supermarket, gym and pharmacy loyalty cards, cinema membership cards, transport subscriptions and discount coupons. One Wallet for the whole family — nobody is ever without the right card at the wrong moment.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wallet/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.22.17.png" alt="Wallet home">
+            </div>
+            <p class="screenshot-caption">Wallet with family cards and tickets</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wallet/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.23.03.png" alt="Card detail">
+            </div>
+            <p class="screenshot-caption">Card detail with barcode</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wallet/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.23.33.png" alt="Add item">
+            </div>
+            <p class="screenshot-caption">Add card or ticket</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Wallet/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.23.38.png" alt="Scan code">
+            </div>
+            <p class="screenshot-caption">Scan code with camera</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS & PHOTOS -->
+      <div class="feature-section" id="documenti">
+        <div class="feature-header">
+          <span class="feature-emoji">📄</span>
+          <h2>Documents &amp; Photos</h2>
+        </div>
+        <p class="feature-desc">Archive important documents securely and share them with whoever you choose — the whole family, only some members, or keep them private. Supports PDFs, images, Word, Excel and much more.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Documents section</strong>
+              <p>Access Documents from the "More" menu in the bottom bar. You'll find the archive organised in folders — you can create themed folders such as "School", "Insurance", "Passports", "Medical".</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Upload a document</strong>
+              <p>Tap <strong>+</strong> and choose the source: from the iPhone <strong>Files</strong> app, from the <strong>Photo Library</strong>, or take a photo directly with the camera to photograph a paper document. KidBox supports PDF, JPG, PNG, Word and Excel.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Set visibility</strong>
+              <p>Each document has three visibility levels you can choose at upload time or change later:</p>
+              <p>🔒 <strong>Only me</strong> — visible only to you, other members cannot see it<br>
+              👨‍👩‍👧 <strong>Family</strong> — shared with all members of your KidBox family<br>
+              🔗 <strong>External link</strong> — generates a shareable link for anyone, even outside the app (e.g. doctor, teacher, grandparents)</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Share externally with a link</strong>
+              <p>Tap the document, select <strong>Share</strong> and activate <strong>Generate external link</strong>. You'll get a link you can send via WhatsApp, email or SMS — the recipient can open the document even without having KidBox installed.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Merge multiple PDFs into one</strong>
+              <p>Select two or more PDF documents by tapping <strong>Select</strong> at the top right, tick the files you want to merge in the desired order, then tap <strong>Merge PDF</strong>. KidBox generates a single combined PDF file that you can save or share immediately.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">6</div>
+            <div>
+              <strong>View and download</strong>
+              <p>Tap any document to open the preview directly in the app. From there you can share it, download it to the device, rename it or move it to another folder.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Use the <strong>external link</strong> feature to send the medical report to the paediatrician or the school report to the grandparents — without them needing to download any app. The link can be deactivated at any time from the document card.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.19.38.png" alt="Document archive">
+            </div>
+            <p class="screenshot-caption">Document archive with folders</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.19.57.png" alt="Document list">
+            </div>
+            <p class="screenshot-caption">Documents in folder</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.20.11.png" alt="Document detail">
+            </div>
+            <p class="screenshot-caption">Preview and document options</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.22.55.png" alt="Document visibility">
+            </div>
+            <p class="screenshot-caption">Visibility setting — private, family or external link</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.23.02.png" alt="External link sharing">
+            </div>
+            <p class="screenshot-caption">Generate external sharing link</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.23.15.png" alt="Select PDFs to merge">
+            </div>
+            <p class="screenshot-caption">Select PDFs to merge</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Documenti/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.24.17.png" alt="Merge PDF">
+            </div>
+            <p class="screenshot-caption">Merging multiple PDFs into one document</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHOTOS & VIDEOS -->
+      <div class="feature-section" id="fotovideo">
+        <div class="feature-header">
+          <span class="feature-emoji">📸</span>
+          <h2>Photos &amp; Videos</h2>
+        </div>
+        <p class="feature-desc">Photo and video albums shared with the whole family — your children's memories, holidays and special moments, all in one safe place always accessible to those you love.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Photos &amp; Videos section</strong>
+              <p>Access Photos &amp; Videos from the "More" menu in the bottom bar. You'll find all albums created by the family, ordered by date. Photos uploaded by any member are visible to everyone in real time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Create a new album</strong>
+              <p>Tap <strong>+ New album</strong>, assign a name (e.g. "Summer 2026", "Matteo's first", "Family Christmas") and choose whether to make it visible to the whole family or keep it private. You can add a cover now or later.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Add photos and videos</strong>
+              <p>Go into an album and tap <strong>+</strong> to add content from your iPhone Photo Library or take a photo directly with the camera. You can select multiple photos at once to upload them in bulk.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>View and download</strong>
+              <p>Tap a photo to open it full screen. Swipe sideways to browse the album. From the detail view you can save the photo to your iPhone, share it via other channels or delete it from the album.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Contribute to others' albums</strong>
+              <p>All family members can add photos to any shared album. If your partner takes a photo at the school play, you'll find it in the album as soon as they upload it — without waiting for them to send it on WhatsApp.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Create an album <strong>"[Child's name] growing up"</strong> and add a photo every month — you'll have a visual diary of their growth always available and shared with grandparents and distant relatives.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Foto e Video/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.25.52.png" alt="Photo albums">
+            </div>
+            <p class="screenshot-caption">Family photo albums</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Foto e Video/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.33.07.png" alt="Album detail">
+            </div>
+            <p class="screenshot-caption">Photos in the shared album</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Foto e Video/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.35.40.png" alt="Photo view">
+            </div>
+            <p class="screenshot-caption">Full-screen photo view</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSWORDS -->
+      <div class="feature-section" id="password">
+        <div class="feature-header">
+          <span class="feature-emoji">🔐</span>
+          <h2>Passwords</h2>
+        </div>
+        <p class="feature-desc">A secure password manager built into the app, shared with the family. End-to-end encryption, autofill in Safari, a password generator and automatic checking of compromised credentials.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Passwords section</strong>
+              <p>Access Passwords from the "More" menu in the bottom bar. Access is protected by <strong>Face ID or Touch ID</strong> — nobody can see the passwords without your biometrics, not even other family members on the same account.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add a new password</strong>
+              <p>Tap <strong>+</strong> at the top right and fill in: site or service name, URL, username and password. You can also add additional notes (e.g. security questions, associated PINs). Passwords are encrypted locally before being synchronised — KidBox cannot read them.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Use the secure password generator</strong>
+              <p>In the password field tap <strong>Generate</strong> to get a random secure password. You can customise length, use of symbols, numbers and uppercase letters. The generated password is saved directly without having to type it.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Enable autofill in Safari and apps</strong>
+              <p>Go to <strong>iPhone Settings → General → Passwords → Password Options</strong> and select <strong>KidBox</strong>. From that moment Safari and apps will automatically suggest the saved credentials with a tap, without opening KidBox.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Check for compromised passwords (Breach Check)</strong>
+              <p>KidBox automatically checks your passwords against public security breach databases (Have I Been Pwned and similar). Compromised passwords appear with a <strong>red warning</strong> — tap it to see which accounts are at risk and update the credentials immediately.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">6</div>
+            <div>
+              <strong>Share passwords with the family</strong>
+              <p>Passwords marked as "shared" are visible to all family members (always protected by Face ID on their device). Ideal for streaming accounts, home WiFi, shared family services.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">7</div>
+            <div>
+              <strong>Search and organise</strong>
+              <p>Use the search bar at the top to find any credential in a second. You can also organise passwords into categories (Work, Home, Streaming, Banking) to find everything more easily.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>🔒</span>
+          <p>Passwords are encrypted with end-to-end encryption directly on the device before synchronisation. Not even KidBox or its servers can access your credentials in plain text.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.53.18.png" alt="Password list">
+            </div>
+            <p class="screenshot-caption">Saved password list</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.53.24.png" alt="Password detail">
+            </div>
+            <p class="screenshot-caption">Credential detail</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.53.52.png" alt="Add password">
+            </div>
+            <p class="screenshot-caption">Add new password</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.54.23.png" alt="Password generator">
+            </div>
+            <p class="screenshot-caption">Secure password generator</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.54.54.png" alt="Breach check">
+            </div>
+            <p class="screenshot-caption">Check for compromised passwords</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.55.01.png" alt="Autofill">
+            </div>
+            <p class="screenshot-caption">Autofill in Safari and apps</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.55.07.png" alt="Shared passwords">
+            </div>
+            <p class="screenshot-caption">Passwords shared with the family</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Password/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 17.55.13.png" alt="Password categories">
+            </div>
+            <p class="screenshot-caption">Organisation by categories</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHOPPING LIST -->
+      <div class="feature-section" id="spesa">
+        <div class="feature-header">
+          <span class="feature-emoji">🛒</span>
+          <h2>Shopping list</h2>
+        </div>
+        <p class="feature-desc">KidBox's shopping list is shared in real time with the whole family. Anyone can add items from home while you're already at the supermarket — everything synchronised instantly.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Shopping list</strong>
+              <p>Access Todo from the "More" menu and select the <strong>Shopping</strong> list. You'll find all items to buy added by family members, organised by category.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add items</strong>
+              <p>Tap <strong>+</strong> and write the product name. You can add a note (e.g. "specific brand") and the quantity. The item appears immediately in everyone's list.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Tick off at the supermarket</strong>
+              <p>Tap the circle next to each item while shopping — it gets crossed out and moved to the bottom of the list. If there are two of you at the supermarket, you can split the aisles and tick items simultaneously.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Clear the list after shopping</strong>
+              <p>Once shopping is done, tap <strong>Clear completed</strong> to remove all ticked items and start fresh for next time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Ask the AI to fill the list</strong>
+              <p>In L'Assistente di Famiglia you can say <em>"Add the ingredients for a lasagne for 6 people to the shopping list"</em> or <em>"Put what's missing for breakfast on the shopping list"</em> — the AI adds everything automatically.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Keep the list open on your phone while you shop — it updates in real time if your partner adds something from home. No more phone calls to remember what's missing.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Lista della spesa/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.08.07.png" alt="Shopping list">
+            </div>
+            <p class="screenshot-caption">Real-time shared shopping list</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Lista della spesa/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 16.08.31.png" alt="Add shopping item">
+            </div>
+            <p class="screenshot-caption">Add item to list</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="feature-section" id="note">
+        <div class="feature-header">
+          <span class="feature-emoji">📝</span>
+          <h2>Notes</h2>
+        </div>
+        <p class="feature-desc">Notes shared with the whole family — ideas, reminders, recipes, instructions. Notes are always synchronised and visible to all members in real time.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Notes section</strong>
+              <p>Access Notes from the "More" menu in the bottom bar. You'll find the list of all family notes, ordered by most recently modified.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Create a new note</strong>
+              <p>Tap <strong>+</strong> at the top right, enter a title and start writing. You can format text with bold, italics, bullet lists and headings to better organise the content.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Share with the family</strong>
+              <p>Notes are visible to all family members by default. If you want a private note, you can set it as personal at creation time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Ask the AI to create or summarise notes</strong>
+              <p>In L'Assistente di Famiglia you can say <em>"Create a note with instructions for Sofia's paediatrician"</em> or <em>"Summarise the note about the summer holiday"</em> — the AI writes or reworks it for you.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Notes are ideal for recurring instructions: emergency numbers, medication doses, school contacts. Written once, always available for the whole family.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Note/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.42.28.png" alt="Notes list">
+            </div>
+            <p class="screenshot-caption">Family notes list</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Note/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.43.28.png" alt="Note detail">
+            </div>
+            <p class="screenshot-caption">View and edit note</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Note/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.45.20.png" alt="New note">
+            </div>
+            <p class="screenshot-caption">Create new note</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOME (HOUSE) -->
+      <div class="feature-section" id="casa">
+        <div class="feature-header">
+          <span class="feature-emoji">🏠</span>
+          <h2>Home</h2>
+        </div>
+        <p class="feature-desc">Keep track of appliances, systems and bills in your home. Monitor warranties, deadlines and recurring payments — all in one place with automatic reminders.</p>
+
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Home section</strong>
+              <p>Access the Home section from the navigation. If it's your first time, you'll find two buttons: <strong>Add item</strong> to register an appliance or system, and <strong>Add deadline or payment</strong> for bills and recurring subscriptions.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add a home item</strong>
+              <p>Enter the name (e.g. Boiler), category (Appliance, System…), brand, model and serial number. Enable <strong>Purchase date</strong> and <strong>Warranty expiry</strong> to receive a warning before the warranty runs out. You can also set the date of the next scheduled maintenance.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Add a deadline or payment</strong>
+              <p>For bills and subscriptions choose the type (Bill, Subscription, Rent…), the category (Electricity, Gas, Internet…), the amount, the due day of the month and the provider. You can attach invoices directly — also visible in Documents → Home. KidBox alerts you before each deadline.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Monitor everything from the list</strong>
+              <p>The main list shows items divided by category: <strong>Appliances</strong>, <strong>Systems</strong>, <strong>Deadlines &amp; Payments</strong>. A red badge immediately highlights upcoming or overdue deadlines so nothing slips through.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Ask the AI: <em>"When does the boiler warranty expire?"</em> or <em>"When was the last time I had the air conditioner serviced?"</em> — it answers by consulting your data in real time.</p>
+        </div>
+
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Casa/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.28.01.png" alt="Home section">
+            </div>
+            <p class="screenshot-caption">Home section</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Casa/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.28.35.png" alt="New home item">
+            </div>
+            <p class="screenshot-caption">Add item</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Casa/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.28.43.png" alt="Add menu">
+            </div>
+            <p class="screenshot-caption">Item or deadline</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Casa/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.29.12.png" alt="Home list with deadlines">
+            </div>
+            <p class="screenshot-caption">List with deadlines</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Casa/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.29.27.png" alt="New deadline or payment">
+            </div>
+            <p class="screenshot-caption">New deadline</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GARAGE -->
+      <div class="feature-section" id="garage">
+        <div class="feature-header">
+          <span class="feature-emoji">🚗</span>
+          <h2>Garage</h2>
+        </div>
+        <p class="feature-desc">Keep all your vehicles under control: insurance, MOT, road tax and service deadlines — with automatic reminders and a service history always at hand.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Garage</strong>
+              <p>Access the Garage section from the navigation. If you don't have any vehicles yet, tap <strong>Add vehicle</strong> to get started. The list shows all vehicles with their plate and a red badge if there are upcoming deadlines.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Add a vehicle</strong>
+              <p>Enter the name, plate, make, model, year, fuel type, colour and chassis/VIN number. Then activate the <strong>Deadlines</strong> you want to monitor: Insurance, MOT, Road tax and Next service — KidBox will alert you before they arrive.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>View the vehicle profile</strong>
+              <p>The profile shows all vehicle data, deadlines with dates and a red indicator for those coming up. Below you'll find the <strong>Service history</strong> and the <strong>Attachments</strong> section to archive insurance contracts, logbooks and receipts.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Record a service</strong>
+              <p>Tap <strong>+</strong> to add a new service: choose the type (Service, MOT, Repair…), enter date, mileage, cost and garage. You can attach the invoice directly from the app — it will also be visible in Documents → Garage.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Ask the AI: <em>"When does Adam's insurance expire?"</em> or <em>"How many km did I have at the last service?"</em> — it answers in a second by consulting your vehicle history.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Garage/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.59.18.png" alt="Garage">
+            </div>
+            <p class="screenshot-caption">Garage section</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Garage/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.09.57.png" alt="New vehicle">
+            </div>
+            <p class="screenshot-caption">Add vehicle</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Garage/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.11.35.png" alt="Garage list with deadline">
+            </div>
+            <p class="screenshot-caption">Vehicle with deadline</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Garage/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.11.13.png" alt="Vehicle profile">
+            </div>
+            <p class="screenshot-caption">Profile and deadlines</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Garage/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2019.11.29.png" alt="New service">
+            </div>
+            <p class="screenshot-caption">Record service</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PETS -->
+      <div class="feature-section" id="animali">
+        <div class="feature-header">
+          <span class="feature-emoji">🐾</span>
+          <h2>Pets</h2>
+        </div>
+        <p class="feature-desc">Create a complete profile for every family pet: vaccines, vet visits, medications with dosages and reminders — all organised just like your children's health records.</p>
+
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Add your pet</strong>
+              <p>Tap <strong>Add pet</strong> on the main screen. Enter name, species (dog, cat…), breed, date of birth, colour and microchip number. A complete profile helps the AI give you accurate information about the breed and age.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>View all your pets</strong>
+              <p>The list shows all family pets with name, breed and icon. Tap a pet to access its full profile with Treatments and Event history.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Add treatments or vet events</strong>
+              <p>From the pet's profile tap <strong>+</strong> to choose between <strong>New treatment</strong> (medications with dosage and reminders) and <strong>New event</strong> (vaccines, visits, procedures). Each event can have attachments such as vet reports, also visible in the Documents section.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Record a vet event</strong>
+              <p>For each event choose the type (Vaccine, Visit, Procedure…), date, vet name, cost and the <strong>next due date</strong> for the booster. KidBox automatically adds the reminder to the family calendar.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Set up a medication treatment</strong>
+              <p>Select the medication from a catalogue of common veterinary medicines (Frontline, Advantix, NexGard, Bravecto, Milbemax and others), then set dosage, treatment duration and daily frequency (1×, 2×, 3×). KidBox automatically calculates total doses and start and end dates.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">6</div>
+            <div>
+              <strong>Set administration times and activate reminders</strong>
+              <p>Set administration times (morning, evening) and activate notifications so you don't miss any dose. The final summary shows start date, end date and total number of doses before you confirm.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <span>💡</span>
+          <p>Ask the AI: <em>"Has Alì had the rabies vaccine?"</em> or <em>"When does Mia's Frontline expire?"</em> — the assistant checks the event history and active treatments in real time.</p>
+        </div>
+
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.41.44.png" alt="Pets section">
+            </div>
+            <p class="screenshot-caption">Pets section</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.41.51.png" alt="New pet">
+            </div>
+            <p class="screenshot-caption">Add pet</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.43.11.png" alt="Pet list">
+            </div>
+            <p class="screenshot-caption">Your pets</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.43.19.png" alt="Pet profile">
+            </div>
+            <p class="screenshot-caption">Alì's profile</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.43.25.png" alt="Add treatment or event">
+            </div>
+            <p class="screenshot-caption">Add treatment or event</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.43.33.png" alt="New vet event">
+            </div>
+            <p class="screenshot-caption">New vet event</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.43.57.png" alt="Vet medication selection">
+            </div>
+            <p class="screenshot-caption">Veterinary medication catalogue</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.44.05.png" alt="Set dose">
+            </div>
+            <p class="screenshot-caption">Dosage and frequency</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.44.15.png" alt="Set times">
+            </div>
+            <p class="screenshot-caption">Administration times</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.44.22.png" alt="Confirm treatment">
+            </div>
+            <p class="screenshot-caption">Summary and confirm treatment</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Animali/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-05-20%20at%2018.44.27.png" alt="Active treatment in profile">
+            </div>
+            <p class="screenshot-caption">Active treatment in profile</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOCATION -->
+      <div class="feature-section" id="posizione">
+        <div class="feature-header">
+          <span class="feature-emoji">📍</span>
+          <h2>Shared location</h2>
+        </div>
+        <p class="feature-desc">Always know where your family members are in real time — directly on a map. Sharing is voluntary, transparent and controllable by everyone at any time.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Open the Location section</strong>
+              <p>Access Location from the "More" menu in the bottom bar. You'll find the map with pins for family members who have activated sharing, updated in real time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Enable sharing of your location</strong>
+              <p>Tap your name in the member list and select <strong>Share location</strong>. You can choose to share it <strong>always</strong> (even with the app in the background) or <strong>only when the app is open</strong>. Other members will see your pin on the map.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>View family members' location</strong>
+              <p>Each member who has activated sharing appears on the map with their avatar. Tap the pin to see their name, approximate address and how long they've been there. You can also switch to the <strong>list view</strong> to see everyone in order.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Set zones and arrival notifications</strong>
+              <p>You can create <strong>custom zones</strong> (e.g. "School", "Grandparents' house", "Gym") and receive an automatic notification when a family member arrives at or leaves that zone — without having to check the map every time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Stop sharing</strong>
+              <p>You can stop sharing your location at any time by going to <strong>Location → Your profile → Stop sharing</strong>. As soon as you deactivate it, your pin disappears from everyone else's map.</p>
+            </div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <span>🔒</span>
+          <p>Location is shared <strong>only with your KidBox family members</strong> — nobody else can see it. Every member has full control over when and how to share their location.</p>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Posizione/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 18.07.08.png" alt="Location map">
+            </div>
+            <p class="screenshot-caption">Map with family members' location</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Posizione/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 18.07.15.png" alt="Members list">
+            </div>
+            <p class="screenshot-caption">Member list with location</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Posizione/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 18.07.20.png" alt="Location detail">
+            </div>
+            <p class="screenshot-caption">Member location detail</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Posizione/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 18.07.25.png" alt="Sharing settings">
+            </div>
+            <p class="screenshot-caption">Location sharing settings</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Posizione/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 18.07.37.png" alt="Custom zones">
+            </div>
+            <p class="screenshot-caption">Zones with arrival notifications</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Posizione/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 18.07.44.png" alt="Zone notification">
+            </div>
+            <p class="screenshot-caption">Automatic arrival notification</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="feature-section" id="profilo">
+        <div class="feature-header">
+          <span class="feature-emoji">👤</span>
+          <h2>Profile &amp; Settings</h2>
+        </div>
+        <p class="feature-desc">Manage your personal profile, family members, notifications, subscription and all app preferences from one place.</p>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong>Access your profile</strong>
+              <p>Tap the 👤 icon at the bottom right in the navigation bar. You'll find your photo, name and a summary of your active plan (Free, Pro or Max).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong>Manage the family</strong>
+              <p>In the <strong>Family</strong> section you can see all members with their roles. From here you can invite new members via link or code, and remove anyone who is no longer part of the household.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong>Configure notifications</strong>
+              <p>Choose which notifications to receive and how often: AI reminders, chat messages, calendar events or health updates. You can customise them for each type of alert.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div>
+              <strong>Manage your subscription</strong>
+              <p>View your active plan and upgrade to Pro or Max directly from the app. Subscriptions are managed by the App Store — to cancel go to <strong>iPhone Settings → Your Name → Subscriptions → KidBox</strong>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div>
+              <strong>Delete account</strong>
+              <p>Scroll to the bottom of the profile and tap <strong>Delete account</strong> to remove all your data permanently. The operation is irreversible.</p>
+            </div>
+          </div>
+        </div>
+        <div class="screenshots">
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Profilo/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.36.26.png" alt="KidBox Profile">
+            </div>
+            <p class="screenshot-caption">Personal profile screen</p>
+          </div>
+          <div class="screenshot-item">
+            <div class="screenshot-frame">
+              <img src="screenshots/Profilo/Simulator Screenshot - iPhone 17 Pro - 2026-05-20 at 15.36.36.png" alt="KidBox Settings">
+            </div>
+            <p class="screenshot-caption">Settings and family management</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <footer>
+    <p>© 2026 KidBox · Vittorio Scocca</p>
+    <div>
+      <a href="index-en.html">Home</a>
+      <a href="privacy-en.html">Privacy</a>
+      <a href="terms-en.html">Terms</a>
+      <a href="data-deletion-en.html">Support</a>
+    </div>
+  </footer>
+
+  <script>
+    // Highlight sidebar link on scroll
+    const sections = document.querySelectorAll('.feature-section');
+    const links = document.querySelectorAll('.sidebar-nav li a');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(s => {
+        if (window.scrollY >= s.offsetTop - 120) current = s.id;
+      });
+      links.forEach(a => {
+        a.classList.remove('active');
+        if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

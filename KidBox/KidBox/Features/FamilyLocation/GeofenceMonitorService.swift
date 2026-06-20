@@ -23,6 +23,11 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
 
     static let shared = GeofenceMonitorService()
 
+    /// Raggio minimo affidabile per il region monitoring (Apple raccomanda ≥100 m).
+    static let minRadiusMeters: CLLocationDistance = 100
+    /// Raggio usato quando la zona non ne specifica uno valido.
+    static let defaultRadiusMeters: CLLocationDistance = 200
+
     // MARK: - Published
 
     @Published private(set) var monitoredGeofenceIds: Set<String> = []
@@ -153,7 +158,10 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
     }
 
     private func effectiveRadius(for geofence: KBGeofence) -> CLLocationDistance {
-        let requested = geofence.radius > 0 ? geofence.radius : 200
+        // Floor a 100 m: sotto questa soglia il region monitoring è inaffidabile
+        // (falsi ingressi/uscite, eventi mancati). Parità col floor lato Android.
+        let base = geofence.radius > 0 ? geofence.radius : Self.defaultRadiusMeters
+        let requested = max(base, Self.minRadiusMeters)
         let maxAllowed = locationManager.maximumRegionMonitoringDistance
         return min(requested, maxAllowed)
     }

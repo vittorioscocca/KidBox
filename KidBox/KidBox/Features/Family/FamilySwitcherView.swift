@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 struct FamilySwitcherView: View {
     @Environment(\.modelContext) private var modelContext
@@ -18,6 +19,7 @@ struct FamilySwitcherView: View {
     @State private var newFamilyName = ""
     @State private var isCreating = false
     @State private var errorMessage: String?
+    @State private var isSyncingRemote = false
 
     var body: some View {
         NavigationStack {
@@ -63,7 +65,13 @@ struct FamilySwitcherView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Chiudi") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if isSyncingRemote {
+                        ProgressView().scaleEffect(0.8)
+                    }
+                }
             }
+            .task { await syncFamiliesFromRemote() }
             .sheet(isPresented: $showCreateSheet) {
                 createFamilySheet
             }
@@ -133,6 +141,61 @@ struct FamilySwitcherView: View {
             }
         }
         .presentationDetents([.medium])
+    }
+
+    /// Fetcha le memberships da Firestore e inserisce in SwiftData le famiglie mancanti.
+    /// Così le famiglie create su altri device compaiono nel picker senza bootstrap completo.
+    private func syncFamiliesFromRemote() async {
+        isSyncingRemote = true
+        defer { isSyncingRemote = false }
+
+        do {
+            let memberships = try await MembershipRemoteStore().fetchMembershipsForCurrentUser()
+            let localIds = Set(families.map { $0.id })
+            let missing = memberships.filter { !localIds.contains($0.familyId) }
+            guard !missing.isEmpty else { return }
+
+            let remote = FamilyReadRemoteStore()
+            let now = Date()
+            let uid = Auth.auth().currentUser?.uid ?? ""
+
+            for membership in missing {
+                guard let fetched = try? await remote.fetchFamily(familyId: membership.familyId) else { continue }
+                let family = KBFamily(
+                    id: fetched.id,
+                    name: fetched.name,
+                    createdBy: fetched.ownerUid,
+                    updatedBy: fetched.ownerUid,
+                    createdAt: now,
+                    updatedAt: now
+                )
+                modelContext.insert(family)
+
+                // Inserisci anche il member corrente se mancante
+                let fetchedId = fetched.id
+                let memberDesc = FetchDescriptor<KBFamilyMember>(
+                    predicate: #Predicate { $0.familyId == fetchedId && $0.userId == uid }
+                )
+                if (try? modelContext.fetch(memberDesc))?.isEmpty != false {
+                    let member = KBFamilyMember(
+                        id: uid,
+                        familyId: fetched.id,
+                        userId: uid,
+                        role: membership.role,
+                        displayName: Auth.auth().currentUser?.displayName,
+                        email: Auth.auth().currentUser?.email,
+                        photoURL: Auth.auth().currentUser?.photoURL?.absoluteString,
+                        updatedBy: uid,
+                        createdAt: now,
+                        updatedAt: now
+                    )
+                    modelContext.insert(member)
+                }
+            }
+            try? modelContext.save()
+        } catch {
+            KBLog.sync.kbError("FamilySwitcher syncFamiliesFromRemote error: \(error.localizedDescription)")
+        }
     }
 
     private func createFamily() {

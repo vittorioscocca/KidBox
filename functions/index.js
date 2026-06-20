@@ -980,6 +980,20 @@ exports.onGeofenceEvent = onDocumentCreated(
         return;
       }
 
+      // Gate per-utente autoritativo: la zona vale solo per i membri in
+      // monitoredMemberIds. Array vuoto/assente = si applica a chiunque (vedi
+      // modello KBGeofence). I client filtrano già al momento della registrazione,
+      // ma le regioni restano registrate a livello OS: se monitoredMemberIds cambia
+      // mentre l'app non viene aperta, il device potrebbe ancora emettere un evento
+      // per un utente non più monitorato. Questo check è la rete di sicurezza.
+      const monitoredMemberIds = Array.isArray(geofence.monitoredMemberIds) ?
+          geofence.monitoredMemberIds : [];
+      if (monitoredMemberIds.length > 0 && !monitoredMemberIds.includes(senderUid)) {
+        logger.info("onGeofenceEvent: sender not monitored for this geofence",
+            {familyId, geofenceId, senderUid});
+        return;
+      }
+
       const geofenceName = (geofence.name || "").trim() || "una zona";
       const notifyMembers = Array.isArray(geofence.notifyMembers) ? geofence.notifyMembers : [];
 
