@@ -516,7 +516,12 @@ final class HealthPatternAnalyzerService {
         dc.hour = 9
         dc.minute = 0
         dc.second = 0
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+        // `repeats: false`: l'insight scatta una sola volta. Con `repeats: true`
+        // si ripeteva ogni mese (giorno 1) riproponendo il `fullText` del mese in cui
+        // era stato generato → al tap la chat apriva un insight datato. Viene
+        // rigenerato ogni mese (vedi `analyzeIfNeeded`), che rimuove la richiesta
+        // pendente precedente e ne schedula una fresca.
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
 
         let notifId = "kb-health-pattern-\(monthKey)"
         let request = UNNotificationRequest(

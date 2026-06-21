@@ -421,7 +421,12 @@ final class WeeklySummaryService {
         dc.hour         = 8
         dc.minute       = 0
         dc.second       = 0
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+        // `repeats: false`: il recap scatta una sola volta. Con `repeats: true`
+        // si ripeteva ogni lunedì riproponendo il `fullText` della settimana in cui
+        // era stato generato → al tap la chat apriva un recap datato. Viene
+        // rigenerato ogni settimana (vedi `scheduleWeeklyIfNeeded`), che rimuove la
+        // richiesta pendente precedente e ne schedula una fresca.
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
         
         let notifId = "kb-weekly-summary-\(isoWeekKey())"
         let request = UNNotificationRequest(

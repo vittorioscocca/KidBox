@@ -316,7 +316,13 @@ final class DailyBriefingService {
         dc.hour = 8
         dc.minute = 0
         dc.second = 0
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+        // `repeats: false`: il briefing scatta una sola volta. Con `repeats: true`
+        // la notifica si ripeteva ogni giorno alle 08:00 riproponendo il `fullText`
+        // del giorno in cui era stata generata → al tap la chat si apriva con un
+        // briefing datato. Il briefing viene rigenerato ad ogni avvio / cambio
+        // famiglia (vedi `scheduleDailyIfNeeded`), che rimuove la richiesta
+        // pendente precedente e ne schedula una fresca per la giornata corrente.
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
 
         let notifId = "kb-daily-briefing-\(isoDateKey())"
         let request = UNNotificationRequest(
