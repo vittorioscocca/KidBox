@@ -1,0 +1,15 @@
+<!-- @dsCard group="Spacing" viewport="700x180" name="Home Grid in Use" subtitle="2-col tile grid, 12px gap, 14px page margin" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;padding:0;background:var(--kb-bg);font-family:var(--kb-font-sans);}
+  .page{padding:14px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .tile{height:70px;border-radius:16px;background:color-mix(in srgb, var(--kb-cat-purple) 10%, var(--kb-surface));border:1px solid color-mix(in srgb, var(--kb-cat-purple) 18%, transparent);}
+  .tile:nth-child(2){background:color-mix(in srgb, var(--kb-cat-blue) 10%, var(--kb-surface));border-color:color-mix(in srgb, var(--kb-cat-blue) 18%, transparent);}
+  .tile:nth-child(3){background:color-mix(in srgb, var(--kb-cat-red) 10%, var(--kb-surface));border-color:color-mix(in srgb, var(--kb-cat-red) 18%, transparent);}
+  .tile:nth-child(4){background:color-mix(in srgb, var(--kb-cat-green) 10%, var(--kb-surface));border-color:color-mix(in srgb, var(--kb-cat-green) 18%, transparent);}
+</style></head>
+<body>
+  <div class="page"><div class="grid"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div></div>
+</body></html>

@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Status & Dark Mode" subtitle="Info/warning/danger/success + dark surfaces" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;padding:18px;background:var(--kb-bg);font-family:var(--kb-font-sans);}
+  .row{display:flex;gap:10px;}
+  .sw{flex:1;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;}
+  .dark{background:#1C1C1E;color:#fff;border-radius:10px;padding:10px;display:flex;gap:8px;margin-top:10px;}
+  .dcard{background:#2C2C2E;border-radius:8px;padding:10px;flex:1;font-size:11px;}
+</style></head>
+<body>
+  <div class="row">
+    <div class="sw" style="background:var(--kb-info)">Info</div>
+    <div class="sw" style="background:var(--kb-warning)">Warning</div>
+    <div class="sw" style="background:var(--kb-danger)">Danger</div>
+    <div class="sw" style="background:var(--kb-success)">Success</div>
+  </div>
+  <div class="dark">
+    <div class="dcard">Dark bg #1C1C1E<br/>Card #2C2C2E<br/>Title #FFFFFF · Subtitle #AAAAAA</div>
+    <div class="dcard" style="background:#2A1E14;color:#F5EDE3">Marketing dark<br/>bg #18110A · surface #2A1E14</div>
+  </div>
+</body></html>

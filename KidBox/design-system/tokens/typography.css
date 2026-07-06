@@ -1,0 +1,47 @@
+/* ============================================================
+   KidBox — Typography tokens
+   Native app: Nunito (Android Theme.kt) / SF Pro (iOS system).
+   Marketing:  DM Sans.
+   Type scale mirrors the SwiftUI text roles used across the app
+   (largeTitle 34 / title2 22 / headline 17 / subheadline 15 / caption 12).
+   ============================================================ */
+
+:root {
+  /* Families */
+  --kb-font-sans:  "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --kb-font-marketing: "DM Sans", "Nunito", system-ui, sans-serif;
+  --kb-font-mono:  ui-monospace, "SF Mono", Menlo, monospace;
+  /* LoginView / OnboardingWalkthrough set their hero title + tagline in
+     SwiftUI's `.serif` design (renders as New York on Apple platforms) —
+     the app's one deliberate serif moment, reserved for auth/onboarding hero copy. */
+  --kb-font-serif-display: ui-serif, "New York", Georgia, "Times New Roman", serif;
+
+  /* Weights (Nunito ships 400/600/700/800) */
+  --kb-weight-regular:   400;
+  --kb-weight-semibold:  600;
+  --kb-weight-bold:      700;
+  --kb-weight-heavy:     800;
+
+  /* Sizes — named for SwiftUI roles */
+  --kb-text-largetitle: 34px;  /* Home "KidBox" header, .heavy   */
+  --kb-text-title:      28px;  /* screen titles                  */
+  --kb-text-title2:     22px;  /* hero card title, section heads  */
+  --kb-text-title3:     20px;
+  --kb-text-headline:   17px;  /* card titles, .semibold          */
+  --kb-text-body:       17px;  /* body copy                       */
+  --kb-text-subheadline:15px;  /* card subtitles (secondary)      */
+  --kb-text-footnote:   13px;
+  --kb-text-caption:    12px;  /* badges, meta, pill labels       */
+  --kb-text-caption2:   11px;
+
+  /* Line heights */
+  --kb-leading-tight:   1.15;  /* display / titles */
+  --kb-leading-snug:    1.3;
+  --kb-leading-normal:  1.5;
+  --kb-leading-relaxed: 1.7;   /* marketing paragraphs */
+
+  /* Tracking */
+  --kb-tracking-tight:  -0.5px;  /* largeTitle kerning (HomeView) */
+  --kb-tracking-normal: 0;
+  --kb-tracking-wide:   0.12em;  /* uppercase section labels      */
+}

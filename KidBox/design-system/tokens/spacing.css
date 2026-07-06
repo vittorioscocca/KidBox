@@ -1,0 +1,34 @@
+/* ============================================================
+   KidBox — Spacing & radius tokens
+   Card padding 14, grid gap 12, corner radius 16 (18 on hero) —
+   the constants used throughout the SwiftUI UIComponents.
+   ============================================================ */
+
+:root {
+  /* Spacing scale */
+  --kb-space-1:  2px;
+  --kb-space-2:  4px;
+  --kb-space-3:  6px;
+  --kb-space-4:  8px;
+  --kb-space-5:  10px;
+  --kb-space-6:  12px;   /* grid gap             */
+  --kb-space-7:  14px;   /* card inner padding   */
+  --kb-space-8:  16px;
+  --kb-space-9:  20px;
+  --kb-space-10: 24px;
+  --kb-space-12: 32px;
+  --kb-space-14: 40px;
+  --kb-space-16: 48px;
+  --kb-space-20: 64px;
+  --kb-space-24: 80px;
+
+  /* Radii */
+  --kb-radius-sm:   10px;
+  --kb-radius-md:   16px;   /* standard card            */
+  --kb-radius-hero: 18px;   /* hero photo card          */
+  --kb-radius-lg:   24px;   /* marketing panels         */
+  --kb-radius-pill: 999px;  /* chips, capsule buttons   */
+
+  /* Hit target (min tappable) */
+  --kb-touch-min:   44px;
+}

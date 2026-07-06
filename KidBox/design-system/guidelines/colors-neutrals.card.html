@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x200" name="Neutrals & Surfaces" subtitle="Backgrounds, cards, text, dividers" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;padding:18px;background:var(--kb-bg);font-family:var(--kb-font-sans);}
+  .row{display:flex;gap:10px;margin-bottom:10px;}
+  .sw{flex:1;height:64px;border-radius:12px;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-size:11px;font-weight:700;border:1px solid var(--kb-border);}
+  .sw span{opacity:.7;font-weight:600;display:block;}
+</style></head>
+<body>
+  <div class="row">
+    <div class="sw" style="background:var(--kb-bg);color:var(--kb-text)">--kb-bg<span>app canvas</span></div>
+    <div class="sw" style="background:var(--kb-surface);color:var(--kb-text)">--kb-surface<span>card</span></div>
+    <div class="sw" style="background:var(--kb-surface-2);color:var(--kb-text)">--kb-surface-2<span>raised tint</span></div>
+    <div class="sw" style="background:var(--kb-bg-alt);color:var(--kb-text)">--kb-bg-alt<span>grouped</span></div>
+  </div>
+  <div class="row">
+    <div class="sw" style="background:var(--kb-surface);color:var(--kb-text)">--kb-text<span>#1A1A1A</span></div>
+    <div class="sw" style="background:var(--kb-surface);color:var(--kb-text-secondary)">--kb-text-secondary<span>#666666</span></div>
+    <div class="sw" style="background:var(--kb-surface);color:var(--kb-text)">--kb-divider<span style="height:1px;background:var(--kb-divider);margin-top:4px;"></span></div>
+    <div class="sw" style="background:var(--kb-surface);color:var(--kb-text);border-color:var(--kb-border-strong)">--kb-border<span>hairline</span></div>
+  </div>
+</body></html>

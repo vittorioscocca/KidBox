@@ -1,0 +1,35 @@
+<!-- @dsCard group="Components" viewport="700x220" name="AI — AskAIButton" subtitle="The orange-gradient Ask-AI FAB" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin:0; background:var(--kb-bg); font-family:var(--kb-font-sans); padding:28px; }
+  .row { display:flex; align-items:center; gap:28px; }
+  .lbl { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--kb-text-secondary); margin-top:10px; text-align:center; }
+  .col { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { AskAIButton } = window.KidBoxDesignSystem_d1a58b;
+function Demo() {
+  return (
+    <div className="row">
+      <div className="col"><AskAIButton /><span className="lbl">fab · pulsing</span></div>
+      <div className="col"><AskAIButton pulse={false} /><span className="lbl">fab · static</span></div>
+      <div className="col"><AskAIButton size="sm" pulse={false} /><span className="lbl">sm · inline</span></div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script>
+</body>
+</html>

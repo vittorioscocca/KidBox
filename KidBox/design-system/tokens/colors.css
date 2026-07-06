@@ -1,0 +1,131 @@
+/* ============================================================
+   KidBox — Color tokens
+   Sourced from:
+   • iOS   KBTheme.swift          (KidBox/KidBox/UIComponent)
+   • Android ui/theme/Theme.kt    (KidBoxColorScheme light/dark)
+   • Web   KidboxLanding index.html  (:root marketing palette)
+   ============================================================ */
+
+:root {
+  /* ---- Brand orange (the warm KidBox signature) ---- */
+  --kb-orange:            #E8833A;  /* landing --c-accent  / primary brand */
+  --kb-orange-deep:       #C96A20;  /* landing --c-accent2 / pressed, links */
+  --kb-orange-soft:       #FDF0E4;  /* landing --c-accent-l / tint wash     */
+  --kb-orange-bubble:     #F28C33;  /* iOS KBTheme.bubbleTint               */
+
+  /* ---- AI accent (the "parla con l'AI" gradient FAB) ---- */
+  --kb-ai-orange:         #FF6B00;  /* iOS aiFabOrange / Android ORANGE_FAB */
+  --kb-ai-orange-deep:    #EB5205;  /* iOS aiFabOrangeDeep                  */
+
+  /* ---- Brand secondary tints (iOS KBTheme) ---- */
+  --kb-violet:            #9973D9;  /* KBTheme.tint  */
+  --kb-green:             #4CA673;  /* KBTheme.green */
+
+  /* ---- Surfaces (light) ---- */
+  --kb-bg:                #F5F3EE;  /* app canvas (Android background)          */
+  --kb-bg-marketing:      #FDF7F0;  /* landing --c-bg (warmer marketing cream) */
+  --kb-bg-alt:            #F5EBE0;  /* landing --c-bg2 / grouped sections      */
+  --kb-bg-secondary:      #EDEDED;  /* iOS KBTheme.secondaryBackground (grouped) */
+  --kb-surface:           #FFFFFF;  /* cards, sheets                           */
+  --kb-surface-2:         #FEF3E8;  /* landing --c-surface2 / raised warm tint */
+  --kb-surface-overlay:   rgba(0,0,0,0.06);  /* inner container on a card      */
+
+  /* ---- Text (light) ---- */
+  --kb-text:              #1A1A1A;  /* titles      */
+  --kb-text-secondary:    #666666;  /* subtitles   */
+  --kb-text-marketing:    #1C1008;  /* landing ink */
+  --kb-text-muted:        rgba(28,16,8,0.5);
+  --kb-on-accent:         #FFFFFF;  /* text on orange */
+
+  /* ---- Lines ---- */
+  --kb-divider:           #E8E8E8;              /* row / list dividers          */
+  --kb-border:            rgba(180,120,60,0.12);/* warm hairline (marketing)    */
+  --kb-border-strong:     rgba(180,120,60,0.25);
+
+  /* ---- Buttons (mirror LoginView: ink button) ---- */
+  --kb-btn-primary-bg:    #000000;  /* KBTheme.primaryButtonBackground(.light) is pure black, not #1A1A1A */
+  --kb-btn-primary-fg:    #FFFFFF;
+  --kb-input-bg:          #F2F2F5;              /* iOS systemGray6 */
+
+  /* ---- Chips / pills ---- */
+  --kb-chip-bg:           #F2F1E9;              /* Android visibilityChip */
+  --kb-chip-fg:           #1A1A1A;
+
+  /* ============================================================
+     Category / semantic colours — the SF-Symbol tints used on the
+     Home grid (HomeView.swift). Each tile fills its tint at 10% and
+     borders it at 18%.
+     ============================================================ */
+  --kb-cat-yellow:   #FFCC00;  /* Note              */
+  --kb-cat-blue:     #007AFF;  /* To-Do             */
+  --kb-cat-green:    #34C759;  /* Spesa · Chat      */
+  --kb-cat-purple:   #AF52DE;  /* Calendario · Assistente */
+  --kb-cat-red:      #FF3B30;  /* Salute            */
+  --kb-cat-orange:   #FF9500;  /* Documenti · Animali */
+  --kb-cat-mint:     #00C7BE;  /* Spese             */
+  --kb-cat-indigo:   #5856D6;  /* Wallet            */
+  --kb-cat-key:      #5E5CE6;  /* Password          */
+  --kb-cat-cyan:     #32ADE6;  /* Posizione         */
+  --kb-cat-pink:     #FF2D55;  /* Foto e video      */
+  --kb-cat-teal:     #30B0C7;  /* Family · Viaggi   */
+  --kb-cat-brown:    #8B6914;  /* Casa              */
+  --kb-cat-ink:      #1A1A1A;  /* Garage            */
+
+  /* ---- Status (KBSettingsCard styles) ---- */
+  --kb-info:     #007AFF;
+  --kb-warning:  #FF9500;
+  --kb-danger:   #FF3B30;
+  --kb-success:  #2E9E6B;   /* landing --c-green */
+
+  /* ---- Shadows ---- */
+  --kb-shadow-card:  0 2px 20px rgba(180,100,30,0.08);
+  --kb-shadow-lg:    0 8px 48px rgba(180,100,30,0.14);
+  --kb-shadow-ai:    0 6px 14px rgba(255,107,0,0.38);
+  --kb-shadow-ios:   0 1px 3px rgba(0,0,0,0.07);
+}
+
+/* ============================================================
+   Dark theme — iOS + Android dark schemes.
+   Applies via OS preference OR an explicit [data-theme="dark"].
+   ============================================================ */
+:root[data-theme="dark"] {
+  --kb-bg:              #212121;  /* KBTheme.background(.dark) — was wrongly inherited from Android's #1C1C1E */
+  --kb-bg-marketing:    #18110A;
+  --kb-bg-alt:          #221810;
+  --kb-bg-secondary:    #292929;  /* iOS KBTheme.secondaryBackground (grouped) */
+  --kb-surface:         #2E2E2E;  /* KBTheme.cardBackground(.dark) — was wrongly inherited from Android's #2C2C2E */
+  --kb-surface-2:       #311F10;
+  --kb-surface-overlay: rgba(255,255,255,0.10);
+
+  --kb-text:            #FFFFFF;
+  --kb-text-secondary:  #AAAAAA;
+  --kb-text-marketing:  #F5EDE3;
+  --kb-text-muted:      rgba(245,237,227,0.5);
+
+  --kb-divider:         #3A3A3C;
+  --kb-border:          rgba(255,180,100,0.10);
+  --kb-border-strong:   rgba(255,180,100,0.22);
+
+  --kb-orange:          #F09050;
+  --kb-orange-deep:     #E8833A;
+  --kb-orange-soft:     rgba(240,144,80,0.12);
+
+  --kb-btn-primary-bg:  #FFFFFF;
+  --kb-btn-primary-fg:  #000000;
+  --kb-input-bg:        #38383A;
+  --kb-chip-bg:         #3A3A3C;
+  --kb-chip-fg:         #FFFFFF;
+
+  --kb-shadow-card:  0 2px 20px rgba(0,0,0,0.30);
+  --kb-shadow-lg:    0 8px 48px rgba(0,0,0,0.40);
+  --kb-shadow-ios:   0 1px 3px rgba(255,255,255,0.04);  /* KBTheme.shadow(.dark) is a white glow, not a black shadow */
+}
+
+/* Note: OS-level `prefers-color-scheme` auto-switching is intentionally not
+   duplicated here as a bare media query — the design-system compiler only
+   indexes tokens declared under :root or a single-selector theme scope, and
+   duplicating every dark value again under a media query invited drift
+   between the two copies. Consumers who want automatic OS-driven dark mode
+   should toggle `[data-theme="dark"]` on :root via a tiny script:
+   matchMedia('(prefers-color-scheme: dark)') → set the attribute — which
+   reuses the single source of truth above instead of a second copy. */

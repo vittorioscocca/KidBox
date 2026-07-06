@@ -1,0 +1,37 @@
+/* KidBox webfonts.
+   Nunito = the typeface the native Android app ships (ui/theme/Theme.kt).
+   iOS uses the system font (SF Pro); Nunito is our cross-platform stand-in for it.
+   DM Sans = the marketing / landing-site face (kidbox.app). */
+
+@font-face {
+  font-family: "Nunito";
+  src: url("../fonts/nunito_regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("../fonts/nunito_semibold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("../fonts/nunito_bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("../fonts/nunito_extrabold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* DM Sans is pulled from Google Fonts by the marketing surfaces. Cards/kits that
+   want it should also add:
+   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet"> */

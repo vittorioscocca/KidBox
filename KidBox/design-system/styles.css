@@ -1,0 +1,7 @@
+/* KidBox — global style entry point.
+   Consumers link THIS file. It is a manifest of @imports only. */
+
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
