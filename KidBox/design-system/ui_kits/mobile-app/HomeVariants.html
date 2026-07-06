@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="design_doc_mode" content="canvas">
+<title>KidBox — Home screen: varianti scansionabili</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  html, body { margin: 0; background: #EDEAE3; }
+  .kb-label { font-family: var(--kb-font-sans); font-size: 15px; font-weight: 800; color: #3a352c; margin-bottom: 6px; }
+  .kb-note { font-family: var(--kb-font-sans); font-size: 12px; font-weight: 500; color: #7d766a; max-width: 360px; line-height: 1.5; margin-bottom: 14px; }
+  .kb-id { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:6px; background:#3a352c; color:#fff; font-size:11px; font-weight:800; margin-right:6px; }
+</style>
+</head>
+<body>
+
+<div id="root-a" style="position:absolute; left:0px; top:0px;"></div>
+<div id="root-b" style="position:absolute; left:460px; top:0px;"></div>
+<div id="root-c" style="position:absolute; left:920px; top:0px;"></div>
+
+<script src="ios-frame.jsx" type="text/babel" data-presets="react"></script>
+<script src="Icons.jsx" type="text/babel" data-presets="react"></script>
+
+<script type="text/babel" data-presets="react">
+const { HeroCard, AskAIButton } = window.KidBoxDesignSystem_d1a58b;
+
+// Full 18-category inventory (same tints/icons as HomeScreen.jsx)
+const HOME_GRID = [
+  { id: "note", title: "Note", short: "Note", tint: "var(--kb-cat-yellow)", icon: "sticky-note" },
+  { id: "todo", title: "To-Do", short: "To-Do", tint: "var(--kb-cat-blue)", icon: "list-checks" },
+  { id: "shopping", title: "Lista della Spesa", short: "Spesa", tint: "var(--kb-cat-green)", icon: "shopping-cart" },
+  { id: "calendar", title: "Calendario", short: "Calendario", tint: "var(--kb-cat-purple)", icon: "calendar" },
+  { id: "care", title: "Salute", short: "Salute", tint: "var(--kb-cat-red)", icon: "heart" },
+  { id: "chat", title: "Chat", short: "Chat", tint: "var(--kb-cat-green)", icon: "message-circle" },
+  { id: "documents", title: "Documenti", short: "Documenti", tint: "var(--kb-cat-orange)", icon: "file-text" },
+  { id: "expenses", title: "Spese", short: "Spese", tint: "var(--kb-cat-mint)", icon: "euro" },
+  { id: "wallet", title: "Wallet", short: "Wallet", tint: "var(--kb-cat-indigo)", icon: "ticket" },
+  { id: "passwords", title: "Password", short: "Password", tint: "var(--kb-cat-key)", icon: "key" },
+  { id: "location", title: "Posizione", short: "Posizione", tint: "var(--kb-cat-cyan)", icon: "map-pin" },
+  { id: "photos", title: "Foto e video", short: "Foto", tint: "var(--kb-cat-pink)", icon: "images" },
+  { id: "family", title: "Family", short: "Family", tint: "var(--kb-cat-teal)", icon: "users" },
+  { id: "expert", title: "Assistente", short: "Assistente", tint: "var(--kb-cat-purple)", icon: "brain" },
+  { id: "travel", title: "Viaggi", short: "Viaggi", tint: "var(--kb-cat-teal)", icon: "briefcase" },
+  { id: "pets", title: "Animali domestici", short: "Animali", tint: "var(--kb-cat-orange)", icon: "paw-print" },
+  { id: "homeItems", title: "Casa", short: "Casa", tint: "var(--kb-cat-brown)", icon: "home" },
+  { id: "vehicles", title: "Garage", short: "Garage", tint: "var(--kb-cat-ink)", icon: "car" },
+];
+const byId = Object.fromEntries(HOME_GRID.map(c => [c.id, c]));
+
+function Phone({ children, width = 360, height = 760 }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <IOSDevice width={width} height={height}>{children}</IOSDevice>
+    </div>
+  );
+}
+
+function Header({ big = false }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: big ? "4px 14px 0" : "4px 14px 0" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--kb-text)" }}>KidBox</span>
+        <span style={{ fontSize: 14, fontWeight: 500, color: "var(--kb-text-secondary)" }}>Famiglia Scocca</span>
+      </div>
+      <button style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", color: "var(--kb-text)" }}>
+        <Ic name="settings" size={18} />
+      </button>
+    </div>
+  );
+}
+
+function Eyebrow({ children }) {
+  return (
+    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--kb-text-secondary)", padding: "4px 2px" }}>
+      {children}
+    </div>
+  );
+}
+
+function Fab() {
+  return (
+    <div style={{ position: "absolute", right: 16, bottom: 24, zIndex: 5 }}>
+      <AskAIButton size="sm" />
+    </div>
+  );
+}
+
+/* ============================================================
+   A — "In evidenza" (4 big cards) + resto in lista compatta 3col
+   ============================================================ */
+function BigFeatured({ item }) {
+  return (
+    <button style={{
+      display: "flex", flexDirection: "column", gap: 8, padding: 12, minHeight: 92,
+      textAlign: "left", border: `1px solid color-mix(in srgb, ${item.tint} 20%, transparent)`,
+      borderRadius: "var(--kb-radius-md)", background: `color-mix(in srgb, ${item.tint} 11%, var(--kb-surface))`,
+      fontFamily: "var(--kb-font-sans)",
+    }}>
+      <span style={{ color: item.tint, display: "inline-flex" }}><Ic name={item.icon} size={20} /></span>
+      <span style={{ fontSize: 14, fontWeight: 800, color: "var(--kb-text)" }}>{item.title}</span>
+    </button>
+  );
+}
+function CompactTile({ item }) {
+  return (
+    <button style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "10px 4px",
+      border: "1px solid var(--kb-border)", borderRadius: "var(--kb-radius-sm)", background: "var(--kb-surface)",
+      fontFamily: "var(--kb-font-sans)",
+    }}>
+      <span style={{
+        width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+        background: `color-mix(in srgb, ${item.tint} 16%, transparent)`, color: item.tint,
+      }}><Ic name={item.icon} size={16} /></span>
+      <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--kb-text)", textAlign: "center", lineHeight: 1.15 }}>{item.short}</span>
+    </button>
+  );
+}
+
+function HomeVariantA() {
+  const featuredIds = ["calendar", "todo", "chat", "documents"];
+  const rest = HOME_GRID.filter(c => !featuredIds.includes(c.id));
+  return (
+    <div style={{ height: "100%", overflowY: "auto", background: "var(--kb-bg)" }}>
+      <Header />
+      <div style={{ padding: "10px 14px 90px", display: "flex", flexDirection: "column", gap: 10 }}>
+        <HeroCard title="Famiglia Scocca" dateText="lunedì, 6 luglio" badgeText="4 membri" height={130} />
+        <Eyebrow>In evidenza</Eyebrow>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {featuredIds.map(id => <BigFeatured key={id} item={byId[id]} />)}
+        </div>
+        <Eyebrow>Tutte le categorie</Eyebrow>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {rest.map(c => <CompactTile key={c.id} item={c} />)}
+        </div>
+      </div>
+      <Fab />
+    </div>
+  );
+}
+
+/* ============================================================
+   B — Griglia densa 3 colonne, tutte uguali, solo icona+etichetta
+   ============================================================ */
+function HomeVariantB() {
+  return (
+    <div style={{ height: "100%", overflowY: "auto", background: "var(--kb-bg)" }}>
+      <Header />
+      <div style={{ padding: "10px 14px 90px", display: "flex", flexDirection: "column", gap: 10 }}>
+        <HeroCard title="Famiglia Scocca" dateText="lunedì, 6 luglio" badgeText="4 membri" height={110} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 2 }}>
+          {HOME_GRID.map(c => <CompactTile key={c.id} item={c} />)}
+        </div>
+      </div>
+      <Fab />
+    </div>
+  );
+}
+
+/* ============================================================
+   C — Scorciatoie fisse + liste raggruppate per tema (proposta)
+   ============================================================ */
+const GROUPS = [
+  { name: "Organizzazione", ids: ["note", "todo", "shopping", "calendar"] },
+  { name: "Famiglia & Salute", ids: ["care", "family", "expert", "chat"] },
+  { name: "Documenti & Denaro", ids: ["documents", "expenses", "wallet", "passwords"] },
+  { name: "Vita quotidiana", ids: ["location", "photos", "travel", "pets", "homeItems", "vehicles"] },
+];
+const SHORTCUT_IDS = ["calendar", "todo", "chat", "expert"];
+
+function Shortcut({ item }) {
+  return (
+    <button style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", fontFamily: "var(--kb-font-sans)" }}>
+      <span style={{
+        width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+        background: `color-mix(in srgb, ${item.tint} 14%, var(--kb-surface))`,
+        border: `1px solid color-mix(in srgb, ${item.tint} 24%, transparent)`, color: item.tint,
+      }}><Ic name={item.icon} size={22} /></span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--kb-text)" }}>{item.short}</span>
+    </button>
+  );
+}
+function GroupRow({ item, isLast }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+      borderBottom: isLast ? "none" : "1px solid var(--kb-divider)",
+    }}>
+      <span style={{ color: item.tint, display: "inline-flex" }}><Ic name={item.icon} size={18} /></span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--kb-text)", flex: 1 }}>{item.title}</span>
+      <Ic name="chevron-right" size={14} color="var(--kb-text-secondary)" />
+    </div>
+  );
+}
+function Group({ group }) {
+  const items = group.ids.map(id => byId[id]);
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <Eyebrow>{group.name}</Eyebrow>
+      <div style={{ background: "var(--kb-surface)", border: "1px solid var(--kb-border)", borderRadius: "var(--kb-radius-md)", overflow: "hidden" }}>
+        {items.map((it, i) => <GroupRow key={it.id} item={it} isLast={i === items.length - 1} />)}
+      </div>
+    </div>
+  );
+}
+
+function HomeVariantC() {
+  return (
+    <div style={{ height: "100%", overflowY: "auto", background: "var(--kb-bg)" }}>
+      <Header />
+      <div style={{ padding: "10px 14px 90px", display: "flex", flexDirection: "column", gap: 10 }}>
+        <HeroCard title="Famiglia Scocca" dateText="lunedì, 6 luglio" badgeText="4 membri" height={116} />
+        <Eyebrow>Scorciatoie</Eyebrow>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "0 4px 6px" }}>
+          {SHORTCUT_IDS.map(id => <Shortcut key={id} item={byId[id]} />)}
+        </div>
+        {GROUPS.map(g => <Group key={g.name} group={g} />)}
+      </div>
+      <Fab />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root-a")).render(
+  <div>
+    <div className="kb-label"><span className="kb-id">A</span>In evidenza + lista compatta</div>
+    <div className="kb-note">4 card grandi per le azioni più usate in cima; le altre 14 categorie scendono a tile 3-colonne con solo icona + etichetta corta — meno testo da leggere, priorità visiva chiara.</div>
+    <Phone><HomeVariantA /></Phone>
+  </div>
+);
+ReactDOM.createRoot(document.getElementById("root-b")).render(
+  <div>
+    <div className="kb-label"><span className="kb-id">B</span>Griglia densa 3 colonne</div>
+    <div className="kb-note">Tutte le 18 categorie nella stessa griglia compatta, senza sezioni: massima densità, scansione per icona/colore invece che per sottotitolo.</div>
+    <Phone><HomeVariantB /></Phone>
+  </div>
+);
+ReactDOM.createRoot(document.getElementById("root-c")).render(
+  <div>
+    <div className="kb-label"><span className="kb-id">C</span>Scorciatoie + liste raggruppate (proposta)</div>
+    <div className="kb-note">Riga di 4 scorciatoie circolari (le azioni quotidiane) sempre in cima, poi le 18 categorie raggruppate in 4 temi con etichette — il cervello scansiona per "tipo di bisogno" invece che per una griglia indifferenziata di 18 elementi.</div>
+    <Phone><HomeVariantC /></Phone>
+  </div>
+);
+</script>
+</body>
+</html>

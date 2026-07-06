@@ -55,8 +55,9 @@ struct HomeView: View {
     @State private var isUploadingHero = false
     @State private var heroUploadError: String?
     
-    // MARK: - FAB
-    @State private var fabExpanded = false
+    // MARK: - AI button / FAB (Catalyst) / family switcher
+    @State private var showAIUpgrade = false
+    @State private var fabExpanded = false   // usato solo su Mac Catalyst (Home classica)
     @State private var showFamilySwitcher = false
     
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
@@ -144,7 +145,8 @@ struct HomeView: View {
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
-            
+
+            #if targetEnvironment(macCatalyst)
             if fabExpanded {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -156,7 +158,8 @@ struct HomeView: View {
                     .transition(.opacity)
                     .zIndex(1)
             }
-            
+            #endif
+
             ScrollView {
                 VStack(spacing: 14) {
                     homeTitleHeader
@@ -184,10 +187,17 @@ struct HomeView: View {
                     }
                     .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
                     
-                    // ✅ Grid estratta in subview per evitare type-check timeout
+                    #if targetEnvironment(macCatalyst)
+                    // Mac Catalyst: Home classica (griglia + FAB) invariata
                     HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
                         navigate(to: destination)
                     }
+                    #else
+                    // iOS/iPadOS: Home a scorciatoie + gruppi tematici (variante C del design system)
+                    HomeCategoryList(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
+                        navigate(to: destination)
+                    }
+                    #endif
                     
                     if showInvite {
                         InviteCardView {
@@ -195,6 +205,12 @@ struct HomeView: View {
                             coordinator.navigate(to: .inviteCode)
                         }
                     }
+
+                    #if !targetEnvironment(macCatalyst)
+                    // Spazio in coda: le ultime righe (e i loro badge) restano
+                    // sopra il bottone AI flottante, non nascoste sotto.
+                    Color.clear.frame(height: 96)
+                    #endif
                 }
                 .padding()
             }
@@ -203,11 +219,27 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
             if hasFamily {
+                #if targetEnvironment(macCatalyst)
                 HomeFAB(familyId: activeFamilyId, isExpanded: $fabExpanded)
                     .padding(.trailing, 20)
                     .padding(.bottom, 32)
                     .zIndex(2)
+                #else
+                HomeAIFloatingButton(
+                    onOpenAI: { navigate(to: .askExpert) },
+                    onLockedTap: {
+                        if KBSubscriptionManager.shared.isFamilyOwner { showAIUpgrade = true }
+                    }
+                )
+                .padding(.trailing, 20)
+                .padding(.bottom, 32)
+                .zIndex(2)
+                #endif
             }
+        }
+        .sheet(isPresented: $showAIUpgrade) {
+            UpgradeSheetView()
+                .environmentObject(KBSubscriptionManager.shared)
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -1087,6 +1119,377 @@ private struct HeroCropperSheet: View {
                 Button("Chiudi") { onCancel() }
             }
             .padding()
+        }
+    }
+}
+
+// MARK: - Home category metadata (variante C)
+
+private struct HomeCatMeta {
+    let id: HomeCardID
+    let title: String
+    let short: String
+    let symbol: String
+    let tint: Color
+    /// Chiave per il tracker di utilizzo (scorciatoie). `nil` = categoria non tracciata.
+    let usageKey: String?
+}
+
+private enum HomeCatalog {
+    static func meta(_ id: HomeCardID) -> HomeCatMeta {
+        switch id {
+        case .note:      return .init(id: id, title: "Note", short: "Note", symbol: "note.text", tint: .yellow, usageKey: "note")
+        case .todo:      return .init(id: id, title: "To-Do", short: "To-Do", symbol: "checklist", tint: .blue, usageKey: "todo")
+        case .shopping:  return .init(id: id, title: "Lista della Spesa", short: "Spesa", symbol: "cart.fill", tint: .green, usageKey: "grocery")
+        case .calendar:  return .init(id: id, title: "Calendario", short: "Calendario", symbol: "calendar", tint: .purple, usageKey: "event")
+        case .care:      return .init(id: id, title: "Salute", short: "Salute", symbol: "heart.fill", tint: .red, usageKey: "health")
+        case .chat:      return .init(id: id, title: "Chat", short: "Chat", symbol: "message.fill", tint: .green, usageKey: "chat")
+        case .documents: return .init(id: id, title: "Documenti", short: "Documenti", symbol: "doc.text", tint: .orange, usageKey: "documents")
+        case .expenses:  return .init(id: id, title: "Spese", short: "Spese", symbol: "eurosign.circle", tint: .mint, usageKey: "expense")
+        case .wallet:    return .init(id: id, title: "Wallet", short: "Wallet", symbol: "ticket.fill", tint: .indigo, usageKey: "wallet")
+        case .passwords: return .init(id: id, title: "Password", short: "Password", symbol: "key.fill", tint: Color(hex: "#5E5CE6") ?? .blue, usageKey: "passwords")
+        case .location:  return .init(id: id, title: "Posizione", short: "Posizione", symbol: "location.fill", tint: .cyan, usageKey: nil)
+        case .photos:    return .init(id: id, title: "Foto e video", short: "Foto", symbol: "photo.stack.fill", tint: .pink, usageKey: nil)
+        case .family:    return .init(id: id, title: "Family", short: "Family", symbol: "person.2.fill", tint: .teal, usageKey: nil)
+        case .expert:    return .init(id: id, title: "Assistente", short: "Assistente", symbol: "brain.head.profile", tint: .purple, usageKey: nil)
+        case .pets:      return .init(id: id, title: "Animali domestici", short: "Animali", symbol: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange, usageKey: "pets")
+        case .homeItems: return .init(id: id, title: "Casa", short: "Casa", symbol: "house.fill", tint: Color(hex: "#8B6914") ?? .brown, usageKey: "home_items")
+        case .vehicles:  return .init(id: id, title: "Garage", short: "Garage", symbol: "car.fill", tint: Color(hex: "#1A1A1A") ?? .primary, usageKey: "vehicles")
+        case .travel:    return .init(id: id, title: "Viaggi", short: "Viaggi", symbol: "suitcase.fill", tint: .teal, usageKey: nil)
+        }
+    }
+
+    /// Gruppi tematici (Assistente escluso: ora è il bottone AI flottante).
+    static let groups: [(name: String, ids: [HomeCardID])] = [
+        ("Organizzazione",      [.note, .todo, .shopping, .calendar]),
+        ("Famiglia & Salute",   [.care, .family, .chat]),
+        ("Documenti & Denaro",  [.documents, .expenses, .wallet, .passwords]),
+        ("Vita quotidiana",     [.location, .photos, .travel, .pets, .homeItems, .vehicles]),
+    ]
+
+    /// Priorità di default per le scorciatoie quando l'utilizzo è ancora a zero.
+    static let shortcutDefaultPriority: [HomeCardID] = [
+        .calendar, .todo, .chat, .documents, .shopping, .note, .expenses,
+        .care, .wallet, .passwords, .location, .photos, .family, .pets, .homeItems, .vehicles, .travel
+    ]
+}
+
+// MARK: - HomeCategoryList (scorciatoie + gruppi)
+
+private struct HomeCategoryList: View {
+    let hasFamily: Bool
+    let familyId: String
+    let onNavigate: (HomeDestination) -> Void
+
+    @ObservedObject private var badge = BadgeManager.shared
+    @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
+    @ObservedObject private var usageTracker = FABUsageTracker.shared
+    @StateObject private var locationObserver = LocationSharingObserver()
+    @Query private var passwordEntries: [PasswordEntry]
+    @State private var showUpgrade = false
+
+    init(hasFamily: Bool, familyId: String, onNavigate: @escaping (HomeDestination) -> Void) {
+        self.hasFamily = hasFamily
+        self.familyId = familyId
+        self.onNavigate = onNavigate
+        let fid = familyId
+        _passwordEntries = Query(
+            filter: #Predicate<PasswordEntry> { $0.familyId == fid && $0.deletedAt == nil },
+            sort: [SortDescriptor(\PasswordEntry.updatedAt, order: .reverse)]
+        )
+    }
+
+    private var passwordHomeSecurityBadgeCount: Int {
+        PasswordsHomeBadgeAck.homeBadgeCount(
+            entries: passwordEntries,
+            familyId: familyId,
+            currentUid: Auth.auth().currentUser?.uid
+        )
+    }
+
+    // MARK: Scorciatoie (top-4 per utilizzo)
+
+    private func usageCount(_ id: HomeCardID) -> Int {
+        guard let key = HomeCatalog.meta(id).usageKey else { return 0 }
+        return usageTracker.count(for: key)
+    }
+
+    private var shortcutIDs: [HomeCardID] {
+        let candidates = HomeCatalog.shortcutDefaultPriority
+        return candidates.enumerated().sorted { a, b in
+            let ua = usageCount(a.element), ub = usageCount(b.element)
+            if ua != ub { return ua > ub }
+            return a.offset < b.offset
+        }
+        .map { $0.element }
+        .prefix(4)
+        .map { $0 }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Scorciatoie
+            eyebrow("Scorciatoie")
+            HStack(alignment: .top, spacing: 0) {
+                ForEach(shortcutIDs, id: \.self) { id in
+                    shortcut(HomeCatalog.meta(id))
+                    if id != shortcutIDs.last { Spacer(minLength: 0) }
+                }
+            }
+            .padding(.horizontal, 4)
+
+            // Gruppi tematici
+            ForEach(HomeCatalog.groups, id: \.name) { group in
+                VStack(alignment: .leading, spacing: 6) {
+                    eyebrow(group.name)
+                    VStack(spacing: 0) {
+                        ForEach(Array(group.ids.enumerated()), id: \.element) { idx, id in
+                            groupRow(HomeCatalog.meta(id))
+                            if idx != group.ids.count - 1 {
+                                Divider().padding(.leading, 48)
+                            }
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color(.separator).opacity(0.4), lineWidth: 1)
+                    )
+                }
+            }
+        }
+        .sheet(isPresented: $showUpgrade) {
+            UpgradeSheetView()
+                .environmentObject(subscriptionManager)
+        }
+    }
+
+    // MARK: Sub-views
+
+    private func eyebrow(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 11, weight: .heavy))
+            .kerning(0.8)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 2)
+    }
+
+    private func shortcut(_ meta: HomeCatMeta) -> some View {
+        Button {
+            handleTap(meta.id)
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(meta.tint.opacity(0.14))
+                        .frame(width: 52, height: 52)
+                        .overlay(Circle().stroke(meta.tint.opacity(0.24), lineWidth: 1))
+                    Image(systemName: meta.symbol)
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(meta.tint)
+                }
+                Text(meta.short)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func groupRow(_ meta: HomeCatMeta) -> some View {
+        let locked = (meta.id == .travel) && !subscriptionManager.currentPlan.includesAI
+        Button {
+            handleTap(meta.id)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: locked ? "lock.fill" : meta.symbol)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(locked ? Color.gray : meta.tint)
+                    .frame(width: 24)
+                Text(meta.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 8)
+                trailingAccessory(meta.id, locked: locked)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func trailingAccessory(_ id: HomeCardID, locked: Bool) -> some View {
+        if locked {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.tertiary)
+        } else {
+            HStack(spacing: 8) {
+                if id == .location && locationObserver.isSharing {
+                    LocationSharingPulse()
+                        .frame(width: 20, height: 20)
+                }
+                let count = badgeCount(id)
+                if count > 0 {
+                    BadgeView(count: count)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    // MARK: Badge + tap
+
+    private func badgeCount(_ id: HomeCardID) -> Int {
+        switch id {
+        case .note:      return badge.notes
+        case .todo:      return badge.todos
+        case .shopping:  return badge.shopping
+        case .calendar:  return badge.calendar
+        case .chat:      return badge.chat
+        case .documents: return badge.documents
+        case .expenses:  return badge.expenses
+        case .wallet:    return badge.wallet
+        case .passwords: return passwordHomeSecurityBadgeCount
+        case .location:  return badge.location
+        default:         return 0
+        }
+    }
+
+    private func handleTap(_ id: HomeCardID) {
+        if let key = HomeCatalog.meta(id).usageKey {
+            FABUsageTracker.shared.record(key)
+        }
+        switch id {
+        case .note:
+            KBLog.navigation.kbDebug("Home: tap Notes")
+            Task { @MainActor in
+                BadgeManager.shared.clearNotes()
+                await CountersService.shared.reset(familyId: familyId, field: .notes)
+            }
+            onNavigate(.notes(familyId: familyId))
+        case .todo:
+            KBLog.navigation.kbDebug("Home: tap Todo")
+            onNavigate(.todo)
+        case .shopping:
+            KBLog.navigation.kbDebug("Home: tap Shopping")
+            Task { @MainActor in
+                BadgeManager.shared.clearShopping()
+                await CountersService.shared.reset(familyId: familyId, field: .shopping)
+            }
+            onNavigate(.shopping(familyId: familyId))
+        case .calendar:
+            KBLog.navigation.kbDebug("Home: tap Calendar")
+            onNavigate(.calendar(familyId: familyId))
+        case .care:
+            KBLog.navigation.kbDebug("Home: tap Care")
+            onNavigate(.pediatric(familyId: familyId, childId: ""))
+        case .chat:
+            KBLog.navigation.kbDebug("Home: tap Chat")
+            onNavigate(.chat)
+        case .documents:
+            KBLog.navigation.kbDebug("Home: tap Documents")
+            onNavigate(.document)
+        case .expenses:
+            KBLog.navigation.kbDebug("Home: tap Expenses")
+            Task {
+                BadgeManager.shared.clearExpenses()
+                await CountersService.shared.reset(familyId: familyId, field: .expenses)
+            }
+            onNavigate(.expenses(familyId: familyId))
+        case .wallet:
+            KBLog.navigation.kbDebug("Home: tap Wallet")
+            Task {
+                BadgeManager.shared.clearWallet()
+                await CountersService.shared.reset(familyId: familyId, field: .wallet)
+            }
+            onNavigate(.wallet(familyId: familyId))
+        case .passwords:
+            KBLog.navigation.kbDebug("Home: tap Passwords")
+            onNavigate(.passwords(familyId: familyId))
+        case .location:
+            KBLog.navigation.kbDebug("Home: tap FamilyLocation")
+            onNavigate(.familyLocation(familyId: familyId))
+        case .photos:
+            KBLog.navigation.kbDebug("Home: tap FamilyPhotos")
+            onNavigate(.familyPhotos(familyId: familyId))
+        case .family:
+            KBLog.navigation.kbDebug("Home: tap FamilySettings")
+            onNavigate(.familySettings)
+        case .pets:
+            KBLog.navigation.kbDebug("Home: tap Pets")
+            onNavigate(.pets(familyId: familyId))
+        case .homeItems:
+            KBLog.navigation.kbDebug("Home: tap HomeItems")
+            onNavigate(.homeItems(familyId: familyId))
+        case .vehicles:
+            KBLog.navigation.kbDebug("Home: tap Vehicles")
+            onNavigate(.vehicles(familyId: familyId))
+        case .travel:
+            KBLog.navigation.kbDebug("Home: tap Travel")
+            if !hasFamily {
+                onNavigate(.familySettings)
+            } else if subscriptionManager.currentPlan.includesAI {
+                onNavigate(.travel(familyId: familyId))
+            } else if subscriptionManager.isFamilyOwner {
+                showUpgrade = true
+            }
+        case .expert:
+            break // ora è il bottone AI flottante
+        }
+    }
+}
+
+// MARK: - HomeAIFloatingButton
+// Sostituisce il vecchio FAB. Cerchio arancione pulsante quando l'AI è
+// attiva (piano + toggle), altrimenti lucchetto (tap → upgrade o attivazione).
+
+private struct HomeAIFloatingButton: View {
+    let onOpenAI: () -> Void
+    let onLockedTap: () -> Void
+
+    @ObservedObject private var subscription = KBSubscriptionManager.shared
+    @ObservedObject private var aiSettings = AISettings.shared
+
+    private var planIncludesAI: Bool { subscription.currentPlan.includesAI }
+    private var isActive: Bool { planIncludesAI && aiSettings.isEnabled }
+
+    var body: some View {
+        if isActive {
+            AskAIControl(style: .circle, accessibilityLabel: "Chiedi all'AI") {
+                KBLog.navigation.kbDebug("Home: tap AI FAB (attivo)")
+                onOpenAI()
+            }
+        } else {
+            Button {
+                if planIncludesAI {
+                    // Piano incluso ma non attivato → apri per completare consenso/attivazione
+                    onOpenAI()
+                } else {
+                    onLockedTap()
+                }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.gray.opacity(0.9))
+                        .frame(width: 58, height: 58)
+                        .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Assistente AI non attivo")
         }
     }
 }
