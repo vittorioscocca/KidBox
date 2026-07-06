@@ -224,25 +224,39 @@ struct PediatricVisitDetailView: View {
     
     private func outcomeCard(_ v: KBMedicalVisit) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Esito della Visita", systemImage: "stethoscope")
-                .font(.subheadline.bold()).foregroundStyle(tint)
+            HStack {
+                Label("Esito della Visita", systemImage: "stethoscope")
+                    .font(.subheadline.bold()).foregroundStyle(tint)
+                Spacer()
+                if let text = outcomeCopyText(v) {
+                    CopyToClipboardButton(text: text, accessibilityLabel: "Copia esito della visita")
+                }
+            }
             if let d = v.diagnosis, !d.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Diagnosi").font(.caption).foregroundStyle(.secondary)
-                    Text(d).font(.subheadline)
+                    Text(d).font(.subheadline).textSelection(.enabled)
                 }
             }
             if let r = v.recommendations, !r.isEmpty {
                 if v.diagnosis != nil { Divider() }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Raccomandazioni").font(.caption).foregroundStyle(.secondary)
-                    Text(r).font(.subheadline)
+                    Text(r).font(.subheadline).textSelection(.enabled)
                 }
             }
         }
         .padding(16)
         .background(detailCard)
         .padding(.horizontal)
+    }
+
+    /// Testo copiabile dell'esito (diagnosi + raccomandazioni).
+    private func outcomeCopyText(_ v: KBMedicalVisit) -> String? {
+        var parts: [String] = []
+        if let d = v.diagnosis, !d.isEmpty { parts.append("Diagnosi:\n\(d)") }
+        if let r = v.recommendations, !r.isEmpty { parts.append("Raccomandazioni:\n\(r)") }
+        return parts.isEmpty ? nil : parts.joined(separator: "\n\n")
     }
     
     // MARK: - Farmaci Programmati

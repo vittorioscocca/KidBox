@@ -1148,14 +1148,14 @@ private enum HomeCatalog {
         case .expenses:  return .init(id: id, title: "Spese", short: "Spese", symbol: "eurosign.circle", tint: .mint, usageKey: "expense")
         case .wallet:    return .init(id: id, title: "Wallet", short: "Wallet", symbol: "ticket.fill", tint: .indigo, usageKey: "wallet")
         case .passwords: return .init(id: id, title: "Password", short: "Password", symbol: "key.fill", tint: Color(hex: "#5E5CE6") ?? .blue, usageKey: "passwords")
-        case .location:  return .init(id: id, title: "Posizione", short: "Posizione", symbol: "location.fill", tint: .cyan, usageKey: nil)
-        case .photos:    return .init(id: id, title: "Foto e video", short: "Foto", symbol: "photo.stack.fill", tint: .pink, usageKey: nil)
-        case .family:    return .init(id: id, title: "Family", short: "Family", symbol: "person.2.fill", tint: .teal, usageKey: nil)
+        case .location:  return .init(id: id, title: "Posizione", short: "Posizione", symbol: "location.fill", tint: .cyan, usageKey: "location")
+        case .photos:    return .init(id: id, title: "Foto e video", short: "Foto", symbol: "photo.stack.fill", tint: .pink, usageKey: "photos")
+        case .family:    return .init(id: id, title: "Family", short: "Family", symbol: "person.2.fill", tint: .teal, usageKey: "family")
         case .expert:    return .init(id: id, title: "Assistente", short: "Assistente", symbol: "brain.head.profile", tint: .purple, usageKey: nil)
         case .pets:      return .init(id: id, title: "Animali domestici", short: "Animali", symbol: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange, usageKey: "pets")
         case .homeItems: return .init(id: id, title: "Casa", short: "Casa", symbol: "house.fill", tint: Color(hex: "#8B6914") ?? .brown, usageKey: "home_items")
         case .vehicles:  return .init(id: id, title: "Garage", short: "Garage", symbol: "car.fill", tint: Color(hex: "#1A1A1A") ?? .primary, usageKey: "vehicles")
-        case .travel:    return .init(id: id, title: "Viaggi", short: "Viaggi", symbol: "suitcase.fill", tint: .teal, usageKey: nil)
+        case .travel:    return .init(id: id, title: "Viaggi", short: "Viaggi", symbol: "suitcase.fill", tint: .teal, usageKey: "travel")
         }
     }
 
@@ -1174,6 +1174,31 @@ private enum HomeCatalog {
     ]
 }
 
+// MARK: - HomeShortcutUsage
+// Contatore d'uso dedicato alle Scorciatoie della nuova Home, per feature-id.
+// Usa @Published così SwiftUI aggiorna in modo affidabile ad ogni tap, ed è
+// separato dallo storico del vecchio FAB (che rendeva le scorciatoie "ferme").
+
+@MainActor
+final class HomeShortcutUsage: ObservableObject {
+    static let shared = HomeShortcutUsage()
+
+    private let key = "kb.home.shortcutUsage.v1"
+
+    @Published private(set) var counts: [String: Int]
+
+    private init() {
+        counts = UserDefaults.standard.dictionary(forKey: key) as? [String: Int] ?? [:]
+    }
+
+    func record(_ id: String) {
+        counts[id, default: 0] += 1
+        UserDefaults.standard.set(counts, forKey: key)
+    }
+
+    func count(_ id: String) -> Int { counts[id] ?? 0 }
+}
+
 // MARK: - HomeCategoryList (scorciatoie + gruppi)
 
 private struct HomeCategoryList: View {
@@ -1183,7 +1208,7 @@ private struct HomeCategoryList: View {
 
     @ObservedObject private var badge = BadgeManager.shared
     @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
-    @ObservedObject private var usageTracker = FABUsageTracker.shared
+    @ObservedObject private var shortcutUsage = HomeShortcutUsage.shared
     @StateObject private var locationObserver = LocationSharingObserver()
     @Query private var passwordEntries: [PasswordEntry]
     @State private var showUpgrade = false
@@ -1210,8 +1235,7 @@ private struct HomeCategoryList: View {
     // MARK: Scorciatoie (top-4 per utilizzo)
 
     private func usageCount(_ id: HomeCardID) -> Int {
-        guard let key = HomeCatalog.meta(id).usageKey else { return 0 }
-        return usageTracker.count(for: key)
+        shortcutUsage.count(id.rawValue)
     }
 
     private var shortcutIDs: [HomeCardID] {
@@ -1366,6 +1390,9 @@ private struct HomeCategoryList: View {
     }
 
     private func handleTap(_ id: HomeCardID) {
+        // Contatore dedicato alle Scorciatoie (tutte le categorie).
+        HomeShortcutUsage.shared.record(id.rawValue)
+        // Manteniamo anche il tracker storico del FAB (usato dalla Home classica su Catalyst).
         if let key = HomeCatalog.meta(id).usageKey {
             FABUsageTracker.shared.record(key)
         }

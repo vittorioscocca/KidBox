@@ -65,7 +65,9 @@
       "Bash(find /Users/vscocca/KidBox/KidBoxAndroid -iname \"*.kt\" | xargs grep -ln \"Capsule\\\\|initials\\\\|Avatar\" 2>/dev/null | grep -iv test | head -20)",
       "Bash(./gradlew :app:compileDebugKotlin --console=plain)",
       "Bash(JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ./gradlew :app:compileDebugKotlin --console=plain)",
-      "Bash(xcodebuild -project KidBox.xcodeproj -scheme KidBox -destination 'platform=macOS,variant=Mac Catalyst' build)"
+      "Bash(xcodebuild -project KidBox.xcodeproj -scheme KidBox -destination 'platform=macOS,variant=Mac Catalyst' build)",
+      "Bash(awk -F: '$1>1150 && $1<1180')",
+      "Bash(xcodebuild -project KidBox.xcodeproj -scheme KidBox -destination 'platform=macOS,variant=Mac Catalyst' clean)"
     ]
   }
 }
