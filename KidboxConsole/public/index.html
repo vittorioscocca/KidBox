@@ -41,6 +41,19 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-save-cfg').addEventListener('click', saveAndConnect);
   document.getElementById('btn-refresh').addEventListener('click', () => loadAll());
   document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+  // sidebar nav active state
+  document.querySelectorAll('.nav-item[data-section]').forEach(link => {
+    link.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+
+  // sidebar toggle mobile
+  document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
 });
 
 function prefillForm(cfg) {
@@ -65,7 +78,7 @@ function saveAndConnect() {
 function handleAuth(user) {
   if (user) {
     document.getElementById('screen-login').style.display = 'none';
-    document.getElementById('screen-dash').style.display  = 'block';
+    document.getElementById('screen-dash').style.display  = 'flex';
     document.getElementById('user-email').textContent     = user.email;
     loadAll();
     initTickets();
@@ -103,7 +116,7 @@ const EUR_RATE = 0.92;
 //   Anthropic costi  → https://platform.claude.com/cost
 //   Firebase Storage → https://console.firebase.google.com/u/1/project/kidbox-42cd7/overview
 //   Google Billing   → https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1
-const AI_DELTA_USD    = 0.5268;       // USD non tracciati — aggiorna quando serve
+const AI_DELTA_USD    = 0.5268;
 const STORAGE_DELTA_B = 0;
 
 function fmtEur(n)  { return n==null ? '—' : '€'+Number(n*EUR_RATE).toFixed(2).replace('.',','); }
@@ -148,7 +161,6 @@ function drawPie(canvasId, slices) {
     ctx.fill();
     angle += sweep;
   });
-  // donut hole
   ctx.beginPath();
   ctx.arc(cx,cy,r*0.55,0,Math.PI*2);
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-card').trim() || '#fff';
@@ -177,7 +189,7 @@ function renderSupportTable(tickets) {
   const tbody = document.getElementById('support-tbody');
   if (!tbody) return;
   if (tickets.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-dim-line);padding:24px">Nessun ticket di supporto 🎉</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Nessun ticket di supporto 🎉</td></tr>';
     return;
   }
   const typeIcon  = { bug:'🐛', question:'❓', suggestion:'💡', other:'📝' };
@@ -253,7 +265,6 @@ function initTickets() {
     setVal('ticket-new',      newC);
     setVal('ticket-taken',    taken);
     setVal('ticket-resolved', resolved);
-    // badge topbar
     const badge = document.getElementById('ticket-badge');
     if (badge) { badge.textContent = newC > 0 ? newC : ''; badge.style.display = newC > 0 ? 'inline-flex' : 'none'; }
     const navBadge = document.getElementById('nav-ticket-badge');
@@ -313,7 +324,6 @@ window.ticketDetail = async function ticketDetail(caseId) {
     const snap = await getDoc(doc(db, 'cases', caseId));
     if (!snap.exists()) { alert('Ticket non trovato'); return; }
     const c = snap.data();
-    // Prova a leggere i raw logs dal crash_report collegato
     let rawLogs = '(nessun log disponibile)';
     if (c.reportId) {
       try {
@@ -338,7 +348,6 @@ window.toggleAdminNotif = async function toggleAdminNotif(btn) {
   btn.disabled = true;
   btn.textContent = '⏳';
   try {
-    // Registra direttamente — la function server-side gestisce tutto
     const result = await httpsCallable(functions, 'registerAdminNotifications')({});
     console.log('registerAdminNotifications result:', result);
     btn.textContent = '🔔 Notifiche ✓';
@@ -360,19 +369,117 @@ async function checkAdminNotifStatus() {
   const btn = document.getElementById('btn-notif');
   if (!btn) return;
   try {
-    // Usa la callable function (admin SDK server-side bypassa le rules)
     const result = await httpsCallable(functions, 'checkAdminNotifStatus')({});
     if (result.data?.registered) {
-      btn.textContent = '🔔 Notifiche ✓';
+      btn.textContent = '🔔 ✓';
       btn.classList.add('btn-accent');
     } else {
-      btn.textContent = '🔔 Notifiche';
+      btn.textContent = '🔔';
       btn.classList.remove('btn-accent');
     }
   } catch(e) {
-    // checkAdminNotifStatus non esiste ancora sul server — ignora silenziosamente
     console.warn('checkAdminNotifStatus:', e.message);
   }
+}
+
+// ── families table sort ───────────────────
+let _familyRows = [];
+let _famSort = { col: 'storage', dir: 'desc' };
+
+function sortRows(rows, col, dir) {
+  return [...rows].sort((a, b) => {
+    let va, vb;
+    if (col === 'storage')   { va = a.storageBytes; vb = b.storageBytes; }
+    else if (col === 'ai')   { va = a.aiMonth;      vb = b.aiMonth; }
+    else if (col === 'date') { va = a.updatedAt?.getTime()||0; vb = b.updatedAt?.getTime()||0; }
+    else { va = 0; vb = 0; }
+    return dir === 'desc' ? vb - va : va - vb;
+  });
+}
+
+window.sortFamilies = function(col) {
+  if (_famSort.col === col) {
+    _famSort.dir = _famSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    _famSort = { col, dir: 'desc' };
+  }
+  renderFamiliesTable(_familyRows);
+  updateSortHeaders();
+};
+
+function updateSortHeaders() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    const col = th.dataset.sort;
+    const arrow = th.querySelector('.sort-arrow');
+    if (!arrow) return;
+    if (col === _famSort.col) {
+      arrow.textContent = _famSort.dir === 'desc' ? ' ↓' : ' ↑';
+      th.style.color = 'var(--color-text)';
+    } else {
+      arrow.textContent = ' ↕';
+      th.style.color = '';
+    }
+  });
+}
+
+function renderFamiliesTable(rows) {
+  const tbody = document.getElementById('fam-tbody');
+  if (!tbody) return;
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessuna famiglia trovata</td></tr>';
+    return;
+  }
+  const sorted = sortRows(rows, _famSort.col, _famSort.dir);
+  tbody.innerHTML = sorted.map(r => {
+    const email = r.ownerEmail || '—';
+    const emailShort = email.length > 28 ? email.slice(0,26)+'…' : email;
+    const fnameShort = (r.fname||'—').length > 20 ? (r.fname||'—').slice(0,18)+'…' : (r.fname||'—');
+    const platforms = [
+      r.iosCount     ? `<span title="${r.iosCount} da iOS">🍎 ${r.iosCount}</span>`     : '',
+      r.androidCount ? `<span title="${r.androidCount} da Android">🤖 ${r.androidCount}</span>` : '',
+    ].filter(Boolean).join(' ') || '<span class="dim">—</span>';
+    return `
+    <tr>
+      <td class="mono dim" style="cursor:pointer;font-size:11px" title="${r.fid}"
+        onclick="selectOverrideUser('','${email.replace(/'/g,"\\'")}','${String(r.fid).replace(/'/g,"\\'")}');document.getElementById('section-plans').scrollIntoView({behavior:'smooth'})">
+        ${r.fid.slice(0,18)}…</td>
+      <td style="font-size:13px;font-weight:500" title="${r.fname||''}">${fnameShort}</td>
+      <td class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
+      <td><span class="badge badge-${r.plan}">${r.plan}</span></td>
+      <td style="font-size:13px;white-space:nowrap">${platforms}</td>
+      <td class="mono">${fmtBytes(r.storageBytes)}</td>
+      <td class="mono ${r.aiMonth>0?'hi':''}">${r.aiMonth > 0 ? r.aiMonth : '—'}</td>
+      <td class="dim">${r.updatedAt?r.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderUsersTable(rows) {
+  const tbody = document.getElementById('user-tbody');
+  if (!tbody) return;
+  setVal('users-table-count', `(${rows.length})`);
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Nessun utente trovato</td></tr>';
+    return;
+  }
+  const sorted = [...rows].sort((a,b) => a.email.localeCompare(b.email));
+  tbody.innerHTML = sorted.map(u => {
+    const fid = _familyByUid[u.uid] || '';
+    const fam = fid ? _familyRows.find(f => f.fid === fid) : null;
+    const famName = fam ? ((fam.fname && fam.fname !== '—') ? fam.fname : fam.fid.slice(0,14)+'…') : '—';
+    const plan = fam ? fam.plan : '';
+    const emailShort = u.email.length > 30 ? u.email.slice(0,28)+'…' : u.email;
+    const platformBadge = u.platform === 'ios' ? '🍎 iOS' : u.platform === 'android' ? '🤖 Android' : '<span class="dim">—</span>';
+    return `
+    <tr>
+      <td class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
+      <td style="font-size:13px;font-weight:500">${u.name}</td>
+      <td class="dim" style="font-size:12px" title="${fid}">${famName}</td>
+      <td>${plan ? `<span class="badge badge-${plan}">${plan}</span>` : '<span class="dim">—</span>'}</td>
+      <td style="font-size:13px;white-space:nowrap">${platformBadge}</td>
+      <td class="dim">${u.updatedAt?u.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── load ──────────────────────────────────
@@ -387,7 +494,10 @@ async function loadAll() {
   setVal('ai-month-lbl', monthKey());
 
   try {
-    await Promise.all([ loadUsers(), loadFamilies(), loadAICosts() ]);
+    await loadUsers();
+    await loadFamilies();
+    renderUsersTable(_allUsersRows);
+    await loadAICosts();
     updateTotalCost();
     setStatus('Aggiornato', true);
   } catch(e) {
@@ -398,22 +508,45 @@ async function loadAll() {
 }
 
 let _usersCache = [];
+let _allUsersRows = [];
+let _platformByUid = {};
+let _familyByUid = {};
 async function loadUsers() {
   try {
     const snap = await getDocs(collection(db,'users'));
     setVal('stat-users', fmtNum(snap.size));
+
+    _platformByUid = {};
+    let iosCount = 0, androidCount = 0;
+    _allUsersRows = snap.docs.map(d => {
+      const u = d.data();
+      const p = u.platform;
+      _platformByUid[d.id] = p;
+      if (p === 'ios') iosCount++;
+      else if (p === 'android') androidCount++;
+      const name = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.displayName || '—';
+      return {
+        uid: d.id,
+        email: u.email || '—',
+        name,
+        platform: p || '',
+        updatedAt: u.updatedAt?.toDate(),
+      };
+    });
+    setVal('stat-platform-ios', fmtNum(iosCount));
+    setVal('stat-platform-android', fmtNum(androidCount));
+
     _usersCache = snap.docs.map(d => ({
       uid:   d.id,
       email: d.data().email || '',
       fid:   d.data().familyId || d.data().activeFamilyId || '',
     })).filter(u => u.email).sort((a,b) => a.email.localeCompare(b.email));
-    // Popola il menù a tendina
     const sel = document.getElementById('override-email');
     if (sel) {
       sel.innerHTML = '<option value="">— Seleziona utente…</option>' +
         _usersCache.map(u => `<option value="${u.uid}" data-fid="${u.fid}">${u.email}</option>`).join('');
     }
-  } catch { setVal('stat-users','N/A'); }
+  } catch { setVal('stat-users','N/A'); setVal('stat-platform-ios','N/A'); setVal('stat-platform-android','N/A'); }
 }
 
 async function loadFamilies() {
@@ -421,9 +554,10 @@ async function loadFamilies() {
   const docs  = snap.docs;
   setVal('stat-families', fmtNum(docs.length));
 
-  const tdk = todayKey();
+  const mk = monthKey();
   let planFree=0, planPro=0, planMax=0, totalStorage=0;
   const rows = [];
+  _familyByUid = {};
 
   const chunks = [];
   for (let i=0; i<Math.min(docs.length,60); i+=10)
@@ -435,17 +569,20 @@ async function loadFamilies() {
       const d    = fdoc.data();
       const ov   = d.planOverride;
       const plan = (ov === 'pro' || ov === 'max') ? ov : (d.plan || 'free');
-      let storageBytes=0, aiToday=0, ownerEmail='—';
+      let storageBytes=0, aiMonth=0, ownerEmail='—', iosCount=0, androidCount=0;
       try { const sd=await getDoc(doc(db,'families',fid,'stats','storage')); if(sd.exists()) storageBytes=sd.data().usedBytes||0; } catch {}
-      try { const ad=await getDoc(doc(db,'ai_usage',`family_${fid}`,'daily',tdk)); if(ad.exists()) aiToday=ad.data().count||0; } catch {}
-      // Trova email del proprietario dalla subcollection members
+      // legge messaggi AI del mese corrente (non giornaliero)
+      try { const ad=await getDoc(doc(db,'ai_costs',mk,'families',fid)); if(ad.exists()) aiMonth=ad.data().calls||0; } catch {}
       try {
         const membSnap = await getDocs(collection(db,'families',fid,'members'));
-        // Cerca prima role=owner, poi il primo membro
         let ownerUid = null;
         membSnap.forEach(m => {
           const md = m.data();
           if (md.role === 'owner' || md.role === 'admin') ownerUid = m.id;
+          _familyByUid[m.id] = fid;
+          const p = _platformByUid[m.id];
+          if (p === 'ios') iosCount++;
+          else if (p === 'android') androidCount++;
         });
         if (!ownerUid && !membSnap.empty) ownerUid = membSnap.docs[0].id;
         if (ownerUid) {
@@ -454,7 +591,7 @@ async function loadFamilies() {
         }
       } catch {}
       const fname = d.name || '—';
-      return { fid, fname, plan, storageBytes, aiToday, ownerEmail, updatedAt: fdoc.data().updatedAt?.toDate() };
+      return { fid, fname, plan, storageBytes, aiMonth, ownerEmail, iosCount, androidCount, updatedAt: fdoc.data().updatedAt?.toDate() };
     }));
     rows.push(...res);
   }
@@ -475,41 +612,22 @@ async function loadFamilies() {
   _costData.storage = storageCost;
   _planData = { free: planFree, pro: planPro, max: planMax };
 
-  // tabella
-  const tbody = document.getElementById('fam-tbody');
-  tbody.innerHTML = rows.length===0
-    ? '<tr><td colspan="7" class="empty">Nessuna famiglia trovata</td></tr>'
-    : rows.sort((a,b)=>b.storageBytes-a.storageBytes).map(r=>{
-        const email = r.ownerEmail || '—';
-        const emailShort = email.length > 28 ? email.slice(0,26)+'…' : email;
-        const fnameShort = (r.fname||'—').length > 20 ? (r.fname||'—').slice(0,18)+'…' : (r.fname||'—');
-        return `
-        <tr>
-          <td class="mono dim" style="cursor:pointer;font-size:11px" title="${r.fid}"
-            onclick="selectOverrideUser('','${email.replace(/'/g,"\\'")}','${String(r.fid).replace(/'/g,"\\'")}');document.getElementById('section-plans').scrollIntoView({behavior:'smooth'})">
-            ${r.fid.slice(0,18)}…</td>
-          <td style="font-size:13px;font-weight:500" title="${r.fname||''}">${fnameShort}</td>
-          <td class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
-          <td><span class="badge badge-${r.plan}">${r.plan}</span></td>
-          <td class="mono">${fmtBytes(r.storageBytes)}</td>
-          <td class="mono ${r.aiToday>0?'hi':''}">${r.aiToday}</td>
-          <td class="dim">${r.updatedAt?r.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
-        </tr>`;
-      }).join('');
+  _familyRows = rows;
+  renderFamiliesTable(rows);
+  updateSortHeaders();
 
-  // bars storage
+  // bars storage — mostra nome famiglia
   const topSt = [...rows].sort((a,b)=>b.storageBytes-a.storageBytes).slice(0,8);
   const maxSt = topSt[0]?.storageBytes||1;
   document.getElementById('bars-storage').innerHTML = topSt.length
     ? topSt.map(r=>`
         <div class="bar-row">
-          <div class="bar-lbl">${r.fid.slice(0,14)}…</div>
+          <div class="bar-lbl" title="${r.fid}">${(r.fname && r.fname!=='—') ? r.fname.slice(0,16) : r.fid.slice(0,14)+'…'}</div>
           <div class="bar-track"><div class="bar-fill green" style="width:${(r.storageBytes/maxSt*100).toFixed(1)}%"></div></div>
           <div class="bar-val">${fmtBytes(r.storageBytes)}</div>
         </div>`).join('')
     : '<div class="dim small">Nessun dato</div>';
 
-  // pie piani
   drawPie('pie-plans', [
     { val: planFree, color: 'var(--color-dim-line)' },
     { val: planPro,  color: 'var(--color-blue)' },
@@ -531,7 +649,7 @@ async function loadAICosts() {
       _costData.ai = aiCost;
     } else {
       ['stat-ai-calls','stat-ai-input','stat-ai-output'].forEach(i=>setVal(i,'0'));
-      setVal('stat-ai-cost','$0.0000');
+      setVal('stat-ai-cost','€0,00');
     }
   } catch { ['stat-ai-calls','stat-ai-input','stat-ai-output','stat-ai-cost'].forEach(i=>setVal(i,'N/A')); }
 
@@ -539,10 +657,18 @@ async function loadAICosts() {
     const fs   = await getDocs(collection(db,'ai_costs',mk,'families'));
     const fams = fs.docs.map(d=>({fid:d.id,...d.data()})).sort((a,b)=>(b.calls||0)-(a.calls||0));
     const maxC = fams[0]?.calls||1;
+
+    // risolve nome famiglia dal cache _familyRows (i doc ID non hanno prefisso family_)
+    function famName(docFid) {
+      const row = _familyRows.find(r => r.fid === docFid);
+      if (row && row.fname && row.fname !== '—') return row.fname.slice(0,16);
+      return docFid.slice(0,14)+'…';
+    }
+
     document.getElementById('bars-ai').innerHTML = fams.length
       ? fams.slice(0,8).map(f=>`
           <div class="bar-row">
-            <div class="bar-lbl">${f.fid.slice(0,14)}…</div>
+            <div class="bar-lbl" title="${f.fid}">${famName(f.fid)}</div>
             <div class="bar-track"><div class="bar-fill orange" style="width:${((f.calls||0)/maxC*100).toFixed(1)}%"></div></div>
             <div class="bar-val">${f.calls||0} msg</div>
           </div>`).join('')
@@ -567,12 +693,12 @@ window.resetStorageAll = async function(btn) {
     const json = await res.json();
     if (json.error) throw new Error(json.error.message || 'Errore sconosciuto');
     const d = json.result;
-    btn.textContent = '↺ Reset Storage';
+    btn.textContent = '↺ Reset';
     btn.disabled = false;
     alert(`Storage resettato!\n\nFamiglie: ${d.totalFamilies}\nTotale: ${fmtBytes(d.grandTotalBytes)}`);
     loadAll();
   } catch(e) {
-    btn.textContent = '↺ Reset Storage';
+    btn.textContent = '↺ Reset';
     btn.disabled = false;
     alert('Errore: ' + e.message);
   }
@@ -581,7 +707,6 @@ window.resetStorageAll = async function(btn) {
 // ── OVERRIDE UTENTE → FAMIGLIE → PIANO ───────────────────────
 window.onOverrideUserSelect = async function(sel) {
   const uid = sel.value;
-  // Reset step 2 e 3
   document.getElementById('override-families-wrap').style.display = 'none';
   document.getElementById('override-plan-wrap').style.display = 'none';
   document.getElementById('btn-override').style.display = 'none';
@@ -594,9 +719,7 @@ window.onOverrideUserSelect = async function(sel) {
   document.getElementById('override-families-wrap').style.display = 'flex';
 
   try {
-    // Trova tutte le famiglie dove questo uid è membro con role=owner/admin
     const membersSnap = await Promise.all(
-      // Leggi tutte le famiglie e cerca questo uid nei members
       (await getDocs(collection(db,'families'))).docs.map(async fdoc => {
         const fid = fdoc.id;
         try {
@@ -635,7 +758,6 @@ window.onOverrideUserSelect = async function(sel) {
 };
 
 window.selectOverrideFamily = function(fid, fname, currentPlan, email) {
-  // Evidenzia la riga selezionata
   document.querySelectorAll('[id^="frow-"]').forEach(el => el.style.borderColor = 'transparent');
   const row = document.getElementById('frow-' + fid);
   if (row) row.style.borderColor = 'var(--color-accent)';
@@ -646,7 +768,6 @@ window.selectOverrideFamily = function(fid, fname, currentPlan, email) {
   document.getElementById('override-plan-wrap').style.display = 'block';
   document.getElementById('btn-override').style.display = 'inline-block';
 
-  // Pre-seleziona piano corrente
   const planSel = document.getElementById('override-plan');
   for (const opt of planSel.options) {
     if (opt.value === currentPlan) { planSel.value = currentPlan; break; }
@@ -654,7 +775,6 @@ window.selectOverrideFamily = function(fid, fname, currentPlan, email) {
 };
 
 window.selectOverrideUser = function(uid, email, fid) {
-  // Chiamato dal click sulla riga famiglie — seleziona nel dropdown e triggera
   const sel = document.getElementById('override-email');
   if (!sel) return;
   for (const opt of sel.options) {
@@ -697,19 +817,16 @@ window.setPlanOverride = async function() {
 };
 
 function updateTotalCost() {
-  // Usa _costData (in USD) per evitare doppia conversione EUR
   const tot = _costData.ai + _costData.storage;
   if (tot>0) {
     setVal('stat-total-cost', fmtEur(tot));
   }
 
-  // pie costi
   drawPie('pie-costs', [
     { val: _costData.ai,      color: 'var(--color-orange)' },
     { val: _costData.storage, color: 'var(--color-green)' },
   ]);
 
-  // pie piani (ridisegna dopo che _planData è popolato)
   drawPie('pie-plans', [
     { val: _planData.free, color: 'var(--color-dim-line)' },
     { val: _planData.pro,  color: 'var(--color-blue)' },
@@ -739,6 +856,10 @@ function updateTotalCost() {
   --color-total-bg: #1a1916;
   --color-total-fg: #f4f3f0;
 
+  --sidebar-bg:     #1a1916;
+  --sidebar-fg:     #c8c3bc;
+  --sidebar-w:      220px;
+
   --mono: 'DM Mono', monospace;
   --sans: 'DM Sans', sans-serif;
   --radius: 12px;
@@ -762,12 +883,14 @@ function updateTotalCost() {
     --color-purple:   #c084fc;
     --color-total-bg: #f0ede8;
     --color-total-fg: #111110;
+    --sidebar-bg:     #0e0d0b;
+    --sidebar-fg:     #a09b94;
     --shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
   }
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--color-bg);color:var(--color-text);font-family:var(--sans);font-size:13px;min-height:100vh;transition:background .2s,color .2s}
+body{background:var(--color-bg);color:var(--color-text);font-family:var(--sans);font-size:13px;min-height:100vh}
 
 /* ── LOGIN ───────────────────────────── */
 #screen-login{display:flex;align-items:center;justify-content:center;min-height:100vh}
@@ -787,32 +910,166 @@ h2{font-size:22px;font-weight:600;margin-bottom:6px;letter-spacing:-.4px}
 .btn-google:hover{opacity:.88}
 .cfg-note{margin-top:16px;padding:11px 13px;background:color-mix(in srgb,var(--color-orange) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-orange) 22%,transparent);border-radius:8px;font-size:11px;color:var(--color-orange);line-height:1.6}
 
-/* ── DASH ────────────────────────────── */
-#screen-dash{display:none}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--color-brd);background:var(--color-surf);position:sticky;top:0;z-index:99;backdrop-filter:blur(12px)}
-.topbar-brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;letter-spacing:-.4px}
-.topbar-brand em{color:var(--color-orange);font-style:normal}
+/* ── DASHBOARD LAYOUT ────────────────── */
+#screen-dash{display:none;min-height:100vh}
+
+/* ── SIDEBAR ─────────────────────────── */
+#sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.sidebar-brand-icon {
+  width: 32px; height: 32px;
+  background: var(--color-orange);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.sidebar-brand-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f0ede8;
+  letter-spacing: -.3px;
+  line-height: 1.1;
+}
+.sidebar-brand-text small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--sidebar-fg);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+nav.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-section-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,.25);
+  padding: 14px 8px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--sidebar-fg);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .12s, color .12s;
+  position: relative;
+  cursor: pointer;
+}
+.nav-item:hover { background: rgba(255,255,255,.07); color: #f0ede8; }
+.nav-item.active { background: rgba(224,92,26,.18); color: #f97316; }
+.nav-item .nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: #f06060;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+}
+.sidebar-footer {
+  padding: 14px 10px;
+  border-top: 1px solid rgba(255,255,255,.07);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar-footer a, .sidebar-footer button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: var(--sidebar-fg);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  transition: background .12s, color .12s;
+  font-family: var(--sans);
+}
+.sidebar-footer a:hover, .sidebar-footer button:hover { background: rgba(255,255,255,.07); color: #f0ede8; }
+.sidebar-user {
+  padding: 10px 10px 6px;
+  font-size: 10px;
+  color: rgba(255,255,255,.3);
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── CONTENT AREA ────────────────────── */
+#dash-content {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ──────────────────────────── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--color-brd);background:var(--color-surf);position:sticky;top:0;z-index:99;backdrop-filter:blur(12px)}
+.topbar-left{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--color-dim)}
 .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .dot-ok{background:var(--color-green);box-shadow:0 0 8px var(--color-green);animation:pulse 2.5s infinite}
 .dot-err{background:var(--color-red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-right{display:flex;align-items:center;gap:8px}
 .badge-month{font-family:var(--mono);font-size:10px;color:var(--color-dim);background:var(--color-muted);padding:4px 9px;border-radius:5px;border:1px solid var(--color-brd)}
-/* TICKET */
 .ticket-badge{background:#f06060;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;margin-left:4px}
+
+/* ── MODALS ──────────────────────────── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center}
 .modal-box{background:#1a1a1a;border:1px solid var(--color-brd);border-radius:14px;padding:28px;width:90%;max-width:780px;max-height:85vh;overflow-y:auto;position:relative}
 .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--color-dim);font-size:18px;cursor:pointer}
 .modal-logs{background:#111;border:1px solid var(--color-brd);border-radius:8px;padding:14px;font-family:var(--mono);font-size:10px;color:#9ef;white-space:pre-wrap;max-height:320px;overflow-y:auto;margin-top:12px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-/* END TICKET */
+
+/* ── BUTTONS ─────────────────────────── */
 .btn-sm{background:var(--color-muted);border:1px solid var(--color-brd);color:var(--color-text);padding:7px 14px;border-radius:7px;font-family:var(--sans);font-weight:500;font-size:12px;cursor:pointer;transition:background .15s}
 .btn-sm:hover{background:var(--color-dim-line)}
 .btn-sm:disabled{opacity:.4;cursor:not-allowed}
 .btn-accent{background:var(--color-orange)!important;border:none!important;color:#fff!important}
 .btn-accent:hover{opacity:.88!important}
 .user-chip{font-size:11px;color:var(--color-dim);font-family:var(--mono)}
-.main{padding:24px 28px;max-width:1400px;margin:0 auto}
+
+/* ── MAIN CONTENT ────────────────────── */
+.main{padding:24px 28px;max-width:1300px;flex:1}
 .err-box{background:color-mix(in srgb,var(--color-red) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-red) 22%,transparent);border-radius:10px;padding:12px 16px;color:var(--color-red);font-size:12px;margin-bottom:16px;display:none}
 .sec-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--color-dim);margin:32px 0 14px}
 .sec-title:first-child{margin-top:0}
@@ -851,6 +1108,8 @@ h2{font-size:22px;font-weight:600;margin-bottom:6px;letter-spacing:-.4px}
 .tcard-hdr .sub{font-weight:400;color:var(--color-dim);font-size:11px}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--color-dim);padding:9px 18px;border-bottom:1px solid var(--color-brd)}
+th[data-sort]{cursor:pointer;user-select:none;transition:color .15s}
+th[data-sort]:hover{color:var(--color-text)}
 td{padding:11px 18px;font-size:12px;border-bottom:1px solid var(--color-brd)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
@@ -893,9 +1152,13 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 .pie-title{font-weight:600;font-size:13px;margin-bottom:14px}
 
 /* ── STATUSBAR ───────────────────────── */
-.statusbar{display:flex;align-items:center;gap:8px;padding:9px 28px;background:var(--color-surf);border-top:1px solid var(--color-brd);position:fixed;bottom:0;left:0;right:0;font-size:10px;color:var(--color-dim);font-family:var(--mono);z-index:99}
+.statusbar{display:flex;align-items:center;gap:8px;padding:9px 24px;background:var(--color-surf);border-top:1px solid var(--color-brd);font-size:10px;color:var(--color-dim);font-family:var(--mono)}
 
-@media(max-width:900px){
+/* ── RESPONSIVE ──────────────────────── */
+@media(max-width:640px){
+  #sidebar{transform:translateX(-100%);transition:transform .2s}
+  #sidebar.open{transform:translateX(0)}
+  #dash-content{margin-left:0}
   .grid-4,.grid-3{grid-template-columns:repeat(2,1fr)}
   .grid-2,.charts-row{grid-template-columns:1fr}
   .main{padding:16px}
@@ -934,340 +1197,445 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
 <!-- DASHBOARD -->
 <div id="screen-dash">
-  <div class="topbar">
-    <div class="topbar-brand">
-      <div class="dot dot-ok" id="status-dot"></div>
-      KidBox <em>Admin</em>
-    </div>
-    <div class="topbar-right">
-      <a href="https://platform.claude.com/cost" target="_blank" class="btn-sm" style="text-decoration:none">🤖 Anthropic</a>
-      <a href="https://console.firebase.google.com/u/1/project/kidbox-42cd7/overview" target="_blank" class="btn-sm" style="text-decoration:none">🔥 Firebase</a>
-      <a href="https://aistudio.google.com/spend?project=kidbox-42cd7" target="_blank" class="btn-sm" style="text-decoration:none">📊 Google AI</a>
-      <a href="https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1" target="_blank" class="btn-sm" style="text-decoration:none">💰 Billing</a>
-      <span class="badge-month" id="month-badge">—</span>
-      <span class="user-chip" id="user-email"></span>
-      <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-dim)">🐛<span class="ticket-badge" id="ticket-badge"></span></span>
-      <button class="btn-sm" id="btn-notif" onclick="toggleAdminNotif(this)" title="Attiva/disattiva notifiche push per ticket critical">🔔 Notifiche</button>
-      <button class="btn-sm btn-accent" id="btn-refresh">↻ Aggiorna</button>
-      <button class="btn-sm" id="btn-reset-all" onclick="resetStorageAll(this)">↺ Reset Storage</button>
-      <button class="btn-sm" id="btn-logout">Esci</button>
-    </div>
-  </div>
 
-  <div class="main">
-    <div class="err-box" id="err-box"></div>
-
-    <!-- NAV RAPIDA -->
-    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
-      <a href="#section-users"   class="btn-sm" style="text-decoration:none">👥 Utenti</a>
-      <a href="#section-ai"      class="btn-sm" style="text-decoration:none">🤖 AI & Costi</a>
-      <a href="#section-storage" class="btn-sm" style="text-decoration:none">💾 Storage</a>
-      <a href="#section-plans"   class="btn-sm" style="text-decoration:none">💳 Piani</a>
-      <a href="#section-tickets" class="btn-sm btn-accent" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">🐛 Ticket <span id="nav-ticket-badge" style="background:rgba(255,255,255,0.3);border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></a>
-      <a href="#section-support" class="btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">💬 Supporto <span id="nav-support-badge" style="background:rgba(255,255,255,0.3);border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center"></span></a>
-      <a href="#section-families" class="btn-sm" style="text-decoration:none">📋 Famiglie</a>
-    </div>
-
-    <!-- UTENTI & FAMIGLIE -->
-    <div id="section-users"></div>
-    <div class="sec-title">👥 Utenti & Famiglie</div>
-    <div class="grid-4">
-      <div class="card">
-        <div class="card-lbl">Utenti registrati</div>
-        <div class="card-val c-blue" id="stat-users">—</div>
-        <div class="card-sub">profili su Firestore</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Famiglie</div>
-        <div class="card-val c-orange" id="stat-families">—</div>
-        <div class="card-sub">famiglie create</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Piano Pro</div>
-        <div class="card-val c-blue" id="stat-plan-pro">—</div>
-        <div class="card-sub">famiglie abbonate</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Piano Max</div>
-        <div class="card-val c-purple" id="stat-plan-max">—</div>
-        <div class="card-sub">famiglie abbonate</div>
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">📦</div>
+      <div class="sidebar-brand-text">
+        KidBox
+        <small>Admin Console</small>
       </div>
     </div>
 
-    <!-- AI -->
-    <div id="section-ai"></div>
-    <div class="sec-title">🤖 AI — <span id="ai-month-lbl">—</span></div>
-    <div class="grid-4">
-      <div class="card">
-        <div class="card-lbl">Chiamate</div>
-        <div class="card-val c-orange" id="stat-ai-calls">—</div>
-        <div class="card-sub">messaggi AI inviati</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-lbl">Overview</div>
+      <a class="nav-item active" data-section="section-users" href="#section-users">
+        <span class="nav-icon">👥</span> Utenti & Famiglie
+      </a>
+      <a class="nav-item" data-section="section-ai" href="#section-ai">
+        <span class="nav-icon">🤖</span> AI & Costi
+      </a>
+      <a class="nav-item" data-section="section-storage" href="#section-storage">
+        <span class="nav-icon">💾</span> Storage
+      </a>
+
+      <div class="nav-section-lbl">Gestione</div>
+      <a class="nav-item" data-section="section-plans" href="#section-plans">
+        <span class="nav-icon">🎁</span> Piani Override
+      </a>
+      <a class="nav-item" data-section="section-families" href="#section-families">
+        <span class="nav-icon">📋</span> Tutte le famiglie
+      </a>
+      <a class="nav-item" data-section="section-users-table" href="#section-users-table">
+        <span class="nav-icon">👤</span> Tutti gli utenti
+      </a>
+
+      <div class="nav-section-lbl">Supporto</div>
+      <a class="nav-item" data-section="section-tickets" href="#section-tickets">
+        <span class="nav-icon">🐛</span> Bug Report
+        <span class="nav-badge" id="nav-ticket-badge"></span>
+      </a>
+      <a class="nav-item" data-section="section-support" href="#section-support">
+        <span class="nav-icon">💬</span> Ticket Supporto
+        <span class="nav-badge" id="nav-support-badge"></span>
+      </a>
+
+      <div class="nav-section-lbl">Link rapidi</div>
+      <a class="nav-item" href="https://platform.claude.com/cost" target="_blank">
+        <span class="nav-icon">🤖</span> Anthropic Cost
+      </a>
+      <a class="nav-item" href="https://console.firebase.google.com/u/1/project/kidbox-42cd7/overview" target="_blank">
+        <span class="nav-icon">🔥</span> Firebase Console
+      </a>
+      <a class="nav-item" href="https://console.cloud.google.com/billing/015E5B-092B59-BED0B8?authuser=1" target="_blank">
+        <span class="nav-icon">💰</span> Google Billing
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="user-email">—</div>
+      <button id="btn-notif" onclick="toggleAdminNotif(this)" title="Push notification per ticket critical">
+        <span>🔔</span> Notifiche push
+      </button>
+      <button id="btn-logout">
+        <span>↩</span> Esci
+      </button>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <div id="dash-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="dot dot-ok" id="status-dot"></div>
+        <span id="status-msg">pronto</span>
+        <span style="opacity:.4">·</span>
+        <span id="last-upd">—</span>
+        <span class="badge-month" id="month-badge">—</span>
       </div>
-      <div class="card">
-        <div class="card-lbl">Token input</div>
-        <div class="card-val c-blue" id="stat-ai-input">—</div>
-        <div class="card-sub">token ricevuti</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Token output</div>
-        <div class="card-val c-green" id="stat-ai-output">—</div>
-        <div class="card-sub">token generati</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Costo AI stimato</div>
-        <div class="card-val c-red" id="stat-ai-cost">—</div>
-        <div class="card-sub">EUR questo mese</div>
+      <div class="topbar-right">
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--color-dim)">🐛<span class="ticket-badge" id="ticket-badge"></span></span>
+        <button class="btn-sm" id="btn-reset-all" onclick="resetStorageAll(this)">↺ Reset Storage</button>
+        <button class="btn-sm btn-accent" id="btn-refresh">↻ Aggiorna</button>
       </div>
     </div>
 
-    <!-- STORAGE & COSTO TOTALE -->
-    <div id="section-storage"></div>
-    <div class="sec-title">💾 Storage & Costi</div>
-    <div class="grid-3">
-      <div class="card">
-        <div class="card-lbl">Storage totale</div>
-        <div class="card-val c-green" id="stat-storage">—</div>
-        <div class="card-sub">usato su Firebase Storage</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Costo storage est.</div>
-        <div class="card-val c-orange" id="stat-storage-cost">—</div>
-        <div class="card-sub">EUR/mese · €0.024/GB</div>
-      </div>
-      <!-- HERO TOTAL -->
-      <div class="card card-total">
-        <div class="card-lbl">Costo totale stimato</div>
-        <div class="card-val" id="stat-total-cost">—</div>
-        <div class="card-sub">AI + Storage questo mese</div>
-        <div class="cost-breakdown">
-          <div class="cost-item">
-            <div class="cost-dot" style="background:var(--color-orange)"></div>
-            AI: <span id="breakdown-ai" style="margin-left:2px">—</span>
-          </div>
-          <div class="cost-item">
-            <div class="cost-dot" style="background:var(--color-green)"></div>
-            Storage: <span id="breakdown-storage" style="margin-left:2px">—</span>
-          </div>
+    <div class="main">
+      <div class="err-box" id="err-box"></div>
+
+      <!-- UTENTI & FAMIGLIE -->
+      <div id="section-users"></div>
+      <div class="sec-title">👥 Utenti & Famiglie</div>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-lbl">Utenti registrati</div>
+          <div class="card-val c-blue" id="stat-users">—</div>
+          <div class="card-sub">profili su Firestore</div>
         </div>
-      </div>
-    </div>
-
-    <!-- PIE CHARTS -->
-    <div class="charts-row">
-      <div class="pie-card">
-        <div style="width:100%">
-          <div class="pie-title">Distribuzione piani</div>
-          <div style="display:flex;align-items:center;gap:20px">
-            <canvas id="pie-plans" width="120" height="120"></canvas>
-            <div class="pie-legend">
-              <div class="legend-item">
-                <div class="legend-dot" style="background:var(--color-dim-line)"></div>
-                <span class="legend-label">Free</span>
-                <span class="legend-val" id="leg-free">—</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-dot" style="background:var(--color-blue)"></div>
-                <span class="legend-label">Pro</span>
-                <span class="legend-val c-blue" id="leg-pro">—</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-dot" style="background:var(--color-purple)"></div>
-                <span class="legend-label">Max</span>
-                <span class="legend-val c-purple" id="leg-max">—</span>
-              </div>
-            </div>
-          </div>
+        <div class="card">
+          <div class="card-lbl">Famiglie</div>
+          <div class="card-val c-orange" id="stat-families">—</div>
+          <div class="card-sub">famiglie create</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Piano Pro</div>
+          <div class="card-val c-blue" id="stat-plan-pro">—</div>
+          <div class="card-sub">famiglie abbonate</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Piano Max</div>
+          <div class="card-val c-purple" id="stat-plan-max">—</div>
+          <div class="card-sub">famiglie abbonate</div>
         </div>
       </div>
 
-      <div class="pie-card">
-        <div style="width:100%">
-          <div class="pie-title">Ripartizione costi</div>
-          <div style="display:flex;align-items:center;gap:20px">
-            <canvas id="pie-costs" width="120" height="120"></canvas>
-            <div class="pie-legend">
-              <div class="legend-item">
-                <div class="legend-dot" style="background:var(--color-orange)"></div>
-                <span class="legend-label">AI</span>
-                <span class="legend-val c-orange" id="leg-ai-cost">—</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-dot" style="background:var(--color-green)"></div>
-                <span class="legend-label">Storage</span>
-                <span class="legend-val c-green" id="leg-storage-cost">—</span>
-              </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="card">
+          <div class="card-lbl">🍎 Dispositivi Apple</div>
+          <div class="card-val c-blue" id="stat-platform-ios">—</div>
+          <div class="card-sub">utenti collegati da iOS</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">🤖 Dispositivi Android</div>
+          <div class="card-val c-green" id="stat-platform-android">—</div>
+          <div class="card-sub">utenti collegati da Android</div>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div id="section-ai"></div>
+      <div class="sec-title">🤖 AI — <span id="ai-month-lbl">—</span></div>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-lbl">Chiamate</div>
+          <div class="card-val c-orange" id="stat-ai-calls">—</div>
+          <div class="card-sub">messaggi AI inviati</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Token input</div>
+          <div class="card-val c-blue" id="stat-ai-input">—</div>
+          <div class="card-sub">token ricevuti</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Token output</div>
+          <div class="card-val c-green" id="stat-ai-output">—</div>
+          <div class="card-sub">token generati</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Costo AI stimato</div>
+          <div class="card-val c-red" id="stat-ai-cost">—</div>
+          <div class="card-sub">EUR questo mese</div>
+        </div>
+      </div>
+
+      <!-- STORAGE & COSTO TOTALE -->
+      <div id="section-storage"></div>
+      <div class="sec-title">💾 Storage & Costi</div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-lbl">Storage totale</div>
+          <div class="card-val c-green" id="stat-storage">—</div>
+          <div class="card-sub">usato su Firebase Storage</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Costo storage est.</div>
+          <div class="card-val c-orange" id="stat-storage-cost">—</div>
+          <div class="card-sub">EUR/mese · €0.024/GB</div>
+        </div>
+        <div class="card card-total">
+          <div class="card-lbl">Costo totale stimato</div>
+          <div class="card-val" id="stat-total-cost">—</div>
+          <div class="card-sub">AI + Storage questo mese</div>
+          <div class="cost-breakdown">
+            <div class="cost-item">
+              <div class="cost-dot" style="background:var(--color-orange)"></div>
+              AI: <span id="breakdown-ai" style="margin-left:2px">—</span>
+            </div>
+            <div class="cost-item">
+              <div class="cost-dot" style="background:var(--color-green)"></div>
+              Storage: <span id="breakdown-storage" style="margin-left:2px">—</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- TOP BARS -->
-    <div class="grid-2" style="margin-top:12px">
-      <div class="tcard">
-        <div class="tcard-hdr">Top famiglie · AI <span class="sub" id="top-ai-month"></span></div>
-        <div class="bars-wrap" id="bars-ai"><div class="dim small">Caricamento…</div></div>
-      </div>
-      <div class="tcard">
-        <div class="tcard-hdr">Top famiglie · Storage</div>
-        <div class="bars-wrap" id="bars-storage"><div class="dim small">Caricamento…</div></div>
-      </div>
-    </div>
-
-    <!-- GESTIONE PIANI OVERRIDE -->
-    <div id="section-plans"></div>
-    <div class="sec-title">🎁 Gestione Piani — Override Amministrativo</div>
-    <div class="card" style="max-width:620px">
-        <div class="card-lbl">Assegna piano gratuito a una famiglia</div>
-        <p class="card-sub" style="margin-bottom:16px;line-height:1.6">
-            Cerca l'utente per email. L'override ha priorità assoluta su StoreKit
-            e non viene mai sovrascritto dall'app. Scegli <strong>— Rimuovi override</strong> per
-            ripristinare il comportamento normale (StoreKit).
-        </p>
-
-        <div style="display:flex;flex-direction:column;gap:12px">
-
-            <!-- STEP 1: utente -->
-            <div class="field" style="margin:0">
-                <label>① Utente</label>
-                <select id="override-email" onchange="onOverrideUserSelect(this)"
-                  style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none">
-                  <option value="">— Seleziona utente…</option>
-                </select>
-            </div>
-
-            <!-- STEP 2: famiglie dell'utente (appare dopo selezione) -->
-            <div id="override-families-wrap" style="display:none;flex-direction:column;gap:6px">
-                <label>② Famiglia da aggiornare</label>
-                <div id="override-families-list" style="display:flex;flex-direction:column;gap:6px"></div>
-            </div>
-
-            <!-- STEP 3: piano + nota (appare dopo selezione famiglia) -->
-            <div id="override-plan-wrap" style="display:none">
-                <div style="font-size:11px;font-family:var(--mono);color:var(--color-dim);margin-bottom:8px" id="override-family-resolved"></div>
-                <input type="hidden" id="override-family-id" />
-                <div style="display:flex;gap:10px">
-                    <div class="field" style="margin:0;flex:1">
-                        <label>③ Piano</label>
-                        <select id="override-plan" style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none">
-                            <option value="max">Max (gratuito)</option>
-                            <option value="pro">Pro (gratuito)</option>
-                            <option value="none">— Rimuovi override</option>
-                        </select>
-                    </div>
-                    <div class="field" style="margin:0;flex:2">
-                        <label>Nota interna (opzionale)</label>
-                        <input id="override-note" placeholder="Es. Beta tester, Amico, Press…" style="width:100%" />
-                    </div>
+      <!-- PIE CHARTS -->
+      <div class="charts-row">
+        <div class="pie-card">
+          <div style="width:100%">
+            <div class="pie-title">Distribuzione piani</div>
+            <div style="display:flex;align-items:center;gap:20px">
+              <canvas id="pie-plans" width="120" height="120"></canvas>
+              <div class="pie-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--color-dim-line)"></div>
+                  <span class="legend-label">Free</span>
+                  <span class="legend-val" id="leg-free">—</span>
                 </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--color-blue)"></div>
+                  <span class="legend-label">Pro</span>
+                  <span class="legend-val c-blue" id="leg-pro">—</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--color-purple)"></div>
+                  <span class="legend-label">Max</span>
+                  <span class="legend-val c-purple" id="leg-max">—</span>
+                </div>
+              </div>
             </div>
-
-            <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-                <button id="btn-override" class="btn-sm btn-accent" onclick="setPlanOverride()" style="padding:9px 24px;font-size:13px;display:none">
-                    Applica
-                </button>
-                <span id="override-result" class="override-msg"></span>
-            </div>
+          </div>
         </div>
+
+        <div class="pie-card">
+          <div style="width:100%">
+            <div class="pie-title">Ripartizione costi</div>
+            <div style="display:flex;align-items:center;gap:20px">
+              <canvas id="pie-costs" width="120" height="120"></canvas>
+              <div class="pie-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--color-orange)"></div>
+                  <span class="legend-label">AI</span>
+                  <span class="legend-val c-orange" id="leg-ai-cost">—</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--color-green)"></div>
+                  <span class="legend-label">Storage</span>
+                  <span class="legend-val c-green" id="leg-storage-cost">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP BARS -->
+      <div class="grid-2" style="margin-top:12px">
+        <div class="tcard">
+          <div class="tcard-hdr">Top famiglie · AI <span class="sub" id="top-ai-month"></span></div>
+          <div class="bars-wrap" id="bars-ai"><div class="dim small">Caricamento…</div></div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-hdr">Top famiglie · Storage</div>
+          <div class="bars-wrap" id="bars-storage"><div class="dim small">Caricamento…</div></div>
+        </div>
+      </div>
+
+      <!-- GESTIONE PIANI OVERRIDE -->
+      <div id="section-plans"></div>
+      <div class="sec-title">🎁 Gestione Piani — Override Amministrativo</div>
+      <div class="card" style="max-width:620px">
+          <div class="card-lbl">Assegna piano gratuito a una famiglia</div>
+          <p class="card-sub" style="margin-bottom:16px;line-height:1.6">
+              Cerca l'utente per email. L'override ha priorità assoluta su StoreKit
+              e non viene mai sovrascritto dall'app. Scegli <strong>— Rimuovi override</strong> per
+              ripristinare il comportamento normale (StoreKit).
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="field" style="margin:0">
+                  <label>① Utente</label>
+                  <select id="override-email" onchange="onOverrideUserSelect(this)"
+                    style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none">
+                    <option value="">— Seleziona utente…</option>
+                  </select>
+              </div>
+
+              <div id="override-families-wrap" style="display:none;flex-direction:column;gap:6px">
+                  <label>② Famiglia da aggiornare</label>
+                  <div id="override-families-list" style="display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+
+              <div id="override-plan-wrap" style="display:none">
+                  <div style="font-size:11px;font-family:var(--mono);color:var(--color-dim);margin-bottom:8px" id="override-family-resolved"></div>
+                  <input type="hidden" id="override-family-id" />
+                  <div style="display:flex;gap:10px">
+                      <div class="field" style="margin:0;flex:1">
+                          <label>③ Piano</label>
+                          <select id="override-plan" style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:9px 12px;color:var(--color-text);font-family:var(--sans);font-size:13px;outline:none">
+                              <option value="max">Max (gratuito)</option>
+                              <option value="pro">Pro (gratuito)</option>
+                              <option value="none">— Rimuovi override</option>
+                          </select>
+                      </div>
+                      <div class="field" style="margin:0;flex:2">
+                          <label>Nota interna (opzionale)</label>
+                          <input id="override-note" placeholder="Es. Beta tester, Amico, Press…" style="width:100%" />
+                      </div>
+                  </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+                  <button id="btn-override" class="btn-sm btn-accent" onclick="setPlanOverride()" style="padding:9px 24px;font-size:13px;display:none">
+                      Applica
+                  </button>
+                  <span id="override-result" class="override-msg"></span>
+              </div>
+          </div>
+      </div>
+
+      <!-- TABELLA FAMIGLIE -->
+      <div id="section-families"></div>
+      <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
+      <div class="tcard">
+        <div class="tcard-hdr">
+          Famiglie <span class="sub">(max 60)</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Family ID</th>
+              <th>Nome famiglia</th>
+              <th>Email</th>
+              <th>Piano</th>
+              <th>Dispositivi</th>
+              <th data-sort="storage" onclick="sortFamilies('storage')" style="cursor:pointer">Storage<span class="sort-arrow"> ↓</span></th>
+              <th data-sort="ai" onclick="sortFamilies('ai')" style="cursor:pointer">AI mese<span class="sort-arrow"> ↕</span></th>
+              <th data-sort="date" onclick="sortFamilies('date')" style="cursor:pointer">Aggiornato<span class="sort-arrow"> ↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="fam-tbody"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
+        </table>
+      </div>
+      <div style="height:32px"></div>
+
+      <!-- TABELLA UTENTI -->
+      <div id="section-users-table"></div>
+      <div class="sec-title" style="margin-top:32px">👤 Tutti gli utenti</div>
+      <div class="tcard">
+        <div class="tcard-hdr">
+          Utenti <span class="sub" id="users-table-count"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Nome</th>
+              <th>Famiglia</th>
+              <th>Piano</th>
+              <th>Dispositivo</th>
+              <th>Aggiornato</th>
+            </tr>
+          </thead>
+          <tbody id="user-tbody"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div style="height:32px"></div>
+
+      <!-- TICKET & BUG REPORT -->
+      <div id="section-tickets"></div>
+      <div class="sec-title" style="margin-top:40px">🐛 Ticket & Bug Report</div>
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-lbl">Nuovi</div>
+          <div class="card-val" id="ticket-new" style="color:#f06060">—</div>
+          <div class="card-sub">da prendere in carico</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">In carico</div>
+          <div class="card-val" id="ticket-taken" style="color:#e8c44a">—</div>
+          <div class="card-sub">in lavorazione</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Risolti</div>
+          <div class="card-val" id="ticket-resolved" style="color:#3bbf80">—</div>
+          <div class="card-sub">eliminati dopo 7gg</div>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <div class="tcard-hdr">Casi aperti <span class="sub">(aggiornamento in tempo reale)</span></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Gravità</th>
+              <th>Piattaforma</th>
+              <th>Modulo</th>
+              <th>Descrizione</th>
+              <th>Versione</th>
+              <th>Stato</th>
+              <th>Data</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="ticket-tbody">
+            <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- SUPPORTO CHAT -->
+      <div id="section-support"></div>
+      <div class="sec-title" style="margin-top:40px">💬 Ticket Supporto Chat</div>
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-lbl">Nuovi</div>
+          <div class="card-val" id="support-count-new" style="color:#f06060">—</div>
+          <div class="card-sub">da gestire</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">In lavorazione</div>
+          <div class="card-val" id="support-count-wip" style="color:#e8c44a">—</div>
+          <div class="card-sub">in gestione</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Risolti</div>
+          <div class="card-val" id="support-count-done" style="color:#3bbf80">—</div>
+          <div class="card-sub">chiusi</div>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-hdr">Ticket supporto <span class="sub">(in tempo reale)</span></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Piattaforma</th>
+              <th>Titolo</th>
+              <th>Email</th>
+              <th>Versione</th>
+              <th>Stato</th>
+              <th>Data</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="support-tbody">
+            <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="height:52px"></div>
     </div>
 
-    <!-- TABELLA FAMIGLIE -->
-    <div id="section-families"></div>
-    <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
-    <div class="tcard">
-      <div class="tcard-hdr">Famiglie <span class="sub">(max 60 · ordinate per storage)</span></div>
-      <table>
-        <thead><tr><th>Family ID</th><th>Nome famiglia</th><th>Email</th><th>Piano</th><th>Storage</th><th>AI oggi</th><th>Aggiornato</th></tr></thead>
-        <tbody id="fam-tbody"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
-      </table>
+    <!-- STATUSBAR -->
+    <div class="statusbar">
+      <div class="dot dot-ok" style="width:6px;height:6px"></div>
+      <span id="status-msg-2"></span>
     </div>
-    <div style="height:52px"></div>
-
-    <!-- TICKET & BUG REPORT -->
-    <div id="section-tickets"></div>
-    <div class="sec-title" style="margin-top:40px">🐛 Ticket & Bug Report</div>
-    <div class="grid-3" style="margin-bottom:16px">
-      <div class="card">
-        <div class="card-lbl">Nuovi</div>
-        <div class="card-val" id="ticket-new" style="color:#f06060">—</div>
-        <div class="card-sub">da prendere in carico</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">In carico</div>
-        <div class="card-val" id="ticket-taken" style="color:#e8c44a">—</div>
-        <div class="card-sub">in lavorazione</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Risolti</div>
-        <div class="card-val" id="ticket-resolved" style="color:#3bbf80">—</div>
-        <div class="card-sub">eliminati dopo 7gg</div>
-      </div>
-    </div>
-
-    <div class="tcard">
-      <div class="tcard-hdr">Casi aperti <span class="sub">(aggiornamento in tempo reale)</span></div>
-      <table>
-        <thead>
-          <tr>
-            <th>Gravità</th>
-            <th>Piattaforma</th>
-            <th>Modulo</th>
-            <th>Descrizione</th>
-            <th>Versione</th>
-            <th>Stato</th>
-            <th>Data</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody id="ticket-tbody">
-          <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- SUPPORTO CHAT -->
-    <div id="section-support"></div>
-    <div class="sec-title" style="margin-top:40px">💬 Ticket Supporto Chat</div>
-    <div class="grid-3" style="margin-bottom:16px">
-      <div class="card">
-        <div class="card-lbl">Nuovi</div>
-        <div class="card-val" id="support-count-new" style="color:#f06060">—</div>
-        <div class="card-sub">da gestire</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">In lavorazione</div>
-        <div class="card-val" id="support-count-wip" style="color:#e8c44a">—</div>
-        <div class="card-sub">in gestione</div>
-      </div>
-      <div class="card">
-        <div class="card-lbl">Risolti</div>
-        <div class="card-val" id="support-count-done" style="color:#3bbf80">—</div>
-        <div class="card-sub">chiusi</div>
-      </div>
-    </div>
-    <div class="tcard">
-      <div class="tcard-hdr">Ticket supporto <span class="sub">(in tempo reale)</span></div>
-      <table>
-        <thead>
-          <tr>
-            <th>Tipo</th>
-            <th>Piattaforma</th>
-            <th>Titolo</th>
-            <th>Email</th>
-            <th>Versione</th>
-            <th>Stato</th>
-            <th>Data</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody id="support-tbody">
-          <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="height:52px"></div>
-  </div>
-</div>
+  </div><!-- /dash-content -->
+</div><!-- /screen-dash -->
 
 <!-- MODAL DETTAGLIO TICKET SUPPORTO -->
 <div class="modal-overlay" id="support-modal" onclick="if(event.target===this)this.style.display='none'">
@@ -1312,36 +1680,19 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
   </div>
 </div>
 
-<!-- STATUSBAR -->
-<div class="statusbar">
-  <div class="dot dot-ok" style="width:6px;height:6px"></div>
-  <span id="status-msg">pronto</span>
-  <span style="margin-left:auto" id="last-upd">—</span>
-</div>
-
 <script>
-// Aggiorna le legende pie dopo loadAll
-const _origUpdate = window.__origUpdate;
-// Patch per aggiornare i valori delle legende
 function patchLegends() {
   const setV = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
-  // piani
-  const free = document.getElementById('stat-families')?.textContent || '—';
-  const pro  = document.getElementById('stat-plan-pro')?.textContent || '—';
-  const max  = document.getElementById('stat-plan-max')?.textContent || '—';
-  setV('leg-free', free);
-  setV('leg-pro',  pro);
-  setV('leg-max',  max);
-  // costi
-  const ai  = document.getElementById('stat-ai-cost')?.textContent || '—';
-  const st  = document.getElementById('stat-storage-cost')?.textContent || '—';
+  setV('leg-free', document.getElementById('stat-families')?.textContent || '—');
+  setV('leg-pro',  document.getElementById('stat-plan-pro')?.textContent || '—');
+  setV('leg-max',  document.getElementById('stat-plan-max')?.textContent || '—');
+  const ai = document.getElementById('stat-ai-cost')?.textContent || '—';
+  const st = document.getElementById('stat-storage-cost')?.textContent || '—';
   setV('leg-ai-cost',      ai);
   setV('leg-storage-cost', st);
-  // breakdown nel card totale
-  setV('breakdown-ai',      ai);
-  setV('breakdown-storage', st);
+  setV('breakdown-ai',     ai);
+  setV('breakdown-storage',st);
 }
-// polling leggero per aggiornare legende quando i dati arrivano
 setInterval(patchLegends, 500);
 </script>
 

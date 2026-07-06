@@ -19,12 +19,12 @@
     n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
     t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
     document,'script','https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '25962552233393986');
+    fbq('init', '1335685042033994');
     fbq('track', 'PageView');
   </script>
   <noscript>
     <img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=25962552233393986&ev=PageView&noscript=1"/>
+    src="https://www.facebook.com/tr?id=1335685042033994&ev=PageView&noscript=1"/>
   </noscript>
   <!-- Fine Meta Pixel -->
 
@@ -180,17 +180,17 @@
     }
     .cta-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
-    .appstore-badge {
+    .appstore-badge, .gplay-badge {
       display: inline-flex; align-items: center; gap: 10px;
       padding: 12px 22px;
       background: #000; color: #fff;
       border-radius: 14px;
       text-decoration: none; transition: transform .2s, opacity .2s;
     }
-    .appstore-badge:hover { transform: translateY(-2px); opacity: .88; }
-    .appstore-badge-inner { display: flex; flex-direction: column; line-height: 1.2; }
-    .appstore-badge-sub  { font-size: 0.62rem; font-weight: 400; opacity: .75; text-transform: uppercase; letter-spacing: 0.05em; }
-    .appstore-badge-main { font-size: 1rem; font-weight: 700; }
+    .appstore-badge:hover, .gplay-badge:hover { transform: translateY(-2px); opacity: .88; }
+    .appstore-badge-inner, .gplay-badge-inner { display: flex; flex-direction: column; line-height: 1.2; }
+    .appstore-badge-sub, .gplay-badge-sub  { font-size: 0.62rem; font-weight: 400; opacity: .75; text-transform: uppercase; letter-spacing: 0.05em; }
+    .appstore-badge-main, .gplay-badge-main { font-size: 1rem; font-weight: 700; }
 
     .btn-secondary {
       display: inline-flex; align-items: center; gap: 8px;
@@ -344,6 +344,9 @@
     footer a { color: var(--c-muted); text-decoration: none; transition: color .2s; }
     footer a:hover { color: var(--c-accent); }
     .footer-links { display: flex; gap: 24px; }
+    .footer-social { display: flex; gap: 14px; align-items: center; }
+    .footer-social a { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: var(--c-border); color: var(--c-muted); transition: background .2s, color .2s; }
+    .footer-social a:hover { background: var(--c-accent); color: #fff; }
 
     /* ── PIANI ── */
     .plans-section {
@@ -466,10 +469,6 @@
   <div class="hero">
     <div class="hero-content">
       <img class="hero-app-icon" src="icon.png" alt="KidBox">
-      <div class="badge">
-        <span class="badge-dot"></span>
-        Cinque agenti AI · Sempre in italiano
-      </div>
       <h1>La famiglia<br>organizzata.<br>Grazie all'<em>AI</em>.</h1>
       <p class="hero-sub">KidBox riunisce salute, pianificazione, viaggi, documenti e memoria familiare in un'unica app — con agenti AI che lavorano per te, anche quando l'app è chiusa.</p>
       <div class="cta-group">
@@ -478,6 +477,13 @@
           <div class="appstore-badge-inner">
             <span class="appstore-badge-sub">Scarica su</span>
             <span class="appstore-badge-main">App Store</span>
+          </div>
+        </a>
+        <a class="gplay-badge" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener">
+          <svg width="26" height="26" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg>
+          <div class="gplay-badge-inner">
+            <span class="gplay-badge-sub">Disponibile su</span>
+            <span class="gplay-badge-main">Google Play</span>
           </div>
         </a>
         <a class="btn-secondary" href="#agenti">Scopri gli agenti →</a>
@@ -505,10 +511,6 @@
     <div class="stat">
       <div class="stat-n" style="color:var(--c-blue)">E2E</div>
       <div class="stat-l">Crittografia end-to-end</div>
-    </div>
-    <div class="stat">
-      <div class="stat-n" style="color:var(--c-amber)">0</div>
-      <div class="stat-l">App aggiuntive necessarie</div>
     </div>
   </div>
 
@@ -737,7 +739,7 @@
     </div>
 
     <p class="plan-note">
-      Gli abbonamenti sono gestiti da <strong>App Store</strong> e si rinnovano automaticamente. Puoi annullare in qualsiasi momento da <strong>Impostazioni → Il tuo nome → Abbonamenti</strong>. Il contatore messaggi AI è condiviso tra tutta la famiglia e si azzera ogni giorno a mezzanotte.
+      Gli abbonamenti sono gestiti da <strong>App Store</strong> (iPhone/iPad/Mac) o <strong>Google Play</strong> (Android) e si rinnovano automaticamente. Puoi annullare in qualsiasi momento da <strong>Impostazioni → Il tuo nome → Abbonamenti</strong> su iOS, oppure da <strong>Google Play → Abbonamenti</strong> su Android. Il contatore messaggi AI è condiviso tra tutta la famiglia e si azzera ogni giorno a mezzanotte.
     </p>
   </section>
 
@@ -756,12 +758,19 @@
           <span class="appstore-badge-main">App Store</span>
         </div>
       </a>
+      <a class="gplay-badge" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener">
+        <svg width="26" height="26" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg>
+        <div class="gplay-badge-inner">
+          <span class="gplay-badge-sub">Disponibile su</span>
+          <span class="gplay-badge-main">Google Play</span>
+        </div>
+      </a>
     </div>
   </div>
 
   <!-- FOOTER -->
   <footer>
-    <p>© 2026 KidBox · Vittorio Scocca · Fatto con ❤️ in Italia</p>
+    <p>© 2026 KidBox · Fatto con ❤️ in Italia</p>
     <div class="footer-links">
       <a href="guide.html">Guida</a>
       <a href="#piani">Piani</a>
@@ -769,6 +778,14 @@
       <a href="terms.html">Termini</a>
       <a href="support.html">Supporto</a>
       <a href="data-deletion.html">Eliminazione Dati</a>
+    </div>
+    <div class="footer-social">
+      <a href="https://www.facebook.com/profile.php?id=61574265148948&locale=it_IT" target="_blank" rel="noopener" aria-label="Facebook">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+      </a>
+      <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
     </div>
   </footer>
 

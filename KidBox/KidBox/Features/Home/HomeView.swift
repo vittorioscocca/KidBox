@@ -214,8 +214,7 @@ struct HomeView: View {
                 Button {
                     coordinator.navigate(to: .profile)
                 } label: {
-                    ProfileAvatarView(avatarData: myProfile?.avatarData)
-                        .frame(width: 34, height: 34)
+                    KBAvatar(imageData: myProfile?.avatarData, name: myProfile?.displayName ?? "", size: 34)
                         .padding(6)
                         .contentShape(Rectangle())
                 }
@@ -309,26 +308,6 @@ struct HomeView: View {
             KBLog.app.kbDebug("Profile: avatar downloaded bytes=\(data.count)")
         } catch {
             KBLog.app.kbError("Profile: avatar download failed: \(error.localizedDescription)")
-        }
-    }
-    
-    struct ProfileAvatarView: View {
-        let avatarData: Data?
-        
-        var body: some View {
-            Group {
-                if let avatarData, let uiImage = UIImage(data: avatarData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Image(systemName: "person.crop.circle")
-                        .resizable()
-                        .scaledToFill()
-                }
-            }
-            .clipShape(Circle())
-            .overlay(Circle().stroke(.quaternary, lineWidth: 1))
         }
     }
     

@@ -7,6 +7,7 @@ import SwiftUI
 import Combine
 import OSLog
 import FirebaseAuth
+import FirebaseFirestore
 import SwiftData
 
 /// Central coordinator responsible for navigation and flow control.
@@ -316,7 +317,10 @@ final class AppCoordinator: ObservableObject {
                     KBLog.auth.kbInfo("Auth state changed: logged in uid=\(user.uid)")
                     
                     self.upsertUserProfile(from: user, modelContext: modelContext)
-                    
+
+                    try? await Firestore.firestore().collection("users").document(user.uid)
+                        .setData(["platform": "ios"], merge: true)
+
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
                     

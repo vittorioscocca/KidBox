@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "KidboxConsole",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8787", "--directory", "/Users/vscocca/KidBox/KidboxConsole/public"],
+      "port": 8787
+    }
+  ]
+}

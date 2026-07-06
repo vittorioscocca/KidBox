@@ -42,7 +42,29 @@
       "Bash(xcodebuild -scheme KidBox -destination 'generic/platform=iOS' build -quiet)",
       "Bash(xcodebuild -scheme KidBox -destination 'generic/platform=iOS' build)",
       "Read(//Users/vscocca/KidBox/functions/**)",
-      "Bash(node --check index.js)"
+      "Bash(node --check index.js)",
+      "Bash(ls /Users/vscocca/KidBox/ && echo --- && ls /Users/vscocca/KidBox/KidBox)",
+      "Bash(echo \"=== Android: AuthViewModel files ===\" && find /Users/vscocca/KidBoxAndroid -iname \"*AuthViewModel*\" -o -iname \"*Auth*.kt\" 2>/dev/null)",
+      "Bash(ls /Users/vscocca/KidBox/ 2>/dev/null *)",
+      "Bash(./gradlew :app:compileDebugKotlin -q)",
+      "Bash(/usr/libexec/java_home -V)",
+      "Bash(xcodebuild -project KidBox.xcodeproj -list)",
+      "Bash(xcodebuild -project KidBox.xcodeproj -scheme KidBox -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(rm /Users/vscocca/KidBox/KidBox/.claude/launch.json; rm -rf /Users/vscocca/KidBox/KidboxConsole/.claude; echo done)",
+      "Bash(awk '$1>1')",
+      "Bash(awk '$1>1{print}')",
+      "Bash(firebase hosting:sites:list)",
+      "Bash(firebase target *)",
+      "mcp__claude-in-chrome__navigate",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://kidbox-42cd7.web.app/__/auth/handler\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://kidbox-42cd7.web.app/__/firebase/init.json\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://kidbox-42cd7.firebaseapp.com/__/auth/handler\")",
+      "Bash(curl -s \"https://kidbox-42cd7.web.app/index.html\")",
+      "Bash(git push *)",
+      "Bash(xcodebuild -project KidBox.xcodeproj -scheme KidBox -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(find /Users/vscocca/KidBox/KidBoxAndroid -iname \"*.kt\" | xargs grep -ln \"Capsule\\\\|initials\\\\|Avatar\" 2>/dev/null | grep -iv test | head -20)",
+      "Bash(./gradlew :app:compileDebugKotlin --console=plain)",
+      "Bash(JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ./gradlew :app:compileDebugKotlin --console=plain)"
     ]
   }
 }
