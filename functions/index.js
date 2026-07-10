@@ -4811,3 +4811,28 @@ exports.unregisterAdminNotifications = onCall(
     return { ok: true };
   },
 );
+
+/**
+ * Callable (admin only): restituisce uid + createdAt (ms) per tutti gli utenti Auth.
+ * Usato dalla console per mostrare la data di prima registrazione.
+ */
+exports.getAuthUsersData = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+    if (!ADMIN_UIDS.includes(uid)) throw new HttpsError("permission-denied", "Non autorizzato.");
+
+    const result = [];
+    let pageToken;
+    do {
+      const listResult = await admin.auth().listUsers(1000, pageToken);
+      for (const u of listResult.users) {
+        result.push({ uid: u.uid, createdAt: parseInt(u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : 0, 10) });
+      }
+      pageToken = listResult.pageToken;
+    } while (pageToken);
+
+    return { users: result };
+  },
+);

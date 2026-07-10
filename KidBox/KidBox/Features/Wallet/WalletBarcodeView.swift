@@ -181,11 +181,21 @@ struct WalletBarcodeView: View {
                 f.quietSpace = 7
                 f.barcodeHeight = 80
                 return f.outputImage
+            case .code39:
+                // CoreImage non ha un generatore Code 39 built-in (a differenza
+                // di Code128/QR/Aztec/PDF417): lo disegniamo a mano in
+                // `Code39Generator`, usato per la Tessera Sanitaria (il CF è
+                // codificato in Code 39 sul fronte della tessera).
+                return nil // gestito a parte sotto, non passa dal path CIImage
             default:
                 // Formati non supportati dai CIFilter built-in.
                 return nil
             }
         }()
+
+        if normalized == .code39, let cg = Code39Generator.generate(text: text)?.cgImage {
+            return UIImage(cgImage: cg)
+        }
 
         guard let ci = ciImage else { return nil }
 
@@ -195,5 +205,65 @@ struct WalletBarcodeView: View {
 
         guard let cg = context.createCGImage(scaled, from: scaled.extent) else { return nil }
         return UIImage(cgImage: cg)
+    }
+}
+
+/// Generatore Code 39 "manuale" (disegno barre via Core Graphics): CoreImage
+/// non offre un `CICode39BarcodeGenerator` built-in. Copre l'alfabeto standard
+/// (0-9, A-Z, spazio, `- . $ / + %`), sufficiente per il Codice Fiscale.
+enum Code39Generator {
+    /// Pattern a 9 elementi (bar,space,bar,space,bar,space,bar,space,bar):
+    /// "0" = elemento stretto, "1" = elemento largo.
+    private static let patterns: [Character: String] = [
+        "0": "000110100", "1": "100100001", "2": "001100001", "3": "101100000",
+        "4": "000110001", "5": "100110000", "6": "001110000", "7": "000100101",
+        "8": "100100100", "9": "001100100",
+        "A": "100001001", "B": "001001001", "C": "101001000", "D": "000011001",
+        "E": "100011000", "F": "001011000", "G": "000001101", "H": "100001100",
+        "I": "001001100", "J": "000011100", "K": "100000011", "L": "001000011",
+        "M": "101000010", "N": "000010011", "O": "100010010", "P": "001010010",
+        "Q": "000000111", "R": "100000110", "S": "001000110", "T": "000010110",
+        "U": "110000001", "V": "011000001", "W": "111000000", "X": "010010001",
+        "Y": "110010000", "Z": "011010000",
+        "-": "010000101", ".": "110000100", " ": "011000100",
+        "$": "010101000", "/": "010100010", "+": "010001010", "%": "000101010",
+        "*": "010010100"
+    ]
+
+    /// `nil` se `text` contiene caratteri fuori dall'alfabeto Code 39.
+    static func generate(text: String, narrowWidth: CGFloat = 2, height: CGFloat = 120) -> UIImage? {
+        let upper = text.uppercased()
+        guard !upper.isEmpty, upper.allSatisfy({ patterns[$0] != nil }) else { return nil }
+
+        let full = "*\(upper)*"
+        var elements: [(isBar: Bool, isWide: Bool)] = []
+        for (idx, char) in full.enumerated() {
+            guard let pattern = patterns[char] else { return nil }
+            for (i, bit) in pattern.enumerated() {
+                elements.append((isBar: i % 2 == 0, isWide: bit == "1"))
+            }
+            if idx < full.count - 1 {
+                elements.append((isBar: false, isWide: false)) // gap stretto tra caratteri
+            }
+        }
+
+        let wideWidth = narrowWidth * 3
+        let totalWidth = elements.reduce(CGFloat(0)) { $0 + ($1.isWide ? wideWidth : narrowWidth) }
+        let size = CGSize(width: totalWidth, height: height)
+
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            UIColor.black.setFill()
+            var x: CGFloat = 0
+            for element in elements {
+                let w = element.isWide ? wideWidth : narrowWidth
+                if element.isBar {
+                    ctx.fill(CGRect(x: x, y: 0, width: w, height: height))
+                }
+                x += w
+            }
+        }
     }
 }

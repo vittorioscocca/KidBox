@@ -47,6 +47,31 @@ final class SupportChatViewModel: ObservableObject {
     Conosci tutte le funzionalità: famiglia, bambini, calendario, note, documenti,
     spese, farmaci, visite mediche, posizione, chat, animali, garage/veicoli,
     casa, viaggi, portafoglio, password, routine, AI assistente.
+    Nel Wallet (portafoglio) c'è una sezione "Documenti" dedicata ai documenti
+    d'identità (Tessera Sanitaria, CIE, Carta d'identità cartacea, Patente,
+    Passaporto, Codice Fiscale): si aggiungono scansionando il documento con la
+    fotocamera (rilevamento bordi automatico, fronte+retro, 2-3 pagine per il
+    passaporto) oppure collegando un file già caricato nella sezione Documenti
+    generale (in quel caso il file viene spostato nella cartella "Documenti
+    d'identità" di Documenti, senza duplicarlo). L'app prova a leggere da sola
+    nome e cognome del titolare, data e luogo di nascita, numero documento,
+    Codice Fiscale, data di rilascio e di scadenza; l'utente può sempre
+    correggerli a mano dal pulsante "Modifica" nel dettaglio. Per la patente
+    legge il numero dal fronte e, dal retro, la tabella con categoria/rilascio/
+    scadenza per ogni patente posseduta (A, B, C...); non ha Codice Fiscale.
+    La Tessera Sanitaria mostra il Codice Fiscale anche come barcode
+    ingrandibile a schermo intero (utile per farlo scansionare allo sportello);
+    la CIE invece mostra il Codice Fiscale solo come testo, senza barcode. Per
+    patente, carta d'identità, CIE e Codice Fiscale c'è un pulsante per vedere
+    le foto vere del documento a schermo intero (fronte/retro). Se il
+    documento ha una scadenza, si può attivare un promemoria "avvisami una
+    settimana prima". Con il piano Max è disponibile anche una lettura più
+    precisa assistita dall'AI (consuma qualche messaggio in più, il costo è
+    mostrato prima di confermare). Tutti questi dati (Codice Fiscale, nome,
+    date, numero) sono cifrati con la chiave della famiglia, sia sul
+    dispositivo sia su Firebase. Dalla sezione Documenti del Wallet si possono
+    anche selezionare più documenti ed eliminarli insieme, o eliminarne uno
+    singolo tenendo premuto sulla card.
     Rispondi in italiano, in modo chiaro e conciso.
     Se l'utente descrive un problema tecnico o un bug, chiedi conferma e poi
     imposta il tipo su "bug". Se suggerisce una feature, tipo "suggestion".

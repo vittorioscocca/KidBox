@@ -454,15 +454,49 @@ function renderFamiliesTable(rows) {
   }).join('');
 }
 
+let _userSort = { col: 'createdAt', dir: 'desc' };
+
+window.sortUsers = function(col) {
+  if (_userSort.col === col) {
+    _userSort.dir = _userSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    _userSort = { col, dir: 'desc' };
+  }
+  renderUsersTable(_allUsersRows);
+  updateUserSortHeaders();
+};
+
+function updateUserSortHeaders() {
+  document.querySelectorAll('th[data-usort]').forEach(th => {
+    const col = th.dataset.usort;
+    const arrow = th.querySelector('.sort-arrow');
+    if (!arrow) return;
+    if (col === _userSort.col) {
+      arrow.textContent = _userSort.dir === 'desc' ? ' ↓' : ' ↑';
+      th.style.color = 'var(--color-text)';
+    } else {
+      arrow.textContent = ' ↕';
+      th.style.color = '';
+    }
+  });
+}
+
 function renderUsersTable(rows) {
   const tbody = document.getElementById('user-tbody');
   if (!tbody) return;
   setVal('users-table-count', `(${rows.length})`);
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Nessun utente trovato</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessun utente trovato</td></tr>';
     return;
   }
-  const sorted = [...rows].sort((a,b) => a.email.localeCompare(b.email));
+  const sorted = [...rows].sort((a, b) => {
+    let va, vb;
+    if (_userSort.col === 'createdAt') { va = a.createdAt?.getTime()||0; vb = b.createdAt?.getTime()||0; }
+    else if (_userSort.col === 'email') { return _userSort.dir === 'asc' ? a.email.localeCompare(b.email) : b.email.localeCompare(a.email); }
+    else { va = 0; vb = 0; }
+    return _userSort.dir === 'desc' ? vb - va : va - vb;
+  });
+  updateUserSortHeaders();
   tbody.innerHTML = sorted.map(u => {
     const fid = _familyByUid[u.uid] || '';
     const fam = fid ? _familyRows.find(f => f.fid === fid) : null;
@@ -470,6 +504,7 @@ function renderUsersTable(rows) {
     const plan = fam ? fam.plan : '';
     const emailShort = u.email.length > 30 ? u.email.slice(0,28)+'…' : u.email;
     const platformBadge = u.platform === 'ios' ? '🍎 iOS' : u.platform === 'android' ? '🤖 Android' : '<span class="dim">—</span>';
+    const createdStr = u.createdAt ? u.createdAt.toLocaleDateString('it-IT') : '—';
     return `
     <tr>
       <td class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
@@ -477,7 +512,7 @@ function renderUsersTable(rows) {
       <td class="dim" style="font-size:12px" title="${fid}">${famName}</td>
       <td>${plan ? `<span class="badge badge-${plan}">${plan}</span>` : '<span class="dim">—</span>'}</td>
       <td style="font-size:13px;white-space:nowrap">${platformBadge}</td>
-      <td class="dim">${u.updatedAt?u.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
+      <td class="dim mono" style="font-size:11px">${createdStr}</td>
     </tr>`;
   }).join('');
 }
@@ -513,7 +548,13 @@ let _platformByUid = {};
 let _familyByUid = {};
 async function loadUsers() {
   try {
-    const snap = await getDocs(collection(db,'users'));
+    const [snap, authResult] = await Promise.all([
+      getDocs(collection(db,'users')),
+      httpsCallable(functions, 'getAuthUsersData')({}).catch(() => ({ data: { users: [] } })),
+    ]);
+    const authCreatedAt = {};
+    for (const u of (authResult.data?.users || [])) authCreatedAt[u.uid] = u.createdAt;
+
     setVal('stat-users', fmtNum(snap.size));
 
     _platformByUid = {};
@@ -525,12 +566,14 @@ async function loadUsers() {
       if (p === 'ios') iosCount++;
       else if (p === 'android') androidCount++;
       const name = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.displayName || '—';
+      const caMs = authCreatedAt[d.id];
       return {
         uid: d.id,
         email: u.email || '—',
         name,
         platform: p || '',
         updatedAt: u.updatedAt?.toDate(),
+        createdAt: caMs ? new Date(caMs) : null,
       };
     });
     setVal('stat-platform-ios', fmtNum(iosCount));
@@ -1530,12 +1573,12 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <table>
           <thead>
             <tr>
-              <th>Email</th>
+              <th data-usort="email" onclick="sortUsers('email')" style="cursor:pointer">Email<span class="sort-arrow"> ↕</span></th>
               <th>Nome</th>
               <th>Famiglia</th>
               <th>Piano</th>
               <th>Dispositivo</th>
-              <th>Aggiornato</th>
+              <th data-usort="createdAt" onclick="sortUsers('createdAt')" style="cursor:pointer">Registrato<span class="sort-arrow"> ↓</span></th>
             </tr>
           </thead>
           <tbody id="user-tbody"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>

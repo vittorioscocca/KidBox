@@ -24,9 +24,15 @@ struct WalletHomeView: View {
     @State private var prefilledSharePath: String?
     @State private var prefilledShareTitle: String?
 
+    private enum WalletTab: String, CaseIterable {
+        case tickets = "Biglietti"
+        case documents = "Documenti"
+    }
+    @State private var selectedTab: WalletTab = .tickets
+
     // Costanti di layout per lo stack.
-    private let cardHeight: CGFloat = 180
-    private let peekHeight: CGFloat = 58     // porzione visibile delle card sottostanti
+    private let cardHeight: CGFloat = 205
+    private let peekHeight: CGFloat = 62     // porzione visibile delle card sottostanti
     private let stackTopPadding: CGFloat = 8
     private let stackBottomPadding: CGFloat = 24
 
@@ -48,27 +54,46 @@ struct WalletHomeView: View {
     }
 
     var body: some View {
-        Group {
-            if visibleTickets.isEmpty {
-                ContentUnavailableView(
-                    "Wallet vuoto",
-                    systemImage: "wallet.pass",
-                    description: Text("Importa un PDF di biglietto (Trenitalia, Italo, Ryanair, cinema, concerti…)")
-                )
-            } else {
-                cardStack
+        VStack(spacing: 0) {
+            Picker("Sezione", selection: $selectedTab) {
+                ForEach(WalletTab.allCases, id: \.self) { tab in
+                    Text(tab.rawValue).tag(tab)
+                }
             }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+
+            Group {
+                switch selectedTab {
+                case .tickets:
+                    if visibleTickets.isEmpty {
+                        ContentUnavailableView(
+                            "Wallet vuoto",
+                            systemImage: "wallet.pass",
+                            description: Text("Importa un PDF di biglietto (Trenitalia, Italo, Ryanair, cinema, concerti…)")
+                        )
+                    } else {
+                        cardStack
+                    }
+                case .documents:
+                    WalletDocumentsSectionView(familyId: familyId)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Wallet")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    prefilledSharePath = nil
-                    prefilledShareTitle = nil
-                    showAddSheet = true
-                } label: {
-                    Image(systemName: "plus")
+            if selectedTab == .tickets {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        prefilledSharePath = nil
+                        prefilledShareTitle = nil
+                        showAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }

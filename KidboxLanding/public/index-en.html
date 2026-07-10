@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KidBox · The family, organized</title>
-  <meta name="description" content="KidBox is the app with five AI agents that lighten every parent's mental load. Health, planning, travel, documents and much more — all in one place.">
-  <meta property="og:title" content="KidBox · The family, organized">
-  <meta property="og:description" content="Five AI agents working for your family, proactively, in Italian.">
+  <title>KidBox · Your whole family, organized</title>
+  <meta name="description" content="KidBox brings your family's health, documents, chat, travel, location and passwords into one app — with five AI agents working for you.">
+  <meta property="og:title" content="KidBox · Your whole family, organized">
+  <meta property="og:description" content="Health, documents, chat, travel, location and passwords — all in one place, with AI agents that work for you.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="icon.png">
   <link rel="icon" type="image/png" href="icon.png">
@@ -26,761 +26,579 @@
     src="https://www.facebook.com/tr?id=1335685042033994&ev=PageView&noscript=1"/>
   </noscript>
   <!-- End Meta Pixel -->
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+  :root {
+    --bg:#fdf7f0; --bg2:#f5ebe0; --surface:#ffffff; --surface2:#fef3e8;
+    --border:rgba(180,120,60,0.14); --text:#1c1008; --muted:rgba(28,16,8,0.52); --faint:rgba(28,16,8,0.32);
+    --accent:#e8833a; --accent2:#c96a20; --accent-l:#fdf0e4;
+    --green:#2e9e6b; --blue:#2b7cb8; --violet:#7c5cbf; --amber:#d4860a;
+    --nav-bg:rgba(253,247,240,0.82);
+    --bezel:#3a2c22;
+    --r-lg:28px; --r-md:18px; --r-sm:11px;
+    --shadow:0 2px 24px rgba(180,100,30,0.09); --shadow-lg:0 20px 70px rgba(180,100,30,0.16);
+    --maxw:1160px;
+  }
+  @media (prefers-color-scheme: dark) {
     :root {
-      --c-bg:        #fdf7f0;
-      --c-bg2:       #f5ebe0;
-      --c-surface:   #ffffff;
-      --c-surface2:  #fef3e8;
-      --c-border:    rgba(180,120,60,0.12);
-      --c-text:      #1c1008;
-      --c-muted:     rgba(28,16,8,0.5);
-      --c-accent:    #e8833a;
-      --c-accent2:   #c96a20;
-      --c-accent-l:  #fdf0e4;
-      --c-green:     #2e9e6b;
-      --c-amber:     #d4860a;
-      --c-blue:      #2b7cb8;
-      --c-nav-bg:    rgba(253,247,240,0.92);
-      --radius-lg:   24px;
-      --radius-md:   16px;
-      --radius-sm:   10px;
-      --shadow:      0 2px 20px rgba(180,100,30,0.08);
-      --shadow-lg:   0 8px 48px rgba(180,100,30,0.14);
+      --bg:#140e08; --bg2:#1e150d; --surface:#241a10; --surface2:#2c1e10;
+      --border:rgba(255,180,100,0.11); --text:#f6efe6; --muted:rgba(246,239,230,0.55); --faint:rgba(246,239,230,0.32);
+      --accent:#f4995a; --accent2:#e8833a; --accent-l:rgba(244,153,90,0.12);
+      --green:#3bbf80; --blue:#4a9fd4; --violet:#a586e0; --amber:#e5a020;
+      --nav-bg:rgba(20,14,8,0.82);
+      --bezel:#2a2018;
+      --shadow:0 2px 24px rgba(0,0,0,0.35); --shadow-lg:0 20px 70px rgba(0,0,0,0.5);
     }
+  }
+  :root[data-theme="dark"] {
+    --bg:#140e08; --bg2:#1e150d; --surface:#241a10; --surface2:#2c1e10;
+    --border:rgba(255,180,100,0.11); --text:#f6efe6; --muted:rgba(246,239,230,0.55); --faint:rgba(246,239,230,0.32);
+    --accent:#f4995a; --accent2:#e8833a; --accent-l:rgba(244,153,90,0.12);
+    --green:#3bbf80; --blue:#4a9fd4; --violet:#a586e0; --amber:#e5a020;
+    --nav-bg:rgba(20,14,8,0.82);
+    --bezel:#2a2018;
+    --shadow:0 2px 24px rgba(0,0,0,0.35); --shadow-lg:0 20px 70px rgba(0,0,0,0.5);
+  }
+  :root[data-theme="light"] {
+    --bg:#fdf7f0; --bg2:#f5ebe0; --surface:#ffffff; --surface2:#fef3e8;
+    --border:rgba(180,120,60,0.14); --text:#1c1008; --muted:rgba(28,16,8,0.52); --faint:rgba(28,16,8,0.32);
+    --accent:#e8833a; --accent2:#c96a20; --accent-l:#fdf0e4;
+    --green:#2e9e6b; --blue:#2b7cb8; --violet:#7c5cbf; --amber:#d4860a;
+    --nav-bg:rgba(253,247,240,0.82);
+    --bezel:#3a2c22;
+    --shadow:0 2px 24px rgba(180,100,30,0.09); --shadow-lg:0 20px 70px rgba(180,100,30,0.16);
+  }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --c-bg:        #18110a;
-        --c-bg2:       #221810;
-        --c-surface:   #2a1e14;
-        --c-surface2:  #311f10;
-        --c-border:    rgba(255,180,100,0.1);
-        --c-text:      #f5ede3;
-        --c-muted:     rgba(245,237,227,0.5);
-        --c-accent:    #f09050;
-        --c-accent2:   #e8833a;
-        --c-accent-l:  rgba(240,144,80,0.12);
-        --c-green:     #3bbf80;
-        --c-amber:     #e09a20;
-        --c-blue:      #4a9fd4;
-        --c-nav-bg:    rgba(24,17,10,0.92);
-        --shadow:      0 2px 20px rgba(0,0,0,0.3);
-        --shadow-lg:   0 8px 48px rgba(0,0,0,0.4);
-      }
-    }
+  html { scroll-behavior:smooth; }
+  body { font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:var(--maxw); margin:0 auto; padding:0 24px; }
 
-    html { scroll-behavior: smooth; }
+  /* NAV */
+  nav { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:var(--nav-bg); backdrop-filter:blur(24px); border-bottom:1px solid var(--border); }
+  .logo { display:flex; align-items:center; gap:9px; font-weight:700; font-size:1.18rem; letter-spacing:-0.02em; color:var(--text); text-decoration:none; }
+  .logo img { width:30px; height:30px; border-radius:8px; }
+  .logo .ac { color:var(--accent); }
+  .nav-r { display:flex; align-items:center; gap:14px; }
+  .nav-lnk { font-size:0.86rem; font-weight:600; color:var(--muted); text-decoration:none; transition:color .2s; }
+  .nav-lnk:hover { color:var(--accent); }
+  .nav-lang { display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:600; }
+  .nav-lang a { text-decoration:none; }
+  .theme-btn { cursor:pointer; background:transparent; border:1px solid var(--border); color:var(--muted); width:34px; height:34px; border-radius:50%; font-size:0.9rem; display:grid; place-items:center; transition:border-color .2s,color .2s; }
+  .theme-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .nav-cta { font-size:0.84rem; font-weight:700; color:#fff; background:var(--accent); text-decoration:none; padding:8px 16px; border-radius:50px; transition:transform .15s; }
+  .nav-cta:hover { transform:translateY(-1px); }
+  @media (max-width:720px){ .nav-hide { display:none; } nav{ padding:12px 18px; } }
 
-    body {
-      font-family: 'DM Sans', system-ui, sans-serif;
-      background: var(--c-bg);
-      color: var(--c-text);
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
+  /* HERO */
+  .hero { text-align:center; padding:80px 24px 40px; position:relative; overflow:hidden; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:0.76rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent2); background:var(--accent-l); border:1px solid rgba(232,131,58,0.22); padding:6px 15px; border-radius:50px; margin-bottom:26px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .hero h1 { font-size:clamp(2.6rem,6.5vw,5rem); font-weight:800; line-height:1.02; letter-spacing:-0.04em; text-wrap:balance; margin:0 auto 22px; max-width:15ch; }
+  .hero h1 .g { background:linear-gradient(120deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero > p { font-size:clamp(1.05rem,2vw,1.28rem); color:var(--muted); max-width:54ch; margin:0 auto 34px; }
+  .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .store { display:inline-flex; align-items:center; gap:10px; padding:13px 22px; background:var(--text); color:var(--bg); border-radius:14px; text-decoration:none; transition:transform .18s,opacity .18s; }
+  .store:hover { transform:translateY(-2px); opacity:.9; }
+  .store .st-in { display:flex; flex-direction:column; line-height:1.15; text-align:left; }
+  .store .st-sub { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.05em; opacity:.7; }
+  .store .st-main { font-size:1rem; font-weight:700; }
+  .ghost { display:inline-flex; align-items:center; gap:7px; padding:14px 24px; border:1.5px solid var(--border); border-radius:50px; color:var(--text); text-decoration:none; font-weight:600; font-size:0.95rem; transition:border-color .2s,color .2s; }
+  .ghost:hover { border-color:var(--accent); color:var(--accent); }
 
-    /* ── NAV ── */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 40px;
-      background: var(--c-nav-bg);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--c-border);
-    }
-    .nav-logo {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em;
-      color: var(--c-text); text-decoration: none;
-    }
-    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
-    .nav-logo em { font-style: normal; color: var(--c-accent); letter-spacing: -0.02em; }
-    .nav-logo-name { display: inline; font-size: 0; }
-    .nav-logo-name span { font-size: 1.2rem; }
-    .nav-logo-name span.accent { color: var(--c-accent); }
-    .nav-guide {
-      font-size: 0.88rem; font-weight: 600; color: var(--c-text);
-      text-decoration: none; padding: 8px 16px;
-      border-radius: 50px; border: 1.5px solid var(--c-border);
-      transition: border-color .2s, color .2s;
-    }
-    .nav-guide:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .hero-stage { margin:52px auto 0; position:relative; width:100%; display:flex; justify-content:center; }
+  .hero-glow { position:absolute; inset:-30px 0 auto; height:55%; background:radial-gradient(ellipse at center,rgba(232,131,58,.22),transparent 68%); filter:blur(20px); z-index:0; }
 
-    /* ── HERO ── */
-    .hero {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-items: center;
-      padding-top: 68px;
-      overflow: hidden;
-    }
-    .hero-content {
-      padding: 80px 56px 80px 80px;
-    }
-    .hero-image-wrap {
-      position: relative;
-      height: 100vh;
-      overflow: hidden;
-    }
-    .hero-image-wrap img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      object-position: center;
-    }
-    .hero-image-wrap::before {
-      content: '';
-      position: absolute; inset: 0; z-index: 1;
-      background: linear-gradient(to right, var(--c-bg) 0%, transparent 25%),
-                  linear-gradient(to top, var(--c-bg) 0%, transparent 15%);
-    }
-    .hero-app-icon {
-      width: 72px; height: 72px; border-radius: 18px;
-      margin-bottom: 24px;
-      box-shadow: 0 12px 40px rgba(232,131,58,0.35);
-    }
-    .badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 14px;
-      background: var(--c-accent-l);
-      border: 1px solid rgba(232,131,58,0.25);
-      border-radius: 50px;
-      font-size: 0.78rem; font-weight: 600; color: var(--c-accent2);
-      margin-bottom: 22px;
-    }
-    .badge-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--c-green);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  /* DEVICE */
+  .device { position:relative; width:100%; max-width:320px; aspect-ratio:320/650; background:var(--bezel); border-radius:42px; padding:10px; box-shadow:var(--shadow-lg), inset 0 0 0 1.5px rgba(255,255,255,0.06); z-index:1; }
+  .device.sm { max-width:300px; }
+  .device.tilt { transform:perspective(1500px) rotateY(-9deg) rotateX(2deg); }
+  .band.rev .device.tilt { transform:perspective(1500px) rotateY(9deg) rotateX(2deg); }
+  .screen { width:100%; height:100%; border-radius:32px; overflow:hidden; background:var(--bg); position:relative; display:flex; flex-direction:column; }
+  .notch { position:absolute; top:9px; left:50%; transform:translateX(-50%); width:96px; height:22px; background:var(--bezel); border-radius:50px; z-index:5; }
 
-    h1 {
-      font-size: clamp(2.4rem, 4vw, 3.6rem);
-      font-weight: 700; line-height: 1.1;
-      letter-spacing: -0.03em;
-      color: var(--c-text);
-      margin-bottom: 20px;
-    }
-    h1 em { font-style: normal; color: var(--c-accent); }
-    .hero-sub {
-      font-size: 1.05rem;
-      color: var(--c-muted);
-      max-width: 460px;
-      margin-bottom: 36px;
-      font-weight: 300; line-height: 1.7;
-    }
-    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  /* CSS mock bits */
+  .scr-top { padding:26px 18px 12px; }
+  .scr-time { font-size:0.66rem; color:var(--muted); font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+  .scr-h { font-size:1.15rem; font-weight:800; letter-spacing:-0.02em; }
+  .scr-sub { font-size:0.72rem; color:var(--muted); }
+  .scr-body { flex:1; padding:6px 14px 16px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+  .row { background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:10px 12px; display:flex; gap:10px; align-items:center; }
+  .row .ic { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:0.95rem; flex-shrink:0; }
+  .row .tx { flex:1; min-width:0; }
+  .row .t1 { font-size:0.76rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .t2 { font-size:0.66rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .rt { font-size:0.66rem; font-weight:700; flex-shrink:0; }
+  .pill { font-size:0.6rem; font-weight:700; padding:2px 8px; border-radius:50px; }
 
-    .appstore-badge {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 12px 22px;
-      background: #000; color: #fff;
-      border-radius: 14px;
-      text-decoration: none; transition: transform .2s, opacity .2s;
-    }
-    .appstore-badge:hover { transform: translateY(-2px); opacity: .88; }
-    .appstore-badge-inner { display: flex; flex-direction: column; line-height: 1.2; }
-    .appstore-badge-sub  { font-size: 0.62rem; font-weight: 400; opacity: .75; text-transform: uppercase; letter-spacing: 0.05em; }
-    .appstore-badge-main { font-size: 1rem; font-weight: 700; }
+  /* dashboard tiles (hero) */
+  .dash { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .tile { border-radius:15px; padding:12px; min-height:74px; display:flex; flex-direction:column; justify-content:space-between; border:1px solid var(--border); }
+  .tile .ti { font-size:1.15rem; }
+  .tile .tl { font-size:0.7rem; font-weight:800; letter-spacing:-0.01em; }
+  .tile .td { font-size:0.58rem; color:var(--muted); }
+  /* chat */
+  .bub { max-width:80%; padding:8px 11px; border-radius:15px; font-size:0.72rem; line-height:1.4; }
+  .bub.them { background:var(--surface); border:1px solid var(--border); border-bottom-left-radius:5px; align-self:flex-start; }
+  .bub.me { background:var(--accent); color:#fff; border-bottom-right-radius:5px; align-self:flex-end; }
+  .chat-map { align-self:flex-end; width:70%; height:74px; border-radius:14px; border:1px solid var(--border); overflow:hidden; position:relative; background:
+      repeating-linear-gradient(0deg,var(--border) 0 1px,transparent 1px 22px),
+      repeating-linear-gradient(90deg,var(--border) 0 1px,transparent 1px 22px); background-color:var(--surface); }
+  .chat-inp { margin-top:auto; display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:7px 12px; font-size:0.68rem; color:var(--muted); }
+  /* map */
+  .map { flex:1; border-radius:14px; position:relative; overflow:hidden; border:1px solid var(--border); background:
+      linear-gradient(120deg, color-mix(in srgb, var(--green) 10%, transparent), transparent 55%),
+      repeating-linear-gradient(0deg,var(--border) 0 1px,transparent 1px 30px),
+      repeating-linear-gradient(90deg,var(--border) 0 1px,transparent 1px 30px); background-color:var(--surface); }
+  .map .road { position:absolute; background:var(--bg2); }
+  .map .r1 { top:42%; left:0; right:0; height:13px; }
+  .map .r2 { left:40%; top:0; bottom:0; width:13px; }
+  .map .r3 { top:70%; left:0; right:0; height:9px; transform:rotate(-8deg); }
+  .pin { position:absolute; width:26px; height:26px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:grid; place-items:center; box-shadow:0 4px 10px rgba(0,0,0,.25); }
+  .pin span { transform:rotate(45deg); font-size:0.68rem; }
+  .sheet { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:11px 13px; display:flex; flex-direction:column; gap:9px; }
+  .sheet .sh-h { font-size:0.82rem; font-weight:800; }
+  .toggle { width:34px; height:20px; border-radius:50px; background:var(--accent); position:relative; flex-shrink:0; }
+  .toggle::after { content:''; position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:#fff; }
+  /* password tabs */
+  .tabs { display:flex; gap:6px; overflow:hidden; }
+  .tab { font-size:0.6rem; font-weight:700; padding:5px 10px; border-radius:50px; background:var(--surface); border:1px solid var(--border); color:var(--muted); white-space:nowrap; }
+  .tab.on { background:var(--accent-l); color:var(--accent2); border-color:rgba(232,131,58,.3); }
+  .grp-h { font-size:0.62rem; font-weight:700; color:var(--muted); display:flex; align-items:center; gap:5px; margin:2px 0; }
+  .logo-badge { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:0.85rem; font-weight:800; color:#fff; flex-shrink:0; }
 
-    .btn-secondary {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 13px 26px;
-      background: transparent; color: var(--c-text);
-      border: 1.5px solid var(--c-border);
-      border-radius: 50px; font-weight: 500; font-size: 0.95rem;
-      text-decoration: none; transition: border-color .2s, background .2s;
-    }
-    .btn-secondary:hover { border-color: var(--c-accent); color: var(--c-accent2); }
+  /* SECTION */
+  section { padding:80px 0; }
+  .kicker { font-size:0.74rem; font-weight:700; letter-spacing:0.13em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+  .sec-head { text-align:center; max-width:660px; margin:0 auto; }
+  .sec-head h2 { font-size:clamp(1.9rem,4.2vw,3rem); font-weight:800; letter-spacing:-0.035em; line-height:1.05; text-wrap:balance; }
+  .sec-head p { color:var(--muted); font-size:1.05rem; margin-top:14px; max-width:52ch; margin-inline:auto; }
 
-    /* ── STATS BAR ── */
-    .stats-bar {
-      display: flex; align-items: center; justify-content: center;
-      flex-wrap: wrap; gap: 0;
-      background: var(--c-surface);
-      border-top: 1px solid var(--c-border);
-      border-bottom: 1px solid var(--c-border);
-    }
-    .stat {
-      text-align: center;
-      padding: 36px 48px;
-      border-right: 1px solid var(--c-border);
-    }
-    .stat:last-child { border-right: none; }
-    .stat-n { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
-    .stat-l { font-size: 0.82rem; color: var(--c-muted); margin-top: 3px; }
+  /* BANDS */
+  .band { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:60px 0; }
+  .band.rev .band-copy { order:2; }
+  .band-copy .p-eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px; }
+  .band-copy h3 { font-size:clamp(1.7rem,3.4vw,2.4rem); font-weight:800; letter-spacing:-0.03em; line-height:1.08; margin-bottom:16px; text-wrap:balance; }
+  .band-copy > p { color:var(--muted); font-size:1.05rem; max-width:44ch; margin-bottom:22px; }
+  .mini-list { list-style:none; display:flex; flex-direction:column; gap:11px; }
+  .mini-list li { display:flex; gap:11px; align-items:flex-start; font-size:0.94rem; color:var(--text); }
+  .mini-list li b { font-weight:600; }
+  .mini-list .ck { flex-shrink:0; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; color:#fff; margin-top:2px; }
+  .band-visual { display:flex; justify-content:center; }
 
-    /* ── SECTION ── */
-    section { padding: 96px 24px; max-width: 1120px; margin: 0 auto; }
-    .section-label {
-      display: inline-block;
-      font-size: 0.72rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.12em;
-      color: var(--c-accent); margin-bottom: 14px;
-    }
-    h2 {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 700; letter-spacing: -0.03em;
-      line-height: 1.1; margin-bottom: 16px;
-      color: var(--c-text);
-    }
-    .section-intro {
-      font-size: 1.05rem; color: var(--c-muted);
-      max-width: 540px; margin-bottom: 56px;
-      font-weight: 300; line-height: 1.7;
-    }
+  /* AGENTS */
+  .agents { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:44px; }
+  .agent { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:30px 26px; box-shadow:var(--shadow); transition:transform .2s,box-shadow .2s; position:relative; overflow:hidden; }
+  .agent::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--ac,var(--accent)); }
+  .agent:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
+  .agent .a-ic { font-size:1.9rem; margin-bottom:14px; }
+  .agent h4 { font-size:1.12rem; font-weight:800; letter-spacing:-0.02em; margin-bottom:9px; }
+  .agent p { font-size:0.9rem; color:var(--muted); line-height:1.65; }
+  .agent .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+  .agent .tag { font-size:0.68rem; font-weight:600; color:var(--muted); background:var(--bg2); border:1px solid var(--border); padding:3px 9px; border-radius:50px; }
 
-    /* ── AGENTS GRID ── */
-    .agents-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-    }
-    .agent-card {
-      background: var(--c-surface);
-      padding: 36px 32px;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--c-border);
-      box-shadow: var(--shadow);
-      transition: transform .2s, box-shadow .2s;
-    }
-    .agent-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-    .agent-card-top {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
-    }
-    .agent-num {
-      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.1em; color: var(--c-muted);
-    }
-    .agent-icon { font-size: 2rem; }
-    .agent-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.02em; }
-    .agent-card p { font-size: 0.92rem; color: var(--c-muted); line-height: 1.7; font-weight: 300; }
-    .agent-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 20px; }
-    .tag {
-      padding: 4px 11px;
-      background: var(--c-bg2);
-      border: 1px solid var(--c-border);
-      border-radius: 50px;
-      font-size: 0.73rem; color: var(--c-muted); font-weight: 500;
-    }
-    .agent-card.c-orange { border-top: 3px solid var(--c-accent); }
-    .agent-card.c-green  { border-top: 3px solid var(--c-green); }
-    .agent-card.c-blue   { border-top: 3px solid var(--c-blue); }
-    .agent-card.c-amber  { border-top: 3px solid var(--c-amber); }
+  /* GRID SM */
+  .grid-sm { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-top:44px; }
+  .cell { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:22px; transition:border-color .2s,transform .2s; }
+  .cell:hover { border-color:rgba(232,131,58,.35); transform:translateY(-2px); }
+  .cell .c-ic { font-size:1.4rem; }
+  .cell h5 { font-size:0.95rem; font-weight:700; margin:10px 0 6px; }
+  .cell p { font-size:0.83rem; color:var(--muted); line-height:1.55; }
 
-    /* ── PROACTIVE ── */
-    .proactive-wrap {
-      background: var(--c-bg2);
-      border-radius: var(--radius-lg);
-      padding: 64px 56px;
-      display: grid; gap: 56px;
-      grid-template-columns: 1fr 1fr;
-      align-items: center;
-      border: 1px solid var(--c-border);
-    }
-    .proactive-wrap h2 { margin-bottom: 14px; }
-    .proactive-wrap > div > p { color: var(--c-muted); font-weight: 300; line-height: 1.75; }
-    .proactive-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-    .proactive-item {
-      display: flex; align-items: flex-start; gap: 16px;
-      padding: 18px 22px;
-      background: var(--c-surface);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--c-border);
-      box-shadow: var(--shadow);
-    }
-    .proactive-item-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
-    .proactive-item-text strong { display: block; font-size: 0.92rem; font-weight: 600; margin-bottom: 3px; }
-    .proactive-item-text span { font-size: 0.82rem; color: var(--c-muted); font-weight: 300; line-height: 1.5; }
+  /* PLANS */
+  .plans { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:44px; align-items:stretch; }
+  .plan { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); padding:30px 26px; box-shadow:var(--shadow); position:relative; }
+  .plan.hot { border-color:var(--accent); box-shadow:0 10px 44px rgba(232,131,58,.2); }
+  .plan .badge { position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:4px 13px; border-radius:50px; white-space:nowrap; }
+  .plan .pn { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--muted); margin-bottom:12px; }
+  .plan .pp { font-size:2.5rem; font-weight:800; letter-spacing:-0.02em; line-height:1; }
+  .plan .pp small { font-size:0.95rem; font-weight:400; color:var(--muted); }
+  .plan .psub { font-size:0.8rem; color:var(--muted); margin-top:5px; }
+  .plan hr { border:none; border-top:1px solid var(--border); margin:20px 0; }
+  .plan ul { list-style:none; display:flex; flex-direction:column; gap:9px; }
+  .plan li { display:flex; gap:9px; font-size:0.86rem; color:var(--muted); }
+  .plan li b { color:var(--text); font-weight:700; }
+  .plan-note { margin-top:36px; text-align:center; font-size:0.85rem; color:var(--muted); max-width:60ch; margin-inline:auto; }
+  .plan-note b { color:var(--text); }
 
-    /* ── FEATURES ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-    }
-    .feature-item {
-      padding: 26px;
-      background: var(--c-surface);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--c-border);
-      box-shadow: var(--shadow);
-      transition: border-color .2s;
-    }
-    .feature-item:hover { border-color: rgba(232,131,58,0.3); }
-    .feature-icon { font-size: 1.5rem; margin-bottom: 12px; display: block; }
-    .feature-item h4 { font-size: 0.97rem; font-weight: 600; margin-bottom: 7px; }
-    .feature-item p  { font-size: 0.85rem; color: var(--c-muted); line-height: 1.6; font-weight: 300; }
+  /* GUIDE CARD */
+  .guide-card { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:26px 32px; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-lg); text-decoration:none; box-shadow:var(--shadow); transition:border-color .2s,box-shadow .2s; }
+  .guide-card:hover { border-color:rgba(232,131,58,.4); box-shadow:var(--shadow-lg); }
 
-    /* ── CTA BOTTOM ── */
-    .cta-section {
-      text-align: center; padding: 96px 24px;
-      background: var(--c-accent-l);
-      border-radius: var(--radius-lg);
-      max-width: 1120px; margin: 0 auto 80px;
-      border: 1px solid rgba(232,131,58,0.15);
-    }
-    .cta-section h2 { max-width: 600px; margin: 0 auto 16px; }
-    .cta-section p { color: var(--c-muted); margin-bottom: 36px; font-weight: 300; }
+  /* FINAL + FOOTER */
+  .final { text-align:center; background:var(--accent-l); border:1px solid rgba(232,131,58,.16); border-radius:var(--r-lg); padding:72px 24px; }
+  .final h2 { font-size:clamp(1.9rem,4vw,2.8rem); font-weight:800; letter-spacing:-0.03em; max-width:18ch; margin:0 auto 14px; text-wrap:balance; }
+  .final p { color:var(--muted); margin-bottom:30px; }
+  footer { border-top:1px solid var(--border); margin-top:70px; padding:34px 0; }
+  .foot { display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px; align-items:center; font-size:0.84rem; color:var(--muted); }
+  .foot a { color:var(--muted); text-decoration:none; }
+  .foot a:hover { color:var(--accent); }
+  .foot-links { display:flex; gap:20px; flex-wrap:wrap; }
+  .foot-social { display:flex; gap:12px; }
+  .foot-social a { width:34px; height:34px; border-radius:8px; background:var(--border); display:grid; place-items:center; color:var(--muted); transition:background .2s,color .2s; }
+  .foot-social a:hover { background:var(--accent); color:#fff; }
 
-    /* ── FOOTER ── */
-    footer {
-      border-top: 1px solid var(--c-border);
-      padding: 36px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 16px;
-      max-width: 1120px; margin: 0 auto;
-    }
-    footer p { font-size: 0.83rem; color: var(--c-muted); }
-    footer a { color: var(--c-muted); text-decoration: none; transition: color .2s; }
-    footer a:hover { color: var(--c-accent); }
-    .footer-links { display: flex; gap: 24px; }
-    .footer-social { display: flex; gap: 14px; align-items: center; }
-    .footer-social a { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: var(--c-border); color: var(--c-muted); transition: background .2s, color .2s; }
-    .footer-social a:hover { background: var(--c-accent); color: #fff; }
+  .rv { opacity:0; transform:translateY(26px); transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1); }
+  .rv.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){ .rv{opacity:1;transform:none;transition:none} .dot{animation:none} }
 
-    /* ── PLANS ── */
-    .plans-section {
-      max-width: 1120px; margin: 0 auto;
-      padding: 80px 40px;
-    }
-    .plans-section .section-label { display: block; margin-bottom: 12px; }
-    .plans-section > h2 { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
-    .plans-section > p { color: var(--c-muted); font-weight: 300; margin-bottom: 48px; font-size: 1.02rem; }
-    .plans-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      align-items: stretch;
-    }
-    .plan-card {
-      background: var(--c-surface);
-      border: 1.5px solid var(--c-border);
-      border-radius: var(--radius-lg);
-      padding: 32px 28px;
-      box-shadow: var(--shadow);
-      position: relative;
-      transition: box-shadow .2s, border-color .2s;
-    }
-    .plan-card:hover { box-shadow: var(--shadow-lg); border-color: rgba(232,131,58,0.25); }
-    .plan-card.featured {
-      border-color: var(--c-accent);
-      box-shadow: 0 8px 40px rgba(232,131,58,0.18);
-    }
-    .plan-badge {
-      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-      background: var(--c-accent); color: #fff;
-      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-      padding: 4px 14px; border-radius: 50px;
-      white-space: nowrap;
-    }
-    .plan-name { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-muted); margin-bottom: 16px; }
-    .plan-price { font-size: 2.6rem; font-weight: 700; letter-spacing: -0.01em; color: var(--c-text); line-height: 1; margin-bottom: 4px; }
-    .plan-price span { font-size: 1rem; font-weight: 400; color: var(--c-muted); }
-    .plan-sub { font-size: 0.82rem; color: var(--c-muted); font-weight: 300; margin-bottom: 24px; }
-    .plan-trial {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.78rem; font-weight: 600; color: var(--c-green, #2e9e6b);
-      background: rgba(46,158,107,0.1); border: 1px solid rgba(46,158,107,0.2);
-      padding: 4px 12px; border-radius: 50px; margin-bottom: 24px;
-    }
-    .plan-divider { border: none; border-top: 1px solid var(--c-border); margin: 20px 0; }
-    .plan-features { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-    .plan-features li {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: 0.88rem; color: var(--c-muted); font-weight: 300; line-height: 1.5;
-    }
-    .plan-features li .fi { flex-shrink: 0; font-size: 0.9rem; margin-top: 1px; }
-    .plan-features li strong { color: var(--c-text); font-weight: 600; }
-    .plan-note {
-      margin-top: 48px; text-align: center;
-      font-size: 0.88rem; color: var(--c-muted); font-weight: 300;
-    }
-    .plan-note strong { color: var(--c-text); }
-
-    /* ── PLANS ANCHOR BTN ── */
-    .plans-anchor-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 11px 24px;
-      background: var(--c-surface); color: var(--c-text);
-      border: 1.5px solid var(--c-border);
-      border-radius: 50px; font-weight: 600; font-size: 0.88rem;
-      text-decoration: none; transition: border-color .2s, color .2s;
-    }
-    .plans-anchor-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
-
-    /* ── DIVIDER ── */
-    .divider { border: none; border-top: 1px solid var(--c-border); max-width: 1120px; margin: 0 auto; }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 900px) {
-      .hero { grid-template-columns: 1fr; }
-      .hero-content { padding: 100px 28px 48px; }
-      .hero-image-wrap { height: 60vw; min-height: 280px; }
-      .hero-image-wrap::before {
-        background: linear-gradient(to bottom, var(--c-bg) 0%, transparent 25%),
-                    linear-gradient(to top, var(--c-bg) 0%, transparent 25%);
-      }
-      .proactive-wrap { grid-template-columns: 1fr; padding: 40px 28px; }
-      .stat { padding: 28px 28px; }
-    }
-    @media (max-width: 900px) {
-      .plans-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
-    }
-    @media (max-width: 768px) {
-      nav { padding: 14px 20px; }
-      .plans-anchor-btn { display: none; }
-      section { padding: 60px 20px; }
-      .plans-section { padding: 60px 20px; }
-      .stats-bar { flex-wrap: wrap; }
-      .stat { border-right: none; border-bottom: 1px solid var(--c-border); width: 50%; }
-    }
-  </style>
+  @media (max-width:860px) {
+    .band { grid-template-columns:1fr; gap:34px; padding:44px 0; }
+    .band.rev .band-copy { order:0; }
+    .device.tilt,.band.rev .device.tilt { transform:none; }
+    .plans { grid-template-columns:1fr; max-width:400px; margin-inline:auto; }
+    section { padding:56px 0; }
+  }
+</style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav>
-    <a class="nav-logo" href="#">
-      <img src="icon.png" alt="KidBox">
-<span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
-    </a>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <a class="plans-anchor-btn" href="#plans">💳 Subscription plans</a>
-      <a class="nav-guide" href="guide-en.html">📖 Guide</a>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;">
-        <a href="index.html" onclick="localStorage.setItem('kidbox_lang','it')" style="color:var(--c-muted);text-decoration:none;">IT</a>
-        <span style="color:var(--c-muted)">|</span>
-        <a href="index-en.html" onclick="localStorage.setItem('kidbox_lang','en')" style="color:var(--c-accent);text-decoration:none;">EN</a>
-      </div>
+<nav>
+  <a class="logo" href="#top"><img src="icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
+  <div class="nav-r">
+    <a class="nav-lnk nav-hide" href="#prodotti">Products</a>
+    <a class="nav-lnk nav-hide" href="#ai">AI Intelligence</a>
+    <a class="nav-lnk nav-hide" href="#prezzi">Pricing</a>
+    <a class="nav-lnk nav-hide" href="guide-en.html">Guide</a>
+    <div class="nav-lang nav-hide">
+      <a href="index.html" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a>
+      <span style="color:var(--muted)">|</span>
+      <a href="index-en.html" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a>
     </div>
-  </nav>
+    <button class="theme-btn" id="tg" aria-label="Toggle theme">◐</button>
+    <a class="nav-cta" href="#scarica">Download free</a>
+  </div>
+</nav>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-content">
-      <img class="hero-app-icon" src="icon.png" alt="KidBox">
-      <div class="badge">
-        <span class="badge-dot"></span>
-        Five AI agents · Always in Italian
+<div id="top" class="hero">
+  <div class="hero-glow"></div>
+  <span class="eyebrow"><span class="dot"></span> Five AI agents · Made for families</span>
+  <h1>Your whole family,<br><span class="g">in one app.</span></h1>
+  <p>Health, documents, chat, travel, location and passwords — organized in one place, with AI agents that work for you even when the app is closed.</p>
+  <div class="hero-cta">
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing-MetaAds-Landin&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
+  </div>
+  <div class="hero-stage rv">
+    <div class="device sm"><div class="screen"><div class="notch"></div>
+      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Good morning, Vitto</div><div class="scr-h">Your family</div></div>
+      <div class="scr-body">
+        <div class="dash">
+          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Health</div><div class="td">Visits &amp; vaccines</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documents</div><div class="td">Important papers</div></div></div>
+          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Family</div></div></div>
+          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Location</div><div class="td">Where everyone is</div></div></div>
+          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Travel</div><div class="td">AI itineraries</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Passwords</div><div class="td">Credentials</div></div></div>
+        </div>
       </div>
-      <h1>The family<br>organized.<br>Thanks to <em>AI</em>.</h1>
-      <p class="hero-sub">KidBox brings health, planning, travel, documents and family memory together in a single app — with AI agents that work for you, even when the app is closed.</p>
-      <div class="cta-group">
-        <a class="appstore-badge" href="https://apps.apple.com/us/app/kidbox/id6761055375" target="_blank" rel="noopener">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-          <div class="appstore-badge-inner">
-            <span class="appstore-badge-sub">Download on the</span>
-            <span class="appstore-badge-main">App Store</span>
-          </div>
-        </a>
-        <a class="btn-secondary" href="#agents">Discover the agents →</a>
-      </div>
-    </div>
-    <div class="hero-image-wrap">
-      <img
-        src="https://images.pexels.com/photos/4609049/pexels-photo-4609049.jpeg?auto=compress&cs=tinysrgb&w=1200&fit=crop&h=900"
-        alt="Happy family together"
-        loading="eager"
-      >
-    </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<section id="prodotti" class="wrap">
+  <div class="sec-head rv">
+    <div class="kicker">The products</div>
+    <h2>Everything about family life, rethought.</h2>
+    <p>Not a loose bundle of features, but tools that know each other and share the same context.</p>
   </div>
 
-  <!-- STATS -->
-  <div class="stats-bar">
-    <div class="stat">
-      <div class="stat-n" style="color:var(--c-accent)">5</div>
-      <div class="stat-l">Specialized AI agents</div>
-    </div>
-    <div class="stat">
-      <div class="stat-n" style="color:var(--c-green)">100%</div>
-      <div class="stat-l">In Italian</div>
-    </div>
-    <div class="stat">
-      <div class="stat-n" style="color:var(--c-blue)">E2E</div>
-      <div class="stat-l">End-to-end encryption</div>
-    </div>
-    <div class="stat">
-      <div class="stat-n" style="color:var(--c-amber)">0</div>
-      <div class="stat-l">Additional apps needed</div>
-    </div>
-  </div>
-
-  <!-- AGENTS -->
-  <section id="agents">
-    <div class="section-label">The AI agents</div>
-    <h2>Five specialists.<br>One single app.</h2>
-    <p class="section-intro">Each agent knows your family, updates in real time and takes concrete action — it doesn't just answer questions.</p>
-    <div class="agents-grid">
-      <div class="agent-card c-orange">
-        <div class="agent-card-top">
-          <span class="agent-icon">🧠</span>
-          <span class="agent-num">Agent 1</span>
-        </div>
-        <h3>L'Assistente di Famiglia</h3>
-        <p>Talk to it like a personal assistant who knows every detail about your family. It knows what's on the calendar, the children's medications, the month's expenses and the tickets in the wallet. And it doesn't just answer: when you ask it to create an event or add a reminder, it does so directly.</p>
-        <div class="agent-tags">
-          <span class="tag">Calendar</span>
-          <span class="tag">Todo</span>
-          <span class="tag">Expenses</span>
-          <span class="tag">Shopping list</span>
-          <span class="tag">Automatic actions</span>
-        </div>
-      </div>
-      <div class="agent-card c-green">
-        <div class="agent-card-top">
-          <span class="agent-icon">🩺</span>
-          <span class="agent-num">Agent 2</span>
-        </div>
-        <h3>Il Consulente di Salute</h3>
-        <p>For every family member, a medical assistant who knows appointments, tests, ongoing treatments, vaccines and uploaded reports. Ask questions in plain language and receive clear answers, designed for a parent — not a doctor.</p>
-        <div class="agent-tags">
-          <span class="tag">Appointments</span>
-          <span class="tag">Tests</span>
-          <span class="tag">Vaccines</span>
-          <span class="tag">PDF reports</span>
-          <span class="tag">Treatments</span>
-        </div>
-      </div>
-      <div class="agent-card c-blue">
-        <div class="agent-card-top">
-          <span class="agent-icon">✈️</span>
-          <span class="agent-num">Agent 3</span>
-        </div>
-        <h3>Il Pianificatore di Viaggi</h3>
-        <p>Tell it where you want to go, with whom and for how many days. The agent already knows your children's ages and any health conditions. It generates a complete itinerary, day by day, tailored to your family.</p>
-        <div class="agent-tags">
-          <span class="tag">Personalized itineraries</span>
-          <span class="tag">Family-friendly</span>
-          <span class="tag">Regenerate days</span>
-        </div>
-      </div>
-      <div class="agent-card c-amber">
-        <div class="agent-card-top">
-          <span class="agent-icon">⚡</span>
-          <span class="agent-num">Agent 4</span>
-        </div>
-        <h3>La Mente Proattiva</h3>
-        <p>Works for you even when the app is closed. Every morning a briefing with appointments, medications, scheduled vaccines, vehicle deadlines, home payments and children's birthdays. Every week a recap. Every month a children's health analysis with patterns and signals to watch.</p>
-        <div class="agent-tags">
-          <span class="tag">Daily briefing</span>
-          <span class="tag">Weekly recap</span>
-          <span class="tag">Monthly health analysis</span>
-          <span class="tag">Vehicle deadlines</span>
-          <span class="tag">Birthdays</span>
-        </div>
-      </div>
-
-      <div class="agent-card" style="border-top: 3px solid #7c5cbf;">
-        <div class="agent-card-top">
-          <span class="agent-icon">🔍</span>
-          <span class="agent-num">Agent 5</span>
-        </div>
-        <h3>Document Intelligence</h3>
-        <p>Import a document — an invoice, a prescription, a medical report, a fine — and the AI reads it and proposes concrete actions: adds an expense, creates an event, records a visit, sets a reminder or renames the file. You confirm, KidBox does the rest.</p>
-        <div class="agent-tags">
-          <span class="tag">PDFs and images</span>
-          <span class="tag">Automatic actions</span>
-          <span class="tag">Expenses</span>
-          <span class="tag">Medical visits</span>
-          <span class="tag">Deadlines</span>
-          <span class="tag">Opt-in</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <hr class="divider">
-
-  <!-- PROACTIVE -->
-  <section>
-    <div class="proactive-wrap">
-      <div>
-        <div class="section-label">Always one step ahead</div>
-        <h2>It doesn't wait for you to ask.</h2>
-        <p>KidBox monitors your family's life in the background and brings you the right information at the right moment — without you needing to open the app or remember to ask.</p>
-      </div>
-      <ul class="proactive-list">
-        <li class="proactive-item">
-          <span class="proactive-item-icon">🌅</span>
-          <div class="proactive-item-text">
-            <strong>Morning briefing</strong>
-            <span>Every morning: appointments, medications, vaccines, vehicle deadlines, home payments and children's birthdays.</span>
-          </div>
-        </li>
-        <li class="proactive-item">
-          <span class="proactive-item-icon">📊</span>
-          <div class="proactive-item-text">
-            <strong>Weekly recap</strong>
-            <span>Every Monday, a summary of how the week went and what's ahead.</span>
-          </div>
-        </li>
-        <li class="proactive-item">
-          <span class="proactive-item-icon">🔬</span>
-          <div class="proactive-item-text">
-            <strong>Monthly health analysis</strong>
-            <span>Once a month the AI analyses your children's medical history and flags recurring patterns.</span>
-          </div>
-        </li>
+  <!-- HEALTH -->
+  <div class="band rv">
+    <div class="band-copy">
+      <div class="p-eyebrow" style="color:var(--green)">🩺 Health &amp; Pediatrics</div>
+      <h3>Your family's medical record, always with you.</h3>
+      <p>For every child and adult: visits, tests, vaccines, ongoing treatments and reports. Organized, encrypted and readable by a parent — not a doctor.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--green)">✓</span><span><b>Visits, vaccines and tests</b> for every member</span></li>
+        <li><span class="ck" style="background:var(--green)">✓</span><span>PDF reports attached and <b>read by AI</b></span></li>
+        <li><span class="ck" style="background:var(--green)">✓</span><span>Monthly analysis with <b>patterns to watch</b></span></li>
       </ul>
     </div>
-  </section>
-
-  <hr class="divider">
-
-  <!-- FEATURES -->
-  <section>
-    <div class="section-label">And much more</div>
-    <h2>Much more than a diary.</h2>
-    <p class="section-intro">Beyond the AI agents, KidBox is a complete platform for family life — all encrypted, all synchronized.</p>
-    <div class="features-grid">
-      <div class="feature-item"><span class="feature-icon">📅</span><h4>Shared calendar</h4><p>All family appointments synchronized in real time across every device.</p></div>
-      <div class="feature-item"><span class="feature-icon">🏥</span><h4>Health records</h4><p>Visits, tests, vaccines, treatments and reports for children and adults — all in one place.</p></div>
-      <div class="feature-item"><span class="feature-icon">🛒</span><h4>Shopping list</h4><p>Lists shared in real time. The AI fills them for you on simple request.</p></div>
-      <div class="feature-item"><span class="feature-icon">💰</span><h4>Family expenses</h4><p>Track expenses by category and keep the family budget under control.</p></div>
-      <div class="feature-item"><span class="feature-icon">🔐</span><h4>Secure passwords</h4><p>Password management with autofill, breach verification and end-to-end encryption.</p></div>
-      <div class="feature-item"><span class="feature-icon">🎟️</span><h4>Family wallet</h4><p>Tickets, loyalty cards, digital documents — always at hand.</p></div>
-      <div class="feature-item"><span class="feature-icon">💬</span><h4>Family chat</h4><p>Private and group messages for the whole family, encrypted and always synchronized.</p></div>
-      <div class="feature-item"><span class="feature-icon">✅</span><h4>Todo &amp; Routines</h4><p>To-do lists, daily routines and shared reminders with the whole family.</p></div>
-      <div class="feature-item"><span class="feature-icon">📄</span><h4>Documents</h4><p>Archive and share important documents — certificates, reports, contracts — always at hand.</p></div>
-      <div class="feature-item"><span class="feature-icon">📸</span><h4>Family photos</h4><p>Shared albums to keep your best memories, accessible from all devices.</p></div>
-      <div class="feature-item"><span class="feature-icon">🐾</span><h4>Pets</h4><p>Profiles and vet visits for your animals, integrated into family life.</p></div>
-      <div class="feature-item"><span class="feature-icon">🏠</span><h4>Home &amp; vehicles</h4><p>Maintenance, payments and deadlines for the home and cars — nothing forgotten.</p></div>
-      <div class="feature-item"><span class="feature-icon">📍</span><h4>Real-time location</h4><p>Always know where your children and partner are — position shared in real time, only with who you authorize.</p></div>
-      <div class="feature-item"><span class="feature-icon">📝</span><h4>Shared notes</h4><p>Notes, instructions and reminders shared with the family — always synchronized and accessible from all devices.</p></div>
-      <div class="feature-item"><span class="feature-icon">✈️</span><h4>Travel &amp; AI Itineraries</h4><p>Describe your holiday and the AI creates a complete itinerary day by day — flights, hotels, activities and practical tips.</p></div>
-    </div>
-  </section>
-
-  <!-- GUIDE CTA -->
-  <section style="padding: 0 24px 80px; max-width: 1120px; margin: 0 auto;">
-    <a href="guide-en.html" style="display:flex; align-items:center; justify-content:space-between; padding: 28px 36px; background: var(--c-surface); border: 1.5px solid var(--c-border); border-radius: var(--radius-lg); text-decoration:none; box-shadow: var(--shadow); transition: border-color .2s, box-shadow .2s;" onmouseover="this.style.borderColor='rgba(232,131,58,0.4)';this.style.boxShadow='0 8px 48px rgba(180,100,30,0.14)'" onmouseout="this.style.borderColor='rgba(180,120,60,0.12)';this.style.boxShadow='0 2px 20px rgba(180,100,30,0.08)'">
-      <div style="display:flex; align-items:center; gap:16px;">
-        <span style="font-size:2rem">📖</span>
-        <div>
-          <div style="font-size:1rem; font-weight:700; color:#1c1008; margin-bottom:4px;">User manual</div>
-          <div style="font-size:0.88rem; color:rgba(28,16,8,0.5); font-weight:300;">Learn how to use every feature of KidBox — with app screenshots.</div>
+    <div class="band-visual">
+      <div class="device tilt"><div class="screen"><div class="notch"></div>
+        <div class="scr-top"><div class="scr-time">Health · Sofia, age 8</div><div class="scr-h">Medical record</div><div class="scr-sub">Updated today</div></div>
+        <div class="scr-body">
+          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">💉</span><div class="tx"><div class="t1">Hexavalent vaccine</div><div class="t2">Done · booster in 6 months</div></div><span class="pill" style="background:rgba(46,158,107,.14);color:var(--green)">ok</span></div>
+          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">🩺</span><div class="tx"><div class="t1">Pediatric visit</div><div class="t2">Today · 4:30 PM · Dr. Rossi</div></div><span class="rt" style="color:var(--accent)">today</span></div>
+          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">🧪</span><div class="tx"><div class="t1">Blood tests</div><div class="t2">PDF report attached</div></div></div>
+          <div class="row"><span class="ic" style="background:rgba(212,134,10,.14);color:var(--amber)">💊</span><div class="tx"><div class="t1">Vitamin D</div><div class="t2">Every evening after dinner</div></div></div>
         </div>
-      </div>
-      <span style="font-size:1.2rem; color:#e8833a; font-weight:600;">→</span>
-    </a>
-  </section>
-
-  <!-- PLANS -->
-  <section class="plans-section" id="plans">
-    <span class="section-label">Subscriptions</span>
-    <h2>Choose the right plan for your family</h2>
-    <p>The price is per family — a single subscription covers all members. Start free with a 7-day full trial of the Max plan, no credit card required.</p>
-
-    <div class="plans-grid">
-
-      <!-- FREE -->
-      <div class="plan-card">
-        <p class="plan-name">Free</p>
-        <div class="plan-price">€&thinsp;0 <span></span></div>
-        <p class="plan-sub">Free forever</p>
-        <hr class="plan-divider">
-        <ul class="plan-features">
-          <li><span class="fi">✅</span> Children and family profiles</li>
-          <li><span class="fi">✅</span> Visits, tests and vaccines</li>
-          <li><span class="fi">✅</span> Family chat</li>
-          <li><span class="fi">✅</span> Documents and reports</li>
-          <li><span class="fi">✅</span> Shopping list and expenses</li>
-          <li><span class="fi">✅</span> Location sharing</li>
-          <li><span class="fi">✅</span> <strong>200 MB</strong> storage</li>
-          <li><span class="fi">❌</span> <span style="opacity:.5">AI assistant</span></li>
-          <li><span class="fi">❌</span> <span style="opacity:.5">AI travel planner</span></li>
-          <li><span class="fi">❌</span> <span style="opacity:.5">Priority support</span></li>
-        </ul>
-      </div>
-
-      <!-- PRO -->
-      <div class="plan-card featured">
-        <div class="plan-badge">⭐ Most popular</div>
-        <p class="plan-name">Pro</p>
-        <div class="plan-price">€&thinsp;4.99 <span>/ month</span></div>
-        <p class="plan-sub">Per family · automatic renewal</p>
-        <hr class="plan-divider">
-        <ul class="plan-features">
-          <li><span class="fi">✅</span> Everything in Free</li>
-          <li><span class="fi">🧠</span> <strong>AI assistant included</strong></li>
-          <li><span class="fi">✈️</span> <strong>AI travel planner</strong></li>
-          <li><span class="fi">💬</span> <strong>30 AI messages</strong> / day per family</li>
-          <li><span class="fi">☁️</span> <strong>5 GB</strong> storage per family</li>
-          <li><span class="fi">✅</span> All AI agents active</li>
-          <li><span class="fi">❌</span> <span style="opacity:.5">Priority support</span></li>
-        </ul>
-      </div>
-
-      <!-- MAX -->
-      <div class="plan-card">
-        <p class="plan-name">Max</p>
-        <div class="plan-price">€&thinsp;9.99 <span>/ month</span></div>
-        <p class="plan-sub">Per family · automatic renewal</p>
-        <hr class="plan-divider">
-        <ul class="plan-features">
-          <li><span class="fi">✅</span> Everything in Pro</li>
-          <li><span class="fi">✈️</span> <strong>AI travel planner</strong></li>
-          <li><span class="fi">💬</span> <strong>100 AI messages</strong> / day per family</li>
-          <li><span class="fi">☁️</span> <strong>20 GB</strong> storage per family</li>
-          <li><span class="fi">🛟</span> <strong>Priority support</strong></li>
-          <li><span class="fi">🚀</span> Early access to new features</li>
-        </ul>
-      </div>
-
-    </div>
-
-    <p class="plan-note">
-      Subscriptions are managed by the <strong>App Store</strong> (iPhone/iPad/Mac) or <strong>Google Play</strong> (Android) and renew automatically. You can cancel at any time from <strong>Settings → Your Name → Subscriptions</strong> on iOS, or from <strong>Google Play → Subscriptions</strong> on Android. The AI message counter is shared across the entire family and resets every day at midnight.
-    </p>
-  </section>
-
-  <hr class="divider">
-
-  <!-- CTA -->
-  <div class="cta-section" id="download">
-    <div class="section-label">Start today</div>
-    <h2>Your family deserves a great app.</h2>
-    <p>Free to start. No card required.</p>
-    <div class="cta-group" style="justify-content:center">
-      <a class="appstore-badge" href="https://apps.apple.com/us/app/kidbox/id6761055375" target="_blank" rel="noopener">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-        <div class="appstore-badge-inner">
-          <span class="appstore-badge-sub">Download on the</span>
-          <span class="appstore-badge-main">App Store</span>
-        </div>
-      </a>
+      </div></div>
     </div>
   </div>
 
-  <!-- FOOTER -->
-  <footer>
-    <p>© 2026 KidBox · Made with ❤️ in Italy</p>
-    <div class="footer-links">
-      <a href="guide-en.html">Guide</a>
-      <a href="#plans">Plans</a>
-      <a href="privacy-en.html">Privacy</a>
-      <a href="terms-en.html">Terms</a>
-      <a href="support-en.html">Support</a>
-      <a href="data-deletion-en.html">Data Deletion</a>
+  <!-- DOCUMENTS -->
+  <div class="band rev rv">
+    <div class="band-copy">
+      <div class="p-eyebrow" style="color:var(--violet)">📄 Documents</div>
+      <h3>Your family documents, always at hand.</h3>
+      <p>Reports, certificates, contracts, receipts — stored, encrypted and shared with whoever needs them. And AI reads them to suggest concrete actions.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--violet)">✓</span><span>Folders shared with <b>the whole family</b></span></li>
+        <li><span class="ck" style="background:var(--violet)">✓</span><span>Import <b>PDFs and photos</b>, all encrypted</span></li>
+        <li><span class="ck" style="background:var(--violet)">✓</span><span>AI <b>extracts data and suggests actions</b></span></li>
+      </ul>
     </div>
-    <div class="footer-social">
-      <a href="https://www.facebook.com/profile.php?id=61574265148948&locale=it_IT" target="_blank" rel="noopener" aria-label="Facebook">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
-      </a>
-      <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-      </a>
+    <div class="band-visual">
+      <div class="device tilt"><div class="screen"><div class="notch"></div>
+        <div class="scr-top"><div class="scr-time">Documents · 4 folders</div><div class="scr-h">Documents</div><div class="scr-sub">End-to-end encrypted</div></div>
+        <div class="scr-body">
+          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">📁</span><div class="tx"><div class="t1">ID documents</div><div class="t2">IDs, passports</div></div></div>
+          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">📁</span><div class="tx"><div class="t1">Expenses &amp; invoices</div><div class="t2">4 hours ago</div></div></div>
+          <div class="row"><span class="ic" style="background:rgba(124,92,191,.14);color:var(--violet)">🧾</span><div class="tx"><div class="t1">Dentist invoice</div><div class="t2">→ €80 expense logged</div></div><span class="pill" style="background:var(--accent-l);color:var(--accent2)">AI</span></div>
+          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">🚗</span><div class="tx"><div class="t1">Car tax 2026</div><div class="t2">→ deadline added</div></div><span class="pill" style="background:var(--accent-l);color:var(--accent2)">AI</span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="band rv">
+    <div class="band-copy">
+      <div class="p-eyebrow" style="color:var(--accent)">💬 Chat</div>
+      <h3>A chat just for the family.</h3>
+      <p>Private and group messages, end-to-end encrypted, dedicated to managing the kids — without getting lost among a thousand other conversations.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--accent)">✓</span><span><b>End-to-end encryption</b></span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span>Share <b>location, photos and documents</b> in the flow</span></li>
+        <li><span class="ck" style="background:var(--accent)">✓</span><span>Perfect for <b>separated parents</b> too</span></li>
+      </ul>
+    </div>
+    <div class="band-visual">
+      <div class="device tilt"><div class="screen"><div class="notch"></div>
+        <div class="scr-top"><div class="scr-time">🔒 Family chat · online</div><div class="scr-h">Anto &amp; Vitto</div></div>
+        <div class="scr-body" style="gap:7px;">
+          <div class="bub them">Who's taking Sofia to the pediatrician today?</div>
+          <div class="bub me">I'll go at 4:30 👍</div>
+          <div class="chat-map"><div class="pin" style="background:var(--accent);top:24%;left:42%"><span>📍</span></div></div>
+          <div class="bub them">Perfect! I'll send you the prescription</div>
+          <div class="chat-inp"><span style="color:var(--accent);font-weight:800">＋</span> Message…</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- TRAVEL -->
+  <div class="band rev rv">
+    <div class="band-copy">
+      <div class="p-eyebrow" style="color:var(--blue)">✈️ Travel</div>
+      <h3>Tailor-made itineraries, generated by AI.</h3>
+      <p>Tell me where you want to go, with whom and for how many days. The agent already knows your kids' ages and health and builds a complete day-by-day itinerary.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--blue)">✓</span><span>Personalized <b>family-friendly</b> itineraries</span></li>
+        <li><span class="ck" style="background:var(--blue)">✓</span><span>Considers <b>kids' ages and needs</b></span></li>
+        <li><span class="ck" style="background:var(--blue)">✓</span><span>Regenerate individual days with a tap</span></li>
+      </ul>
+    </div>
+    <div class="band-visual">
+      <div class="device tilt"><div class="screen"><div class="notch"></div>
+        <div class="scr-top"><div class="scr-time">Trip · 4 days</div><div class="scr-h">Tuscany with family</div><div class="scr-sub">Generated by AI · Sofia 8, Luca 5</div></div>
+        <div class="scr-body">
+          <div class="row"><span class="ic" style="background:rgba(43,124,184,.14);color:var(--blue)">1️⃣</span><div class="tx"><div class="t1">Florence — kid-sized center</div><div class="t2">Carousel, gelato, quick Duomo</div></div></div>
+          <div class="row"><span class="ic" style="background:rgba(46,158,107,.14);color:var(--green)">2️⃣</span><div class="tx"><div class="t1">Educational farm</div><div class="t2">Animals and outdoor lunch</div></div></div>
+          <div class="row"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">3️⃣</span><div class="tx"><div class="t1">Beach at Castiglione</div><div class="t2">Family-equipped beach</div></div></div>
+          <div class="row"><span class="ic" style="background:rgba(124,92,191,.14);color:var(--violet)">✨</span><div class="tx"><div class="t1">Regenerate day 4</div><div class="t2">New ideas in 3 seconds</div></div></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- LOCATION -->
+  <div class="band rv">
+    <div class="band-copy">
+      <div class="p-eyebrow" style="color:var(--blue)">📍 Location</div>
+      <h3>Always know where your loved ones are.</h3>
+      <p>Real-time location shared with family members — only with those you allow, and only when you want.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--blue)">✓</span><span>Real-time, <b>only with those you allow</b></span></li>
+        <li><span class="ck" style="background:var(--blue)">✓</span><span>Know if the kids have <b>arrived at school</b></span></li>
+        <li><span class="ck" style="background:var(--blue)">✓</span><span>Privacy first: <b>turn it off whenever you want</b></span></li>
+      </ul>
+    </div>
+    <div class="band-visual">
+      <div class="device tilt"><div class="screen"><div class="notch"></div>
+        <div class="scr-top"><div class="scr-time">📍 Location</div><div class="scr-h">Where we are</div></div>
+        <div class="scr-body">
+          <div class="map">
+            <div class="road r1"></div><div class="road r2"></div><div class="road r3"></div>
+            <div class="pin" style="background:var(--accent);top:26%;left:28%"><span>🧒</span></div>
+            <div class="pin" style="background:var(--blue);top:54%;left:62%"><span>👩</span></div>
+          </div>
+          <div class="sheet">
+            <div class="sh-h">The family</div>
+            <div class="row" style="padding:7px 10px"><span class="ic" style="background:var(--accent-l);color:var(--accent2)">🧒</span><div class="tx"><div class="t1">Sofia</div><div class="t2">Manzoni Middle School</div></div><span class="rt" style="color:var(--green)">now</span></div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.72rem;font-weight:600;"><span style="flex:1">Share my location</span><span class="toggle"></span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- PASSWORDS -->
+  <div class="band rev rv">
+    <div class="band-copy">
+      <div class="p-eyebrow" style="color:var(--violet)">🔐 Passwords</div>
+      <h3>Your family credentials, safe.</h3>
+      <p>A shared password manager: the credentials everyone needs in one encrypted place, with autofill and breach monitoring.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:var(--violet)">✓</span><span>Share only <b>what the family needs</b></span></li>
+        <li><span class="ck" style="background:var(--violet)">✓</span><span><b>Autofill</b> and breach checks</span></li>
+        <li><span class="ck" style="background:var(--violet)">✓</span><span><b>End-to-end</b> encryption</span></li>
+      </ul>
+    </div>
+    <div class="band-visual">
+      <div class="device tilt"><div class="screen"><div class="notch"></div>
+        <div class="scr-top"><div class="scr-time">🔐 Passwords</div><div class="scr-h">Credentials</div></div>
+        <div class="scr-body">
+          <div class="tabs"><span class="tab on">All</span><span class="tab">Favorites</span><span class="tab">Shared</span><span class="tab">Only me</span></div>
+          <div class="grp-h">🏠 Family · 3</div>
+          <div class="row"><span class="logo-badge" style="background:#232f3e">a</span><div class="tx"><div class="t1">Amazon</div><div class="t2">family@gmail.com</div></div><span style="color:var(--muted)">›</span></div>
+          <div class="row"><span class="logo-badge" style="background:#e50914">N</span><div class="tx"><div class="t1">Netflix</div><div class="t2">family@gmail.com</div></div><span style="color:var(--muted)">›</span></div>
+          <div class="row"><span class="logo-badge" style="background:#0a84ff">☰</span><div class="tx"><div class="t1">School portal</div><div class="t2">Sofia's register</div></div><span style="color:var(--muted)">›</span></div>
+          <div class="grp-h">🔒 Only me · 1</div>
+          <div class="row"><span class="logo-badge" style="background:var(--green)">B</span><div class="tx"><div class="t1">Online banking</div><div class="t2">•••• protected</div></div><span style="color:var(--muted)">›</span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- MORE -->
+<section class="wrap" style="padding-top:0;">
+  <div class="sec-head rv"><h2 style="font-size:clamp(1.5rem,3vw,2rem)">And more — everything a family uses every day.</h2></div>
+  <div class="grid-sm rv">
+    <div class="cell"><div class="c-ic">📅</div><h5>Shared calendar</h5><p>All family events, synced in real time across every device.</p></div>
+    <div class="cell"><div class="c-ic">💰</div><h5>Family expenses</h5><p>Track spending by category and keep the budget under control.</p></div>
+    <div class="cell"><div class="c-ic">🛒</div><h5>Shopping list</h5><p>Shared in real time. AI fills it in on request.</p></div>
+    <div class="cell"><div class="c-ic">🏠</div><h5>Home &amp; Vehicles</h5><p>Maintenance, taxes and deadlines — nothing forgotten.</p></div>
+    <div class="cell"><div class="c-ic">📝</div><h5>Shared notes</h5><p>Notes and reminders synced with the family.</p></div>
+    <div class="cell"><div class="c-ic">🎟️</div><h5>Family wallet</h5><p>Tickets, loyalty cards and digital documents.</p></div>
+    <div class="cell"><div class="c-ic">✅</div><h5>Todos &amp; Routines</h5><p>Tasks and daily routines shared with everyone.</p></div>
+    <div class="cell"><div class="c-ic">📸</div><h5>Family photos</h5><p>Shared albums to keep your best memories.</p></div>
+    <div class="cell"><div class="c-ic">🐾</div><h5>Pets</h5><p>Profiles and vet visits, integrated into family life.</p></div>
+    <div class="cell"><div class="c-ic">👨‍👩‍👧</div><h5>Family profiles</h5><p>A profile for each member, with their own data.</p></div>
+  </div>
+</section>
+
+<!-- AI -->
+<section id="ai" style="background:var(--bg2); border-block:1px solid var(--border);">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="kicker">KidBox Intelligence</div>
+      <h2>Five AI agents that work for you.</h2>
+      <p>Not a generic chatbot: five specialists that know your family and take concrete action.</p>
+    </div>
+    <div class="agents rv">
+      <div class="agent" style="--ac:var(--accent)"><div class="a-ic">🧠</div><h4>The Family Assistant</h4><p>Knows your calendar, medicines, expenses and wallet. Ask it to create an event or a reminder and it actually does it.</p><div class="tags"><span class="tag">Calendar</span><span class="tag">Todos</span><span class="tag">Expenses</span><span class="tag">Actions</span></div></div>
+      <div class="agent" style="--ac:var(--green)"><div class="a-ic">🩺</div><h4>The Health Advisor</h4><p>For every member: visits, tests, treatments, vaccines and reports. Clear answers made for a parent.</p><div class="tags"><span class="tag">Visits</span><span class="tag">Vaccines</span><span class="tag">Reports</span></div></div>
+      <div class="agent" style="--ac:var(--blue)"><div class="a-ic">✈️</div><h4>The Travel Planner</h4><p>Tell me where and with whom: it knows the kids' ages and health and generates a tailor-made itinerary, day by day.</p><div class="tags"><span class="tag">Itineraries</span><span class="tag">Family-friendly</span></div></div>
+      <div class="agent" style="--ac:var(--amber)"><div class="a-ic">⚡</div><h4>The Proactive Mind</h4><p>Works even when the app is closed: morning briefing, weekly recap and monthly analysis of the children's health.</p><div class="tags"><span class="tag">Briefing</span><span class="tag">Recap</span><span class="tag">Deadlines</span></div></div>
+      <div class="agent" style="--ac:var(--violet)"><div class="a-ic">🔍</div><h4>Document Intelligence</h4><p>Import an invoice, a report, a fine: AI reads it and suggests actions. You confirm, KidBox does the rest.</p><div class="tags"><span class="tag">PDF &amp; photos</span><span class="tag">Expenses</span><span class="tag">Deadlines</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDE -->
+<section class="wrap" style="padding-block:56px;">
+  <a href="guide-en.html" class="guide-card rv">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <span style="font-size:1.9rem">📖</span>
+      <div><div style="font-weight:800; color:var(--text); margin-bottom:3px;">User guide</div><div style="font-size:0.88rem; color:var(--muted);">Discover how to use every KidBox feature — with app screenshots.</div></div>
+    </div>
+    <span style="color:var(--accent); font-weight:700; font-size:1.2rem;">→</span>
+  </a>
+</section>
+
+<!-- PRICING -->
+<section id="prezzi" class="wrap" style="padding-top:20px;">
+  <div class="sec-head rv">
+    <div class="kicker">Plans</div>
+    <h2>One price per family. Everyone included.</h2>
+    <p>A single subscription covers all members. Start free with a 7-day full trial of the Max plan, no card required.</p>
+  </div>
+  <div class="plans rv">
+    <div class="plan">
+      <div class="pn">Free</div><div class="pp">€&thinsp;0</div><div class="psub">Free forever</div><hr>
+      <ul>
+        <li><b>✓</b> Kids and family profiles</li>
+        <li><b>✓</b> Visits, tests and vaccines</li>
+        <li><b>✓</b> Family chat</li>
+        <li><b>✓</b> Documents and reports</li>
+        <li><b>✓</b> Shopping list and expenses</li>
+        <li><b>✓</b> Location sharing</li>
+        <li><b>✓</b> <b>200 MB</b> storage</li>
+      </ul>
+    </div>
+    <div class="plan hot">
+      <div class="badge">⭐ Most popular</div>
+      <div class="pn">Pro</div><div class="pp">€&thinsp;4.99 <small>/ month</small></div><div class="psub">Per family · auto-renews</div><hr>
+      <ul>
+        <li><b>✓</b> Everything in Free</li>
+        <li><b>🧠</b> <b>AI Assistant included</b></li>
+        <li><b>✈️</b> <b>AI Travel Planner</b></li>
+        <li><b>💬</b> <b>30 AI messages</b> / day</li>
+        <li><b>☁️</b> <b>5 GB</b> storage</li>
+        <li><b>✓</b> All AI agents active</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="pn">Max</div><div class="pp">€&thinsp;9.99 <small>/ month</small></div><div class="psub">Per family · auto-renews</div><hr>
+      <ul>
+        <li><b>✓</b> Everything in Pro</li>
+        <li><b>💬</b> <b>100 AI messages</b> / day</li>
+        <li><b>☁️</b> <b>20 GB</b> storage</li>
+        <li><b>🛟</b> <b>Priority support</b></li>
+        <li><b>🚀</b> Early access to new features</li>
+      </ul>
+    </div>
+  </div>
+  <p class="plan-note">Subscriptions are managed by <b>App Store</b> or <b>Google Play</b> and renew automatically. You can cancel anytime. The AI message counter is shared across the whole family and resets every day.</p>
+</section>
+
+<!-- FINAL -->
+<section id="scarica" class="wrap">
+  <div class="final rv">
+    <div class="kicker">Start today</div>
+    <h2>Your family deserves an app that measures up.</h2>
+    <p>Free to start. No card required.</p>
+    <div class="hero-cta" style="justify-content:center">
+      <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing-MetaAds-Landin&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
+      <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
+    </div>
+  </div>
+  <footer>
+    <div class="foot">
+      <span>© 2026 KidBox · Made with ❤️ in Italy</span>
+      <div class="foot-links">
+        <a href="guide-en.html">Guide</a>
+        <a href="#prezzi">Pricing</a>
+        <a href="privacy-en.html">Privacy</a>
+        <a href="terms-en.html">Terms</a>
+        <a href="support-en.html">Support</a>
+        <a href="data-deletion-en.html">Data Deletion</a>
+      </div>
+      <div class="foot-social">
+        <a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
+        <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+      </div>
     </div>
   </footer>
+</section>
 
+<script>
+  (function(){
+    var tg=document.getElementById('tg');
+    tg&&tg.addEventListener('click',function(){
+      var r=document.documentElement, c=r.getAttribute('data-theme');
+      var dark=c?c==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+      r.setAttribute('data-theme',dark?'light':'dark');
+    });
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:0.12});
+    document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
+  })();
+</script>
 </body>
 </html>

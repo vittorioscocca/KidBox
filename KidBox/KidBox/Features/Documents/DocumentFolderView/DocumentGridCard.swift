@@ -39,7 +39,7 @@ struct DocumentGridCard: View {
                             .background(iconTint, in: RoundedRectangle(cornerRadius: 3))
                             .offset(x: 6, y: 8)
                     }
-                    .frame(width: 72, height: 64)
+                    .frame(width: 72, height: 78)
                     
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
@@ -60,7 +60,7 @@ struct DocumentGridCard: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, 14)
             .padding(.horizontal, 4)
             .scaleEffect(isSelected ? 0.94 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)

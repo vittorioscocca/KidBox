@@ -17,7 +17,7 @@ struct WalletTicketCardView: View {
     /// Altezza "nominale" della card. In modalità stack, la home mostra solo
     /// la porzione superiore (~90pt) per le card non in cima — questo valore
     /// definisce invece la forma completa quando è in cima / in dettaglio.
-    var height: CGFloat = 180
+    var height: CGFloat = 205
 
     var body: some View {
         ZStack(alignment: .topLeading) {
