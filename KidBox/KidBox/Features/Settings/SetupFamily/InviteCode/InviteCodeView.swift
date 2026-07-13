@@ -65,7 +65,7 @@ private struct InviteCodeViewBody: View {
                             Text("Scansiona con l'altro genitore")
                                 .font(.headline)
                             
-                            Text("Condividi questo codice QR. L'altro genitore lo scannerà per unirsi alla famiglia e ricevere automaticamente la chiave di cifratura.")
+                            Text("Condividi questo codice QR. L'altro genitore lo scannerizzerà per unirsi alla famiglia e ricevere automaticamente la chiave di cifratura.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -74,9 +74,6 @@ private struct InviteCodeViewBody: View {
                         
                         ShareLink(item: qrPayload) {
                             Label("Condividi QR", systemImage: "square.and.arrow.up")
-                        }
-                        .onTapGesture {
-                            KBLog.navigation.kbDebug("InviteCode: tap ShareLink")
                         }
                     }
                     .padding(.vertical, 12)

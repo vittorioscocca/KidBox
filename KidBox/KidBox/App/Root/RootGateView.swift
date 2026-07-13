@@ -40,6 +40,11 @@ struct RootGateView: View {
     /// Mostra la Home se onboarding completato **oppure** c’è una famiglia attiva coerente nel DB (nessuna lista selezione dopo join).
     private var shouldShowHome: Bool {
         if coordinator.hasSeenOnboarding { return true }
+        // Percorso "crea": la KBFamily viene inserita localmente già a pagina 4 (e pinnata come
+        // active family) prima della pagina QR. Senza questo guard `pinnedFamilyReadyInStore`
+        // diventa subito true e manderebbe l'utente in Home saltando la pagina del QR.
+        // Resta nel walkthrough finché l'utente non finisce (→ completeOnboarding azzera il flag).
+        if coordinator.isCreatingFamilyInOnboarding { return false }
         return pinnedFamilyReadyInStore || hasAnyLocalFamily
     }
     
@@ -85,8 +90,12 @@ struct RootGateView: View {
             KBLog.navigation.kbInfo("Auth state changed: \(newValue)")
         }
         /// Quando SwiftData riceve la famiglia dopo join ma `hasSeenOnboarding` è ancora false, completa l’onboarding così non si resta bloccati sul walkthrough.
+        /// NB: nel percorso "crea" la KBFamily viene inserita localmente già a pagina 4, prima
+        /// della pagina QR; `isCreatingFamilyInOnboarding` evita che questo auto-complete scatti
+        /// in quel caso e salti la pagina del QR. Resta attivo solo per il flusso join.
         .task(id: families.map(\.id).joined(separator: "|")) {
             guard !coordinator.hasSeenOnboarding,
+                  !coordinator.isCreatingFamilyInOnboarding,
                   hasAnyLocalFamily else { return }
             coordinator.completeOnboarding()
             KBLog.navigation.kbInfo("RootGateView: completeOnboarding after joined family present in store")

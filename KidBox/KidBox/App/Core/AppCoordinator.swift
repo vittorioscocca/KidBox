@@ -47,6 +47,13 @@ final class AppCoordinator: ObservableObject {
     /// true se l'utente ha già completato il walkthrough di benvenuto.
     @Published var hasSeenOnboarding: Bool =
     UserDefaults.standard.bool(forKey: AppCoordinator.onboardingKey)
+
+    /// True mentre l'utente è nel percorso "crea famiglia" dell'onboarding e non ha ancora
+    /// finito la pagina di invito (QR). Impedisce a `RootGateView` di completare l'onboarding
+    /// automaticamente non appena la `KBFamily` appena creata compare in SwiftData — cosa che
+    /// altrimenti farebbe saltare la pagina del QR mandando l'utente dritto in Home.
+    /// In-memory only: si azzera al riavvio (recupero desiderato) e in `completeOnboarding()`.
+    @Published var isCreatingFamilyInOnboarding = false
     
     /// Cached Firebase UID of the current user (if authenticated).
     @Published private(set) var uid: String?
@@ -181,6 +188,7 @@ final class AppCoordinator: ObservableObject {
     
     
     func completeOnboarding() {
+        isCreatingFamilyInOnboarding = false
         UserDefaults.standard.set(true, forKey: Self.onboardingKey)
         hasSeenOnboarding = true
         KBLog.navigation.kbInfo("Onboarding completed")

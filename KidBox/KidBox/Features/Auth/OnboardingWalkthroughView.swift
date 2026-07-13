@@ -266,8 +266,15 @@ struct OnboardingWalkthroughView: View {
             }
         }
         .onAppear { animateIn() }
+        // Segnala a RootGateView che siamo nel percorso "crea": così l'inserimento locale
+        // della KBFamily (che avviene prima ancora di premere "Continua") non fa completare
+        // l'onboarding automaticamente saltando la pagina del QR. Impostato qui, alla scelta
+        // del percorso, così è già attivo prima che parta FamilyCreationService.
+        .onChange(of: familyPath) { _, newPath in
+            coordinator.isCreatingFamilyInOnboarding = (newPath == .create)
+        }
     }
-    
+
     // MARK: - Subviews info pages
     
     private var iconCard: some View {
@@ -895,7 +902,12 @@ private struct CreateFamilyCard: View {
                 userId: Auth.auth().currentUser?.uid ?? ""
             )
             
-            withAnimation { didCreate = true }
+            // Collassa il calendario: una volta creata la famiglia non serve più e,
+            // se resta espanso, l'altezza della card spinge il CTA "Continua" fuori schermo.
+            withAnimation {
+                showDatePicker = false
+                didCreate = true
+            }
             onFamilyCreated(familyId)
             
         } catch {

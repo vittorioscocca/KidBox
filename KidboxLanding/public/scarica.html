@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scarica KidBox</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Meta Pixel -->
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1335685042033994');
+    fbq('track', 'PageView');
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1335685042033994&ev=PageView&noscript=1"/>
+  </noscript>
+  <!-- Fine Meta Pixel -->
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#fdf7f0; --text:#1c1008; --muted:rgba(28,16,8,0.55);
+      --accent:#e8833a; --accent2:#c96a20; --border:rgba(180,120,60,0.14);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#140e08; --text:#f6efe6; --muted:rgba(246,239,230,0.6); --border:rgba(255,180,100,0.12); }
+    }
+    body{
+      font-family:'DM Sans',system-ui,-apple-system,sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:24px; gap:20px;
+    }
+    img.logo{ width:72px; height:72px; border-radius:18px; box-shadow:0 10px 30px rgba(232,131,58,.3); }
+    h1{ font-size:1.3rem; font-weight:700; letter-spacing:-0.02em; }
+    p{ color:var(--muted); font-size:0.92rem; max-width:280px; }
+    .spinner{
+      width:26px; height:26px; border-radius:50%;
+      border:3px solid var(--border); border-top-color:var(--accent);
+      animation:spin .8s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+    .fallback{ display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+    .store{
+      display:inline-flex; align-items:center; gap:10px; padding:13px 22px;
+      background:var(--text); color:var(--bg); border-radius:14px; text-decoration:none;
+      font-weight:700; font-size:0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <img class="logo" src="icon.png" alt="KidBox">
+  <div class="spinner" id="spin"></div>
+  <h1>Ti stiamo portando su KidBox…</h1>
+  <p>Se non vieni reindirizzato automaticamente, scegli il tuo store qui sotto.</p>
+  <div class="fallback" id="fallback" style="display:none">
+    <a class="store" id="apple-link" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=Instagram-Bio&mt=8" target="_blank" rel="noopener">Scarica su App Store</a>
+    <a class="store" id="play-link" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox&referrer=utm_source%3Dinstagram%26utm_medium%3Dbio_link%26utm_campaign%3Dinstagram_organic" target="_blank" rel="noopener">Disponibile su Google Play</a>
+  </div>
+
+  <script>
+    (function(){
+      var ua = navigator.userAgent || navigator.vendor || window.opera;
+      var appleUrl = document.getElementById('apple-link').href;
+      var playUrl = document.getElementById('play-link').href;
+      var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      var isAndroid = /android/i.test(ua);
+
+      if (isIOS) {
+        window.location.replace(appleUrl);
+      } else if (isAndroid) {
+        window.location.replace(playUrl);
+      } else {
+        document.getElementById('spin').style.display = 'none';
+        document.getElementById('fallback').style.display = 'flex';
+        document.querySelector('h1').textContent = 'Scegli il tuo store';
+        document.querySelector('p').textContent = 'Apri KidBox dal tuo telefono per scaricare l\'app.';
+      }
+    })();
+  </script>
+</body>
+</html>

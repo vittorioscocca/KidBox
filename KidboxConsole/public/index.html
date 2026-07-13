@@ -425,12 +425,30 @@ function updateSortHeaders() {
 function renderFamiliesTable(rows) {
   const tbody = document.getElementById('fam-tbody');
   if (!tbody) return;
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessuna famiglia trovata</td></tr>';
+  const filtered = applyTimeFilter(rows, 'updatedAt');
+
+  // ── aggiorna stat card sempre coerenti con la vista filtrata ──
+  let pFree=0, pPro=0, pMax=0;
+  filtered.forEach(r => { if(r.plan==='pro') pPro++; else if(r.plan==='max') pMax++; else pFree++; });
+  setVal('stat-families', fmtNum(filtered.length));
+  setVal('stat-plan-pro', fmtNum(pPro));
+  setVal('stat-plan-max', fmtNum(pMax));
+  _planData = { free: pFree, pro: pPro, max: pMax };
+  drawPie('pie-plans', [
+    { val: pFree, color: 'var(--color-dim-line)' },
+    { val: pPro,  color: 'var(--color-blue)' },
+    { val: pMax,  color: 'var(--color-purple)' },
+  ]);
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nessuna famiglia nel periodo selezionato</td></tr>';
+    renderPagination('fam', 0, 1, 'famGoPage');
     return;
   }
-  const sorted = sortRows(rows, _famSort.col, _famSort.dir);
-  tbody.innerHTML = sorted.map(r => {
+  const sorted = sortRows(filtered, _famSort.col, _famSort.dir);
+  const page   = sorted.slice((_famPage-1)*PAGE_SIZE, _famPage*PAGE_SIZE);
+  renderPagination('fam', sorted.length, _famPage, 'famGoPage');
+  tbody.innerHTML = page.map(r => {
     const email = r.ownerEmail || '—';
     const emailShort = email.length > 28 ? email.slice(0,26)+'…' : email;
     const fnameShort = (r.fname||'—').length > 20 ? (r.fname||'—').slice(0,18)+'…' : (r.fname||'—');
@@ -454,6 +472,123 @@ function renderFamiliesTable(rows) {
   }).join('');
 }
 
+// ── FILTRI TEMPORALI ──────────────────────────────────────────────────────────
+let _timeFilter = { preset: 'max', from: null, to: null };
+const PAGE_SIZE = 10;
+let _famPage  = 1;
+let _userPage = 1;
+
+function getFilterRange() {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  switch (_timeFilter.preset) {
+    case 'today':     return { from: today, to: now };
+    case 'yesterday': { const y=new Date(today); y.setDate(y.getDate()-1); const ye=new Date(today); return {from:y, to:ye}; }
+    case 'week':      { const w=new Date(today); w.setDate(w.getDate()-7); return {from:w, to:now}; }
+    case 'month':     { const m=new Date(today); m.setMonth(m.getMonth()-1); return {from:m, to:now}; }
+    case 'custom':    return { from: _timeFilter.from, to: _timeFilter.to };
+    default:          return { from: null, to: null };
+  }
+}
+
+function applyTimeFilter(rows, dateField) {
+  const { from, to } = getFilterRange();
+  if (!from && !to) return rows;
+  return rows.filter(r => {
+    const d = r[dateField];
+    if (!d) return false;
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById('filter-active-badge');
+  const { from, to } = getFilterRange();
+  if (!from && !to) { badge.style.display='none'; return; }
+  const fmt = d => d.toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  const labels = { today:'Oggi', yesterday:'Ieri', week:'Ultimi 7 giorni', month:'Ultimo mese' };
+  if (_timeFilter.preset !== 'custom') {
+    badge.textContent = labels[_timeFilter.preset] || '';
+  } else {
+    badge.textContent = (from ? fmt(from) : '…') + ' → ' + (to ? fmt(to) : '…');
+  }
+  badge.style.display = 'inline-block';
+}
+
+window.setFilter = function(preset) {
+  _timeFilter = { preset, from: null, to: null };
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const cw = document.getElementById('filter-custom-wrap');
+  if (preset === 'custom') { cw.classList.add('show'); }
+  else { cw.classList.remove('show'); }
+  _famPage  = 1;
+  _userPage = 1;
+  updateFilterBadge();
+  renderFamiliesTable(_familyRows);
+  renderUsersTable(_allUsersRows);
+  updateStatsForFilter();
+};
+
+window.applyCustomFilter = function() {
+  const fromVal = document.getElementById('filter-from').value;
+  const toVal   = document.getElementById('filter-to').value;
+  _timeFilter.from = fromVal ? new Date(fromVal) : null;
+  _timeFilter.to   = toVal   ? new Date(toVal + 'T23:59:59') : null;
+  _famPage  = 1;
+  _userPage = 1;
+  updateFilterBadge();
+  renderFamiliesTable(_familyRows);
+  renderUsersTable(_allUsersRows);
+  updateStatsForFilter();
+};
+
+function renderPagination(prefix, totalRows, currentPage, goFn) {
+  const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+  const wrap = document.getElementById(prefix+'-pagination');
+  const info = document.getElementById(prefix+'-pag-info');
+  const prev = document.getElementById(prefix+'-pag-prev');
+  const next = document.getElementById(prefix+'-pag-next');
+  const pages = document.getElementById(prefix+'-pag-pages');
+
+  if (totalRows === 0) { wrap.style.display='none'; return; }
+  wrap.style.display = 'flex';
+
+  const start = (currentPage-1)*PAGE_SIZE+1;
+  const end   = Math.min(currentPage*PAGE_SIZE, totalRows);
+  info.textContent = `${start}–${end} di ${totalRows}`;
+
+  prev.disabled = currentPage <= 1;
+  next.disabled = currentPage >= totalPages;
+
+  // mostra max 5 pagine centrate sulla corrente
+  const range = [];
+  let lo = Math.max(1, currentPage-2);
+  let hi = Math.min(totalPages, lo+4);
+  lo = Math.max(1, hi-4);
+  for (let i=lo; i<=hi; i++) range.push(i);
+  pages.innerHTML = range.map(n =>
+    `<button class="pag-btn${n===currentPage?' active':''}" onclick="${goFn}(${n})">${n}</button>`
+  ).join('');
+}
+
+window.famGoPage = function(p) {
+  const filtered = applyTimeFilter(_familyRows, 'updatedAt');
+  const total = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  _famPage = Math.max(1, Math.min(p, total));
+  renderFamiliesTable(_familyRows);
+};
+
+window.userGoPage = function(p) {
+  const filtered = applyTimeFilter(_allUsersRows, 'createdAt');
+  const total = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  _userPage = Math.max(1, Math.min(p, total));
+  renderUsersTable(_allUsersRows);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 let _userSort = { col: 'createdAt', dir: 'desc' };
 
 window.sortUsers = function(col) {
@@ -484,12 +619,22 @@ function updateUserSortHeaders() {
 function renderUsersTable(rows) {
   const tbody = document.getElementById('user-tbody');
   if (!tbody) return;
-  setVal('users-table-count', `(${rows.length})`);
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nessun utente trovato</td></tr>';
+  const filtered = applyTimeFilter(rows, 'createdAt');
+
+  // ── aggiorna stat card coerenti con la vista filtrata ──
+  setVal('stat-users', fmtNum(filtered.length));
+  setVal('users-table-count', `(${filtered.length})`);
+  let ios=0, android=0;
+  filtered.forEach(u => { if(u.platform==='ios') ios++; else if(u.platform==='android') android++; });
+  setVal('stat-platform-ios',     fmtNum(ios));
+  setVal('stat-platform-android', fmtNum(android));
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Nessun utente nel periodo selezionato</td></tr>';
+    renderPagination('user', 0, 1, 'userGoPage');
     return;
   }
-  const sorted = [...rows].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     let va, vb;
     if (_userSort.col === 'createdAt') { va = a.createdAt?.getTime()||0; vb = b.createdAt?.getTime()||0; }
     else if (_userSort.col === 'email') { return _userSort.dir === 'asc' ? a.email.localeCompare(b.email) : b.email.localeCompare(a.email); }
@@ -497,7 +642,9 @@ function renderUsersTable(rows) {
     return _userSort.dir === 'desc' ? vb - va : va - vb;
   });
   updateUserSortHeaders();
-  tbody.innerHTML = sorted.map(u => {
+  const page = sorted.slice((_userPage-1)*PAGE_SIZE, _userPage*PAGE_SIZE);
+  renderPagination('user', sorted.length, _userPage, 'userGoPage');
+  tbody.innerHTML = page.map(u => {
     const fid = _familyByUid[u.uid] || '';
     const fam = fid ? _familyRows.find(f => f.fid === fid) : null;
     const famName = fam ? ((fam.fname && fam.fname !== '—') ? fam.fname : fam.fid.slice(0,14)+'…') : '—';
@@ -555,16 +702,11 @@ async function loadUsers() {
     const authCreatedAt = {};
     for (const u of (authResult.data?.users || [])) authCreatedAt[u.uid] = u.createdAt;
 
-    setVal('stat-users', fmtNum(snap.size));
-
     _platformByUid = {};
-    let iosCount = 0, androidCount = 0;
     _allUsersRows = snap.docs.map(d => {
       const u = d.data();
       const p = u.platform;
       _platformByUid[d.id] = p;
-      if (p === 'ios') iosCount++;
-      else if (p === 'android') androidCount++;
       const name = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.displayName || '—';
       const caMs = authCreatedAt[d.id];
       return {
@@ -576,8 +718,6 @@ async function loadUsers() {
         createdAt: caMs ? new Date(caMs) : null,
       };
     });
-    setVal('stat-platform-ios', fmtNum(iosCount));
-    setVal('stat-platform-android', fmtNum(androidCount));
 
     _usersCache = snap.docs.map(d => ({
       uid:   d.id,
@@ -595,8 +735,6 @@ async function loadUsers() {
 async function loadFamilies() {
   const snap = await getDocs(collection(db,'families'));
   const docs  = snap.docs;
-  setVal('stat-families', fmtNum(docs.length));
-
   const mk = monthKey();
   let planFree=0, planPro=0, planMax=0, totalStorage=0;
   const rows = [];
@@ -646,8 +784,6 @@ async function loadFamilies() {
     totalStorage+=r.storageBytes;
   });
 
-  setVal('stat-plan-pro', planPro);
-  setVal('stat-plan-max', planMax);
   const totalStorageReal = totalStorage + STORAGE_DELTA_B;
   setVal('stat-storage',  fmtBytes(totalStorageReal));
   const storageCost = (totalStorageReal/1e9)*0.026;
@@ -875,6 +1011,61 @@ function updateTotalCost() {
     { val: _planData.pro,  color: 'var(--color-blue)' },
     { val: _planData.max,  color: 'var(--color-purple)' },
   ]);
+}
+
+// ── AGGIORNAMENTO STATISTICHE PER FILTRO TEMPORALE ───────────────────────────
+function monthsInRange(from, to) {
+  const cur  = monthKey();
+  if (!from && !to) return [cur];
+  const start = from || new Date();
+  const end   = to   || new Date();
+  const list  = [];
+  let d = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (d <= end) {
+    list.push(d.toLocaleDateString('sv-SE').slice(0,7));
+    d.setMonth(d.getMonth()+1);
+  }
+  return list.length ? list : [cur];
+}
+
+async function updateStatsForFilter() {
+  const { from, to } = getFilterRange();
+
+  // utenti e famiglie sono già aggiornati da renderUsersTable/renderFamiliesTable
+  // ── AI: somma i mesi del periodo ──
+  const months = monthsInRange(from, to);
+  const cur = monthKey();
+  let calls=0, inputTok=0, outputTok=0, costUsd=0;
+  for (const mk of months) {
+    try {
+      const td = await getDoc(doc(db,'ai_costs',mk));
+      if (td.exists()) {
+        const d = td.data();
+        calls    += d.calls        || 0;
+        inputTok += d.inputTokens  || 0;
+        outputTok+= d.outputTokens || 0;
+        costUsd  += d.costUsd      || 0;
+      }
+    } catch {}
+  }
+  const delta = months.includes(cur) ? AI_DELTA_USD : 0;
+  const aiCost = costUsd + delta;
+  setVal('stat-ai-calls',  fmtNum(calls));
+  setVal('stat-ai-input',  fmtNum(inputTok));
+  setVal('stat-ai-output', fmtNum(outputTok));
+  setVal('stat-ai-cost',   fmtUsd(aiCost));
+  _costData.ai = aiCost;
+  setVal('ai-month-lbl', months.length===1 ? months[0] : months[0]+' → '+months[months.length-1]);
+
+  updateTotalCost();
+  updateLegend();
+}
+
+function updateLegend() {
+  const setV = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  setV('leg-free', fmtNum(_planData.free));
+  setV('leg-pro',  fmtNum(_planData.pro));
+  setV('leg-max',  fmtNum(_planData.max));
 }
 </script>
 
@@ -1197,6 +1388,29 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 /* ── STATUSBAR ───────────────────────── */
 .statusbar{display:flex;align-items:center;gap:8px;padding:9px 24px;background:var(--color-surf);border-top:1px solid var(--color-brd);font-size:10px;color:var(--color-dim);font-family:var(--mono)}
 
+/* ── FILTER BAR ──────────────────────── */
+.filter-bar{display:flex;align-items:center;gap:8px;padding:10px 28px;background:var(--color-surf);border-bottom:1px solid var(--color-brd);flex-wrap:wrap}
+.filter-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--color-dim);margin-right:4px;white-space:nowrap}
+.filter-pills{display:flex;gap:4px;flex-wrap:wrap}
+.filter-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--color-brd);background:transparent;color:var(--color-dim);font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
+.filter-pill:hover{border-color:var(--color-orange);color:var(--color-orange)}
+.filter-pill.active{background:var(--color-orange);border-color:var(--color-orange);color:#fff}
+.filter-custom{display:none;align-items:center;gap:6px;margin-left:8px}
+.filter-custom.show{display:flex}
+.filter-custom input[type=date]{background:var(--color-muted);border:1px solid var(--color-brd);border-radius:6px;color:var(--color-text);font-family:var(--mono);font-size:11px;padding:4px 8px;cursor:pointer}
+.filter-custom input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.5)}
+.filter-active-badge{font-size:10px;font-family:var(--mono);color:var(--color-orange);background:color-mix(in srgb,var(--color-orange) 10%,transparent);padding:3px 8px;border-radius:4px;white-space:nowrap}
+
+/* ── PAGINATION ──────────────────────── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--color-brd);font-size:11px}
+.pag-info{color:var(--color-dim);font-family:var(--mono)}
+.pag-btns{display:flex;align-items:center;gap:4px}
+.pag-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--color-brd);background:transparent;color:var(--color-text);font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .15s}
+.pag-btn:hover:not(:disabled){border-color:var(--color-orange);color:var(--color-orange)}
+.pag-btn:disabled{opacity:.3;cursor:not-allowed}
+.pag-btn.active{background:var(--color-orange);border-color:var(--color-orange);color:#fff}
+.pag-pages{display:flex;gap:3px}
+
 /* ── RESPONSIVE ──────────────────────── */
 @media(max-width:640px){
   #sidebar{transform:translateX(-100%);transition:transform .2s}
@@ -1322,6 +1536,25 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <button class="btn-sm" id="btn-reset-all" onclick="resetStorageAll(this)">↺ Reset Storage</button>
         <button class="btn-sm btn-accent" id="btn-refresh">↻ Aggiorna</button>
       </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <span class="filter-lbl">Periodo</span>
+      <div class="filter-pills">
+        <button class="filter-pill" onclick="setFilter('today')">Oggi</button>
+        <button class="filter-pill" onclick="setFilter('yesterday')">Ieri</button>
+        <button class="filter-pill" onclick="setFilter('week')">Ultima settimana</button>
+        <button class="filter-pill" onclick="setFilter('month')">Ultimo mese</button>
+        <button class="filter-pill active" onclick="setFilter('max')">Tutto</button>
+        <button class="filter-pill" onclick="setFilter('custom')">Personalizzato</button>
+      </div>
+      <div class="filter-custom" id="filter-custom-wrap">
+        <input type="date" id="filter-from" onchange="applyCustomFilter()">
+        <span style="color:var(--color-dim);font-size:11px">→</span>
+        <input type="date" id="filter-to" onchange="applyCustomFilter()">
+      </div>
+      <span class="filter-active-badge" id="filter-active-badge" style="display:none"></span>
     </div>
 
     <div class="main">
@@ -1560,6 +1793,14 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           </thead>
           <tbody id="fam-tbody"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
         </table>
+        <div class="pagination" id="fam-pagination" style="display:none">
+          <span class="pag-info" id="fam-pag-info"></span>
+          <div class="pag-btns">
+            <button class="pag-btn" id="fam-pag-prev" onclick="famGoPage(_famPage-1)">← Prec</button>
+            <div class="pag-pages" id="fam-pag-pages"></div>
+            <button class="pag-btn" id="fam-pag-next" onclick="famGoPage(_famPage+1)">Succ →</button>
+          </div>
+        </div>
       </div>
       <div style="height:32px"></div>
 
@@ -1583,6 +1824,14 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           </thead>
           <tbody id="user-tbody"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>
         </table>
+        <div class="pagination" id="user-pagination" style="display:none">
+          <span class="pag-info" id="user-pag-info"></span>
+          <div class="pag-btns">
+            <button class="pag-btn" id="user-pag-prev" onclick="userGoPage(_userPage-1)">← Prec</button>
+            <div class="pag-pages" id="user-pag-pages"></div>
+            <button class="pag-btn" id="user-pag-next" onclick="userGoPage(_userPage+1)">Succ →</button>
+          </div>
+        </div>
       </div>
 
       <div style="height:32px"></div>
