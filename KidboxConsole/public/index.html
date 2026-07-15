@@ -51,8 +51,13 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   // sidebar toggle mobile
-  document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-toggle')?.addEventListener('click', toggleSidebar);
+
+  // chiudi sidebar cliccando su un nav-item (mobile)
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => {
+      if (window.innerWidth <= 640) closeSidebar();
+    });
   });
 });
 
@@ -178,6 +183,8 @@ function initSupportTickets() {
     const newCount = tickets.filter(t => t.status === 'new').length;
     const navBadge = document.getElementById('nav-support-badge');
     if (navBadge) { navBadge.textContent = newCount > 0 ? newCount : ''; navBadge.style.display = newCount > 0 ? 'inline-flex' : 'none'; }
+    const bnBdgS = document.getElementById('bn-bdg-support');
+    if (bnBdgS) { bnBdgS.textContent = newCount > 0 ? newCount : ''; bnBdgS.style.display = newCount > 0 ? 'inline-block' : 'none'; }
     setVal('support-count-new',  tickets.filter(t => t.status === 'new').length);
     setVal('support-count-wip',  tickets.filter(t => t.status === 'in_progress').length);
     setVal('support-count-done', tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length);
@@ -200,13 +207,13 @@ function renderSupportTable(tickets) {
     const st = t.status || 'new';
     const title = (t.title || '—').slice(0, 60);
     return `<tr>
-      <td style="font-size:16px;text-align:center">${icon}</td>
-      <td style="font-size:11px;opacity:.6">${t.platform||'—'}</td>
-      <td style="max-width:240px;font-size:12px">${title}</td>
-      <td style="font-size:11px;opacity:.7;font-family:var(--mono)">${(t.userEmail||'—').slice(0,28)}</td>
-      <td style="font-size:11px;opacity:.7">${t.appVersion||'—'}</td>
-      <td><span style="font-size:12px">${statusLabel[st]||st}</span></td>
-      <td style="font-size:11px;opacity:.6">${ts}</td>
+      <td data-label="Tipo" style="font-size:16px">${icon}</td>
+      <td data-label="Piattaforma" style="font-size:11px;opacity:.6">${t.platform||'—'}</td>
+      <td data-label="Titolo" style="max-width:220px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${t.title||''}">${title}</td>
+      <td data-label="Email" style="font-size:11px;opacity:.7;font-family:var(--mono)">${(t.userEmail||'—').slice(0,28)}</td>
+      <td data-label="Versione" style="font-size:11px;opacity:.7">${t.appVersion||'—'}</td>
+      <td data-label="Stato"><span style="font-size:12px">${statusLabel[st]||st}</span></td>
+      <td data-label="Data" style="font-size:11px;opacity:.6">${ts}</td>
       <td style="white-space:nowrap">
         <button class="btn-sm" onclick="supportDetail('${t.id}')">🔍</button>
         ${st === 'new' ? `<button class="btn-sm btn-accent" onclick="supportAction('wip','${t.id}')" style="margin-left:4px">Prendi</button>` : ''}
@@ -269,6 +276,8 @@ function initTickets() {
     if (badge) { badge.textContent = newC > 0 ? newC : ''; badge.style.display = newC > 0 ? 'inline-flex' : 'none'; }
     const navBadge = document.getElementById('nav-ticket-badge');
     if (navBadge) { navBadge.textContent = newC > 0 ? newC : ''; navBadge.style.display = newC > 0 ? 'inline-flex' : 'none'; }
+    const bnBdg = document.getElementById('bn-bdg-tickets');
+    if (bnBdg) { bnBdg.textContent = newC > 0 ? newC : ''; bnBdg.style.display = newC > 0 ? 'inline-block' : 'none'; }
     renderTicketTable(cases);
   }, err => console.error('tickets snapshot error', err));
 }
@@ -287,13 +296,13 @@ function renderTicketTable(cases) {
     const sev = c.severity || 'medium';
     const st  = c.status || 'new';
     return `<tr>
-      <td><span style="background:${severityColor[sev]}22;color:${severityColor[sev]};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${sev.toUpperCase()}</span></td>
-      <td><span style="font-size:11px;opacity:.6">${c.platform||'—'}</span></td>
-      <td style="font-family:var(--mono);font-size:11px">${c.affectedModule||'—'}</td>
-      <td style="max-width:260px;font-size:12px">${c.summary||'—'}</td>
-      <td style="font-size:11px;opacity:.7">${c.appVersion||'—'}</td>
-      <td><span style="font-size:12px">${statusLabel[st]||st}</span>${c.assignedTo ? `<div style="font-size:10px;opacity:.5;margin-top:2px">${c.assignedTo}</div>` : ''}</td>
-      <td style="font-size:11px;opacity:.6">${ts}</td>
+      <td data-label="Gravità"><span style="background:${severityColor[sev]}22;color:${severityColor[sev]};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${sev.toUpperCase()}</span></td>
+      <td data-label="Piattaforma"><span style="font-size:11px;opacity:.6">${c.platform||'—'}</span></td>
+      <td data-label="Modulo" style="font-family:var(--mono);font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.affectedModule||''}">${c.affectedModule||'—'}</td>
+      <td data-label="Descrizione" style="max-width:220px;font-size:12px;white-space:normal;word-break:break-word">${c.summary||'—'}</td>
+      <td data-label="Versione" style="font-size:11px;opacity:.7">${c.appVersion||'—'}</td>
+      <td data-label="Stato"><span style="font-size:12px">${statusLabel[st]||st}</span>${c.assignedTo ? `<div style="font-size:10px;opacity:.5;margin-top:2px">${c.assignedTo}</div>` : ''}</td>
+      <td data-label="Data" style="font-size:11px;opacity:.6">${ts}</td>
       <td style="white-space:nowrap">
         ${st === 'new'    ? `<button class="btn-sm" onclick="ticketAction('take','${c.id}')">Prendi</button> ` : ''}
         ${st === 'taken'  ? `<button class="btn-sm btn-accent" onclick="ticketAction('resolve','${c.id}')">Risolvi</button> ` : ''}
@@ -458,16 +467,16 @@ function renderFamiliesTable(rows) {
     ].filter(Boolean).join(' ') || '<span class="dim">—</span>';
     return `
     <tr>
-      <td class="mono dim" style="cursor:pointer;font-size:11px" title="${r.fid}"
+      <td data-label="Family ID" class="mono dim" style="cursor:pointer;font-size:11px" title="${r.fid}"
         onclick="selectOverrideUser('','${email.replace(/'/g,"\\'")}','${String(r.fid).replace(/'/g,"\\'")}');document.getElementById('section-plans').scrollIntoView({behavior:'smooth'})">
         ${r.fid.slice(0,18)}…</td>
-      <td style="font-size:13px;font-weight:500" title="${r.fname||''}">${fnameShort}</td>
-      <td class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
-      <td><span class="badge badge-${r.plan}">${r.plan}</span></td>
-      <td style="font-size:13px;white-space:nowrap">${platforms}</td>
-      <td class="mono">${fmtBytes(r.storageBytes)}</td>
-      <td class="mono ${r.aiMonth>0?'hi':''}">${r.aiMonth > 0 ? r.aiMonth : '—'}</td>
-      <td class="dim">${r.updatedAt?r.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
+      <td data-label="Famiglia" style="font-size:13px;font-weight:500" title="${r.fname||''}">${fnameShort}</td>
+      <td data-label="Email" class="dim" style="font-size:12px" title="${email}">${emailShort}</td>
+      <td data-label="Piano"><span class="badge badge-${r.plan}">${r.plan}</span></td>
+      <td data-label="Dispositivi" style="font-size:13px;white-space:nowrap">${platforms}</td>
+      <td data-label="Storage" class="mono">${fmtBytes(r.storageBytes)}</td>
+      <td data-label="AI mese" class="mono ${r.aiMonth>0?'hi':''}">${r.aiMonth > 0 ? r.aiMonth : '—'}</td>
+      <td data-label="Aggiornato" class="dim">${r.updatedAt?r.updatedAt.toLocaleDateString('it-IT'):'—'}</td>
     </tr>`;
   }).join('');
 }
@@ -574,6 +583,23 @@ function renderPagination(prefix, totalRows, currentPage, goFn) {
   ).join('');
 }
 
+window.toggleSidebar = function() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const open = sb.classList.toggle('open');
+  ov.classList.toggle('show', open);
+};
+window.closeSidebar = function() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+};
+
+window.bnGo = function(el, sectionId) {
+  document.querySelectorAll('.bn-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+};
+
 window.famGoPage = function(p) {
   const filtered = applyTimeFilter(_familyRows, 'updatedAt');
   const total = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -654,12 +680,12 @@ function renderUsersTable(rows) {
     const createdStr = u.createdAt ? u.createdAt.toLocaleDateString('it-IT') : '—';
     return `
     <tr>
-      <td class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
-      <td style="font-size:13px;font-weight:500">${u.name}</td>
-      <td class="dim" style="font-size:12px" title="${fid}">${famName}</td>
-      <td>${plan ? `<span class="badge badge-${plan}">${plan}</span>` : '<span class="dim">—</span>'}</td>
-      <td style="font-size:13px;white-space:nowrap">${platformBadge}</td>
-      <td class="dim mono" style="font-size:11px">${createdStr}</td>
+      <td data-label="Email" class="dim" style="font-size:12px" title="${u.email}">${emailShort}</td>
+      <td data-label="Nome" style="font-size:13px;font-weight:500">${u.name}</td>
+      <td data-label="Famiglia" class="dim" style="font-size:12px" title="${fid}">${famName}</td>
+      <td data-label="Piano">${plan ? `<span class="badge badge-${plan}">${plan}</span>` : '<span class="dim">—</span>'}</td>
+      <td data-label="Dispositivo" style="font-size:13px;white-space:nowrap">${platformBadge}</td>
+      <td data-label="Registrato" class="dim mono" style="font-size:11px">${createdStr}</td>
     </tr>`;
   }).join('');
 }
@@ -699,31 +725,32 @@ async function loadUsers() {
       getDocs(collection(db,'users')),
       httpsCallable(functions, 'getAuthUsersData')({}).catch(() => ({ data: { users: [] } })),
     ]);
-    const authCreatedAt = {};
-    for (const u of (authResult.data?.users || [])) authCreatedAt[u.uid] = u.createdAt;
+    const authByUid = {};
+    for (const u of (authResult.data?.users || [])) authByUid[u.uid] = u;
 
     _platformByUid = {};
     _allUsersRows = snap.docs.map(d => {
-      const u = d.data();
-      const p = u.platform;
+      const u    = d.data();
+      const auth = authByUid[d.id] || {};
+      const p    = u.platform;
       _platformByUid[d.id] = p;
-      const name = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.displayName || '—';
-      const caMs = authCreatedAt[d.id];
+      const email = u.email || auth.email || '—';
+      const name  = [u.firstName, u.lastName].filter(Boolean).join(' ').trim()
+                    || u.displayName || auth.displayName || '—';
       return {
         uid: d.id,
-        email: u.email || '—',
+        email,
         name,
         platform: p || '',
         updatedAt: u.updatedAt?.toDate(),
-        createdAt: caMs ? new Date(caMs) : null,
+        createdAt: auth.createdAt ? new Date(auth.createdAt) : null,
       };
     });
 
-    _usersCache = snap.docs.map(d => ({
-      uid:   d.id,
-      email: d.data().email || '',
-      fid:   d.data().familyId || d.data().activeFamilyId || '',
-    })).filter(u => u.email).sort((a,b) => a.email.localeCompare(b.email));
+    _usersCache = _allUsersRows
+      .filter(u => u.email !== '—')
+      .map(u => ({ uid: u.uid, email: u.email, fid: snap.docs.find(d=>d.id===u.uid)?.data().familyId || snap.docs.find(d=>d.id===u.uid)?.data().activeFamilyId || '' }))
+      .sort((a,b) => a.email.localeCompare(b.email));
     const sel = document.getElementById('override-email');
     if (sel) {
       sel.innerHTML = '<option value="">— Seleziona utente…</option>' +
@@ -768,7 +795,12 @@ async function loadFamilies() {
         if (!ownerUid && !membSnap.empty) ownerUid = membSnap.docs[0].id;
         if (ownerUid) {
           const usnap = await getDoc(doc(db,'users',ownerUid));
-          if (usnap.exists()) ownerEmail = usnap.data().email || '—';
+          if (usnap.exists()) ownerEmail = usnap.data().email || '';
+          if (!ownerEmail) {
+            const authRow = _allUsersRows.find(u => u.uid === ownerUid);
+            ownerEmail = authRow?.email !== '—' ? (authRow?.email || '') : '';
+          }
+          if (!ownerEmail) ownerEmail = '—';
         }
       } catch {}
       const fname = d.name || '—';
@@ -1337,7 +1369,8 @@ nav.sidebar-nav {
 .c-purple{color:var(--color-purple)}
 
 /* ── TABLE CARD ──────────────────────── */
-.tcard{background:var(--color-card);border:1px solid var(--color-brd);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.tcard{background:var(--color-card);border:1px solid var(--color-brd);border-radius:var(--radius);overflow:clip;box-shadow:var(--shadow)}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tcard-hdr{padding:14px 18px;border-bottom:1px solid var(--color-brd);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:space-between}
 .tcard-hdr .sub{font-weight:400;color:var(--color-dim);font-size:11px}
 table{width:100%;border-collapse:collapse}
@@ -1411,15 +1444,200 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 .pag-btn.active{background:var(--color-orange);border-color:var(--color-orange);color:#fff}
 .pag-pages{display:flex;gap:3px}
 
-/* ── RESPONSIVE ──────────────────────── */
+/* ── HAMBURGER & OVERLAY ─────────────── */
+#sidebar-toggle{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--color-brd);background:var(--color-muted);cursor:pointer;flex-shrink:0}
+#sidebar-toggle svg{display:block}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:199;backdrop-filter:blur(2px)}
+#sidebar-overlay.show{display:block}
+
+/* ── BOTTOM NAV ──────────────────────── */
+#bottom-nav{
+  display:none;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:var(--sidebar-bg);
+  border-top:1px solid rgba(255,255,255,.09);
+  z-index:200;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.bn-item{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:9px 2px 7px;
+  color:rgba(255,255,255,.38);
+  font-size:10px;
+  font-weight:500;
+  text-decoration:none;
+  cursor:pointer;
+  position:relative;
+  transition:color .12s;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.bn-item.active{color:var(--color-orange)}
+.bn-icon{font-size:20px;line-height:1;display:block}
+.bn-lbl{font-size:9px;line-height:1;letter-spacing:.2px;display:block}
+.bn-bdg{
+  position:absolute;
+  top:5px;
+  right:calc(50% - 20px);
+  background:#f06060;
+  color:#fff;
+  border-radius:10px;
+  padding:1px 5px;
+  font-size:9px;
+  font-weight:700;
+  display:none;
+  min-width:16px;
+  text-align:center;
+  line-height:1.5;
+}
+
+/* ── TABLET (≤900px) ─────────────────── */
+@media(max-width:900px){
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ── MOBILE (≤640px) ─────────────────── */
 @media(max-width:640px){
-  #sidebar{transform:translateX(-100%);transition:transform .2s}
-  #sidebar.open{transform:translateX(0)}
-  #dash-content{margin-left:0}
-  .grid-4,.grid-3{grid-template-columns:repeat(2,1fr)}
+  /* Login */
+  .login-box{width:calc(100% - 32px);max-width:420px;padding:28px 20px}
+
+  /* Sidebar — slide in, still accessible via hamburger */
+  #sidebar{transform:translateX(-100%);transition:transform .25s;box-shadow:none}
+  #sidebar.open{transform:translateX(0);box-shadow:4px 0 32px rgba(0,0,0,.5)}
+  #dash-content{margin-left:0;padding-bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+
+  /* Hamburger — visibile solo se bottom-nav non c'è (failsafe) */
+  #sidebar-toggle{display:flex}
+
+  /* Bottom nav visibile */
+  #bottom-nav{display:flex}
+
+  /* Topbar compatta */
+  .topbar{padding:10px 14px;gap:8px}
+  .topbar-left{gap:6px;min-width:0;overflow:hidden}
+  #status-msg,.badge-month,#btn-reset-all{display:none}
+
+  /* Filter bar: scroll orizzontale, no wrap */
+  .filter-bar{padding:8px 14px 6px;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .filter-lbl{display:none}
+  .filter-pills{flex-wrap:nowrap;gap:4px}
+  .filter-pill{padding:5px 11px;font-size:11px;white-space:nowrap;flex-shrink:0}
+  .filter-active-badge{white-space:nowrap;flex-shrink:0}
+  .filter-custom{margin-left:0}
+  .filter-custom input[type=date]{font-size:10px;padding:3px 6px}
+
+  /* Layout principale */
+  .main{padding:12px 14px}
+  .sec-title{margin:24px 0 12px;font-size:11px}
+
+  /* Grids */
+  .grid-4{grid-template-columns:repeat(2,1fr);gap:8px}
+  .grid-3{grid-template-columns:repeat(2,1fr);gap:8px}
   .grid-2,.charts-row{grid-template-columns:1fr}
-  .main{padding:16px}
+
+  /* Stat cards */
+  .card{padding:14px 16px}
+  .card-lbl{font-size:9px}
+  .card-val{font-size:24px}
+  .card-sub{font-size:10px}
+  .card-total .card-val{font-size:30px}
+  .card-total{grid-column:span 2}
+
+  /* ── TABELLE → CARD LIST ─────────────── */
+  /* Rimuovi scroll orizzontale: le righe diventano card verticali */
+  .tbl-scroll{overflow-x:visible}
+  .tcard table{min-width:unset!important;width:100%}
+
+  /* Nasconde header colonne */
+  .tcard thead{display:none}
+
+  /* tbody = contenitore di card */
+  .tcard tbody{display:flex;flex-direction:column;gap:0;padding:8px 10px}
+
+  /* ogni <tr> diventa una card */
+  .tcard tbody tr{
+    display:block;
+    background:var(--color-muted);
+    border:1px solid var(--color-brd);
+    border-radius:10px;
+    padding:10px 13px 8px;
+    margin-bottom:8px;
+  }
+  .tcard tbody tr:last-child{margin-bottom:0}
+  /* neutralizza hover desktop */
+  .tcard tbody tr:hover td{background:transparent}
+
+  /* ogni <td> = riga label + valore */
+  .tcard tbody td{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:4px 0!important;
+    border-bottom:1px solid var(--color-brd)!important;
+    font-size:12px;
+    min-height:28px;
+    word-break:break-word;
+  }
+  .tcard tbody td:last-child{border-bottom:none!important}
+
+  /* label a sinistra via data-label */
+  .tcard tbody td[data-label]::before{
+    content:attr(data-label);
+    font-size:9px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--color-dim);
+    flex-shrink:0;
+    min-width:76px;
+    line-height:1.4;
+  }
+
+  /* Colonna azioni: solo bottoni, allineati a destra */
+  .tcard tbody td:not([data-label]){
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    gap:5px;
+    padding-top:6px!important;
+    border-bottom:none!important;
+  }
+  .tcard tbody td:not([data-label])::before{content:none}
+
+  /* Modulo ticket: permetti wrap su mobile */
+  .tcard tbody td[data-label="Modulo"]{
+    font-size:10px;
+    white-space:normal!important;
+    word-break:break-all;
+  }
+
+  /* Pagination: solo prev/next */
+  .pag-pages{display:none}
+  .pagination{padding:8px 14px}
+  .pag-info{font-size:10px}
+
+  /* Pie charts */
   .pie-card{flex-direction:column;align-items:flex-start}
+  .pie-card canvas{align-self:center}
+
+  /* Bars */
+  .bar-lbl{width:80px}
+
+  /* Modals full-width */
+  .modal-box{padding:20px 16px;max-height:92vh;width:calc(100% - 24px)}
+}
+
+/* ── VERY SMALL (≤380px) ─────────────── */
+@media(max-width:380px){
+  .grid-4,.grid-3{grid-template-columns:1fr}
+  .card-total{grid-column:span 1}
 }
 </style>
 </head>
@@ -1521,10 +1739,20 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
     </div>
   </aside>
 
+  <!-- SIDEBAR OVERLAY -->
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
   <!-- CONTENT -->
   <div id="dash-content">
     <div class="topbar">
       <div class="topbar-left">
+        <button id="sidebar-toggle" aria-label="Menu" onclick="toggleSidebar()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="3" width="14" height="1.5" rx=".75" fill="currentColor"/>
+            <rect x="1" y="7.25" width="14" height="1.5" rx=".75" fill="currentColor"/>
+            <rect x="1" y="11.5" width="14" height="1.5" rx=".75" fill="currentColor"/>
+          </svg>
+        </button>
         <div class="dot dot-ok" id="status-dot"></div>
         <span id="status-msg">pronto</span>
         <span style="opacity:.4">·</span>
@@ -1778,7 +2006,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="tcard-hdr">
           Famiglie <span class="sub">(max 60)</span>
         </div>
-        <table>
+        <div class="tbl-scroll"><table>
           <thead>
             <tr>
               <th>Family ID</th>
@@ -1792,7 +2020,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
             </tr>
           </thead>
           <tbody id="fam-tbody"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
-        </table>
+        </table></div>
         <div class="pagination" id="fam-pagination" style="display:none">
           <span class="pag-info" id="fam-pag-info"></span>
           <div class="pag-btns">
@@ -1811,7 +2039,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="tcard-hdr">
           Utenti <span class="sub" id="users-table-count"></span>
         </div>
-        <table>
+        <div class="tbl-scroll"><table>
           <thead>
             <tr>
               <th data-usort="email" onclick="sortUsers('email')" style="cursor:pointer">Email<span class="sort-arrow"> ↕</span></th>
@@ -1823,7 +2051,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
             </tr>
           </thead>
           <tbody id="user-tbody"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>
-        </table>
+        </table></div>
         <div class="pagination" id="user-pagination" style="display:none">
           <span class="pag-info" id="user-pag-info"></span>
           <div class="pag-btns">
@@ -1859,7 +2087,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
       <div class="tcard">
         <div class="tcard-hdr">Casi aperti <span class="sub">(aggiornamento in tempo reale)</span></div>
-        <table>
+        <div class="tbl-scroll"><table>
           <thead>
             <tr>
               <th>Gravità</th>
@@ -1875,7 +2103,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <tbody id="ticket-tbody">
             <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       <!-- SUPPORTO CHAT -->
@@ -1900,7 +2128,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       </div>
       <div class="tcard">
         <div class="tcard-hdr">Ticket supporto <span class="sub">(in tempo reale)</span></div>
-        <table>
+        <div class="tbl-scroll"><table>
           <thead>
             <tr>
               <th>Tipo</th>
@@ -1916,7 +2144,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           <tbody id="support-tbody">
             <tr><td colspan="8" style="text-align:center;color:var(--color-dim-line);padding:24px">Caricamento…</td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
       <div style="height:52px"></div>
     </div>
@@ -1927,6 +2155,33 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <span id="status-msg-2"></span>
     </div>
   </div><!-- /dash-content -->
+
+  <!-- BOTTOM NAV (mobile only) -->
+  <nav id="bottom-nav">
+    <a class="bn-item active" onclick="bnGo(this,'section-users')">
+      <span class="bn-icon">📊</span>
+      <span class="bn-lbl">Overview</span>
+    </a>
+    <a class="bn-item" onclick="bnGo(this,'section-families')">
+      <span class="bn-icon">📋</span>
+      <span class="bn-lbl">Famiglie</span>
+    </a>
+    <a class="bn-item" onclick="bnGo(this,'section-users-table')">
+      <span class="bn-icon">👤</span>
+      <span class="bn-lbl">Utenti</span>
+    </a>
+    <a class="bn-item" onclick="bnGo(this,'section-tickets')">
+      <span class="bn-icon">🐛</span>
+      <span class="bn-lbl">Bug</span>
+      <span class="bn-bdg" id="bn-bdg-tickets"></span>
+    </a>
+    <a class="bn-item" onclick="bnGo(this,'section-support')">
+      <span class="bn-icon">💬</span>
+      <span class="bn-lbl">Chat</span>
+      <span class="bn-bdg" id="bn-bdg-support"></span>
+    </a>
+  </nav>
+
 </div><!-- /screen-dash -->
 
 <!-- MODAL DETTAGLIO TICKET SUPPORTO -->

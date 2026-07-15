@@ -195,15 +195,23 @@ private extension MedicalDocumentTextExtractor {
                 KBLog.storage.kbDebug("PDF OCR skip missing page index=\(index)")
                 continue
             }
-            
-            guard let image = renderPDFPage(page, pageIndex: index) else {
+
+            // Render the page image inside an autorelease pool so the large
+            // bitmap backing store is freed before moving to the next page.
+            // Keeping several full-resolution page images alive at once is
+            // what pushes the process over the iOS memory limit and crashes it.
+            let cgImage: CGImage? = autoreleasepool {
+                renderPDFPage(page, pageIndex: index)?.cgImage
+            }
+
+            guard let cgImage else {
                 KBLog.storage.kbError("PDF OCR render failed page index=\(index)")
                 continue
             }
-            
-            let text = try await recognizeText(in: image, sourceLabel: "pdf_page_\(index)")
+
+            let text = try await recognizeText(in: cgImage, sourceLabel: "pdf_page_\(index)")
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            
+
             if !trimmed.isEmpty {
                 KBLog.storage.kbDebug("PDF OCR page index=\(index) chars=\(trimmed.count)")
                 chunks.append(trimmed)
@@ -224,12 +232,23 @@ private extension MedicalDocumentTextExtractor {
             return nil
         }
         
-        let scale: CGFloat = 2.0
+        // Cap the longest side so high-resolution scanned PDFs don't produce
+        // enormous bitmaps. ~2500px is more than enough for accurate Vision OCR.
+        let maxDimension: CGFloat = 2500
+        let longestSide = max(pageRect.width, pageRect.height)
+        let scale = min(2.0, maxDimension / longestSide)
         let targetSize = CGSize(width: pageRect.width * scale, height: pageRect.height * scale)
-        
-        KBLog.storage.kbDebug("Rendering PDF page index=\(pageIndex) targetSize=\(Int(targetSize.width))x\(Int(targetSize.height))")
-        
-        let renderer = UIGraphicsImageRenderer(size: targetSize)
+
+        KBLog.storage.kbDebug("Rendering PDF page index=\(pageIndex) targetSize=\(Int(targetSize.width))x\(Int(targetSize.height)) scale=\(scale)")
+
+        // Force scale=1 so the backing bitmap matches targetSize exactly.
+        // The default format inherits the display scale (2x/3x), which would
+        // multiply memory usage several-fold and crash the process.
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
         return renderer.image { ctx in
             UIColor.white.set()
             ctx.fill(CGRect(origin: .zero, size: targetSize))
@@ -257,9 +276,14 @@ private extension MedicalDocumentTextExtractor {
             throw MedicalDocumentTextExtractorError.invalidImage
         }
         
-        let text = try await recognizeText(in: image, sourceLabel: url.lastPathComponent)
+        guard let cgImage = image.cgImage else {
+            KBLog.storage.kbError("Image OCR failed: cgImage missing fileName=\(url.lastPathComponent)")
+            throw MedicalDocumentTextExtractorError.invalidImage
+        }
+
+        let text = try await recognizeText(in: cgImage, sourceLabel: url.lastPathComponent)
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         guard !trimmed.isEmpty else {
             KBLog.storage.kbError("Image OCR produced empty text fileName=\(url.lastPathComponent)")
             throw MedicalDocumentTextExtractorError.extractionProducedEmptyText
@@ -269,13 +293,8 @@ private extension MedicalDocumentTextExtractor {
         return trimmed
     }
     
-    func recognizeText(in image: UIImage, sourceLabel: String) async throws -> String {
-        guard let cgImage = image.cgImage else {
-            KBLog.storage.kbError("OCR failed: cgImage missing source=\(sourceLabel)")
-            throw MedicalDocumentTextExtractorError.invalidImage
-        }
-        
-        KBLog.storage.kbDebug("Starting Vision OCR source=\(sourceLabel) size=\(Int(image.size.width))x\(Int(image.size.height))")
+    func recognizeText(in cgImage: CGImage, sourceLabel: String) async throws -> String {
+        KBLog.storage.kbDebug("Starting Vision OCR source=\(sourceLabel) size=\(cgImage.width)x\(cgImage.height)")
         
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in

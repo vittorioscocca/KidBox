@@ -73,9 +73,9 @@
       var isAndroid = /android/i.test(ua);
 
       if (isIOS) {
-        window.location.replace(appleUrl);
+        setTimeout(function(){ window.location.replace(appleUrl); }, 300);
       } else if (isAndroid) {
-        window.location.replace(playUrl);
+        setTimeout(function(){ window.location.replace(playUrl); }, 300);
       } else {
         document.getElementById('spin').style.display = 'none';
         document.getElementById('fallback').style.display = 'flex';

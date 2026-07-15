@@ -225,11 +225,18 @@ final class ExpenseAttachmentService {
         let uid         = Auth.auth().currentUser?.uid ?? "local"
         let now         = Date()
         let docId       = UUID().uuidString
-        let fileName    = url.lastPathComponent
+        let originalFileName = url.lastPathComponent
         let ext         = url.pathExtension.lowercased()
-        let mime        = mimeType(for: ext)
+        let originalMime = mimeType(for: ext)
         let title       = url.deletingPathExtension().lastPathComponent
-        
+
+        // Comprimi le immagini ad alta risoluzione prima di cifrare/caricare.
+        let compressed = DocumentImageCompressor.compressIfNeeded(
+            data: data, fileName: originalFileName, mimeType: originalMime)
+        let uploadData  = compressed.data
+        let fileName    = compressed.fileName
+        let mime        = compressed.mimeType
+
         // Il path di Storage usa "documents" — le Security Rules concedono
         // accesso solo a families/{fid}/documents/...
         let storagePath = "families/\(familyId)/documents/\(docId)/\(fileName).kbenc"
@@ -244,7 +251,7 @@ final class ExpenseAttachmentService {
         )
         
         // Encrypt before writing to local cache.
-        guard let encrypted = try? DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid) else {
+        guard let encrypted = try? DocumentCryptoService.encrypt(uploadData, familyId: familyId, userId: uid) else {
             KBLog.storage.kbError("Encrypt failed docId=\(docId) file=\(fileName)")
             return nil
         }
@@ -268,7 +275,7 @@ final class ExpenseAttachmentService {
             title: title,
             fileName: fileName,
             mimeType: mime,
-            fileSize: Int64(data.count),
+            fileSize: Int64(uploadData.count),
             storagePath: storagePath,
             downloadURL: nil,
             notes: ExpenseAttachmentTag.make(expenseId),

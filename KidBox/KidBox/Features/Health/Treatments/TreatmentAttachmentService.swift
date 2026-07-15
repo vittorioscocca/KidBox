@@ -142,16 +142,24 @@ final class TreatmentAttachmentService {
         let uid         = Auth.auth().currentUser?.uid ?? "local"
         let now         = Date()
         let docId       = UUID().uuidString
-        let fileName    = url.lastPathComponent
+        let originalFileName = url.lastPathComponent
         let ext         = url.pathExtension.lowercased()
-        let mime        = mimeType(for: ext)
+        let originalMime = mimeType(for: ext)
         let title       = url.deletingPathExtension().lastPathComponent
+
+        // Comprimi le immagini ad alta risoluzione prima di cifrare/caricare.
+        let compressed = DocumentImageCompressor.compressIfNeeded(
+            data: data, fileName: originalFileName, mimeType: originalMime)
+        let uploadData  = compressed.data
+        let fileName    = compressed.fileName
+        let mime        = compressed.mimeType
+
         let storagePath = "families/\(familyId)/treatment-attachments/\(treatmentId)/\(docId)/\(fileName).kbenc"
-        
+
         let (_, referti) = ensureHealthFolders(familyId: familyId, modelContext: modelContext)
 
         // Encrypt before writing to local cache so that open() can decrypt correctly.
-        guard let encrypted = try? DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid) else { return nil }
+        guard let encrypted = try? DocumentCryptoService.encrypt(uploadData, familyId: familyId, userId: uid) else { return nil }
         guard let localRelPath = try? DocumentLocalCache.write(
             familyId: familyId, docId: docId, fileName: fileName, data: encrypted
         ) else { return nil }
@@ -164,7 +172,7 @@ final class TreatmentAttachmentService {
             title: title,
             fileName: fileName,
             mimeType: mime,
-            fileSize: Int64(data.count),
+            fileSize: Int64(uploadData.count),
             storagePath: storagePath,
             downloadURL: nil,
             notes: TreatmentAttachmentTag.make(treatmentId),

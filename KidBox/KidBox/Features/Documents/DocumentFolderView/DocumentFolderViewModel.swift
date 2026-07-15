@@ -785,26 +785,33 @@ final class DocumentFolderViewModel: ObservableObject {
                 fileName = rawFileName
             }
             let ext  = (fileName as NSString).pathExtension.lowercased()
-            let mime = forcedMime ?? (mimeType(forExtension: ext) ?? "application/octet-stream")
-            let size = Int64(data.count)
-            
+            let originalMime = forcedMime ?? (mimeType(forExtension: ext) ?? "application/octet-stream")
+
+            // Comprimi le immagini ad alta risoluzione prima di cifrare/caricare.
+            let compressed = DocumentImageCompressor.compressIfNeeded(
+                data: data, fileName: fileName, mimeType: originalMime)
+            let uploadData = compressed.data
+            let uploadFileName = compressed.fileName
+            let mime = compressed.mimeType
+            let size = Int64(uploadData.count)
+
             let rawTitle = forcedTitle ?? fileURL.deletingPathExtension().lastPathComponent
             let title    = rawTitle.hasPrefix("share_") ? String(rawTitle.dropFirst("share_".count)) : rawTitle
-            
+
             let uid        = Auth.auth().currentUser?.uid ?? "local"
             let now        = Date()
             let documentId = UUID().uuidString
-            let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
+            let storagePath = "families/\(familyId)/documents/\(documentId)/\(uploadFileName).kbenc"
 
             // Encrypt before writing to local cache so that open() can decrypt
             // from cache with the same key that protects the remote copy.
-            let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
+            let encryptedData = try DocumentCryptoService.encrypt(uploadData, familyId: familyId, userId: uid)
             let localRelPath = try DocumentLocalCache.write(
-                familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData)
-            
+                familyId: familyId, docId: documentId, fileName: uploadFileName, data: encryptedData)
+
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
-                title: title, fileName: fileName, mimeType: mime, fileSize: size,
+                title: title, fileName: uploadFileName, mimeType: mime, fileSize: size,
                 storagePath: storagePath, downloadURL: nil, updatedBy: uid,
                 createdAt: now, updatedAt: now, isDeleted: false
             )
@@ -816,10 +823,10 @@ final class DocumentFolderViewModel: ObservableObject {
             try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(
                 documentId: local.id, familyId: familyId, modelContext: modelContext)
-            
+
             do {
                 let (_, downloadURL) = try await storageService.upload(
-                    familyId: familyId, docId: documentId, fileName: fileName,
+                    familyId: familyId, docId: documentId, fileName: uploadFileName,
                     originalMimeType: mime, encryptedData: encryptedData)
                 local.downloadURL   = downloadURL
                 local.syncState     = .synced
@@ -887,26 +894,33 @@ final class DocumentFolderViewModel: ObservableObject {
                 fileName = rawFileName
             }
             let ext  = (fileName as NSString).pathExtension.lowercased()
-            let mime = forcedMime ?? (mimeType(forExtension: ext) ?? "application/octet-stream")
-            let size = Int64(data.count)
-            
+            let originalMime = forcedMime ?? (mimeType(forExtension: ext) ?? "application/octet-stream")
+
+            // Comprimi le immagini ad alta risoluzione prima di cifrare/caricare.
+            let compressed = DocumentImageCompressor.compressIfNeeded(
+                data: data, fileName: fileName, mimeType: originalMime)
+            let uploadData = compressed.data
+            let uploadFileName = compressed.fileName
+            let mime = compressed.mimeType
+            let size = Int64(uploadData.count)
+
             let rawTitle = forcedTitle ?? url.deletingPathExtension().lastPathComponent
             let title    = rawTitle.hasPrefix("share_") ? String(rawTitle.dropFirst("share_".count)) : rawTitle
-            
+
             let uid        = Auth.auth().currentUser?.uid ?? "local"
             let now        = Date()
             let documentId = UUID().uuidString
-            let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
-            
+            let storagePath = "families/\(familyId)/documents/\(documentId)/\(uploadFileName).kbenc"
+
             // Encrypt before writing to local cache so that open() can decrypt
             // from cache with the same key that protects the remote copy.
-            let encryptedData = try DocumentCryptoService.encrypt(data, familyId: familyId, userId: uid)
+            let encryptedData = try DocumentCryptoService.encrypt(uploadData, familyId: familyId, userId: uid)
             let localRelPath = try DocumentLocalCache.write(
-                familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData)
-            
+                familyId: familyId, docId: documentId, fileName: uploadFileName, data: encryptedData)
+
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
-                title: title, fileName: fileName, mimeType: mime, fileSize: size,
+                title: title, fileName: uploadFileName, mimeType: mime, fileSize: size,
                 storagePath: storagePath, downloadURL: nil, updatedBy: uid,
                 createdAt: now, updatedAt: now, isDeleted: false
             )
@@ -918,10 +932,10 @@ final class DocumentFolderViewModel: ObservableObject {
             try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(
                 documentId: local.id, familyId: familyId, modelContext: modelContext)
-            
+
             do {
                 let (_, downloadURL) = try await storageService.upload(
-                    familyId: familyId, docId: documentId, fileName: fileName,
+                    familyId: familyId, docId: documentId, fileName: uploadFileName,
                     originalMimeType: mime, encryptedData: encryptedData)
                 local.downloadURL   = downloadURL
                 local.syncState     = .synced
@@ -948,20 +962,27 @@ final class DocumentFolderViewModel: ObservableObject {
             let plaintext = try Data(contentsOf: url)
             if plaintext.isEmpty { return false }
             
-            let fileName = url.lastPathComponent
+            let originalFileName = url.lastPathComponent
             let ext = url.pathExtension.lowercased()
-            let mime = mimeType(forExtension: ext) ?? "application/octet-stream"
-            let size = Int64(plaintext.count)
+            let originalMime = mimeType(forExtension: ext) ?? "application/octet-stream"
+
+            // Comprimi le immagini ad alta risoluzione prima di cifrare/caricare.
+            let compressed = DocumentImageCompressor.compressIfNeeded(
+                data: plaintext, fileName: originalFileName, mimeType: originalMime)
+            let uploadData = compressed.data
+            let fileName = compressed.fileName
+            let mime = compressed.mimeType
+            let size = Int64(uploadData.count)
             let title = url.deletingPathExtension().lastPathComponent
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
             let documentId = UUID().uuidString
             let storagePath = "families/\(familyId)/documents/\(documentId)/\(fileName).kbenc"
-            
-            guard let encryptedData = try? DocumentCryptoService.encrypt(plaintext, familyId: familyId, userId: uid) else { return false }
+
+            guard let encryptedData = try? DocumentCryptoService.encrypt(uploadData, familyId: familyId, userId: uid) else { return false }
             // Store encrypted bytes so open() can decrypt from cache correctly.
             guard let localPath = try? DocumentLocalCache.write(familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData) else { return false }
-            
+
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: childId, categoryId: folderId,
                 title: title, fileName: fileName, mimeType: mime, fileSize: size,
@@ -972,7 +993,7 @@ final class DocumentFolderViewModel: ObservableObject {
             local.syncState = .pendingUpsert; local.lastSyncError = nil; local.localPath = localPath
             modelContext.insert(local); try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(documentId: local.id, familyId: familyId, modelContext: modelContext)
-            
+
             do {
                 let (uploadedPath, downloadURL) = try await storageService.upload(
                     familyId: familyId, docId: documentId, fileName: fileName,
@@ -985,7 +1006,7 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
                 if analyzeAfter {
                     await maybeRunDocumentIntelligence(
-                        plaintext: plaintext, fileName: fileName, mimeType: mime, documentId: documentId)
+                        plaintext: uploadData, fileName: fileName, mimeType: mime, documentId: documentId)
                 }
                 return true
             } catch {

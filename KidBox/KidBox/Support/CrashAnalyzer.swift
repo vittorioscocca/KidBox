@@ -160,10 +160,18 @@ enum CrashAnalyzer {
 
     @available(iOS 18.1, *)
     private static func buildPrompt(rawLogs: String) -> String {
-        let tail = truncateLogs(rawLogs, maxBytes: 32 * 1024)
+        // Only feed WARNING/ERROR/CRASH lines to reduce LLM false positives on INFO entries.
+        let filtered = filterSignificantLines(rawLogs)
+        let tail = truncateLogs(filtered, maxBytes: 32 * 1024)
         return """
-        Sei un analizzatore di log per l'app KidBox. Analizza i log e \
-        rispondi SOLO con JSON valido, nessun testo aggiuntivo:
+        Sei un analizzatore di log per l'app KidBox.
+        Regole IMPORTANTI prima di analizzare:
+        - I log hanno formato: [timestamp] [LEVEL] [category] [module] messaggio
+        - Solo le righe [ERROR], [CRASH], [FATAL] indicano problemi reali
+        - Le righe [INFO], [DEBUG], [WARNING] sono normali anche se menzionano operazioni come "flushGlobal", "startAutoFlush", "sync", ecc.
+        - Se una sequenza INFO mostra "requested" → "ops=0" → "completed" è un'esecuzione RIUSCITA, NON un errore
+        - Segna hasIssues:true SOLO se ci sono righe [ERROR] o [CRASH] concrete
+        Rispondi SOLO con JSON valido, nessun testo aggiuntivo:
         {
           "hasIssues": true/false,
           "issues": [
@@ -179,9 +187,21 @@ enum CrashAnalyzer {
             }
           ]
         }
-        Log da analizzare (ultime righe):
+        Log da analizzare (solo righe significative):
         \(tail)
         """
+    }
+
+    private static func filterSignificantLines(_ logs: String) -> String {
+        let lines = logs.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        let significant = lines.filter { line in
+            line.contains("[ERROR]") || line.contains("[CRASH]") ||
+            line.contains("[FATAL]") || line.contains("[WARNING]") ||
+            line.contains("Fatal error") || line.contains("SIGABRT")
+        }
+        // If nothing significant, fall back to tail of all logs so FM can still detect anomalies
+        if significant.isEmpty { return logs }
+        return significant.joined(separator: "\n")
     }
 
     private static func parseAnalysisResponse(_ text: String) throws -> AnalysisResponse {

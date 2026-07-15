@@ -1363,6 +1363,10 @@ const ANTHROPIC_MODEL_CLINICAL_RECORD = "claude-sonnet-4-5";
 const ANTHROPIC_INPUT_USD_PER_1M_SONNET = 3.0;
 const ANTHROPIC_OUTPUT_USD_PER_1M_SONNET = 15.0;
 const CLINICAL_RECORD_MAX_TOKENS = 4096;
+// Le chat (incluso l'assistente Salute) ragionano su visite/esami/cure/referti:
+// 1024 token tagliavano le risposte a metà frase. Haiku costa poco in output e si
+// paga solo ciò che genera, quindi diamo ampio margine.
+const CHAT_MAX_TOKENS = 4096;
 // Unità minime scalate dal limite giornaliero per una generazione cartella clinica.
 // Sonnet costa ~3× Haiku per token + niente caching (one-shot) → costo fisso più alto.
 const CLINICAL_RECORD_MIN_UNITS = 3;
@@ -1719,7 +1723,7 @@ exports.askAI = onCall(
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, messageUnits);
 
       const anthropicModel = clinicalRecord ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
-      const maxTokens = clinicalRecord ? CLINICAL_RECORD_MAX_TOKENS : 1024;
+      const maxTokens = clinicalRecord ? CLINICAL_RECORD_MAX_TOKENS : CHAT_MAX_TOKENS;
       const effectiveSystemPrompt = clinicalRecord ?
         `${systemPrompt.trim()}\n\n${CLINICAL_RECORD_SYSTEM_RULES}` :
         systemPrompt;
@@ -1779,6 +1783,15 @@ exports.askAI = onCall(
         const json = await res.json();
         reply = json?.content?.[0]?.text;
         if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
+
+        // Se Anthropic tronca per limite token, `stop_reason` = "max_tokens".
+        // Lo logghiamo per poter alzare CHAT_MAX_TOKENS se ricapita.
+        if (json?.stop_reason === "max_tokens") {
+          logger.warn("askAI reply truncated by max_tokens", {
+            uid, familyId, clinicalRecord, maxTokens,
+            outputTokens: json?.usage?.output_tokens || 0,
+          });
+        }
 
         // ── Tracking costi Anthropic ────────────────────────────────────────
         // `input_tokens` è il solo resto NON cachato. Con prompt caching il
@@ -4828,7 +4841,12 @@ exports.getAuthUsersData = onCall(
     do {
       const listResult = await admin.auth().listUsers(1000, pageToken);
       for (const u of listResult.users) {
-        result.push({ uid: u.uid, createdAt: parseInt(u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : 0, 10) });
+        result.push({
+          uid: u.uid,
+          createdAt: parseInt(u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : 0, 10),
+          email: u.email || "",
+          displayName: u.displayName || "",
+        });
       }
       pageToken = listResult.pageToken;
     } while (pageToken);
