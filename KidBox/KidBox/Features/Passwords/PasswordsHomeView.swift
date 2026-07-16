@@ -453,6 +453,9 @@ struct PasswordsHomeView: View {
                 if entry.isFavorite {
                     WatchOtpSyncService.sendOtpPayloadIfNeeded(entry: entry)
                 }
+                // Distingue "trovato cercando" da "trovato sfogliando": è la sola
+                // differenza che dice se il contenuto è davvero a portata di click.
+                coordinator.setRetrievalOrigin(searchQuery.isEmpty ? .list : .search)
                 coordinator.navigate(to: .passwordDetail(familyId: familyId, entryId: entry.id))
             }
         } label: {

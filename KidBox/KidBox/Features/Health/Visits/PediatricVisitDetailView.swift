@@ -71,6 +71,18 @@ struct PediatricVisitDetailView: View {
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            guard let visit else { return }
+            let origin = coordinator.consumeRetrievalOrigin()
+            Task {
+                await KBAnalytics.shared.logRetrieval(
+                    feature: .health,
+                    uploaderUid: visit.createdBy,
+                    createdAt: visit.createdAt,
+                    entryPoint: origin
+                )
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             if let visit, let child = childForAI, AISettings.shared.isEnabled {
                 AskAIButton(visit: visit, child: child)

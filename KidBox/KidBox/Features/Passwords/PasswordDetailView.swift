@@ -33,6 +33,10 @@ struct PasswordDetailView: View {
     @State private var showOtpRemoveConfirm = false
     @State private var otpSecretDraft = ""
 
+    /// Come si è arrivati a questa voce. Catturato una volta all'apparire: la
+    /// copia può avvenire più volte, ma l'origine resta quella dell'arrivo.
+    @State private var retrievalOrigin: KBAnalyticsEntryPoint = .list
+
     init(familyId: String, entryId: String) {
         self.familyId = familyId
         self.entryId = entryId
@@ -81,6 +85,7 @@ struct PasswordDetailView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle(entry.map { navigationTitle(for: $0) } ?? "Dettaglio")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { retrievalOrigin = coordinator.consumeRetrievalOrigin() }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if let e = entry, e.isVisible(to: currentUid) {
@@ -571,6 +576,15 @@ struct PasswordDetailView: View {
         }
         KBClipboard.copy(plain, expiresIn: 60, localOnly: true)
         coordinator.globalBannerMessage = "Password copiata (60 s negli appunti)."
+        let origin = retrievalOrigin
+        Task {
+            await KBAnalytics.shared.logRetrieval(
+                feature: .passwords,
+                uploaderUid: e.createdBy,
+                createdAt: e.createdAt,
+                entryPoint: origin
+            )
+        }
     }
 
     private func deleteEntry() {

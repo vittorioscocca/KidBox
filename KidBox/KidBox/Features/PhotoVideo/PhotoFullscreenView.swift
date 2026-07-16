@@ -71,6 +71,20 @@ struct PhotoFullscreenView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
+                // Aperta a schermo intero dalla griglia: l'origine è sempre la
+                // lista, e non serve il coordinator (qui si arriva da un
+                // fullScreenCover, non da una route).
+                .onAppear {
+                    let photo = startPhoto
+                    Task {
+                        await KBAnalytics.shared.logRetrieval(
+                            feature: .photoVideo,
+                            uploaderUid: photo.createdBy,
+                            createdAt: photo.createdAt,
+                            entryPoint: .list
+                        )
+                    }
+                }
             
             // ── Pager ────────────────────────────────────────────────────────
             TabView(selection: $currentIndex) {

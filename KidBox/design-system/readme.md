@@ -18,7 +18,7 @@ This system was built by reading the real product source — not screenshots:
 - **iOS app** — [github.com/vittorioscocca/KidBox](https://github.com/vittorioscocca/KidBox) (SwiftUI, SwiftData, Firebase). Key files read: `KidBox/UIComponent/*.swift` (the real reusable primitives), `KBTheme.swift` (color system), `Features/Home/HomeView.swift` (the Home grid — full 18-category inventory + tints), `Features/Auth/LoginView.swift`, `Features/Settings/SettingsView/SettingsView.swift`, `Features/Documents/*`.
 - **Android app** — [github.com/vittorioscocca/KidBoxAndroid](https://github.com/vittorioscocca/KidBoxAndroid) (Jetpack Compose). Key file: `ui/theme/Theme.kt` (light/dark `KidBoxColorScheme`, Nunito typography) — the Nunito font files shipped in `assets/` come from `res/font/` in this repo.
 - **Marketing website** — `KidboxLanding/public/index.html` inside the KidBox repo (kidbox.app landing page, static HTML/CSS, DM Sans).
-- **Admin console** — `KidboxConsole/kidbox-admin.html` (internal, read-only Firestore dashboard) — reviewed for completeness but **not** built into a UI kit; it's a personal ops tool, not a designed product surface. Mentioned here for transparency.
+- **Admin console** — `KidboxConsole/public/index.html` (internal Firestore dashboard) — reviewed for completeness but **not** built into a UI kit; it's a personal ops tool, not a designed product surface. Mentioned here for transparency.
 
 If you have access to these repos, go read them directly for anything this
 system simplified or omitted — especially `KidBox/KidBox/ARCHITECTURE.md` and

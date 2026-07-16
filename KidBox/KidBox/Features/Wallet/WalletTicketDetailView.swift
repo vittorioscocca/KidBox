@@ -17,6 +17,7 @@ struct WalletTicketDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var coordinator: AppCoordinator
 
     @Query private var tickets: [KBWalletTicket]
     @Query private var members: [KBFamilyMember]
@@ -78,6 +79,20 @@ struct WalletTicketDetailView: View {
         }
         .navigationTitle("Dettaglio biglietto")
         .navigationBarTitleDisplayMode(.inline)
+        // Aprire il dettaglio è il recupero vero: è per questo che il biglietto
+        // è stato caricato. Non produce scritture, quindi il server non lo vede.
+        .onAppear {
+            guard let ticket, ticket.isVisible(to: currentUid) else { return }
+            let origin = coordinator.consumeRetrievalOrigin()
+            Task {
+                await KBAnalytics.shared.logRetrieval(
+                    feature: .wallet,
+                    uploaderUid: ticket.createdBy,
+                    createdAt: ticket.createdAt,
+                    entryPoint: origin
+                )
+            }
+        }
         .fullScreenCover(isPresented: $showPDF) {
             NavigationStack {
                 Group {

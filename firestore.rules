@@ -13,6 +13,32 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // ── ANALYTICS ──────────────────────────────────────────
+    // Vedi docs/analytics-active-users.md.
+    //
+    // Top-level e NON sotto families/{familyId}: quel ramo è leggibile da ogni
+    // membro (isMemberOrOwner), quindi il log delle letture diventerebbe un
+    // registro di chi-ha-guardato-cosa consultabile dal partner.
+    //
+    // Append-only: il client scrive e non rilegge mai. Rollup e console passano
+    // dall'Admin SDK, che bypassa le rules.
+    match /analyticsEvents/{eventId} {
+      // `expiresAt` è il campo della TTL policy (90gg): data di morte, non di
+      // nascita. La policy NON va puntata su `ts`, che è già nel passato alla
+      // scrittura e cancellerebbe ogni evento appena creato.
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(
+             ['name', 'uid', 'familyId', 'feature', 'ts', 'expiresAt', 'props']);
+      allow read, update, delete: if false;
+    }
+
+    // Rollup giornalieri: scritti dallo scheduler, letti solo dalla console.
+    match /metrics/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     function isMember(familyId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid))

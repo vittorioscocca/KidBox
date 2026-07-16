@@ -357,6 +357,7 @@ struct KidBoxApp: App {
                 SyncCenter.shared.startAutoFlush(modelContext: context)
                 SyncCenter.shared.flushGlobal(modelContext: context)
                 BadgeManager.shared.refreshAppBadge()
+                Task { await KBAnalytics.shared.logSessionStart(entryPoint: .icon) }
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
 
                 // Safety net: se la Share Extension ha salvato un "pendingShare"
@@ -415,6 +416,9 @@ struct KidBoxApp: App {
                 KBLog.sync.kbDebug("ScenePhase inactive")
             case .background:
                 KBLog.sync.kbInfo("ScenePhase background -> stopAutoFlush + stopFamilyBundleRealtime")
+                // Le letture sono bufferizzate in memoria: qui è l'unico punto
+                // in cui partono. Se si perde qualcosa è un costo accettabile.
+                Task { await KBAnalytics.shared.flush() }
                 SyncCenter.shared.stopAutoFlush()
                 SyncCenter.shared.stopFamilyBundleRealtime()
                 SyncCenter.shared.stopPetsRealtime()

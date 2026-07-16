@@ -12,6 +12,8 @@ struct DocumentDetailView: View {
     @Environment(\.modelContext) private var modelContext
 
     let document: KBDocument
+
+    @EnvironmentObject private var coordinator: AppCoordinator
     let members: [KBFamilyMember]
 
     @State private var showVisibilityPicker = false
@@ -71,6 +73,19 @@ struct DocumentDetailView: View {
         }
         .navigationTitle("Documento")
         .navigationBarTitleDisplayMode(.inline)
+        // Il valore del documento è che sia a portata di click per la famiglia:
+        // questa apertura è la prova, e il server non la vede.
+        .onAppear {
+            let origin = coordinator.consumeRetrievalOrigin()
+            Task {
+                await KBAnalytics.shared.logRetrieval(
+                    feature: .documents,
+                    uploaderUid: document.createdBy,
+                    createdAt: document.createdAt,
+                    entryPoint: origin
+                )
+            }
+        }
         .sheet(isPresented: $showVisibilityPicker) {
             VisibilityPickerSheet(
                 selectedScope: $pickerScope,

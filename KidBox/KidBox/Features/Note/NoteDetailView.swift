@@ -9,6 +9,8 @@ import FirebaseAuth
 import UIKit
 
 struct NoteDetailView: View {
+
+    @EnvironmentObject private var coordinator: AppCoordinator
     let familyId: String
     let noteId: String
     /// Porta il focus sul corpo all’apertura (es. nota viaggio appena creata).
@@ -98,6 +100,18 @@ struct NoteDetailView: View {
         }
         .navigationTitle("Nota")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            guard let n = note else { return }
+            let origin = coordinator.consumeRetrievalOrigin()
+            Task {
+                await KBAnalytics.shared.logRetrieval(
+                    feature: .note,
+                    uploaderUid: n.createdBy,
+                    createdAt: n.createdAt,
+                    entryPoint: origin
+                )
+            }
+        }
         #if targetEnvironment(macCatalyst)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             MacNoteFormattingBar(store: richTextStore)

@@ -706,6 +706,7 @@ async function loadAll() {
     await loadFamilies();
     renderUsersTable(_allUsersRows);
     await loadAICosts();
+    await loadActiveUsers();
     updateTotalCost();
     setStatus('Aggiornato', true);
   } catch(e) {
@@ -885,6 +886,128 @@ async function loadAICosts() {
           </div>`).join('')
       : '<div class="dim small">Nessuna chiamata AI questo mese</div>';
   } catch { document.getElementById('bars-ai').innerHTML='<div class="dim small">Nessuna chiamata AI questo mese</div>'; }
+}
+
+// ── UTENTI ATTIVI ────────────────────────────────────────────────────────────
+// Ultimi n giorni come id `YYYY-MM-DD`, dal più recente. Europe/Rome come il
+// rollup lato server: usare un fuso diverso disallineerebbe i confini di giornata.
+function lastNDates(n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    out.push(d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }));
+  }
+  return out;
+}
+
+// Legge SOLO i rollup in metrics/{YYYY-MM-DD}, mai analyticsEvents: il costo di
+// lettura resta costante mentre gli eventi crescono, e i grezzi scadono a 90gg.
+// Design: docs/analytics-active-users.md
+async function loadActiveUsers() {
+  const empty = (msg) => {
+    ['stat-dau','stat-wau','stat-mau','stat-stick','stat-daf','stat-mpf','stat-xread','stat-noact']
+      .forEach(id => setVal(id, '—'));
+    document.getElementById('bars-dau').innerHTML  = `<div class="dim small">${msg}</div>`;
+    document.getElementById('bars-feat').innerHTML = `<div class="dim small">${msg}</div>`;
+  };
+
+  try {
+    // Letture per id diretto, non una query ordinata. Gli id sono date
+    // `YYYY-MM-DD`, quindi le ricostruiamo: 28 point read, costo costante,
+    // nessun indice. `orderBy(documentId(),'desc')` richiederebbe un indice
+    // dedicato — Firestore indicizza `__name__` solo in ascendente.
+    const ids = lastNDates(28);   // desc: [oggi, ieri, …]
+    const snaps = await Promise.all(ids.map(id => getDoc(doc(db,'metrics',id))));
+    const days = snaps.filter(s => s.exists()).map(s => ({ id: s.id, ...s.data() }));
+
+    if (!days.length) { empty('Nessun rollup: usa ↻ Ricalcola'); setVal('au-window','· nessun dato'); return; }
+
+    const m = days[0];
+    setVal('au-window', `· rollup ${m.id} · ${m.tz||'Europe/Rome'}`);
+    setVal('stat-dau', fmtNum(m.dau));
+    setVal('stat-wau', fmtNum(m.wau));
+    setVal('stat-mau', fmtNum(m.mau));
+    setVal('stat-daf', fmtNum(m.daf));
+    setVal('stat-maf', fmtNum(m.maf));
+    setVal('stat-mpf', (m.activeMembersPerActiveFamily ?? 0).toFixed(2));
+    setVal('stat-stick', m.mau ? (m.stickinessWauMau*100).toFixed(0)+'%' : '—');
+
+    // Zero ≠ non misurato. Senza il logger client non esistono content_retrieved
+    // né session_start: mostrare "0%" leggerebbe come un fallimento del prodotto
+    // che in realtà non è stato ancora misurato.
+    const pending = '<span class="dim">n/d</span>';
+    if (m.retrievedTotal > 0) {
+      setVal('stat-xread', (m.crossMemberReadRate*100).toFixed(0)+'%');
+      document.getElementById('stat-xread-sub').textContent = `su ${fmtNum(m.retrievedTotal)} letture`;
+    } else {
+      document.getElementById('stat-xread').innerHTML = pending;
+      document.getElementById('stat-xread-sub').textContent = 'richiede il logger client';
+    }
+    if (m.sessionsTotal > 0) {
+      setVal('stat-noact', fmtNum(m.sessionsNoAction));
+      document.getElementById('stat-noact-sub').textContent = `su ${fmtNum(m.sessionsTotal)} aperture`;
+    } else {
+      document.getElementById('stat-noact').innerHTML = pending;
+      document.getElementById('stat-noact-sub').textContent = 'richiede il logger client';
+    }
+
+    // DAU ultimi 14 giorni, in ordine cronologico
+    const last14 = days.slice(0,14).reverse();
+    const maxDau = Math.max(...last14.map(d => d.dau||0), 1);
+    document.getElementById('bars-dau').innerHTML = last14.map(d => `
+      <div class="bar-row">
+        <div class="bar-lbl">${d.id.slice(5)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${((d.dau||0)/maxDau*100).toFixed(1)}%"></div></div>
+        <div class="bar-val">${d.dau||0}</div>
+      </div>`).join('');
+
+    // Azioni per feature nell'ultimo giorno
+    const feats = Object.entries(m.byFeature||{})
+      .map(([k,v]) => [k, (v.created||0)+(v.updated||0)+(v.completed||0)+(v.retrieved||0)+(v.ai||0)])
+      .filter(([,n]) => n > 0)
+      .sort((a,b) => b[1]-a[1]).slice(0,10);
+    const maxF = feats[0]?.[1] || 1;
+    document.getElementById('bars-feat').innerHTML = feats.length
+      ? feats.map(([k,n]) => `
+        <div class="bar-row">
+          <div class="bar-lbl">${k}</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:${(n/maxF*100).toFixed(1)}%"></div></div>
+          <div class="bar-val">${n}</div>
+        </div>`).join('')
+      : '<div class="dim small">Nessuna azione registrata</div>';
+
+  } catch(e) {
+    console.error(e);
+    empty('Errore: ' + e.message);
+  }
+}
+
+// Ricalcola oggi + ieri. Idempotente: riscrive gli stessi documenti.
+window.runRollup = async function(btn) {
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Non autenticato');
+    const token = await user.getIdToken();
+    const cfg = getCfg();
+    const res = await fetch(`https://europe-west1-${cfg.projectId}.cloudfunctions.net/runAnalyticsRollup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ data: { days: 2 } })
+    });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error.message || 'Errore sconosciuto');
+    const lines = json.result.days.map(d => `${d.date}  DAU ${d.dau}  ·  ${d.eventsScanned} eventi`).join('\n');
+    btn.textContent = '✓';
+    await loadActiveUsers();
+    alert('Rollup ricalcolato:\n\n' + lines);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
 }
 
 window.resetStorageAll = async function(btn) {
@@ -1325,6 +1448,16 @@ nav.sidebar-nav {
 .modal-box{background:#1a1a1a;border:1px solid var(--color-brd);border-radius:14px;padding:28px;width:90%;max-width:780px;max-height:85vh;overflow-y:auto;position:relative}
 .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--color-dim);font-size:18px;cursor:pointer}
 .modal-logs{background:#111;border:1px solid var(--color-brd);border-radius:8px;padding:14px;font-family:var(--mono);font-size:10px;color:#9ef;white-space:pre-wrap;max-height:320px;overflow-y:auto;margin-top:12px}
+
+/* Pulsante info (i) accanto ai titoli di sezione */
+.btn-info{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--color-dim);background:none;color:var(--color-dim);font-size:11px;font-weight:700;font-style:italic;line-height:1;cursor:pointer;padding:0;margin-left:8px;vertical-align:middle;transition:all .15s}
+.btn-info:hover{border-color:var(--color-orange);color:var(--color-orange)}
+/* Glossario metriche */
+.gl-item{padding:12px 0;border-bottom:1px solid var(--color-brd)}
+.gl-item:last-child{border-bottom:none}
+.gl-name{font-size:12px;font-weight:600;margin-bottom:3px}
+.gl-desc{font-size:12px;opacity:.75;line-height:1.6}
+.gl-note{font-size:11px;color:var(--color-orange);margin-top:4px;line-height:1.5}
 
 /* ── BUTTONS ─────────────────────────── */
 .btn-sm{background:var(--color-muted);border:1px solid var(--color-brd);color:var(--color-text);padding:7px 14px;border-radius:7px;font-family:var(--sans);font-weight:500;font-size:12px;cursor:pointer;transition:background .15s}
@@ -2001,6 +2134,67 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
       <!-- TABELLA FAMIGLIE -->
       <div id="section-families"></div>
+      <!-- UTENTI ATTIVI -->
+      <div class="sec-title" style="margin-top:32px">
+        👥 Utenti attivi <span class="sub" id="au-window">—</span>
+        <button class="btn-info" onclick="document.getElementById('au-info-modal').style.display='flex'" title="Cosa significano questi indici">i</button>
+        <button class="btn-sm btn-accent" onclick="runRollup(this)" style="margin-left:10px" title="Ricalcola i rollup di oggi e ieri">↻ Ricalcola</button>
+      </div>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-lbl">DAU</div>
+          <div class="card-val c-blue" id="stat-dau">—</div>
+          <div class="card-sub">azione di valore, non aperture</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">WAU</div>
+          <div class="card-val c-purple" id="stat-wau">—</div>
+          <div class="card-sub">rolling 7 giorni</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">MAU</div>
+          <div class="card-val c-green" id="stat-mau">—</div>
+          <div class="card-sub">rolling 28 giorni</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">WAU / MAU</div>
+          <div class="card-val c-orange" id="stat-stick">—</div>
+          <div class="card-sub">stickiness · target &gt; 50%</div>
+        </div>
+      </div>
+      <div class="grid-4" style="margin-top:12px">
+        <div class="card">
+          <div class="card-lbl">Famiglie attive</div>
+          <div class="card-val c-blue" id="stat-daf">—</div>
+          <div class="card-sub">oggi · MAF <span id="stat-maf">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Membri attivi / famiglia</div>
+          <div class="card-val c-purple" id="stat-mpf">—</div>
+          <div class="card-sub">predice il churn meglio del DAU</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Cross-member read</div>
+          <div class="card-val c-green" id="stat-xread">—</div>
+          <div class="card-sub" id="stat-xread-sub">letture di contenuti altrui</div>
+        </div>
+        <div class="card">
+          <div class="card-lbl">Aperture a vuoto</div>
+          <div class="card-val c-red" id="stat-noact">—</div>
+          <div class="card-sub" id="stat-noact-sub">sessioni senza azione</div>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="tcard">
+          <div class="tcard-hdr">DAU <span class="sub">(ultimi 14 giorni)</span></div>
+          <div class="bars-wrap" id="bars-dau"><div class="dim small">Caricamento…</div></div>
+        </div>
+        <div class="tcard">
+          <div class="tcard-hdr">Azioni per feature <span class="sub">(ultimo rollup)</span></div>
+          <div class="bars-wrap" id="bars-feat"><div class="dim small">Caricamento…</div></div>
+        </div>
+      </div>
+
       <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
       <div class="tcard">
         <div class="tcard-hdr">
@@ -2207,6 +2401,104 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 </div>
 
 <!-- MODAL DETTAGLIO TICKET -->
+<!-- GLOSSARIO UTENTI ATTIVI -->
+<div class="modal-overlay" id="au-info-modal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:640px">
+    <button class="modal-close" onclick="document.getElementById('au-info-modal').style.display='none'">✕</button>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-orange);margin-bottom:6px">Utenti attivi</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px">Cosa significano questi indici</div>
+    <div style="font-size:12px;color:var(--color-dim);margin-bottom:18px;line-height:1.6">
+      Un utente è <b>attivo</b> se compie almeno una <b>azione di valore</b>: crea, modifica
+      o completa un contenuto, ne recupera uno (apre un documento, copia una password,
+      guarda dov'è un familiare), o usa l'AI.<br>
+      Aprire l'app <b>non</b> conta. Guardare la Home nemmeno.
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">DAU · WAU · MAU</div>
+      <div class="gl-desc">
+        Utenti unici con almeno un'azione di valore in 1, 7 e 28 giorni. Le finestre
+        sono <b>scorrevoli</b> e ricalcolate ogni notte: non sono la settimana o il
+        mese di calendario. 28 giorni e non "un mese" perché contengono sempre 4
+        weekend, quindi due finestre sono confrontabili tra loro.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">WAU / MAU — stickiness</div>
+      <div class="gl-desc">
+        Quanta parte degli utenti del mese torna in una settimana. È il benchmark
+        giusto per KidBox, <b>non</b> DAU/MAU.
+      </div>
+      <div class="gl-note">
+        Un DAU/MAU basso qui non è un fallimento: spesa e calendario hanno cadenza
+        settimanale, documenti e veicoli mensile o annuale. Target WAU/MAU &gt; 50%.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">Famiglie attive (DAF / MAF)</div>
+      <div class="gl-desc">
+        Famiglie con almeno un membro attivo, sulle stesse finestre. KidBox è
+        un'app familiare: il denominatore che conta per il business è la famiglia,
+        non l'utente.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">Membri attivi / famiglia</div>
+      <div class="gl-desc">
+        Media dei membri attivi in ciascuna famiglia attiva. Predice il churn meglio
+        del DAU: una famiglia dove è attivo un solo genitore è a rischio anche se il
+        suo DAU è stabile.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">Cross-member read</div>
+      <div class="gl-desc">
+        Quota di letture di contenuti caricati da <b>un altro</b> membro. È la
+        metrica più importante: dimostra la tesi del prodotto — un documento
+        condiviso vale perché è a portata di click <b>senza doverlo chiedere</b>.
+        Leggere roba propria è solo un archivio personale.
+      </div>
+      <div class="gl-note">
+        Il conteggio grezzo delle letture non proverebbe nulla: sei documenti aperti
+        per trovarne uno sono sei letture, ma sono il "cercare" che il prodotto
+        dovrebbe eliminare.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">Aperture a vuoto</div>
+      <div class="gl-desc">
+        Utenti che hanno aperto l'app senza compiere alcuna azione di valore. È il
+        denominatore che tiene onesto il DAU.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">n/d — non misurato</div>
+      <div class="gl-desc">
+        <b>Non</b> è zero. Cross-member read e aperture a vuoto richiedono il logger
+        dell'app: finché la versione con <code>KBAnalytics</code> non è rilasciata,
+        quei dati non arrivano. Mostrare "0%" farebbe leggere come fallimento una
+        cosa che non è ancora stata misurata.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">Giorni e fuso</div>
+      <div class="gl-desc">
+        Giorno solare <b>Europe/Rome</b>, non UTC: per un'app familiare le sere
+        contano, e UTC spezzerebbe la serata italiana a mezzanotte spostando gli
+        eventi al giorno dopo. Il rollup gira alle 03:15; <b>↻ Ricalcola</b> rifà
+        oggi e ieri a mano.
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="ticket-modal" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal-box">
     <button class="modal-close" onclick="document.getElementById('ticket-modal').style.display='none'">✕</button>

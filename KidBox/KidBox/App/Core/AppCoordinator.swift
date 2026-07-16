@@ -849,8 +849,30 @@ final class AppCoordinator: ObservableObject {
         openFamilyPhotosWithCameraShortcut(modelContext: modelContext)
     }
     
+    // MARK: - Origine della navigazione (analytics)
+
+    /// Come l'utente sta raggiungendo il prossimo contenuto.
+    ///
+    /// Serve solo a `KBAnalytics`: la vista di dettaglio non può sapere da sola se
+    /// ci si è arrivati da una notifica, da una ricerca o sfogliando una lista, ma
+    /// è esattamente la differenza tra "a portata di click" e "l'ho dovuto cercare".
+    /// Chi naviga la imposta, il dettaglio la consuma. Vedi
+    /// docs/analytics-active-users.md.
+    private var pendingRetrievalOrigin: KBAnalyticsEntryPoint?
+
+    func setRetrievalOrigin(_ origin: KBAnalyticsEntryPoint) {
+        pendingRetrievalOrigin = origin
+    }
+
+    /// Legge e azzera l'origine. Azzerare è il punto: senza, una notifica
+    /// "colorerebbe" tutte le aperture successive fatte sfogliando.
+    func consumeRetrievalOrigin() -> KBAnalyticsEntryPoint {
+        defer { pendingRetrievalOrigin = nil }
+        return pendingRetrievalOrigin ?? .list
+    }
+
     // MARK: - Navigation actions
-    
+
     func navigate(to route: Route) {
         KBLog.navigation.kbInfo("Navigate to route=\(String(describing: route))")
         path.append(route)
@@ -867,6 +889,7 @@ final class AppCoordinator: ObservableObject {
     @MainActor
     func openDocumentFromPush(familyId: String, docId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openDocumentFromPush familyId=\(familyId) docId=\(docId)")
+        setRetrievalOrigin(.notification)
         
         Task { @MainActor in
             let maxAttempts = 8
@@ -932,6 +955,7 @@ final class AppCoordinator: ObservableObject {
     @MainActor
     func openWalletTicketFromPush(familyId: String, ticketId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openWalletTicketFromPush familyId=\(familyId) ticketId=\(ticketId)")
+        setRetrievalOrigin(.notification)
 
         Task { @MainActor in
             await SyncCenter.shared.fetchWalletTicketsOnce(familyId: familyId, modelContext: modelContext)
@@ -954,6 +978,7 @@ final class AppCoordinator: ObservableObject {
     @MainActor
     func openNoteFromPush(familyId: String, noteId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")
+        setRetrievalOrigin(.notification)
         
         Task { @MainActor in
             let nid = noteId

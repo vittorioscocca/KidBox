@@ -12,6 +12,8 @@ extension Notification.Name {
 }
 
 struct FamilyLocationView: View {
+
+    @EnvironmentObject private var coordinator: AppCoordinator
     
     let familyId: String
     
@@ -156,6 +158,19 @@ struct FamilyLocationView: View {
         }
         .navigationTitle("Posizione")
         .navigationBarTitleDisplayMode(.inline)
+        // Guardare dov'è un familiare è cross-member per definizione: non c'è un
+        // `createdBy` da confrontare, si sta guardando la posizione altrui.
+        .onAppear {
+            let origin = coordinator.consumeRetrievalOrigin()
+            Task {
+                await KBAnalytics.shared.logRetrieval(
+                    feature: .familyLocation,
+                    uploaderIsSelf: false,
+                    createdAt: nil,
+                    entryPoint: origin
+                )
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {

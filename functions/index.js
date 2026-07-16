@@ -4,6 +4,10 @@ const {onDocumentCreated, onDocumentWritten} = require("firebase-functions/v2/fi
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
+// Analytics utenti attivi — docs/analytics-active-users.md. I trigger di
+// scrittura stanno in analytics.js; qui serve solo per `askAI`, che è l'unica
+// azione di valore senza una scrittura Firestore dietro.
+const {logEvent: logAnalyticsEvent} = require("./analytics");
 const STORAGE_BUCKET = "kidbox-42cd7-eu";
 
 /** Stima foto visita pediatrica (allineata a initStorageUsage / client). */
@@ -1847,6 +1851,22 @@ exports.askAI = onCall(
         uid, usageCount, messageUnits, clinicalRecord,
         totalPayloadChars: totalChars,
       });
+
+      // Analytics: l'unica azione di valore che non passa da una scrittura
+      // Firestore, quindi invisibile ai trigger. Solo sul percorso di successo:
+      // una chiamata fallita o rifiutata dal rate limit non è un uso del
+      // prodotto. `logEvent` non solleva mai — non può rompere askAI.
+      await logAnalyticsEvent({
+        name: "ai_interaction",
+        uid,
+        familyId,
+        feature: "chat",
+        props: {
+          surface: clinicalRecord ? "clinicalRecord" : "chat",
+          actionType: "message",
+        },
+      });
+
       return {
         reply,
         usageToday: usageCount,
@@ -4854,3 +4874,18 @@ exports.getAuthUsersData = onCall(
     return { users: result };
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS — utenti attivi (docs/analytics-active-users.md)
+//
+// Trigger separati da quelli di notifica qui sopra: un errore nell'analytics non
+// deve poter impedire una notifica. Il require sta in fondo perché analytics.js
+// usa `admin`, inizializzato a inizio file.
+// ─────────────────────────────────────────────────────────────────────────────
+Object.assign(exports, require("./analytics").triggers);
+
+// Rollup notturni → metrics/{YYYY-MM-DD}, più la callable admin per ricalcoli
+// manuali e backfill.
+const analyticsRollup = require("./analyticsRollup");
+exports.analyticsRollupDaily = analyticsRollup.analyticsRollupDaily;
+exports.runAnalyticsRollup = analyticsRollup.runAnalyticsRollup;
