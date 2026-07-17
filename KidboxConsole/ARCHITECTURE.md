@@ -61,7 +61,7 @@ python3 -m http.server 8080
 
 > `ai_usage` e `ai_costs` sono popolati da `askAI`; `metrics` da
 > `analyticsRollupDaily`. Vedi `functions/ARCHITECTURE.md` e
-> `docs/analytics-active-users.md`.
+> `internal/analytics-active-users.md`.
 
 ---
 

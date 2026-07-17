@@ -903,7 +903,7 @@ function lastNDates(n) {
 
 // Legge SOLO i rollup in metrics/{YYYY-MM-DD}, mai analyticsEvents: il costo di
 // lettura resta costante mentre gli eventi crescono, e i grezzi scadono a 90gg.
-// Design: docs/analytics-active-users.md
+// Design: internal/analytics-active-users.md
 async function loadActiveUsers() {
   const empty = (msg) => {
     ['stat-dau','stat-wau','stat-mau','stat-stick','stat-daf','stat-mpf','stat-xread','stat-noact']
@@ -932,6 +932,8 @@ async function loadActiveUsers() {
     setVal('stat-maf', fmtNum(m.maf));
     setVal('stat-mpf', (m.activeMembersPerActiveFamily ?? 0).toFixed(2));
     setVal('stat-stick', m.mau ? (m.stickinessWauMau*100).toFixed(0)+'%' : '—');
+    // Somma dei join sugli ultimi 28 rollup: evento di crescita, fuori dal DAU.
+    setVal('stat-joins', fmtNum(days.reduce((a,d) => a + (d.membersJoined||0), 0)));
 
     // Zero ≠ non misurato. Senza il logger client non esistono content_retrieved
     // né session_start: mostrare "0%" leggerebbe come un fallimento del prodotto
@@ -1453,10 +1455,10 @@ nav.sidebar-nav {
 .btn-info{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--color-dim);background:none;color:var(--color-dim);font-size:11px;font-weight:700;font-style:italic;line-height:1;cursor:pointer;padding:0;margin-left:8px;vertical-align:middle;transition:all .15s}
 .btn-info:hover{border-color:var(--color-orange);color:var(--color-orange)}
 /* Glossario metriche */
-.gl-item{padding:12px 0;border-bottom:1px solid var(--color-brd)}
+.gl-item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08)}
 .gl-item:last-child{border-bottom:none}
-.gl-name{font-size:12px;font-weight:600;margin-bottom:3px}
-.gl-desc{font-size:12px;opacity:.75;line-height:1.6}
+.gl-name{font-size:12px;font-weight:600;margin-bottom:3px;color:#f0ede8}
+.gl-desc{font-size:12px;opacity:.75;line-height:1.6;color:#cfcbc3}
 .gl-note{font-size:11px;color:var(--color-orange);margin-top:4px;line-height:1.5}
 
 /* ── BUTTONS ─────────────────────────── */
@@ -2166,7 +2168,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         <div class="card">
           <div class="card-lbl">Famiglie attive</div>
           <div class="card-val c-blue" id="stat-daf">—</div>
-          <div class="card-sub">oggi · MAF <span id="stat-maf">—</span></div>
+          <div class="card-sub">oggi · MAF <span id="stat-maf">—</span> · nuovi membri 28gg: <span id="stat-joins">—</span></div>
         </div>
         <div class="card">
           <div class="card-lbl">Membri attivi / famiglia</div>
@@ -2406,7 +2408,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
   <div class="modal-box" style="max-width:640px">
     <button class="modal-close" onclick="document.getElementById('au-info-modal').style.display='none'">✕</button>
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-orange);margin-bottom:6px">Utenti attivi</div>
-    <div style="font-size:16px;font-weight:600;margin-bottom:4px">Cosa significano questi indici</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px;color:#f0ede8">Cosa significano questi indici</div>
     <div style="font-size:12px;color:var(--color-dim);margin-bottom:18px;line-height:1.6">
       Un utente è <b>attivo</b> se compie almeno una <b>azione di valore</b>: crea, modifica
       o completa un contenuto, ne recupera uno (apre un documento, copia una password,
@@ -2474,6 +2476,16 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div class="gl-desc">
         Utenti che hanno aperto l'app senza compiere alcuna azione di valore. È il
         denominatore che tiene onesto il DAU.
+      </div>
+    </div>
+
+    <div class="gl-item">
+      <div class="gl-name">Nuovi membri</div>
+      <div class="gl-desc">
+        Persone entrate in una famiglia esistente (l'owner che la crea non conta).
+        Non entra nel DAU: è un evento di <b>crescita</b>, non di attività — chi
+        invita ha già deciso che l'app vale per la famiglia. A differenza degli
+        altri eventi, questi non scadono a 90 giorni.
       </div>
     </div>
 

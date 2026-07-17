@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ANALYTICS — rollup giornalieri
 //
-// Design: docs/analytics-active-users.md
+// Design: internal/analytics-active-users.md
 //
 // Ogni notte aggrega gli eventi grezzi del giorno in `metrics/{YYYY-MM-DD}`.
 // La console legge SOLO questi documenti: il costo di lettura resta costante
@@ -127,6 +127,9 @@ async function buildDaily(dateStr) {
   // console deve poter distinguere lo zero dal non-misurato, altrimenti mostra
   // un fallimento inesistente.
   let sessionsTotal = 0;
+  // Join famiglia del giorno (evento persistente, fuori dal DAU).
+  let membersJoined = 0;
+  const grownFamilies = new Set();
 
   for (const doc of snap.docs) {
     const e = doc.data();
@@ -135,6 +138,14 @@ async function buildDaily(dateStr) {
     if (e.name === "session_start") {
       if (e.uid) openedUids.add(e.uid);
       sessionsTotal += 1;
+      continue;
+    }
+    // Evento di crescita, non di attività: entrare in una famiglia non conta
+    // per il DAU, ma segnala l'intento di condivisione — chi invita ha già
+    // deciso che l'app vale per la famiglia.
+    if (e.name === "family_member_joined") {
+      membersJoined += 1;
+      if (e.familyId) grownFamilies.add(e.familyId);
       continue;
     }
     if (!VALUE_EVENTS.includes(e.name)) continue;
@@ -194,6 +205,8 @@ async function buildDaily(dateStr) {
     activeMembersPerActiveFamily: membersPerFamily,
     sessionsNoAction,
     sessionsTotal,
+    membersJoined,
+    familiesGrown: grownFamilies.size,
     byFeature,
     retrievedTotal,
     crossMemberReadRate: retrievedTotal ?

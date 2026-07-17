@@ -1,6 +1,10 @@
 # Utenti attivi — definizione e schema eventi
 
-Stato: proposta di design. Nessuna implementazione ancora.
+Stato: implementato e in produzione (server, console, client iOS e Android).
+Manca solo il rilascio delle app sugli store. Vedi §9 per le fasi.
+
+Documento **interno**: non sta in `docs/`, che è pubblicata da GitHub Pages come
+sito legale (privacy, termini, eliminazione dati, supporto).
 
 Oggi KidBox non ha nessuna instrumentazione analytics: nessun `logEvent`, nessun SDK
 Analytics linkato, `IS_ANALYTICS_ENABLED = false` nel progetto Firebase.
@@ -99,6 +103,22 @@ Il client scrive e non rilegge mai. Console e rollup passano dall'Admin SDK.
 
 ## 4. Regole di privacy (vincolanti)
 
+### Cancellazione account — `purgeAnalyticsForUid()`
+
+`deleteAccount` (`functions/index.js`) rimuove **tutte** le tracce analytics di un
+utente. Non basta cancellare `analyticsEvents`: i rollup in `metrics/` contengono
+l'array `uids` (serve per le finestre WAU/MAU) e **non hanno TTL**, quindi l'uid vi
+resterebbe per sempre. `purgeAnalyticsForUid()` fa entrambe le cose: elimina gli
+eventi (query per `uid`) e toglie l'uid dai rollup (`array-contains` + `arrayRemove`).
+
+I conteggi aggregati (`dau`, `byFeature`, …) **non** vengono ricalcolati: sono già
+storicizzati e non identificano nessuno. Si rimuove solo l'identificatore.
+
+Questo è ciò che rende vera la frase già presente nella privacy policy — *"alla
+cancellazione dell'account tutti i dati associati vengono eliminati in modo
+permanente"*. Senza, sarebbe falsa.
+
+
 **Registra la forma dell'azione, mai l'oggetto.** `feature: "wallet"` sì;
 `documentId`, titolo, nome file, o qualunque cosa permetta di ricostruire *quale*
 documento ha aperto chi, no. Le domande che abbiamo sono aggregate: non si perde
@@ -142,7 +162,7 @@ chat | familyLocation`
 | `content_completed` | trigger | — |
 | `content_retrieved` | **client** | `uploaderIsSelf`, `entryPoint`, `daysSinceUpload`, `count` |
 | `ai_interaction` | callable | `surface`, `actionType`, `accepted` |
-| `family_member_joined` | trigger | `role` |
+| `family_member_joined` | trigger ✅ | `role` — **persistente** (senza `expiresAt`, non scade a 90gg) |
 | `session_start` | client | `entryPoint`: icon \| widget \| notification \| dynamicIsland \| shareExt |
 
 `session_start` si registra ma **non** conta per il DAU: serve come denominatore per
@@ -214,6 +234,23 @@ Le ultime cinque erano la fase 6: il factory le assorbe subito.
 
 **Fuori copertura**: hard e soft delete non sono azioni di valore (`classify()`
 ritorna null). `geofenceEvents` è escluso: è generato dal sistema, non dall'utente.
+
+### `family_member_joined` — crescita, non attività
+
+`analyticsFamilyMemberJoined` (`onDocumentCreated` su `families/{f}/members/{uid}`)
+scrive l'evento per ogni membro che **non** è l'`ownerUid` della famiglia. È il
+segnale di intento di condivisione: chi invita ha già deciso che l'app vale per la
+famiglia — non serve misurare se poi l'invitato la usa.
+
+- **Confronto con `ownerUid`, non conteggio membri**: un conteggio con due join
+  quasi simultanei ha una race; il campo owner è stabile e atomico.
+- **Persistente**: `logEvent({persistent: true})` omette `expiresAt`, la TTL policy
+  ignora i doc senza quel campo. Evento di stato: interessa anche fra un anno.
+- **Fuori da `VALUE_EVENTS`**: non conta per il DAU. Nel rollup finisce in
+  `membersJoined` / `familiesGrown`; la console somma gli ultimi 28 giorni
+  (card "Famiglie attive").
+- **Rientri**: uscire dalla famiglia è hard delete del doc membro, quindi un
+  rientro riconta. Voluto; dedup a posteriori su `familyId`+`uid` se mai servirà.
 
 ### Callable ✅ `askAI`
 

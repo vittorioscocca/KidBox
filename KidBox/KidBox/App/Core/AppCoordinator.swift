@@ -857,7 +857,7 @@ final class AppCoordinator: ObservableObject {
     /// ci si è arrivati da una notifica, da una ricerca o sfogliando una lista, ma
     /// è esattamente la differenza tra "a portata di click" e "l'ho dovuto cercare".
     /// Chi naviga la imposta, il dettaglio la consuma. Vedi
-    /// docs/analytics-active-users.md.
+    /// internal/analytics-active-users.md.
     private var pendingRetrievalOrigin: KBAnalyticsEntryPoint?
 
     func setRetrievalOrigin(_ origin: KBAnalyticsEntryPoint) {

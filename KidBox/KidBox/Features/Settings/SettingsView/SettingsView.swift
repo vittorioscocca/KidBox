@@ -34,6 +34,10 @@ struct SettingsView: View {
     private var appBuild: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
     }
+
+#if DEBUG
+    @State private var updateTestReport: String?
+#endif
     
     var body: some View {
         List {
@@ -182,6 +186,17 @@ struct SettingsView: View {
             VStack(spacing: 6) {
                 Text("Versione \(appVersion)")
                 Text("Build \(appBuild)")
+#if DEBUG
+                Button("Test aggiornamento") {
+                    Task { updateTestReport = await AppUpdateChecker.shared.runDebugCheck() }
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 4)
+                if let updateTestReport {
+                    Text(updateTestReport)
+                        .font(.caption2)
+                }
+#endif
             }
             .font(.footnote)
             .foregroundStyle(.secondary)

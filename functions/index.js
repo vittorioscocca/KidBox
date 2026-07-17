@@ -4,7 +4,7 @@ const {onDocumentCreated, onDocumentWritten} = require("firebase-functions/v2/fi
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
-// Analytics utenti attivi — docs/analytics-active-users.md. I trigger di
+// Analytics utenti attivi — internal/analytics-active-users.md. I trigger di
 // scrittura stanno in analytics.js; qui serve solo per `askAI`, che è l'unica
 // azione di valore senza una scrittura Firestore dietro.
 const {logEvent: logAnalyticsEvent} = require("./analytics");
@@ -3868,6 +3868,47 @@ async function deleteCollection(colRef, batchSize = 300) {
 }
 
 /**
+ * Rimuove ogni traccia analytics di un utente: gli eventi grezzi e il suo uid
+ * dagli array dei rollup.
+ *
+ * I rollup restano validi come aggregati — `dau`, `byFeature` e i conteggi non
+ * vengono ritoccati: sono già stati calcolati e non identificano nessuno. Si
+ * toglie solo l'identificatore. Il costo è che le finestre WAU/MAU dei giorni
+ * successivi non conteranno più questo utente, il che è esattamente ciò che
+ * deve succedere dopo una cancellazione.
+ *
+ * @param {string} uid utente da rimuovere
+ * @return {Promise<void>}
+ */
+async function purgeAnalyticsForUid(uid) {
+  const db = admin.firestore();
+
+  // 1) Eventi grezzi. `deleteCollection` accetta anche una Query: ha
+  //    `.limit()` e `.get()` come una CollectionReference.
+  await deleteCollection(
+      db.collection("analyticsEvents").where("uid", "==", uid),
+  ).catch(() => {});
+
+  // 2) Uid dentro i rollup. Solo gli array-contains: una scansione completa di
+  //    `metrics/` crescerebbe per sempre.
+  const snap = await db.collection("metrics")
+      .where("uids", "array-contains", uid)
+      .get()
+      .catch(() => null);
+  if (!snap || snap.empty) return;
+
+  const batch = db.batch();
+  snap.docs.forEach((d) => {
+    batch.update(d.ref, {
+      uids: admin.firestore.FieldValue.arrayRemove(uid),
+    });
+  });
+  await batch.commit();
+
+  logger.info("purgeAnalyticsForUid done", {uid, rollups: snap.size});
+}
+
+/**
  * Deletes all files in Cloud Storage with a given prefix.
  * @param {string} prefix
  * @return {Promise<void>}
@@ -3953,6 +3994,16 @@ exports.deleteAccount = onCall(
       await db.collection("ai_usage").doc(uid).delete().catch(() => {});
       // Il contatore famiglia (family_{familyId}) viene rimosso da deleteFamilyCompletely
       // se l'utente era l'ultimo membro — altrimenti resta per gli altri.
+
+      // ── Analytics: eventi di utilizzo e tracce nei rollup ──
+      // La privacy policy promette che alla cancellazione dell'account TUTTI i
+      // dati associati spariscono. Non basta cancellare gli eventi grezzi: i
+      // rollup in `metrics/` contengono l'array `uids` (serve per le finestre
+      // WAU/MAU) e NON hanno TTL, quindi l'uid resterebbe lì per sempre.
+      // Vedi internal/analytics-active-users.md.
+      await purgeAnalyticsForUid(uid).catch((e) => {
+        logger.warn("purgeAnalyticsForUid failed", {uid, err: String(e)});
+      });
 
       await admin.auth().deleteUser(uid);
 
@@ -4876,7 +4927,7 @@ exports.getAuthUsersData = onCall(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ANALYTICS — utenti attivi (docs/analytics-active-users.md)
+// ANALYTICS — utenti attivi (internal/analytics-active-users.md)
 //
 // Trigger separati da quelli di notifica qui sopra: un errore nell'analytics non
 // deve poter impedire una notifica. Il require sta in fondo perché analytics.js

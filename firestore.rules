@@ -14,7 +14,7 @@ service cloud.firestore {
     }
 
     // ── ANALYTICS ──────────────────────────────────────────
-    // Vedi docs/analytics-active-users.md.
+    // Vedi internal/analytics-active-users.md.
     //
     // Top-level e NON sotto families/{familyId}: quel ramo è leggibile da ogni
     // membro (isMemberOrOwner), quindi il log delle letture diventerebbe un

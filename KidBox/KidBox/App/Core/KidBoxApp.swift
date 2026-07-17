@@ -359,6 +359,8 @@ struct KidBoxApp: App {
                 BadgeManager.shared.refreshAppBadge()
                 Task { await KBAnalytics.shared.logSessionStart(entryPoint: .icon) }
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
+                // Throttlato internamente a una chiamata ogni 6 ore.
+                Task { await AppUpdateChecker.shared.checkForUpdate() }
 
                 // Safety net: se la Share Extension ha salvato un "pendingShare"
                 // nell'App Group ma il deep link kidbox://share non è stato

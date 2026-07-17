@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ANALYTICS — utenti attivi
 //
-// Design: docs/analytics-active-users.md
+// Design: internal/analytics-active-users.md
 //
 // Registra le AZIONI DI VALORE su una collection top-level append-only
 // (`analyticsEvents`), da cui i rollup notturni ricavano DAU/WAU/MAU e le
@@ -25,7 +25,10 @@
 // vederle — richiedono il logger client, fase 3.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const {onDocumentWritten} = require("firebase-functions/v2/firestore");
+const {
+  onDocumentWritten,
+  onDocumentCreated,
+} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -71,8 +74,12 @@ function expiryTimestamp() {
 
 /**
  * Scrive un evento. Non solleva mai: l'analytics non deve poter rompere nulla.
- * @param {{name: string, uid: ?string, familyId: ?string,
- *          feature: string, props: ?Object}} evt evento da registrare
+ * @param {{name: string, uid: ?string, familyId: ?string, feature: string,
+ *          persistent: ?boolean, props: ?Object}} evt evento da registrare.
+ *          `persistent: true` omette `expiresAt`: la TTL policy ignora i
+ *          documenti senza quel campo, quindi l'evento sopravvive ai 90gg.
+ *          Da usare per gli eventi di STATO (es. un join famiglia), che
+ *          interessano anche fra un anno — non per quelli di flusso.
  * @return {Promise<void>}
  */
 async function logEvent(evt) {
@@ -81,17 +88,20 @@ async function logEvent(evt) {
     // non sarebbero ricostruibili a posteriori. Meglio scartarlo.
     if (!evt.uid || !evt.familyId) return;
 
-    await admin.firestore().collection(EVENTS_COLLECTION).add({
+    const doc = {
       name: evt.name,
       uid: evt.uid,
       familyId: evt.familyId,
       feature: evt.feature,
       ts: admin.firestore.FieldValue.serverTimestamp(),
-      // Campo della TTL policy: è la data di MORTE, non di nascita. Puntare la
-      // policy su `ts` cancellerebbe ogni evento appena scritto, in silenzio.
-      expiresAt: expiryTimestamp(),
       props: evt.props || {},
-    });
+    };
+    if (!evt.persistent) {
+      // Campo della TTL policy: è la data di MORTE, non di nascita. Puntare
+      // la policy su `ts` cancellerebbe ogni evento appena scritto.
+      doc.expiresAt = expiryTimestamp();
+    }
+    await admin.firestore().collection(EVENTS_COLLECTION).add(doc);
   } catch (err) {
     logger.warn("logEvent failed", {
       name: evt.name,
@@ -193,12 +203,55 @@ function makeTrigger(spec) {
   );
 }
 
+// ── Join famiglia ────────────────────────────────────────────────────────────
+// L'evento che segnala l'intento di condivisione: chi invita ha già deciso che
+// l'app vale per la famiglia. Scatta per ogni membro che NON è l'owner — il
+// confronto con `ownerUid` (campo stabile del doc famiglia) è atomico, a
+// differenza di un conteggio dei membri, che con due join quasi simultanei
+// darebbe risultati sbagliati.
+//
+// PERSISTENTE: niente `expiresAt`. È un evento di stato, non di flusso —
+// "questa famiglia è cresciuta" interessa anche fra un anno, e il TTL dei
+// 90 giorni lo cancellerebbe.
+//
+// Nota: uscire dalla famiglia è un hard delete del doc membro, quindi un
+// rientro fa scattare di nuovo il trigger. Voluto: un rientro È un join;
+// eventuali duplicati sono distinguibili a posteriori (stesso familyId+uid).
+const familyMemberJoined = onDocumentCreated(
+    {
+      document: "families/{familyId}/members/{uid}",
+      region: REGION,
+    },
+    async (event) => {
+      const {familyId, uid} = event.params;
+      const data = event.data ? event.data.data() : null;
+      if (!data || data.isDeleted === true) return;
+
+      const famSnap = await admin.firestore()
+          .collection("families").doc(familyId).get();
+      const ownerUid = famSnap.exists ? famSnap.data().ownerUid : null;
+      // Senza ownerUid non si distingue il fondatore da un invitato: meglio
+      // perdere un evento che contare il fondatore come join.
+      if (!ownerUid || uid === ownerUid) return;
+
+      await logEvent({
+        name: "family_member_joined",
+        uid,
+        familyId,
+        feature: "family",
+        persistent: true,
+        props: data.role ? {role: String(data.role)} : {},
+      });
+    },
+);
+
 // Export: `analyticsDocuments`, `analyticsTodos`, …
 const triggers = {};
 for (const spec of TRACKED) {
   const suffix = spec.coll.charAt(0).toUpperCase() + spec.coll.slice(1);
   triggers[`analytics${suffix}`] = makeTrigger(spec);
 }
+triggers.analyticsFamilyMemberJoined = familyMemberJoined;
 
 module.exports = {
   triggers,

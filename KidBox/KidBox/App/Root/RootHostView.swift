@@ -74,6 +74,7 @@ struct RootHostView: View {
     @State private var revokedFamilyName: String?
     @State private var showRevokedAlert = false
     @ObservedObject private var crashReportPrompt = CrashReportPromptCenter.shared
+    @ObservedObject private var appUpdateChecker = AppUpdateChecker.shared
     
     // MARK: - View
 
@@ -285,6 +286,20 @@ struct RootHostView: View {
                 ),
                 primaryButton: .default(Text("Invia report"), action: prompt.onSend),
                 secondaryButton: .cancel(Text("No grazie"), action: prompt.onDecline)
+            )
+        }
+        .alert(item: $appUpdateChecker.availableUpdate) { update in
+            Alert(
+                title: Text("È disponibile un aggiornamento"),
+                message: Text(
+                    "Per usare KidBox al meglio ti consigliamo di aggiornare all'ultima versione: contiene miglioramenti e correzioni."
+                ),
+                primaryButton: .default(Text("Aggiorna")) {
+                    appUpdateChecker.openAppStore(update)
+                },
+                secondaryButton: .cancel(Text("Non ora")) {
+                    appUpdateChecker.snooze(update)
+                }
             )
         }
     }

@@ -2,7 +2,7 @@
 //  KBAnalytics.swift
 //  KidBox
 //
-//  Design: docs/analytics-active-users.md
+//  Design: internal/analytics-active-users.md
 //
 
 import Foundation
