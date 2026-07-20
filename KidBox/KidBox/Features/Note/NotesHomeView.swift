@@ -51,6 +51,16 @@ struct NotesHomeView: View {
         case week7  = "Ultimi 7 giorni"
         case days30 = "Ultimi 30 giorni"
         case older  = "Più vecchie"
+
+        /// Titolo localizzato per l'header di sezione.
+        var localizedTitle: LocalizedStringKey {
+            switch self {
+            case .pinned: return "In evidenza"
+            case .week7:  return "Ultimi 7 giorni"
+            case .days30: return "Ultimi 30 giorni"
+            case .older:  return "Più vecchie"
+            }
+        }
     }
     
     private var sectioned: [(NoteSection, [KBNote])] {
@@ -215,7 +225,7 @@ struct NotesHomeView: View {
         } else {
             List {
                 ForEach(sectioned, id: \.0.rawValue) { section, sectionNotes in
-                    Section(section.rawValue) {
+                    Section(section.localizedTitle) {
                         ForEach(sectionNotes, id: \.id) { note in
                             noteRow(note)
                                 .listRowBackground(cardBackground)

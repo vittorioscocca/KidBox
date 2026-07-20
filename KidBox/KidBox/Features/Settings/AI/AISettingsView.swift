@@ -546,7 +546,7 @@ struct AISettingsView: View {
     // MARK: - Helpers
     
     @ViewBuilder
-    private func infoRow(icon: String, color: Color, title: String, body: String) -> some View {
+    private func infoRow(icon: String, color: Color, title: LocalizedStringKey, body: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon).foregroundStyle(color).frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {

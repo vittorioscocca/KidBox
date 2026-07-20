@@ -258,7 +258,7 @@ struct PediatricExamDetailView: View {
                                 .background(Capsule().fill(.red))
                         }
                     }
-                    Label(e.status.rawValue, systemImage: e.status.icon)
+                    Label(e.status.displayName, systemImage: e.status.icon)
                         .font(.caption)
                         .foregroundStyle(statusColor(e.status))
                     Text("Creato: \(localizedAbbreviatedDate(e.createdAt))")

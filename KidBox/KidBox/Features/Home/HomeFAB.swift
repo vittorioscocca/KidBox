@@ -56,7 +56,7 @@ final class FABUsageTracker: ObservableObject {
 struct FABAction: Identifiable {
     let id:    String
     let icon:  String
-    let label: String
+    let label: LocalizedStringKey
     let color: Color
 }
 

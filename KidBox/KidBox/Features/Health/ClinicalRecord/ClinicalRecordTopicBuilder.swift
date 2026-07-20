@@ -17,15 +17,17 @@ enum ClinicalRecordTopicBuilder {
         case urology
         case metabolism
 
+        /// `String` (non `LocalizedStringKey`): usato con `.uppercased()` e persistito
+        /// dentro `ClinicalRecordReportArea` (Codable), quindi passa da NSLocalizedString.
         var title: String {
             switch self {
-            case .therapies: return "Terapie in corso"
-            case .pending: return "Esami in attesa"
-            case .bloodPressure: return "Pressione"
-            case .cardiology: return "Cardiologia"
-            case .gastroenterology: return "Gastroenterologia"
-            case .urology: return "Urologia"
-            case .metabolism: return "Glicemia e metabolismo"
+            case .therapies: return NSLocalizedString("Terapie in corso", comment: "Clinical topic: ongoing therapies")
+            case .pending: return NSLocalizedString("Esami in attesa", comment: "Clinical topic: pending exams")
+            case .bloodPressure: return NSLocalizedString("Pressione", comment: "Clinical topic: blood pressure")
+            case .cardiology: return NSLocalizedString("Cardiologia", comment: "Clinical topic: cardiology")
+            case .gastroenterology: return NSLocalizedString("Gastroenterologia", comment: "Clinical topic: gastroenterology")
+            case .urology: return NSLocalizedString("Urologia", comment: "Clinical topic: urology")
+            case .metabolism: return NSLocalizedString("Glicemia e metabolismo", comment: "Clinical topic: metabolism")
             }
         }
 

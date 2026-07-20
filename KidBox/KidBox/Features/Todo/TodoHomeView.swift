@@ -357,7 +357,7 @@ struct TodoHomeView: View {
     }
     
     private func card(
-        title: String,
+        title: LocalizedStringKey,
         count: Int,
         icon: String,
         tint: Color,

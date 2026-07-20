@@ -66,14 +66,15 @@ struct KBNoteCardView: View {
     
     private func formattedDate(_ date: Date) -> String {
         let cal = Calendar.current
+        let locale = kbDeviceLocale()
         if cal.isDateInToday(date) {
-            return date.formatted(date: .omitted, time: .shortened)
+            return date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: locale))
         } else if cal.isDateInYesterday(date) {
-            return "Ieri"
+            return NSLocalizedString("Ieri", comment: "Yesterday")
         } else if let days = cal.dateComponents([.day], from: date, to: Date()).day, days < 7 {
-            return date.formatted(.dateTime.weekday(.wide))
+            return date.formatted(.dateTime.weekday(.wide).locale(locale))
         } else {
-            return date.formatted(.dateTime.day().month(.twoDigits).year(.twoDigits))
+            return date.formatted(.dateTime.day().month(.twoDigits).year(.twoDigits).locale(locale))
         }
     }
     

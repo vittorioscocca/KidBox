@@ -18,7 +18,17 @@ enum ExamTimeFilter: String, CaseIterable, Identifiable {
     case custom  = "Personalizzato"
     
     var id: String { rawValue }
-    
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .all:     return "Tutti"
+        case .months3: return "3 mesi"
+        case .months6: return "6 mesi"
+        case .year1:   return "Ultimo anno"
+        case .custom:  return "Personalizzato"
+        }
+    }
+
     func cutoff(from customStart: Date?) -> Date? {
         let cal = Calendar.current
         switch self {
@@ -255,7 +265,7 @@ struct PediatricExamsView: View {
                                 .font(.caption2).foregroundStyle(.red)
                         }
                     }
-                    Label(e.status.rawValue, systemImage: e.status.icon)
+                    Label(e.status.displayName, systemImage: e.status.icon)
                         .font(.caption2).foregroundStyle(statusColor(e.status))
                     if let dl = e.deadline {
                         let isOverdue = dl < Date() && e.status == .pending
@@ -329,7 +339,7 @@ struct PediatricExamsView: View {
         .foregroundStyle(tint)
     }
     
-    private var filterLabel: String {
+    private var filterLabel: LocalizedStringKey {
         let fmt = DateFormatter(); fmt.dateStyle = .short; fmt.locale = kbDeviceLocale()
         switch timeFilter {
         case .all:     return "Tutti"
@@ -348,7 +358,7 @@ struct PediatricExamsView: View {
                 Section("Periodo rapido") {
                     ForEach([ExamTimeFilter.all, .months3, .months6, .year1], id: \.self) { f in
                         HStack {
-                            Text(f.rawValue)
+                            Text(f.displayName)
                             Spacer()
                             if timeFilter == f { Image(systemName: "checkmark").foregroundStyle(tint) }
                         }
@@ -430,7 +440,7 @@ struct PediatricExamsView: View {
     
     // MARK: - Section header
     
-    private func sectionHeader(_ title: String, icon: String, count: Int, color: Color) -> some View {
+    private func sectionHeader(_ title: LocalizedStringKey, icon: String, count: Int, color: Color) -> some View {
         HStack {
             Label(title, systemImage: icon).foregroundStyle(color)
             Spacer()

@@ -220,7 +220,7 @@ private struct DetailsCard: View {
             DetailRow(
                 icon: "calendar",
                 label: "Data",
-                value: expense.date.formatted(.dateTime.day().month(.wide).year())
+                value: expense.date.formatted(.dateTime.day().month(.wide).year().locale(kbDeviceLocale()))
             )
             if let cat = category {
                 Divider().padding(.leading, 46)
@@ -296,14 +296,14 @@ private struct MetadataCard: View {
             DetailRow(
                 icon: "clock",
                 label: "Aggiunta il",
-                value: expense.createdAt.formatted(.dateTime.day().month(.abbreviated).year().hour().minute())
+                value: expense.createdAt.formatted(.dateTime.day().month(.abbreviated).year().hour().minute().locale(kbDeviceLocale()))
             )
             if expense.updatedAt > expense.createdAt.addingTimeInterval(5) {
                 Divider().padding(.leading, 46)
                 DetailRow(
                     icon: "pencil.and.clock",
                     label: "Modificata il",
-                    value: expense.updatedAt.formatted(.dateTime.day().month(.abbreviated).year().hour().minute())
+                    value: expense.updatedAt.formatted(.dateTime.day().month(.abbreviated).year().hour().minute().locale(kbDeviceLocale()))
                 )
             }
         }

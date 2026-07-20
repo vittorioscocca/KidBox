@@ -21,6 +21,12 @@ struct WalletParsedTicketData {
     let barcodeText: String?
     let barcodeFormat: String?
     let notes: String?
+    /// Luogo di arrivo (`location` resta il luogo di partenza). Non estratto da regex, popolato dalla lettura AI.
+    var arrivalLocation: String? = nil
+    /// Nome del titolare del biglietto. Non estratto da regex, popolato dalla lettura AI.
+    var holderName: String? = nil
+    /// Testo grezzo estratto dal PDF (per la lettura AI).
+    var rawText: String = ""
 }
 
 enum WalletPDFParser {
@@ -68,7 +74,8 @@ enum WalletPDFParser {
             addToAppleWalletURL: addToWalletURL,
             barcodeText: barcodeText,
             barcodeFormat: barcodeFormat,
-            notes: extractShortNotes(from: text)
+            notes: extractShortNotes(from: text),
+            rawText: text
         )
     }
 

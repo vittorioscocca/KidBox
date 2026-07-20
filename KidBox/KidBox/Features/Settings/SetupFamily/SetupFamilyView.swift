@@ -82,7 +82,10 @@ struct SetupFamilyView: View {
                     if let errorText {
                         KBSettingsCard(
                             title: "Errore",
-                            subtitle: errorText,
+                            // errorText può contenere testo arbitrario (es. error.localizedDescription):
+                            // esegue l'escape di "%" per evitare che LocalizedStringKey lo interpreti
+                            // come specificatore di formato.
+                            subtitle: LocalizedStringKey(errorText.replacingOccurrences(of: "%", with: "%%")),
                             systemImage: "exclamationmark.triangle",
                             style: .danger,
                             action: nil
@@ -120,35 +123,35 @@ struct SetupFamilyView: View {
         .padding(.bottom, 4)
     }
     
-    private var navTitle: String {
+    private var navTitle: LocalizedStringKey {
         switch mode {
         case .create: return "Crea famiglia"
         case .edit:   return "Modifica famiglia"
         }
     }
-    
-    private var modeSubtitle: String {
+
+    private var modeSubtitle: LocalizedStringKey {
         switch mode {
         case .create: return "Imposta nome famiglia e figli."
         case .edit:   return "Aggiorna nome famiglia e gestisci i figli."
         }
     }
-    
-    private var buttonTitle: String {
+
+    private var buttonTitle: LocalizedStringKey {
         switch mode {
         case .create: return "Crea famiglia"
         case .edit:   return "Salva modifiche"
         }
     }
-    
-    private var buttonBusyTitle: String {
+
+    private var buttonBusyTitle: LocalizedStringKey {
         switch mode {
         case .create: return "Creazione…"
         case .edit:   return "Salvataggio…"
         }
     }
-    
-    private var buttonSubtitle: String {
+
+    private var buttonSubtitle: LocalizedStringKey {
         switch mode {
         case .create: return "La famiglia verrà creata con i figli inseriti."
         case .edit:   return "Le modifiche verranno sincronizzate."
@@ -344,7 +347,7 @@ struct SetupFamilyView: View {
         }
     }
     
-    private func childrenSubtitleCount(count: Int) -> String {
+    private func childrenSubtitleCount(count: Int) -> LocalizedStringKey {
         if count == 0 { return "Gestisci i profili dei figli." }
         if count == 1 { return "1 figlio configurato." }
         return "\(count) figli configurati."

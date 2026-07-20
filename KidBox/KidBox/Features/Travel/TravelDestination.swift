@@ -71,10 +71,15 @@ struct TravelSuggestionsResponse {
 }
 
 enum TravelDiscoverTips {
+    /// `String` (non `LocalizedStringKey`): `title` è usato con `.uppercased()`,
+    /// quindi passa da NSLocalizedString.
     static let items: [(title: String, body: String)] = [
-        ("Lo sapevi?", "Il periodo migliore per Roma è aprile–maggio o settembre–ottobre. Meno folla, clima mite."),
-        ("Lo sapevi?", "In primavera le città del Mediterraneo offrono sole e serate vivaci senza il caldo estivo."),
-        ("Lo sapevi?", "Con bambini, 1–2 attività al giorno rendono il viaggio più piacevole per tutti."),
+        (NSLocalizedString("Lo sapevi?", comment: "Travel tip title"),
+         NSLocalizedString("Il periodo migliore per Roma è aprile–maggio o settembre–ottobre. Meno folla, clima mite.", comment: "Travel tip body")),
+        (NSLocalizedString("Lo sapevi?", comment: "Travel tip title"),
+         NSLocalizedString("In primavera le città del Mediterraneo offrono sole e serate vivaci senza il caldo estivo.", comment: "Travel tip body")),
+        (NSLocalizedString("Lo sapevi?", comment: "Travel tip title"),
+         NSLocalizedString("Con bambini, 1–2 attività al giorno rendono il viaggio più piacevole per tutti.", comment: "Travel tip body")),
     ]
 
     static func random() -> (title: String, body: String) {

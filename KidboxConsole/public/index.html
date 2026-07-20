@@ -960,7 +960,7 @@ async function loadActiveUsers() {
     document.getElementById('bars-dau').innerHTML = last14.map(d => `
       <div class="bar-row">
         <div class="bar-lbl">${d.id.slice(5)}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${((d.dau||0)/maxDau*100).toFixed(1)}%"></div></div>
+        <div class="bar-track"><div class="bar-fill blue" style="width:${((d.dau||0)/maxDau*100).toFixed(1)}%"></div></div>
         <div class="bar-val">${d.dau||0}</div>
       </div>`).join('');
 
@@ -1536,6 +1536,7 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 .bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1)}
 .orange{background:var(--color-orange)}
 .green{background:var(--color-green)}
+.blue{background:var(--color-blue)}
 .bar-val{width:72px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--color-text);flex-shrink:0}
 
 .override-msg { font-size: 12px; font-family: var(--mono); }

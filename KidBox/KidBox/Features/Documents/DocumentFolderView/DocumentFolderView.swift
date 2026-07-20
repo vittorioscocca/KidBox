@@ -275,7 +275,7 @@ struct DocumentFolderView: View {
             HStack(spacing: 4) {
                 Image(systemName: mode.systemImage)
                     .font(.caption2)
-                Text(mode.rawValue)
+                Text(mode.displayName)
                     .font(.caption.weight(isActive ? .semibold : .regular))
                 if isActive {
                     Image(systemName: viewModel.nameSortOrder == .asc ? "chevron.up" : "chevron.down")

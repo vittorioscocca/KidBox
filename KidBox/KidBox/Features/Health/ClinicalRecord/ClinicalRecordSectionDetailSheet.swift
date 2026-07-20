@@ -67,7 +67,7 @@ struct ClinicalRecordSectionDetailSheet: View {
         }
     }
 
-    private func refertoSynthesisTitle(for sectionId: String) -> String {
+    private func refertoSynthesisTitle(for sectionId: String) -> LocalizedStringKey {
         switch sectionId {
         case ClinicalRecordTopicBuilder.TopicId.cardiology.rawValue,
              ClinicalRecordTopicBuilder.TopicId.urology.rawValue:
@@ -77,7 +77,7 @@ struct ClinicalRecordSectionDetailSheet: View {
         }
     }
 
-    private func timelineTitle(for sectionId: String) -> String {
+    private func timelineTitle(for sectionId: String) -> LocalizedStringKey {
         switch sectionId {
         case ClinicalRecordTopicBuilder.TopicId.cardiology.rawValue,
              ClinicalRecordTopicBuilder.TopicId.urology.rawValue:
@@ -115,7 +115,7 @@ struct ClinicalRecordSectionDetailSheet: View {
             .fill(KBTheme.cardBackground(colorScheme))
     }
 
-    private func trendCard(title: String, text: String, tint: Color) -> some View {
+    private func trendCard(title: LocalizedStringKey, text: String, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(title, systemImage: "chart.line.uptrend.xyaxis")
                 .font(.subheadline.bold())
@@ -129,7 +129,7 @@ struct ClinicalRecordSectionDetailSheet: View {
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(tint.opacity(0.08)))
     }
 
-    private func contentCard(title: String, text: String) -> some View {
+    private func contentCard(title: LocalizedStringKey, text: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)

@@ -111,22 +111,27 @@ struct WalletTicketCardView: View {
     private var footer: some View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
-                if let eventDate = ticket.eventDate {
-                    Text(localizedTicketDay(eventDate))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                    Text(localizedTicketTime(eventDate))
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
-                } else if let location = ticket.location, !location.isEmpty {
-                    Text(location)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
+                if hasJourney {
+                    HStack(alignment: .bottom, spacing: 6) {
+                        journeyPoint(timeText: ticket.eventDate.map(localizedTicketTime), location: ticket.location, dateText: ticket.eventDate.map(localizedTicketDay))
+                        if ticket.eventEndDate != nil || !(ticket.arrivalLocation ?? "").isEmpty {
+                            Text("→")
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.6))
+                            journeyPoint(timeText: ticket.eventEndDate.map(localizedTicketTime), location: ticket.arrivalLocation, dateText: nil)
+                        }
+                    }
                 } else {
                     Text("—")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
+                }
+                if let holderName = ticket.holderName, !holderName.isEmpty {
+                    Text(holderName)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
+                        .padding(.top, hasJourney ? 4 : 0)
                 }
             }
 
@@ -143,6 +148,34 @@ struct WalletTicketCardView: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                 }
+            }
+        }
+    }
+
+    private var hasJourney: Bool {
+        ticket.eventDate != nil || ticket.eventEndDate != nil ||
+            !(ticket.location ?? "").isEmpty || !(ticket.arrivalLocation ?? "").isEmpty
+    }
+
+    /// Un estremo del viaggio (orario + luogo) mostrato nel footer della card.
+    @ViewBuilder
+    private func journeyPoint(timeText: String?, location: String?, dateText: String?) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let dateText {
+                Text(dateText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            if let timeText {
+                Text(timeText)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+            if let location, !location.isEmpty {
+                Text(location)
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
             }
         }
     }

@@ -150,14 +150,16 @@ enum KBEventCategory: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
+    /// `String` (non `LocalizedStringKey`): interpolato in stringhe di contesto
+    /// (es. `PlanningContextBuilder`), quindi passa da NSLocalizedString.
     var label: String {
         switch self {
-        case .children: return "Bambini"
-        case .school:   return "Scuola"
-        case .health:   return "Salute"
-        case .family:   return "Famiglia"
-        case .admin:    return "Amministrazione"
-        case .leisure:  return "Tempo libero"
+        case .children: return NSLocalizedString("Bambini", comment: "Event category")
+        case .school:   return NSLocalizedString("Scuola", comment: "Event category")
+        case .health:   return NSLocalizedString("Salute", comment: "Event category")
+        case .family:   return NSLocalizedString("Famiglia", comment: "Event category")
+        case .admin:    return NSLocalizedString("Amministrazione", comment: "Event category")
+        case .leisure:  return NSLocalizedString("Tempo libero", comment: "Event category")
         }
     }
     
@@ -193,13 +195,15 @@ enum KBEventRecurrence: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
+    /// `String` (non `LocalizedStringKey`): interpolato in stringhe di contesto
+    /// (es. `PlanningContextBuilder`), quindi passa da NSLocalizedString.
     var label: String {
         switch self {
-        case .none:    return "Nessuna"
-        case .daily:   return "Giornaliera"
-        case .weekly:  return "Settimanale"
-        case .monthly: return "Mensile"
-        case .yearly:  return "Annuale"
+        case .none:    return NSLocalizedString("Nessuna", comment: "Event recurrence: none")
+        case .daily:   return NSLocalizedString("Giornaliera", comment: "Event recurrence: daily")
+        case .weekly:  return NSLocalizedString("Settimanale", comment: "Event recurrence: weekly")
+        case .monthly: return NSLocalizedString("Mensile", comment: "Event recurrence: monthly")
+        case .yearly:  return NSLocalizedString("Annuale", comment: "Event recurrence: yearly")
         }
     }
 }

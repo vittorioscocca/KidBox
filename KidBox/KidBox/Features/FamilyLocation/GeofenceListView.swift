@@ -152,7 +152,13 @@ struct GeofenceListView: View {
     }
 
     private func statusBadge(isActive: Bool) -> some View {
-        Text(isActive ? "Attiva" : "Inattiva")
+        Group {
+            if isActive {
+                Text("Attiva")
+            } else {
+                Text("Inattiva")
+            }
+        }
             .font(.caption.weight(.semibold))
             .foregroundStyle(isActive ? Color.green : Color.secondary)
             .padding(.horizontal, 10)

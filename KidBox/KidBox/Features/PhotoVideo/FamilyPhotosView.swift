@@ -1815,13 +1815,13 @@ private struct GridWidthKey: PreferenceKey {
 enum PhotoTab: String, CaseIterable, Identifiable {
     case library, albums
     var id: Self { self }
-    var label: String { self == .library ? "Libreria" : "Album" }
+    var label: LocalizedStringKey { self == .library ? "Libreria" : "Album" }
 }
 
 enum PhotoGrouping: String, CaseIterable, Identifiable {
     case year, month, day, all
     var id: Self { self }
-    var label: String {
+    var label: LocalizedStringKey {
         switch self {
         case .year:  "Anni"
         case .month: "Mesi"

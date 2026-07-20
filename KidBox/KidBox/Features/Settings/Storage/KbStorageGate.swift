@@ -44,20 +44,24 @@ enum KBStorageBlockReason {
     case quotaExceeded(used: Int64, quota: Int64)
     case wouldExceed(used: Int64, quota: Int64, needed: Int64)
     
-    var title: String {
+    var title: LocalizedStringKey {
         switch self {
         case .quotaExceeded: return "Spazio esaurito"
         case .wouldExceed:   return "Spazio insufficiente"
         }
     }
-    
+
+    /// Testo già risolto per il locale corrente — usato sia in UI (Text(reason.message))
+    /// sia nei log, quindi resta `String` e passa da NSLocalizedString invece che da LocalizedStringKey.
     var message: String {
         switch self {
         case .quotaExceeded(let used, let quota):
-            return "La famiglia ha usato \(used.formattedFileSize) su \(quota.formattedFileSize). Passa a Pro per 5 GB."
+            let format = NSLocalizedString("La famiglia ha usato %@ su %@. Passa a Pro per 5 GB.", comment: "Storage quota exceeded message")
+            return String(format: format, used.formattedFileSize, quota.formattedFileSize)
         case .wouldExceed(let used, let quota, let needed):
             let free = quota - used
-            return "Questo file richiede \(needed.formattedFileSize) ma hai solo \(free.formattedFileSize) liberi su \(quota.formattedFileSize). Passa a Pro per 5 GB."
+            let format = NSLocalizedString("Questo file richiede %@ ma hai solo %@ liberi su %@. Passa a Pro per 5 GB.", comment: "Storage would exceed quota message")
+            return String(format: format, needed.formattedFileSize, free.formattedFileSize, quota.formattedFileSize)
         }
     }
 }
@@ -234,14 +238,14 @@ enum KBAIBlockReason: Equatable {
     case planNotIncludesAI
     case consentNotGiven
     
-    var title: String {
+    var title: LocalizedStringKey {
         switch self {
         case .planNotIncludesAI: return "Funzione AI non disponibile"
         case .consentNotGiven:   return "Consenso richiesto"
         }
     }
-    
-    var message: String {
+
+    var message: LocalizedStringKey {
         switch self {
         case .planNotIncludesAI:
             return "L'assistente AI è incluso nei piani Pro e Max. Passa a Pro per 20 messaggi al giorno per membro."

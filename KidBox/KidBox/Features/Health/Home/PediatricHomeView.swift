@@ -16,7 +16,16 @@ enum HealthEventKind: String {
     case exam      = "Esame"
     case treatment = "Cura"
     case vaccine   = "Vaccino"
-    
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .visit:     return "Visita"
+        case .exam:      return "Esame"
+        case .treatment: return "Cura"
+        case .vaccine:   return "Vaccino"
+        }
+    }
+
     var icon: String {
         switch self {
         case .visit:     return "stethoscope"
@@ -330,8 +339,8 @@ struct PediatricHomeView: View {
     
     @ViewBuilder
     private func moduleCard(
-        title: String,
-        subtitle: String,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey,
         systemImage: String,
         tint: Color,
         badge: Int? = nil,
@@ -489,7 +498,7 @@ struct HealthTimelineView: View {
                             if active { activeFilters.remove(kind.rawValue) }
                             else      { activeFilters.insert(kind.rawValue) }
                         } label: {
-                            Label(kind.rawValue, systemImage: kind.icon)
+                            Label(kind.displayName, systemImage: kind.icon)
                                 .font(.caption.bold())
                                 .padding(.horizontal, 12).padding(.vertical, 7)
                                 .background(Capsule().fill(active ? kind.color : kind.color.opacity(0.12)))
@@ -686,7 +695,7 @@ struct HealthTimelineView: View {
                 
                 // Chip tipo + chevron
                 HStack(spacing: 6) {
-                    Text(event.kind.rawValue)
+                    Text(event.kind.displayName)
                         .font(.caption2.bold())
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Capsule().fill(event.kind.color.opacity(0.12)))
@@ -769,21 +778,21 @@ struct PediatricTimelineDestinationView: View {
         var events: [HealthTimelineEvent] = []
         for v in allVisits {
             events.append(HealthTimelineEvent(id: "visit-\(v.id)", sourceId: v.id, date: v.date, kind: .visit,
-                                              title: v.reason.isEmpty ? "Visita medica" : v.reason, subtitle: v.doctorName))
+                                              title: v.reason.isEmpty ? NSLocalizedString("Visita medica", comment: "") : v.reason, subtitle: v.doctorName))
         }
         for e in allExams {
             events.append(HealthTimelineEvent(id: "exam-\(e.id)", sourceId: e.id,
-                                              date: e.deadline ?? e.createdAt, kind: .exam, title: e.name, subtitle: e.status.rawValue))
+                                              date: e.deadline ?? e.createdAt, kind: .exam, title: e.name, subtitle: e.status.displayName))
         }
         for t in allTreatments {
             events.append(HealthTimelineEvent(id: "treatment-\(t.id)", sourceId: t.id, date: t.startDate, kind: .treatment,
-                                              title: t.drugName, subtitle: t.isLongTerm ? "Lungo termine" : (t.durationDays > 0 ? "\(t.durationDays) giorni" : nil)))
+                                              title: t.drugName, subtitle: t.isLongTerm ? NSLocalizedString("Lungo termine", comment: "") : (t.durationDays > 0 ? String(format: NSLocalizedString("%d giorni", comment: ""), t.durationDays) : nil)))
         }
         for v in allVaccines {
             events.append(HealthTimelineEvent(id: "vaccine-\(v.id)", sourceId: v.id,
                                               date: v.administeredDate ?? v.scheduledDate ?? v.createdAt,
                                               kind: .vaccine, title: v.commercialName ?? v.vaccineType.displayName,
-                                              subtitle: v.lotNumber.map { "Lotto: \($0)" }))
+                                              subtitle: v.lotNumber.map { String(format: NSLocalizedString("Lotto: %@", comment: ""), $0) }))
         }
         return events.sorted { $0.date > $1.date }
     }

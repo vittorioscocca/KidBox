@@ -268,7 +268,7 @@ struct PediatricVisitEditView: View {
                             }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(selectedDoctorName).font(.subheadline.bold())
-                                if let s = selectedSpec { Text(s.rawValue).font(.caption).foregroundStyle(.secondary) }
+                                if let s = selectedSpec { Text(s.uiLabel).font(.caption).foregroundStyle(.secondary) }
                             }
                             Spacer()
                             Button {
@@ -353,7 +353,7 @@ struct PediatricVisitEditView: View {
                                     HStack {
                                         ForEach(KBDoctorSpecialization.allCases, id: \.self) { s in
                                             Button { selectedSpec = s } label: {
-                                                Text(s.rawValue).font(.caption)
+                                                Text(s.uiLabel).font(.caption)
                                                     .padding(.horizontal, 12).padding(.vertical, 6)
                                                     .background(Capsule().fill(selectedSpec == s ? tint : Color.secondary.opacity(0.12)))
                                                     .foregroundStyle(selectedSpec == s ? .white : KBTheme.primaryText(colorScheme))
@@ -410,7 +410,7 @@ struct PediatricVisitEditView: View {
                         HStack(spacing: 8) {
                             ForEach(KBVisitStatus.allCases, id: \.self) { s in
                                 Button { visitStatus = s } label: {
-                                    Label(s.rawValue, systemImage: s.icon)
+                                    Label(s.displayName, systemImage: s.icon)
                                         .font(.caption.bold())
                                         .padding(.horizontal, 12).padding(.vertical, 8)
                                         .background(
@@ -615,7 +615,7 @@ struct PediatricVisitEditView: View {
                         if therapyTypes.contains(t) { therapyTypes.removeAll { $0 == t } }
                         else { therapyTypes.append(t) }
                     } label: {
-                        Text(t.rawValue).font(.subheadline)
+                        Text(t.uiLabel).font(.subheadline)
                             .frame(maxWidth: .infinity).padding(10)
                             .background(RoundedRectangle(cornerRadius: 10)
                                 .fill(therapyTypes.contains(t) ? tint : Color.secondary.opacity(0.1)))
@@ -773,7 +773,7 @@ struct PediatricVisitEditView: View {
                     summaryRow(icon: "person.fill", title: "Nome Medico") {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(selectedDoctorName).font(.subheadline.bold())
-                            if let s = selectedSpec { Text(s.rawValue).font(.caption).foregroundStyle(.secondary) }
+                            if let s = selectedSpec { Text(s.uiLabel).font(.caption).foregroundStyle(.secondary) }
                         }
                     }
                 }
@@ -808,7 +808,7 @@ struct PediatricVisitEditView: View {
                 }
                 if !therapyTypes.isEmpty {
                     summaryRow(icon: "figure.walk", title: "Terapie (\(therapyTypes.count))") {
-                        Text(therapyTypes.map { $0.rawValue }.joined(separator: ", ")).font(.subheadline)
+                        Text(therapyTypes.map { $0.uiLabel }.joined(separator: ", ")).font(.subheadline)
                     }
                 }
                 // ← Esami: linkedExamIds con SummaryLinkedExamRow
@@ -1043,7 +1043,7 @@ struct PediatricVisitEditView: View {
     // MARK: - View helpers
     
     @ViewBuilder
-    private func sectionCard<Content: View>(icon: String, title: String, badge: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func sectionCard<Content: View>(icon: String, title: LocalizedStringKey, badge: String? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Label(title, systemImage: icon).font(.headline)
@@ -1058,7 +1058,7 @@ struct PediatricVisitEditView: View {
     }
     
     @ViewBuilder
-    private func summaryRow<Content: View>(icon: String, title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func summaryRow<Content: View>(icon: String, title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(title, systemImage: icon).font(.caption).foregroundStyle(.secondary)
             content()

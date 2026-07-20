@@ -38,11 +38,13 @@ enum KBPlan: String, CaseIterable {
         }
     }
     
+    /// `String` (non `LocalizedStringKey`): confrontato con `.isEmpty` e usato in `??`
+    /// insieme a `product?.displayPrice` (StoreKit), quindi passa da NSLocalizedString.
     var monthlyPrice: String {
         switch self {
-        case .free: return "Gratis"
-        case .pro:  return "€4,99/mese"
-        case .max:  return "€9,99/mese"
+        case .free: return NSLocalizedString("Gratis", comment: "Free plan price")
+        case .pro:  return NSLocalizedString("€4,99/mese", comment: "Pro plan monthly price")
+        case .max:  return NSLocalizedString("€9,99/mese", comment: "Max plan monthly price")
         }
     }
     
@@ -76,11 +78,12 @@ enum KBPlan: String, CaseIterable {
         }
     }
     
+    /// `String` (non `LocalizedStringKey`): confrontato con `.isEmpty`, quindi passa da NSLocalizedString.
     var badge: String {
         switch self {
         case .free: return ""
-        case .pro:  return "Più popolare"
-        case .max:  return "Migliore"
+        case .pro:  return NSLocalizedString("Più popolare", comment: "Pro plan badge")
+        case .max:  return NSLocalizedString("Migliore", comment: "Max plan badge")
         }
     }
 }

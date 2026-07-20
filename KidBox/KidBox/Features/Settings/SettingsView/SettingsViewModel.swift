@@ -169,7 +169,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewDocs(enabled)
-                infoText = enabled ? "Notifiche attive." : "Notifiche disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche attive.", comment: "") : NSLocalizedString("Notifiche disattivate.", comment: "")
             } catch {
                 notifyOnNewDocs = false
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnNewDocs)
@@ -186,7 +186,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewMessages(enabled)
-                infoText = enabled ? "Notifiche chat attive." : "Notifiche chat disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche chat attive.", comment: "") : NSLocalizedString("Notifiche chat disattivate.", comment: "")
             } catch {
                 notifyOnNewMessages = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewMessages)
@@ -202,7 +202,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnLocationSharing(enabled)
-                infoText = enabled ? "Notifiche posizione attive." : "Notifiche posizione disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche posizione attive.", comment: "") : NSLocalizedString("Notifiche posizione disattivate.", comment: "")
             } catch {
                 notifyOnLocationSharing = false
                 UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnLocationSharing)
@@ -219,7 +219,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnTodoAssigned(enabled)
-                infoText = enabled ? "Notifiche Todo attive." : "Notifiche Todo disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche Todo attive.", comment: "") : NSLocalizedString("Notifiche Todo disattivate.", comment: "")
             } catch {
                 notifyOnTodos = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnTodos)
@@ -238,7 +238,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewGroceryItem(enabled)
-                infoText = enabled ? "Notifiche spesa attive." : "Notifiche spesa disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche spesa attive.", comment: "") : NSLocalizedString("Notifiche spesa disattivate.", comment: "")
             } catch {
                 notifyOnNewGroceryItem = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewGroceryItem)
@@ -258,7 +258,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewNote(enabled)
-                infoText = enabled ? "Notifiche note attive." : "Notifiche note disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche note attive.", comment: "") : NSLocalizedString("Notifiche note disattivate.", comment: "")
             } catch {
                 notifyOnNewNote = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewNote)
@@ -278,7 +278,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewExpense(enabled)
-                infoText = enabled ? "Notifiche spese attive." : "Notifiche spese disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche spese attive.", comment: "") : NSLocalizedString("Notifiche spese disattivate.", comment: "")
             } catch {
                 notifyOnNewExpense = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewExpense)
@@ -298,7 +298,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnNewWalletTicket(enabled)
-                infoText = enabled ? "Notifiche Wallet attive." : "Notifiche Wallet disattivate."
+                infoText = enabled ? NSLocalizedString("Notifiche Wallet attive.", comment: "") : NSLocalizedString("Notifiche Wallet disattivate.", comment: "")
             } catch {
                 notifyOnNewWalletTicket = true
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewWalletTicket)
@@ -316,7 +316,7 @@ final class SettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setNotifyOnWalletReminder(enabled)
-                infoText = enabled ? "Promemoria Wallet attivi." : "Promemoria Wallet disattivati."
+                infoText = enabled ? NSLocalizedString("Promemoria Wallet attivi.", comment: "") : NSLocalizedString("Promemoria Wallet disattivati.", comment: "")
 
                 // Disabilitato → cancella anche le notifiche locali già schedulate.
                 // (Le push schedulate dalla CF rispettano già la preferenza remota.)
@@ -341,7 +341,7 @@ final class SettingsViewModel: ObservableObject {
         KBLog.settings.kbInfo("SettingsVM toggleAudioTranscription enabled=\(enabled)")
         audioTranscriptionEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: LocalKeys.audioTranscriptionEnabled)
-        infoText = enabled ? "Trascrizione vocale attiva." : "Trascrizione vocale disattivata."
+        infoText = enabled ? NSLocalizedString("Trascrizione vocale attiva.", comment: "") : NSLocalizedString("Trascrizione vocale disattivata.", comment: "")
     }
     
     // MARK: - Appearance toggle
@@ -353,6 +353,6 @@ final class SettingsViewModel: ObservableObject {
         appearanceMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: LocalKeys.appearanceMode)
         coordinator.setAppearanceMode(mode)
-        infoText = "Tema impostato su \(mode.label)."
+        infoText = String(format: NSLocalizedString("Tema impostato su %@.", comment: "Theme changed info"), mode.label)
     }
 }

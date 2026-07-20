@@ -15,11 +15,13 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
     
     var id: Self { self }
     
+    /// Testo già risolto per il locale corrente (usato anche in interpolazioni di stringhe,
+    /// non solo in `Text()`), quindi passa da `NSLocalizedString` invece che da `LocalizedStringKey`.
     var label: String {
         switch self {
-        case .light:  return "Chiaro"
-        case .dark:   return "Scuro"
-        case .system: return "Sistema"
+        case .light:  return NSLocalizedString("Chiaro", comment: "Light appearance mode")
+        case .dark:   return NSLocalizedString("Scuro", comment: "Dark appearance mode")
+        case .system: return NSLocalizedString("Sistema", comment: "System appearance mode")
         }
     }
     

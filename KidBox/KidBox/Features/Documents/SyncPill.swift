@@ -45,11 +45,13 @@ struct SyncPill: View {
     // MARK: - Derived UI
     
     /// Short visual label shown inside the pill.
+    /// `String` (non `LocalizedStringKey`): interpolato in `accessibilityText`, quindi
+    /// passa da NSLocalizedString.
     private var label: String {
         switch state {
-        case .synced: return "OK"
-        case .pendingUpsert, .pendingDelete: return "Sync"
-        case .error: return "Errore"
+        case .synced: return NSLocalizedString("OK", comment: "Sync state: synced")
+        case .pendingUpsert, .pendingDelete: return NSLocalizedString("Sync", comment: "Sync state: pending")
+        case .error: return NSLocalizedString("Errore", comment: "Sync state: error")
         }
     }
     

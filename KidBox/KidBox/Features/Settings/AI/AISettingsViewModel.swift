@@ -119,7 +119,7 @@ final class AISettingsViewModel: ObservableObject {
         Task { @MainActor in
             do {
                 try await notifications.setAIEnabled(enabled)
-                infoText = enabled ? "Assistente AI attivato." : "Assistente AI disattivato."
+                infoText = enabled ? NSLocalizedString("Assistente AI attivato.", comment: "") : NSLocalizedString("Assistente AI disattivato.", comment: "")
             } catch {
                 // Rollback
                 aiEnabled = !enabled

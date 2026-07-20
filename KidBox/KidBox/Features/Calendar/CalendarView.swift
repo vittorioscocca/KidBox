@@ -209,7 +209,7 @@ struct CalendarView: View {
 private enum CalendarViewMode: String, CaseIterable, Identifiable {
     case month, year
     var id: String { rawValue }
-    var label: String {
+    var label: LocalizedStringKey {
         switch self {
         case .month: return "Mese"
         case .year:  return "Anno"
@@ -971,7 +971,7 @@ struct CalendarEventFormView: View {
         )
     }
     
-    private func label(_ text: String) -> some View {
+    private func label(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(secondaryText)
@@ -980,7 +980,7 @@ struct CalendarEventFormView: View {
     }
     
     @ViewBuilder
-    private func datePicker(_ title: String, selection: Binding<Date>, components: DatePickerComponents) -> some View {
+    private func datePicker(_ title: LocalizedStringKey, selection: Binding<Date>, components: DatePickerComponents) -> some View {
         HStack {
             Text(title)
                 .foregroundStyle(primaryText)

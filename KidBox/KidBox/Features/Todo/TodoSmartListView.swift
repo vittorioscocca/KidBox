@@ -152,7 +152,7 @@ struct TodoSmartListView: View {
     
     // MARK: - Helpers
     
-    private var title: String {
+    private var title: LocalizedStringKey {
         switch kind {
         case .today:            return "Oggi"
         case .all:              return "Tutti"
@@ -186,7 +186,7 @@ struct TodoSmartListView: View {
                     }
                     
                     if let due = todo.dueAt {
-                        Text(due.formatted(.dateTime.day().month().hour().minute()))
+                        Text(due.formatted(.dateTime.day().month().hour().minute().locale(kbDeviceLocale())))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

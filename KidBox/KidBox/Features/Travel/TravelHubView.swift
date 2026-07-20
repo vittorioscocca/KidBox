@@ -17,7 +17,7 @@ struct TravelHubView: View {
 
     private let accent = Color(red: 0.95, green: 0.38, blue: 0.10)
 
-    private var greeting: String {
+    private var greeting: LocalizedStringKey {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
         case 5 ..< 12: return "Buongiorno"

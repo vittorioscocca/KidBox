@@ -26,7 +26,11 @@ struct AddWalletTicketSheet: View {
     @State private var kind: KBWalletTicketKind = .other
     @State private var hasEventDate = false
     @State private var eventDate: Date = .now
+    @State private var hasArrivalDate = false
+    @State private var arrivalDate: Date = .now
     @State private var location: String = ""
+    @State private var arrivalLocation: String = ""
+    @State private var holderName: String = ""
     @State private var bookingCode: String = ""
     @State private var notes: String = ""
     @State private var addToWalletURL: String = ""
@@ -36,10 +40,15 @@ struct AddWalletTicketSheet: View {
     @State private var parsedBarcodeText: String?
     @State private var parsedBarcodeFormat: String?
     @State private var parsedEmitter: String?
+    @State private var parsedRawText: String = ""
     @State private var showImporter = false
     @State private var showKidBoxDocumentPicker = false
     @State private var isSaving = false
     @State private var errorMessage: String?
+
+    @State private var isAIReading = false
+    @State private var showAICostConfirm = false
+    @State private var showUpgradeSheet = false
 
     @State private var selectedVisibilityScope: String = KBVisibilityScope.onlyCreator
     @State private var selectedVisibilityMemberIds: Set<String> = []
@@ -71,6 +80,10 @@ struct AddWalletTicketSheet: View {
     private var selectableMembers: [KBFamilyMember] {
         members.filter { $0.userId != currentUid }
     }
+
+    private var isMaxPlan: Bool { KBSubscriptionManager.shared.currentPlan == .max }
+    private var usedImageFallbackForAI: Bool { parsedRawText.trimmingCharacters(in: .whitespacesAndNewlines).count < 40 }
+    private var aiMessageCost: Int { WalletTicketAIExtractor.estimatedMessageUnits(usedImageFallback: usedImageFallbackForAI) }
 
     var body: some View {
         NavigationStack {
@@ -115,6 +128,24 @@ struct AddWalletTicketSheet: View {
                     }
                 }
 
+                if selectedPDFData != nil {
+                    Section {
+                        Button {
+                            if isMaxPlan { showAICostConfirm = true } else { showUpgradeSheet = true }
+                        } label: {
+                            HStack {
+                                if isAIReading { ProgressView() } else { Label("Leggi con AI", systemImage: "sparkles") }
+                                Spacer()
+                                Text("\(aiMessageCost) msg").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .disabled(isAIReading)
+                        Text("Lettura assistita dall'AI: più precisa di data/luogo/codice estratti automaticamente. Disponibile con il piano Max; consuma \(aiMessageCost) messaggi.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Section("Dati biglietto") {
                     TextField("Titolo", text: $title)
                     Picker("Tipo", selection: $kind) {
@@ -122,15 +153,24 @@ struct AddWalletTicketSheet: View {
                             Text(item.displayName).tag(item)
                         }
                     }
+                    TextField("Nome titolare (opzionale)", text: $holderName)
+                        .textInputAutocapitalization(.words)
 
-                    Toggle("Data evento", isOn: $hasEventDate)
+                    Toggle("Ora di partenza", isOn: $hasEventDate)
                     if hasEventDate {
-                        DatePicker("Quando", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
+                        DatePicker("Partenza", selection: $eventDate, displayedComponents: [.date, .hourAndMinute])
                             .datePickerStyle(.compact)
                     }
+                    TextField("Luogo di partenza (opzionale)", text: $location)
 
-                    TextField("Luogo (opzionale)", text: $location)
-                    TextField("Codice prenotazione (opzionale)", text: $bookingCode)
+                    Toggle("Ora di arrivo", isOn: $hasArrivalDate)
+                    if hasArrivalDate {
+                        DatePicker("Arrivo", selection: $arrivalDate, displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(.compact)
+                    }
+                    TextField("Luogo di arrivo (opzionale)", text: $arrivalLocation)
+
+                    TextField("Codice biglietto (opzionale)", text: $bookingCode)
                     TextField("Link Add to Apple Wallet (opzionale)", text: $addToWalletURL)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -204,7 +244,48 @@ struct AddWalletTicketSheet: View {
                     loadPDF(from: url)
                 }
             }
+            .sheet(isPresented: $showUpgradeSheet) {
+                UpgradeSheetView()
+            }
+            .confirmationDialog(
+                "Lettura con AI",
+                isPresented: $showAICostConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Leggi con AI (\(aiMessageCost) messaggi)") {
+                    Task { await runAIExtraction() }
+                }
+                Button("Annulla", role: .cancel) {}
+            } message: {
+                Text("Le informazioni del biglietto verranno analizzate dall'AI. Questa operazione consumerà \(aiMessageCost) messaggi del tuo piano Max.")
+            }
         }
+    }
+
+    /// Lettura AI (piano Max): usa il testo già estratto dal PDF, o un'immagine di fallback se il testo è insufficiente.
+    private func runAIExtraction() async {
+        isAIReading = true
+        errorMessage = nil
+        defer { isAIReading = false }
+        do {
+            let fallbackImage = usedImageFallbackForAI ? selectedPDFData.flatMap(firstPageImage(from:)) : nil
+            let result = try await WalletTicketAIExtractor.extract(text: parsedRawText, fallbackImage: fallbackImage)
+            if let v = result.holderName { holderName = v }
+            if let v = result.bookingCode { bookingCode = v }
+            if let v = result.kind { kind = v }
+            if let v = result.emitter { parsedEmitter = v }
+            if let v = result.departureLocation { location = v }
+            if let v = result.departureDateTime { hasEventDate = true; eventDate = v }
+            if let v = result.arrivalLocation { arrivalLocation = v }
+            if let v = result.arrivalDateTime { hasArrivalDate = true; arrivalDate = v }
+        } catch {
+            errorMessage = "Lettura AI non riuscita: \(error.localizedDescription)"
+        }
+    }
+
+    private func firstPageImage(from pdfData: Data) -> UIImage? {
+        guard let doc = PDFDocument(data: pdfData), let page = doc.page(at: 0) else { return nil }
+        return page.thumbnail(of: CGSize(width: 1600, height: 1600), for: .cropBox)
     }
 
     private func loadPrefilledPDF(path: String) {
@@ -266,6 +347,7 @@ struct AddWalletTicketSheet: View {
         parsedBarcodeText = parsed.barcodeText
         parsedBarcodeFormat = parsed.barcodeFormat
         parsedEmitter = parsed.emitter
+        parsedRawText = parsed.rawText
     }
 
     private func saveTicket() async {
@@ -296,10 +378,12 @@ struct AddWalletTicketSheet: View {
                 title: cleanTitle,
                 kind: kind,
                 eventDate: hasEventDate ? eventDate : nil,
-                eventEndDate: nil,
+                eventEndDate: hasArrivalDate ? arrivalDate : nil,
                 location: sanitized(location),
                 seat: nil,
                 bookingCode: sanitized(bookingCode),
+                arrivalLocation: sanitized(arrivalLocation),
+                holderName: sanitized(holderName),
                 notes: sanitized(notes),
                 emitter: parsedEmitter,
                 visibilityScope: selectedVisibilityScope,

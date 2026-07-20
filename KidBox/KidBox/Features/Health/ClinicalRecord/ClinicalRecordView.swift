@@ -223,7 +223,7 @@ struct ClinicalRecordView: View {
         .background(cardBackground)
     }
 
-    private func summaryMetric(_ value: String, _ label: String, alert: Bool = false) -> some View {
+    private func summaryMetric(_ value: String, _ label: LocalizedStringKey, alert: Bool = false) -> some View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.headline)
@@ -316,7 +316,7 @@ struct ClinicalRecordView: View {
         }
     }
 
-    private func overviewPill(value: String, label: String) -> some View {
+    private func overviewPill(value: String, label: LocalizedStringKey) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.headline).foregroundStyle(Color(red: 0.45, green: 0.55, blue: 0.9))
             Text(label).font(.caption2).foregroundStyle(KBTheme.secondaryText(colorScheme))

@@ -13,7 +13,19 @@ enum KBExamStatus: String, Codable, CaseIterable {
     case booked    = "Prenotato"
     case done      = "Eseguito"
     case resultIn  = "Risultato disponibile"
-    
+
+    /// Etichetta da mostrare in UI. `rawValue` resta invariato (persistito su
+    /// SwiftData/Firestore come `statusRaw`) — non tradurlo, altrimenti i record
+    /// esistenti non verrebbero più riconosciuti.
+    var displayName: String {
+        switch self {
+        case .pending:  return NSLocalizedString("In attesa", comment: "Exam status: pending")
+        case .booked:   return NSLocalizedString("Prenotato", comment: "Exam status: booked")
+        case .done:     return NSLocalizedString("Eseguito", comment: "Exam status: done")
+        case .resultIn: return NSLocalizedString("Risultato disponibile", comment: "Exam status: result available")
+        }
+    }
+
     var icon: String {
         switch self {
         case .pending:  return "clock"

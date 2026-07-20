@@ -51,6 +51,17 @@ final class KBHealthKitService {
 
     var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
 
+    /// HealthKit segnala l'assenza di campioni per il periodo richiesto come un
+    /// "errore" (`HKError.errorNoData`), non come risultato vuoto — es. passi di
+    /// oggi prima di mezzanotte, o media di 90 giorni per una metrica mai
+    /// registrata (VO2 max, HRV…). Non è un vero fallimento: se non gestito qui,
+    /// fa fallire l'intera `fetchSnapshot()` (tutte le query sono in `try await`
+    /// insieme) anche quando il resto dei dati Salute è disponibile.
+    private static func isNoDataError(_ error: Error) -> Bool {
+        (error as NSError).domain == HKErrorDomain
+            && (error as NSError).code == HKError.Code.errorNoData.rawValue
+    }
+
     func requestAuthorization() async throws {
         guard isAvailable else { throw KBHealthKitError.notAvailable }
         try await store.requestAuthorization(toShare: [], read: readTypes)
@@ -234,7 +245,7 @@ final class KBHealthKitService {
                 limit: limit,
                 sortDescriptors: sort
             ) { _, samples, error in
-                if let error {
+                if let error, !Self.isNoDataError(error) {
                     continuation.resume(throwing: error)
                     return
                 }
@@ -300,7 +311,7 @@ final class KBHealthKitService {
                 quantitySamplePredicate: predicate,
                 options: .cumulativeSum
             ) { _, stats, error in
-                if let error {
+                if let error, !Self.isNoDataError(error) {
                     continuation.resume(throwing: error)
                     return
                 }
@@ -337,7 +348,7 @@ final class KBHealthKitService {
                 limit: limit,
                 sortDescriptors: sort
             ) { _, samples, error in
-                if let error {
+                if let error, !Self.isNoDataError(error) {
                     continuation.resume(throwing: error)
                     return
                 }
@@ -374,7 +385,7 @@ final class KBHealthKitService {
                 limit: limit,
                 sortDescriptors: sort
             ) { _, samples, error in
-                if let error {
+                if let error, !Self.isNoDataError(error) {
                     continuation.resume(throwing: error)
                     return
                 }
@@ -423,7 +434,7 @@ final class KBHealthKitService {
                 quantitySamplePredicate: predicate,
                 options: .discreteAverage
             ) { _, stats, error in
-                if let error {
+                if let error, !Self.isNoDataError(error) {
                     continuation.resume(throwing: error)
                     return
                 }

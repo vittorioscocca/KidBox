@@ -25,17 +25,20 @@ enum VaccineType: String, Codable, CaseIterable {
     case influenza      = "influenza"
     case altro          = "altro"
     
+    /// `String` (non `LocalizedStringKey`): usato in coalescenza con `commercialName`
+    /// (`String` dinamico) e in interpolazioni per notifiche/contesto AI, quindi
+    /// passa da NSLocalizedString.
     var displayName: String {
         switch self {
-        case .esavalente:       return "Esavalente"
-        case .pneumococco:      return "Pneumococco"
-        case .meningococcoB:    return "Meningococco B"
-        case .mpr:              return "MPR"
-        case .varicella:        return "Varicella"
-        case .meningococcoACWY: return "Meningococco ACWY"
-        case .hpv:              return "HPV"
-        case .influenza:        return "Influenza"
-        case .altro:            return "Altro"
+        case .esavalente:       return NSLocalizedString("Esavalente", comment: "Vaccine type")
+        case .pneumococco:      return NSLocalizedString("Pneumococco", comment: "Vaccine type")
+        case .meningococcoB:    return NSLocalizedString("Meningococco B", comment: "Vaccine type")
+        case .mpr:              return NSLocalizedString("MPR", comment: "Vaccine type")
+        case .varicella:        return NSLocalizedString("Varicella", comment: "Vaccine type")
+        case .meningococcoACWY: return NSLocalizedString("Meningococco ACWY", comment: "Vaccine type")
+        case .hpv:              return NSLocalizedString("HPV", comment: "Vaccine type")
+        case .influenza:        return NSLocalizedString("Influenza", comment: "Vaccine type")
+        case .altro:            return NSLocalizedString("Altro", comment: "Vaccine type")
         }
     }
     

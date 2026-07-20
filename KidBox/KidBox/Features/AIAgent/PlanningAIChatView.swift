@@ -675,7 +675,7 @@ private struct PlanningAIChatInnerView: View {
                 // Data
                 briefingChip(
                     icon: "calendar",
-                    label: Date().formatted(.dateTime.weekday(.wide).day().month()),
+                    label: Date().formatted(.dateTime.weekday(.wide).day().month().locale(kbDeviceLocale())),
                     color: tint
                 )
                 
@@ -1112,7 +1112,14 @@ private struct PlanningAIChatInnerView: View {
     }
     
     private var quickInputChips: some View {
-        let chips = ["Crea un evento", "Aggiungi to-do", "Mostra scadenze", "Orari liberi"]
+        // `String` (non `LocalizedStringKey`): il testo del chip diventa anche il
+        // messaggio inviato all'AI (`vm.inputText = chip`), quindi passa da NSLocalizedString.
+        let chips = [
+            NSLocalizedString("Crea un evento", comment: "AI quick chip"),
+            NSLocalizedString("Aggiungi to-do", comment: "AI quick chip"),
+            NSLocalizedString("Mostra scadenze", comment: "AI quick chip"),
+            NSLocalizedString("Orari liberi", comment: "AI quick chip"),
+        ]
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(chips, id: \.self) { chip in
@@ -1250,11 +1257,11 @@ enum PlanningActionParser {
         if offerCreatableCards,
            lower.contains("vuoi che crei l'evento") || lower.contains("posso aggiungere al calendario") ||
             lower.contains("aggiungere al calendario") {
-            let title = extractQuoted(from: text) ?? "Nuovo evento"
+            let title = extractQuoted(from: text) ?? NSLocalizedString("Nuovo evento", comment: "")
             actions.append(PlanningAction(
                 kind:             .createEvent,
                 title:            title,
-                subtitle:         "Apre il form pre-compilato",
+                subtitle:         NSLocalizedString("Apre il form pre-compilato", comment: ""),
                 navigationTarget: .none
             ))
         }
@@ -1268,11 +1275,13 @@ enum PlanningActionParser {
            grocerySignals.contains(where: { lower.contains($0) }),
            (lower.contains("vuoi che") || lower.contains("posso ")) {
             let items = extractGroceryItems(from: text)
-            let title = items.first ?? extractQuoted(from: text) ?? "Articoli spesa"
+            let title = items.first ?? extractQuoted(from: text) ?? NSLocalizedString("Articoli spesa", comment: "")
             var action = PlanningAction(
                 kind:             .createGrocery,
                 title:            title,
-                subtitle:         items.count > 1 ? "\(items.count) articoli" : "Aggiungi alla lista spesa",
+                subtitle:         items.count > 1
+                    ? String(format: NSLocalizedString("%d articoli", comment: ""), items.count)
+                    : NSLocalizedString("Aggiungi alla lista spesa", comment: ""),
                 navigationTarget: .none
             )
             action.groceryItems = items.isEmpty ? [title] : items
@@ -1283,11 +1292,11 @@ enum PlanningActionParser {
         if offerCreatableCards,
            lower.contains("vuoi che") || lower.contains("posso "),
            lower.contains("nota") {
-            let title = extractQuoted(from: text) ?? "Nuova nota"
+            let title = extractQuoted(from: text) ?? NSLocalizedString("Nuova nota", comment: "")
             var action = PlanningAction(
                 kind:             .createNote,
                 title:            title,
-                subtitle:         "Salva nelle note famiglia",
+                subtitle:         NSLocalizedString("Salva nelle note famiglia", comment: ""),
                 navigationTarget: .none
             )
             action.noteBody = title
@@ -1298,11 +1307,11 @@ enum PlanningActionParser {
         if offerCreatableCards,
            lower.contains("vuoi che aggiunga il to-do") || lower.contains("crea un to-do") ||
             lower.contains("posso aggiungere il to-do") {
-            let title = extractQuoted(from: text) ?? "Nuovo to-do"
+            let title = extractQuoted(from: text) ?? NSLocalizedString("Nuovo to-do", comment: "")
             actions.append(PlanningAction(
                 kind:             .createTodo,
                 title:            title,
-                subtitle:         "Aggiunto alla lista condivisa",
+                subtitle:         NSLocalizedString("Aggiunto alla lista condivisa", comment: ""),
                 navigationTarget: .none
             ))
         }
@@ -1342,25 +1351,25 @@ enum PlanningActionParser {
             let parsedDate = extractDate(from: lower)
             
             var reminderCtx: PlanningReminderContext = .freeText(dueAt: parsedDate)
-            var subtitle = "Notifica locale programmata"
-            
+            var subtitle = NSLocalizedString("Notifica locale programmata", comment: "")
+
             if let todo = matchedTodo {
                 let dueAt = parsedDate ?? todo.dueAt ?? Calendar.current.date(byAdding: .hour, value: 9, to: Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))) ?? Date()
                 reminderCtx = .todo(todo: todo, dueAt: dueAt)
-                subtitle = "Promemoria per \"\(todo.title)\""
+                subtitle = String(format: NSLocalizedString("Promemoria per \"%@\"", comment: ""), todo.title)
             } else if let visit = matchedVisit, let nextDate = visit.nextVisitDate {
-                let childName = childNames[visit.childId] ?? "il bambino"
+                let childName = childNames[visit.childId] ?? NSLocalizedString("il bambino", comment: "")
                 reminderCtx = .visit(visit: visit, childName: childName)
-                subtitle = "Visita di controllo il \(shortDate(nextDate))"
+                subtitle = String(format: NSLocalizedString("Visita di controllo il %@", comment: ""), shortDate(nextDate))
             } else if let treatment = matchedTreatment {
-                let childName = childNames[treatment.childId] ?? "il bambino"
+                let childName = childNames[treatment.childId] ?? NSLocalizedString("il bambino", comment: "")
                 reminderCtx = .treatment(treatment: treatment, childName: childName)
-                subtitle = "Dosi \(treatment.drugName) — \(treatment.scheduleTimes.joined(separator: ", "))"
+                subtitle = String(format: NSLocalizedString("Dosi %@ — %@", comment: ""), treatment.drugName, treatment.scheduleTimes.joined(separator: ", "))
             }
-            
+
             var action = PlanningAction(
                 kind:             .setReminder,
-                title:            quoted ?? "Promemoria",
+                title:            quoted ?? NSLocalizedString("Promemoria", comment: ""),
                 subtitle:         subtitle,
                 navigationTarget: .none
             )
@@ -1372,28 +1381,28 @@ enum PlanningActionParser {
         if lower.contains("apri il calendario") || lower.contains("vai al calendario") {
             actions.append(PlanningAction(
                 kind:             .navigate,
-                title:            "Apri Calendario",
-                subtitle:         "Vai alla vista calendario",
+                title:            NSLocalizedString("Apri Calendario", comment: ""),
+                subtitle:         NSLocalizedString("Vai alla vista calendario", comment: ""),
                 navigationTarget: .calendar
             ))
         }
-        
+
         // ── Apri to-do ────────────────────────────────────────────
         if lower.contains("apri i to-do") || lower.contains("vai ai to-do") {
             actions.append(PlanningAction(
                 kind:             .navigate,
-                title:            "Apri To-Do",
-                subtitle:         "Vai alla lista to-do",
+                title:            NSLocalizedString("Apri To-Do", comment: ""),
+                subtitle:         NSLocalizedString("Vai alla lista to-do", comment: ""),
                 navigationTarget: .todo
             ))
         }
-        
+
         // ── Apri salute ───────────────────────────────────────────
         if lower.contains("apri salute") || lower.contains("vai alla sezione salute") {
             actions.append(PlanningAction(
                 kind:             .navigate,
-                title:            "Apri Salute",
-                subtitle:         "Vai alla sezione sanitaria",
+                title:            NSLocalizedString("Apri Salute", comment: ""),
+                subtitle:         NSLocalizedString("Vai alla sezione sanitaria", comment: ""),
                 navigationTarget: .health
             ))
         }
@@ -1585,7 +1594,7 @@ private struct PlanningActionCard: View {
         }
     }
     
-    private func buttonLabel(for kind: PlanningActionKind) -> String {
+    private func buttonLabel(for kind: PlanningActionKind) -> LocalizedStringKey {
         switch kind {
         case .navigate:      return "Vai"
         case .setReminder:   return "Attiva"

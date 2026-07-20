@@ -23,6 +23,8 @@ struct WalletTicketDTO {
     let locationEnc: String?
     let seatEnc: String?
     let bookingCodeEnc: String?
+    let arrivalLocationEnc: String?
+    let holderNameEnc: String?
     let notesEnc: String?
     let barcodeTextEnc: String?
     let fileNameEnc: String?
@@ -115,6 +117,8 @@ final class WalletRemoteStore {
         let locationEnc     = try WalletCryptoService.encryptOptional(ticket.location, familyId: ticket.familyId, userId: uid)
         let seatEnc         = try WalletCryptoService.encryptOptional(ticket.seat, familyId: ticket.familyId, userId: uid)
         let bookingCodeEnc  = try WalletCryptoService.encryptOptional(ticket.bookingCode, familyId: ticket.familyId, userId: uid)
+        let arrivalLocationEnc = try WalletCryptoService.encryptOptional(ticket.arrivalLocation, familyId: ticket.familyId, userId: uid)
+        let holderNameEnc   = try WalletCryptoService.encryptOptional(ticket.holderName, familyId: ticket.familyId, userId: uid)
         let notesEnc        = try WalletCryptoService.encryptOptional(ticket.notes, familyId: ticket.familyId, userId: uid)
         let barcodeTextEnc  = try WalletCryptoService.encryptOptional(ticket.extractedBarcodeText, familyId: ticket.familyId, userId: uid)
         let fileNameEnc     = try WalletCryptoService.encryptOptional(ticket.pdfFileName, familyId: ticket.familyId, userId: uid)
@@ -127,6 +131,8 @@ final class WalletRemoteStore {
             "locationEnc":     locationEnc as Any,
             "seatEnc":         seatEnc as Any,
             "bookingCodeEnc":  bookingCodeEnc as Any,
+            "arrivalLocationEnc": arrivalLocationEnc as Any,
+            "holderNameEnc":   holderNameEnc as Any,
             "notesEnc":        notesEnc as Any,
             "barcodeTextEnc":  barcodeTextEnc as Any,
             "fileNameEnc":     fileNameEnc as Any,
@@ -208,6 +214,8 @@ final class WalletRemoteStore {
                         locationEnc:        d["locationEnc"]     as? String,
                         seatEnc:            d["seatEnc"]         as? String,
                         bookingCodeEnc:     d["bookingCodeEnc"]  as? String,
+                        arrivalLocationEnc: d["arrivalLocationEnc"] as? String,
+                        holderNameEnc:      d["holderNameEnc"]   as? String,
                         notesEnc:           d["notesEnc"]        as? String,
                         barcodeTextEnc:     d["barcodeTextEnc"]  as? String,
                         fileNameEnc:        d["fileNameEnc"]     as? String,
@@ -261,6 +269,8 @@ final class WalletRemoteStore {
                 locationEnc:        d["locationEnc"]     as? String,
                 seatEnc:            d["seatEnc"]         as? String,
                 bookingCodeEnc:     d["bookingCodeEnc"]  as? String,
+                arrivalLocationEnc: d["arrivalLocationEnc"] as? String,
+                holderNameEnc:      d["holderNameEnc"]   as? String,
                 notesEnc:           d["notesEnc"]        as? String,
                 barcodeTextEnc:     d["barcodeTextEnc"]  as? String,
                 fileNameEnc:        d["fileNameEnc"]     as? String,

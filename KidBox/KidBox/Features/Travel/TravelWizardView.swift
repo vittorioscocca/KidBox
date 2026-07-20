@@ -134,8 +134,8 @@ private struct TravelWizardRootView: View {
             set: { _ in }
         )) {
             TravelPlanningLoadingView(
-                destinationName: vm.destinationName.isEmpty ? "il viaggio" : vm.destinationName,
-                subtitle: "Sto finalizzando il percorso di \(vm.tripDayCount) giorni",
+                destinationName: vm.destinationName.isEmpty ? NSLocalizedString("il viaggio", comment: "") : vm.destinationName,
+                subtitle: String(format: NSLocalizedString("Sto finalizzando il percorso di %d giorni", comment: ""), vm.tripDayCount),
                 plannedDayCount: vm.tripDayCount
             )
             .interactiveDismissDisabled(true)
@@ -168,7 +168,7 @@ private struct TravelWizardRootView: View {
         .travelWizardKeyboardDismiss()
     }
 
-    private var stepTitle: String {
+    private var stepTitle: LocalizedStringKey {
         switch step {
         case 0: return "Dove vuoi andare?"
         case 1: return "Quando è il tuo viaggio?"
@@ -180,7 +180,7 @@ private struct TravelWizardRootView: View {
         }
     }
 
-    private var stepSubtitle: String {
+    private var stepSubtitle: LocalizedStringKey {
         switch step {
         case 0: return "Cerca la destinazione del viaggio"
         case 1: return "Scegli le date del viaggio"

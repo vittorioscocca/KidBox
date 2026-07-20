@@ -16,6 +16,16 @@ enum NoteTextStyle: String, CaseIterable {
     case heading    = "Intestazione"
     case subheading = "Sottoint."
     case mono       = "Mono"
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .body:       return "Corpo"
+        case .title:      return "Titolo"
+        case .heading:    return "Intestazione"
+        case .subheading: return "Sottoint."
+        case .mono:       return "Mono"
+        }
+    }
 }
 
 // MARK: - Actions
@@ -337,7 +347,7 @@ private struct StyleChip: View {
     
     var body: some View {
         Button(action: action) {
-            Text(style.rawValue)
+            Text(style.displayName)
                 .font(chipFont)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)

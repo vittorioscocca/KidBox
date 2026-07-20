@@ -387,16 +387,16 @@ struct PasswordsHomeView: View {
     private var groupFilterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                filterChip(title: "Tutti", selected: listScope == .all) {
+                filterChip(title: NSLocalizedString("Tutti", comment: "Passwords filter: all"), selected: listScope == .all) {
                     listScope = .all
                 }
-                filterChip(title: "Preferite", selected: listScope == .favorites) {
+                filterChip(title: NSLocalizedString("Preferite", comment: "Passwords filter: favorites"), selected: listScope == .favorites) {
                     listScope = .favorites
                 }
-                filterChip(title: "In famiglia", selected: listScope == .familyShared) {
+                filterChip(title: NSLocalizedString("In famiglia", comment: "Passwords filter: family shared"), selected: listScope == .familyShared) {
                     listScope = .familyShared
                 }
-                filterChip(title: "Solo io", selected: listScope == .onlyMinePrivate) {
+                filterChip(title: NSLocalizedString("Solo io", comment: "Passwords filter: only me"), selected: listScope == .onlyMinePrivate) {
                     listScope = .onlyMinePrivate
                 }
                 ForEach(visibleGroups, id: \.id) { group in

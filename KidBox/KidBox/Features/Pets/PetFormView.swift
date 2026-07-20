@@ -36,7 +36,7 @@ struct PetFormView: View {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private let speciesOptions: [(label: String, value: String)] = [
+    private let speciesOptions: [(label: LocalizedStringKey, value: String)] = [
         ("Cane", "cane"),
         ("Gatto", "gatto"),
         ("Coniglio", "coniglio"),

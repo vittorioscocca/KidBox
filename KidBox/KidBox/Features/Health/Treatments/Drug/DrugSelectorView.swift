@@ -301,7 +301,7 @@ struct CustomDrugSheet: View {
     }
     
     @ViewBuilder
-    private func fieldSection<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+    private func fieldSection<Content: View>(label: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.subheadline)

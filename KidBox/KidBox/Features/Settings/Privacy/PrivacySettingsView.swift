@@ -25,11 +25,7 @@ struct PrivacySettingsView: View {
     var body: some View {
         List {
             Section {
-                Text(
-                    "KidBox salva log tecnici sul dispositivo (avvio app, sincronizzazione, crash). "
-                    + "Se attivi l’invio automatico, analizziamo questi log e possiamo inviare un report "
-                    + "anonimo per correggere bug e migliorare l’app."
-                )
+                Text("KidBox salva log tecnici sul dispositivo (avvio app, sincronizzazione, crash). Se attivi l’invio automatico, analizziamo questi log e possiamo inviare un report anonimo per correggere bug e migliorare l’app.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -41,10 +37,7 @@ struct PrivacySettingsView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Invia report errori automatici")
                             .font(.body.weight(.medium))
-                        Text(
-                            "Nessun nome, messaggio di chat, documento o dato sanitario. "
-                            + "Solo log tecnici e informazioni sul dispositivo."
-                        )
+                        Text("Nessun nome, messaggio di chat, documento o dato sanitario. Solo log tecnici e informazioni sul dispositivo.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }
@@ -58,10 +51,7 @@ struct PrivacySettingsView: View {
                     }
                 }
             } footer: {
-                Text(
-                    "Su iPhone l’analisi usa Apple Intelligence sul dispositivo quando disponibile. "
-                    + "Puoi disattivare l’invio in qualsiasi momento."
-                )
+                Text("Su iPhone l’analisi usa Apple Intelligence sul dispositivo quando disponibile. Puoi disattivare l’invio in qualsiasi momento.")
             }
             .listRowBackground(cardBackground)
         }

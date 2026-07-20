@@ -136,7 +136,7 @@ private struct PeriodPickerView: View {
                                 vm.period = p
                             }
                         } label: {
-                            Text(p.rawValue)
+                            Text(p.displayName)
                                 .font(.subheadline.weight(.medium))
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)

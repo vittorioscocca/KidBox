@@ -789,7 +789,7 @@ struct PediatricTreatmentEditView: View {
     // MARK: - Reusable styled GroupBox
     
     @ViewBuilder
-    private func styledGroupBox<Content: View>(title: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func styledGroupBox<Content: View>(title: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if let title {
                 Text(title)
@@ -807,7 +807,7 @@ struct PediatricTreatmentEditView: View {
         )
     }
     
-    private func summaryRow(label: String, value: String) -> some View {
+    private func summaryRow(label: LocalizedStringKey, value: String) -> some View {
         HStack {
             Text(label).foregroundStyle(.secondary)
             Spacer()

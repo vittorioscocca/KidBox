@@ -144,7 +144,7 @@ struct PediatricChildSelectorView: View {
         }
     }
     
-    private func sectionHeader(_ title: String, icon: String) -> some View {
+    private func sectionHeader(_ title: LocalizedStringKey, icon: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon).font(.caption).foregroundStyle(.secondary)
             Text(title).font(.subheadline.bold()).foregroundStyle(.secondary)

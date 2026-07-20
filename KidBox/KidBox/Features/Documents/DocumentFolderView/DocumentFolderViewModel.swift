@@ -119,6 +119,18 @@ final class DocumentFolderViewModel: ObservableObject {
         case date    = "Data modifica"
         case size    = "Dimensioni"
         var id: String { rawValue }
+
+        /// Etichetta per la UI. `rawValue` resta invariato (persistito in
+        /// `@AppStorage("documentsSortMode")`) — non tradurlo.
+        var displayName: LocalizedStringKey {
+            switch self {
+            case .name: return "Nome"
+            case .type: return "Tipo di file"
+            case .date: return "Data modifica"
+            case .size: return "Dimensioni"
+            }
+        }
+
         var systemImage: String {
             switch self {
             case .name: return "character.cursor.ibeam"

@@ -36,6 +36,12 @@ final class KBWalletTicket {
     var location: String?
     var seat: String?
     var bookingCode: String?
+    /// Luogo di arrivo (`location` resta il luogo di partenza). Opzionale per
+    /// migrazione SwiftData: i biglietti pre-esistenti non hanno questo campo.
+    var arrivalLocation: String?
+    /// Nome del titolare del biglietto (letto via AI o inserito a mano).
+    /// Opzionale per migrazione SwiftData.
+    var holderName: String?
     var notes: String?
 
     /// Nome dell'emittente/vettore riconosciuto dal parser (es. "Trenitalia",
@@ -119,6 +125,8 @@ final class KBWalletTicket {
         location: String? = nil,
         seat: String? = nil,
         bookingCode: String? = nil,
+        arrivalLocation: String? = nil,
+        holderName: String? = nil,
         notes: String? = nil,
         emitter: String? = nil,
         visibilityScope: String = KBVisibilityScope.onlyCreator,
@@ -147,6 +155,8 @@ final class KBWalletTicket {
         self.location = location
         self.seat = seat
         self.bookingCode = bookingCode
+        self.arrivalLocation = arrivalLocation
+        self.holderName = holderName
         self.notes = notes
         self.emitter = emitter
         self.visibilityScope = Self.normalizedVisibilityScopeForWallet(visibilityScope)

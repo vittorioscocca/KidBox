@@ -58,7 +58,25 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(cardBackground)
-            
+
+            NavigationLink {
+                LanguageSettingsView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "globe")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Lingua")
+                            .foregroundStyle(.primary)
+                        Text(LanguageManager.shared.current.label)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .listRowBackground(cardBackground)
+
             Button {
                 KBLog.navigation.kbDebug("Settings -> Family settings tap")
                 coordinator.navigate(to: .familySettings)
@@ -180,35 +198,48 @@ struct SettingsView: View {
                 }
             }
             .listRowBackground(cardBackground)
+
+            NavigationLink {
+                UserGuideWebView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "book.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    Text("Guida all'utilizzo")
+                        .foregroundStyle(.primary)
+                }
+            }
+            .listRowBackground(cardBackground)
+
+            // Versione/build/test: dentro la List così scorrono con il resto della pagina.
+            Section {
+                VStack(spacing: 6) {
+                    Text("Versione \(appVersion)")
+                    Text("Build \(appBuild)")
+#if DEBUG
+                    Button("Test aggiornamento") {
+                        Task { updateTestReport = await AppUpdateChecker.shared.runDebugCheck() }
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.top, 4)
+                    if let updateTestReport {
+                        Text(updateTestReport)
+                            .font(.caption2)
+                    }
+#endif
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Versione \(appVersion), build \(appBuild)")
+            }
+            .listRowBackground(Color.clear)
         }
         .scrollContentBackground(.hidden)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 6) {
-                Text("Versione \(appVersion)")
-                Text("Build \(appBuild)")
-#if DEBUG
-                Button("Test aggiornamento") {
-                    Task { updateTestReport = await AppUpdateChecker.shared.runDebugCheck() }
-                }
-                .buttonStyle(.bordered)
-                .padding(.top, 4)
-                if let updateTestReport {
-                    Text(updateTestReport)
-                        .font(.caption2)
-                }
-#endif
-            }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 12)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-            .background(backgroundColor)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Versione \(appVersion), build \(appBuild)")
-        }
         .background(backgroundColor)
         .navigationTitle("Impostazioni")
         .tint(.primary)

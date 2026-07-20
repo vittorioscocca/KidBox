@@ -250,27 +250,43 @@ struct WalletTicketDetailView: View {
     @ViewBuilder
     private func detailsBlock(for ticket: KBWalletTicket) -> some View {
         let hasLocation = (ticket.location?.isEmpty == false)
+        let hasArrivalLocation = (ticket.arrivalLocation?.isEmpty == false)
+        let hasHolderName = (ticket.holderName?.isEmpty == false)
         let hasBooking = (ticket.bookingCode?.isEmpty == false)
         let hasNotes = (ticket.notes?.isEmpty == false)
 
-        if hasLocation || hasBooking || hasNotes || ticket.eventDate != nil {
+        if hasLocation || hasArrivalLocation || hasHolderName || hasBooking || hasNotes ||
+            ticket.eventDate != nil || ticket.eventEndDate != nil {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Dettagli")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
+                if let holderName = ticket.holderName, !holderName.isEmpty {
+                    detailRow(icon: "person.fill", title: "Titolare", value: holderName)
+                }
                 if let eventDate = ticket.eventDate {
                     detailRow(
                         icon: "calendar",
-                        title: "Quando",
+                        title: "Partenza",
                         value: localizedTicketDateTime(eventDate)
                     )
                 }
                 if let location = ticket.location, !location.isEmpty {
-                    detailRow(icon: "mappin.and.ellipse", title: "Dove", value: location)
+                    detailRow(icon: "mappin.and.ellipse", title: "Luogo di partenza", value: location)
+                }
+                if let eventEndDate = ticket.eventEndDate {
+                    detailRow(
+                        icon: "calendar",
+                        title: "Arrivo",
+                        value: localizedTicketDateTime(eventEndDate)
+                    )
+                }
+                if let arrivalLocation = ticket.arrivalLocation, !arrivalLocation.isEmpty {
+                    detailRow(icon: "mappin.and.ellipse", title: "Luogo di arrivo", value: arrivalLocation)
                 }
                 if let bookingCode = ticket.bookingCode, !bookingCode.isEmpty {
-                    detailRow(icon: "number", title: "Codice prenotazione", value: bookingCode, monospaced: true)
+                    detailRow(icon: "number", title: "Codice biglietto", value: bookingCode, monospaced: true)
                 }
                 if let notes = ticket.notes, !notes.isEmpty {
                     detailRow(icon: "note.text", title: "Note", value: notes)

@@ -9,7 +9,7 @@ import UIKit
 struct NoteTitleTextField: UIViewRepresentable {
     
     @Binding var text: String
-    var placeholder: String = "Titolo"
+    var placeholder: String = NSLocalizedString("Titolo", comment: "Note title placeholder")
     var onReturn: (() -> Void)? = nil
     
     static let titleFont = UIFont.systemFont(ofSize: 28, weight: .bold)

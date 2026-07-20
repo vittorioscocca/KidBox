@@ -26,11 +26,8 @@ struct GroceryEditView: View {
     private let prefillName: String
     private var isEditing: Bool { itemIdToEdit != nil }
     
-    // Categorie suggerite
-    private let suggestedCategories = [
-        "Frutta e Verdura", "Carne e Pesce", "Latticini", "Pane e Cereali",
-        "Surgelati", "Bevande", "Dolci e Snack", "Pulizia", "Cura Personale", "Altro"
-    ]
+    // Categorie suggerite (valori salvati in italiano, vedi KBGroceryCategory)
+    private let suggestedCategories = KBGroceryCategory.suggested
     
     init(familyId: String, itemIdToEdit: String? = nil, prefillName: String = "") {
         self.familyId = familyId
@@ -55,7 +52,7 @@ struct GroceryEditView: View {
                                 Button {
                                     category = cat
                                 } label: {
-                                    Text(cat)
+                                    Text(KBGroceryCategory.displayName(for: cat))
                                         .font(.caption)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)

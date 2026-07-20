@@ -17,8 +17,18 @@ enum ExpensePeriod: String, CaseIterable, Identifiable {
     case sixMonths   = "6 mesi"
     case oneYear     = "1 anno"
     case custom      = "Personalizzato"
-    
+
     var id: String { rawValue }
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .oneMonth:    return "1 mese"
+        case .threeMonths: return "3 mesi"
+        case .sixMonths:   return "6 mesi"
+        case .oneYear:     return "1 anno"
+        case .custom:      return "Personalizzato"
+        }
+    }
     
     func dateRange(relativeTo today: Date = Date()) -> (start: Date, end: Date) {
         let cal = Calendar.current

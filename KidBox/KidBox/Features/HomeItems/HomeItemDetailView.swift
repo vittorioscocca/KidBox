@@ -205,7 +205,7 @@ enum KidBoxUrgency {
         return .green
     }
 
-    static func label(days: Int?) -> String {
+    static func label(days: Int?) -> LocalizedStringKey {
         guard let d = days else { return "" }
         if d < 0 { return "Scaduto" }
         return "Tra \(d) giorni"

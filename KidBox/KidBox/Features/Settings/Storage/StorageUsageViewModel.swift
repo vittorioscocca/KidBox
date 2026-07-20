@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftUI
 import SwiftData
 import FirebaseFunctions
 import Combine
@@ -12,7 +13,7 @@ import Combine
 
 struct KBStorageSection: Identifiable {
     let id: String
-    let name: String
+    let name: LocalizedStringKey
     let icon: String
     let color: String
     let bytes: Int64

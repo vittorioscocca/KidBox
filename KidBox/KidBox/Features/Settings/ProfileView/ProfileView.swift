@@ -642,12 +642,13 @@ struct ProfileView: View {
     
     // MARK: - Reusable Components
     
-    private func sectionHeader(icon: String, title: String) -> some View {
+    private func sectionHeader(icon: String, title: LocalizedStringKey) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(accent)
-            Text(title.uppercased())
+            Text(title)
+                .textCase(.uppercase)
                 .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundStyle(.secondary)
                 .kerning(0.5)
@@ -655,8 +656,8 @@ struct ProfileView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
     }
-    
-    private func accountRow(icon: String, iconColor: Color, label: String, value: String) -> some View {
+
+    private func accountRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String) -> some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)

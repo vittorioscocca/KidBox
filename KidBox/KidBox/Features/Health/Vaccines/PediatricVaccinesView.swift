@@ -17,7 +17,17 @@ enum VaccineTimeFilter: String, CaseIterable, Identifiable {
     case custom  = "Personalizzato"
     
     var id: String { rawValue }
-    
+
+    var displayName: LocalizedStringKey {
+        switch self {
+        case .all:     return "Tutti"
+        case .months3: return "3 mesi"
+        case .months6: return "6 mesi"
+        case .year1:   return "Ultimo anno"
+        case .custom:  return "Personalizzato"
+        }
+    }
+
     func cutoff(from customStart: Date?) -> Date? {
         let cal = Calendar.current
         switch self {
@@ -228,14 +238,15 @@ struct PediatricVaccinesView: View {
     
     // MARK: - Section block
     
-    private func sectionBlock(title: String, icon: String, iconColor: Color, items: [KBVaccine]) -> some View {
+    private func sectionBlock(title: LocalizedStringKey, icon: String, iconColor: Color, items: [KBVaccine]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             // Section header
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.caption.bold())
                     .foregroundStyle(iconColor)
-                Text(title.uppercased())
+                Text(title)
+                    .textCase(.uppercase)
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
                     .kerning(0.5)
@@ -462,7 +473,7 @@ struct PediatricVaccinesView: View {
         .foregroundStyle(tint)
     }
     
-    private var filterLabel: String {
+    private var filterLabel: LocalizedStringKey {
         let fmt = DateFormatter(); fmt.dateStyle = .short
         switch timeFilter {
         case .all:     return "Tutti"
@@ -481,7 +492,7 @@ struct PediatricVaccinesView: View {
                 Section("Periodo rapido") {
                     ForEach([VaccineTimeFilter.all, .months3, .months6, .year1], id: \.self) { f in
                         HStack {
-                            Text(f.rawValue)
+                            Text(f.displayName)
                             Spacer()
                             if timeFilter == f { Image(systemName: "checkmark").foregroundStyle(tint) }
                         }
@@ -824,7 +835,7 @@ struct PediatricVaccineEditView: View {
             )
     }
     
-    private func sectionLabel(_ text: String, icon: String) -> some View {
+    private func sectionLabel(_ text: LocalizedStringKey, icon: String) -> some View {
         Label(text, systemImage: icon)
             .font(.subheadline.bold())
             .foregroundStyle(.primary)

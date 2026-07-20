@@ -25,17 +25,20 @@ enum KBWalletTicketKind: String, Codable, CaseIterable, Hashable {
     case museum     // Uffizi, MAXXI, GetYourGuide, Musement, ecc.
     case other
 
+    /// `String` (non `LocalizedStringKey`): usato in confronti (`title == kind.displayName`),
+    /// notifiche (`UNMutableNotificationContent.title/body`) e `.uppercased()`,
+    /// quindi passa da NSLocalizedString invece che da LocalizedStringKey.
     var displayName: String {
         switch self {
-        case .train:    return "Treno"
-        case .flight:   return "Volo"
-        case .ferry:    return "Traghetto"
-        case .bus:      return "Autobus"
-        case .concert:  return "Concerto"
-        case .cinema:   return "Cinema"
-        case .parking:  return "Parcheggio"
-        case .museum:   return "Museo / Mostra"
-        case .other:    return "Biglietto"
+        case .train:    return NSLocalizedString("Treno", comment: "Ticket kind: train")
+        case .flight:   return NSLocalizedString("Volo", comment: "Ticket kind: flight")
+        case .ferry:    return NSLocalizedString("Traghetto", comment: "Ticket kind: ferry")
+        case .bus:      return NSLocalizedString("Autobus", comment: "Ticket kind: bus")
+        case .concert:  return NSLocalizedString("Concerto", comment: "Ticket kind: concert")
+        case .cinema:   return NSLocalizedString("Cinema", comment: "Ticket kind: cinema")
+        case .parking:  return NSLocalizedString("Parcheggio", comment: "Ticket kind: parking")
+        case .museum:   return NSLocalizedString("Museo / Mostra", comment: "Ticket kind: museum")
+        case .other:    return NSLocalizedString("Biglietto", comment: "Ticket kind: other")
         }
     }
 

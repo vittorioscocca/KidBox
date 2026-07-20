@@ -6,7 +6,7 @@
 import SwiftUI
 
 enum TravelTripDateRangeFormatter {
-    private static let locale = Locale(identifier: "it_IT")
+    private static var locale: Locale { kbDeviceLocale() }
 
     static func format(start: Date, end: Date) -> String {
         let calendar = Calendar.current

@@ -12,18 +12,18 @@ import SwiftUI
 struct KBSettingsCard: View {
     enum Style { case primary, secondary, info, warning, danger}
     
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let systemImage: String
     let style: Style
-    
+
     let action: (() -> Void)?
     let trailingSystemImage: String?
     let trailingAction: (() -> Void)?
-    
+
     init(
-        title: String,
-        subtitle: String,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey,
         systemImage: String,
         style: Style,
         action: (() -> Void)? = nil,
@@ -116,18 +116,18 @@ struct KBSettingsCard: View {
 // MARK: - Card with extra content (GENERIC only when needed)
 
 struct KBSettingsCardWithExtra<ExtraContent: View>: View {
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let systemImage: String
     let style: KBSettingsCard.Style
     let action: (() -> Void)?
     let trailingSystemImage: String?
     let trailingAction: (() -> Void)?
     let extraContent: () -> ExtraContent
-    
+
     init(
-        title: String,
-        subtitle: String,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey,
         systemImage: String,
         style: KBSettingsCard.Style,
         action: (() -> Void)? = nil,

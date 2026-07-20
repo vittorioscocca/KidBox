@@ -148,7 +148,7 @@ struct PediatricVisitsView: View {
                             HStack(spacing: 6) {
                                 Image(systemName: section.status.icon)
                                     .foregroundStyle(section.status.color)
-                                Text(section.status.rawValue)
+                                Text(section.status.displayName)
                                     .foregroundStyle(section.status.color)
                                     .font(.caption.bold().uppercaseSmallCaps())
                                 Spacer()
@@ -280,7 +280,7 @@ struct PediatricVisitsView: View {
                     Text(localizedVisitDateTime(v.date))
                         .font(.caption).foregroundStyle(KBTheme.secondaryText(colorScheme))
                     if let status = v.visitStatus {
-                        Label(status.rawValue, systemImage: status.icon)
+                        Label(status.displayName, systemImage: status.icon)
                             .font(.caption2.bold())
                             .foregroundStyle(status.color)
                     }
@@ -326,7 +326,7 @@ struct PediatricVisitsView: View {
         .foregroundStyle(tint)
     }
     
-    private var filterLabel: String {
+    private var filterLabel: LocalizedStringKey {
         let fmt = DateFormatter(); fmt.dateStyle = .short; fmt.locale = kbDeviceLocale()
         switch selectedPeriod {
         case .all:        return "Tutti"

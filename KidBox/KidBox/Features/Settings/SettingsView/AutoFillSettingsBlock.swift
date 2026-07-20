@@ -33,9 +33,15 @@ struct AutoFillSettingsView: View {
                 HStack {
                     Text("Stato")
                     Spacer()
-                    Text(providerEnabled ? "Attivo" : "Da attivare in Impostazioni iOS")
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
+                    Group {
+                        if providerEnabled {
+                            Text("Attivo")
+                        } else {
+                            Text("Da attivare in Impostazioni iOS")
+                        }
+                    }
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
                 }
                 .listRowBackground(cardBackground)
 

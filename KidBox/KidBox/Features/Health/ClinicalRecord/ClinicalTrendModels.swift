@@ -18,13 +18,15 @@ enum ClinicalOverallStatus: String, Codable, Equatable {
     case daMonitorare
     case attenzione
 
+    /// `String` (non `LocalizedStringKey`): interpolato in stringhe di contesto/report
+    /// (es. `ClinicalRecordTopicBuilder`), quindi passa da NSLocalizedString.
     var badgeLabel: String {
         switch self {
-        case .stabile: return "Stabile"
-        case .migliorato: return "Migliorato"
-        case .peggiorato: return "Attenzione"
-        case .daMonitorare: return "Da monitorare"
-        case .attenzione: return "Attenzione"
+        case .stabile: return NSLocalizedString("Stabile", comment: "Clinical status: stable")
+        case .migliorato: return NSLocalizedString("Migliorato", comment: "Clinical status: improved")
+        case .peggiorato: return NSLocalizedString("Attenzione", comment: "Clinical status: attention")
+        case .daMonitorare: return NSLocalizedString("Da monitorare", comment: "Clinical status: to monitor")
+        case .attenzione: return NSLocalizedString("Attenzione", comment: "Clinical status: attention")
         }
     }
 

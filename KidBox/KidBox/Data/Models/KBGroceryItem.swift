@@ -73,3 +73,36 @@ final class KBGroceryItem {
         self.syncStateRaw = KBSyncState.synced.rawValue
     }
 }
+
+// MARK: - Category display
+
+/// Categorie suggerite per la lista della spesa. Il valore salvato in `category`
+/// resta in italiano (per compatibilità dati tra membri della famiglia con lingue
+/// diverse); `displayName(for:)` restituisce l'etichetta localizzata da mostrare
+/// in UI. Le categorie inserite liberamente dall'utente (non in questo elenco)
+/// vengono mostrate invariate.
+enum KBGroceryCategory {
+    static let suggested = [
+        "Frutta e Verdura", "Carne e Pesce", "Latticini", "Pane e Cereali",
+        "Surgelati", "Bevande", "Dolci e Snack", "Pulizia", "Cura Personale", "Altro"
+    ]
+
+    /// Etichetta per categoria "non specificata" (item senza `category`).
+    static let uncategorized = "Altro"
+
+    static func displayName(for category: String) -> String {
+        switch category {
+        case "Frutta e Verdura": return NSLocalizedString("Frutta e Verdura", comment: "Grocery category")
+        case "Carne e Pesce":    return NSLocalizedString("Carne e Pesce", comment: "Grocery category")
+        case "Latticini":        return NSLocalizedString("Latticini", comment: "Grocery category")
+        case "Pane e Cereali":   return NSLocalizedString("Pane e Cereali", comment: "Grocery category")
+        case "Surgelati":        return NSLocalizedString("Surgelati", comment: "Grocery category")
+        case "Bevande":          return NSLocalizedString("Bevande", comment: "Grocery category")
+        case "Dolci e Snack":    return NSLocalizedString("Dolci e Snack", comment: "Grocery category")
+        case "Pulizia":          return NSLocalizedString("Pulizia", comment: "Grocery category")
+        case "Cura Personale":   return NSLocalizedString("Cura Personale", comment: "Grocery category")
+        case "Altro":            return NSLocalizedString("Altro", comment: "Grocery category: other")
+        default:                 return category
+        }
+    }
+}

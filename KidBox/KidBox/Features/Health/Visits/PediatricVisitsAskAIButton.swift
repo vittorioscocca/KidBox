@@ -15,7 +15,18 @@ enum PeriodFilter: String, CaseIterable, Identifiable {
     case custom      = "Personalizzato"
     
     var id: String    { rawValue }
-    var label: String { rawValue }
+
+    var label: LocalizedStringKey {
+        switch self {
+        case .sevenDays:    return "7 gg"
+        case .thirtyDays:   return "30 gg"
+        case .threeMonths:  return "3 mesi"
+        case .sixMonths:    return "6 mesi"
+        case .oneYear:      return "1 anno"
+        case .all:          return "Tutto"
+        case .custom:       return "Personalizzato"
+        }
+    }
     
     var cutoffDate: Date? {
         let cal = Calendar.current

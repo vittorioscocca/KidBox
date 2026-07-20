@@ -248,8 +248,10 @@ struct FamilySettingsView: View {
     
     private var familySummaryCard: some View {
         KBSettingsCard(
-            title: family?.name ?? "Famiglia",
-            subtitle: childrenNamesSummary,
+            // Nomi liberi inseriti dall'utente: escape di "%" per evitare che
+            // LocalizedStringKey lo interpreti come specificatore di formato.
+            title: LocalizedStringKey((family?.name ?? NSLocalizedString("Famiglia", comment: "")).replacingOccurrences(of: "%", with: "%%")),
+            subtitle: LocalizedStringKey(childrenNamesSummary.replacingOccurrences(of: "%", with: "%%")),
             systemImage: "person.2.fill",
             style: .info,
             action: nil,
@@ -523,23 +525,23 @@ struct FamilySettingsView: View {
     // MARK: - Helpers
     
     private func displayLabel(for m: KBFamilyMember?) -> String {
-        guard let m else { return "questo membro" }
+        guard let m else { return NSLocalizedString("questo membro", comment: "Fallback member label") }
         return displayLabel(for: m)
     }
-    
+
     private func displayLabel(for m: KBFamilyMember) -> String {
         (m.displayName?.trimmedNonEmpty)
         ?? (m.email?.trimmedNonEmpty)
-        ?? "Utente"
+        ?? NSLocalizedString("Utente", comment: "Fallback member label")
     }
-    
-    private func membersSubtitle(list: [KBFamilyMember]) -> String {
+
+    private func membersSubtitle(list: [KBFamilyMember]) -> LocalizedStringKey {
         if list.isEmpty { return "Chi può accedere ai dati della famiglia." }
         if list.count == 1 { return "1 membro collegato." }
         return "\(list.count) membri collegati."
     }
-    
-    private func roleLabel(_ raw: String) -> String {
+
+    private func roleLabel(_ raw: String) -> LocalizedStringKey {
         switch raw.lowercased() {
         case "admin", "owner": return "Admin"
         default: return "Membro"

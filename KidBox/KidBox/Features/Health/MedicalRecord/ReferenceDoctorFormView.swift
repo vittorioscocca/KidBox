@@ -123,7 +123,7 @@ private struct OfficeHourSlotEditor: View {
         VStack(alignment: .leading, spacing: 10) {
             Picker("Giorno", selection: $slot.weekday) {
                 ForEach(KBItalianWeekday.allCases) { day in
-                    Text(day.rawValue).tag(day.rawValue)
+                    Text(day.uiLabel).tag(day.rawValue)
                 }
             }
 

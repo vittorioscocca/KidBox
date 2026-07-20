@@ -12,19 +12,21 @@ enum WizardPrimaryTransport: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// `String` (non `LocalizedStringKey`): mostrato anche in `summaryRow(_:_:)`
+    /// (secondo parametro `String`), quindi passa da NSLocalizedString.
     var title: String {
         switch self {
-        case .flight: return "Volo"
-        case .car: return "In auto"
-        case .other: return "Altro"
+        case .flight: return NSLocalizedString("Volo", comment: "Transport mode")
+        case .car: return NSLocalizedString("In auto", comment: "Transport mode")
+        case .other: return NSLocalizedString("Altro", comment: "Transport mode")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .flight: return "Prezzi voli in tempo reale"
-        case .car: return "Viaggio su strada flessibile"
-        case .other: return "Treno, autobus, traghetto…"
+        case .flight: return NSLocalizedString("Prezzi voli in tempo reale", comment: "Transport mode detail")
+        case .car: return NSLocalizedString("Viaggio su strada flessibile", comment: "Transport mode detail")
+        case .other: return NSLocalizedString("Treno, autobus, traghetto…", comment: "Transport mode detail")
         }
     }
 

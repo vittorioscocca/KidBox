@@ -161,7 +161,7 @@ struct PediatricExamEditView: View {
                 Section("Stato") {
                     Picker("Stato", selection: $status) {
                         ForEach(KBExamStatus.allCases, id: \.self) { s in
-                            Label(s.rawValue, systemImage: s.icon).tag(s)
+                            Label(s.displayName, systemImage: s.icon).tag(s)
                         }
                     }
                     .pickerStyle(.menu)

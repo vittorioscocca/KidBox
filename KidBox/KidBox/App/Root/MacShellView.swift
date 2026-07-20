@@ -373,7 +373,7 @@ private struct MacDashboardView: View {
                 HomeHeroCard(
                     title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
                     subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
-                    dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide)),
+                    dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(kbDeviceLocale())),
                     rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
                     photoURL: heroPhotoURL,
                     photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,

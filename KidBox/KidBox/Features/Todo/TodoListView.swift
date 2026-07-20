@@ -314,7 +314,7 @@ struct TodoListView: View {
                             Image(systemName: "clock")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
-                            Text(due.formatted(.dateTime.day().month(.abbreviated).hour().minute()))
+                            Text(due.formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(kbDeviceLocale())))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)

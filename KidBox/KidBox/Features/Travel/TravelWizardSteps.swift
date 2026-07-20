@@ -29,10 +29,10 @@ private struct WizardInfoTip: View {
 struct TravelWizardStepLayout<Content: View>: View {
     let step: Int
     let totalSteps: Int
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let canContinue: Bool
-    let continueTitle: String
+    let continueTitle: LocalizedStringKey
     let onBack: () -> Void
     let onContinue: () -> Void
     @ViewBuilder let content: () -> Content
@@ -153,15 +153,15 @@ struct TravelWizardDatesStep: View {
         )
     }
 
-    private func dateCard(title: String, date: Date, highlighted: Bool, action: @escaping () -> Void) -> some View {
+    private func dateCard(title: LocalizedStringKey, date: Date, highlighted: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text(date.formatted(.dateTime.day().month(.abbreviated)))
+                Text(date.formatted(.dateTime.day().month(.abbreviated).locale(kbDeviceLocale())))
                     .font(.title2.bold())
-                Text(date.formatted(.dateTime.weekday(.abbreviated).year()))
+                Text(date.formatted(.dateTime.weekday(.abbreviated).year().locale(kbDeviceLocale())))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -540,7 +540,7 @@ struct TravelWizardBuildStep: View {
         }
     }
 
-    private func summaryRow(_ label: String, _ value: String) -> some View {
+    private func summaryRow(_ label: LocalizedStringKey, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label).font(.caption).foregroundStyle(.secondary)
             Text(value.isEmpty ? "—" : value).font(.subheadline.weight(.medium))

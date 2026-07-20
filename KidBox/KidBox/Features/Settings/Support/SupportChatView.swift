@@ -443,7 +443,7 @@ private struct SupportInfoSheet: View {
         .presentationDetents([.medium, .large])
     }
 
-    private func infoSection(title: String, body: String) -> some View {
+    private func infoSection(title: LocalizedStringKey, body: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.subheadline.weight(.semibold))

@@ -393,7 +393,7 @@ struct TreatmentDetailView: View {
                         let allTaken   = expected > 0 && dayDoses.count == expected && dayDoses.allSatisfy { $0.taken }
                         
                         VStack(spacing: 4) {
-                            Text(date.formatted(.dateTime.day()))
+                            Text(date.formatted(.dateTime.day().locale(kbDeviceLocale())))
                                 .font(.caption.bold())
                                 .foregroundStyle(isSelected ? .white : (isToday ? tint : .primary))
                             Text(Self.timelineMonthFormatter.string(from: date))

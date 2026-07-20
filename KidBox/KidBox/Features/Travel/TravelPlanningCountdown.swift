@@ -32,10 +32,11 @@ enum TravelPlanningCountdown {
         let messages = messageCost(plannedDayCount: plannedDayCount)
         let timePart: String
         if seconds == 0 {
-            timePart = "L'AI può impiegare fino a circa \(minutes) minuti."
+            timePart = String(format: NSLocalizedString("L'AI può impiegare fino a circa %d minuti.", comment: ""), minutes)
         } else {
-            timePart = "L'AI può impiegare fino a circa \(minutes) min \(seconds)s."
+            timePart = String(format: NSLocalizedString("L'AI può impiegare fino a circa %d min %ds.", comment: ""), minutes, seconds)
         }
-        return "\(timePart) Conta \(messages) messaggi sul limite AI giornaliero della famiglia. Il contatore è solo indicativo."
+        let suffix = String(format: NSLocalizedString("Conta %d messaggi sul limite AI giornaliero della famiglia. Il contatore è solo indicativo.", comment: ""), messages)
+        return "\(timePart) \(suffix)"
     }
 }

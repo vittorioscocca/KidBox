@@ -19,14 +19,15 @@ enum PasswordStrengthLevel: Int, CaseIterable, Comparable, Sendable {
         lhs.rawValue < rhs.rawValue
     }
 
-    /// Etichetta breve per UI (italiano, coerente con il resto del modulo Password).
+    /// Etichetta breve per UI. `String` (non `LocalizedStringKey`): interpolata in altre
+    /// stringhe (es. `strengthLabel(for:)`), quindi passa da NSLocalizedString.
     var label: String {
         switch self {
-        case .veryWeak: return "Molto debole"
-        case .weak: return "Debole"
-        case .fair: return "Discreta"
-        case .strong: return "Forte"
-        case .veryStrong: return "Molto forte"
+        case .veryWeak: return NSLocalizedString("Molto debole", comment: "Password strength: very weak")
+        case .weak: return NSLocalizedString("Debole", comment: "Password strength: weak")
+        case .fair: return NSLocalizedString("Discreta", comment: "Password strength: fair")
+        case .strong: return NSLocalizedString("Forte", comment: "Password strength: strong")
+        case .veryStrong: return NSLocalizedString("Molto forte", comment: "Password strength: very strong")
         }
     }
 

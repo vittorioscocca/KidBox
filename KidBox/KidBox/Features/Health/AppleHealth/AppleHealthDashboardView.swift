@@ -311,7 +311,7 @@ struct AppleHealthDashboardView: View {
     }
 
     private var syncFooter: some View {
-        Text("Aggiornato \(snapshot.syncedAt.formatted(.dateTime.day().month().hour().minute())) · dati da Salute su questo iPhone")
+        Text("Aggiornato \(snapshot.syncedAt.formatted(.dateTime.day().month().hour().minute().locale(kbDeviceLocale()))) · dati da Salute su questo iPhone")
             .font(.caption2)
             .foregroundStyle(KBTheme.secondaryText(colorScheme))
     }

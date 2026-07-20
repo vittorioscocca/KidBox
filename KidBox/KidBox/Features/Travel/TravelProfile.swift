@@ -26,25 +26,27 @@ enum TravelStyle: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// `String` (non `LocalizedStringKey`): usato con `.sorted()`/`.joined()`, quindi
+    /// passa da NSLocalizedString.
     var title: String {
         switch self {
-        case .culture: return "Cultura e storia"
-        case .food: return "Cibo e gastronomia"
-        case .nightlife: return "Vita notturna"
-        case .adventure: return "Avventura e outdoor"
-        case .relaxation: return "Relax e spiaggia"
-        case .shopping: return "Shopping"
+        case .culture: return NSLocalizedString("Cultura e storia", comment: "Travel style")
+        case .food: return NSLocalizedString("Cibo e gastronomia", comment: "Travel style")
+        case .nightlife: return NSLocalizedString("Vita notturna", comment: "Travel style")
+        case .adventure: return NSLocalizedString("Avventura e outdoor", comment: "Travel style")
+        case .relaxation: return NSLocalizedString("Relax e spiaggia", comment: "Travel style")
+        case .shopping: return NSLocalizedString("Shopping", comment: "Travel style")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .culture: return "Musei, monumenti, storie"
-        case .food: return "Ristoranti, mercati, cucina locale"
-        case .nightlife: return "Bar, locali, serate"
-        case .adventure: return "Trekking, sport, natura"
-        case .relaxation: return "Spa, resort, giornate lente"
-        case .shopping: return "Boutique, mercati, design"
+        case .culture: return NSLocalizedString("Musei, monumenti, storie", comment: "Travel style detail")
+        case .food: return NSLocalizedString("Ristoranti, mercati, cucina locale", comment: "Travel style detail")
+        case .nightlife: return NSLocalizedString("Bar, locali, serate", comment: "Travel style detail")
+        case .adventure: return NSLocalizedString("Trekking, sport, natura", comment: "Travel style detail")
+        case .relaxation: return NSLocalizedString("Spa, resort, giornate lente", comment: "Travel style detail")
+        case .shopping: return NSLocalizedString("Boutique, mercati, design", comment: "Travel style detail")
         }
     }
 }
@@ -56,27 +58,29 @@ enum TravelPace: String, CaseIterable, Codable, Identifiable {
 
     var id: String { rawValue }
 
+    /// `String` (non `LocalizedStringKey`): usato con `.lowercased()` in frasi
+    /// composte (es. `TravelHubView`), quindi passa da NSLocalizedString.
     var title: String {
         switch self {
-        case .chill: return "Rilassato"
-        case .balanced: return "Equilibrato"
-        case .packed: return "Intenso"
+        case .chill: return NSLocalizedString("Rilassato", comment: "Travel pace")
+        case .balanced: return NSLocalizedString("Equilibrato", comment: "Travel pace")
+        case .packed: return NSLocalizedString("Intenso", comment: "Travel pace")
         }
     }
 
     var line1: String {
         switch self {
-        case .chill: return "1–2 attività al giorno"
-        case .balanced: return "3–4 attività al giorno"
-        case .packed: return "5–6 attività al giorno"
+        case .chill: return NSLocalizedString("1–2 attività al giorno", comment: "Travel pace detail")
+        case .balanced: return NSLocalizedString("3–4 attività al giorno", comment: "Travel pace detail")
+        case .packed: return NSLocalizedString("5–6 attività al giorno", comment: "Travel pace detail")
         }
     }
 
     var line2: String {
         switch self {
-        case .chill: return "Mattine lente, pasti lunghi"
-        case .balanced: return "Mix di visite e riposo"
-        case .packed: return "Vedi tutto, senza perdere tempo"
+        case .chill: return NSLocalizedString("Mattine lente, pasti lunghi", comment: "Travel pace detail")
+        case .balanced: return NSLocalizedString("Mix di visite e riposo", comment: "Travel pace detail")
+        case .packed: return NSLocalizedString("Vedi tutto, senza perdere tempo", comment: "Travel pace detail")
         }
     }
 
@@ -118,10 +122,10 @@ enum TravelAgeGroup: String, CaseIterable, Codable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .young: return "Giovane esploratore"
-        case .modern: return "Viaggiatore moderno"
-        case .seasoned: return "Esperto"
-        case .comfort: return "In cerca di comfort"
+        case .young: return NSLocalizedString("Giovane esploratore", comment: "Travel age group detail")
+        case .modern: return NSLocalizedString("Viaggiatore moderno", comment: "Travel age group detail")
+        case .seasoned: return NSLocalizedString("Esperto", comment: "Travel age group detail")
+        case .comfort: return NSLocalizedString("In cerca di comfort", comment: "Travel age group detail")
         }
     }
 }
@@ -141,7 +145,9 @@ struct TravelProfile: Codable, Equatable {
 
     var discoverSubtitle: String {
         let stylesPart = styles.prefix(2).map(\.title).joined(separator: ", ")
-        return "In base al tuo stile\(stylesPart.isEmpty ? "" : " (\(stylesPart))"), ritmo \(pace.title.lowercased()), fascia \(ageGroup.rawValue)"
+        let format = NSLocalizedString("In base al tuo stile%@, ritmo %@, fascia %@", comment: "Discover subtitle built from travel profile")
+        let stylesSuffix = stylesPart.isEmpty ? "" : " (\(stylesPart))"
+        return String(format: format, stylesSuffix, pace.title.lowercased(), ageGroup.rawValue)
     }
 }
 

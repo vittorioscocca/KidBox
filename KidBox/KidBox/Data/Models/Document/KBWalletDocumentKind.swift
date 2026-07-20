@@ -31,15 +31,18 @@ enum KBWalletDocumentKind: String, CaseIterable, Identifiable {
 
     static let notesPrefix = "kb_wallet_doc:"
 
+    /// `String` (non `LocalizedStringKey`): assegnato a campi form `String` e
+    /// confrontato con `==` (per capire se l'utente ha modificato il titolo
+    /// auto-compilato), quindi passa da NSLocalizedString.
     var displayName: String {
         switch self {
-        case .tesseraSanitaria: return "Tessera Sanitaria"
-        case .cartaIdentita:    return "Carta d'identità (cartacea)"
-        case .cie:              return "CIE (Carta d'identità elettronica)"
-        case .passaporto:       return "Passaporto"
-        case .codiceFiscale:    return "Codice Fiscale"
-        case .patente:          return "Patente"
-        case .altro:            return "Documento"
+        case .tesseraSanitaria: return NSLocalizedString("Tessera Sanitaria", comment: "Document kind")
+        case .cartaIdentita:    return NSLocalizedString("Carta d'identità (cartacea)", comment: "Document kind")
+        case .cie:              return NSLocalizedString("CIE (Carta d'identità elettronica)", comment: "Document kind")
+        case .passaporto:       return NSLocalizedString("Passaporto", comment: "Document kind")
+        case .codiceFiscale:    return NSLocalizedString("Codice Fiscale", comment: "Document kind")
+        case .patente:          return NSLocalizedString("Patente", comment: "Document kind")
+        case .altro:            return NSLocalizedString("Documento", comment: "Document kind")
         }
     }
 

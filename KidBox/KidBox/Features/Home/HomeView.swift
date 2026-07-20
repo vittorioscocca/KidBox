@@ -59,6 +59,13 @@ struct HomeView: View {
     @State private var showAIUpgrade = false
     @State private var fabExpanded = false   // usato solo su Mac Catalyst (Home classica)
     @State private var showFamilySwitcher = false
+    @State private var showTips = false
+
+    /// Vista Home: lista raggruppata o griglia di card riordinabili. Preferenza locale al dispositivo.
+    @AppStorage("kb_homeLayoutMode") private var homeLayoutMode: HomeLayoutMode = .list
+
+    // MARK: - Home carousel (foto famiglia + slide promozionali), circolare
+    @State private var homeCarouselIndex: Int = 0
     
     @Query(sort: \KBUserProfile.updatedAt, order: .reverse) private var profiles: [KBUserProfile]
     
@@ -99,7 +106,141 @@ struct HomeView: View {
         return URL(string: s)
     }
     private let avatarRemoteStore = AvatarRemoteStore()
-    
+
+    /// Slide promozionali del carosello Home (dopo la foto famiglia). Al tap
+    /// navigano alla sezione corrispondente, come se si toccasse la card.
+    private var homePromoSlides: [HomePromoSlideData] {
+        [
+            .init(id: "invite", imageName: "HomePromoInvite",
+                  title: "Espandi il tuo cerchio. Invita nuovi membri",
+                  subtitle: nil,
+                  destination: .inviteCode),
+            .init(id: "passwords", imageName: "HomePromoPasswords",
+                  title: "Le password di famiglia, al sicuro",
+                  subtitle: "Condividi in sicurezza, senza uscire da KidBox",
+                  destination: .passwords(familyId: activeFamilyId)),
+            .init(id: "ai", imageName: "HomePromoAI",
+                  title: "Chiedile qualsiasi cosa",
+                  subtitle: "Risponde subito, nella tua lingua",
+                  destination: .askExpert),
+            .init(id: "grocery", imageName: "HomePromoGrocery",
+                  title: "La lista si aggiorna da sola",
+                  subtitle: "Se uno spunta, l'altro lo vede subito",
+                  destination: .shopping(familyId: activeFamilyId)),
+            .init(id: "calendar", imageName: "HomePromoCalendar",
+                  title: "Un calendario, due genitori, zero conflitti",
+                  subtitle: nil,
+                  destination: .calendar(familyId: activeFamilyId)),
+            .init(id: "expenses", imageName: "HomePromoExpenses",
+                  title: "Sai sempre dove vanno i soldi",
+                  subtitle: "Spese per categoria, scontrini e foto allegate",
+                  destination: .expenses(familyId: activeFamilyId)),
+            .init(id: "documents1", imageName: "HomePromoDocuments1",
+                  title: "Ogni documento, sempre a portata di mano",
+                  subtitle: "Referti, certificati e foto in un archivio sicuro",
+                  destination: .document),
+            .init(id: "documents2", imageName: "HomePromoDocuments2",
+                  title: "Scansiona. Pensa lei a tutto il resto.",
+                  subtitle: "L'AI legge il documento e propone l'azione giusta",
+                  destination: .document),
+            .init(id: "health", imageName: "HomePromoHealth",
+                  title: "Salute dei bambini, sempre sotto controllo",
+                  subtitle: "Vaccini, visite ed esami: mai più una scadenza dimenticata",
+                  destination: .pediatric(familyId: activeFamilyId, childId: "")),
+        ]
+    }
+
+    /// Una pagina del carosello Home: la foto famiglia o una slide promozionale.
+    private struct HomeCarouselPage: Identifiable {
+        enum Kind {
+            case hero
+            case promo(HomePromoSlideData)
+        }
+        let id: String
+        let kind: Kind
+    }
+
+    /// Pagine reali del carosello (senza duplicati per il loop).
+    private var homeCarouselRealPages: [HomeCarouselPage] {
+        var pages: [HomeCarouselPage] = [HomeCarouselPage(id: "hero", kind: .hero)]
+        if hasFamily {
+            pages += homePromoSlides.map { HomeCarouselPage(id: $0.id, kind: .promo($0)) }
+        }
+        return pages
+    }
+
+    /// True se ci sono almeno 2 pagine reali, quindi il loop circolare ha senso.
+    private var homeCarouselHasLoop: Bool { homeCarouselRealPages.count > 1 }
+
+    /// Pagine effettive mostrate nella TabView: se c'è più di una pagina reale,
+    /// aggiunge una copia dell'ultima all'inizio e una copia della prima alla fine,
+    /// così lo swipe oltre i due estremi "continua" invece di fermarsi (loop infinito).
+    /// Quando si raggiunge una copia, l'indice viene silenziosamente corretto sulla
+    /// pagina reale corrispondente (stesso contenuto, nessun salto visibile).
+    private var homeCarouselLoopPages: [HomeCarouselPage] {
+        let real = homeCarouselRealPages
+        guard homeCarouselHasLoop, let first = real.first, let last = real.last else { return real }
+        let dupLast = HomeCarouselPage(id: "dup-last-\(last.id)", kind: last.kind)
+        let dupFirst = HomeCarouselPage(id: "dup-first-\(first.id)", kind: first.kind)
+        return [dupLast] + real + [dupFirst]
+    }
+
+    /// Indice della pagina reale correntemente mostrata (0..<realCount), derivato
+    /// dall'indice nella lista con i duplicati di loop.
+    private var homeCarouselRealIndex: Int {
+        let realCount = homeCarouselRealPages.count
+        guard homeCarouselHasLoop else { return 0 }
+        if homeCarouselIndex == 0 { return realCount - 1 }
+        if homeCarouselIndex == realCount + 1 { return 0 }
+        return homeCarouselIndex - 1
+    }
+
+    /// Indicatore a pallini custom, mostrato SOTTO la card (mai sovrapposto al
+    /// testo promozionale, a differenza dei dot di sistema di `.tabViewStyle(.page)`).
+    private var homeCarouselDots: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<homeCarouselRealPages.count, id: \.self) { index in
+                Circle()
+                    .fill(index == homeCarouselRealIndex ? Color.primary : Color.secondary.opacity(0.35))
+                    .frame(width: 6, height: 6)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: homeCarouselRealIndex)
+    }
+
+    @ViewBuilder
+    private func homeCarouselPageView(_ page: HomeCarouselPage) -> some View {
+        switch page.kind {
+        case .hero:
+            HomeHeroCard(
+                title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
+                subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
+                dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(kbDeviceLocale())),
+                rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
+                photoURL: heroPhotoURL,
+                photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,
+                scale: activeFamily?.heroPhotoScale ?? 1.0,
+                offsetX: activeFamily?.heroPhotoOffsetX ?? 0.0,
+                offsetY: activeFamily?.heroPhotoOffsetY ?? 0.0,
+                isBusy: isUploadingHero
+            ) {
+                if hasFamily {
+                    KBLog.navigation.kbDebug("Home: tap hero -> open picker familyId=\(activeFamilyId)")
+                    showHeroPicker = true
+                } else {
+                    KBLog.navigation.kbDebug("Home: tap hero without family -> go FamilySettings")
+                    coordinator.navigate(to: .familySettings)
+                }
+            }
+            .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
+        case .promo(let slide):
+            HomePromoSlideView(imageName: slide.imageName, title: slide.title, subtitle: slide.subtitle) {
+                KBLog.navigation.kbDebug("Home: tap promo slide -> \(slide.imageName)")
+                navigate(to: slide.destination)
+            }
+        }
+    }
+
     /// Initial crop values for the cropper UI (persisted on KBFamily).
     private var initialCrop: HeroCrop {
         HeroCrop(
@@ -125,6 +266,9 @@ struct HomeView: View {
                 }
             }
             Spacer(minLength: 8)
+            #if !targetEnvironment(macCatalyst)
+            homeLayoutModeToggle
+            #endif
             if hasFamily {
                 Button {
                     showFamilySwitcher = true
@@ -140,6 +284,35 @@ struct HomeView: View {
             }
         }
         .padding(.top, 4)
+    }
+
+    /// Due pulsanti per scegliere tra vista a lista raggruppata e vista a griglia libera (drag & drop).
+    private var homeLayoutModeToggle: some View {
+        HStack(spacing: 2) {
+            layoutModeButton(.list, systemImage: "list.bullet")
+            layoutModeButton(.grid, systemImage: "square.grid.2x2")
+        }
+        .padding(3)
+        .background(
+            Capsule().fill(Color(.secondarySystemFill))
+        )
+    }
+
+    private func layoutModeButton(_ mode: HomeLayoutMode, systemImage: String) -> some View {
+        let selected = homeLayoutMode == mode
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) { homeLayoutMode = mode }
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(selected ? Color.primary : Color.secondary)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle().fill(selected ? Color(.systemBackground) : Color.clear)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(mode == .list ? "Vista a lista" : "Vista a griglia")
     }
     
     var body: some View {
@@ -163,39 +336,63 @@ struct HomeView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     homeTitleHeader
-                    
-                    // HERO
-                    HomeHeroCard(
-                        title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
-                        subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
-                        dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide)),
-                        rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
-                        photoURL: heroPhotoURL,
-                        photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,
-                        scale: activeFamily?.heroPhotoScale ?? 1.0,
-                        offsetX: activeFamily?.heroPhotoOffsetX ?? 0.0,
-                        offsetY: activeFamily?.heroPhotoOffsetY ?? 0.0,
-                        isBusy: isUploadingHero
-                    ) {
-                        if hasFamily {
-                            KBLog.navigation.kbDebug("Home: tap hero -> open picker familyId=\(activeFamilyId)")
-                            showHeroPicker = true
-                        } else {
-                            KBLog.navigation.kbDebug("Home: tap hero without family -> go FamilySettings")
-                            coordinator.navigate(to: .familySettings)
+
+                    // HERO — carosello circolare: prima slide = foto famiglia (invariata), poi slide promozionali.
+                    // Oltre l'ultima slide si torna alla prima (e viceversa), come un loop infinito.
+                    TabView(selection: $homeCarouselIndex) {
+                        ForEach(Array(homeCarouselLoopPages.enumerated()), id: \.element.id) { index, page in
+                            homeCarouselPageView(page)
+                                .tag(index)
                         }
                     }
-                    .id(activeFamily?.heroPhotoUpdatedAt ?? activeFamily?.updatedAt)
-                    
+                    .frame(height: 300)
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .onAppear {
+                        homeCarouselIndex = homeCarouselHasLoop ? 1 : 0
+                    }
+                    .onChange(of: hasFamily) { _, _ in
+                        homeCarouselIndex = homeCarouselHasLoop ? 1 : 0
+                    }
+                    .onChange(of: homeCarouselIndex) { _, newValue in
+                        guard homeCarouselHasLoop else { return }
+                        let realCount = homeCarouselRealPages.count
+                        if newValue == 0 {
+                            // Copia dell'ultima pagina reale: dopo lo swipe, salta senza animazione alla pagina reale.
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                var tx = Transaction()
+                                tx.disablesAnimations = true
+                                withTransaction(tx) { homeCarouselIndex = realCount }
+                            }
+                        } else if newValue == realCount + 1 {
+                            // Copia della prima pagina reale.
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                var tx = Transaction()
+                                tx.disablesAnimations = true
+                                withTransaction(tx) { homeCarouselIndex = 1 }
+                            }
+                        }
+                    }
+
+                    if hasFamily {
+                        homeCarouselDots
+                    }
+
                     #if targetEnvironment(macCatalyst)
                     // Mac Catalyst: Home classica (griglia + FAB) invariata
                     HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
                         navigate(to: destination)
                     }
                     #else
-                    // iOS/iPadOS: Home a scorciatoie + gruppi tematici (variante C del design system)
-                    HomeCategoryList(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
-                        navigate(to: destination)
+                    // iOS/iPadOS: l'utente sceglie tra lista raggruppata e griglia libera riordinabile
+                    switch homeLayoutMode {
+                    case .list:
+                        HomeCategoryList(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
+                            navigate(to: destination)
+                        }
+                    case .grid:
+                        HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId, initialOrder: HomeCatalog.flatOrder) { destination in
+                            navigate(to: destination)
+                        }
                     }
                     #endif
                     
@@ -255,12 +452,27 @@ struct HomeView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    KBLog.navigation.kbDebug("Home: tap Tips")
+                    showTips = true
+                } label: {
+                    Image(systemName: "lightbulb")
+                }
+                .accessibilityLabel("Suggerimenti")
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
                     KBLog.navigation.kbDebug("Home: tap Settings")
                     coordinator.navigate(to: .settings)
                 } label: {
                     Image(systemName: "gearshape")
                 }
                 .accessibilityLabel("Impostazioni")
+            }
+        }
+        .sheet(isPresented: $showTips) {
+            NavigationStack {
+                HomeTipsView()
             }
         }
         .sheet(isPresented: $showFamilySwitcher) {
@@ -575,30 +787,41 @@ private enum HomeCardID: String, CaseIterable, Codable {
     case travel
 }
 
+/// Modalità di visualizzazione della Home: lista raggruppata (attuale) o griglia
+/// di card libere, riordinabili con drag & drop. Preferenza locale al dispositivo.
+private enum HomeLayoutMode: String {
+    case list
+    case grid
+}
+
 // MARK: - HomeCardGrid
 
 private struct HomeCardGrid: View {
     let hasFamily: Bool
     let familyId: String
+    /// Ordine iniziale da usare se non esiste ancora un ordine salvato per questa famiglia.
+    /// `nil` = usa `defaultOrder()` (comportamento storico, es. Mac Catalyst).
+    let initialOrder: [HomeCardID]?
     let onNavigate: (HomeDestination) -> Void
-    
+
     @ObservedObject private var badge = BadgeManager.shared
     @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
     @StateObject private var locationObserver = LocationSharingObserver()
     @Query private var passwordEntries: [PasswordEntry]
-    
+
     @State private var order: [HomeCardID] = []
     @State private var dragged: HomeCardID?
     @State private var showUpgrade = false
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
 
-    init(hasFamily: Bool, familyId: String, onNavigate: @escaping (HomeDestination) -> Void) {
+    init(hasFamily: Bool, familyId: String, initialOrder: [HomeCardID]? = nil, onNavigate: @escaping (HomeDestination) -> Void) {
         self.hasFamily = hasFamily
         self.familyId = familyId
+        self.initialOrder = initialOrder
         self.onNavigate = onNavigate
         let fid = familyId
         _passwordEntries = Query(
@@ -643,7 +866,7 @@ private struct HomeCardGrid: View {
             }      }
         .onAppear {
             if order.isEmpty {
-                order = loadOrder() ?? defaultOrder()
+                order = loadOrder() ?? initialOrder ?? defaultOrder()
             }
         }
         .sheet(isPresented: $showUpgrade) {
@@ -1127,8 +1350,8 @@ private struct HeroCropperSheet: View {
 
 private struct HomeCatMeta {
     let id: HomeCardID
-    let title: String
-    let short: String
+    let title: LocalizedStringKey
+    let short: LocalizedStringKey
     let symbol: String
     let tint: Color
     /// Chiave per il tracker di utilizzo (scorciatoie). `nil` = categoria non tracciata.
@@ -1160,7 +1383,7 @@ private enum HomeCatalog {
     }
 
     /// Gruppi tematici (Assistente escluso: ora è il bottone AI flottante).
-    static let groups: [(name: String, ids: [HomeCardID])] = [
+    static let groups: [(name: LocalizedStringKey, ids: [HomeCardID])] = [
         ("Organizzazione",      [.note, .todo, .shopping, .calendar]),
         ("Famiglia & Salute",   [.care, .family, .chat]),
         ("Documenti & Denaro",  [.documents, .expenses, .wallet, .passwords]),
@@ -1172,6 +1395,10 @@ private enum HomeCatalog {
         .calendar, .todo, .chat, .documents, .shopping, .note, .expenses,
         .care, .wallet, .passwords, .location, .photos, .family, .pets, .homeItems, .vehicles, .travel
     ]
+
+    /// Ordine "piatto" (senza gruppi) usato come ordine iniziale della vista a griglia:
+    /// stesso ordine con cui le card appaiono oggi nella lista raggruppata.
+    static var flatOrder: [HomeCardID] { groups.flatMap { $0.ids } }
 }
 
 // MARK: - HomeShortcutUsage
@@ -1263,7 +1490,7 @@ private struct HomeCategoryList: View {
             .padding(.horizontal, 4)
 
             // Gruppi tematici
-            ForEach(HomeCatalog.groups, id: \.name) { group in
+            ForEach(HomeCatalog.groups, id: \.ids) { group in
                 VStack(alignment: .leading, spacing: 6) {
                     eyebrow(group.name)
                     VStack(spacing: 0) {
@@ -1293,8 +1520,9 @@ private struct HomeCategoryList: View {
 
     // MARK: Sub-views
 
-    private func eyebrow(_ text: String) -> some View {
-        Text(text.uppercased())
+    private func eyebrow(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .textCase(.uppercase)
             .font(.system(size: 11, weight: .heavy))
             .kerning(0.8)
             .foregroundStyle(.secondary)

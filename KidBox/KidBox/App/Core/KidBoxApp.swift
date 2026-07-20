@@ -18,6 +18,9 @@ struct KidBoxApp: App {
     private var modelContainer: ModelContainer
     @StateObject private var coordinator = AppCoordinator()
     @StateObject private var subscriptionManager = KBSubscriptionManager.shared
+    // Osservato solo per invalidare la view quando l'utente cambia lingua nei
+    // Settings: forza il ricalcolo di kbDeviceLocale() sotto, senza riavvio.
+    @StateObject private var languageManager = LanguageManager.shared
     @Environment(\.scenePhase) private var scenePhase
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var notifications = NotificationManager.shared

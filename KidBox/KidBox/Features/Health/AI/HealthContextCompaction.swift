@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 enum HealthContextSendMode: String, CaseIterable, Identifiable {
     case fullAccuracy
@@ -20,7 +21,7 @@ enum HealthContextSendPreference: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
+    var displayName: LocalizedStringKey {
         switch self {
         case .askEachTime: return "Chiedi ogni volta"
         case .fullAccuracy: return "Massima accuratezza"
@@ -28,7 +29,7 @@ enum HealthContextSendPreference: String, CaseIterable, Identifiable {
         }
     }
 
-    var detail: String {
+    var detail: LocalizedStringKey {
         switch self {
         case .askEachTime:
             return "Con contesto ampio mostra la scelta prima di ogni invio."

@@ -127,6 +127,20 @@ enum KBItalianWeekday: String, CaseIterable, Identifiable {
     case domenica = "Domenica"
 
     var id: String { rawValue }
+
+    /// Etichetta per la UI. `rawValue` resta invariato (persistito come
+    /// `KBDoctorOfficeHourSlot.weekday`) — non tradurlo.
+    var uiLabel: String {
+        switch self {
+        case .lunedi:     return NSLocalizedString("Lunedì", comment: "Weekday")
+        case .martedi:    return NSLocalizedString("Martedì", comment: "Weekday")
+        case .mercoledi:  return NSLocalizedString("Mercoledì", comment: "Weekday")
+        case .giovedi:    return NSLocalizedString("Giovedì", comment: "Weekday")
+        case .venerdi:    return NSLocalizedString("Venerdì", comment: "Weekday")
+        case .sabato:     return NSLocalizedString("Sabato", comment: "Weekday")
+        case .domenica:   return NSLocalizedString("Domenica", comment: "Weekday")
+        }
+    }
 }
 
 /// Contatto di emergenza associato a un bambino.

@@ -10,28 +10,28 @@ import SwiftUI
 // MARK: - Home Card (grid)
 
 struct HomeCardView: View {
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let systemImage: String
     let tint: Color
     let action: () -> Void
-    
+
     private let cornerRadius: CGFloat = 16
-    
+
     var body: some View {
         Button(action: action) {
             HomeCardLabel(title: title, subtitle: subtitle, systemImage: systemImage, tint: tint)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityHint(subtitle)
+        .accessibilityLabel(Text(title))
+        .accessibilityHint(Text(subtitle))
     }
 }
 
 /// Contenuto visivo della card Home (usabile dentro `NavigationLink`).
 struct HomeCardLabel: View {
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let systemImage: String
     let tint: Color
 

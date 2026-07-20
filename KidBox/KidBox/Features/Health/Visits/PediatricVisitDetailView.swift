@@ -171,7 +171,7 @@ struct PediatricVisitDetailView: View {
                             .foregroundStyle(KBTheme.secondaryText(colorScheme))
                         // ── Stato visita ──
                         if let status = v.visitStatus {
-                            Label(status.rawValue, systemImage: status.icon)
+                            Label(status.displayName, systemImage: status.icon)
                                 .font(.caption2.bold())
                                 .padding(.horizontal, 8).padding(.vertical, 3)
                                 .background(Capsule().fill(statusColor(status).opacity(0.15)))
@@ -207,7 +207,7 @@ struct PediatricVisitDetailView: View {
                         HStack(spacing: 6) {
                             Text(doctor).font(.subheadline.bold())
                             if let spec = v.doctorSpecialization {
-                                Text("· \(spec.rawValue)")
+                                Text("· \(spec.uiLabel)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -313,7 +313,7 @@ struct PediatricVisitDetailView: View {
                 prescriptionSection(title: "Terapie", icon: "figure.walk") {
                     FlowLayout(spacing: 6) {
                         ForEach(v.therapyTypes, id: \.self) { t in
-                            Text(t.rawValue)
+                            Text(t.uiLabel)
                                 .font(.caption)
                                 .padding(.horizontal, 10).padding(.vertical, 4)
                                 .background(Capsule().fill(tint.opacity(0.1)))
@@ -417,7 +417,7 @@ struct PediatricVisitDetailView: View {
             .shadow(color: KBTheme.shadow(colorScheme), radius: 6, x: 0, y: 2)
     }
     
-    private func prescriptionSection<C: View>(title: String, icon: String, @ViewBuilder content: () -> C) -> some View {
+    private func prescriptionSection<C: View>(title: LocalizedStringKey, icon: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(title, systemImage: icon)
                 .font(.caption.bold()).foregroundStyle(.secondary)
@@ -585,7 +585,7 @@ private struct LinkedExamDetailRow: View {
                     Text(p).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 }
                 if let s = exam?.status {
-                    Label(s.rawValue, systemImage: s.icon)
+                    Label(s.displayName, systemImage: s.icon)
                         .font(.caption2).foregroundStyle(.secondary)
                 }
             }

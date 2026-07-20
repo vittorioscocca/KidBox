@@ -155,7 +155,9 @@ struct PasswordsSecurityView: View {
     }
 
     private func strengthLabel(for entry: PasswordEntry) -> String {
-        guard let plain = try? entry.decryptPassword() else { return "Debole" }
+        guard let plain = try? entry.decryptPassword() else {
+            return NSLocalizedString("Debole", comment: "Password strength: weak")
+        }
         return PasswordStrength.evaluate(plain).level.label
     }
 

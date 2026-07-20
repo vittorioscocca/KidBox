@@ -76,7 +76,7 @@ struct NoteDetailView: View {
                     .padding(.leading, 8)
                 
                 // ── Titolo ────────────────────────────────────────────────────
-                NoteTitleTextField(text: $titleText, placeholder: "Titolo") {
+                NoteTitleTextField(text: $titleText, placeholder: NSLocalizedString("Titolo", comment: "Note title placeholder")) {
                     bodyFocusTrigger = UUID()
                 }
                 .padding(.top, 12)
@@ -88,7 +88,7 @@ struct NoteDetailView: View {
                 // ✅ La UITextView gestisce lo scroll internamente tramite contentInset.
                 //    ignoresSafeArea(.keyboard) impedisce a SwiftUI di shrinkare il frame
                 //    quando compare la tastiera — altrimenti la tv perde altezza e non scrolla.
-                RichTextView(html: $bodyHTML, placeholder: "Scrivi qui…",
+                RichTextView(html: $bodyHTML, placeholder: NSLocalizedString("Scrivi qui…", comment: "Note body placeholder"),
                              focusTrigger: bodyFocusTrigger,
                              store: richTextStore)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

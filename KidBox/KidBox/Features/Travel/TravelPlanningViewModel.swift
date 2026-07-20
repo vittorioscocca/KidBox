@@ -156,8 +156,8 @@ final class TravelPlanningViewModel: ObservableObject {
         let adultLines = members.map { member in
             TravelWizardParticipantLine(
                 id: member.userId,
-                name: member.displayName ?? "Membro",
-                ageLabel: "Adulto",
+                name: member.displayName ?? NSLocalizedString("Membro", comment: ""),
+                ageLabel: NSLocalizedString("Adulto", comment: "Adult participant label"),
                 emoji: "🧑",
                 isChild: false
             )
@@ -166,7 +166,7 @@ final class TravelPlanningViewModel: ObservableObject {
             TravelWizardParticipantLine(
                 id: child.id,
                 name: child.name,
-                ageLabel: child.ageDescription.isEmpty ? "Bambino" : child.ageDescription,
+                ageLabel: child.ageDescription.isEmpty ? NSLocalizedString("Bambino", comment: "Child participant label") : child.ageDescription,
                 emoji: child.avatarEmoji,
                 isChild: true
             )
@@ -177,9 +177,10 @@ final class TravelPlanningViewModel: ObservableObject {
     func selectedParticipantSummary(members: [KBFamilyMember], children: [KBChild]) -> String {
         let lines = participantLines(members: members, children: children)
             .filter { selectedParticipantIds.contains($0.id) }
-        if lines.isEmpty { return "Nessun viaggiatore selezionato" }
+        if lines.isEmpty { return NSLocalizedString("Nessun viaggiatore selezionato", comment: "") }
+        let adultLabel = NSLocalizedString("Adulto", comment: "Adult participant label")
         return lines.map { line in
-            if line.ageLabel == "Adulto" || line.ageLabel.isEmpty {
+            if line.ageLabel == adultLabel || line.ageLabel.isEmpty {
                 return line.name
             }
             return "\(line.name) (\(line.ageLabel))"
@@ -191,7 +192,11 @@ final class TravelPlanningViewModel: ObservableObject {
         let names = selectedParticipantSummary(members: members, children: children)
         let perDay = budgetTotal / Double(max(tripDayCount, 1))
         let symbol = currency == "EUR" ? "€" : "$"
-        return "per \(tripDayCount) giorni · \(count) \(count == 1 ? "persona" : "persone") · \(names) · ~\(Int(perDay)) \(symbol)/giorno"
+        let peopleWord = count == 1
+            ? NSLocalizedString("persona", comment: "")
+            : NSLocalizedString("persone", comment: "")
+        let format = NSLocalizedString("per %d giorni · %d %@ · %@ · ~%d %@/giorno", comment: "Travel budget footnote")
+        return String(format: format, tripDayCount, count, peopleWord, names, Int(perDay), symbol)
     }
 
     var composedFreeTextPrompt: String {

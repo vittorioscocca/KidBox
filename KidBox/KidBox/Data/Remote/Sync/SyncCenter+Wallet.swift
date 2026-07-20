@@ -149,6 +149,8 @@ extension SyncCenter {
                     var location: String?
                     var seat: String?
                     var bookingCode: String?
+                    var arrivalLocation: String?
+                    var holderName: String?
                     var notes: String?
                     var barcodeText: String?
                     let fileName: String?
@@ -159,6 +161,8 @@ extension SyncCenter {
                             location    = try WalletCryptoService.decryptOptional(dto.locationEnc, familyId: familyId, userId: uid)
                             seat        = try WalletCryptoService.decryptOptional(dto.seatEnc, familyId: familyId, userId: uid)
                             bookingCode = try WalletCryptoService.decryptOptional(dto.bookingCodeEnc, familyId: familyId, userId: uid)
+                            arrivalLocation = try WalletCryptoService.decryptOptional(dto.arrivalLocationEnc, familyId: familyId, userId: uid)
+                            holderName  = try WalletCryptoService.decryptOptional(dto.holderNameEnc, familyId: familyId, userId: uid)
                             notes       = try WalletCryptoService.decryptOptional(dto.notesEnc, familyId: familyId, userId: uid)
                             barcodeText = try WalletCryptoService.decryptOptional(dto.barcodeTextEnc, familyId: familyId, userId: uid)
                             fileName    = try WalletCryptoService.decryptOptional(dto.fileNameEnc, familyId: familyId, userId: uid)
@@ -166,11 +170,13 @@ extension SyncCenter {
                             KBLog.sync.kbError("[wallet][inbound] decrypt FAIL id=\(dto.id) err=\(error.localizedDescription)")
                             title = "⚠️ Biglietto non decifrabile"
                             location = nil; seat = nil; bookingCode = nil; notes = nil
+                            arrivalLocation = nil; holderName = nil
                             barcodeText = nil; fileName = nil
                         }
                     } else {
                         title = "⚠️ Biglietto non decifrabile"
                         location = nil; seat = nil; bookingCode = nil; notes = nil
+                        arrivalLocation = nil; holderName = nil
                         barcodeText = nil; fileName = nil
                     }
 
@@ -196,6 +202,8 @@ extension SyncCenter {
                         existing.location = location
                         existing.seat = seat
                         existing.bookingCode = bookingCode
+                        existing.arrivalLocation = arrivalLocation
+                        existing.holderName = holderName
                         existing.notes = notes
                         existing.extractedBarcodeText = barcodeText
                         existing.pdfFileName = fileName
@@ -246,6 +254,8 @@ extension SyncCenter {
                             location: location,
                             seat: seat,
                             bookingCode: bookingCode,
+                            arrivalLocation: arrivalLocation,
+                            holderName: holderName,
                             notes: notes,
                             emitter: dto.emitter,
                             visibilityScope: KBWalletTicket.normalizedVisibilityScopeForWallet(dto.visibilityScope),

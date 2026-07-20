@@ -63,12 +63,11 @@ struct GroceryListView: View {
     }
     
     private var groupedToBuy: [(category: String, items: [KBGroceryItem])] {
-        let uncategorized = "Altro"
         var dict: [String: [KBGroceryItem]] = [:]
         for item in toBuy {
             let key = item.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             ? item.category!
-            : uncategorized
+            : KBGroceryCategory.uncategorized
             dict[key, default: []].append(item)
         }
         return dict.keys.sorted().map { key in
@@ -89,7 +88,7 @@ struct GroceryListView: View {
             
             if !toBuy.isEmpty {
                 ForEach(groupedToBuy, id: \.category) { group in
-                    Section(group.category) {
+                    Section(KBGroceryCategory.displayName(for: group.category)) {
                         ForEach(group.items) { item in
                             row(item)
                                 .listRowBackground(cardBackground)

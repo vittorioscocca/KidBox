@@ -25,11 +25,11 @@ enum KBVisibilityScope {
     static func chipLabel(for scope: String) -> String {
         switch scope {
         case members:
-            return "👥 Membri selezionati"
+            return "👥 " + NSLocalizedString("Membri selezionati", comment: "Visibility: selected members")
         case onlyCreator:
-            return "🔒 Solo io"
+            return "🔒 " + NSLocalizedString("Solo io", comment: "Visibility: only me")
         default:
-            return "👨‍👩‍👧 Tutta la famiglia"
+            return "👨‍👩‍👧 " + NSLocalizedString("Tutta la famiglia", comment: "Visibility: whole family")
         }
     }
 
