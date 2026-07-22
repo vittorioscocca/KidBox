@@ -33,6 +33,16 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // Configurazione remota letta dai client (oggi: `config/nudges`).
+    // Non contiene dati di nessun utente — solo testi, cadenze e interruttori —
+    // quindi la lettura è aperta a chiunque sia autenticato. La scrittura resta
+    // negata ai client: si modifica dalla console con l'Admin SDK, che le rules
+    // non le attraversa.
+    match /config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Rollup giornalieri: scritti dallo scheduler, letti solo dalla console.
     match /metrics/{docId} {
       allow read: if isAdmin();

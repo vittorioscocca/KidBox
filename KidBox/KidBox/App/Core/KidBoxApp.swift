@@ -26,6 +26,10 @@ struct KidBoxApp: App {
     @StateObject private var notifications = NotificationManager.shared
     @State private var showLaunch = true
     @State private var lastForegroundMaintenanceAt: Date?
+    /// Annuncio dalla console admin da mostrare in `BroadcastMessageView`.
+    /// Sta qui e non nel coordinator perché non è navigazione: non ha famiglia,
+    /// non ha destinazione, e non deve entrare nello stack di nessuna sezione.
+    @State private var broadcastMessage: BroadcastMessage?
     
     init() {
         KBFileLogger.shared.performStartupMaintenance()
@@ -55,6 +59,31 @@ struct KidBoxApp: App {
         KBLog.app.kbInfo("KidBoxApp ready")
     }
     
+    /// Traduce la destinazione di un nudge in una rotta reale.
+    ///
+    /// Le destinazioni sono un insieme chiuso (`NudgeDestination`) proprio
+    /// perché devono atterrare su schermate che esistono: un catalogo remoto
+    /// non può inventare un posto dove mandare l'utente.
+    @MainActor
+    private func navigateToNudgeDestination(_ destination: NudgeDestination) {
+        // Le sezioni di famiglia hanno bisogno della famiglia attiva. Se non
+        // c'è (caso raro: utente senza famiglia) l'unica destinazione sensata
+        // resta l'invito, che di famiglia non ha bisogno.
+        guard let familyId = coordinator.activeFamilyId else {
+            coordinator.navigate(to: .inviteCode)
+            return
+        }
+        switch destination {
+        case .invite:    coordinator.navigate(to: .inviteCode)
+        case .documents: coordinator.navigate(to: .documentsHome)
+        case .wallet:    coordinator.navigate(to: .walletHome(familyId: familyId))
+        case .health:    coordinator.navigate(to: .pediatricChildSelector(familyId: familyId))
+        case .ai:        coordinator.navigate(to: .askExpert)
+        case .chat:      coordinator.navigate(to: .chat)
+        case .calendar:  coordinator.navigate(to: .calendar(familyId: familyId))
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -327,11 +356,56 @@ struct KidBoxApp: App {
                                 coordinator.navigate(to: .passwordsSecurity(familyId: familyId))
                             }
                             NotificationManager.shared.consumeDeepLink()
+
+                        case .broadcast(let id, let title, let body):
+                            KBLog.navigation.kbInfo("Deep link -> broadcast id=\(id)")
+                            // Nessuno switch di famiglia e nessuna navigazione:
+                            // l'annuncio non appartiene a una famiglia. Il testo
+                            // arriva già nel payload, quindi la sheet si apre
+                            // anche offline.
+                            broadcastMessage = BroadcastMessage(id: id, title: title, body: body)
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .nudge(let campaignId, let title, let body, let destination):
+                            KBLog.navigation.kbInfo("Deep link -> nudge campaignId=\(campaignId)")
+                            // Stessa sheet del broadcast, con in più la
+                            // destinazione: il tap sul pulsante primario
+                            // naviga, "Non ora" no.
+                            broadcastMessage = BroadcastMessage(
+                                id: campaignId,
+                                title: title,
+                                body: body,
+                                campaignId: campaignId,
+                                destination: destination
+                            )
+                            NotificationManager.shared.consumeDeepLink()
                         }
                         notifications.consumeDeepLink()
                         KBLog.auth.kbDebug("Deep link consumed")
                     }
-                
+                    .sheet(item: $broadcastMessage) { msg in
+                        BroadcastMessageView(
+                            title: msg.title,
+                            message: msg.body,
+                            actionTitle: msg.destination.map { _ in "Vai" },
+                            onAction: {
+                                if let campaignId = msg.campaignId {
+                                    KBAnalytics.shared.logNudge(
+                                        name: "nudge_opened", campaignId: campaignId)
+                                }
+                                if let destination = msg.destination {
+                                    navigateToNudgeDestination(destination)
+                                }
+                            },
+                            onDismiss: {
+                                if let campaignId = msg.campaignId {
+                                    KBAnalytics.shared.logNudge(
+                                        name: "nudge_dismissed", campaignId: campaignId)
+                                }
+                            }
+                        )
+                    }
+
                 // Launch screen
                 if showLaunch {
                     LaunchScreenView()
@@ -413,6 +487,12 @@ struct KidBoxApp: App {
                     }
                     Task { @MainActor in
                         await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
+                    }
+                    // Ricalcolo della coda nudge. Sta dentro il throttle dei
+                    // 120s come il resto della manutenzione: è una lettura
+                    // locale, ma non ha senso rifarla a ogni rientro rapido.
+                    Task { @MainActor in
+                        await NudgeEngine.shared.refresh(modelContext: context)
                     }
                 } else {
                     KBLog.sync.kbDebug("ScenePhase active -> skip heavy foreground maintenance (throttled)")

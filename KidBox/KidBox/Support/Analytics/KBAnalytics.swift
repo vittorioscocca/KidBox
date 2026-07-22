@@ -128,6 +128,30 @@ actor KBAnalytics {
         }
     }
 
+    /// Registra un evento del motore di nudge.
+    ///
+    /// `campaignId` è l'id di una campagna del catalogo, non un dato
+    /// dell'utente: dice *quale messaggio* è stato mostrato, non cosa quella
+    /// persona ha o non ha in casa. Senza questi eventi i nudge si spingono al
+    /// buio, e l'unico segnale di ritorno sarebbe la disattivazione dei
+    /// permessi — che è irreversibile e arriva quando è troppo tardi.
+    ///
+    /// - Parameter name: `nudge_scheduled`, `nudge_opened` o `nudge_dismissed`.
+    func logNudge(name: String, campaignId: String) {
+        guard let uid = Self.currentUid(), let familyId = Self.currentFamilyId() else { return }
+        Task {
+            await Self.write([
+                Self.event(
+                    name: name,
+                    uid: uid,
+                    familyId: familyId,
+                    feature: "nudge",
+                    props: ["campaignId": campaignId]
+                )
+            ])
+        }
+    }
+
     /// Scarica il buffer in un unico batch. Idempotente: svuota prima di
     /// scrivere, così un fallimento non duplica gli eventi al flush successivo.
     func flush() async {

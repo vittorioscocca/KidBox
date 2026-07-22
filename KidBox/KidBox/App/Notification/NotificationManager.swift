@@ -89,6 +89,14 @@ final class NotificationManager: NSObject, ObservableObject {
         case passwordExpiry(familyId: String, entryId: String)
         /// Notifica locale aggregata dopo scan sicurezza password.
         case passwordSecurity(familyId: String)
+        /// Suggerimento generato in locale da `NudgeEngine`. Come il broadcast
+        /// porta il proprio testo con sé, ma in più ha una destinazione: il
+        /// pulsante primario deve poter aprire la sezione di cui parla.
+        case nudge(campaignId: String, title: String, body: String, destination: NudgeDestination?)
+        /// Annuncio inviato a mano dalla console admin (`sendBroadcast`).
+        /// Non ha una destinazione dentro l'app né una famiglia di riferimento:
+        /// il contenuto *è* il messaggio, e viaggia dentro il link stesso.
+        case broadcast(id: String, title: String, body: String)
     }
 
     // MARK: - Auth / FCM token ownership
@@ -313,6 +321,38 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .passwordSecurity(familyId: familyId)
             KBLog.auth.kbInfo("DeepLink set for passwordSecurity familyId=\(familyId)")
+
+        } else if type == "broadcast" {
+            // `title` / `body` arrivano dal payload `data`, non da `aps.alert`:
+            // il server li duplica lì apposta, perché la copia in `aps` iOS la
+            // può troncare e ne cambia la forma (String o dizionario) a seconda
+            // che ci sia o meno la localizzazione.
+            let title = (userInfo["title"] as? String) ?? ""
+            let body  = (userInfo["body"]  as? String) ?? ""
+            guard !body.isEmpty else {
+                KBLog.auth.kbError("Invalid broadcast payload (body vuoto)")
+                return
+            }
+            let id = (userInfo["broadcastId"] as? String) ?? UUID().uuidString
+            pendingDeepLink = .broadcast(id: id, title: title, body: body)
+            KBLog.auth.kbInfo("DeepLink set for broadcast id=\(id)")
+
+        } else if type == "nudge" {
+            let title = (userInfo["title"] as? String) ?? ""
+            let body = (userInfo["body"] as? String) ?? ""
+            let campaignId = (userInfo["campaignId"] as? String) ?? ""
+            guard !body.isEmpty, !campaignId.isEmpty else {
+                KBLog.auth.kbError("Invalid nudge payload")
+                return
+            }
+            // Destinazione sconosciuta (catalogo remoto più recente dell'app):
+            // il messaggio si apre lo stesso, senza pulsante di azione. Meglio
+            // informativo che assente.
+            let destination = (userInfo["destination"] as? String)
+                .flatMap { NudgeDestination(rawValue: $0) }
+            pendingDeepLink = .nudge(
+                campaignId: campaignId, title: title, body: body, destination: destination)
+            KBLog.auth.kbInfo("DeepLink set for nudge campaignId=\(campaignId)")
         }
     }
     
@@ -571,8 +611,12 @@ final class NotificationManager: NSObject, ObservableObject {
                 return v
             }
             
-            KBLog.auth.kbDebug("Preference not found, default false")
-            return false
+            // Preferenza mai scritta = ATTIVA, come decide il server in
+            // `getUserTokensIfEnabled` (`!prefs || prefs[campo] !== false`).
+            // Con `false` qui l'interfaccia mostrava spento mentre le notifiche
+            // arrivavano davvero.
+            KBLog.auth.kbDebug("Preference not found, default true")
+            return true
             
         } catch {
             KBLog.auth.kbError("Failed reading notification prefs: \(error.localizedDescription)")
@@ -610,7 +654,8 @@ final class NotificationManager: NSObject, ObservableObject {
                let v = prefs["notifyOnLocationSharing"] as? Bool {
                 return v
             }
-            return false
+            // Assente = attiva: stessa regola del server.
+            return true
         } catch {
             return false
         }

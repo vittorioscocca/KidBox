@@ -6579,6 +6579,29 @@
         }
       }
     },
+    "Carica un documento una volta sola: tutta la famiglia lo vede subito, senza doverlo chiedere a nessuno.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload a document once: your whole family sees it right away, without having to ask anyone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importez un document une seule fois : toute la famille le voit aussitôt, sans avoir à le demander à personne."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sube un documento una sola vez: toda la familia lo ve al instante, sin tener que pedírselo a nadie."
+          }
+        }
+      }
+    },
     "Caricamento PDF...": {
       "localizations": {
         "en": {
@@ -6753,6 +6776,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Carte d'identité (papier)"
+          }
+        }
+      }
+    },
+    "Carte d'identità e biglietti nel Wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID cards and tickets in your Wallet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cartes d'identité et billets dans le Wallet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNI y billetes en el Wallet"
           }
         }
       }
@@ -7546,6 +7592,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Demandez tout ce que vous voulez sur votre famille : l'assistant connaît la santé, les documents, les dépenses, le calendrier et les mots de passe, et peut créer des événements ou des rappels à votre place."
+          }
+        }
+      }
+    },
+    "Chiedi, invece di cercare": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask, instead of searching"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demandez, au lieu de chercher"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregunta, en vez de buscar"
           }
         }
       }
@@ -9141,6 +9210,29 @@
         }
       }
     },
+    "Conserva documenti d'identità e di viaggio, e ricevi un promemoria una settimana prima che scadano.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep identity and travel documents, and get a reminder a week before they expire."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conservez vos papiers d'identité et de voyage, et recevez un rappel une semaine avant leur expiration."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarda documentos de identidad y de viaje, y recibe un aviso una semana antes de que caduquen."
+          }
+        }
+      }
+    },
     "Considera una password più lunga e varia.": {
       "localizations": {
         "en": {
@@ -9181,6 +9273,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Conseils généraux du médecin"
+          }
+        }
+      }
+    },
+    "Consigli su KidBox": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox tips"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conseils KidBox"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consejos de KidBox"
           }
         }
       }
@@ -17267,6 +17382,29 @@
         }
       }
     },
+    "I documenti, sempre con te": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your documents, always with you"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos documents, toujours avec vous"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus documentos, siempre contigo"
+          }
+        }
+      }
+    },
     "I messaggi usano la quota AI giornaliera del piano famiglia (Pro o Max).": {
       "localizations": {
         "en": {
@@ -19389,6 +19527,29 @@
         }
       }
     },
+    "Invita l'altro genitore o gli altri membri: documenti, wallet, salute, spese e calendario diventano condivisi e aggiornati per tutti, in tempo reale.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite your partner or the other family members: documents, wallet, health, expenses and calendar become shared and up to date for everyone, in real time."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitez l'autre parent ou les autres membres : documents, wallet, santé, dépenses et calendrier deviennent partagés et à jour pour tout le monde, en temps réel."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invita al otro progenitor o a los demás miembros: documentos, wallet, salud, gastos y calendario pasan a estar compartidos y actualizados para todos, en tiempo real."
+          }
+        }
+      }
+    },
     "Invita l'altro genitore o un altro componente della famiglia": {
       "localizations": {
         "en": {
@@ -19517,6 +19678,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "KidBox"
+          }
+        }
+      }
+    },
+    "KidBox funziona in famiglia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox works best with your family"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox prend tout son sens en famille"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KidBox funciona en familia"
           }
         }
       }
@@ -19807,6 +19991,29 @@
         }
       }
     },
+    "L'assistente conosce quello che hai in KidBox: fai una domanda, e può anche creare promemoria ed eventi per te.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assistant knows what you keep in KidBox: ask a question, and it can even create reminders and events for you."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'assistant connaît ce que vous gardez dans KidBox : posez une question, il peut même créer des rappels et des événements pour vous."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El asistente conoce lo que guardas en KidBox: haz una pregunta, e incluso puede crear recordatorios y eventos por ti."
+          }
+        }
+      }
+    },
     "L'itinerario giornaliero non è disponibile per questo viaggio.": {
       "localizations": {
         "en": {
@@ -19847,6 +20054,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "L'itinéraire structuré n'est pas disponible. Essayez « Régénérer »."
+          }
+        }
+      }
+    },
+    "La chat di famiglia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your family chat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La discussion de famille"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El chat de la familia"
           }
         }
       }
@@ -20179,6 +20409,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "La planification par IA nécessite un forfait Pro ou Max."
+          }
+        }
+      }
+    },
+    "La salute dei tuoi figli, in un posto solo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your children's health, all in one place"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La santé de vos enfants, au même endroit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La salud de tus hijos, en un solo sitio"
           }
         }
       }
@@ -36721,6 +36974,52 @@
         }
       }
     },
+    "Suggerimenti occasionali sulle funzioni che non hai ancora provato.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occasional suggestions about features you haven't tried yet."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggestions occasionnelles sur les fonctions que vous n'avez pas encore essayées."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugerencias ocasionales sobre funciones que aún no has probado."
+          }
+        }
+      }
+    },
+    "Suggerimenti occasionali sulle funzioni che non hai ancora provato. Non influisce sulle notifiche qui sopra.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occasional suggestions about features you haven't tried yet. This does not affect the notifications above."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggestions occasionnelles sur les fonctions que vous n'avez pas encore essayées. Sans effet sur les notifications ci-dessus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugerencias ocasionales sobre funciones que aún no has probado. No afecta a las notificaciones de arriba."
+          }
+        }
+      }
+    },
     "Suggerimento": {
       "localizations": {
         "en": {
@@ -38891,6 +39190,29 @@
         }
       }
     },
+    "Un calendario che vedete in due": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A calendar you both can see"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un calendrier que vous voyez à deux"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un calendario que veis los dos"
+          }
+        }
+      }
+    },
     "Un calendario unico per tutta la famiglia, con categorie colorate ed eventi ricorrenti. Puoi collegare un evento a una visita o a un vaccino, così non dimentichi mai una scadenza sanitaria.": {
       "localizations": {
         "en": {
@@ -38997,6 +39319,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Un forfait pour toute la famille. Un seul abonnement couvre tous les membres."
+          }
+        }
+      }
+    },
+    "Un posto solo per parlarne, con accanto i documenti e le foto di cui state parlando.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One place to talk it through, right next to the documents and photos you're talking about."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un seul endroit pour en parler, à côté des documents et des photos dont vous parlez."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un único sitio para hablarlo, junto a los documentos y las fotos de los que estáis hablando."
           }
         }
       }
@@ -40523,6 +40868,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Visites"
+          }
+        }
+      }
+    },
+    "Visite, accertamenti, cure e cartella clinica: lo storico completo, condiviso con chi se ne occupa insieme a te.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visits, tests, treatments and medical records: the full history, shared with whoever looks after them with you."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consultations, examens, traitements et dossier médical : l'historique complet, partagé avec ceux qui s'en occupent avec vous."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visitas, pruebas, tratamientos e historial médico: el histórico completo, compartido con quien se ocupa de ellos contigo."
+          }
+        }
+      }
+    },
+    "Visite, sport, compleanni: chi c'è, quando, e chi ci pensa. Senza rincorrersi a messaggi.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appointments, sports, birthdays: who's going, when, and who's taking care of it. Without chasing each other over messages."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rendez-vous, sport, anniversaires : qui y va, quand, et qui s'en charge. Sans se courir après par messages."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Citas, deporte, cumpleaños: quién va, cuándo y quién se encarga. Sin perseguiros a mensajes."
           }
         }
       }

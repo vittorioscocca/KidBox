@@ -6,12 +6,19 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 internal import os
 
 struct NotificationSettingsView: View {
     @StateObject private var vm = SettingsViewModel()
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.modelContext) private var modelContext
+    /// Specchio di `NudgeState.isOptedOut`, che è una `static` su UserDefaults
+    /// e quindi non osservabile. Senza questo `@State` SwiftUI non avrebbe
+    /// nessuna dipendenza da cui ridisegnare: il Toggle tornerebbe indietro da
+    /// solo appena toccato, pur avendo salvato il valore giusto.
+    @State private var nudgesEnabled = !NudgeState.isOptedOut
     
     // MARK: - Dynamic theme (same as LoginView)
     
@@ -145,6 +152,25 @@ struct NotificationSettingsView: View {
             )
             .disabled(vm.isLoading)
             .accessibilityHint("Ricevi promemoria locali e push prima della partenza/evento (es. 24h e 2h prima).")
+            .listRowBackground(cardBackground)
+
+            // Separato dagli altri: le preferenze sopra sono lato server e
+            // riguardano cose che succedono in famiglia. Questa è locale e
+            // riguarda ciò che KidBox dice di sé — mescolarle porterebbe a
+            // spegnere le notifiche utili per zittire i suggerimenti.
+            Section {
+                Toggle("Consigli su KidBox", isOn: $nudgesEnabled)
+                    .onChange(of: nudgesEnabled) { _, newValue in
+                        KBLog.settings.kbInfo("Toggle nudges set=\(newValue)")
+                        NudgeState.isOptedOut = !newValue
+                        // Spegnendolo la coda si svuota subito, senza aspettare
+                        // il prossimo foreground.
+                        Task { await NudgeEngine.shared.refresh(modelContext: modelContext) }
+                    }
+                .accessibilityHint("Suggerimenti occasionali sulle funzioni che non hai ancora provato.")
+            } footer: {
+                Text("Suggerimenti occasionali sulle funzioni che non hai ancora provato. Non influisce sulle notifiche qui sopra.")
+            }
             .listRowBackground(cardBackground)
 
             if let t = vm.infoText {

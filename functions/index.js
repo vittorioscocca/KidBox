@@ -4927,6 +4927,248 @@ exports.getAuthUsersData = onCall(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// BROADCAST — invio manuale di notifiche dalla console admin
+//
+// È l'unica funzione che spedisce una push scritta a mano a utenti che non
+// hanno fatto nulla per riceverla. Tre vincoli di sicurezza, in ordine di
+// importanza:
+//
+// 1) DRY RUN DI DEFAULT. `dryRun` deve essere disattivato esplicitamente. Una
+//    push è irreversibile: non si "annulla" un messaggio già sul lock screen.
+//    Il dry run risolve i destinatari e conta i token senza inviare nulla,
+//    così l'anteprima in console è la stessa lista che partirà davvero.
+//
+// 2) TETTO MASSIMO. `MAX_BROADCAST_RECIPIENTS` blocca l'invio se il segmento
+//    risolve più utenti del previsto. Serve contro l'errore di targeting, non
+//    contro l'abuso: un `segment: "all"` digitato per sbaglio al posto di un
+//    test su un uid è il modo realistico di bruciare la fiducia di tutta la
+//    base utenti in un colpo solo.
+//
+// 3) AUDIT. Ogni invio reale scrive in `broadcasts/{id}` chi l'ha mandato, a
+//    chi, con che testo e con che esito. Senza questo non c'è modo di sapere,
+//    fra un mese, perché un utente ha ricevuto un certo messaggio.
+//
+// NOTA localizzazione: il testo è quello che l'admin scrive, in una sola
+// lingua. Non passa dallo String Catalog. Per i nudge automatici (che invece
+// vanno tradotti) servirà un'altra strada — qui si accetta perché il broadcast
+// è un annuncio occasionale, scritto e riletto a mano.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MAX_BROADCAST_RECIPIENTS = 2000;
+const MAX_EXPLICIT_UIDS = 100;
+
+/**
+ * Risolve il segmento in una lista di uid.
+ *
+ * `inactive` si basa sui rollup `metrics/{YYYY-MM-DD}`, che contengono gli uid
+ * con almeno un'AZIONE DI VALORE in quel giorno. Chi ha aperto l'app senza fare
+ * nulla NON compare lì: per questo targeting è "inattivo", ed è la definizione
+ * giusta — è esattamente l'utente che non sta ricavando valore.
+ *
+ * @param {{uids: ?string[], segment: ?string, inactiveDays: ?number}} target
+ * @return {Promise<{uids: string[], describe: string}>}
+ */
+async function resolveBroadcastTargets(target) {
+  const db = admin.firestore();
+
+  // Lista esplicita: vince su tutto. È la strada per i test.
+  if (Array.isArray(target.uids) && target.uids.length > 0) {
+    const uids = [...new Set(target.uids.filter((u) => typeof u === "string" && u))];
+    if (uids.length > MAX_EXPLICIT_UIDS) {
+      throw new HttpsError("invalid-argument",
+          `Massimo ${MAX_EXPLICIT_UIDS} uid espliciti.`);
+    }
+    return {uids, describe: `${uids.length} uid espliciti`};
+  }
+
+  const segment = target.segment || "";
+  const usersSnap = await db.collection("users").get();
+
+  if (segment === "all") {
+    return {uids: usersSnap.docs.map((d) => d.id), describe: "tutti gli utenti"};
+  }
+
+  if (segment === "ios" || segment === "android") {
+    const uids = usersSnap.docs
+        .filter((d) => d.get("platform") === segment)
+        .map((d) => d.id);
+    return {uids, describe: `piattaforma ${segment}`};
+  }
+
+  if (segment === "inactive") {
+    const days = Math.min(Math.max(parseInt(target.inactiveDays || 14, 10), 1), 90);
+
+    // Giorni da oggi all'indietro. Si legge un doc per giorno: a 90gg sono 90
+    // letture, ordini di grandezza meno che riscansionare `analyticsEvents`.
+    const ids = [];
+    const today = new Date();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      ids.push(d.toISOString().slice(0, 10));
+    }
+    const refs = ids.map((id) => db.collection("metrics").doc(id));
+    const snaps = await db.getAll(...refs);
+
+    const active = new Set();
+    for (const s of snaps) {
+      if (!s.exists) continue;
+      for (const u of (s.get("uids") || [])) active.add(u);
+    }
+
+    const uids = usersSnap.docs
+        .map((d) => d.id)
+        .filter((uid) => !active.has(uid));
+    return {uids, describe: `inattivi da ${days} giorni`};
+  }
+
+  throw new HttpsError("invalid-argument",
+      "Specificare `uids` oppure `segment` (all | inactive | ios | android).");
+}
+
+exports.sendBroadcast = onCall(
+    {region: "europe-west1", invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+
+      const data = request.data || {};
+      const title = (data.title || "").trim();
+      const body = (data.body || "").trim();
+      // Il default è il dry run: solo un `dryRun === false` esplicito spedisce.
+      const dryRun = data.dryRun !== false;
+
+      if (!title || title.length > 80) {
+        throw new HttpsError("invalid-argument", "Titolo richiesto (max 80 caratteri).");
+      }
+      if (!body || body.length > 300) {
+        throw new HttpsError("invalid-argument", "Testo richiesto (max 300 caratteri).");
+      }
+
+      const {uids, describe} = await resolveBroadcastTargets(data);
+
+      if (uids.length === 0) {
+        return {dryRun, recipients: 0, tokens: 0, describe, sent: 0, failed: 0};
+      }
+      if (uids.length > MAX_BROADCAST_RECIPIENTS) {
+        throw new HttpsError("failed-precondition",
+            `Il segmento risolve ${uids.length} utenti, oltre il tetto di ` +
+            `${MAX_BROADCAST_RECIPIENTS}. Restringi il target.`);
+      }
+
+      // Token per utente: servono separati per poter ripulire quelli morti
+      // sull'utente giusto dopo l'invio.
+      const tokensByUid = new Map();
+      let tokenCount = 0;
+      for (const uid of uids) {
+        const toks = await getTokensForUser(uid);
+        if (toks.length) {
+          tokensByUid.set(uid, toks);
+          tokenCount += toks.length;
+        }
+      }
+
+      if (dryRun) {
+        logger.info("sendBroadcast: DRY RUN", {
+          callerUid, describe, recipients: uids.length, tokens: tokenCount,
+        });
+        return {
+          dryRun: true,
+          describe,
+          recipients: uids.length,
+          reachable: tokensByUid.size,
+          tokens: tokenCount,
+          sent: 0,
+          failed: 0,
+        };
+      }
+
+      // L'id dell'audit si genera PRIMA dell'invio, così viaggia nel payload:
+      // da una segnalazione utente ("mi è arrivato questo messaggio") si risale
+      // alla riga di `broadcasts` che l'ha prodotto.
+      const broadcastRef = admin.firestore().collection("broadcasts").doc();
+
+      // `title` e `body` viaggiano ANCHE in `data`, non solo in `notification`.
+      // Il client apre una view dedicata che mostra il testo per esteso, e
+      // leggerlo da `aps.alert` è fragile: iOS lo tronca, lo localizza e ne
+      // cambia la forma (stringa vs dizionario) a seconda del caso.
+      const payloadData = {
+        type: "broadcast",
+        broadcastId: broadcastRef.id,
+        title,
+        body,
+        broadcastAt: String(Date.now()),
+      };
+
+      let sent = 0;
+      let failed = 0;
+
+      for (const [uid, tokens] of tokensByUid.entries()) {
+        try {
+          const result = await admin.messaging().sendEachForMulticast({
+            tokens,
+            notification: {title, body},
+            data: payloadData,
+            apns: {payload: {aps: {sound: "default"}}},
+            // `channelId` esplicito: senza, con app in background la notifica
+            // finisce sul canale di fallback creato dall'SDK, che ha
+            // importanza e suono diversi da quelli scelti nell'app. Il canale
+            // esiste sempre — `KidBoxApplication.onCreate` lo crea all'avvio.
+            android: {
+              priority: "high",
+              notification: {sound: "default", channelId: "family_updates_v2"},
+            },
+          });
+          sent += result.successCount;
+          failed += result.failureCount;
+          if (result.failureCount > 0) {
+            await pruneInvalidFcmTokens(uid, tokens, result.responses).catch(() => {});
+          }
+        } catch (err) {
+          failed += tokens.length;
+          logger.warn("sendBroadcast: invio fallito", {uid, err: String(err)});
+        }
+      }
+
+      const audit = {
+        title,
+        body,
+        describe,
+        segment: data.segment || null,
+        explicitUids: Array.isArray(data.uids) ? data.uids : null,
+        recipients: uids.length,
+        reachable: tokensByUid.size,
+        tokens: tokenCount,
+        sent,
+        failed,
+        sentBy: callerUid,
+        sentByEmail: request.auth?.token?.email || "",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      await broadcastRef.set(audit).catch((err) => {
+        logger.error("sendBroadcast: audit non scritto", {err: String(err)});
+      });
+
+      logger.info("sendBroadcast: inviato", {
+        callerUid, describe, recipients: uids.length, sent, failed,
+      });
+
+      return {
+        dryRun: false,
+        describe,
+        recipients: uids.length,
+        reachable: tokensByUid.size,
+        tokens: tokenCount,
+        sent,
+        failed,
+      };
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ANALYTICS — utenti attivi (internal/analytics-active-users.md)
 //
 // Trigger separati da quelli di notifica qui sopra: un errore nell'analytics non

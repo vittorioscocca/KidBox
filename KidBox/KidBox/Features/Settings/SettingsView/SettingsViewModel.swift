@@ -18,11 +18,14 @@ import OSLog
 final class SettingsViewModel: ObservableObject {
     
     // MARK: - Published UI state
-    @Published var notifyOnNewDocs: Bool = false
+    // Tutte le preferenze di notifica nascono ATTIVE, coerenti con il server
+    // (`getUserTokensIfEnabled`: preferenza assente = attiva). Un default a
+    // `false` qui mostrerebbe spento ciò che invece sta arrivando.
+    @Published var notifyOnNewDocs: Bool = true
     @Published var infoText: String? = nil
     @Published var isLoading: Bool = false
     @Published var notifyOnNewMessages: Bool = true
-    @Published var notifyOnLocationSharing: Bool = false
+    @Published var notifyOnLocationSharing: Bool = true
     @Published var notifyOnTodos: Bool = true
     @Published var notifyOnNewGroceryItem: Bool = true
     @Published var notifyOnNewNote: Bool = true
@@ -52,7 +55,9 @@ final class SettingsViewModel: ObservableObject {
     
     // MARK: - Init
     init() {
-        let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
+        // `bool(forKey:)` non distingue "mai scritta" da "false": userebbe
+        // sempre `false` alla prima installazione. `object(forKey:)` sì.
+        let cached = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewDocs) as? Bool ?? true
         self.notifyOnNewDocs = cached
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewDocs=\(cached)")
         
@@ -60,7 +65,7 @@ final class SettingsViewModel: ObservableObject {
         self.notifyOnNewMessages = cachedChat
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewMessages=\(cachedChat)")
         
-        let cachedLoc = UserDefaults.standard.object(forKey: LocalKeys.notifyOnLocationSharing) as? Bool ?? false
+        let cachedLoc = UserDefaults.standard.object(forKey: LocalKeys.notifyOnLocationSharing) as? Bool ?? true
         self.notifyOnLocationSharing = cachedLoc
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnLocationSharing=\(cachedLoc)")
         
@@ -101,7 +106,7 @@ final class SettingsViewModel: ObservableObject {
     func load() {
         KBLog.settings.kbDebug("SettingsVM load requested")
         
-        let cached = UserDefaults.standard.bool(forKey: LocalKeys.notifyOnNewDocs)
+        let cached = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewDocs) as? Bool ?? true
         if notifyOnNewDocs != cached { notifyOnNewDocs = cached }
         
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
