@@ -105,7 +105,7 @@ struct PediatricExamDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Esami")
         .overlay(alignment: .bottomTrailing) {
-            if let exam, AISettings.shared.isEnabled {
+            if let exam {
                 ExamsAskAIButton(subjectName: childName, scope: .single(exam))
                     .padding(.trailing, 20)
                     .padding(.bottom, 96)

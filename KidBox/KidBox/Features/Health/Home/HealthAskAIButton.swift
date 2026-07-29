@@ -6,22 +6,18 @@
 import SwiftUI
 
 struct HealthAskAIButton: View {
-    
+
     let subjectName: String
     let subjectId:   String
     let exams:       [KBMedicalExam]
     let visits:      [KBMedicalVisit]
     let treatments:  [KBTreatment]
     let vaccines:    [KBVaccine]
-    
+
     @State private var showConsent = false
     @State private var showChat    = false
     @State private var showUpgrade = false
-    
-    private var isEmpty: Bool {
-        exams.isEmpty && visits.isEmpty && treatments.isEmpty && vaccines.isEmpty
-    }
-    
+
     var body: some View {
         AskAIControl(
             style: .circle,
@@ -29,10 +25,8 @@ struct HealthAskAIButton: View {
         ) {
             handleTap()
         }
-        .disabled(isEmpty)
-        .opacity(isEmpty ? 0.5 : 1)
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(contextualMessage: "ai_upgrade_health_home")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .sheet(isPresented: $showConsent) {
@@ -49,9 +43,8 @@ struct HealthAskAIButton: View {
             )
         }
     }
-    
+
     private func handleTap() {
-        guard !isEmpty else { return }
         guard KBSubscriptionManager.shared.currentPlan.includesAI else {
             showUpgrade = true
             return

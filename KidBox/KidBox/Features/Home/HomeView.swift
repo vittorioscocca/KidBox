@@ -1705,46 +1705,20 @@ private struct HomeCategoryList: View {
 }
 
 // MARK: - HomeAIFloatingButton
-// Sostituisce il vecchio FAB. Cerchio arancione pulsante quando l'AI è
-// attiva (piano + toggle), altrimenti lucchetto (tap → upgrade o attivazione).
 
 private struct HomeAIFloatingButton: View {
     let onOpenAI: () -> Void
     let onLockedTap: () -> Void
 
     @ObservedObject private var subscription = KBSubscriptionManager.shared
-    @ObservedObject private var aiSettings = AISettings.shared
-
-    private var planIncludesAI: Bool { subscription.currentPlan.includesAI }
-    private var isActive: Bool { planIncludesAI && aiSettings.isEnabled }
 
     var body: some View {
-        if isActive {
-            AskAIControl(style: .circle, accessibilityLabel: "Chiedi all'AI") {
-                KBLog.navigation.kbDebug("Home: tap AI FAB (attivo)")
+        AskAIControl(style: .circle, accessibilityLabel: "Chiedi all'AI") {
+            if subscription.currentPlan.includesAI {
                 onOpenAI()
+            } else {
+                onLockedTap()
             }
-        } else {
-            Button {
-                if planIncludesAI {
-                    // Piano incluso ma non attivato → apri per completare consenso/attivazione
-                    onOpenAI()
-                } else {
-                    onLockedTap()
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Color.gray.opacity(0.9))
-                        .frame(width: 58, height: 58)
-                        .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 4)
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Assistente AI non attivo")
         }
     }
 }

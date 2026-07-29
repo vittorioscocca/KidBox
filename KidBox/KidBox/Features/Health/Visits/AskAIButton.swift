@@ -22,7 +22,7 @@ struct AskAIButton: View {
             handleTap()
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(contextualMessage: "ai_upgrade_visit_detail")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .sheet(isPresented: $showConsent) {

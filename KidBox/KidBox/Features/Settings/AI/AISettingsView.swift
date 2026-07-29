@@ -577,21 +577,23 @@ struct AISettingsView: View {
 // MARK: - Upgrade Sheet (riutilizzabile da più punti)
 
 struct UpgradeSheetView: View {
-    
+
+    var contextualMessage: LocalizedStringKey? = nil
+
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    
+
     @State private var showOfferCodeRedemption = false
-    
+
     private let tint     = Color(red: 0.35, green: 0.6, blue: 0.85)
     private let maxColor = Color(red: 0.55, green: 0.35, blue: 0.9)
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    
+
                     // Hero
                     VStack(spacing: 8) {
                         Image(systemName: "sparkles")
@@ -606,6 +608,20 @@ struct UpgradeSheetView: View {
                             .padding(.horizontal)
                     }
                     .padding(.top, 8)
+
+                    if let msg = contextualMessage {
+                        HStack(spacing: 10) {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(tint)
+                            Text(msg)
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal)
+                    }
                     
                     // Piano Pro
                     planCard(

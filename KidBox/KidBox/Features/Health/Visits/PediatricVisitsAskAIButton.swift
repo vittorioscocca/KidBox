@@ -77,16 +77,13 @@ struct PediatricVisitsAskAIButton: View {
         ) {
             handleTap()
         }
-        .disabled(visits.isEmpty)
-        .opacity(visits.isEmpty ? 0.5 : 1)
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(contextualMessage: "ai_upgrade_visits_home")
                 .environmentObject(KBSubscriptionManager.shared)
         }
     }
-    
+
     private func handleTap() {
-        guard !visits.isEmpty else { return }
         guard KBSubscriptionManager.shared.currentPlan.includesAI else {
             showUpgrade = true
             return

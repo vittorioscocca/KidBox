@@ -239,7 +239,13 @@ struct OnboardingWalkthroughView: View {
                             accentColor:    currentAccent,
                             iconColor:      currentIconColor,
                             modelContext:   modelContext,
-                            coordinator:    coordinator
+                            coordinator:    coordinator,
+                            onFinish: { _ in
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    bgOpacity = 0; textOpacity = 0; iconOpacity = 0; ctaScale = 0.88
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
+                            }
                         )
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
@@ -339,7 +345,9 @@ struct OnboardingWalkthroughView: View {
     
     // MARK: - CTA
     
+    @ViewBuilder
     private var ctaButton: some View {
+        if !isInvitePage {
         Button { handleCTA() } label: {
             HStack(spacing: 10) {
                 Text(ctaLabel)
@@ -365,8 +373,9 @@ struct OnboardingWalkthroughView: View {
         .disabled(isCTADisabled)
         .opacity(currentPage == 3 && familyPath == nil ? 0.45 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+        } // end if !isInvitePage
     }
-    
+
     private var isCTADisabled: Bool {
         if currentPage == 3 && familyPath == nil { return true }
         return false
@@ -918,120 +927,100 @@ private struct CreateFamilyCard: View {
 
 // MARK: - InviteOnboardingCard
 //
-// Schermata 5: QR generato da InviteCodeViewModel (riusa il VM esistente).
-// ShareLink per WhatsApp / AirDrop / SMS + copia codice testuale.
+// Schermata 5: link condivisibile come azione primaria; QR collassabile come secondaria.
+// onFinish(_ didShare:) segnala al parent se l'utente ha condiviso o saltato.
 
 private struct InviteOnboardingCard: View {
-    
+
     let cardBackground: Color
     let accentColor:    Color
     let iconColor:      Color
     let modelContext:   ModelContext
     let coordinator:    AppCoordinator
-    
+    let onFinish:       (Bool) -> Void
+
     @StateObject private var vm: InviteCodeViewModel
     @State private var didGenerate = false
     @State private var didCopy     = false
-    
+    @State private var showQR      = false
+
     init(
         cardBackground: Color,
         accentColor: Color,
         iconColor: Color,
         modelContext: ModelContext,
-        coordinator: AppCoordinator
+        coordinator: AppCoordinator,
+        onFinish: @escaping (Bool) -> Void
     ) {
         self.cardBackground = cardBackground
         self.accentColor    = accentColor
         self.iconColor      = iconColor
         self.modelContext   = modelContext
         self.coordinator    = coordinator
+        self.onFinish       = onFinish
         _vm = StateObject(wrappedValue: InviteCodeViewModel(
             remote: InviteRemoteStore(),
             modelContext: modelContext,
             coordinator: coordinator
         ))
     }
-    
+
     var body: some View {
-        VStack(spacing: 24) {
-            
-            // Header
-            VStack(spacing: 12) {
-                ZStack {
-                    Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundStyle(LinearGradient(
-                            colors: [iconColor, accentColor],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        ))
-                }
-                Text("Aggiungi il tuo partner")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                Text("Fallo scansionare al tuo partner per unirsi alla famiglia — riceverà tutto automaticamente.")
-                    .font(.system(size: 15))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-            }
-            .padding(.horizontal, 8)
-            
-            // QR card
-            ZStack {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(cardBackground)
-                    .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 8)
-                
-                Group {
-                    if vm.isBusy {
-                        VStack(spacing: 12) {
-                            ProgressView().scaleEffect(1.3).tint(accentColor)
-                            Text("Generazione QR…").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        .frame(height: 180)
-                        
-                    } else if let qrPayload = vm.qrPayload {
-                        VStack(spacing: 12) {
-                            QRCodeView(payload: qrPayload)
-                                .frame(width: 156, height: 156)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            Text("Valido 24 ore").font(.caption).foregroundStyle(.secondary)
-                        }
-                        .padding(20)
-                        
-                    } else if let err = vm.errorMessage {
-                        VStack(spacing: 10) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.title2).foregroundStyle(.orange)
-                            Text(err).font(.subheadline).foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                            Button("Riprova") { Task { await vm.generateInviteCode() } }
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(accentColor)
-                        }
-                        .padding(24)
-                        
-                    } else {
-                        Color.clear.frame(height: 180)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+
+                // ── Header ──
+                VStack(spacing: 12) {
+                    ZStack {
+                        Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundStyle(LinearGradient(
+                                colors: [iconColor, accentColor],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ))
                     }
+                    Text("Manda il link al tuo partner")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                    Text("Invia via WhatsApp o SMS — può unirsi anche dopo, non serve essere vicini.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
                 }
-            }
-            
-            // Azioni
-            if vm.qrPayload != nil {
-                HStack(spacing: 12) {
+                .padding(.horizontal, 8)
+
+                // ── Pulsante condividi (primario) ──
+                if vm.isBusy {
+                    HStack(spacing: 10) {
+                        ProgressView().scaleEffect(0.85).tint(accentColor)
+                        Text("Preparazione link…")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity).frame(height: 52)
+                    .background(Color.secondary.opacity(0.08),
+                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                } else if !vm.shareText.isEmpty {
                     ShareLink(item: vm.shareText) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "square.and.arrow.up").font(.system(size: 15, weight: .semibold))
-                            Text("Condividi").font(.system(size: 15, weight: .semibold))
+                        HStack(spacing: 10) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 17, weight: .semibold))
+                            Text("Invia link al partner")
+                                .font(.system(size: 17, weight: .semibold))
                         }
-                        .foregroundStyle(accentColor)
-                        .frame(maxWidth: .infinity).frame(height: 48)
-                        .background(accentColor.opacity(0.10),
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).frame(height: 52)
+                        .background(
+                            LinearGradient(colors: [iconColor, accentColor],
+                                           startPoint: .leading, endPoint: .trailing),
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .shadow(color: accentColor.opacity(0.35), radius: 10, x: 0, y: 5)
                     }
-                    
+
+                    // Copia codice (secondario)
                     Button {
                         vm.copyToClipboard()
                         withAnimation { didCopy = true }
@@ -1041,21 +1030,90 @@ private struct InviteOnboardingCard: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                             Text(didCopy ? "Copiato!" : "Copia codice")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                         }
                         .foregroundStyle(didCopy ? .green : .secondary)
-                        .frame(maxWidth: .infinity).frame(height: 48)
-                        .background(Color.secondary.opacity(0.08),
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .frame(maxWidth: .infinity).frame(height: 42)
+                        .background(Color.secondary.opacity(0.07),
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                } else if let err = vm.errorMessage {
+                    VStack(spacing: 8) {
+                        Text(err).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        Button("Riprova") { Task { await vm.generateInviteCode() } }
+                            .font(.caption.weight(.medium)).foregroundStyle(accentColor)
+                    }
+                    .padding()
+                }
+
+                // ── QR collassabile (secondario) ──
+                VStack(spacing: 0) {
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { showQR.toggle() }
+                    } label: {
+                        HStack {
+                            Text("Oppure mostra il QR se siete vicini")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Image(systemName: showQR ? "chevron.up" : "chevron.down")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.plain)
+
+                    if showQR, let qrPayload = vm.qrPayload {
+                        VStack(spacing: 8) {
+                            QRCodeView(payload: qrPayload)
+                                .frame(width: 140, height: 140)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            Text("Valido 24 ore").font(.caption).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(cardBackground,
+                                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+
+                Divider().padding(.vertical, 4)
+
+                // ── Bottoni di completamento ──
+                VStack(spacing: 10) {
+                    Button {
+                        onFinish(true)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Ho inviato il link")
+                        }
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).frame(height: 52)
+                        .background(
+                            LinearGradient(colors: [iconColor, accentColor],
+                                           startPoint: .leading, endPoint: .trailing),
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button { onFinish(false) } label: {
+                        Text("Farlo dopo →")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.tertiary)
+                            .padding(.vertical, 6)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            
-            Text("Puoi farlo anche dopo da Impostazioni → Invita partner")
-                .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+            .padding(.vertical, 8)
         }
         .onAppear {
             guard !didGenerate else { return }

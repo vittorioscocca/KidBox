@@ -203,7 +203,7 @@ struct PediatricVisitsView: View {
             Text("Le visite verranno rimosse da tutti i dispositivi.")
         }
         .overlay(alignment: .bottomTrailing) {
-            if let selectedPerson, !filteredVisits.isEmpty, !isSelecting, AISettings.shared.isEnabled {
+            if let selectedPerson, !filteredVisits.isEmpty, !isSelecting {
                 PediatricVisitsAskAIButton(
                     person: selectedPerson,
                     visits: filteredVisits,

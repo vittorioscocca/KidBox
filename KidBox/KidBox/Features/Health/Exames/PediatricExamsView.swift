@@ -168,7 +168,7 @@ struct PediatricExamsView: View {
         .navigationTitle("Analisi & Esami")
         .toolbar { toolbarItems }
         .overlay(alignment: .bottomTrailing) {
-            if !isSelecting && AISettings.shared.isEnabled {
+            if !isSelecting && !exams.isEmpty {
                 ExamsAskAIButton(subjectName: childName, scope: .all(filtered))
                     .padding(.trailing, 20)
                     .padding(.bottom, 96)

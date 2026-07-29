@@ -42,6 +42,10 @@ enum CrashAnalyzer {
 
     private static let minLogBytes = 2 * 1024
     private static let maxUploadLogBytes = 50 * 1024
+    /// Il modello on-device (Apple Intelligence) ha una context window piccola
+    /// (~4k token): oltre questa soglia l'analisi fallisce o produce output
+    /// inaffidabili. Teniamo il prompt log ben sotto il limite.
+    private static let maxPromptLogBytes = 6 * 1024
     private static let throttleInterval: TimeInterval = 6 * 60 * 60
 
     // MARK: - Public preferences
@@ -127,9 +131,18 @@ enum CrashAnalyzer {
     @available(iOS 18.1, *)
     private static func analyzeWithFoundationModels(rawLogs: String, allowCrashFallback: Bool) async {
         #if canImport(FoundationModels)
+        // Analizza SOLO se ci sono righe realmente significative (ERROR/CRASH/…).
+        // Con log tutti INFO/DEBUG non c'è nulla da analizzare: inviare l'intero
+        // file saturerebbe la context window e produrrebbe issue fittizie.
+        let significantLogs = filterSignificantLines(rawLogs)
+        guard !significantLogs.isEmpty else {
+            KBLog.app.kbInfo("CrashAnalyzer: nessuna riga significativa (ERROR/CRASH) → skip analisi on-device")
+            markAnalysisRun()
+            return
+        }
         do {
             let session = LanguageModelSession()
-            let response = try await session.respond(to: buildPrompt(rawLogs: rawLogs))
+            let response = try await session.respond(to: buildPrompt(significantLogs: significantLogs))
             let parsed = try parseAnalysisResponse(response.content)
             if parsed.hasIssues {
                 await requestPermissionAndUpload(issues: parsed.issues, rawLogs: rawLogs)
@@ -159,10 +172,9 @@ enum CrashAnalyzer {
     }
 
     @available(iOS 18.1, *)
-    private static func buildPrompt(rawLogs: String) -> String {
-        // Only feed WARNING/ERROR/CRASH lines to reduce LLM false positives on INFO entries.
-        let filtered = filterSignificantLines(rawLogs)
-        let tail = truncateLogs(filtered, maxBytes: 32 * 1024)
+    private static func buildPrompt(significantLogs: String) -> String {
+        // significantLogs contiene già solo righe WARNING/ERROR/CRASH.
+        let tail = truncateLogs(significantLogs, maxBytes: maxPromptLogBytes)
         return """
         Sei un analizzatore di log per l'app KidBox.
         Regole IMPORTANTI prima di analizzare:
@@ -199,8 +211,9 @@ enum CrashAnalyzer {
             line.contains("[FATAL]") || line.contains("[WARNING]") ||
             line.contains("Fatal error") || line.contains("SIGABRT")
         }
-        // If nothing significant, fall back to tail of all logs so FM can still detect anomalies
-        if significant.isEmpty { return logs }
+        // Niente fallback all'intero file: se non ci sono righe significative
+        // non c'è nulla da analizzare (evita false positive e saturazione del
+        // modello on-device). Il chiamante gestisce il caso vuoto.
         return significant.joined(separator: "\n")
     }
 

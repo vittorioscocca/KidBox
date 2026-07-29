@@ -84,7 +84,7 @@ struct PediatricVisitDetailView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            if let visit, let child = childForAI, AISettings.shared.isEnabled {
+            if let visit, let child = childForAI {
                 AskAIButton(visit: visit, child: child)
                     .padding(.trailing, 20)
                     .padding(.bottom, 96)
