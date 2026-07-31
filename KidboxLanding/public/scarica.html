@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scarica KidBox</title>
   <meta name="robots" content="noindex">
+  <!-- Smart App Banner iOS: appare nativamente anche in Instagram WebView -->
+  <meta name="apple-itunes-app" content="app-id=6761055375">
   <link rel="icon" type="image/png" href="icon.png">
   <!-- Meta Pixel -->
   <script>
@@ -71,16 +73,46 @@
       var playUrl = document.getElementById('play-link').href;
       var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
       var isAndroid = /android/i.test(ua);
+      // Solo Instagram blocca il redirect agli store; il browser interno di
+      // Facebook lo consente, quindi lì lasciamo il flusso automatico.
+      var isInAppBrowser = /Instagram/.test(ua);
 
-      if (isIOS) {
+      function showFallback(title, subtitle, hint) {
+        document.getElementById('spin').style.display = 'none';
+        document.getElementById('fallback').style.display = 'flex';
+        document.querySelector('h1').textContent = title;
+        document.querySelector('p').textContent = subtitle;
+        if (hint) {
+          var banner = document.createElement('p');
+          banner.textContent = hint;
+          banner.style.cssText = 'font-size:.8rem;color:var(--accent);margin-top:-8px;max-width:280px;';
+          document.getElementById('fallback').insertAdjacentElement('beforebegin', banner);
+        }
+      }
+
+      if (isInAppBrowser) {
+        var appleEl = document.getElementById('apple-link');
+        var playEl  = document.getElementById('play-link');
+        // Gli href restano https:// così il long press → "Apri link" funziona.
+        // Il tap normale è comunque bloccato da Instagram: le istruzioni
+        // guidano l'utente verso il menu ••• → Apri su browser esterno.
+        appleEl.removeAttribute('target');
+        appleEl.removeAttribute('rel');
+        playEl.removeAttribute('target');
+        playEl.removeAttribute('rel');
+
+        showFallback(
+          'Apri su browser esterno',
+          'Tocca i tre pallini ••• in alto e scegli "Apri su browser esterno", oppure tieni premuto il pulsante qui sotto → Apri link.'
+        );
+        if (isIOS) playEl.style.display = 'none';
+        else if (isAndroid) appleEl.style.display = 'none';
+      } else if (isIOS) {
         setTimeout(function(){ window.location.replace(appleUrl); }, 300);
       } else if (isAndroid) {
         setTimeout(function(){ window.location.replace(playUrl); }, 300);
       } else {
-        document.getElementById('spin').style.display = 'none';
-        document.getElementById('fallback').style.display = 'flex';
-        document.querySelector('h1').textContent = 'Scegli il tuo store';
-        document.querySelector('p').textContent = 'Apri KidBox dal tuo telefono per scaricare l\'app.';
+        showFallback('Scegli il tuo store', 'Apri KidBox dal tuo telefono per scaricare l\'app.');
       }
     })();
   </script>

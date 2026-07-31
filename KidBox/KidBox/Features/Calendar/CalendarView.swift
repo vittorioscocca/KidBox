@@ -326,7 +326,7 @@ private struct MiniMonthView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
             
-            let symbols = localizedCalendar().shortWeekdaySymbols.map { String($0.prefix(1)).uppercased(with: appLocale()) }
+            let symbols = orderedWeekdayInitials()
             HStack(spacing: 0) {
                 ForEach(symbols.indices, id: \.self) { i in
                     Text(symbols[i])
@@ -456,8 +456,7 @@ private struct MonthDetailView: View {
                 }
             }
             
-            let cal = localizedCalendar()
-            let weekdays = cal.shortWeekdaySymbols.map { String($0.prefix(1)).uppercased(with: appLocale()) }
+            let weekdays = orderedWeekdayInitials()
             HStack(spacing: 0) {
                 ForEach(weekdays.indices, id: \.self) { i in
                     Text(weekdays[i])
@@ -552,6 +551,17 @@ fileprivate func localizedCalendar() -> Calendar {
     cal.locale = appLocale()
     cal.firstWeekday = 2   // lunedì
     return cal
+}
+
+// Iniziali dei giorni ruotate su firstWeekday: shortWeekdaySymbols parte
+// SEMPRE da domenica e senza rotazione le intestazioni risultano sfalsate
+// di una colonna rispetto alla griglia (che parte da lunedì).
+fileprivate func orderedWeekdayInitials() -> [String] {
+    let cal = localizedCalendar()
+    let raw = cal.shortWeekdaySymbols
+    let shift = cal.firstWeekday - 1
+    return (Array(raw[shift...]) + Array(raw[..<shift]))
+        .map { String($0.prefix(1)).uppercased(with: appLocale()) }
 }
 
 fileprivate func calendarDayComponentsCoveredByEvent(_ event: KBCalendarEvent) -> [DateComponents] {
