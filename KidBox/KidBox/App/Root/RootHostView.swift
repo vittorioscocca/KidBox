@@ -321,22 +321,7 @@ struct RootHostView: View {
         guard let familyId, !familyId.isEmpty else {
             if startedFamilyId != nil {
                 KBLog.sync.kbInfo("No active family. Stopping realtime listeners (previous=\(startedFamilyId ?? "nil"))")
-                SyncCenter.shared.stopFamilyBundleRealtime()
-                SyncCenter.shared.stopMembersRealtime()
-                SyncCenter.shared.stopChildrenRealtime()
-                SyncCenter.shared.stopDocumentsRealtime()
-                SyncCenter.shared.stopNotesRealtime()
-                SyncCenter.shared.stopTreatmentsRealtime()
-                SyncCenter.shared.stopExpensesRealtime()
-                SyncCenter.shared.stopWalletRealtime()
-                SyncCenter.shared.stopPasswordsRealtime()
-                SyncCenter.shared.stopPetsRealtime()
-                SyncCenter.shared.stopPetEventsRealtime()
-                SyncCenter.shared.stopHomeItemsRealtime()
-                SyncCenter.shared.stopHousePaymentsRealtime()
-                SyncCenter.shared.stopVehiclesRealtime()
-                SyncCenter.shared.stopVehicleEventsRealtime()
-                SyncCenter.shared.stopTripsRealtime()
+                SyncCenter.shared.stopAllFamilyScopedRealtime()
                 SyncCenter.shared.stopAIChatRealtime()
                 startedFamilyId = nil
                 KBLog.sync.kbDebug("Realtime listeners stopped and startedFamilyId cleared")

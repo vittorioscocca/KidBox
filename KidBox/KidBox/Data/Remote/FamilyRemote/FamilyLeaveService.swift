@@ -65,9 +65,12 @@ final class FamilyLeaveService {
         KBLog.sync.kbInfo("beginLocalWipe")
         SyncCenter.shared.beginLocalWipe()
         
-        // 2) Stop listeners first to avoid re-populating while wiping
+        // 2) Stop ALL family-scoped listeners first. Any listener left
+        // attached receives PERMISSION_DENIED the instant the member doc
+        // below is deleted, triggering the false "removed from family" alert
+        // for a user who left voluntarily.
         KBLog.sync.kbInfo("Stopping realtime listeners before wipe")
-        SyncCenter.shared.stopFamilyBundleRealtime()
+        SyncCenter.shared.stopAllFamilyScopedRealtime()
         
         // 3) Small yield for pending snapshots
         KBLog.sync.kbDebug("Yielding briefly to let pending snapshots settle")

@@ -136,16 +136,35 @@ final class SyncCenter: ObservableObject {
             KBLog.sync.kbDebug("handleFamilyAccessLost suppressed: family join in progress source=\(source) familyId=\(familyId)")
             return
         }
+        // Dopo il logout ogni listener rimasto riceve PERMISSION_DENIED per
+        // definizione: non è un'espulsione, quindi si fermano i listener senza
+        // emettere currentUserRevoked (che mostrerebbe il falso alert
+        // "sei uscito dalla famiglia" sopra la schermata di login).
+        guard Auth.auth().currentUser != nil else {
+            KBLog.sync.kbInfo("handleFamilyAccessLost after sign-out: stopping listeners only source=\(source) familyId=\(familyId)")
+            stopAllFamilyScopedRealtime()
+            return
+        }
         guard !accessLostHandled.contains(familyId) else { return }
         accessLostHandled.insert(familyId)
-        
+
         KBLog.sync.kbError("Family access lost (PERMISSION_DENIED). familyId=\(familyId) source=\(source) err=\(error.localizedDescription)")
         
+        stopAllFamilyScopedRealtime()
+
+        Self._currentUserRevoked.send(familyId)
+    }
+
+    /// Stops every family-scoped realtime listener. Single source of truth:
+    /// any listener left out of this list keeps receiving PERMISSION_DENIED
+    /// after a leave/logout/revoke and re-triggers the access-lost flow.
+    @MainActor
+    func stopAllFamilyScopedRealtime() {
         stopMembersRealtime()
         stopTodoRealtime()
         stopTodoListRealtime()
         stopChildrenRealtime()
-        stopFamilyBundleRealtime()
+        stopFamilyBundleRealtime()   // ferma anche pets/petEvents/homeItems/vehicles/vehicleEvents
         stopDocumentsRealtime()
         stopNotesRealtime()
         stopTreatmentsRealtime()
@@ -158,9 +177,9 @@ final class SyncCenter: ObservableObject {
         stopExpensesRealtime()
         stopWalletRealtime()
         stopPasswordsRealtime()
+        stopHousePaymentsRealtime()
         stopTripsRealtime()
-        
-        Self._currentUserRevoked.send(familyId)
+        BadgeManager.shared.stopListening()
     }
     
     // MARK: - Todo Realtime
