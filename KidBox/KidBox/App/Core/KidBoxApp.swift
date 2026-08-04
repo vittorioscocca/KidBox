@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 import OSLog
 import GoogleSignIn
 import FirebaseAuth
@@ -163,7 +164,13 @@ struct KidBoxApp: App {
                     }
                 
                 // MARK: Push deep link consumption
-                    .onReceive(notifications.$pendingDeepLink) { link in
+                // `receive(on:)` rimanda la consegna al giro di runloop
+                // successivo. Serve al cold start: `@Published` rigioca il
+                // valore alla sottoscrizione, cioè DURANTE la prima
+                // costruzione del body, e un `path.append` dentro quel
+                // passaggio di rendering può essere scartato dal
+                // NavigationStack (tap sulla notifica che non apre nulla).
+                    .onReceive(notifications.$pendingDeepLink.receive(on: DispatchQueue.main)) { link in
                         guard let link else { return }
                         KBLog.auth.kbInfo("[KidBoxApp] Pending deep link received: \(String(describing: link))")
                         switch link {

@@ -36,6 +36,11 @@ struct PlanningAIChatView: View {
     @Environment(\.modelContext)  private var modelContext
     @Environment(\.colorScheme)   private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
+    // Osservato, non letto dal singleton: al cold start da notifica la view
+    // appare PRIMA che `loadPlan()` finisca, quindi `currentPlan` è ancora al
+    // default `.free`. Senza osservazione il body non si aggiorna quando il
+    // piano arriva, e la chat resta su uno spinner bianco per sempre.
+    @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     
     // ── Family ────────────────────────────────────────────────────
     @Query(sort: \KBFamily.updatedAt, order: .reverse) private var families: [KBFamily]
@@ -272,7 +277,7 @@ struct PlanningAIChatView: View {
     
     var body: some View {
         Group {
-            if !KBSubscriptionManager.shared.currentPlan.includesAI {
+            if !subscriptionManager.currentPlan.includesAI {
                 // ── Piano Free: schermata locked ─────────────────────
                 aiLockedView
             } else if let vm {
@@ -297,9 +302,14 @@ struct PlanningAIChatView: View {
             UpgradeSheetView()
                 .environmentObject(KBSubscriptionManager.shared)
         }
-        .task(id: familyId) {
-            guard KBSubscriptionManager.shared.currentPlan.includesAI else { return }
+        // L'id include il piano: quando `loadPlan()` completa dopo che la view
+        // è già apparsa (cold start da notifica), il task DEVE ripartire per
+        // creare il ViewModel — con il solo `familyId` non si ri-eseguiva mai
+        // e la chat restava sullo spinner.
+        .task(id: "\(familyId)|\(subscriptionManager.currentPlan.rawValue)") {
+            guard subscriptionManager.currentPlan.includesAI else { return }
             guard !familyId.isEmpty else { return }
+            guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
                 familyId:               familyId,
                 familyName:             familyName,
