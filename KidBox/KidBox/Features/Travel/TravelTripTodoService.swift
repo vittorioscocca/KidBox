@@ -13,15 +13,35 @@ enum TravelTripTodoService {
     }
 
     /// Crea o recupera la lista Todo KidBox dedicata al viaggio e aggiorna `trip.todoListId`.
+    ///
+    /// - Parameter createIfMissing: `false` quando la chiamata non nasce da un
+    ///   gesto dell'utente (per esempio l'apertura della scheda viaggio). Senza
+    ///   questo freno, una lista cancellata dalla sezione Todo tornava da sola
+    ///   al primo sguardo al viaggio — e ogni volta con un id nuovo, quindi
+    ///   come copia: cancellarne una lasciava le gemelle e sembrava che il
+    ///   tasto Elimina non facesse niente.
     @discardableResult
     static func ensureList(
         for trip: KBTrip,
         childId: String,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        createIfMissing: Bool = true
     ) -> String? {
         guard !childId.isEmpty else { return nil }
 
         let listName = defaultListName(for: trip)
+
+        // Il collegamento punta a una lista che l'utente ha cancellato: il
+        // puntatore è morto e va staccato, altrimenti il conteggio dei todo
+        // aperti continua a contare le voci di una lista che non c'è più.
+        if let linked = trip.todoListId, !linked.isEmpty,
+           let deleted = fetchList(id: linked, familyId: trip.familyId, in: modelContext, includeDeleted: true),
+           deleted.isDeleted {
+            trip.todoListId = nil
+            trip.updatedAt = .now
+            try? modelContext.save()
+            guard createIfMissing else { return nil }
+        }
 
         if let existing = trip.todoListId, !existing.isEmpty,
            let list = fetchList(id: existing, familyId: trip.familyId, in: modelContext) {
@@ -54,6 +74,10 @@ enum TravelTripTodoService {
             return orphan.id
         }
 
+        // Nessuna lista da riagganciare: crearne una si fa solo se l'utente
+        // l'ha chiesto aprendo i todo del viaggio.
+        guard createIfMissing else { return nil }
+
         let list = KBTodoList(
             familyId: trip.familyId,
             childId: childId,
@@ -79,12 +103,17 @@ enum TravelTripTodoService {
         todos.filter { $0.listId == listId && !$0.isDeleted && !$0.isDone }.count
     }
 
-    private static func fetchList(id: String, familyId: String, in context: ModelContext) -> KBTodoList? {
+    private static func fetchList(
+        id: String,
+        familyId: String,
+        in context: ModelContext,
+        includeDeleted: Bool = false
+    ) -> KBTodoList? {
         let listId = id
         let fid = familyId
         let descriptor = FetchDescriptor<KBTodoList>(
             predicate: #Predicate<KBTodoList> {
-                $0.id == listId && $0.familyId == fid && !$0.isDeleted
+                $0.id == listId && $0.familyId == fid && (includeDeleted || !$0.isDeleted)
             }
         )
         return try? context.fetch(descriptor).first

@@ -201,10 +201,14 @@ struct TravelDetailView: View {
                             userDisplayName: name
                         )
                         if let childId = primaryChildId {
+                            // Solo riaggancio: aprire la scheda del viaggio non
+                            // è una richiesta di creare una lista todo, e se
+                            // l'utente l'ha cancellata non deve tornare da sola.
                             TravelTripTodoService.ensureList(
                                 for: trip,
                                 childId: childId,
-                                modelContext: modelContext
+                                modelContext: modelContext,
+                                createIfMissing: false
                             )
                         }
                     }

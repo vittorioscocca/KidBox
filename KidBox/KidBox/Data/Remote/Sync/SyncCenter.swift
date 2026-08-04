@@ -987,6 +987,16 @@ final class SyncCenter: ObservableObject {
                     let desc = FetchDescriptor<KBTodoList>(predicate: #Predicate { $0.id == lid })
                     
                     if let existing = try modelContext.fetch(desc).first {
+                        // ✅ Anti-resurrect, come per i todo: se la lista è già
+                        // cancellata qui, un upsert remoto "viva" non la
+                        // riporta in vita. Senza questo, una cancellazione in
+                        // attesa di sync veniva annullata dal primo snapshot
+                        // con timestamp più recente del nostro.
+                        if existing.isDeleted && !dto.isDeleted {
+                            KBLog.sync.kbInfo("applyTodoListInbound: IGNORE upsert (anti-resurrect) id=\(dto.id)")
+                            continue
+                        }
+
                         let remoteTs = dto.updatedAt ?? Date.distantPast
                         if remoteTs >= existing.updatedAt {
                             existing.name = dto.name

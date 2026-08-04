@@ -261,10 +261,15 @@ struct TodoSmartListView: View {
         Task { @MainActor in
             let uid = Auth.auth().currentUser?.uid ?? "local"
             
+            let now = Date()
+
             for i in offsets {
                 let todo = filteredTodos[i]
                 todo.isDeleted = true
                 todo.updatedBy = uid
+                // Senza bump di updatedAt la cancellazione perde i confronti
+                // last-write-wins contro un upsert remoto più recente.
+                todo.updatedAt = now
                 todo.syncState = .pendingDelete
                 
                 SyncCenter.shared.enqueueTodoDelete(todoId: todo.id, familyId: familyId, modelContext: modelContext)
