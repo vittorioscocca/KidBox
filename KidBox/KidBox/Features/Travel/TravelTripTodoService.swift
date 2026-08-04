@@ -38,6 +38,22 @@ enum TravelTripTodoService {
             return list.id
         }
 
+        // Lista già esistente di questo viaggio, rimasta scollegata: si
+        // riaggancia. Stessa fragilità di nota e album — l'unico legame è
+        // `trip.todoListId`, e se si perde si accumulano duplicati.
+        let fid = trip.familyId
+        let existingDescriptor = FetchDescriptor<KBTodoList>(
+            predicate: #Predicate<KBTodoList> { $0.familyId == fid && !$0.isDeleted }
+        )
+        if let orphan = (try? modelContext.fetch(existingDescriptor))?.first(where: {
+            $0.name.trimmingCharacters(in: .whitespaces) == listName.trimmingCharacters(in: .whitespaces)
+        }) {
+            trip.todoListId = orphan.id
+            trip.updatedAt = .now
+            try? modelContext.save()
+            return orphan.id
+        }
+
         let list = KBTodoList(
             familyId: trip.familyId,
             childId: childId,

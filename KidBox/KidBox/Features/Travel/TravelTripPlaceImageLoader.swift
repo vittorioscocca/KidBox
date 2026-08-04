@@ -14,6 +14,20 @@ actor TravelTripPlaceImageLoader {
         let key = destination.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !key.isEmpty else { return nil }
         if let cached = cache[key] { return cached }
+
+        // Passa da TravelPlaceInfoService invece di cercare su Wikipedia da sé:
+        // quel servizio scarta gli articoli senza coordinate geografiche, cioè
+        // distingue il LUOGO dalla persona omonima. La ricerca diretta per
+        // "Margherita di Savoia" restituiva la regina, e la copertina del
+        // viaggio mostrava il suo ritratto al posto del paese.
+        if let info = try? await TravelPlaceInfoService.shared.info(for: destination),
+           let url = info.imageURLs.first {
+            cache[key] = url
+            return url
+        }
+
+        // Rete di sicurezza: località minori possono non avere un articolo con
+        // coordinate. Meglio un'immagine imprecisa che nessuna copertina.
         guard let url = await fetchWikipediaThumbnail(query: destination) else { return nil }
         cache[key] = url
         return url

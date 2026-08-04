@@ -1064,6 +1064,13 @@ enum TravelItineraryBuilder {
     ) {
         let cleaned = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty, !isGenericMealTitle(cleaned) else { return }
+        // Ultimo filtro prima della lista: scarta ciò che non è il NOME di un
+        // locale. Una delle fonti estrae i locali dal testo narrativo del
+        // piano ("Cena in trattoria con piatti di pesce"), e quando il modello
+        // non cita un nome proprio quella estrazione produce frasi intere o
+        // spezzoni come "con specialità locali". Sta qui e non nel parser
+        // perché è l'unico punto attraversato da TUTTE le fonti.
+        guard looksLikeVenueName(cleaned) else { return }
         let key = cleaned.lowercased()
         guard seen.insert(key).inserted else { return }
         let queryName = placeName ?? placeQueryName(title: cleaned, subtitle: subtitle)
@@ -1076,6 +1083,25 @@ enum TravelItineraryBuilder {
                 locationContext: locationContext
             )
         )
+    }
+
+
+    /// `true` se la stringa sembra il nome di un locale e non un frammento di
+    /// frase. Volutamente conservativo: meglio perdere un locale reale che
+    /// riempire la lista di frasi, perché una voce che non è un nome non è
+    /// nemmeno cercabile su Google Places e porta a un dettaglio vuoto.
+    private static func looksLikeVenueName(_ text: String) -> Bool {
+        // Frase intera: contiene una punteggiatura di fine periodo interna.
+        if text.contains(". ") || text.contains("; ") { return false }
+        // I nomi di locali sono corti; oltre questa soglia è prosa.
+        if text.count > 60 { return false }
+        // Spezzone: inizia con una congiunzione/preposizione minuscola, tipico
+        // taglio di "…in trattoria con piatti di pesce" → "con piatti di pesce".
+        let leadingFragments = ["con ", "e ", "a ", "in ", "per ", "da ", "di ", "presso ", "al ", "alla ", "ai ", "sulle ", "sulla ", "sul "]
+        let lower = text.lowercased()
+        if leadingFragments.contains(where: { lower.hasPrefix($0) }) { return false }
+        // Deve contenere almeno una lettera (scarta orari/prezzi rimasti soli).
+        return text.contains(where: { $0.isLetter })
     }
 
     /// Nome luogo per Google Places (estrae il locale da titoli lunghi).

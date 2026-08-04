@@ -47,6 +47,22 @@ enum TravelTripNotesService {
             return note.id
         }
 
+        // Prima di creare: esiste già una nota di QUESTO viaggio rimasta
+        // scollegata? Il legame è il solo `trip.notesNoteId`, e se quel
+        // puntatore si perde — una sync che riscrive il viaggio, un oggetto
+        // stantio, una corsa fra la creazione e il primo snapshot — senza
+        // questo controllo si creerebbe un duplicato a ogni tentativo, invece
+        // di riagganciare la nota che c'è già.
+        if let orphan = fetchNoteByTitle(
+            defaultNoteTitle(for: trip), familyId: trip.familyId, in: modelContext
+        ) {
+            trip.notesNoteId = orphan.id
+            trip.updatedAt = .now
+            try? modelContext.save()
+            KBLog.sync.kbInfo("TravelTripNotes: nota riagganciata tripId=\(trip.id) noteId=\(orphan.id)")
+            return orphan.id
+        }
+
         let note = KBNote(
             familyId: trip.familyId,
             title: defaultNoteTitle(for: trip),
@@ -87,6 +103,27 @@ enum TravelTripNotesService {
         return (try? NSAttributedString(data: data, options: options, documentAttributes: nil))?
             .string
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? trimmed
+    }
+
+
+    /// Nota già esistente con il titolo del viaggio, non cancellata.
+    ///
+    /// Il titolo è l'unico appiglio disponibile: `KBNote` non ha un `tripId`,
+    /// e aggiungerlo richiederebbe una migrazione dello schema. Il rischio di
+    /// falso positivo è una nota creata a mano con esattamente lo stesso nome
+    /// del viaggio — molto meno dannoso di un duplicato a ogni apertura.
+    private static func fetchNoteByTitle(
+        _ title: String, familyId: String, in context: ModelContext
+    ) -> KBNote? {
+        let wanted = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !wanted.isEmpty else { return nil }
+        let fid = familyId
+        let descriptor = FetchDescriptor<KBNote>(
+            predicate: #Predicate<KBNote> { $0.familyId == fid && !$0.isDeleted }
+        )
+        return (try? context.fetch(descriptor))?.first {
+            $0.title.trimmingCharacters(in: .whitespacesAndNewlines) == wanted
+        }
     }
 
     private static func fetchNote(id: String, familyId: String, in context: ModelContext) -> KBNote? {

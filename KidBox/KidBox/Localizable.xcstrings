@@ -224,6 +224,9 @@
         }
       }
     },
+    "· %lld recensioni su Google" : {
+
+    },
     "· Calendario, to-do, salute" : {
       "localizations" : {
         "en" : {
@@ -289,6 +292,9 @@
           }
         }
       }
+    },
+    "(%lld)" : {
+
     },
     "/ %@" : {
       "localizations" : {
@@ -2230,6 +2236,9 @@
           }
         }
       }
+    },
+    "A %@ · da Google" : {
+
     },
     "A lungo termine" : {
       "localizations" : {
@@ -5612,6 +5621,9 @@
         }
       }
     },
+    "Apri in Google Maps" : {
+
+    },
     "Apri le impostazioni di sistema" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -8028,6 +8040,12 @@
         }
       }
     },
+    "Cerco i luoghi sulla mappa…" : {
+
+    },
+    "Cerco luoghi a %@…" : {
+
+    },
     "Chat" : {
       "localizations" : {
         "en" : {
@@ -10372,6 +10390,9 @@
         }
       }
     },
+    "Continua su Wikipedia" : {
+
+    },
     "Contratto fino al" : {
       "localizations" : {
         "en" : {
@@ -10635,6 +10656,9 @@
           }
         }
       }
+    },
+    "Cosa dicono i visitatori" : {
+
     },
     "Costo" : {
       "localizations" : {
@@ -11673,6 +11697,9 @@
           }
         }
       }
+    },
+    "Dal tuo itinerario" : {
+
     },
     "Dalle" : {
       "localizations" : {
@@ -14432,6 +14459,9 @@
         }
       }
     },
+    "Eliminazione non riuscita" : {
+
+    },
     "Email" : {
       "localizations" : {
         "en" : {
@@ -16773,6 +16803,9 @@
           }
         }
       }
+    },
+    "Fonti: Wikipedia e Google" : {
+
     },
     "Forma" : {
       "localizations" : {
@@ -22636,6 +22669,9 @@
         }
       }
     },
+    "Locali reali con le valutazioni di Google, ordinati per voto." : {
+
+    },
     "Logout" : {
       "localizations" : {
         "en" : {
@@ -22945,6 +22981,9 @@
           }
         }
       }
+    },
+    "Mappa" : {
+
     },
     "Marca" : {
       "localizations" : {
@@ -24943,6 +24982,9 @@
         }
       }
     },
+    "Nessun hotel trovato su Google per %@." : {
+
+    },
     "Nessun intervento" : {
       "localizations" : {
         "en" : {
@@ -24986,6 +25028,9 @@
           }
         }
       }
+    },
+    "Nessun luogo da mostrare" : {
+
     },
     "Nessun medico aggiunto" : {
       "localizations" : {
@@ -25736,6 +25781,9 @@
         }
       }
     },
+    "Nessuna scheda disponibile per questa località." : {
+
+    },
     "Nessuna spesa" : {
       "localizations" : {
         "en" : {
@@ -26285,6 +26333,9 @@
           }
         }
       }
+    },
+    "Non abbiamo la posizione dei luoghi di questa lista." : {
+
     },
     "Non abbiamo trovato suggerimenti in questo itinerario. Prova a rigenerare il piano." : {
       "localizations" : {
@@ -38616,6 +38667,9 @@
           }
         }
       }
+    },
+    "Storia e territorio" : {
+
     },
     "Storico" : {
       "localizations" : {

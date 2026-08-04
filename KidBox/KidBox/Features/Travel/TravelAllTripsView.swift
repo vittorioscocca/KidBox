@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 import SwiftData
 
 struct TravelAllTripsView: View {
@@ -163,7 +164,13 @@ struct TravelAllTripsView: View {
         guard !toDelete.isEmpty else { return }
         Task { @MainActor in
             let store = TripRemoteStore()
+            let uid = Auth.auth().currentUser?.uid ?? ""
             for trip in toDelete {
+                // Come nel dettaglio: album/nota/lista prima del viaggio,
+                // perché i loro id vivono sul KBTrip.
+                TravelTripCleanupService.deleteAttachedEntities(
+                    for: trip, modelContext: modelContext, userId: uid
+                )
                 await store.deleteTrip(trip, modelContext: modelContext)
             }
             selectedIds.removeAll()

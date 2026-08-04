@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 import SwiftData
 
 struct TravelDetailView: View {
@@ -27,6 +28,11 @@ struct TravelDetailView: View {
 
     @State private var showDeleteTripConfirmation = false
     @State private var categoryResults: TravelCategoryResultsPresentation?
+    /// Destinazione di cui mostrare la scheda storica (Wikipedia).
+    @State private var placeInfoDestination: String?
+    @State private var deleteTripError: String?
+    /// Attivo dalla conferma di eliminazione fino all'uscita dalla schermata.
+    @State private var isDeletingTrip = false
     @State private var tripPhotoAlbumRoute: TripPhotoAlbumRoute?
     @State private var tripNoteRoute: TripNoteRoute?
     @State private var tripTodoRoute: TripTodoRoute?
@@ -118,6 +124,17 @@ struct TravelDetailView: View {
                     } message: {
                         Text(dayRegenerateSuccessMessage ?? "")
                     }
+                    .alert(
+                        "Eliminazione non riuscita",
+                        isPresented: Binding(
+                            get: { deleteTripError != nil },
+                            set: { if !$0 { deleteTripError = nil } }
+                        )
+                    ) {
+                        Button("OK", role: .cancel) { deleteTripError = nil }
+                    } message: {
+                        Text(deleteTripError ?? "")
+                    }
                     .confirmationDialog(
                         "Eliminare questo viaggio?",
                         isPresented: $showDeleteTripConfirmation,
@@ -129,6 +146,9 @@ struct TravelDetailView: View {
                         Button("Annulla", role: .cancel) {}
                     } message: {
                         Text("Itinerario, packing list e note collegate verranno rimossi da questo dispositivo.")
+                    }
+                    .navigationDestination(item: $placeInfoDestination) { destination in
+                        TravelPlaceInfoView(placeName: destination, familyId: familyId)
                     }
                     .navigationDestination(item: $categoryResults) { presentation in
                         TravelCategoryResultsView(
@@ -188,6 +208,14 @@ struct TravelDetailView: View {
                             )
                         }
                     }
+            } else if isDeletingTrip {
+                // Fra la cancellazione locale e il `navigateBack` c'è un
+                // render in cui la @Query non trova più il viaggio: senza
+                // questo ramo compariva "Viaggio non trovato" per un istante,
+                // facendo sembrare un errore quella che è una cancellazione
+                // riuscita.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ContentUnavailableView("Viaggio non trovato", systemImage: "exclamationmark.triangle")
             }
@@ -256,6 +284,9 @@ struct TravelDetailView: View {
                             items: restaurants,
                             destinationTitle: overview.destinationTitle
                         )
+                    },
+                    onPlaceInfoTap: {
+                        placeInfoDestination = overview.destinationTitle
                     },
                     onActivitiesTap: {
                         categoryResults = TravelCategoryResultsPresentation(
@@ -496,9 +527,26 @@ struct TravelDetailView: View {
     }
 
     private func deleteTrip(_ trip: KBTrip) {
+        isDeletingTrip = true
         Task {
-            await TripRemoteStore().deleteTrip(trip, modelContext: modelContext)
+            // Prima le entità collegate: i loro id stanno sul KBTrip, quindi
+            // dopo la cancellazione non ci sarebbe più modo di risalirci.
             await MainActor.run {
+                TravelTripCleanupService.deleteAttachedEntities(
+                    for: trip,
+                    modelContext: modelContext,
+                    userId: Auth.auth().currentUser?.uid ?? ""
+                )
+            }
+            let deleted = await TripRemoteStore().deleteTrip(trip, modelContext: modelContext)
+            await MainActor.run {
+                guard deleted else {
+                    isDeletingTrip = false
+                    // Si resta sul viaggio: uscire dopo un fallimento faceva
+                    // credere che fosse cancellato, e poi ricompariva in lista.
+                    deleteTripError = "Non è stato possibile eliminare il viaggio. Controlla la connessione e riprova."
+                    return
+                }
                 coordinator.navigateBack()
             }
         }

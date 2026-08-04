@@ -126,14 +126,23 @@ final class TripRemoteStore {
             }
     }
 
-    func deleteTrip(_ trip: KBTrip, modelContext: ModelContext) async {
+    /// Cancella il viaggio. `false` se il remoto non ha confermato.
+    ///
+    /// Il locale si tocca SOLO dopo la conferma remota: prima si cancellava
+    /// comunque, anche quando Firestore falliva, e il listener al primo
+    /// snapshot ricreava il viaggio da remoto. Per l'utente era
+    /// "l'eliminazione non funziona": il viaggio spariva e poi tornava.
+    @discardableResult
+    func deleteTrip(_ trip: KBTrip, modelContext: ModelContext) async -> Bool {
         do {
             try await deleteTripRemote(trip)
         } catch {
             KBLog.sync.kbError("TripRemoteStore: remote delete failed \(error.localizedDescription)")
+            return false
         }
         deleteTripLocally(trip, modelContext: modelContext)
         try? modelContext.save()
+        return true
     }
 
     private func deleteTripRemote(_ trip: KBTrip) async throws {
@@ -142,11 +151,26 @@ final class TripRemoteStore {
             .collection("trips")
             .document(trip.id)
 
-        try await deleteCollection(tripRef.collection("legs"))
-        try await deleteCollection(tripRef.collection("dayPlans"))
-        try await deleteCollection(tripRef.collection("packingItems"))
-        try await deleteCollection(tripRef.collection("expenses"))
+        // Il documento PRIMA delle sottocollezioni.
+        //
+        // Prima era il contrario, e bastava che una sottocollezione fallisse a
+        // metà perché `tripRef.delete()` non venisse mai raggiunto: il viaggio
+        // restava su Firestore e riappariva al primo snapshot. Cancellando
+        // prima il padre, la sparizione è garantita dal primo `await` che
+        // riesce; se la pulizia successiva fallisce restano documenti orfani,
+        // invisibili all'app perché si elencano i viaggi dal documento padre.
+        // Un po' di spazio sprecato è meglio di un delete che non cancella.
         try await tripRef.delete()
+
+        for name in ["legs", "dayPlans", "packingItems", "expenses"] {
+            do {
+                try await deleteCollection(tripRef.collection(name))
+            } catch {
+                KBLog.sync.kbError(
+                    "TripRemoteStore: cleanup \(name) failed tripId=\(trip.id) — \(error.localizedDescription)"
+                )
+            }
+        }
     }
 
     private func deleteCollection(_ collection: CollectionReference) async throws {

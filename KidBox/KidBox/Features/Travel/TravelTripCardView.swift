@@ -108,10 +108,19 @@ struct TravelTripCardView: View {
     var showsSelectionBadge: Bool = false
 
     private let cornerRadius: CGFloat = 16
+    private let cardHeight: CGFloat = 212
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             TravelTripCardBackgroundView(tripName: trip.name, legs: legs)
+                // Altezza VINCOLATA qui, non solo sullo ZStack esterno.
+                // L'immagine usa scaledToFill: con una foto in verticale lo
+                // sfondo dettava l'altezza dello ZStack, il titolo veniva
+                // allineato al fondo di QUELLO (molto più basso di 212) e il
+                // frame esterno lo tagliava via. Restava la sola foto, senza
+                // titolo né date — mentre le card col placeholder, che ha
+                // altezza libera, si vedevano bene.
+                .frame(height: cardHeight)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
 
             VStack(alignment: .leading, spacing: 6) {
@@ -149,7 +158,7 @@ struct TravelTripCardView: View {
                 .padding(.trailing, 16)
             }
         }
-        .frame(height: 212)
+        .frame(height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }

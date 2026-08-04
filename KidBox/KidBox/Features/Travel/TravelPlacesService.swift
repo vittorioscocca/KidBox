@@ -3,6 +3,7 @@
 //  KidBox
 //
 
+import CoreLocation
 import FirebaseFunctions
 import Foundation
 
@@ -49,6 +50,49 @@ enum TravelPlacesService {
         }
     }
 
+
+    /// Luoghi reali di una categoria nella località (Places Text Search).
+    ///
+    /// Sostituisce l'estrazione dal testo dell'itinerario: quei "nomi" erano
+    /// frasi o spezzoni, e per definizione non erano cercabili su Google —
+    /// quindi niente voti. Qui i risultati sono locali esistenti e il voto
+    /// arriva nella stessa risposta, senza una chiamata per riga.
+    static func searchPlaces(
+        locationContext: String,
+        kind: TravelPlaceSearchKind,
+        familyId: String
+    ) async throws -> [TravelPlaceSummary] {
+        let callable = functions.httpsCallable("searchTravelPlaces")
+        callable.timeoutInterval = 30
+
+        let payload: [String: Any] = [
+            "locationContext": locationContext,
+            "kind": kind.rawValue,
+            "languageCode": placesLanguageCode,
+        ]
+
+        let result = try await callable.call(payload)
+        guard let data = result.data as? [String: Any],
+              let raw = data["places"] as? [[String: Any]] else {
+            throw TravelPlacesServiceError.invalidResponse
+        }
+        return raw.compactMap { dict in
+            let name = dict["name"] as? String ?? ""
+            guard !name.isEmpty else { return nil }
+            return TravelPlaceSummary(
+                placeId: dict["placeId"] as? String ?? UUID().uuidString,
+                name: name,
+                address: dict["address"] as? String ?? "",
+                category: dict["category"] as? String ?? "",
+                rating: dict["rating"] as? Double,
+                reviewCount: dict["reviewCount"] as? Int ?? 0,
+                latitude: dict["latitude"] as? Double,
+                longitude: dict["longitude"] as? Double,
+                googleMapsURI: (dict["googleMapsUri"] as? String).flatMap(URL.init(string:))
+            )
+        }
+    }
+
     private static func parsePlace(_ dict: [String: Any]) throws -> TravelPlaceDetails {
         let name = dict["name"] as? String ?? ""
         guard !name.isEmpty else { throw TravelPlacesServiceError.invalidResponse }
@@ -87,5 +131,41 @@ enum TravelPlacesService {
             reviews: reviews,
             googleMapsURI: mapsURI
         )
+    }
+}
+
+enum TravelPlaceSearchKind: String {
+    case restaurant, hotel, attraction
+
+    /// Simbolo del segnaposto: distingue a colpo d'occhio cosa si sta guardando
+    /// quando la mappa è piena di pin.
+    var mapSymbol: String {
+        switch self {
+        case .restaurant: return "fork.knife"
+        case .hotel: return "bed.double.fill"
+        case .attraction: return "star.fill"
+        }
+    }
+}
+
+struct TravelPlaceSummary: Identifiable, Equatable {
+    let placeId: String
+    let name: String
+    let address: String
+    let category: String
+    let rating: Double?
+    let reviewCount: Int
+    let latitude: Double?
+    let longitude: Double?
+    let googleMapsURI: URL?
+
+    var id: String { placeId }
+
+    /// Coordinata utilizzabile sulla mappa, quando Google l'ha restituita.
+    var coordinate: CLLocationCoordinate2D? {
+        guard let latitude, let longitude else { return nil }
+        // (0,0) è in mezzo all'oceano: è un dato mancante, non un luogo.
+        guard latitude != 0 || longitude != 0 else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }

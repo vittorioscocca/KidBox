@@ -32,6 +32,22 @@ enum TravelTripAlbumService {
         )
         let sortOrder = (try? modelContext.fetchCount(descriptor)) ?? 0
 
+        // Album già esistente di questo viaggio, rimasto scollegato: si
+        // riaggancia invece di crearne un secondo. Stessa fragilità della
+        // nota — l'unico legame è `trip.photoAlbumId`.
+        let wantedTitle = defaultAlbumTitle(for: trip)
+        let existingDescriptor = FetchDescriptor<KBPhotoAlbum>(
+            predicate: #Predicate<KBPhotoAlbum> { $0.familyId == familyId && !$0.isDeleted }
+        )
+        if let orphan = (try? modelContext.fetch(existingDescriptor))?.first(where: {
+            $0.title.trimmingCharacters(in: .whitespaces) == wantedTitle.trimmingCharacters(in: .whitespaces)
+        }) {
+            trip.photoAlbumId = orphan.id
+            trip.updatedAt = .now
+            try? modelContext.save()
+            return orphan.id
+        }
+
         let album = KBPhotoAlbum(
             familyId: trip.familyId,
             title: defaultAlbumTitle(for: trip),

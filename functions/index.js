@@ -2013,6 +2013,9 @@ Lo schema OBBLIGATORIO del dayPlan è:
 }
 
 REGOLE TASSATIVE:
+- VINCOLO GEOGRAFICO (il più importante): ogni luogo, ristorante e attività DEVE trovarsi nella località di QUEL giorno, indicata in "location" e nelle tappe del messaggio utente. Un locale famoso di un'altra città è un errore grave, anche se il nome è plausibile.
+- Se non conosci con certezza un locale reale in quella località, NON inventarlo: usa una descrizione generica ancorata al posto ("trattoria nel centro storico di X") invece di un nome che potrebbe stare altrove.
+- Prima di scrivere ogni "title", verifica mentalmente: questo posto esiste DAVVERO in questa città?
 - Ogni elemento di morningStops/afternoonStops/eveningStops DEVE avere "title" non vuoto con il NOME REALE del luogo (es. "Trattoria da Maria", "Castello di Procida"). MAI omettere "title" e MAI usare placeholder come "Pranzo" o "Visita".
 - Per category "food" usa SEMPRE il nome reale del locale.
 - Minimo 2 tappe per fascia oraria quando possibile.
@@ -2096,6 +2099,9 @@ Il JSON deve seguire ESATTAMENTE questo schema:
 }
 
 REGOLE IMPORTANTI:
+- VINCOLO GEOGRAFICO (la regola più importante): ogni luogo, ristorante e attività DEVE trovarsi nella località di QUEL giorno, coerente con "location" del dayPlan e con le tappe indicate dall'utente. Un locale famoso di un'altra città è un errore grave anche se il nome è verosimile.
+- Se non conosci con certezza un locale REALE in quella località, NON inventarne il nome: usa una descrizione ancorata al posto ("trattoria di pesce nel centro storico di X"). Un nome inventato che esiste altrove è peggio di una descrizione generica.
+- Prima di scrivere ogni "title" e ogni voce di diningPlaces, verifica: questo posto esiste DAVVERO in questa città?
 - Le attività devono essere adatte alle età dei bambini presenti
 - Segnala SEMPRE le allergie nei piani pasto con "⚠️ ALLERGIA:"
 - Includi i farmaci abituali nella packing list con fromMedicalProfile=true
@@ -2104,7 +2110,7 @@ REGOLE IMPORTANTI:
 - Per mattina/pomeriggio/sera compila SEMPRE morningStops, afternoonStops, eveningStops (minimo 2 tappe per fascia quando possibile)
 - Ogni tappa: orario realistico, titolo del luogo, durata in minuti, costo stimato e costLabel ("Gratis" se 0)
 - Per category "food" usa SEMPRE il nome reale del locale (es. "Trattoria da Maria", "Ristorante Il Gabbiano") — MAI solo "Cena" o "Pranzo"
-- Includi almeno 1 tappa food al giorno (pranzo e/o cena) con nomi di locali plausibili per la destinazione
+- Includi almeno 1 tappa food al giorno (pranzo e/o cena) con locali realmente esistenti in QUELLA località
 - Compila diningPlaces con TUTTI i ristoranti/trattorie/osterie citati (minimo 1 per giorno di viaggio), con name, cuisine, day, meal, location, estimatedCost
 - morningPlan/afternoonPlan/eveningPlan devono elencare gli stessi locali con nomi reali (es. "13:00 Trattoria X — pesce · ~35€")
 - Compila trip.budgetBreakdown con stime coerenti con estimatedTotalCost
@@ -3277,6 +3283,101 @@ exports.searchTravelDestinations = onCall(
         }
         logger.error("searchTravelDestinations failed", {error: e.message});
         throw new HttpsError("internal", "Impossibile cercare la destinazione.");
+      }
+    },
+);
+
+/**
+ * Ricerca luoghi REALI di una categoria in una località (Places Text Search).
+ *
+ * Nasce perché le liste "Ristoranti"/"Hotel"/"Attività" erano ricavate dal
+ * testo dell'itinerario generato: ne uscivano frasi ("Pranzo presso una
+ * trattoria di pesce") e spezzoni ("del Borgo con specialità pugliesi"), e
+ * niente voti, perché quei nomi su Google non esistono. Qui i risultati sono
+ * locali veri della località, e il voto arriva nella stessa risposta senza una
+ * chiamata per riga.
+ */
+exports.searchTravelPlaces = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      secrets: [GOOGLE_PLACES_API_KEY],
+      timeoutSeconds: 30,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Login required");
+
+      const {locationContext, kind, languageCode} = request.data || {};
+      const location = (locationContext || "").trim();
+      if (!location) {
+        throw new HttpsError("invalid-argument", "locationContext richiesto.");
+      }
+
+      const apiKey = GOOGLE_PLACES_API_KEY.value();
+      if (!apiKey) {
+        throw new HttpsError("failed-precondition", "Google Places non configurato.");
+      }
+
+      // Query in linguaggio naturale: Text Search rende bene con questa forma
+      // e non richiede coordinate, che qui non abbiamo.
+      const queryByKind = {
+        restaurant: `ristoranti a ${location}`,
+        hotel: `hotel a ${location}`,
+        attraction: `cosa vedere a ${location}`,
+      };
+      const textQuery = queryByKind[kind] || queryByKind.restaurant;
+
+      try {
+        const lang = resolvePlacesLanguageCode(languageCode);
+        const region = placesRegionCode(lang);
+        const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask": PLACES_SEARCH_FIELD_MASK,
+            "Accept-Language": placesAcceptLanguageHeader(lang),
+          },
+          body: JSON.stringify({
+            textQuery,
+            languageCode: lang,
+            ...(region ? {regionCode: region} : {}),
+            maxResultCount: 20,
+          }),
+        });
+
+        const bodyText = await res.text();
+        if (!res.ok) {
+          logger.warn("searchTravelPlaces failed", {status: res.status, body: bodyText.slice(0, 400)});
+          throw new HttpsError("internal", "Ricerca luoghi non riuscita.");
+        }
+
+        const parsed = JSON.parse(bodyText);
+        const places = (parsed.places || []).map((p) => ({
+          placeId: p.id || "",
+          name: p.displayName?.text || "",
+          address: p.formattedAddress || "",
+          rating: typeof p.rating === "number" ? p.rating : null,
+          reviewCount: typeof p.userRatingCount === "number" ? p.userRatingCount : 0,
+          category: p.primaryTypeDisplayName?.text || "",
+          googleMapsUri: p.googleMapsUri || "",
+          // Coordinate: servono alla mappa della lista, che disegna tutti i
+          // locali insieme senza chiedere i dettagli uno per uno.
+          latitude: typeof p.location?.latitude === "number" ? p.location.latitude : null,
+          longitude: typeof p.location?.longitude === "number" ? p.location.longitude : null,
+        })).filter((p) => p.name);
+
+        // Prima i più votati: una lista ordinata per rilevanza Google mette in
+        // cima locali con pochissime recensioni.
+        places.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+        logger.info("searchTravelPlaces", {location, kind, count: places.length});
+        return {places};
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        logger.error("searchTravelPlaces error", {error: e.message});
+        throw new HttpsError("internal", "Ricerca luoghi non riuscita.");
       }
     },
 );

@@ -19,6 +19,7 @@ struct TravelItineraryDetailView: View {
     var activitiesCount: Int = 0
     var onHotelsTap: (() -> Void)? = nil
     var onRestaurantsTap: (() -> Void)? = nil
+    var onPlaceInfoTap: (() -> Void)? = nil
     var onActivitiesTap: (() -> Void)? = nil
     var onStopTap: ((TravelItineraryStopContext) -> Void)? = nil
     var onRegenerateDayTap: ((TravelItineraryDay) -> Void)? = nil
@@ -121,6 +122,15 @@ struct TravelItineraryDetailView: View {
                     onTap: onActivitiesTap
                 )
             }
+            // Storia e territorio: riga intera e non compact card, perché non
+            // ha un importo da mostrare — le compact card sono voci di budget.
+            tappableBudgetRow(
+                emoji: "🏛️",
+                title: "Storia e territorio",
+                subtitle: "Foto e storia di \(overview.destinationTitle)",
+                action: "Scopri",
+                onTap: onPlaceInfoTap
+            )
         }
     }
 
