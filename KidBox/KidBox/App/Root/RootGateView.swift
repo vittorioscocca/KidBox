@@ -20,6 +20,11 @@ struct RootGateView: View {
     
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
+
+    /// Priming permesso notifiche mostrato una sola volta. La chiave in
+    /// `UserDefaults` è la memoria: una volta deciso (sì o no) non si ripresenta.
+    private static let didPrimePushKey = "kb_didPrimePush"
+    @State private var showPushPriming = false
     
     /// Usato per ingresso diretto in Home dopo join: DB ha una famiglia e coincide con `activeFamilyId`.
     @Query(sort: \KBFamily.updatedAt, order: .reverse)
@@ -48,6 +53,22 @@ struct RootGateView: View {
         return pinnedFamilyReadyInStore || hasAnyLocalFamily
     }
     
+    /// Decide se mostrare il priming: solo se non è mai stato deciso E il
+    /// sistema non ha ancora uno stato (`.notDetermined`). Se l'utente ha già
+    /// concesso o negato altrove (es. da un toggle in Impostazioni), non c'è
+    /// niente da chiedere.
+    @MainActor
+    private func maybePresentPushPriming() async {
+        guard !UserDefaults.standard.bool(forKey: Self.didPrimePushKey) else { return }
+        await NotificationManager.shared.refreshAuthorizationStatus()
+        if NotificationManager.shared.authorizationStatus == .notDetermined {
+            showPushPriming = true
+        } else {
+            // Stato già deciso dal sistema: niente priming, e non riproporlo.
+            UserDefaults.standard.set(true, forKey: Self.didPrimePushKey)
+        }
+    }
+
     var body: some View {
         Group {
             if coordinator.isCheckingAuth {
@@ -58,11 +79,29 @@ struct RootGateView: View {
             } else if !coordinator.isAuthenticated {
                 LoginView()
             } else if shouldShowHome {
-                #if targetEnvironment(macCatalyst)
-                MacShellView()
-                #else
-                HomeView()
-                #endif
+                Group {
+                    #if targetEnvironment(macCatalyst)
+                    MacShellView()
+                    #else
+                    HomeView()
+                    #endif
+                }
+                .fullScreenCover(isPresented: $showPushPriming) {
+                    PushPrimingView { didAccept in
+                        UserDefaults.standard.set(true, forKey: Self.didPrimePushKey)
+                        showPushPriming = false
+                        if didAccept {
+                            // Solo qui parte la richiesta di sistema. Le
+                            // preferenze per-categoria sono già tutte ON: il
+                            // permesso di sistema è l'unico interruttore che
+                            // mancava per farle valere.
+                            Task { try? await NotificationManager.shared.enablePushNotificationsForCurrentUser() }
+                        }
+                    }
+                }
+                .task {
+                    await maybePresentPushPriming()
+                }
             } else {
                 OnboardingWalkthroughView {
                     coordinator.completeOnboarding()

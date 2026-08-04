@@ -30,6 +30,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnNewGroceryItem: Bool = true
     @Published var notifyOnNewNote: Bool = true
     @Published var notifyOnNewExpense: Bool = true
+    @Published var notifyOnNewCalendarEvent: Bool = true
     @Published var notifyOnNewWalletTicket: Bool = true
     @Published var notifyOnWalletReminder: Bool = true
     @Published var audioTranscriptionEnabled: Bool = true
@@ -47,6 +48,7 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnNewGroceryItem   = "kb_notifyOnNewGroceryItem"
         static let notifyOnNewNote          = "kb_notifyOnNewNote"
         static let notifyOnNewExpense       = "kb_notifyOnNewExpense"
+        static let notifyOnNewCalendarEvent = "kb_notifyOnNewCalendarEvent"
         static let notifyOnNewWalletTicket  = "kb_notifyOnNewWalletTicket"
         static let notifyOnWalletReminder   = "kb_notifyOnWalletReminder"
         static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"
@@ -84,6 +86,10 @@ final class SettingsViewModel: ObservableObject {
         let cachedExpense = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewExpense) as? Bool ?? true
         self.notifyOnNewExpense = cachedExpense
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewExpense=\(cachedExpense)")
+
+        let cachedCalendar = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewCalendarEvent) as? Bool ?? true
+        self.notifyOnNewCalendarEvent = cachedCalendar
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewCalendarEvent=\(cachedCalendar)")
 
         let cachedWalletNew = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewWalletTicket) as? Bool ?? true
         self.notifyOnNewWalletTicket = cachedWalletNew
@@ -150,6 +156,11 @@ final class SettingsViewModel: ObservableObject {
             KBLog.settings.kbInfo("SettingsVM fetch remote expense pref=\(remoteExpense)")
             if notifyOnNewExpense != remoteExpense { notifyOnNewExpense = remoteExpense }
             UserDefaults.standard.set(remoteExpense, forKey: LocalKeys.notifyOnNewExpense)
+
+            let remoteCalendar = await notifications.fetchNotifyOnNewCalendarEventPreference()
+            KBLog.settings.kbInfo("SettingsVM fetch remote calendar pref=\(remoteCalendar)")
+            if notifyOnNewCalendarEvent != remoteCalendar { notifyOnNewCalendarEvent = remoteCalendar }
+            UserDefaults.standard.set(remoteCalendar, forKey: LocalKeys.notifyOnNewCalendarEvent)
 
             let remoteWalletNew = await notifications.fetchNotifyOnNewWalletTicketPreference()
             KBLog.settings.kbInfo("SettingsVM fetch remote walletNew pref=\(remoteWalletNew)")
@@ -289,6 +300,24 @@ final class SettingsViewModel: ObservableObject {
                 UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewExpense)
                 infoText = error.localizedDescription
                 KBLog.settings.kbError("SettingsVM setNotifyOnNewExpense failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func toggleNotifyOnNewCalendarEvent(_ enabled: Bool) {
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewCalendarEvent enabled=\(enabled)")
+        notifyOnNewCalendarEvent = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewCalendarEvent)
+
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnNewCalendarEvent(enabled)
+                infoText = enabled ? NSLocalizedString("Notifiche calendario attive.", comment: "") : NSLocalizedString("Notifiche calendario disattivate.", comment: "")
+            } catch {
+                notifyOnNewCalendarEvent = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewCalendarEvent)
+                infoText = error.localizedDescription
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewCalendarEvent failed: \(error.localizedDescription)")
             }
         }
     }

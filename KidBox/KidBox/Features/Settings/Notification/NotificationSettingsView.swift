@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 import Combine
 internal import os
 
@@ -19,6 +20,12 @@ struct NotificationSettingsView: View {
     /// nessuna dipendenza da cui ridisegnare: il Toggle tornerebbe indietro da
     /// solo appena toccato, pur avendo salvato il valore giusto.
     @State private var nudgesEnabled = !NudgeState.isOptedOut
+    /// `true` quando il permesso notifiche di sistema è negato. In quel caso
+    /// nessuna notifica arriva, comunque siano le preferenze qui sotto: i
+    /// toggle vanno mostrati spenti e disabilitati, con un banner che spiega il
+    /// vero motivo — altrimenti l'interfaccia direbbe "attivo" mentre non
+    /// arriva niente, lo stesso inganno che questi default correggono.
+    @State private var systemDenied = false
     
     // MARK: - Dynamic theme (same as LoginView)
     
@@ -36,10 +43,36 @@ struct NotificationSettingsView: View {
     
     var body: some View {
         List {
+            if systemDenied {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Notifiche disattivate", systemImage: "bell.slash.fill")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Text("Le notifiche di KidBox sono bloccate nelle impostazioni di sistema. Finché restano disattivate non riceverai nessun avviso, anche con le opzioni qui sotto attive.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Text("Apri le impostazioni di sistema")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(KBTheme.bubbleTint)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .listRowBackground(cardBackground)
+            }
+
             Toggle(
                 "Notifica nuovi documenti",
                 isOn: Binding(
-                    get: { vm.notifyOnNewDocs },
+                    get: { !systemDenied && vm.notifyOnNewDocs },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewDocs set=\(newValue)")
                         vm.notifyOnNewDocs = newValue
@@ -47,23 +80,23 @@ struct NotificationSettingsView: View {
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifica nuovi messaggi in chat",
                 isOn: Binding(
-                    get: { vm.notifyOnNewMessages },
+                    get: { !systemDenied && vm.notifyOnNewMessages },
                     set: { vm.toggleNotifyOnNewMessages($0) }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche posizione (inizio/fine condivisione)",
                 isOn: Binding(
-                    get: { vm.notifyOnLocationSharing },
+                    get: { !systemDenied && vm.notifyOnLocationSharing },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnLocationSharing set=\(newValue)")
                         vm.notifyOnLocationSharing = newValue
@@ -71,86 +104,100 @@ struct NotificationSettingsView: View {
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche Todo (assegnazioni/scadenze)",
                 isOn: Binding(
-                    get: { vm.notifyOnTodos },
+                    get: { !systemDenied && vm.notifyOnTodos },
                     set: { vm.toggleNotifyOnTodos($0) }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche lista della spesa",
                 isOn: Binding(
-                    get: { vm.notifyOnNewGroceryItem },
+                    get: { !systemDenied && vm.notifyOnNewGroceryItem },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewGroceryItem set=\(newValue)")
                         vm.toggleNotifyOnNewGroceryItem(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .accessibilityHint("Ricevi una notifica quando un membro aggiunge un prodotto alla lista della spesa.")
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche nuove note",
                 isOn: Binding(
-                    get: { vm.notifyOnNewNote },
+                    get: { !systemDenied && vm.notifyOnNewNote },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewNote set=\(newValue)")
                         vm.toggleNotifyOnNewNote(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .accessibilityHint("Ricevi una notifica quando un membro crea una nuova nota.")
             .listRowBackground(cardBackground)
             
             Toggle(
                 "Notifiche nuove spese",
                 isOn: Binding(
-                    get: { vm.notifyOnNewExpense },
+                    get: { !systemDenied && vm.notifyOnNewExpense },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewExpense set=\(newValue)")
                         vm.toggleNotifyOnNewExpense(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .accessibilityHint("Ricevi una notifica quando un membro registra una nuova spesa di famiglia.")
+            .listRowBackground(cardBackground)
+
+            Toggle(
+                "Notifiche nuovi eventi calendario",
+                isOn: Binding(
+                    get: { !systemDenied && vm.notifyOnNewCalendarEvent },
+                    set: { newValue in
+                        KBLog.settings.kbInfo("Toggle notifyOnNewCalendarEvent set=\(newValue)")
+                        vm.toggleNotifyOnNewCalendarEvent(newValue)
+                    }
+                )
+            )
+            .disabled(vm.isLoading || systemDenied)
+            .accessibilityHint("Ricevi una notifica quando un membro aggiunge un evento al calendario di famiglia.")
             .listRowBackground(cardBackground)
 
             Toggle(
                 "Notifiche nuovo biglietto Wallet",
                 isOn: Binding(
-                    get: { vm.notifyOnNewWalletTicket },
+                    get: { !systemDenied && vm.notifyOnNewWalletTicket },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnNewWalletTicket set=\(newValue)")
                         vm.toggleNotifyOnNewWalletTicket(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .accessibilityHint("Ricevi una notifica quando un membro aggiunge un nuovo biglietto al Wallet.")
             .listRowBackground(cardBackground)
 
             Toggle(
                 "Promemoria biglietti Wallet",
                 isOn: Binding(
-                    get: { vm.notifyOnWalletReminder },
+                    get: { !systemDenied && vm.notifyOnWalletReminder },
                     set: { newValue in
                         KBLog.settings.kbInfo("Toggle notifyOnWalletReminder set=\(newValue)")
                         vm.toggleNotifyOnWalletReminder(newValue)
                     }
                 )
             )
-            .disabled(vm.isLoading)
+            .disabled(vm.isLoading || systemDenied)
             .accessibilityHint("Ricevi promemoria locali e push prima della partenza/evento (es. 24h e 2h prima).")
             .listRowBackground(cardBackground)
 
@@ -159,7 +206,8 @@ struct NotificationSettingsView: View {
             // riguarda ciò che KidBox dice di sé — mescolarle porterebbe a
             // spegnere le notifiche utili per zittire i suggerimenti.
             Section {
-                Toggle("Consigli su KidBox", isOn: $nudgesEnabled)
+                Toggle("Consigli su KidBox", isOn: .init(get: { !systemDenied && nudgesEnabled }, set: { nudgesEnabled = $0 }))
+                    .disabled(systemDenied)
                     .onChange(of: nudgesEnabled) { _, newValue in
                         KBLog.settings.kbInfo("Toggle nudges set=\(newValue)")
                         NudgeState.isOptedOut = !newValue
@@ -193,7 +241,20 @@ struct NotificationSettingsView: View {
         .task {
             KBLog.settings.kbDebug("NotificationSettingsView task start")
             vm.load()
+            await refreshSystemDenied()
             KBLog.settings.kbDebug("NotificationSettingsView task end")
         }
+        // Al rientro in foreground: l'utente può aver cambiato il permesso nelle
+        // impostazioni di sistema mentre era fuori dall'app.
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIApplication.willEnterForegroundNotification)) { _ in
+            Task { await refreshSystemDenied() }
+        }
+    }
+
+    @MainActor
+    private func refreshSystemDenied() async {
+        await NotificationManager.shared.refreshAuthorizationStatus()
+        systemDenied = NotificationManager.shared.authorizationStatus == .denied
     }
 }
