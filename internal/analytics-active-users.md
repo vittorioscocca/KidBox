@@ -164,9 +164,33 @@ chat | familyLocation`
 | `ai_interaction` | callable | `surface`, `actionType`, `accepted` |
 | `family_member_joined` | trigger ✅ | `role` — **persistente** (senza `expiresAt`, non scade a 90gg) |
 | `session_start` | client | `entryPoint`: icon \| widget \| notification \| dynamicIsland \| shareExt |
+| `onboarding_step` | client | `action`: shown \| tapped \| completed \| dismissed — `step`: id del passo (`card` per la chiusura) |
 
 `session_start` si registra ma **non** conta per il DAU: serve come denominatore per
 sapere quanti aprono senza fare nulla.
+
+### `onboarding_step` — la checklist "Per iniziare"
+
+Misura la card dei primi passi in Home (`OnboardingChecklist.swift`). Anche questo
+evento resta **fuori** da `VALUE_EVENTS`: spuntare un passo di onboarding non è di per
+sé un utente attivo, e contarlo gonfierebbe il DAU esattamente sulla coorte che la
+checklist deve far crescere — il numero salirebbe per costruzione, qualunque cosa
+succeda dopo.
+
+Le quattro azioni sono un imbuto, e vanno lette insieme:
+
+- `shown` — **una volta per passo per utente**, non a ogni apertura della Home:
+  altrimenti il denominatore conterebbe le sessioni invece delle persone.
+- `tapped` — quanti la usano come navigazione.
+- `completed` — una volta per passo, quando il dato che lo chiude compare davvero
+  (il documento caricato, il secondo membro nella famiglia). Non è il tap: un passo si
+  può chiudere anche arrivandoci da un'altra strada, e va contato lo stesso.
+- `dismissed` — `step: "card"`. È il contatore che tiene onesti gli altri tre: senza,
+  si finirebbe per ottimizzare l'attivazione senza accorgersi di infastidire tutti gli
+  altri.
+
+`step` è l'id di un passo del catalogo, mai un contenuto della famiglia: dice *quale
+suggerimento*, non cosa quella famiglia ha in casa.
 
 ### `content_retrieved` — l'evento centrale
 

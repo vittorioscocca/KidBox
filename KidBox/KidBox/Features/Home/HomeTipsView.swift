@@ -60,29 +60,64 @@ enum HomeTipsCatalog {
 
 struct HomeTipsView: View {
     @State private var selectedTip: HomeTipItem?
+    /// Ricalcolato all'apertura: la checklist può essere stata chiusa o
+    /// completata dopo che questa schermata è stata istanziata.
+    @State private var canRestoreChecklist = OnboardingChecklistState.isRestorable
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        List(HomeTipsCatalog.items) { item in
-            Button {
-                selectedTip = item
-            } label: {
-                HStack(spacing: 14) {
-                    Image(systemName: item.symbol)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 34, height: 34)
-                        .background(item.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    Text(item.title)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+        List {
+            // Il recupero vive qui e non nelle Impostazioni: è la stessa
+            // domanda dei suggerimenti ("cosa posso fare con quest'app?"), e chi
+            // ha chiuso la card per sbaglio la cerca dove cerca l'aiuto.
+            if canRestoreChecklist {
+                Section {
+                    Button {
+                        OnboardingChecklistState.restore()
+                        canRestoreChecklist = false
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: "checklist")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 34, height: 34)
+                                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            Text("Rivedi i primi passi")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+
+            Section {
+                ForEach(HomeTipsCatalog.items) { item in
+                    Button {
+                        selectedTip = item
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: item.symbol)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 34, height: 34)
+                                .background(item.tint, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            Text(item.title)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
+        .onAppear { canRestoreChecklist = OnboardingChecklistState.isRestorable }
         .navigationTitle("Suggerimenti")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedTip) { item in

@@ -218,7 +218,30 @@ final class NudgeEngine {
         if let maxMembers = r.familyMembersMax, signals.familyMembers > maxMembers { return false }
         if let minMembers = r.familyMembersMin, signals.familyMembers < minMembers { return false }
         if let feature = r.featureUnused, !signals.unusedFeatures.contains(feature) { return false }
+        if isCoveredByChecklist(campaign) { return false }
         return true
+    }
+
+    /// Una richiesta già in vista nella Home non ha bisogno anche della push.
+    ///
+    /// È un rinvio, non un annullamento: la coda si ricostruisce a ogni
+    /// foreground, quindi appena la checklist esce di scena — completata, chiusa
+    /// o mai mostrata — la campagna torna ammissibile e riparte con le sue
+    /// cadenze. Senza questo filtro `family_invite` scatterebbe il giorno dopo
+    /// l'installazione per chiedere esattamente la cosa che l'utente si vede
+    /// scritta in cima alla Home ogni volta che apre l'app.
+    private func isCoveredByChecklist(_ campaign: NudgeCampaign) -> Bool {
+        guard let destination = campaign.destination else { return false }
+        let step: OnboardingStepID
+        switch destination {
+        case .invite:    step = .invite
+        case .documents: step = .document
+        case .calendar:  step = .calendarEvent
+        // Wallet, salute, AI e chat non sono passi della checklist: nessuna
+        // sovrapposizione da evitare.
+        case .wallet, .health, .ai, .chat: return false
+        }
+        return OnboardingChecklistState.liveSteps.contains(step)
     }
 
     /// Sposta l'orario fuori dalla fascia silenziosa. Un suggerimento

@@ -61,6 +61,11 @@ struct HomeView: View {
     @State private var showFamilySwitcher = false
     @State private var showTips = false
 
+    /// Checklist "Per iniziare". Vive qui e non in una schermata a parte perché
+    /// il suo unico momento utile è quello in cui l'utente guarda la Home e non
+    /// sa cosa fare.
+    @StateObject private var onboarding = OnboardingChecklistModel()
+
     /// Vista Home: lista raggruppata o griglia di card riordinabili. Preferenza locale al dispositivo.
     @AppStorage("kb_homeLayoutMode") private var homeLayoutMode: HomeLayoutMode = .list
 
@@ -161,9 +166,14 @@ struct HomeView: View {
     }
 
     /// Pagine reali del carosello (senza duplicati per il loop).
+    ///
+    /// Finché la checklist è viva le slide promozionali restano fuori: sono due
+    /// sistemi di suggerimento con lo stesso scopo, e uno sopra l'altro si
+    /// annullano — il carosello, per di più, promuove anche cose che la
+    /// checklist ha già spuntato. Tornano appena la checklist esce di scena.
     private var homeCarouselRealPages: [HomeCarouselPage] {
         var pages: [HomeCarouselPage] = [HomeCarouselPage(id: "hero", kind: .hero)]
-        if hasFamily {
+        if hasFamily, !onboarding.isVisible {
             pages += homePromoSlides.map { HomeCarouselPage(id: $0.id, kind: .promo($0)) }
         }
         return pages
@@ -353,6 +363,12 @@ struct HomeView: View {
                     .onChange(of: hasFamily) { _, _ in
                         homeCarouselIndex = homeCarouselHasLoop ? 1 : 0
                     }
+                    // La checklist toglie e rimette le slide promozionali: il
+                    // numero di pagine cambia, e un indice rimasto indietro
+                    // punterebbe a una pagina che non esiste più.
+                    .onChange(of: onboarding.isVisible) { _, _ in
+                        homeCarouselIndex = homeCarouselHasLoop ? 1 : 0
+                    }
                     .onChange(of: homeCarouselIndex) { _, newValue in
                         guard homeCarouselHasLoop else { return }
                         let realCount = homeCarouselRealPages.count
@@ -377,6 +393,18 @@ struct HomeView: View {
                         homeCarouselDots
                     }
 
+                    // Sopra le sezioni, non in fondo: il senso della checklist è
+                    // farsi vedere da chi apre la Home e non sa da dove partire.
+                    if onboarding.isVisible {
+                        OnboardingChecklistCard(model: onboarding) { step in
+                            if let destination = onboarding.handleTap(step, familyId: activeFamilyId) {
+                                KBLog.navigation.kbDebug("Home: tap checklist step -> \(step.rawValue)")
+                                navigate(to: destination)
+                            }
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
                     #if targetEnvironment(macCatalyst)
                     // Mac Catalyst: Home classica (griglia + FAB) invariata
                     HomeCardGrid(hasFamily: hasFamily, familyId: activeFamilyId) { destination in
@@ -396,7 +424,10 @@ struct HomeView: View {
                     }
                     #endif
                     
-                    if showInvite {
+                    // Quando la checklist c'è, l'invito è già la sua seconda riga:
+                    // ripeterlo qui sotto sarebbe la stessa richiesta due volte.
+                    // Per chi la checklist l'ha chiusa, la card resta com'era.
+                    if showInvite, !onboarding.isVisible {
                         InviteCardView {
                             KBLog.navigation.kbDebug("Home: tap InviteCard -> inviteCode")
                             coordinator.navigate(to: .inviteCode)
@@ -475,6 +506,12 @@ struct HomeView: View {
                 HomeTipsView()
             }
         }
+        // Dai Suggerimenti si può riportare la checklist: alla chiusura del
+        // foglio va riletto lo stato, altrimenti il ripristino non si vede.
+        .onChange(of: showTips) { _, isPresented in
+            guard !isPresented else { return }
+            Task { await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId) }
+        }
         .sheet(isPresented: $showFamilySwitcher) {
             FamilySwitcherView()
                 .environmentObject(coordinator)
@@ -484,7 +521,24 @@ struct HomeView: View {
         .onAppear {
             guard !activeFamilyId.isEmpty else { return }
             BadgeManager.shared.startListening(familyId: activeFamilyId)
-            
+
+        }
+        .task(id: activeFamilyId) {
+            await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId)
+        }
+        // Il ritorno alla radice dello stack è il momento che conta: l'utente ha
+        // appena caricato il documento o creato l'evento, e la riga deve
+        // spuntarsi sotto i suoi occhi. `onAppear` della radice non è affidabile
+        // in `NavigationStack` — lo svuotamento del path sì.
+        .onChange(of: coordinator.path.count) { _, newCount in
+            guard newCount == 0 else { return }
+            Task { await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId) }
+        }
+        // Il permesso notifiche può cambiare fuori dall'app, nelle Impostazioni
+        // di sistema: al rientro va riletto, non dato per quello che era.
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId) }
         }
         // ✅ Picker
         .photosPicker(isPresented: $showHeroPicker, selection: $pickedHeroItem, matching: .images)
