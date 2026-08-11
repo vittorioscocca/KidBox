@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 import FirebaseAuth
 
 /// Abbinamento e visualizzazione dati da Apple Salute (card «Apple App Salute»).
@@ -148,6 +149,17 @@ struct AppleHealthAppView: View {
 
         do {
             try await healthService.requestAuthorization()
+
+            // `requestAuthorization` torna appena il permesso è deciso, ma il
+            // foglio di sistema di Salute è ancora sullo schermo mentre si
+            // chiude. Le query qui sotto sono veloci, quindi senza questa attesa
+            // l'alert finale viene chiesto a un controller che sta ancora
+            // presentando `HKHealthPrivacyHostAuthorizationViewController`:
+            // UIKit lo rifiuta ("Attempt to present ... which is already
+            // presenting") e l'utente non vede alcun esito — né il successo né
+            // l'errore. Da fuori sembra che il collegamento non faccia niente.
+            await Self.waitForSystemSheetDismissal()
+
             let imported = try await healthService.fetchSnapshot()
             KBHealthLinkStore.save(imported, childId: childId)
             snapshot = imported
@@ -155,7 +167,26 @@ struct AppleHealthAppView: View {
             showSuccess = true
         } catch {
             importError = error.localizedDescription
+            await Self.waitForSystemSheetDismissal()
             showError = true
+        }
+    }
+
+    /// Attende che nessun controller di sistema sia più presentato sopra la
+    /// schermata, così l'alert successivo trova il campo libero.
+    ///
+    /// Il tetto di 3 secondi esiste perché questa è una cortesia, non una
+    /// dipendenza: se per qualsiasi ragione il foglio restasse su, è meglio
+    /// tentare comunque l'alert che restare in attesa per sempre.
+    @MainActor
+    private static func waitForSystemSheetDismissal(timeout: TimeInterval = 3) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let top = UIApplication.shared.topMostViewController
+            if top?.presentedViewController == nil, top?.isBeingDismissed != true {
+                return
+            }
+            try? await Task.sleep(nanoseconds: 100_000_000)
         }
     }
 

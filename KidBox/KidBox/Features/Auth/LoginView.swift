@@ -258,17 +258,26 @@ struct LoginView: View {
     // MARK: - Footer
     
     private var legalFooter: some View {
-        let privacyURL = URL(string: "https://vittorioscocca.github.io/KidBox/privacy/")!
-        let termsURL   = URL(string: "https://vittorioscocca.github.io/KidBox/terms/")!
-        
-        var attributed = AttributedString("Continuando, accetti i Termini di Servizio e la Privacy Policy di KidBox.")
-        
-        if let termsRange = attributed.range(of: "Termini di Servizio") {
+        let privacyURL = URL(string: "https://kidbox-landing.web.app/privacy.html")!
+        let termsURL   = URL(string: "https://kidbox-landing.web.app/terms.html")!
+
+        // La frase è una sola chiave con due segnaposto, non tre pezzi
+        // concatenati: l'ordine delle parole cambia da lingua a lingua, e
+        // tradurre i frammenti separatamente produce frasi sgrammaticate. I due
+        // link si ritrovano per posizione dentro la frase già composta.
+        let termsLabel = String(localized: "Termini di Servizio")
+        let privacyLabel = String(localized: "Privacy Policy")
+
+        var attributed = AttributedString(
+            String(localized: "Continuando, accetti i \(termsLabel) e la \(privacyLabel) di KidBox.")
+        )
+
+        if let termsRange = attributed.range(of: termsLabel) {
             attributed[termsRange].link = termsURL
             attributed[termsRange].underlineStyle = .single
         }
         
-        if let privacyRange = attributed.range(of: "Privacy Policy") {
+        if let privacyRange = attributed.range(of: privacyLabel) {
             attributed[privacyRange].link = privacyURL
             attributed[privacyRange].underlineStyle = .single
         }
@@ -283,7 +292,7 @@ struct LoginView: View {
 // MARK: - ProviderButton (Google / Facebook)
 
 private struct ProviderButton<Icon: View>: View {
-    let label: String
+    let label: LocalizedStringKey
     let icon: () -> Icon
     let isLoading: Bool
     let background: Color

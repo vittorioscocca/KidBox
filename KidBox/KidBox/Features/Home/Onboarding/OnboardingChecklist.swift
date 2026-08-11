@@ -30,6 +30,7 @@
 //     dalla posizione fissa delle righe.
 //
 
+import Combine
 import Foundation
 import SwiftData
 import SwiftUI

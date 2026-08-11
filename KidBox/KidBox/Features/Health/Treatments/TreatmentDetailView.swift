@@ -220,11 +220,6 @@ struct TreatmentDetailView: View {
         }
         .onAppear {
             selectedDayOffset = currentDayOffset
-            print("🔍 onAppear selectedDayOffset=\(selectedDayOffset) currentDayOffset=\(currentDayOffset)")
-            print("🔍 doseLogs count=\(doseLogs.count)")
-            for log in doseLogs {
-                print("🔍 log dayNumber=\(log.dayNumber) slotIndex=\(log.slotIndex) taken=\(log.taken)")
-            }
             Task {
                 let s = await UNUserNotificationCenter.current().notificationSettings()
                 notifGranted = s.authorizationStatus == .authorized

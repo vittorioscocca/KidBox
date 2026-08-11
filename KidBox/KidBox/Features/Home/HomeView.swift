@@ -503,7 +503,11 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showTips) {
             NavigationStack {
-                HomeTipsView()
+                HomeTipsView(familyId: activeFamilyId) { destination in
+                    showTips = false
+                    KBLog.navigation.kbDebug("Home: tap suggerimento -> vai")
+                    navigate(to: destination)
+                }
             }
         }
         // Dai Suggerimenti si può riportare la checklist: alla chiusura del

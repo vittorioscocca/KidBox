@@ -17,6 +17,36 @@ struct HomeTipItem: Identifiable, Hashable {
 
     static func == (lhs: HomeTipItem, rhs: HomeTipItem) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
+    /// La sezione a cui il suggerimento si riferisce.
+    ///
+    /// Serve al pulsante "Vai": leggere cosa si può fare in una sezione e poi
+    /// doverla cercare a mano nella Home è il punto in cui il suggerimento
+    /// smette di essere utile. `nil` per i pochi id che non hanno una
+    /// destinazione propria, così il pulsante semplicemente non compare invece
+    /// di portare da qualche parte a caso.
+    func destination(familyId: String) -> HomeDestination? {
+        switch id {
+        case "note":       return .notes(familyId: familyId)
+        case "todo":       return .todo
+        case "shopping":   return .shopping(familyId: familyId)
+        case "calendar":   return .calendar(familyId: familyId)
+        case "health":     return .pediatric(familyId: familyId, childId: "")
+        case "documents":  return .document
+        case "expenses":   return .expenses(familyId: familyId)
+        case "wallet":     return .wallet(familyId: familyId)
+        case "passwords":  return .passwords(familyId: familyId)
+        case "location":   return .familyLocation(familyId: familyId)
+        case "photos":     return .familyPhotos(familyId: familyId)
+        case "family":     return .familySettings
+        case "pets":       return .pets(familyId: familyId)
+        case "home_items": return .homeItems(familyId: familyId)
+        case "vehicles":   return .vehicles(familyId: familyId)
+        case "travel":     return .travel(familyId: familyId)
+        case "expert":     return .askExpert
+        default:           return nil
+        }
+    }
 }
 
 enum HomeTipsCatalog {
@@ -59,6 +89,12 @@ enum HomeTipsCatalog {
 }
 
 struct HomeTipsView: View {
+    /// La navigazione resta della Home, che possiede il coordinator: questa
+    /// schermata è un foglio, e spingere una destinazione dal suo stack la
+    /// aprirebbe dentro il foglio invece che nell'app.
+    var familyId: String = ""
+    var onNavigate: ((HomeDestination) -> Void)?
+
     @State private var selectedTip: HomeTipItem?
     /// Ricalcolato all'apertura: la checklist può essere stata chiusa o
     /// completata dopo che questa schermata è stata istanziata.
@@ -121,15 +157,28 @@ struct HomeTipsView: View {
         .navigationTitle("Suggerimenti")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedTip) { item in
-            HomeTipDetailSheet(item: item)
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
+            HomeTipDetailSheet(
+                item: item,
+                destination: item.destination(familyId: familyId),
+                onGo: { destination in
+                    selectedTip = nil
+                    // Il foglio dei suggerimenti va chiuso prima di navigare:
+                    // restando aperto coprirebbe la schermata appena raggiunta.
+                    dismiss()
+                    onNavigate?(destination)
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
     }
 }
 
 private struct HomeTipDetailSheet: View {
     let item: HomeTipItem
+    let destination: HomeDestination?
+    let onGo: (HomeDestination) -> Void
+
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -152,6 +201,20 @@ private struct HomeTipDetailSheet: View {
                     .padding(.horizontal, 8)
 
                 Spacer(minLength: 0)
+
+                if let destination {
+                    Button {
+                        onGo(destination)
+                    } label: {
+                        Text("Vai")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(item.tint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(24)
             .toolbar {

@@ -702,9 +702,10 @@ private struct CreateFamilyCard: View {
     @FocusState private var focusedField: Field?
     private enum Field { case family, child }
     
+    /// Il nome del figlio non entra nella condizione: è facoltativo, e
+    /// pretenderlo qui obbligava a inventarne uno pur di superare la schermata.
     private var canCreate: Bool {
         !familyName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !childName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !isBusy && !didCreate
     }
     
@@ -763,7 +764,7 @@ private struct CreateFamilyCard: View {
                 
                 // Nome primo figlio
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Primo figlio")
+                    Text("Primo figlio (facoltativo)")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     HStack(spacing: 10) {
@@ -887,7 +888,7 @@ private struct CreateFamilyCard: View {
     private func createFamily() async {
         let name  = familyName.trimmingCharacters(in: .whitespaces)
         let child = childName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty, !child.isEmpty else { return }
+        guard !name.isEmpty else { return }
         
         isBusy = true
         errorText = nil

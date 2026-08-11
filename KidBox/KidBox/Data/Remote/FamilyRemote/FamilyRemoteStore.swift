@@ -67,9 +67,13 @@ final class FamilyRemoteStore {
     ///    - users/{uid}/memberships/{familyId}
     /// 3) Write #2 (after membership exists):
     ///    - families/{familyId}/children/{childId}
+    /// `child` è opzionale: il primo figlio è facoltativo in creazione, e una
+    /// famiglia senza figli è uno stato legittimo — se ne aggiungono dopo.
+    /// Scrivere un documento figlio con nome vuoto pur di avere sempre la
+    /// stessa forma lascerebbe in Firestore un record fantasma da ripulire.
     func createFamilyWithChild(
         family: RemoteFamilyPayload,
-        child: RemoteChildPayload
+        child: RemoteChildPayload?
     ) async throws {
         
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -119,6 +123,11 @@ final class FamilyRemoteStore {
         KBLog.sync.kbInfo("Batch#1 committed familyId=\(family.id)")
         
         // ---- WRITE 2: child (now membership exists)
+        guard let child else {
+            KBLog.sync.kbInfo("Family created without child familyId=\(family.id)")
+            return
+        }
+
         KBLog.sync.kbDebug("Write#2: child document")
         
         let childRef = familyRef.collection("children").document(child.id)

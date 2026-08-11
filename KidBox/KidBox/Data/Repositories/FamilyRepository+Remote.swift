@@ -47,11 +47,16 @@ final class FamilyCreationService {
     /// - Starts a detached best-effort remote create.
     ///
     /// - Returns: Tuple `(familyId, childId)` for navigation / follow-up actions.
+    /// Crea la famiglia e, se è stato indicato un nome, il primo figlio.
+    ///
+    /// `childName` vuoto è un caso normale, non un errore: il figlio è
+    /// facoltativo e `childId` torna `nil`. La famiglia esiste comunque, ed è
+    /// l'unica cosa di cui il resto dell'app ha bisogno per partire.
     func createFamily(
         name: String,
         childName: String,
         childBirthDate: Date?
-    ) async throws -> (familyId: String, childId: String) {
+    ) async throws -> (familyId: String, childId: String?) {
         
         KBLog.data.kbInfo("createFamily start nameLen=\(name.count) childNameLen=\(childName.count)")
         
@@ -61,10 +66,11 @@ final class FamilyCreationService {
         }
         
         let familyId = UUID().uuidString
-        let childId = UUID().uuidString
+        let trimmedChildName = childName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let childId: String? = trimmedChildName.isEmpty ? nil : UUID().uuidString
         let now = Date()
         
-        KBLog.data.kbDebug("createFamily generated ids familyId=\(familyId) childId=\(childId)")
+        KBLog.data.kbDebug("createFamily generated ids familyId=\(familyId) childId=\(childId ?? "-")")
         
         let family = KBFamily(
             id: familyId,
@@ -75,24 +81,26 @@ final class FamilyCreationService {
             updatedAt: now
         )
         
-        let child = KBChild(
-            id: childId,
-            familyId: familyId,
-            name: childName,
-            birthDate: childBirthDate,
-            createdBy: uid,
-            createdAt: now,
-            updatedBy: uid,
-            updatedAt: now
-        )
-        
         modelContext.insert(family)
-        modelContext.insert(child)
-        child.family = family
+
+        if let childId {
+            let child = KBChild(
+                id: childId,
+                familyId: familyId,
+                name: trimmedChildName,
+                birthDate: childBirthDate,
+                createdBy: uid,
+                createdAt: now,
+                updatedBy: uid,
+                updatedAt: now
+            )
+            modelContext.insert(child)
+            child.family = family
+        }
         
         try modelContext.save()
         
-        KBLog.data.kbInfo("Local family created familyId=\(familyId) childId=\(childId)")
+        KBLog.data.kbInfo("Local family created familyId=\(familyId) childId=\(childId ?? "-")")
         
         // ✅ Sopprime handleFamilyAccessLost durante la scrittura remota.
         // I listener partono su families.first (SwiftData) che già esiste localmente,
@@ -104,7 +112,9 @@ final class FamilyCreationService {
         do {
             try await remote.createFamilyWithChild(
                 family: .init(id: familyId, name: name, ownerUid: uid),
-                child: .init(id: childId, name: childName, birthDate: childBirthDate)
+                child: childId.map {
+                    .init(id: $0, name: trimmedChildName, birthDate: childBirthDate)
+                }
             )
             KBLog.sync.kbInfo("Remote family create completed familyId=\(familyId)")
         } catch {
@@ -112,7 +122,7 @@ final class FamilyCreationService {
             throw error
         }
         
-        KBLog.data.kbDebug("createFamily done returning ids familyId=\(familyId) childId=\(childId)")
+        KBLog.data.kbDebug("createFamily done returning ids familyId=\(familyId) childId=\(childId ?? "-")")
         return (familyId, childId)
     }
 }
