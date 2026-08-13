@@ -75,40 +75,53 @@ final class MultiFamilyService {
         }
         try modelContext.save()
 
-        let capturedName = trimmedName
-        Task.detached {
-            let db = Firestore.firestore()
-            let familyData: [String: Any] = [
-                "id": familyId,
-                "name": capturedName,
-                "ownerUid": uid,
-                "createdBy": uid,
-                "updatedBy": uid,
-                "createdAt": Timestamp(date: now),
-                "updatedAt": Timestamp(date: now),
-            ]
-            try? await db.collection("families").document(familyId).setData(familyData)
+        let db = Firestore.firestore()
+        let familyData: [String: Any] = [
+            "id": familyId,
+            "name": trimmedName,
+            "ownerUid": uid,
+            "createdBy": uid,
+            "updatedBy": uid,
+            "createdAt": Timestamp(date: now),
+            "updatedAt": Timestamp(date: now),
+        ]
 
-            let memberData: [String: Any] = [
+        do {
+            // Scrittura critica: è QUI che firestore.rules applica il limite di 2
+            // famiglie per account. Prima era un `try?` in un Task.detached — un
+            // fallimento (compreso il rifiuto per limite raggiunto) veniva scartato
+            // in silenzio: la famiglia restava creata solo in locale, mai
+            // sincronizzata, e l'utente non vedeva alcun errore.
+            try await db.collection("families").document(familyId).setData(familyData)
+        } catch {
+            KBLog.sync.kbError("MultiFamilyService: remote family create failed \(error.localizedDescription)")
+            modelContext.delete(family)
+            modelContext.delete(member)
+            try? modelContext.save()
+            throw FamilyCreationError.map(error)
+        }
+
+        // Le scritture indice restano best-effort: la famiglia esiste già ed è
+        // usabile anche se queste falliscono (si autoripareranno al prossimo sync).
+        let memberData: [String: Any] = [
+            "familyId": familyId,
+            "userId": uid,
+            "uid": uid,
+            "role": "owner",
+            "createdAt": Timestamp(date: now),
+            "updatedAt": Timestamp(date: now),
+            "updatedBy": uid,
+        ]
+        try? await db.collection("families").document(familyId)
+            .collection("members").document(uid).setData(memberData)
+
+        try? await db.collection("users").document(uid)
+            .collection("memberships").document(familyId)
+            .setData([
                 "familyId": familyId,
-                "userId": uid,
-                "uid": uid,
                 "role": "owner",
                 "createdAt": Timestamp(date: now),
-                "updatedAt": Timestamp(date: now),
-                "updatedBy": uid,
-            ]
-            try? await db.collection("families").document(familyId)
-                .collection("members").document(uid).setData(memberData)
-
-            try? await db.collection("users").document(uid)
-                .collection("memberships").document(familyId)
-                .setData([
-                    "familyId": familyId,
-                    "role": "owner",
-                    "createdAt": Timestamp(date: now),
-                ])
-        }
+            ])
 
         return familyId
     }

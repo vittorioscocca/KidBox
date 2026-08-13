@@ -921,7 +921,7 @@ private struct CreateFamilyCard: View {
             onFamilyCreated(familyId)
             
         } catch {
-            errorText = "Errore: \(error.localizedDescription)"
+            errorText = error.localizedDescription
         }
     }
 }

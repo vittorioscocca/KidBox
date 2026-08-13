@@ -119,7 +119,14 @@ final class FamilyCreationService {
             KBLog.sync.kbInfo("Remote family create completed familyId=\(familyId)")
         } catch {
             KBLog.sync.kbError("Remote family create failed: \(error.localizedDescription)")
-            throw error
+            // La scrittura remota è stata rifiutata (tipicamente: limite di 2
+            // famiglie per account): senza questo rollback la famiglia resterebbe
+            // creata solo in locale, mai sincronizzata, e l'app la tratterebbe
+            // come attiva al prossimo avvio pur non esistendo su Firestore.
+            modelContext.delete(family)
+            try? modelContext.save()
+            KBLog.data.kbInfo("Local family rolled back after remote failure familyId=\(familyId)")
+            throw FamilyCreationError.map(error)
         }
         
         KBLog.data.kbDebug("createFamily done returning ids familyId=\(familyId) childId=\(childId ?? "-")")
