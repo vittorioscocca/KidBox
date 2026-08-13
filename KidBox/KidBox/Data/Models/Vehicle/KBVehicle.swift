@@ -45,6 +45,8 @@ final class KBVehicle {
 
     var reminderEnabled: Bool
     var reminderId: String?
+    /// JSON con gli offset (in giorni: 7/14/30) di preavviso selezionati per ciascuna scadenza. `nil` = default (7gg).
+    var reminderOffsetsJson: String?
 
     var syncStateRaw: Int
     var lastSyncError: String?
@@ -79,7 +81,8 @@ final class KBVehicle {
         createdBy: String,
         updatedBy: String,
         reminderEnabled: Bool = false,
-        reminderId: String? = nil
+        reminderId: String? = nil,
+        reminderOffsetsJson: String? = nil
     ) {
         self.id = id
         self.familyId = familyId
@@ -106,6 +109,7 @@ final class KBVehicle {
         self.updatedBy = updatedBy
         self.reminderEnabled = reminderEnabled
         self.reminderId = reminderId
+        self.reminderOffsetsJson = reminderOffsetsJson
         self.syncStateRaw = KBSyncState.pendingUpsert.rawValue
         self.lastSyncError = nil
     }

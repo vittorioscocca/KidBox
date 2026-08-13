@@ -63,11 +63,11 @@ final class KBVaccineReminderService {
         let nm = (vaccine.commercialName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let titleText = nm.isEmpty ? vaccine.vaccineType.displayName : nm
         let who = childName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let whoLabel = who.isEmpty ? "il bambino" : who
+        let whoLabel = who.isEmpty ? String(localized: "il bambino") : who
 
         let content = UNMutableNotificationContent()
-        content.title = "Promemoria vaccino"
-        content.body = "Domani alle 9:00: vaccino «\(titleText)» per \(whoLabel)."
+        content.title = String(localized: "Promemoria vaccino")
+        content.body = String(format: String(localized: "Domani alle 9:00: vaccino «%@» per %@."), titleText, whoLabel)
         content.sound = .default
         content.userInfo = [
             "type": "vaccine_reminder",

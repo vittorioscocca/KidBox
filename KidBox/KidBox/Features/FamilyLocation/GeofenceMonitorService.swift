@@ -279,8 +279,10 @@ final class GeofenceMonitorService: NSObject, ObservableObject, CLLocationManage
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             if manager.authorizationStatus != .authorizedAlways {
-                KBLog.app.kbWarning(
-                    "GeofenceMonitorService: authorizedAlways required (status=\(authorizationStatusLabel))"
+                // Scelta legittima dell'utente sul permesso, non un'anomalia
+                // dell'app: a warning finiva tra i casi aperti in console.
+                KBLog.app.kbInfo(
+                    "GeofenceMonitorService: geofencing inactive, authorizedAlways not granted (status=\(authorizationStatusLabel))"
                 )
             }
         }

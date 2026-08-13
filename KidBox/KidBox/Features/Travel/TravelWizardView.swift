@@ -20,7 +20,7 @@ struct TravelWizardView: View {
     @State private var showProposal = false
     @State private var showUpgrade = false
 
-    private var aiAvailable: Bool { subscriptionManager.currentPlan.includesAI }
+    private var aiAvailable: Bool { subscriptionManager.isAIAccessible }
 
     @Query private var members: [KBFamilyMember]
     @Query private var children: [KBChild]

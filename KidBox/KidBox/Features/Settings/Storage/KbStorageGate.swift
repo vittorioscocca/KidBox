@@ -114,7 +114,7 @@ final class KBStorageGate {
     
     /// nil = ok, altrimenti il motivo del blocco.
     func canUseAI() -> KBAIBlockReason? {
-        guard KBSubscriptionManager.shared.currentPlan.includesAI else { return .planNotIncludesAI }
+        guard KBSubscriptionManager.shared.isAIAccessible else { return .planNotIncludesAI }
         guard AISettings.shared.consentGiven else { return .consentNotGiven }
         return nil
     }
@@ -248,7 +248,7 @@ enum KBAIBlockReason: Equatable {
     var message: LocalizedStringKey {
         switch self {
         case .planNotIncludesAI:
-            return "L'assistente AI è incluso nei piani Pro e Max. Passa a Pro per 20 messaggi al giorno per membro."
+            return "Hai usato tutti i messaggi AI gratuiti inclusi nel piano Free. Passa a Pro per continuare a usare l'assistente."
         case .consentNotGiven:
             return "Per usare l'AI devi prima accettare le condizioni d'uso in Impostazioni → Assistente AI."
         }

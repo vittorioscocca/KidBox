@@ -1148,14 +1148,14 @@ private struct HomeCardGrid: View {
             }
 
         case .vehicles:
-            HomeCardView(title: "Garage", subtitle: "Auto e scadenze", systemImage: "car.fill", tint: Color(hex: "#1A1A1A") ?? .primary) {
+            HomeCardView(title: "Garage", subtitle: "Auto e scadenze", systemImage: "car.fill", tint: Color(hex: "#FF6B00") ?? .orange) {
                 KBLog.navigation.kbDebug("Home: tap Vehicles")
                 FABUsageTracker.shared.record("vehicles")
                 onNavigate(.vehicles(familyId: familyId))
             }
 
         case .travel:
-            let travelAI = subscriptionManager.currentPlan.includesAI
+            let travelAI = subscriptionManager.isAIAccessible
             if hasFamily {
                 ZStack(alignment: .topTrailing) {
                     HomeCardView(
@@ -1188,7 +1188,7 @@ private struct HomeCardGrid: View {
             }
 
         case .expert:
-            let aiAvailable = subscriptionManager.currentPlan.includesAI
+            let aiAvailable = subscriptionManager.isAIAccessible
             ZStack(alignment: .topTrailing) {
                 HomeCardView(
                     title: "Assistente",
@@ -1435,7 +1435,7 @@ private enum HomeCatalog {
         case .expert:    return .init(id: id, title: "Assistente", short: "Assistente", symbol: "brain.head.profile", tint: .purple, usageKey: nil)
         case .pets:      return .init(id: id, title: "Animali domestici", short: "Animali", symbol: "pawprint.fill", tint: Color(hex: "#FF9500") ?? .orange, usageKey: "pets")
         case .homeItems: return .init(id: id, title: "Casa", short: "Casa", symbol: "house.fill", tint: Color(hex: "#8B6914") ?? .brown, usageKey: "home_items")
-        case .vehicles:  return .init(id: id, title: "Garage", short: "Garage", symbol: "car.fill", tint: Color(hex: "#1A1A1A") ?? .primary, usageKey: "vehicles")
+        case .vehicles:  return .init(id: id, title: "Garage", short: "Garage", symbol: "car.fill", tint: Color(hex: "#FF6B00") ?? .orange, usageKey: "vehicles")
         case .travel:    return .init(id: id, title: "Viaggi", short: "Viaggi", symbol: "suitcase.fill", tint: .teal, usageKey: "travel")
         }
     }
@@ -1612,7 +1612,7 @@ private struct HomeCategoryList: View {
 
     @ViewBuilder
     private func groupRow(_ meta: HomeCatMeta) -> some View {
-        let locked = (meta.id == .travel) && !subscriptionManager.currentPlan.includesAI
+        let locked = (meta.id == .travel) && !subscriptionManager.isAIAccessible
         Button {
             handleTap(meta.id)
         } label: {
@@ -1751,7 +1751,7 @@ private struct HomeCategoryList: View {
             KBLog.navigation.kbDebug("Home: tap Travel")
             if !hasFamily {
                 onNavigate(.familySettings)
-            } else if subscriptionManager.currentPlan.includesAI {
+            } else if subscriptionManager.isAIAccessible {
                 onNavigate(.travel(familyId: familyId))
             } else if subscriptionManager.isFamilyOwner {
                 showUpgrade = true
@@ -1772,7 +1772,7 @@ private struct HomeAIFloatingButton: View {
 
     var body: some View {
         AskAIControl(style: .circle, accessibilityLabel: "Chiedi all'AI") {
-            if subscription.currentPlan.includesAI {
+            if subscription.isAIAccessible {
                 onOpenAI()
             } else {
                 onLockedTap()

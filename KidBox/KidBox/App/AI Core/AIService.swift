@@ -48,10 +48,12 @@ struct AIResponse {
     let reply: String
     let usageToday: Int
     let dailyLimit: Int
+    /// Periodo su cui si resetta il contatore (mensile su Free, giornaliero su Pro/Max).
+    let period: AIQuotaPeriod
     /// Messaggi scalati sul contatore per questa richiesta (1 = contesto standard).
     let messageUnitsConsumed: Int
     let isLargeContext: Bool
-    
+
     /// Caratteri payload inviati (se restituiti dalla Cloud Function).
     let totalPayloadChars: Int?
 
@@ -59,6 +61,7 @@ struct AIResponse {
         reply: String,
         usageToday: Int,
         dailyLimit: Int,
+        period: AIQuotaPeriod = .daily,
         messageUnitsConsumed: Int = 1,
         isLargeContext: Bool = false,
         totalPayloadChars: Int? = nil
@@ -66,12 +69,17 @@ struct AIResponse {
         self.reply = reply
         self.usageToday = usageToday
         self.dailyLimit = dailyLimit
+        self.period = period
         self.messageUnitsConsumed = messageUnitsConsumed
         self.isLargeContext = isLargeContext
         self.totalPayloadChars = totalPayloadChars
     }
 
-    var usageSummary: String { "\(usageToday)/\(dailyLimit) messaggi oggi" }
+    var usageSummary: String {
+        period == .lifetime
+            ? "\(usageToday)/\(dailyLimit) messaggi gratuiti"
+            : "\(usageToday)/\(dailyLimit) messaggi oggi"
+    }
     var isNearLimit: Bool { usageToday >= Int(Double(dailyLimit) * 0.8) }
 }
 
@@ -264,6 +272,7 @@ final class AIService {
             let messageUnitsConsumed = data["messageUnitsConsumed"] as? Int ?? 1
             let isLargeContext = data["isLargeContext"] as? Bool ?? (messageUnitsConsumed > 1)
             let totalPayloadChars = data["totalPayloadChars"] as? Int
+            let period = (data["period"] as? String).flatMap(AIQuotaPeriod.init) ?? .daily
 
             KBLog.ai.kbInfo(
                 "sendMessage succeeded replyLength=\(reply.count) usageToday=\(usageToday) dailyLimit=\(dailyLimit) units=\(messageUnitsConsumed) payloadChars=\(totalPayloadChars ?? -1)"
@@ -274,6 +283,7 @@ final class AIService {
                 reply: reply,
                 usageToday: usageToday,
                 dailyLimit: dailyLimit,
+                period: period,
                 messageUnitsConsumed: messageUnitsConsumed,
                 isLargeContext: isLargeContext,
                 totalPayloadChars: totalPayloadChars,
@@ -309,13 +319,15 @@ final class AIService {
                 throw AIServiceError.invalidResponse
             }
             
+            let period = (data["period"] as? String).flatMap(AIQuotaPeriod.init) ?? .daily
             KBLog.ai.kbInfo("fetchUsage succeeded usageToday=\(usageToday) dailyLimit=\(dailyLimit) familyId=\(familyId)")
             await AIUsageStore.shared.apply(usageToday: usageToday, dailyLimit: dailyLimit)
 
             return AIResponse(
                 reply: "",
                 usageToday: usageToday,
-                dailyLimit: dailyLimit
+                dailyLimit: dailyLimit,
+                period: period
             )
             
         } catch let error as NSError {
@@ -347,8 +359,10 @@ final class AIService {
         familyId: String
     ) async throws -> TravelSuggestionsResponse {
         await KBSubscriptionManager.shared.loadPlan()
-        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
-            throw AIServiceError.rateLimitReached("Piano Pro o Max richiesto per i suggerimenti AI.")
+        guard KBSubscriptionManager.shared.isAIAccessible else {
+            throw AIServiceError.rateLimitReached(
+                "Hai esaurito i messaggi AI gratuiti del piano Free. Passa a Pro per i suggerimenti AI."
+            )
         }
         guard AISettings.shared.isEnabled else {
             throw AIServiceError.notEnabled
@@ -394,10 +408,10 @@ final class AIService {
     func generateTravelPlan(_ request: TravelPlanRequest, familyId: String) async throws -> TravelPlanResponse {
         // Allinea il piano con Firestore (planOverride / families.plan) prima del gate client.
         await KBSubscriptionManager.shared.loadPlan()
-        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
-            KBLog.ai.kbInfo("generateTravelPlan blocked: plan does not include AI")
+        guard KBSubscriptionManager.shared.isAIAccessible else {
+            KBLog.ai.kbInfo("generateTravelPlan blocked: free plan AI bonus exhausted")
             throw AIServiceError.rateLimitReached(
-                "Piano Pro o Max richiesto. Verifica planOverride su families/\(familyId) in Firebase."
+                "Hai esaurito i messaggi AI gratuiti del piano Free. Passa a Pro per pianificare il viaggio con l'AI."
             )
         }
         guard AISettings.shared.isEnabled else {

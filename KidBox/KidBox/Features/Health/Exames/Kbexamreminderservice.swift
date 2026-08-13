@@ -145,7 +145,7 @@ final class KBExamReminderService {
     ) {
         // ── Contenuto notifica ──
         let content       = UNMutableNotificationContent()
-        content.title     = "Promemoria esame 🩺"
+        content.title     = String(localized: "Promemoria esame 🩺")
         let fmt           = DateFormatter()
         fmt.locale        = kbDeviceLocale()
         fmt.dateFormat    = "HH:mm"
@@ -162,8 +162,8 @@ final class KBExamReminderService {
         }
         
         content.body = examName.isEmpty
-        ? "Oggi alle \(displayTime) \(childName) ha un esame."
-        : "Oggi alle \(displayTime) \(childName) ha l'esame \"\(examName)\"."
+        ? String(format: String(localized: "Oggi alle %@ %@ ha un esame."), displayTime, childName)
+        : String(format: String(localized: "Oggi alle %@ %@ ha l'esame \"%@\"."), displayTime, childName, examName)
         content.sound     = .default
         content.userInfo  = [
             "type":     "exam_reminder",

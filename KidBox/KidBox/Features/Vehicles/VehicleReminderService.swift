@@ -9,11 +9,12 @@ import UserNotifications
 /// Notifiche locali ricorrenti (stesso giorno ogni anno) per le scadenze veicolo in Garage.
 ///
 /// Strategia:
-/// - Identificativi deterministici `vehicle.<vehicleId>.<kind>.<slot>` (`due` | `week`) così
+/// - Identificativi deterministici `vehicle.<vehicleId>.<kind>.offset<giorni>` così
 ///   aggiornare/cancellare è idempotente.
 /// - `UNCalendarNotificationTrigger` con `repeats: true` su mese/giorno/ora (09:00) per
 ///   ricorrenza annuale (allineata al calendario utente).
-/// - Due slot per scadenza: giorno della scadenza e 7 giorni prima.
+/// - Fino a 3 avvisi per scadenza, scelti dall'utente tra: giorno stesso, 2 giorni prima,
+///   1 settimana prima (`KBVehicle.reminderOffsetsJson`).
 @MainActor
 final class VehicleReminderService {
 
@@ -47,59 +48,53 @@ final class VehicleReminderService {
 
         let calendar = Calendar.current
         let label = vehicle.name
+        let offsets = VehicleReminderOffsets.decode(json: vehicle.reminderOffsetsJson)
 
-        let specs: [(key: String, dueTitle: String, weekTitle: String, date: Date?)] = [
-            ("insurance", "Assicurazione", "Assicurazione (tra 7 giorni)", vehicle.insuranceExpiryDate),
-            ("revision", "Revisione", "Revisione (tra 7 giorni)", vehicle.revisionExpiryDate),
-            ("tax", "Bollo", "Bollo (tra 7 giorni)", vehicle.taxExpiryDate),
-            ("service", "Tagliando", "Tagliando (tra 7 giorni)", vehicle.nextServiceDate),
+        let specs: [(key: String, title: String, date: Date?)] = [
+            ("insurance", String(localized: "Assicurazione"), vehicle.insuranceExpiryDate),
+            ("revision", String(localized: "Revisione"), vehicle.revisionExpiryDate),
+            ("tax", String(localized: "Bollo"), vehicle.taxExpiryDate),
+            ("service", String(localized: "Prossimo tagliando"), vehicle.nextServiceDate),
         ]
 
         for spec in specs {
             guard let deadline = spec.date else { continue }
             let startOfDeadline = calendar.startOfDay(for: deadline)
-            guard let weekBefore = calendar.date(byAdding: .day, value: -7, to: startOfDeadline) else { continue }
 
-            let dueDay = calendar.dateComponents([.month, .day], from: startOfDeadline)
-            var dueComps = DateComponents()
-            dueComps.month = dueDay.month
-            dueComps.day = dueDay.day
-            dueComps.hour = 9
-            dueComps.minute = 0
+            for days in offsets.offsets(forKind: spec.key) {
+                guard let fireDay = calendar.date(byAdding: .day, value: -days, to: startOfDeadline) else { continue }
+                let dayComps = calendar.dateComponents([.month, .day], from: fireDay)
+                var comps = DateComponents()
+                comps.month = dayComps.month
+                comps.day = dayComps.day
+                comps.hour = 9
+                comps.minute = 0
 
-            let weekDay = calendar.dateComponents([.month, .day], from: weekBefore)
-            var weekComps = DateComponents()
-            weekComps.month = weekDay.month
-            weekComps.day = weekDay.day
-            weekComps.hour = 9
-            weekComps.minute = 0
-
-            await scheduleOne(
-                identifier: "vehicle.\(vehicle.id).\(spec.key).due",
-                title: "\(spec.dueTitle): \(label)",
-                body: "Scadenza oggi — tocca in Garage.",
-                familyId: vehicle.familyId,
-                vehicleId: vehicle.id,
-                kind: spec.key,
-                slot: "due",
-                components: dueComps,
-                repeats: true
-            )
-            await scheduleOne(
-                identifier: "vehicle.\(vehicle.id).\(spec.key).week",
-                title: "\(spec.weekTitle): \(label)",
-                body: "Tra una settimana — Garage.",
-                familyId: vehicle.familyId,
-                vehicleId: vehicle.id,
-                kind: spec.key,
-                slot: "week",
-                components: weekComps,
-                repeats: true
-            )
+                await scheduleOne(
+                    identifier: "vehicle.\(vehicle.id).\(spec.key).offset\(days)",
+                    title: "\(String(localized: "Promemoria")): \(spec.title): \(label)",
+                    body: Self.offsetBody(days: days),
+                    familyId: vehicle.familyId,
+                    vehicleId: vehicle.id,
+                    kind: spec.key,
+                    slot: "offset\(days)",
+                    components: comps,
+                    repeats: true
+                )
+            }
         }
     }
 
     // MARK: - Private
+
+    private static func offsetBody(days: Int) -> String {
+        switch days {
+        case 0: return String(localized: "Scade oggi — tocca in Garage.")
+        case 2: return String(localized: "Scade tra 2 giorni — Garage.")
+        case 7: return String(localized: "Scade tra una settimana — Garage.")
+        default: return String(localized: "Scade tra una settimana — Garage.")
+        }
+    }
 
     private static func idPrefix(vehicleId: String) -> String { "vehicle.\(vehicleId)." }
 

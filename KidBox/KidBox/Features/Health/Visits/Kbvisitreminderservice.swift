@@ -53,7 +53,7 @@ final class KBVisitReminderService {
             case .authorized, .provisional:
                 self.doSchedule(
                     identifier: self.visitReminderId(for: visitId),
-                    title:      "Visita domani 🏥",
+                    title:      String(localized: "Visita domani 🏥"),
                     body:       self.body(reason: reason, childName: childName, date: date),
                     date:       date,
                     userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
@@ -64,7 +64,7 @@ final class KBVisitReminderService {
                     guard granted else { DispatchQueue.main.async { completion(false) }; return }
                     self.doSchedule(
                         identifier: self.visitReminderId(for: visitId),
-                        title:      "Visita domani 🏥",
+                        title:      String(localized: "Visita domani 🏥"),
                         body:       self.body(reason: reason, childName: childName, date: date),
                         date:       date,
                         userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
@@ -96,7 +96,7 @@ final class KBVisitReminderService {
             case .authorized, .provisional:
                 self.doSchedule(
                     identifier: self.nextVisitReminderId(for: visitId),
-                    title:      "Visita domani 🏥",
+                    title:      String(localized: "Visita domani 🏥"),
                     body:       self.body(reason: reason, childName: childName, date: date),
                     date:       date,
                     userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
@@ -107,7 +107,7 @@ final class KBVisitReminderService {
                     guard granted else { DispatchQueue.main.async { completion(false) }; return }
                     self.doSchedule(
                         identifier: self.nextVisitReminderId(for: visitId),
-                        title:      "Visita domani 🏥",
+                        title:      String(localized: "Visita domani 🏥"),
                         body:       self.body(reason: reason, childName: childName, date: date),
                         date:       date,
                         userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
@@ -181,14 +181,14 @@ final class KBVisitReminderService {
     // MARK: - Helpers
     
     private func body(reason: String, childName: String, date: Date) -> String {
-        let name = childName.isEmpty ? "il bambino" : childName
+        let name = childName.isEmpty ? String(localized: "il bambino") : childName
         let fmt = DateFormatter()
         fmt.locale = kbDeviceLocale()
         fmt.dateFormat = "HH:mm"
         let timeStr = fmt.string(from: date)
         return reason.isEmpty
-        ? "Domani alle \(timeStr) c'è una visita medica per \(name)."
-        : "Domani alle \(timeStr) c'è \"\(reason)\" per \(name)."
+        ? String(format: String(localized: "Domani alle %@ c'è una visita medica per %@."), timeStr, name)
+        : String(format: String(localized: "Domani alle %@ c'è \"%@\" per %@."), timeStr, reason, name)
     }
     
     private func userInfo(type: String, familyId: String, childId: String, visitId: String) -> [String: String] {

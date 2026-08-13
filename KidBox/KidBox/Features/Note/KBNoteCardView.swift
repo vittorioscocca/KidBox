@@ -82,15 +82,20 @@ struct KBNoteCardView: View {
     private func rebuildPreview(from htmlOrPlain: String) async {
         let trimmed = htmlOrPlain.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { previewPlain = "Nessun contenuto"; return }
-        if !trimmed.contains("<") { previewPlain = trimmed; return }
-        let result: String = await Task.detached(priority: .utility) {
-            await htmlOrPlain.htmlToPlainTextHeavy()
-        }.value
-        let clean = result
+        if !trimmed.contains("<") { previewPlain = String(trimmed.prefix(previewLimit)); return }
+        // ⚠️ Niente più parser HTML di NSAttributedString su un Task.detached:
+        //    è basato su WebKit, va usato solo dal main thread ed era il costo
+        //    dominante nello scorrere l'elenco note. Qui serve una riga di
+        //    anteprima, quindi tagliamo l'HTML in ingresso e togliamo i tag.
+        let clean = NoteHtmlSanitizer.plainText(from: htmlOrPlain, maxInputLength: 1_500)
             .replacingOccurrences(of: "\u{00a0}", with: " ")
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        previewPlain = clean.isEmpty ? "Nessun contenuto" : clean
+        previewPlain = clean.isEmpty ? "Nessun contenuto" : String(clean.prefix(previewLimit))
     }
+
+    /// L'anteprima è su una riga sola: oltre questa lunghezza è testo scartato.
+    private var previewLimit: Int { 160 }
     
     private func highlightedText(_ input: String) -> AttributedString {
         var attributed = AttributedString(input)
@@ -114,19 +119,5 @@ struct KBNoteCardView: View {
         if !name.isEmpty { return name }
         let email = (m.email ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return email.isEmpty ? "" : email
-    }
-}
-
-private extension String {
-    func htmlToPlainTextHeavy() -> String {
-        guard let data = self.data(using: .utf8) else { return self }
-        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.html,
-            .characterEncoding: String.Encoding.utf8.rawValue
-        ]
-        if let attr = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
-            return attr.string
-        }
-        return self
     }
 }

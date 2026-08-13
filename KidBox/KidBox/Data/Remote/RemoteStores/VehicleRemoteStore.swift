@@ -36,6 +36,7 @@ struct VehicleRemoteDTO {
     let createdBy: String?
     let updatedBy: String?
     let reminderEnabled: Bool
+    let reminderOffsetsJson: String?
 }
 
 enum VehicleRemoteChange {
@@ -62,6 +63,21 @@ final class VehicleRemoteStore {
             .collection("vehicles")
     }
 
+    /// Firestore restituisce numeri come `NSNumber` dentro gli array della mappa `reminderOffsets`.
+    private static func parseReminderOffsetsMap(_ raw: Any?) -> [String: [Int]]? {
+        guard let map = raw as? [String: Any] else { return nil }
+        var result: [String: [Int]] = [:]
+        for (key, value) in map {
+            guard let array = value as? [Any] else { continue }
+            result[key] = array.compactMap { entry in
+                if let i = entry as? Int { return i }
+                if let n = entry as? NSNumber { return n.intValue }
+                return nil
+            }
+        }
+        return result
+    }
+
     // MARK: - Upsert
 
     func upsert(item: KBVehicle) async throws {
@@ -77,6 +93,7 @@ final class VehicleRemoteStore {
             "name": item.name,
             "isDeleted": false,
             "reminderEnabled": item.reminderEnabled,
+            "reminderOffsets": VehicleReminderOffsets.decode(json: item.reminderOffsetsJson).firestoreMap,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp()
         ]
@@ -189,7 +206,10 @@ final class VehicleRemoteStore {
                         updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue(),
                         createdBy: d["createdBy"] as? String,
                         updatedBy: d["updatedBy"] as? String,
-                        reminderEnabled: d["reminderEnabled"] as? Bool ?? false
+                        reminderEnabled: d["reminderEnabled"] as? Bool ?? false,
+                        reminderOffsetsJson: VehicleReminderOffsets(
+                            firestoreMap: Self.parseReminderOffsetsMap(d["reminderOffsets"])
+                        ).encoded()
                     )
 
                     switch diff.type {

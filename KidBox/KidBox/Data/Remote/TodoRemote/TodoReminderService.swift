@@ -47,7 +47,7 @@ enum TodoReminderService {
         
         let id = "todo.reminder.\(todoId)"   // stabile: 1 notifica per todo
         let content = UNMutableNotificationContent()
-        content.title = "⏰ Promemoria"
+        content.title = String(localized: "⏰ Promemoria")
         content.body  = title
         content.sound = UNNotificationSound.default
         // ── Payload completo per il deep link ──────────────────────────────

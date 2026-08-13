@@ -244,6 +244,7 @@ extension SyncCenter {
                         existing.photoURL = dto.photoURL
                         existing.isDeleted = false
                         existing.reminderEnabled = dto.reminderEnabled
+                        existing.reminderOffsetsJson = dto.reminderOffsetsJson
                         existing.updatedAt = remoteTs
                         if let ub = dto.updatedBy, !ub.isEmpty { existing.updatedBy = ub }
                         if let cb = dto.createdBy, !cb.isEmpty { existing.createdBy = cb }
@@ -281,7 +282,8 @@ extension SyncCenter {
                             createdBy: dto.createdBy ?? "",
                             updatedBy: dto.updatedBy ?? "",
                             reminderEnabled: dto.reminderEnabled,
-                            reminderId: nil
+                            reminderId: nil,
+                            reminderOffsetsJson: dto.reminderOffsetsJson
                         )
                         row.syncState = .synced
                         modelContext.insert(row)

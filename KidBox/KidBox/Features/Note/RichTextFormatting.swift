@@ -14,6 +14,12 @@ final class NoteRichTextStore: ObservableObject {
     weak var textView: UITextView?
     let toolbarModel = RichTextToolbarModel()
 
+    /// Installata da `RichTextView.Coordinator`: forza la serializzazione HTML
+    /// pendente (che è debounced) e restituisce l'HTML aggiornato, se cambiato.
+    /// Va chiamata prima di salvare, altrimenti gli ultimi caratteri digitati
+    /// potrebbero non essere ancora nel binding.
+    var flushPendingHTML: (() -> String?)?
+
     func execute(_ cmd: RichTextCommand) {
         guard let tv = textView else { return }
         RichTextFormatter.toggle(cmd, in: tv)
@@ -63,7 +69,12 @@ final class NoteRichTextStore: ObservableObject {
 
         if sel.length > 0, attr.length > 0 {
             let loc = max(0, min(sel.location, attr.length - 1))
-            let len = max(0, min(sel.length, attr.length - loc))
+            // Lo stato della toolbar viene ricalcolato a ogni cambio di selezione:
+            // su un "seleziona tutto" in una nota lunga scansionare l'intero
+            // documento (×4 attributi, a ogni spostamento delle maniglie) rendeva
+            // la selezione a scatti. Un campione iniziale è sufficiente.
+            let maxScan = 2_000
+            let len = max(0, min(min(sel.length, maxScan), attr.length - loc))
             let range = NSRange(location: loc, length: len)
             model.isBold          = hasTrait(.traitBold,   in: range)
             model.isItalic        = hasTrait(.traitItalic, in: range)
@@ -282,8 +293,10 @@ final class RichTextFormatter {
             ps.headIndent          = max(0, ps.headIndent          + (delta > 0 ? step : -step))
             text.addAttribute(.paragraphStyle, value: ps, range: pr)
         }
+        let offset = tv.contentOffset
         tv.textStorage.setAttributedString(text)
         tv.selectedRange = sel
+        restoreScroll(offset, in: tv)
     }
     
     // MARK: - Exclusive list toggle
@@ -433,8 +446,10 @@ final class RichTextFormatter {
             if safePr.length > 0 { ms.addAttribute(.paragraphStyle, value: ps, range: safePr) }
         }
         
+        let offset = tv.contentOffset
         tv.textStorage.setAttributedString(ms)
         tv.selectedRange = NSRange(location: max(0, min(sel.location, ms.length)), length: 0)
+        restoreScroll(offset, in: tv)
     }
     
     // MARK: - Empty-editor fast path
@@ -494,8 +509,10 @@ final class RichTextFormatter {
         }
 
         ms.insert(insertion, at: caret)
+        let offset = tv.contentOffset
         tv.textStorage.setAttributedString(ms)
         tv.selectedRange = NSRange(location: caret + insertion.length, length: 0)
+        restoreScroll(offset, in: tv)
 
         // Typing attributes per il testo che l'utente scriverà adesso:
         //  - font "normale" (non il 24pt del cerchio checklist)
@@ -518,23 +535,31 @@ final class RichTextFormatter {
     
     @discardableResult
     static func handleChecklistTap(at point: CGPoint, in tv: UITextView) -> Bool {
-        let lm  = tv.layoutManager
-        let tc  = tv.textContainer
+        // ⚠️⚠️ NON leggere `tv.layoutManager` qui (né altrove su questa text view).
+        //     Su iOS 16+ UITextView usa TextKit 2, ma il solo *accesso* alla
+        //     proprietà legacy `layoutManager` la fa ricadere in modo permanente
+        //     in "TextKit 1 compatibility mode": UIKit ributta via il layout e lo
+        //     rifà con il motore vecchio. Siccome questo metodo è agganciato a un
+        //     tap gesture su tutta la text view, bastava toccare un punto
+        //     qualsiasi della nota per far collassare `contentSize` (misurato:
+        //     6773 → 2216 pt) e con essa la corsa dello scroll, in modo definitivo.
+        //     Le API UITextInput qui sotto fanno la stessa cosa senza legarsi
+        //     a un motore di layout.
         let ins = tv.textContainerInset
-        let adj = CGPoint(x: point.x - ins.left, y: point.y - ins.top)
         // Salviamo il cursore attuale per ripristinarlo: `setAttributedString`
         // resetta sempre la selezione (tipicamente a 0), e l'utente vede il
         // caret "saltare" accanto al cerchio appena tappato.
         let previousSelection = tv.selectedRange
 
         // ✅ Pre-filtro veloce: il cerchio non può stare oltre 40pt dal margine sinistro
-        guard adj.x < 40 else { return false }
-        
-        var frac: CGFloat = 0
-        let charIdx = lm.characterIndex(for: adj, in: tc, fractionOfDistanceBetweenInsertionPoints: &frac)
+        guard point.x - ins.left < 40 else { return false }
+
+        // Indice del carattere toccato (coordinate della text view).
+        guard let tapPosition = tv.closestPosition(to: point) else { return false }
+        let charIdx = tv.offset(from: tv.beginningOfDocument, to: tapPosition)
         let full = tv.attributedText ?? NSAttributedString()
         guard full.length > 0, charIdx < full.length else { return false }
-        
+
         let ns   = full.string as NSString
         let para = ns.paragraphRange(for: NSRange(location: charIdx, length: 0))
         var line = ns.substring(with: para)
@@ -548,12 +573,13 @@ final class RichTextFormatter {
         //    e accetta il tap solo se il punto è dentro quella zona (+ 6pt padding).
         let circleIdx = para.location
         guard circleIdx < full.length else { return false }
-        let glyphRange = lm.glyphRange(forCharacterRange: NSRange(location: circleIdx, length: 1),
-                                       actualCharacterRange: nil)
-        let glyphRect  = lm.boundingRect(forGlyphRange: glyphRange, in: tc)
-        // Offset dal textContainerInset già sottratto in adj
-        let hitRect    = glyphRect.insetBy(dx: -8, dy: -6)
-        guard hitRect.contains(adj) else { return false }
+        guard let circleStart = tv.position(from: tv.beginningOfDocument, offset: circleIdx),
+              let circleEnd   = tv.position(from: circleStart, offset: 1),
+              let circleRange = tv.textRange(from: circleStart, to: circleEnd)
+        else { return false }
+        // `firstRect(for:)` è già in coordinate della text view, come `point`.
+        let hitRect = tv.firstRect(for: circleRange).insetBy(dx: -8, dy: -6)
+        guard hitRect.contains(point) else { return false }
         
         let ms    = NSMutableAttributedString(attributedString: full)
         let start = para.location
@@ -596,6 +622,7 @@ final class RichTextFormatter {
             }
         }
         
+        let offset = tv.contentOffset
         tv.textStorage.setAttributedString(ms)
         // Ripristina il cursore dove era prima del tap: il tap sul cerchio
         // non deve muovere la selezione né far "lampeggiare" il caret
@@ -603,6 +630,9 @@ final class RichTextFormatter {
         let clampedLoc = max(0, min(previousSelection.location, ms.length))
         let clampedLen = max(0, min(previousSelection.length, ms.length - clampedLoc))
         tv.selectedRange = NSRange(location: clampedLoc, length: clampedLen)
+        // …e nemmeno lo scroll: spuntare una voce a metà lista non deve
+        // riportare la nota in cima.
+        restoreScroll(offset, in: tv)
         return true
     }
     
@@ -639,8 +669,25 @@ final class RichTextFormatter {
     }
     
     private static func apply(_ text: NSMutableAttributedString, to tv: UITextView, selection: NSRange) {
+        // `setAttributedString` rimpiazza tutto il contenuto e azzera il
+        // contentOffset: senza questo, applicare un grassetto a metà di una nota
+        // lunga riportava l'utente in cima.
+        let offset = tv.contentOffset
         tv.textStorage.setAttributedString(text)
         tv.selectedRange = selection
+        restoreScroll(offset, in: tv)
+    }
+
+    /// Rimette lo scroll dov'era, clampato ai limiti attuali del contenuto.
+    static func restoreScroll(_ offset: CGPoint, in tv: UITextView) {
+        tv.layoutIfNeeded()
+        let minY = -tv.adjustedContentInset.top
+        let maxY = max(minY, tv.contentSize.height
+                       + tv.adjustedContentInset.bottom
+                       - tv.bounds.height)
+        let y = min(max(offset.y, minY), maxY)
+        guard abs(y - tv.contentOffset.y) > 0.5 else { return }
+        tv.setContentOffset(CGPoint(x: offset.x, y: y), animated: false)
     }
     
     // MARK: - List utility

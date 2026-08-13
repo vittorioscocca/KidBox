@@ -509,12 +509,10 @@ struct ProfileView: View {
                             Text(subscriptionManager.currentPlan.storageLabel + " storage")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            if subscriptionManager.currentPlan.includesAI {
-                                Text("·").foregroundStyle(.secondary)
-                                Text("\(subscriptionManager.currentPlan.aiDailyLimit) msg AI/giorno")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+                            Text("·").foregroundStyle(.secondary)
+                            Text(subscriptionManager.currentPlan.aiQuotaLabel)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     

@@ -66,6 +66,39 @@ service cloud.firestore {
       return isOwner(familyId) || isMember(familyId);
     }
 
+    // ── PIANO: scrivibile SOLO lato server ─────────────────
+    // Prima il client scriveva da sé `plan` dopo l'acquisto e le rules glielo
+    // permettevano: bastava una scrittura per regalarsi Pro/Max senza pagare.
+    // Ora l'unica via è la callable `validatePurchase`, che verifica la ricevuta,
+    // e `setFamilyPlanOverride` per la console admin. Entrambe usano l'Admin SDK,
+    // che NON attraversa queste rules — quindi continuano a funzionare.
+    function planFields() {
+      return ['plan', 'planOverride', 'planUpdatedAt', 'planExpiresAt',
+              'planSource', 'planVerifiedBy', 'planOverrideNote',
+              'planOverrideSetAt', 'planOverrideSetBy'];
+    }
+
+    // Su create non esiste `resource`: si guardano le chiavi in arrivo.
+    function createsNoPlanField() {
+      return !request.resource.data.keys().hasAny(planFields());
+    }
+
+    // Su update conta solo ciò che cambia: gli altri campi restano modificabili.
+    function keepsPlanFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(planFields());
+    }
+
+    // Numero di famiglie già possedute dall'utente.
+    // La fonte è `user_quotas/{uid}`, mantenuto SOLO dall'Admin SDK (trigger
+    // onFamilyCreatedQuota/onFamilyDeletedQuota): non può stare su `users/{uid}`,
+    // che l'utente può riscrivere a piacere e falsificherebbe il limite.
+    // Documento assente = 0, così gli account creati prima del limite non si bloccano.
+    function ownedFamilyCount() {
+      return exists(/databases/$(database)/documents/user_quotas/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/user_quotas/$(request.auth.uid)).data.get('ownedFamilies', 0)
+        : 0;
+    }
+
     // ── ADMIN: lettura globale, nessuna scrittura ──────────
     match /{document=**} {
       allow read:  if isAdmin();
@@ -74,7 +107,11 @@ service cloud.firestore {
 
     // ── USERS ──────────────────────────────────────────────
     match /users/{uid} {
-      allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      allow read, delete: if isSignedIn() && request.auth.uid == uid;
+      // `users/{uid}.plan` è il fallback letto dal server per le quote:
+      // se restasse scrivibile, basterebbe scriverlo per ottenere Max.
+      allow create: if isSignedIn() && request.auth.uid == uid && createsNoPlanField();
+      allow update: if isSignedIn() && request.auth.uid == uid && keepsPlanFields();
 
       match /memberships/{familyId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
@@ -90,12 +127,25 @@ service cloud.firestore {
       }
     }
 
+    // Contatore famiglie possedute: l'utente può leggere il proprio (per mostrare
+    // il limite in UI), ma la scrittura è riservata all'Admin SDK, che ignora le rules.
+    match /user_quotas/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     // ── FAMILIES ───────────────────────────────────────────
     match /families/{familyId} {
+      // Massimo 2 famiglie create per account.
+      // `createsNoPlanField()` impedisce di nascere già Pro/Max: senza quel
+      // controllo bastava creare una famiglia con `plan: "max"` per aggirare tutto.
       allow create: if isSignedIn()
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid
+        && ownedFamilyCount() < 2
+        && createsNoPlanField();
 
-      allow read, update, delete: if isMemberOrOwner(familyId);
+      allow read, delete: if isMemberOrOwner(familyId);
+      allow update: if isMemberOrOwner(familyId) && keepsPlanFields();
 
       match /members/{uid} {
         allow create, update, delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
@@ -142,7 +192,15 @@ service cloud.firestore {
 
       match /{subpath=**} {
         allow read: if isMemberOrOwner(familyId);
+        // `subpath.size() > 0` è una protezione, non una formalità: questo
+        // wildcard combacia ANCHE con il documento famiglia stesso (subpath
+        // vuoto). Le rules sono in OR, quindi senza questo guard la sua
+        // `allow write` scavalcherebbe `keepsPlanFields()` e si tornerebbe a
+        // poter scrivere `plan` a mano. Finora a salvarci era solo l'errore di
+        // valutazione di `subpath[0]` su un path vuoto: meglio essere espliciti.
+        // `subpath` è un Path, che non espone size(): si passa dalla stringa.
         allow write: if isMemberOrOwner(familyId)
+          && string(subpath).size() > 0
           && subpath[0] != 'geofences'
           && subpath[0] != 'geofenceEvents';
       }

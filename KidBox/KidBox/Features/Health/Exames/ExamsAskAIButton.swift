@@ -51,7 +51,7 @@ struct ExamsAskAIButton: View {
     
     private func handleTap() {
         guard !isEmpty else { return }
-        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             showUpgrade = true
             return
         }

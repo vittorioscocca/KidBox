@@ -489,7 +489,7 @@ struct ClinicalRecordView: View {
     private func refreshContent() async {
         guard !isRefreshing else { return }
         isRefreshing = true
-        let useAI = AISettings.shared.isEnabled && KBSubscriptionManager.shared.currentPlan.includesAI
+        let useAI = AISettings.shared.isEnabled && KBSubscriptionManager.shared.isAIAccessible
         pendingAIUnits = nil
         lastAIUsage = nil
 

@@ -66,7 +66,7 @@ enum ClinicalRecordAISynthesizer {
         healthContext: String
     ) async throws -> (report: ClinicalRecordReport, usage: ClinicalRecordAIUsageInfo?) {
         guard AISettings.shared.isEnabled else { return (nativeReport, nil) }
-        guard KBSubscriptionManager.shared.currentPlan.includesAI else { return (nativeReport, nil) }
+        guard KBSubscriptionManager.shared.isAIAccessible else { return (nativeReport, nil) }
 
         let estimate = estimatePayload(nativeReport: nativeReport, healthContext: healthContext)
         if estimate.totalChars > AIAskAIPayload.absoluteMaxChars {

@@ -164,27 +164,59 @@ final class HeroImageLoader: ObservableObject {
         guard let url else { return }
         
         task = Task {
-            do {
-                KBLog.sync.kbDebug("HeroImageLoader: loading from \(url.absoluteString)")
-                let (data, response) = try await URLSession.shared.data(from: url)
-                
-                if Task.isCancelled { return }
-                
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                KBLog.sync.kbDebug("HeroImageLoader: received \(data.count) bytes, status=\(statusCode)")
-                
-                image = UIImage(data: data)
-                
-                if image == nil {
-                    KBLog.sync.kbError("HeroImageLoader: UIImage(data:) returned nil despite \(data.count) bytes")
-                } else {
-                    KBLog.sync.kbInfo("HeroImageLoader: image loaded successfully")
+            // Un solo ritentativo: "network connection lost" e i timeout sono
+            // glitch transitori tipici del passaggio Wi-Fi/cellulare, non
+            // guasti veri — al secondo tentativo la hero si carica.
+            for attempt in 0...1 {
+                do {
+                    KBLog.sync.kbDebug("HeroImageLoader: loading from \(url.absoluteString)")
+                    let (data, response) = try await URLSession.shared.data(from: url)
+
+                    if Task.isCancelled { return }
+
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    KBLog.sync.kbDebug("HeroImageLoader: received \(data.count) bytes, status=\(statusCode)")
+
+                    image = UIImage(data: data)
+
+                    if image == nil {
+                        KBLog.sync.kbError("HeroImageLoader: UIImage(data:) returned nil despite \(data.count) bytes")
+                    } else {
+                        KBLog.sync.kbInfo("HeroImageLoader: image loaded successfully")
+                    }
+                    return
+
+                } catch {
+                    if Task.isCancelled { return }
+
+                    if Self.isTransientNetworkError(error) {
+                        if attempt == 0 {
+                            KBLog.sync.kbDebug("HeroImageLoader: transient network error, retrying: \(error.localizedDescription)")
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                            continue
+                        }
+                        // Esaurito il ritentativo resta un problema di rete
+                        // dell'utente, non un difetto dell'app: warning, così
+                        // non finisce tra i casi critici in console.
+                        KBLog.sync.kbWarning("HeroImageLoader: network unavailable: \(error.localizedDescription)")
+                    } else {
+                        KBLog.sync.kbError("HeroImageLoader error: \(error.localizedDescription)")
+                    }
+                    return
                 }
-                
-            } catch {
-                if Task.isCancelled { return }
-                KBLog.sync.kbError("HeroImageLoader error: \(error.localizedDescription)")
             }
         }
+    }
+
+    private static func isTransientNetworkError(_ error: Error) -> Bool {
+        let ns = error as NSError
+        guard ns.domain == NSURLErrorDomain else { return false }
+        return [
+            NSURLErrorNetworkConnectionLost,
+            NSURLErrorNotConnectedToInternet,
+            NSURLErrorTimedOut,
+            NSURLErrorCannotConnectToHost,
+            NSURLErrorDNSLookupFailed,
+        ].contains(ns.code)
     }
 }

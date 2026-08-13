@@ -20,7 +20,7 @@ struct TravelProposalView: View {
     @State private var selectedStop: TravelItineraryStopContext?
     @State private var showRegenerateError = false
 
-    private var aiAvailable: Bool { subscriptionManager.currentPlan.includesAI }
+    private var aiAvailable: Bool { subscriptionManager.isAIAccessible }
     private var hasProposalContent: Bool {
         vm.proposalPlan != nil
             || !(vm.proposalNarrative ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

@@ -23,6 +23,16 @@ import FirebaseFunctions
 import UserNotifications
 import Combine
 
+// MARK: - AI quota period
+
+/// Periodo su cui si resetta la quota messaggi AI condivisa dalla famiglia.
+/// `daily` (Pro/Max) si resetta ogni giorno; `lifetime` (Free) è un bonus
+/// una tantum che non si resetta mai.
+enum AIQuotaPeriod: String {
+    case daily
+    case lifetime
+}
+
 // MARK: - Plan
 
 enum KBPlan: String, CaseIterable {
@@ -56,16 +66,32 @@ enum KBPlan: String, CaseIterable {
         }
     }
     
-    /// Messaggi AI al giorno per famiglia (condivisi tra tutti i membri)
-    var aiDailyLimit: Int {
+    /// Messaggi AI per famiglia nel periodo di quota (condivisi tra tutti i membri).
+    /// Free = 5 a vita (una tantum, non si rinnova), Pro = 30/giorno, Max = 100/giorno.
+    var aiMessageLimit: Int {
         switch self {
-        case .free: return 0
+        case .free: return 5
         case .pro:  return 30
         case .max:  return 100
         }
     }
-    
-    var includesAI: Bool { self != .free }
+
+    /// Periodo su cui si resetta la quota AI: a vita (una tantum) su Free, giornaliero su Pro/Max.
+    var aiQuotaPeriod: AIQuotaPeriod {
+        self == .free ? .lifetime : .daily
+    }
+
+    /// Etichetta quota AI da mostrare in UI, es. "5 msg AI una tantum" o "30 msg AI/giorno".
+    var aiQuotaLabel: String {
+        if aiQuotaPeriod == .lifetime {
+            let format = NSLocalizedString(
+                "%d msg AI una tantum",
+                comment: "AI quota label, one-time free bonus (%d = message count)"
+            )
+            return String(format: format, aiMessageLimit)
+        }
+        return "\(aiMessageLimit) msg AI/giorno"
+    }
     
     var storageLabel: String { storageQuota.formattedFileSize }
     
@@ -115,29 +141,86 @@ final class KBSubscriptionManager: ObservableObject {
     /// `true` finché `loadPlan()` non ha determinato il ruolo (evita flash UI da non-owner).
     /// Solo l'owner famiglia può acquistare/riscattare piani Pro/Max.
     @Published private(set) var isFamilyOwner: Bool = true
-    
+
+    /// true = la famiglia Free ha esaurito il bonus una tantum di `KBPlan.aiMessageLimit`
+    /// messaggi. Su Pro/Max resta sempre false: la loro quota è giornaliera e si
+    /// rinnova da sola, quindi non deve mai bloccare l'ingresso in UI.
+    @Published private(set) var aiAccessBlocked: Bool = false
+
+    /// true = l'assistente AI è utilizzabile ORA dalla famiglia corrente,
+    /// tenendo conto anche dell'esaurimento del bonus una tantum su Free.
+    var isAIAccessible: Bool { !aiAccessBlocked }
+
     /// true = abbonamento attivo ma cancellato (non si rinnoverà)
     var isCancelledButActive: Bool {
         currentPlan != .free && !subscriptionWillRenew && subscriptionExpirationDate != nil
     }
-    
+
     /// Impostato da AppCoordinator al momento del login / cambio famiglia.
     /// Usato per leggere `planOverride` da Firestore.
     var currentFamilyId: String? = nil
-    
-    
+
+
     // MARK: - Private
-    
+
     private let db        = Firestore.firestore()
     private let functions = Functions.functions(region: "europe-west1")
     private var listenerTask: Task<Void, Never>?
-    
+    private var aiUsageObserver: NSObjectProtocol?
+
     private init() {
         startTransactionListener()
+        observeAIUsageChanges()
     }
-    
+
     deinit {
         listenerTask?.cancel()
+        if let aiUsageObserver {
+            NotificationCenter.default.removeObserver(aiUsageObserver)
+        }
+    }
+
+    // MARK: - AI quota status
+
+    /// Ogni chiamata AI aggiorna `AIUsageStore` (vedi `AIService.swift`): intercettiamo
+    /// il notification così `aiAccessBlocked` riflette subito l'esaurimento del bonus
+    /// Free, senza aspettare il prossimo `loadPlan()`.
+    private func observeAIUsageChanges() {
+        aiUsageObserver = NotificationCenter.default.addObserver(
+            forName: .aiUsageDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let usageToday = notification.userInfo?["usageToday"] as? Int,
+                  let dailyLimit = notification.userInfo?["dailyLimit"] as? Int else { return }
+            self.applyAIQuotaStatus(usageToday: usageToday, limit: dailyLimit)
+        }
+    }
+
+    private func applyAIQuotaStatus(usageToday: Int, limit: Int) {
+        guard currentPlan == .free else {
+            aiAccessBlocked = false
+            return
+        }
+        aiAccessBlocked = limit > 0 && usageToday >= limit
+    }
+
+    /// Interroga `getAIUsage` per sapere se la famiglia Free ha già esaurito il bonus.
+    /// Su Pro/Max non serve: la loro quota giornaliera non blocca mai l'ingresso in UI.
+    private func refreshAIQuotaStatus(familyId: String) async {
+        guard currentPlan == .free, !familyId.isEmpty else {
+            aiAccessBlocked = false
+            return
+        }
+        do {
+            let usage = try await AIService.shared.fetchUsage()
+            applyAIQuotaStatus(usageToday: usage.usageToday, limit: usage.dailyLimit)
+        } catch {
+            // Fail-open: non blocchiamo l'UI per un errore di rete: il backend
+            // resta comunque l'ultima parola quando l'utente invia davvero un messaggio.
+            KBLog.app.kbError("SubscriptionManager: refreshAIQuotaStatus failed \(error.localizedDescription)")
+        }
     }
     
     // MARK: - Load plan from Firestore
@@ -214,6 +297,10 @@ final class KBSubscriptionManager: ObservableObject {
         // Se l'abbonamento è scaduto/cancellato, refreshCurrentEntitlement() aggiorna
         // currentPlan e, se siamo l'owner, riscrive "free" su Firestore in modo atomico.
         await refreshCurrentEntitlement()
+
+        // Su Free verifica se il bonus una tantum di messaggi AI è già esaurito,
+        // così l'ingresso in UI (bottoni AskAI, sezione AI, ecc.) è coerente da subito.
+        await refreshAIQuotaStatus(familyId: familyId)
     }
     
     func clearPurchaseError() {
@@ -224,6 +311,7 @@ final class KBSubscriptionManager: ObservableObject {
     func resetOnSignOut() {
         isFamilyOwner = false
         currentFamilyId = nil
+        aiAccessBlocked = false
     }
     
     // MARK: - Load StoreKit products
@@ -259,7 +347,9 @@ final class KBSubscriptionManager: ObservableObject {
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
-                await updatePlanOnServer(plan: plan, transactionId: String(transaction.id))
+                // Alla Cloud Function serve la ricevuta FIRMATA, non l'id transazione:
+                // è la firma di Apple a rendere la prova d'acquisto non falsificabile.
+                await syncPlanWithServer(jwsRepresentation: verification.jwsRepresentation)
                 await transaction.finish()
             case .userCancelled:
                 break
@@ -341,44 +431,50 @@ final class KBSubscriptionManager: ObservableObject {
         return plan
     }
     
-    /// Scrive il piano aggiornato su Firestore (users/{uid}.plan).
-    /// In produzione sostituire con una Cloud Function che verifica il receipt lato server.
-    private func updatePlanOnServer(plan: KBPlan, transactionId: String) async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+    /// Invia la ricevuta firmata alla Cloud Function `validatePurchase`, che la
+    /// verifica con Apple e scrive il piano lato server.
+    ///
+    /// Il client NON scrive più `plan` su Firestore: quelle scritture erano
+    /// consentite dalle rules, quindi chiunque poteva regalarsi Pro/Max. Ora
+    /// l'unica fonte di verità è la ricevuta verificata dal server.
+    private func syncPlanWithServer(jwsRepresentation: String) async {
+        guard Auth.auth().currentUser != nil else { return }
         if await loadPlanOverride() != nil {
-            KBLog.app.kbDebug("SubscriptionManager: skip updatePlanOnServer — override amministrativo attivo")
+            KBLog.app.kbDebug("SubscriptionManager: skip validatePurchase — override amministrativo attivo")
             return
         }
         let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
         let familyId = sharedDefaults?.string(forKey: "activeFamilyId") ?? ""
-        
+        guard !familyId.isEmpty else {
+            KBLog.app.kbError("SubscriptionManager: validatePurchase saltata — familyId mancante")
+            return
+        }
+
         do {
-            // 1. Scrivi su families/{familyId} — fonte di verità condivisa da tutti i membri
-            if !familyId.isEmpty {
-                try await db.collection("families").document(familyId).setData(
-                    ["plan": plan.rawValue, "planUpdatedAt": FieldValue.serverTimestamp()],
-                    merge: true
-                )
+            let result = try await functions.httpsCallable("validatePurchase").call([
+                "familyId": familyId,
+                "platform": "ios",
+                "signedTransaction": jwsRepresentation,
+            ])
+            guard let data = result.data as? [String: Any],
+                  let planRaw = data["plan"] as? String,
+                  let plan = KBPlan(rawValue: planRaw) else {
+                KBLog.app.kbError("SubscriptionManager: validatePurchase risposta non valida")
+                return
             }
-            
-            // 2. Scrivi su users/{uid} — retrocompatibilità e fallback Cloud Functions
-            try await db.collection("users").document(uid).setData(
-                ["plan": plan.rawValue, "planUpdatedAt": FieldValue.serverTimestamp()],
-                merge: true
-            )
-            
+
             currentPlan = plan
-            KBLog.app.kbInfo("SubscriptionManager: plan updated to \(plan.rawValue) txId=\(transactionId) familyId=\(familyId)")
-            
+            KBLog.app.kbInfo("SubscriptionManager: piano validato dal server → \(plan.rawValue) familyId=\(familyId)")
+
             // Aggiorna il gate con la nuova quota
-            if !familyId.isEmpty {
-                Task.detached(priority: .utility) {
-                    await StorageUsageViewModel.prefetchForGate(familyId: familyId)
-                }
+            Task.detached(priority: .utility) {
+                await StorageUsageViewModel.prefetchForGate(familyId: familyId)
             }
         } catch {
-            purchaseError = "Piano acquistato ma aggiornamento profilo fallito. Contatta il supporto."
-            KBLog.app.kbError("SubscriptionManager: updatePlan failed \(error.localizedDescription)")
+            // Il piano resta quello che il server già conosce: non forziamo nulla
+            // localmente, altrimenti la UI mostrerebbe un piano che il server non riconosce.
+            purchaseError = "Acquisto registrato ma non ancora verificato. Riapri l'app tra poco o contatta il supporto."
+            KBLog.app.kbError("SubscriptionManager: validatePurchase fallita \(error.localizedDescription)")
         }
     }
     
@@ -420,12 +516,9 @@ final class KBSubscriptionManager: ObservableObject {
             for await result in Transaction.updates {
                 guard let self else { break }
                 if case .verified(let tx) = result {
-                    let planRaw = tx.productID
-                        .replacingOccurrences(of: "it.vittorioscocca.kidbox.", with: "")
-                        .replacingOccurrences(of: ".monthly", with: "")
-                    if let plan = KBPlan(rawValue: planRaw) {
-                        await self.updatePlanOnServer(plan: plan, transactionId: String(tx.id))
-                    }
+                    // Il piano lo deduce il server dal product id dentro la ricevuta
+                    // firmata: non serve (né va) dedurlo qui dalla stringa.
+                    await self.syncPlanWithServer(jwsRepresentation: result.jwsRepresentation)
                     await tx.finish()
                 }
                 // FIX: rivaluta sempre willAutoRenew e expirationDate dopo ogni update,
@@ -460,7 +553,8 @@ final class KBSubscriptionManager: ObservableObject {
         }
         
         var activePlan: KBPlan?         = nil
-        var activeTransactionId: String = "entitlement-check"
+        /// Ricevuta firmata dell'abbonamento attivo: è ciò che il server verifica.
+        var activeJWS: String?          = nil
         var willRenew: Bool             = true
         var expiryDate: Date?           = nil
         
@@ -482,9 +576,9 @@ final class KBSubscriptionManager: ObservableObject {
             guard activePlan == nil || plan.storageQuota > (activePlan?.storageQuota ?? 0) else { continue }
             
             activePlan          = plan
-            activeTransactionId = String(tx.id)
+            activeJWS           = result.jwsRepresentation
             expiryDate          = tx.expirationDate
-            
+
             let groupID = tx.subscriptionGroupID ?? tx.productID
             if let statuses = try? await Product.SubscriptionInfo.status(for: groupID) {
                 let matched = statuses.first {
@@ -519,7 +613,7 @@ final class KBSubscriptionManager: ObservableObject {
             
             KBLog.app.kbInfo("SubscriptionManager: fallback latest tx found product=\(productId) plan=\(plan.rawValue)")
             activePlan          = plan
-            activeTransactionId = String(tx.id)
+            activeJWS           = result.jwsRepresentation
             expiryDate          = tx.expirationDate
             
             let groupID = tx.subscriptionGroupID ?? tx.productID
@@ -555,25 +649,20 @@ final class KBSubscriptionManager: ObservableObject {
             cancelExpirationNotification()
         }
         
-        // ── Scrittura Firestore ───────────────────────────────────────────────────
-        // FIX 1: solo l'owner scrive su Firestore — sia quando ha un abbonamento attivo
-        // che quando è scaduto/cancellato (activePlan == nil → scrive "free").
-        // I membri leggono sempre e solo da Firestore tramite syncPlanFromFirestore().
+        // ── Allineamento col server ───────────────────────────────────────────────
+        // Il client non scrive più il piano: manda la ricevuta firmata e il server
+        // decide. Rimandarla a ogni refresh tiene aggiornato anche `planExpiresAt`,
+        // che è ciò con cui il server fa scadere il piano da solo.
         //
-        // PRIMA: la scrittura era condizionata a (activePlan != nil), il che bloccava
-        // il downgrade a "free" su Firestore quando l'abbonamento scadeva, lasciando
-        // Firestore stale con "pro" e facendo rientrare l'utente come Pro al riavvio.
-        if isFamilyOwner {
-            // Siamo l'owner: scriviamo sempre il piano reale (attivo o "free")
-            guard planDidChange else { return }
-            await updatePlanOnServer(plan: resolvedPlan, transactionId: activeTransactionId)
-        } else {
-            // Siamo un membro: non scriviamo mai, allineiamo da Firestore
-            if planDidChange {
-                let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
-                    .string(forKey: "activeFamilyId") ?? ""
-                await syncPlanFromFirestore(uid: uid, familyId: familyId)
-            }
+        // Quando NON c'è un abbonamento attivo non c'è nulla da inviare: al
+        // declassamento pensa il server confrontando `planExpiresAt` con l'ora
+        // corrente, quindi qui aggiorniamo solo lo stato locale.
+        if let activeJWS {
+            await syncPlanWithServer(jwsRepresentation: activeJWS)
+        } else if planDidChange {
+            let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+                .string(forKey: "activeFamilyId") ?? ""
+            await syncPlanFromFirestore(uid: uid, familyId: familyId)
         }
     }
     

@@ -277,7 +277,7 @@ struct PlanningAIChatView: View {
     
     var body: some View {
         Group {
-            if !subscriptionManager.currentPlan.includesAI {
+            if !subscriptionManager.isAIAccessible {
                 // ── Piano Free: schermata locked ─────────────────────
                 aiLockedView
             } else if let vm {
@@ -307,7 +307,7 @@ struct PlanningAIChatView: View {
         // creare il ViewModel — con il solo `familyId` non si ri-eseguiva mai
         // e la chat restava sullo spinner.
         .task(id: "\(familyId)|\(subscriptionManager.currentPlan.rawValue)") {
-            guard subscriptionManager.currentPlan.includesAI else { return }
+            guard subscriptionManager.isAIAccessible else { return }
             guard !familyId.isEmpty else { return }
             guard vm == nil else { return }
             let newVM = PlanningAIChatViewModel(
@@ -374,7 +374,9 @@ struct PlanningAIChatView: View {
             VStack(spacing: 8) {
                 Text("Assistente AI")
                     .font(.title2.bold())
-                Text("Disponibile con i piani Pro e Max")
+                Text(KBSubscriptionManager.shared.currentPlan == .free
+                     ? "Hai usato i messaggi AI gratuiti del piano Free"
+                     : "Disponibile con i piani Pro e Max")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text("Passa a Pro per accedere all'assistente che conosce calendario, spesa, salute dei tuoi figli, animali, casa, garage e molto altro.")

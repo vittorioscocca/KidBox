@@ -110,4 +110,107 @@ enum NoteHtmlSanitizer {
     ) -> Range<String.Index>? {
         source.range(of: pattern, options: options)
     }
+
+    // MARK: - HTML → testo semplice
+    //
+    // ⚠️ Volutamente NON usa `NSAttributedString(data:options:)` con
+    //    `documentType: .html`: quel parser è basato su WebKit, è vincolato al
+    //    main thread (usarlo altrove può bloccare o crashare) e costa decine di
+    //    millisecondi per nota. Qui serve solo il testo, quindi basta togliere i
+    //    tag — è ~100× più veloce e utilizzabile ovunque.
+
+    /// Testo semplice estratto da un frammento HTML.
+    /// - Parameter maxInputLength: tronca l'input prima di elaborarlo (utile per
+    ///   le anteprime di lista, dove servono poche decine di caratteri).
+    static func plainText(from html: String, maxInputLength: Int = .max) -> String {
+        var s = maxInputLength < html.count ? String(html.prefix(maxInputLength)) : html
+        guard s.contains("<") || s.contains("&") else { return s }
+
+        s = s.replacingOccurrences(of: "<(script|style)[^>]*>[\\s\\S]*?</\\1>",
+                                   with: " ",
+                                   options: [.regularExpression, .caseInsensitive])
+        s = s.replacingOccurrences(of: "<br[^>]*>",
+                                   with: "\n",
+                                   options: [.regularExpression, .caseInsensitive])
+        s = s.replacingOccurrences(of: "</(p|div|li|tr|h[1-6]|blockquote)\\s*>",
+                                   with: "\n",
+                                   options: [.regularExpression, .caseInsensitive])
+        s = s.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression)
+        // Tag lasciato a metà da un troncamento dell'input.
+        s = s.replacingOccurrences(of: "<[^>]*$", with: "", options: .regularExpression)
+        return decodeEntities(s)
+    }
+
+    /// `true` se l'HTML non contiene alcun testo visibile.
+    /// Scansione a singolo passaggio con uscita anticipata: pensata per essere
+    /// chiamata a ogni ciclo di rendering di SwiftUI.
+    static func isBlank(_ html: String) -> Bool {
+        var iterator  = html.unicodeScalars.makeIterator()
+        var insideTag = false
+        let whitespace = CharacterSet.whitespacesAndNewlines
+
+        while let scalar = iterator.next() {
+            if insideTag {
+                if scalar == ">" { insideTag = false }
+                continue
+            }
+            switch scalar {
+            case "<":
+                insideTag = true
+            case "&":
+                // Entità: solo quelle "vuote" (spazi) non contano come contenuto.
+                var entity = ""
+                while let next = iterator.next(), next != ";", entity.unicodeScalars.count < 8 {
+                    entity.unicodeScalars.append(next)
+                }
+                switch entity.lowercased() {
+                case "nbsp", "#160", "#xa0", "ensp", "emsp", "thinsp": continue
+                default: return false
+                }
+            default:
+                if whitespace.contains(scalar) { continue }
+                return false
+            }
+        }
+        return true
+    }
+
+    private static func decodeEntities(_ input: String) -> String {
+        guard input.contains("&") else { return input }
+        var s = input
+        let named: [(String, String)] = [
+            ("&nbsp;", " "), ("&lt;", "<"), ("&gt;", ">"),
+            ("&quot;", "\""), ("&apos;", "'"), ("&#39;", "'")
+        ]
+        for (entity, replacement) in named {
+            s = s.replacingOccurrences(of: entity, with: replacement, options: .caseInsensitive)
+        }
+        s = decodeNumericEntities(s)
+        // Per ultimo, altrimenti "&amp;lt;" verrebbe decodificato due volte.
+        return s.replacingOccurrences(of: "&amp;", with: "&", options: .caseInsensitive)
+    }
+
+    private static func decodeNumericEntities(_ input: String) -> String {
+        guard input.contains("&#"),
+              let regex = try? NSRegularExpression(pattern: "&#(x?)([0-9a-fA-F]{1,6});")
+        else { return input }
+
+        let ns = input as NSString
+        var result = ""
+        var cursor = 0
+        for match in regex.matches(in: input, range: NSRange(location: 0, length: ns.length)) {
+            result += ns.substring(with: NSRange(location: cursor,
+                                                 length: match.range.location - cursor))
+            let isHex = ns.substring(with: match.range(at: 1)).lowercased() == "x"
+            let digits = ns.substring(with: match.range(at: 2))
+            if let value = UInt32(digits, radix: isHex ? 16 : 10),
+               let scalar = Unicode.Scalar(value) {
+                result.unicodeScalars.append(scalar)
+            }
+            cursor = match.range.location + match.range.length
+        }
+        guard cursor > 0 else { return input }
+        result += ns.substring(from: cursor)
+        return result
+    }
 }

@@ -103,7 +103,7 @@ extension SyncCenter {
                     let isPlaceholder = local.fileName.isEmpty && local.updatedAt == .distantPast
                     KBLog.sync.kbDebug("applyPhotosInbound: upsert id=\(dto.id) storagePath=\(dto.storagePath) thumbPresent=\(dto.thumbnailBase64 != nil) downloadURL=\(dto.downloadURL ?? "nil") isPlaceholder=\(isPlaceholder) remoteAt=\(remoteAt) localUpdatedAt=\(local.updatedAt)")
                     
-                    KBLog.sync.kbError("applyPhotosInbound: CHECK id=\(dto.id) isPlaceholder=\(isPlaceholder) remoteAt=\(remoteAt) localAt=\(local.updatedAt) dtoDuration=\(dto.videoDurationSeconds != nil ? String(dto.videoDurationSeconds!) : "nil") isVideo=\(local.isVideo)")
+                    KBLog.sync.kbDebug("applyPhotosInbound: CHECK id=\(dto.id) isPlaceholder=\(isPlaceholder) remoteAt=\(remoteAt) localAt=\(local.updatedAt) dtoDuration=\(dto.videoDurationSeconds != nil ? String(dto.videoDurationSeconds!) : "nil") isVideo=\(local.isVideo)")
                     if isPlaceholder || remoteAt >= local.updatedAt {
                         local.familyId        = dto.familyId
                         local.fileName        = dto.fileName
@@ -124,9 +124,9 @@ extension SyncCenter {
                         local.isDeleted       = false
                         local.syncState       = .synced
                         local.lastSyncError   = nil
-                        KBLog.sync.kbError("applyPhotosInbound: APPLIED id=\(dto.id) duration=\(local.videoDurationSeconds != nil ? String(local.videoDurationSeconds!) : "nil") isVideo=\(local.isVideo)")
+                        KBLog.sync.kbDebug("applyPhotosInbound: APPLIED id=\(dto.id) duration=\(local.videoDurationSeconds != nil ? String(local.videoDurationSeconds!) : "nil") isVideo=\(local.isVideo)")
                     } else {
-                        KBLog.sync.kbError("applyPhotosInbound: SKIPPED id=\(dto.id) remoteAt=\(remoteAt) localAt=\(local.updatedAt)")
+                        KBLog.sync.kbDebug("applyPhotosInbound: SKIPPED id=\(dto.id) remoteAt=\(remoteAt) localAt=\(local.updatedAt)")
                     }
                     
                 case .remove(let id):

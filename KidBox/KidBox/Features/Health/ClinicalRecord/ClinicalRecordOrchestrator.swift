@@ -138,7 +138,7 @@ enum ClinicalRecordOrchestrator {
         visits: [KBMedicalVisit],
         exams: [KBMedicalExam]
     ) -> (messageUnits: Int, isLargeContext: Bool)? {
-        guard AISettings.shared.isEnabled, KBSubscriptionManager.shared.currentPlan.includesAI else {
+        guard AISettings.shared.isEnabled, KBSubscriptionManager.shared.isAIAccessible else {
             return nil
         }
         let profile = fetchProfile(modelContext: modelContext, childId: childId)

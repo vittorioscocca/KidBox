@@ -35,6 +35,9 @@ struct NoteDetailView: View {
     // Stato locale — fonte di verità mentre la nota è aperta
     @State private var titleText: String   = ""
     @State private var bodyHTML:  String   = ""
+    /// Titolo così com'è stato caricato: baseline per distinguere una modifica
+    /// dell'utente da un semplice caricamento/refresh.
+    @State private var loadedTitle: String = ""
     @State private var isDirty            = false
     @State private var note: KBNote?      = nil
     @State private var bodyFocusTrigger: UUID? = nil
@@ -82,7 +85,11 @@ struct NoteDetailView: View {
                 .padding(.top, 12)
                 .padding(.leading, 8)
                 .fixedSize(horizontal: false, vertical: true)
-                .onChange(of: titleText) { isDirty = true }
+                // ⚠️ Confronto con il titolo caricato: `titleText` cambia anche
+                //    quando la nota viene letta da SwiftData (in `onAppear` e sui
+                //    refresh remoti). Marcarla "modificata" lì dentro faceva
+                //    risalvare — e risincronizzare — ogni nota solo per averla aperta.
+                .onChange(of: titleText) { if titleText != loadedTitle { isDirty = true } }
                 
                 // ── Corpo ─────────────────────────────────────────────────────
                 // ✅ La UITextView gestisce lo scroll internamente tramite contentInset.
@@ -90,11 +97,13 @@ struct NoteDetailView: View {
                 //    quando compare la tastiera — altrimenti la tv perde altezza e non scrolla.
                 RichTextView(html: $bodyHTML, placeholder: NSLocalizedString("Scrivi qui…", comment: "Note body placeholder"),
                              focusTrigger: bodyFocusTrigger,
-                             store: richTextStore)
+                             store: richTextStore,
+                             // La serializzazione HTML è debounced: il flag "modificato"
+                             // arriva comunque subito, al primo tasto.
+                             onEdit: { if !isDirty { isDirty = true } })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 12)
                 .ignoresSafeArea(.keyboard)
-                .onChange(of: bodyHTML) { isDirty = true }
             }
             .padding(.horizontal, 16)
         }
@@ -114,7 +123,7 @@ struct NoteDetailView: View {
         }
         #if targetEnvironment(macCatalyst)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            MacNoteFormattingBar(store: richTextStore)
+            MacNoteFormattingBar(store: richTextStore, model: richTextStore.toolbarModel)
         }
         #endif
         .onAppear  {
@@ -147,8 +156,9 @@ struct NoteDetailView: View {
                 pendingRemoteBody  = n.body
             } else {
                 // Nessuna modifica locale: aggiorna l'UI con il remoto
-                titleText = n.title
-                bodyHTML  = n.body.normalizedKidBoxChecklistGlyphs()
+                titleText   = n.title
+                loadedTitle = n.title
+                bodyHTML    = n.body.normalizedKidBoxChecklistGlyphs()
                 selectedVisibilityScope = KBVisibilityScope.normalized(n.visibilityScope)
                 selectedVisibilityMemberIds = Set(n.visibilityMemberIds ?? [])
                 note      = n
@@ -162,8 +172,9 @@ struct NoteDetailView: View {
                         Image(systemName: "square.and.arrow.up")
                     }
                     .buttonStyle(.plain)
-                    .disabled(titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-                              bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    // ⚠️ Niente conversione HTML completa qui: questo predicato
+                    //    viene valutato a ogni ricalcolo del body.
+                    .disabled(isNoteEmpty)
 
                     if isDirty {
                         Button { saveAndDismiss() } label: {
@@ -211,6 +222,11 @@ struct NoteDetailView: View {
         Auth.auth().currentUser?.uid
     }
 
+    private var isNoteEmpty: Bool {
+        titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && NoteHtmlSanitizer.isBlank(bodyHTML)
+    }
+
     private var canEditVisibility: Bool {
         guard let uid = currentUid else { return false }
         guard let n = note else { return true }
@@ -247,9 +263,10 @@ struct NoteDetailView: View {
     
     private func loadOrCreate() {
         if let existing = queriedNotes.first {
-            note      = existing
-            titleText = existing.title
-            bodyHTML  = existing.body.normalizedKidBoxChecklistGlyphs()
+            note        = existing
+            titleText   = existing.title
+            loadedTitle = existing.title
+            bodyHTML    = existing.body.normalizedKidBoxChecklistGlyphs()
             selectedVisibilityScope = KBVisibilityScope.normalized(existing.visibilityScope)
             selectedVisibilityMemberIds = Set(existing.visibilityMemberIds ?? [])
             isDirty   = false
@@ -271,9 +288,10 @@ struct NoteDetailView: View {
         modelContext.insert(n)
         try? modelContext.save()
         
-        note      = n
-        titleText = ""
-        bodyHTML  = ""
+        note        = n
+        titleText   = ""
+        loadedTitle = ""
+        bodyHTML    = ""
         selectedVisibilityScope = KBVisibilityScope.normalized(n.visibilityScope)
         selectedVisibilityMemberIds = Set(n.visibilityMemberIds ?? [])
         isDirty   = false
@@ -283,7 +301,9 @@ struct NoteDetailView: View {
     
     private func presentShareSheet() {
         let title = titleText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let body  = bodyHTML.htmlToPlainText().trimmingCharacters(in: .whitespacesAndNewlines)
+        let latestBody = richTextStore.flushPendingHTML?() ?? bodyHTML
+        let body  = NoteHtmlSanitizer.plainText(from: latestBody)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let text  = [title, body].filter { !$0.isEmpty }.joined(separator: "\n\n")
         guard !text.isEmpty else { return }
         // Evita di pubblicare stato durante un ciclo di update della view (es. sync in uscita).
@@ -293,33 +313,37 @@ struct NoteDetailView: View {
     }
 
     private func handleDisappear() {
+        // ⚠️ Il flush va fatto *sincronamente*, finché la UITextView è ancora viva:
+        //    la serializzazione HTML è debounced, quindi gli ultimi caratteri
+        //    digitati potrebbero non essere ancora arrivati in `bodyHTML`.
+        let latestBody = richTextStore.flushPendingHTML?() ?? bodyHTML
         guard isDirty else { return }
-        let shouldSave = true
         Task { @MainActor in
-            guard shouldSave, isDirty else { return }
-            commitSave()
+            guard isDirty else { return }
+            commitSave(bodyOverride: latestBody)
         }
         // Non applicare il pendingRemote: se l'utente ha salvato,
         // il sync aggiornerà Firestore con la versione corretta.
         // Se non ha salvato (back senza salvare), le modifiche vengono scartate
         // e la prossima apertura rilegge da SwiftData (che ha già il remoto).
     }
-    
+
     private func saveAndDismiss() {
         commitSave()
         hideKeyboard()
     }
-    
+
     // MARK: - Save
-    
-    private func commitSave() {
+
+    private func commitSave(bodyOverride: String? = nil) {
         guard let note else { return }
+        let latestBody = bodyOverride ?? richTextStore.flushPendingHTML?() ?? bodyHTML
         guard isDirty else { return }
-        
+
         let uid = Auth.auth().currentUser?.uid ?? "local"
-        
+
         note.title         = titleText
-        note.body          = bodyHTML
+        note.body          = latestBody
         note.updatedAt     = .now
         note.updatedBy     = uid
         note.updatedByName = ""
@@ -338,6 +362,7 @@ struct NoteDetailView: View {
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         
         isDirty            = false
+        loadedTitle        = titleText
         pendingRemoteTitle = nil
         pendingRemoteBody  = nil
     }
@@ -354,6 +379,10 @@ struct NoteDetailView: View {
 /// Barra di formattazione fissa in basso per Mac Catalyst (sostituisce inputAccessoryView).
 private struct MacNoteFormattingBar: View {
     @ObservedObject var store: NoteRichTextStore
+    /// ⚠️ Osservato esplicitamente: `store.toolbarModel` è un ObservableObject
+    ///    annidato, i suoi @Published non propagano l'invalidazione allo store —
+    ///    la barra restava con lo stato attivo/inattivo congelato.
+    @ObservedObject var model: RichTextToolbarModel
     @State private var showStylePanel = false
 
     var body: some View {
@@ -376,27 +405,27 @@ private struct MacNoteFormattingBar: View {
                 .popover(isPresented: $showStylePanel, arrowEdge: .bottom) {
                     macStylePanel
                 }
-                .onChange(of: store.toolbarModel.isExpanded) { _, newVal in
+                .onChange(of: model.isExpanded) { _, newVal in
                     if !newVal { showStylePanel = false }
                 }
 
                 sep
 
                 // Formattazione inline
-                fmtIcon("bold",          on: store.toolbarModel.isBold)          { store.execute(.bold) }
-                fmtIcon("italic",        on: store.toolbarModel.isItalic)        { store.execute(.italic) }
-                fmtIcon("underline",     on: store.toolbarModel.isUnderline)     { store.execute(.underline) }
-                fmtIcon("strikethrough", on: store.toolbarModel.isStrikethrough) { store.execute(.strikethrough) }
+                fmtIcon("bold",          on: model.isBold)          { store.execute(.bold) }
+                fmtIcon("italic",        on: model.isItalic)        { store.execute(.italic) }
+                fmtIcon("underline",     on: model.isUnderline)     { store.execute(.underline) }
+                fmtIcon("strikethrough", on: model.isStrikethrough) { store.execute(.strikethrough) }
 
                 sep
 
                 // Liste
                 fmtIcon("list.bullet",
-                         on: store.toolbarModel.activeList == .bullet)    { store.execute(.bullet) }
+                         on: model.activeList == .bullet)    { store.execute(.bullet) }
                 fmtIcon("list.number",
-                         on: store.toolbarModel.activeList == .number)    { store.execute(.number) }
-                fmtIcon(store.toolbarModel.activeList == .checklist ? "checkmark.circle.fill" : "checkmark.circle",
-                         on: store.toolbarModel.activeList == .checklist) { store.execute(.checklist) }
+                         on: model.activeList == .number)    { store.execute(.number) }
+                fmtIcon(model.activeList == .checklist ? "checkmark.circle.fill" : "checkmark.circle",
+                         on: model.activeList == .checklist) { store.execute(.checklist) }
 
                 sep
 
@@ -490,16 +519,6 @@ private struct ShareSheet: UIViewControllerRepresentable {
 // MARK: - String extension
 
 private extension String {
-    func htmlToPlainText() -> String {
-        guard self.contains("<"), let data = self.data(using: .utf8) else { return self }
-        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.html,
-            .characterEncoding: String.Encoding.utf8.rawValue
-        ]
-        return (try? NSAttributedString(data: data, options: options,
-                                        documentAttributes: nil))?.string ?? self
-    }
-    
     /// Allinea i marker checklist vecchi (Android ☐/☑) a quelli usati su iOS (○/◉).
     func normalizedKidBoxChecklistGlyphs() -> String {
         self

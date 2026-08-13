@@ -626,6 +626,9 @@
         }
       }
     },
+    "%d msg AI una tantum" : {
+      "comment" : "AI quota label, one-time free bonus (%d = message count)"
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -776,6 +779,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld sur %lld terminées"
+          }
+        }
+      }
+    },
+    "%lld di %lld messaggi gratuiti usati" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld di %2$lld messaggi gratuiti usati"
           }
         }
       }
@@ -1638,6 +1651,28 @@
         }
       }
     },
+    "⏰ Promemoria" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⏰ Reminder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⏰ Recordatorio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⏰ Rappel"
+          }
+        }
+      }
+    },
     "⚠️ Il file conterrà tutte le tue password in chiaro. Conservalo solo in luoghi affidabili." : {
       "localizations" : {
         "en" : {
@@ -2014,6 +2049,28 @@
         }
       }
     },
+    "1 settimana prima" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 week before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 semana antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 semaine avant"
+          }
+        }
+      }
+    },
     "1–2 attività al giorno" : {
       "comment" : "Travel pace detail",
       "localizations" : {
@@ -2033,6 +2090,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 à 2 activités par jour"
+          }
+        }
+      }
+    },
+    "2 giorni prima" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 days before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 días antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 jours avant"
           }
         }
       }
@@ -4162,6 +4241,7 @@
       }
     },
     "AI non inclusa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6733,6 +6813,28 @@
         }
       }
     },
+    "Avvisi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alertes"
+          }
+        }
+      }
+    },
     "Avviso" : {
       "localizations" : {
         "en" : {
@@ -7045,6 +7147,12 @@
           }
         }
       }
+    },
+    "Bonus AI esaurito" : {
+
+    },
+    "Bonus AI gratuito" : {
+
     },
     "Boutique, mercati, design" : {
       "comment" : "Travel style detail",
@@ -13361,6 +13469,72 @@
         }
       }
     },
+    "Domani alle %@ c'è \"%@\" per %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow at %@ there's \"%@\" for %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana a las %@ hay \"%@\" para %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demain à %@ il y a « %@ » pour %@."
+          }
+        }
+      }
+    },
+    "Domani alle %@ c'è una visita medica per %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow at %@ there's a medical visit for %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana a las %@ hay una visita médica para %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demain à %@ il y a une visite médicale pour %@."
+          }
+        }
+      }
+    },
+    "Domani alle 9:00: vaccino «%@» per %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow at 9:00 AM: vaccine «%@» for %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana a las 9:00: vacuna «%@» para %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demain à 9h00 : vaccin «%@» pour %@."
+          }
+        }
+      }
+    },
     "Domenica" : {
       "comment" : "Weekday",
       "localizations" : {
@@ -13424,6 +13598,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dosage"
+          }
+        }
+      }
+    },
+    "Dose %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosis %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose %@"
           }
         }
       }
@@ -18513,6 +18709,12 @@
         }
       }
     },
+    "Hai usato i %lld messaggi AI gratuiti del piano Free" : {
+
+    },
+    "Hai usato i messaggi AI gratuiti del piano Free" : {
+
+    },
     "Hai usato l'80% dello spazio. Passa a Pro per continuare." : {
       "localizations" : {
         "en" : {
@@ -18534,6 +18736,9 @@
           }
         }
       }
+    },
+    "Hai usato tutti i messaggi AI gratuiti inclusi nel piano Free. Passa a Pro per continuare a usare l'assistente." : {
+
     },
     "Health tracker" : {
       "localizations" : {
@@ -21498,6 +21703,7 @@
       }
     },
     "L'assistente AI è incluso nei piani Pro e Max. Passa a Pro per 20 messaggi al giorno per membro." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -23359,6 +23565,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Précision maximale (%lld messages)"
+          }
+        }
+      }
+    },
+    "Mattina" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morning"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mañana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matin"
           }
         }
       }
@@ -28016,6 +28244,28 @@
         }
       }
     },
+    "Notte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuit"
+          }
+        }
+      }
+    },
     "Numeri" : {
       "localizations" : {
         "en" : {
@@ -28937,6 +29187,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aujourd'hui"
+          }
+        }
+      }
+    },
+    "Oggi alle %@ %@ ha l'esame \"%@\"." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today at %@ %@ has the exam \"%@\"."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy a las %@ %@ tiene el examen \"%@\"."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd'hui à %@ %@ a l'examen « %@ »."
+          }
+        }
+      }
+    },
+    "Oggi alle %@ %@ ha un esame." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today at %@ %@ has an exam."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy a las %@ %@ tiene un examen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd'hui à %@ %@ a un examen."
           }
         }
       }
@@ -29960,6 +30254,7 @@
       }
     },
     "Passa a Pro per 20 messaggi AI al giorno per membro, o a Max per 100." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -29980,6 +30275,9 @@
           }
         }
       }
+    },
+    "Passa a Pro per 30 messaggi AI al giorno per famiglia, o a Max per 100." : {
+
     },
     "Passa a Pro per accedere all'assistente che conosce calendario, spesa, salute dei tuoi figli, animali, casa, garage e molto altro." : {
       "localizations" : {
@@ -31663,6 +31961,28 @@
         }
       }
     },
+    "Pranzo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lunch"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjeuner"
+          }
+        }
+      }
+    },
     "Preferita" : {
       "localizations" : {
         "en" : {
@@ -32618,6 +32938,28 @@
         }
       }
     },
+    "Promemoria esame 🩺" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exam reminder 🩺"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio de examen 🩺"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel d'examen 🩺"
+          }
+        }
+      }
+    },
     "Promemoria il giorno dell'esame" : {
       "localizations" : {
         "en" : {
@@ -32680,6 +33022,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rappel pour « %@ »"
+          }
+        }
+      }
+    },
+    "Promemoria vaccino" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaccine reminder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio de vacuna"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel de vaccin"
           }
         }
       }
@@ -36265,6 +36629,72 @@
         }
       }
     },
+    "Scade oggi — tocca in Garage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due today — tap Garage."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence hoy — toca Garage."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expire aujourd'hui — touchez Garage."
+          }
+        }
+      }
+    },
+    "Scade tra 2 giorni — Garage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due in 2 days — Garage."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence en 2 días — Garage."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expire dans 2 jours — Garage."
+          }
+        }
+      }
+    },
+    "Scade tra una settimana — Garage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due in a week — Garage."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vence en una semana — Garage."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expire dans une semaine — Garage."
+          }
+        }
+      }
+    },
     "Scadenza" : {
       "localizations" : {
         "en" : {
@@ -37809,6 +38239,7 @@
       }
     },
     "Senza AI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -37826,6 +38257,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sans IA"
+          }
+        }
+      }
+    },
+    "Sera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarde"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soir"
           }
         }
       }
@@ -39042,6 +39495,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Statut de la visite"
+          }
+        }
+      }
+    },
+    "Stesso giorno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mismo día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le jour même"
           }
         }
       }
@@ -43164,6 +43639,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visite de contrôle le %@"
+          }
+        }
+      }
+    },
+    "Visita domani 🏥" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visit tomorrow 🏥"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visita mañana 🏥"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visite demain 🏥"
           }
         }
       }

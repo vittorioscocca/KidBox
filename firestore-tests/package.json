@@ -1,0 +1,10 @@
+{
+  "name": "kidbox-firestore-rules-tests",
+  "private": true,
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project kidbox-rules-test \"node rules.test.js\""
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0"
+  }
+}

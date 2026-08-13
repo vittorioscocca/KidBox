@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
-const {onDocumentCreated, onDocumentWritten} = require("firebase-functions/v2/firestore");
+const {onDocumentCreated, onDocumentDeleted, onDocumentWritten} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
@@ -1354,7 +1354,6 @@ exports.notifyNewNote = onDocumentCreated(
 const {defineSecret} = require("firebase-functions/params");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const GOOGLE_PLACES_API_KEY = defineSecret("GOOGLE_PLACES_API_KEY");
-const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 /** Chat, note, todo e task non clinici. */
 const ANTHROPIC_MODEL_DEFAULT = "claude-haiku-4-5-20251001";
 const ANTHROPIC_INPUT_USD_PER_1M_HAIKU = 1.0;
@@ -1420,6 +1419,7 @@ const KB = 1024;
  */
 async function resolveFamilyPlanForQuotas(uid, familyId) {
   let plan = "free";
+  let expiredByDate = false;
   try {
     if (familyId) {
       const familySnap = await admin.firestore().collection("families").doc(familyId).get();
@@ -1427,13 +1427,30 @@ async function resolveFamilyPlanForQuotas(uid, familyId) {
         const d = familySnap.data() || {};
         const ov = d.planOverride;
         if (ov === "pro" || ov === "max") {
+          // L'override amministrativo dalla console non scade mai.
           plan = ov;
         } else {
           plan = d.plan || "free";
+          // Scadenza autorevole lato server: `planExpiresAt` è scritto solo da
+          // validatePurchase a partire dalla ricevuta verificata. Senza questo
+          // controllo un abbonamento scaduto resterebbe Pro per sempre, perché
+          // il client non può più declassarsi da solo scrivendo su Firestore.
+          // Campo assente = famiglia precedente a validatePurchase: non si tocca.
+          const expiresAt = d.planExpiresAt;
+          if (plan !== "free" && expiresAt && typeof expiresAt.toMillis === "function") {
+            if (expiresAt.toMillis() <= Date.now()) {
+              logger.info("Piano scaduto, declassato a free", {familyId, plan, expiresAt: expiresAt.toMillis()});
+              plan = "free";
+              expiredByDate = true;
+            }
+          }
         }
       }
     }
-    if (plan === "free" && uid) {
+    // Il fallback su users/{uid}.plan serve solo agli account precedenti alla
+    // fonte-di-verità sulla famiglia. Va saltato quando il piano è appena stato
+    // declassato per scadenza, altrimenti resusciterebbe l'abbonamento scaduto.
+    if (plan === "free" && uid && !expiredByDate) {
       const userSnap = await admin.firestore().collection("users").doc(uid).get();
       if (userSnap.exists) {
         plan = userSnap.data().plan || "free";
@@ -1457,24 +1474,54 @@ function storageQuotaBytesForPlan(plan) {
 }
 
 /**
- * Limite messaggi AI al giorno per famiglia (Pro = 30, Max = 100, Free = 0).
+ * Verifica che l'utente sia davvero membro della famiglia richiesta.
+ *
+ * CRITICO per le callable AI: il contatore quota è indicizzato su `familyId`,
+ * che arriva dal client. Senza questo controllo basterebbe cambiare la stringa
+ * a ogni chiamata per ottenere ogni volta un contatore vergine — cioè AI
+ * illimitata a spese nostre. Stesso pattern già usato da getStorageUsage.
+ * @param {string} uid
+ * @param {string} familyId
+ * @return {Promise<void>}
+ */
+async function assertFamilyMember(uid, familyId) {
+  const memberSnap = await admin.firestore()
+      .collection("families").doc(familyId)
+      .collection("members").doc(uid).get();
+  if (!memberSnap.exists) {
+    logger.warn("AI callable: familyId non appartenente all'utente", {uid, familyId});
+    throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+  }
+}
+
+/**
+ * Messaggi AI totali per famiglia sul piano Free: bonus UNA TANTUM, non si
+ * resetta mai (a differenza della quota giornaliera di Pro/Max). Una volta
+ * esauriti, la famiglia Free resta senza AI finché non passa a Pro/Max —
+ * esattamente come prima dell'introduzione di questo bonus.
+ */
+const AI_FREE_LIFETIME_LIMIT = 5;
+
+/**
+ * Quota messaggi AI per famiglia: Pro = 30/giorno, Max = 100/giorno,
+ * Free = 5 a vita, una tantum (nuovo: prima l'AI era del tutto assente sul piano Free).
  * Usa [resolveFamilyPlanForQuotas] così rispetta planOverride da console admin.
  * @param {string|null|undefined} uid
  * @param {string|null|undefined} familyId
- * @return {Promise<number>}
+ * @return {Promise<{period: "daily"|"lifetime", limit: number}>}
  */
-async function resolveAIDailyLimit(uid, familyId = null) {
+async function resolveAIQuota(uid, familyId = null) {
   try {
     const plan = await resolveFamilyPlanForQuotas(uid, familyId);
     switch (plan) {
-      case "pro": return 30;
-      case "max": return 100;
+      case "pro": return {period: "daily", limit: 30};
+      case "max": return {period: "daily", limit: 100};
       case "free":
-      default: return 0;
+      default: return {period: "lifetime", limit: AI_FREE_LIFETIME_LIMIT};
     }
   } catch (e) {
-    logger.warn("resolveAIDailyLimit failed, using default", {uid, familyId, error: e.message});
-    return 0;
+    logger.warn("resolveAIQuota failed, using default", {uid, familyId, error: e.message});
+    return {period: "lifetime", limit: AI_FREE_LIFETIME_LIMIT};
   }
 }
 
@@ -1622,39 +1669,58 @@ function messagesWithCacheBreakpoint(messages) {
 }
 
 /**
- * Checks the daily counter and increments it atomically.
+ * Checks the period counter and increments it atomically.
  * Il contatore è per famiglia (family_{familyId}) così tutti i membri
- * condividono il limite giornaliero del piano famiglia.
+ * condividono il limite del piano famiglia: giornaliero per Pro/Max (si
+ * resetta ogni giorno), a vita per Free (bonus una tantum su doc fisso
+ * "lifetime/free" — non è mai keyed su una data, quindi non si resetta mai).
  * @param {string} familyId
  * @param {string} uid
- * @param {number} limit
+ * @param {{period: "daily"|"lifetime", limit: number}} quota
  * @param {number} incrementBy messaggi da scalare (default 1; itinerario viaggio = 2 ogni 3 giorni)
- * @return {Promise<number>} nuovo totale giornaliero dopo l'incremento
+ * @return {Promise<number>} nuovo totale del periodo dopo l'incremento
  */
-async function checkAndIncrementAIUsage(familyId, uid, limit, incrementBy = 1) {
+async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
   const delta = Math.max(1, Math.floor(Number(incrementBy) || 1));
+  const {period, limit} = quota;
 
-  // Free = 0 messaggi → blocca subito senza toccare il contatore
   if (limit <= 0) {
     throw new HttpsError(
         "resource-exhausted",
-        "L'assistente AI è disponibile con i piani Pro e Max. Passa a Pro per 30 messaggi al giorno.",
+        "L'assistente AI non è disponibile per questo piano.",
     );
   }
 
-  const ref = admin.firestore()
+  const isLifetime = period === "lifetime";
+  const periodKey = isLifetime ? "free" : aiTodayKey();
+  const db = admin.firestore();
+  const ref = db
       .collection("ai_usage").doc(`family_${familyId}`)
-      .collection("daily").doc(aiTodayKey());
+      .collection(isLifetime ? "lifetime" : "daily").doc(periodKey);
 
-  return await admin.firestore().runTransaction(async (tx) => {
+  // Il bonus Free è tracciato anche per utente: chiunque può creare famiglie
+  // illimitate (firestore.rules), quindi il solo contatore per famiglia si
+  // aggirerebbe creandone una nuova ogni 5 messaggi. Con il contatore per uid
+  // il bonus resta 5 per persona a prescindere da quante famiglie apre.
+  const userRef = isLifetime ?
+    db.collection("ai_usage").doc(`user_${uid}`).collection("lifetime").doc("free") :
+    null;
+
+  return await db.runTransaction(async (tx) => {
+    // Firestore impone tutte le letture prima di qualsiasi scrittura.
     const snap = await tx.get(ref);
-    const current = snap.exists ? (snap.data().count || 0) : 0;
+    const userSnap = userRef ? await tx.get(userRef) : null;
+
+    const familyCount = snap.exists ? (snap.data().count || 0) : 0;
+    const userCount = userSnap && userSnap.exists ? (userSnap.data().count || 0) : 0;
+    // Sul bonus a vita vale il più alto dei due: esaurire l'uno o l'altro blocca.
+    const current = Math.max(familyCount, userCount);
 
     if (current + delta > limit) {
-      throw new HttpsError(
-          "resource-exhausted",
-          `La famiglia ha raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`,
-      );
+      const message = isLifetime ?
+        `Hai già usato tutti i ${limit} messaggi AI gratuiti del piano Free. Passa a Pro per continuare a usare l'assistente.` :
+        `La famiglia ha raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`;
+      throw new HttpsError("resource-exhausted", message);
     }
 
     tx.set(ref, {
@@ -1663,6 +1729,15 @@ async function checkAndIncrementAIUsage(familyId, uid, limit, incrementBy = 1) {
       familyId,
       lastUid: uid,
     }, {merge: true});
+
+    if (userRef) {
+      tx.set(userRef, {
+        count: admin.firestore.FieldValue.increment(delta),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        uid,
+        lastFamilyId: familyId,
+      }, {merge: true});
+    }
 
     return current + delta;
   });
@@ -1723,8 +1798,10 @@ exports.askAI = onCall(
         payloadUnits;
       const isLargeContext = messageUnits > 1;
 
-      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
-      const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, messageUnits);
+      await assertFamilyMember(uid, familyId);
+
+      const quota = await resolveAIQuota(uid, familyId);
+      const usageCount = await checkAndIncrementAIUsage(familyId, uid, quota, messageUnits);
 
       const anthropicModel = clinicalRecord ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
       const maxTokens = clinicalRecord ? CLINICAL_RECORD_MAX_TOKENS : CHAT_MAX_TOKENS;
@@ -1739,7 +1816,7 @@ exports.askAI = onCall(
         ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU;
 
       logger.info("askAI request", {
-        uid, familyId, usageCount, dailyLimit, msgCount: messages.length,
+        uid, familyId, usageCount, quota, msgCount: messages.length,
         totalChars, messageUnits, isLargeContext, clinicalRecord, anthropicModel,
       });
 
@@ -1870,7 +1947,8 @@ exports.askAI = onCall(
       return {
         reply,
         usageToday: usageCount,
-        dailyLimit,
+        dailyLimit: quota.limit,
+        period: quota.period,
         messageUnitsConsumed: messageUnits,
         isLargeContext,
         totalPayloadChars: totalChars,
@@ -2328,18 +2406,17 @@ exports.generateTravelPlan = onCall(
         throw new HttpsError("invalid-argument", "wizardData non valido: almeno una tappa richiesta.");
       }
 
-      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
-      if (dailyLimit === 0) {
-        throw new HttpsError("permission-denied", "AI not available on free plan");
-      }
+      await assertFamilyMember(uid, familyId);
+
+      const quota = await resolveAIQuota(uid, familyId);
       const plannedDayCount = plannedDayCountFromWizard(wizardData);
       const travelMessageCost = travelMessageCostForPlannedDays(plannedDayCount);
       const usageCount = await checkAndIncrementAIUsage(
-          familyId, uid, dailyLimit, travelMessageCost,
+          familyId, uid, quota, travelMessageCost,
       );
 
       logger.info("generateTravelPlan request", {
-        uid, familyId, usageCount, dailyLimit, tripName, plannedDayCount, travelMessageCost,
+        uid, familyId, usageCount, quota, tripName, plannedDayCount, travelMessageCost,
       });
 
       const apiKey = ANTHROPIC_API_KEY.value();
@@ -2412,7 +2489,8 @@ exports.generateTravelPlan = onCall(
         travelPlan,
         narrativeText,
         usageToday: usageCount,
-        dailyLimit,
+        dailyLimit: quota.limit,
+        period: quota.period,
         plannedDayCount,
         messageCost: travelMessageCost,
       };
@@ -2551,11 +2629,10 @@ exports.suggestTravelDestinations = onCall(
         throw new HttpsError("invalid-argument", "familyId è richiesto.");
       }
 
-      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
-      if (dailyLimit === 0) {
-        throw new HttpsError("permission-denied", "AI not available on free plan");
-      }
-      const usageCount = await checkAndIncrementAIUsage(familyId, uid, dailyLimit, 1);
+      await assertFamilyMember(uid, familyId);
+
+      const quota = await resolveAIQuota(uid, familyId);
+      const usageCount = await checkAndIncrementAIUsage(familyId, uid, quota, 1);
 
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
@@ -2609,7 +2686,8 @@ exports.suggestTravelDestinations = onCall(
           destinations: parsed.destinations,
           profileSummary: parsed.profileSummary,
           usageToday: usageCount,
-          dailyLimit,
+          dailyLimit: quota.limit,
+          period: quota.period,
         };
       } catch (e) {
         if (e instanceof HttpsError) throw e;
@@ -3441,15 +3519,31 @@ exports.getAIUsage = onCall(
         throw new HttpsError("invalid-argument", "familyId è richiesto.");
       }
 
-      const ref = admin.firestore()
+      await assertFamilyMember(uid, familyId);
+
+      const quota = await resolveAIQuota(uid, familyId);
+      const isLifetime = quota.period === "lifetime";
+      const periodKey = isLifetime ? "free" : aiTodayKey();
+      const db = admin.firestore();
+      const ref = db
           .collection("ai_usage").doc(`family_${familyId}`)
-          .collection("daily").doc(aiTodayKey());
+          .collection(isLifetime ? "lifetime" : "daily").doc(periodKey);
 
       const snap = await ref.get();
-      const count = snap.exists ? (snap.data().count || 0) : 0;
-      const dailyLimit = await resolveAIDailyLimit(uid, familyId);
+      const familyCount = snap.exists ? (snap.data().count || 0) : 0;
 
-      return {usageToday: count, dailyLimit};
+      // Allineato a checkAndIncrementAIUsage: sul bonus a vita conta il massimo
+      // tra contatore famiglia e contatore utente, così la UI blocca quando blocca il server.
+      let count = familyCount;
+      if (isLifetime) {
+        const userSnap = await db
+            .collection("ai_usage").doc(`user_${uid}`)
+            .collection("lifetime").doc("free").get();
+        const userCount = userSnap.exists ? (userSnap.data().count || 0) : 0;
+        count = Math.max(familyCount, userCount);
+      }
+
+      return {usageToday: count, dailyLimit: quota.limit, period: quota.period};
     },
 );
 
@@ -4157,6 +4251,185 @@ exports.deleteFamily = onCall(
     },
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ABBONAMENTI — validazione ricevute lato server
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Identità dedicata: nessuna chiave JSON, vedi purchases.js#googleAuth. */
+const PLAY_VALIDATOR_SERVICE_ACCOUNT =
+  "play-purchase-validator@kidbox-42cd7.iam.gserviceaccount.com";
+const {
+  verifyAppleTransaction,
+  subscriptionFromAppleTransaction,
+  verifyGooglePurchase,
+} = require("./purchases");
+
+/**
+ * Valida una prova d'acquisto e scrive il piano della famiglia.
+ *
+ * È l'UNICO percorso legittimo per impostare `plan`: il client non deve più
+ * scrivere quel campo su Firestore. Prima lo faceva, e le rules glielo
+ * consentivano — chiunque poteva quindi regalarsi Pro/Max con una scrittura.
+ *
+ * `planOverride` resta intoccato: è la leva amministrativa della console
+ * (setFamilyPlanOverride) e ha comunque la precedenza in lettura, quindi
+ * chi è stato promosso a mano non viene mai declassato da qui.
+ */
+exports.validatePurchase = onCall(
+    {
+      region: "europe-west1",
+      invoker: "public",
+      // Identità dedicata invece del default condiviso da tutte le altre
+      // function: solo questa può interrogare la Play Developer API, e solo
+      // lei va autorizzata in Play Console. Nessun secret da gestire.
+      serviceAccount: PLAY_VALIDATOR_SERVICE_ACCOUNT,
+      timeoutSeconds: 60,
+    },
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+
+      const {familyId, platform, signedTransaction, purchaseToken, productId} = request.data || {};
+      if (!familyId || typeof familyId !== "string") {
+        throw new HttpsError("invalid-argument", "familyId è richiesto.");
+      }
+      if (platform !== "ios" && platform !== "android") {
+        throw new HttpsError("invalid-argument", "platform deve essere 'ios' o 'android'.");
+      }
+
+      // Il piano è della famiglia: solo chi ne fa parte può cambiarlo.
+      await assertFamilyMember(uid, familyId);
+
+      let result;
+      try {
+        if (platform === "ios") {
+          const payload = await verifyAppleTransaction(signedTransaction);
+          result = subscriptionFromAppleTransaction(payload);
+          logger.info("validatePurchase: transazione Apple verificata", {
+            uid, familyId, productId: payload.productId,
+            environment: payload.verifiedEnvironment,
+            originalTransactionId: payload.originalTransactionId,
+            reason: result.reason,
+          });
+        } else {
+          if (!purchaseToken || typeof purchaseToken !== "string") {
+            throw new HttpsError("invalid-argument", "purchaseToken è richiesto su Android.");
+          }
+          result = await verifyGooglePurchase(purchaseToken, productId);
+          logger.info("validatePurchase: acquisto Google verificato", {
+            uid, familyId, productId, reason: result.reason,
+          });
+        }
+      } catch (e) {
+        if (e instanceof HttpsError) throw e;
+        // Una ricevuta non verificabile non concede nulla: nessun fallback permissivo.
+        logger.warn("validatePurchase: verifica fallita", {uid, familyId, platform, error: e.message});
+        throw new HttpsError("permission-denied", "Acquisto non verificabile.");
+      }
+
+      if (!result.plan || !result.isActive) {
+        logger.info("validatePurchase: abbonamento non attivo", {
+          uid, familyId, plan: result.plan, reason: result.reason,
+        });
+        throw new HttpsError(
+            "failed-precondition",
+            `Abbonamento non attivo (${result.reason}).`,
+        );
+      }
+
+      const db = admin.firestore();
+      const planPayload = {
+        plan: result.plan,
+        planUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        planSource: platform,
+        planExpiresAt: result.expiresAtMs ?
+          admin.firestore.Timestamp.fromMillis(result.expiresAtMs) :
+          null,
+        planVerifiedBy: uid,
+      };
+
+      await db.collection("families").doc(familyId).set(planPayload, {merge: true});
+      // Retrocompatibilità: resolveFamilyPlanForQuotas usa users/{uid}.plan come fallback.
+      await db.collection("users").doc(uid).set({
+        plan: result.plan,
+        planUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
+
+      logger.info("validatePurchase: piano aggiornato", {
+        uid, familyId, plan: result.plan, expiresAtMs: result.expiresAtMs,
+      });
+
+      return {
+        plan: result.plan,
+        isActive: true,
+        expiresAtMs: result.expiresAtMs,
+      };
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIMITE FAMIGLIE PER ACCOUNT
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Massimo numero di famiglie che un singolo account può creare. */
+const MAX_FAMILIES_PER_USER = 2;
+
+/**
+ * Ricalcola il numero di famiglie possedute da `ownerUid` e lo scrive in
+ * `user_quotas/{uid}`.
+ *
+ * Il contatore NON può vivere su `users/{uid}`: quel documento è scrivibile
+ * dall'utente stesso (firestore.rules), quindi un contatore lì sarebbe
+ * falsificabile e le rules non potrebbero fidarsene. `user_quotas` è invece
+ * scrivibile solo dall'Admin SDK.
+ *
+ * Ricalcola con una query invece di incrementare: è auto-riparante, quindi
+ * corregge da solo eventuali contatori disallineati o mai inizializzati
+ * (utenti già esistenti prima dell'introduzione del limite).
+ * @param {string|undefined|null} ownerUid
+ * @return {Promise<void>}
+ */
+async function recomputeOwnedFamilies(ownerUid) {
+  if (!ownerUid) return;
+  const db = admin.firestore();
+  try {
+    const snap = await db.collection("families")
+        .where("ownerUid", "==", ownerUid).get();
+    await db.collection("user_quotas").doc(ownerUid).set({
+      ownedFamilies: snap.size,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, {merge: true});
+    logger.info("recomputeOwnedFamilies", {ownerUid, ownedFamilies: snap.size});
+    // Le rules bloccano la creazione oltre il limite, ma sono valutate prima che
+    // questo trigger aggiorni il contatore: una raffica di richieste concorrenti
+    // può infilarsi nella finestra. Non cancelliamo nulla (sarebbe perdita di
+    // dati su un falso positivo), lo segnaliamo per un controllo manuale.
+    if (snap.size > MAX_FAMILIES_PER_USER) {
+      logger.warn("Limite famiglie superato — possibile abuso", {
+        ownerUid, ownedFamilies: snap.size, limit: MAX_FAMILIES_PER_USER,
+      });
+    }
+  } catch (e) {
+    logger.error("recomputeOwnedFamilies failed", {ownerUid, error: e.message});
+  }
+}
+
+exports.onFamilyCreatedQuota = onDocumentCreated(
+    {document: "families/{familyId}", region: "europe-west1"},
+    async (event) => {
+      await recomputeOwnedFamilies(event.data?.data()?.ownerUid);
+    },
+);
+
+exports.onFamilyDeletedQuota = onDocumentDeleted(
+    {document: "families/{familyId}", region: "europe-west1"},
+    async (event) => {
+      // Liberare lo slot alla cancellazione: il limite è "famiglie attive",
+      // non "famiglie mai create".
+      await recomputeOwnedFamilies(event.data?.data()?.ownerUid);
+    },
+);
+
 exports.setFamilyPlanOverride = onCall(
     {region: "europe-west1", invoker: "public"},
     async (request) => {
@@ -4634,67 +4907,22 @@ exports.notifyUpcomingWalletTickets = onSchedule(
     },
 );
 
-/**
- * @param {string} logs
- * @return {string}
- */
-function buildCrashLogAnalysisPrompt(logs) {
-  return `Sei un analizzatore di log per l'app KidBox Android.
-Analizza i log e rispondi SOLO con JSON valido:
-{
-  "hasIssues": true/false,
-  "issues": [
-    {
-      "type": "crash|error|malfunction|warning",
-      "severity": "critical|high|medium|low",
-      "category": "sync|auth|data|ui|ai|storage|navigation",
-      "affectedModule": "nome classe o funzione",
-      "summary": "descrizione breve max 120 caratteri in italiano",
-      "detail": "causa tecnica probabile",
-      "firstOccurrence": "timestamp",
-      "occurrences": numero
-    }
-  ]
-}
-Log: ${logs}`;
-}
-
+// Disattivata: l'analisi AI-assisted via Gemini richiedeva una API key a pagamento.
+// Risponde "nessun problema rilevato" senza mai chiamare l'API esterna, così eventuali
+// build client precedenti che la invocano ancora non generano alcuna spesa. Il rilevamento
+// crash resta gestito lato client via euristica locale sui marker di log.
 exports.analyzeLogs = onCall(
     {
       region: "europe-west1",
       invoker: "public",
-      secrets: [GEMINI_API_KEY],
-      timeoutSeconds: 120,
+      timeoutSeconds: 30,
     },
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) {
         throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
       }
-
-      const logs = request.data?.logs;
-      if (typeof logs !== "string" || logs.trim().length === 0) {
-        throw new HttpsError("invalid-argument", "logs è richiesto.");
-      }
-      if (logs.length > 200 * 1024) {
-        throw new HttpsError("invalid-argument", "logs troppo grande.");
-      }
-
-      const apiKey = GEMINI_API_KEY.value();
-      if (!apiKey) {
-        logger.error("analyzeLogs: GEMINI_API_KEY secret non configurato");
-        throw new HttpsError("failed-precondition", "Servizio analisi log non configurato.");
-      }
-
-      const {GoogleGenerativeAI} = require("@google/generative-ai");
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({model: "gemini-1.5-flash"});
-      const result = await model.generateContent(buildCrashLogAnalysisPrompt(logs));
-      const text = result?.response?.text?.() ?? "";
-      if (!text) {
-        throw new HttpsError("internal", "Risposta vuota dal modello.");
-      }
-      return text;
+      return JSON.stringify({hasIssues: false, issues: []});
     },
 );
 

@@ -70,7 +70,7 @@ struct AISettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Assistente AI")
                                 .font(.headline)
-                            Text(plan.includesAI ? "Incluso nel tuo piano \(plan.displayName)" : "Disponibile con Pro o Max")
+                            Text("Incluso nel tuo piano \(plan.displayName)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -83,8 +83,8 @@ struct AISettingsView: View {
                 .listRowBackground(cardBackground)
             }
             
-            // MARK: - Toggle (solo se piano include AI)
-            if plan.includesAI {
+            // MARK: - Toggle (solo se la famiglia può ancora usare l'AI)
+            if subscriptionManager.isAIAccessible {
                 Section {
                     Toggle(isOn: Binding(
                         get: { viewModel.aiEnabled },
@@ -99,14 +99,14 @@ struct AISettingsView: View {
                         Label("Attiva assistente AI", systemImage: "brain.head.profile")
                     }
                     .listRowBackground(cardBackground)
-                    
+
                     if let info = viewModel.infoText {
                         Text(info)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .listRowBackground(cardBackground)
                     }
-                    
+
                 } footer: {
                     Text("Puoi disattivarlo in qualsiasi momento. I dati inviati all'AI sono quelli che scegli di condividere, visita per visita.")
                         .font(.caption)
@@ -119,10 +119,10 @@ struct AISettingsView: View {
                         .listRowSeparator(.hidden)
                 }
             }
-            
-            // MARK: - Utilizzo oggi
-            if plan.includesAI && viewModel.aiEnabled {
-                Section("Utilizzo oggi") {
+
+            // MARK: - Utilizzo
+            if subscriptionManager.isAIAccessible && viewModel.aiEnabled {
+                Section(plan.aiQuotaPeriod == .lifetime ? "Bonus AI gratuito" : "Utilizzo oggi") {
                     if viewModel.loadingUsage {
                         HStack {
                             ProgressView().controlSize(.small)
@@ -132,7 +132,9 @@ struct AISettingsView: View {
                     } else if let usage = viewModel.usage {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("\(usage.usageToday) di \(plan.aiDailyLimit) messaggi usati oggi")
+                                Text(plan.aiQuotaPeriod == .lifetime
+                                     ? "\(usage.usageToday) di \(plan.aiMessageLimit) messaggi gratuiti usati"
+                                     : "\(usage.usageToday) di \(plan.aiMessageLimit) messaggi usati oggi")
                                     .font(.subheadline)
                                 Spacer()
                                 if usage.isNearLimit {
@@ -143,10 +145,10 @@ struct AISettingsView: View {
                             }
                             ProgressView(
                                 value: Double(usage.usageToday),
-                                total: Double(plan.aiDailyLimit)
+                                total: Double(plan.aiMessageLimit)
                             )
                             .tint(usage.isNearLimit ? .orange : .blue)
-                            
+
                             if usage.isNearLimit && plan != .max {
                                 if subscriptionManager.isFamilyOwner {
                                     Button {
@@ -174,7 +176,7 @@ struct AISettingsView: View {
             }
 
             // MARK: - Chat salute (contesto AI)
-            if plan.includesAI && viewModel.aiEnabled {
+            if subscriptionManager.isAIAccessible && viewModel.aiEnabled {
                 Section {
                     Picker(selection: Binding(
                         get: { viewModel.healthContextSendPreference },
@@ -203,7 +205,7 @@ struct AISettingsView: View {
             }
             
             // MARK: - Privacy / Consenso
-            if plan.includesAI && viewModel.consentGiven, let date = viewModel.consentDate {
+            if subscriptionManager.isAIAccessible && viewModel.consentGiven, let date = viewModel.consentDate {
                 Section("Privacy") {
                     HStack {
                         Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
@@ -225,7 +227,7 @@ struct AISettingsView: View {
             }
             
             // MARK: - Sintesi settimanale
-            if plan.includesAI {
+            if subscriptionManager.isAIAccessible {
                 Section("Sintesi settimanale") {
                     Toggle(isOn: Binding(
                         get: { WeeklySummaryService.shared.isEnabled },
@@ -272,7 +274,7 @@ struct AISettingsView: View {
             }
             
             // MARK: - Document Intelligence
-            if plan.includesAI && viewModel.consentGiven {
+            if subscriptionManager.isAIAccessible && viewModel.consentGiven {
                 Section("Analisi documenti") {
                     Toggle(isOn: Binding(
                         get: { AISettings.shared.documentIntelligenceEnabled },
@@ -423,11 +425,11 @@ struct AISettingsView: View {
                     Text("Piano \(plan.displayName)")
                         .font(.headline)
                     HStack(spacing: 8) {
-                        if plan.includesAI {
-                            Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
+                        if subscriptionManager.isAIAccessible {
+                            Label(plan.aiQuotaLabel, systemImage: "sparkles")
                                 .font(.caption).foregroundStyle(.secondary)
                         } else {
-                            Label("AI non inclusa", systemImage: "sparkles.slash")
+                            Label("Bonus AI esaurito", systemImage: "sparkles.slash")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -504,18 +506,20 @@ struct AISettingsView: View {
         )
         .padding(.horizontal)
     }
-    
-    // MARK: - AI locked banner (piano Free)
-    
+
+    // MARK: - AI locked banner (bonus Free esaurito o piano non pagante)
+
     private var aiLockedBanner: some View {
         VStack(spacing: 12) {
             Image(systemName: "lock.fill")
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("L'assistente AI è disponibile con Pro o Max")
+            Text(plan == .free
+                 ? "Hai usato i \(plan.aiMessageLimit) messaggi AI gratuiti del piano Free"
+                 : "L'assistente AI è disponibile con Pro o Max")
                 .font(.subheadline.bold())
                 .multilineTextAlignment(.center)
-            Text("Passa a Pro per 20 messaggi AI al giorno per membro, o a Max per 100.")
+            Text("Passa a Pro per 30 messaggi AI al giorno per famiglia, o a Max per 100.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -542,9 +546,9 @@ struct AISettingsView: View {
         )
         .padding(.horizontal)
     }
-    
+
     // MARK: - Helpers
-    
+
     @ViewBuilder
     private func infoRow(icon: String, color: Color, title: LocalizedStringKey, body: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 12) {

@@ -400,13 +400,8 @@ struct StorageUsageView: View {
                     HStack(spacing: 8) {
                         Label(plan.storageLabel + " storage", systemImage: "internaldrive")
                             .font(.caption).foregroundStyle(.secondary)
-                        if plan.includesAI {
-                            Label("\(plan.aiDailyLimit) msg AI/giorno", systemImage: "sparkles")
-                                .font(.caption).foregroundStyle(.secondary)
-                        } else {
-                            Label("Senza AI", systemImage: "sparkles")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
+                        Label(plan.aiQuotaLabel, systemImage: "sparkles")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 

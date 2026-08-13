@@ -22,7 +22,7 @@ struct TravelListView: View {
     @State private var showUpgrade = false
     @State private var needsOnboarding: Bool?
 
-    private var aiAvailable: Bool { subscriptionManager.currentPlan.includesAI }
+    private var aiAvailable: Bool { subscriptionManager.isAIAccessible }
     private var travelProfile: TravelProfile? {
         TravelProfileStore.loadProfile(userId: userId)
     }

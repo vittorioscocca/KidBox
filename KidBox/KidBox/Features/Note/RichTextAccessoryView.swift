@@ -80,6 +80,11 @@ final class RichTextAccessoryView: UIToolbar {
                 guard let self, let tv = self.textView else { return }
                 RichTextFormatter.toggle(cmd, in: tv)
                 self.refreshFromTextView()
+                // ⚠️ `toggle` modifica direttamente il textStorage: UIKit non
+                //    chiama `textViewDidChange`, quindi senza questa notifica
+                //    liste/checklist/grassetto applicati dalla toolbar non
+                //    finivano nel binding e andavano persi al salvataggio.
+                tv.delegate?.textViewDidChange?(tv)
             },
             onDismiss: onDismiss
         )
@@ -162,6 +167,7 @@ final class RichTextAccessoryView: UIToolbar {
             guard let self, let tv = self.textView else { return }
             RichTextFormatter.toggle(cmd, in: tv)
             self.refreshFromTextView()
+            tv.delegate?.textViewDidChange?(tv)
         }
         let host = UIHostingController(rootView: panelView)
         host.view.backgroundColor  = .clear

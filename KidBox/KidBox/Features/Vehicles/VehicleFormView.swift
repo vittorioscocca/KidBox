@@ -25,12 +25,16 @@ struct VehicleFormView: View {
     @State private var vin: String = ""
     @State private var hasIns = false
     @State private var insDate = Date()
+    @State private var insOffsets: Set<Int> = Set(VehicleReminderOffsets.defaultOffsets)
     @State private var hasRev = false
     @State private var revDate = Date()
+    @State private var revOffsets: Set<Int> = Set(VehicleReminderOffsets.defaultOffsets)
     @State private var hasTax = false
     @State private var taxDate = Date()
+    @State private var taxOffsets: Set<Int> = Set(VehicleReminderOffsets.defaultOffsets)
     @State private var hasService = false
     @State private var serviceDate = Date()
+    @State private var serviceOffsets: Set<Int> = Set(VehicleReminderOffsets.defaultOffsets)
     @State private var kmText: String = ""
     @State private var notes: String = ""
     /// Id stabile per allegati (nuovo veicolo = UUID assegnato all’apertura del form).
@@ -81,13 +85,25 @@ struct VehicleFormView: View {
                 }
                 Section("Scadenze") {
                     Toggle("Assicurazione", isOn: $hasIns)
-                    if hasIns { DatePicker("Scadenza", selection: $insDate, displayedComponents: .date) }
+                    if hasIns {
+                        DatePicker("Scadenza", selection: $insDate, displayedComponents: .date)
+                        VehicleReminderOffsetPicker(selected: $insOffsets, accentColor: accentOrange)
+                    }
                     Toggle("Revisione", isOn: $hasRev)
-                    if hasRev { DatePicker("Scadenza", selection: $revDate, displayedComponents: .date) }
+                    if hasRev {
+                        DatePicker("Scadenza", selection: $revDate, displayedComponents: .date)
+                        VehicleReminderOffsetPicker(selected: $revOffsets, accentColor: accentOrange)
+                    }
                     Toggle("Bollo", isOn: $hasTax)
-                    if hasTax { DatePicker("Scadenza", selection: $taxDate, displayedComponents: .date) }
+                    if hasTax {
+                        DatePicker("Scadenza", selection: $taxDate, displayedComponents: .date)
+                        VehicleReminderOffsetPicker(selected: $taxOffsets, accentColor: accentOrange)
+                    }
                     Toggle("Prossimo tagliando", isOn: $hasService)
-                    if hasService { DatePicker("Data", selection: $serviceDate, displayedComponents: .date) }
+                    if hasService {
+                        DatePicker("Data", selection: $serviceDate, displayedComponents: .date)
+                        VehicleReminderOffsetPicker(selected: $serviceOffsets, accentColor: accentOrange)
+                    }
                 }
                 Section {
                     TextField("Chilometri attuali", text: $kmText)
@@ -126,6 +142,11 @@ struct VehicleFormView: View {
                 if let d = v.revisionExpiryDate { hasRev = true; revDate = d }
                 if let d = v.taxExpiryDate { hasTax = true; taxDate = d }
                 if let d = v.nextServiceDate { hasService = true; serviceDate = d }
+                let offsets = VehicleReminderOffsets.decode(json: v.reminderOffsetsJson)
+                insOffsets = Set(offsets.insurance)
+                revOffsets = Set(offsets.revision)
+                taxOffsets = Set(offsets.tax)
+                serviceOffsets = Set(offsets.service)
                 if let k = v.currentKm { kmText = "\(k)" }
                 notes = v.notes ?? ""
             }
@@ -149,6 +170,12 @@ struct VehicleFormView: View {
         let year = Int(yearText.trimmingCharacters(in: .whitespacesAndNewlines))
         let km = Int(kmText.trimmingCharacters(in: .whitespacesAndNewlines))
         let reminder = hasIns || hasRev || hasTax || hasService
+        let reminderOffsetsJson = VehicleReminderOffsets(
+            insurance: Array(insOffsets).sorted(),
+            revision: Array(revOffsets).sorted(),
+            tax: Array(taxOffsets).sorted(),
+            service: Array(serviceOffsets).sorted()
+        ).encoded()
 
         if let ex = existing {
             ex.name = n
@@ -166,6 +193,7 @@ struct VehicleFormView: View {
             ex.currentKm = km
             ex.notes = notes.trimmedNil
             ex.reminderEnabled = reminder
+            ex.reminderOffsetsJson = reminderOffsetsJson
             ex.updatedAt = now
             ex.updatedBy = uid
             ex.syncState = .pendingUpsert
@@ -196,7 +224,8 @@ struct VehicleFormView: View {
                 createdBy: uid,
                 updatedBy: uid,
                 reminderEnabled: reminder,
-                reminderId: nil
+                reminderId: nil,
+                reminderOffsetsJson: reminderOffsetsJson
             )
             modelContext.insert(v)
             try? modelContext.save()
@@ -212,5 +241,51 @@ private extension String {
     var trimmedNil: String? {
         let t = trimmingCharacters(in: .whitespacesAndNewlines)
         return t.isEmpty ? nil : t
+    }
+}
+
+/// Chip multi-select per gli offset di preavviso (giorno stesso / 2 giorni prima / 1 settimana prima) di una scadenza.
+struct VehicleReminderOffsetPicker: View {
+    @Binding var selected: Set<Int>
+    var accentColor: Color
+
+    private let options: [(days: Int, label: String)] = [
+        (0, "Stesso giorno"),
+        (2, "2 giorni prima"),
+        (7, "1 settimana prima"),
+    ]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(String(localized: "Avvisi"))
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize()
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(options, id: \.days) { option in
+                        let isOn = selected.contains(option.days)
+                        Button {
+                            if isOn { selected.remove(option.days) } else { selected.insert(option.days) }
+                        } label: {
+                            Text(option.label)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule().fill(isOn ? accentColor : Color.gray.opacity(0.15))
+                                )
+                                .foregroundColor(isOn ? .white : .primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 2)
     }
 }

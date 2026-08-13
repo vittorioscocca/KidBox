@@ -34,7 +34,7 @@ struct AskAIButton: View {
     }
     
     private func handleTap() {
-        guard KBSubscriptionManager.shared.currentPlan.includesAI else {
+        guard KBSubscriptionManager.shared.isAIAccessible else {
             showUpgrade = true
             return
         }

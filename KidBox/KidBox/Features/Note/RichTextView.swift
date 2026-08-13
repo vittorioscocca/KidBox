@@ -38,7 +38,10 @@ struct RichTextView: UIViewRepresentable {
     var focusTrigger: UUID?  = nil   // cambia valore per richiedere il focus
     /// Store opzionale per Mac Catalyst: registra la UITextView e riflette lo stato
     var store: NoteRichTextStore? = nil
-    
+    /// Notificato subito a ogni modifica (anche prima che l'HTML venga serializzato,
+    /// che è un'operazione costosa e quindi debounced).
+    var onEdit: (() -> Void)? = nil
+
     func makeUIView(context: Context) -> UITextView {
         let tv = RichUITextView()
         tv.isEditable    = true
@@ -52,7 +55,10 @@ struct RichTextView: UIViewRepresentable {
         tv.contentInset          = .zero
         tv.scrollIndicatorInsets = .zero
         tv.automaticallyAdjustsScrollIndicatorInsets = false
-        
+        // Scorrendo verso il basso la tastiera si abbassa seguendo il dito (come Note/Mail):
+        // su note lunghe è il modo più rapido per liberare metà schermo.
+        tv.keyboardDismissMode   = .interactive
+
         tv.onTab = { isShift in
             if isShift { RichTextFormatter.outdentList(in: tv) }
             else        { RichTextFormatter.indentList(in: tv) }
@@ -61,6 +67,10 @@ struct RichTextView: UIViewRepresentable {
             context.coordinator.handlePastePlainText(pasted, in: tv)
         }
         
+        // Traccia l'HTML già presente nella text view: `updateUIView` lo usa come
+        // identità per NON ricaricare il testo a ogni re-render di SwiftUI.
+        context.coordinator.lastSyncedHTML = html
+
         if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont),
            attr.length > 0 {
             tv.attributedText = attr
@@ -87,54 +97,77 @@ struct RichTextView: UIViewRepresentable {
         tv.addGestureRecognizer(tapGR)
         accessory.attach(to: tv)
 
-        // Registra nel store esterno (Mac Catalyst)
-        store?.textView = tv
-        context.coordinator.store = store
+        // Registra nel store esterno (Mac Catalyst / salvataggio)
+        context.coordinator.bind(store: store, textView: tv)
 
         // ✅ Keyboard observers per aggiornare contentInset e scrollare il cursore in vista
         context.coordinator.registerKeyboardObservers(for: tv)
 
         return tv
     }
-    
+
     func updateUIView(_ uiView: UITextView, context: Context) {
-        context.coordinator.isProgrammaticUpdate = true
-        defer { context.coordinator.isProgrammaticUpdate = false }
-        
+        let coordinator = context.coordinator
+        coordinator.isProgrammaticUpdate = true
+        defer { coordinator.isProgrammaticUpdate = false }
+
         // Aggiorna riferimento store (potrebbe cambiare tra un update e l'altro)
-        context.coordinator.store = store
-        if let store { store.textView = uiView }
+        coordinator.bind(store: store, textView: uiView)
 
         // Focus richiesto dal titolo (tasto Avanti)
-        if let trigger = focusTrigger, trigger != context.coordinator.lastFocusTrigger {
-            context.coordinator.lastFocusTrigger = trigger
+        if let trigger = focusTrigger, trigger != coordinator.lastFocusTrigger {
+            coordinator.lastFocusTrigger = trigger
             DispatchQueue.main.async { uiView.becomeFirstResponder() }
         }
-        
+
         // Se stiamo mostrando il placeholder e il binding è ancora vuoto, NON
         // sovrascrivere il textStorage: altrimenti cancelleremmo il placeholder
         // visibile e lasceremmo l'editor apparentemente "morto".
-        if context.coordinator.isShowingPlaceholder,
+        if coordinator.isShowingPlaceholder,
            html.isEmpty {
             return
         }
-        
-        let currentHTML = uiView.attributedText.toHTML() ?? ""
-        guard currentHTML != html else { return }
-        if let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont),
-           attr.length > 0 {
-            // ⚠️ Importante: siamo in stato "placeholder" solo se il textStorage
-            //     contiene il placeholder. Ora stiamo per sovrascrivere con il
-            //     contenuto reale: resettiamo il flag, altrimenti il prossimo
-            //     `textViewDidBeginEditing` cancellerebbe il testo appena
-            //     caricato con `textView.text = ""`.
-            context.coordinator.isShowingPlaceholder = false
-            uiView.attributedText = attr
+
+        // ⚠️ Confronto per *identità della stringa*, non ri-serializzando la text
+        //    view. `toHTML()` è costoso (passa da NSAttributedString→HTML) e —
+        //    soprattutto — non è mai identico all'HTML salvato lato server /
+        //    Android: il confronto falliva sempre e a ogni re-render di SwiftUI
+        //    (comparsa tastiera, isDirty, refresh di @Query…) il testo veniva
+        //    ricaricato da zero, azzerando scroll e selezione.
+        guard html != coordinator.lastSyncedHTML else { return }
+        guard let attr = NSAttributedString.fromHTML(html, fallbackFont: baseFont),
+              attr.length > 0 else {
+            // Binding vuoto / non parsabile: lascia che sia `textViewDidEndEditing`
+            // (o il prossimo makeUIView) a installare il placeholder, per non
+            // sostituire il contenuto mentre l'utente sta ancora digitando.
+            return
         }
-        // Se il binding è vuoto / non parsabile e il textView non è first
-        // responder, lascia che sia `textViewDidEndEditing` (o il prossimo
-        // makeUIView) a installare il placeholder. Non lo installiamo qui per
-        // non sostituire il contenuto mentre l'utente sta ancora digitando.
+
+        // ⚠️ Importante: siamo in stato "placeholder" solo se il textStorage
+        //     contiene il placeholder. Ora stiamo per sovrascrivere con il
+        //     contenuto reale: resettiamo il flag, altrimenti il prossimo
+        //     `textViewDidBeginEditing` cancellerebbe il testo appena
+        //     caricato con `textView.text = ""`.
+        coordinator.isShowingPlaceholder = false
+        coordinator.lastSyncedHTML = html
+
+        // Preserva selezione e posizione di scroll: un aggiornamento remoto non
+        // deve riportare l'utente in cima alla nota.
+        let selection = uiView.selectedRange
+        let offset    = uiView.contentOffset
+        uiView.attributedText = attr
+        let length = uiView.attributedText.length
+        let loc    = min(selection.location, length)
+        uiView.selectedRange = NSRange(location: loc,
+                                       length: min(selection.length, length - loc))
+        uiView.layoutIfNeeded()
+        let minY = -uiView.adjustedContentInset.top
+        let maxY = max(minY, uiView.contentSize.height
+                       + uiView.adjustedContentInset.bottom
+                       - uiView.bounds.height)
+        uiView.setContentOffset(CGPoint(x: offset.x,
+                                        y: min(max(offset.y, minY), maxY)),
+                                animated: false)
     }
     
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -153,9 +186,34 @@ struct RichTextView: UIViewRepresentable {
         //    checklist inserita tramite toolbar finisce davanti al placeholder
         //    invisibilmente in secondaryLabel).
         var isShowingPlaceholder = false
-        
+        /// Ultimo HTML che risulta *già allineato* tra binding e text view.
+        /// Serve a evitare sia ricariche inutili del testo sia riscritture del binding.
+        var lastSyncedHTML: String? = nil
+
+        private var htmlSyncWorkItem: DispatchWorkItem?
+        /// Ritardo con cui l'HTML viene rigenerato dopo una modifica.
+        /// `toHTML()` costa decine di ms su note lunghe: farlo a ogni tasto
+        /// rendeva la digitazione (e lo scroll) a scatti.
+        private let htmlSyncDelay: TimeInterval = 0.35
+
         init(_ parent: RichTextView) { self.parent = parent }
-        
+
+        deinit { htmlSyncWorkItem?.cancel() }
+
+        // MARK: - Store binding
+
+        func bind(store: NoteRichTextStore?, textView: UITextView) {
+            self.store = store
+            guard let store else { return }
+            store.textView = textView
+            store.flushPendingHTML = { [weak self, weak textView] in
+                guard let self, let textView else { return nil }
+                return self.flushHTML(from: textView)
+            }
+        }
+
+        // MARK: - Editing lifecycle
+
         func textViewDidBeginEditing(_ textView: UITextView) {
             guard isShowingPlaceholder else { return }
             isShowingPlaceholder = false
@@ -164,8 +222,9 @@ struct RichTextView: UIViewRepresentable {
             textView.font = parent.baseFont
             textView.typingAttributes = NSAttributedString.defaultTypingAttributes(font: parent.baseFont)
         }
-        
+
         func textViewDidEndEditing(_ textView: UITextView) {
+            flushHTML(from: textView)
             if textView.attributedText.string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                !parent.placeholder.isEmpty {
                 isShowingPlaceholder = true
@@ -174,27 +233,67 @@ struct RichTextView: UIViewRepresentable {
                 textView.font      = parent.baseFont
             }
         }
-        
+
         func textViewDidChange(_ textView: UITextView) {
             guard !isProgrammaticUpdate, !isShowingPlaceholder else { return }
-            parent.html = textView.attributedText.toHTML() ?? ""
-            (textView.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
-            store?.refreshModel()
+            handleTextChanged(in: textView)
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
             guard !isProgrammaticUpdate else { return }
-            (textView.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
-            store?.refreshModel()
+            refreshToolbars(in: textView)
         }
-        
+
+        /// Punto unico per ogni modifica del testo — sia da tastiera sia
+        /// programmatica (continuazione liste, paste, comandi toolbar, checklist).
+        func handleTextChanged(in textView: UITextView) {
+            guard !isShowingPlaceholder else { return }
+            parent.onEdit?()
+            refreshToolbars(in: textView)
+            scheduleHTMLSync(from: textView)
+        }
+
+        private func refreshToolbars(in textView: UITextView) {
+            (textView.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
+            #if targetEnvironment(macCatalyst)
+            // Su iOS lo stato è già riflesso dalla inputAccessoryView: rifarlo
+            // anche sullo store raddoppierebbe la scansione degli attributi.
+            store?.refreshModel()
+            #endif
+        }
+
+        // MARK: - Serializzazione HTML (debounced)
+
+        private func scheduleHTMLSync(from textView: UITextView) {
+            htmlSyncWorkItem?.cancel()
+            let work = DispatchWorkItem { [weak self, weak textView] in
+                guard let self, let textView else { return }
+                self.flushHTML(from: textView)
+            }
+            htmlSyncWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + htmlSyncDelay, execute: work)
+        }
+
+        /// Rigenera subito l'HTML e lo scrive nel binding.
+        /// - Returns: l'HTML aggiornato, oppure `nil` se non era cambiato nulla.
+        @discardableResult
+        func flushHTML(from textView: UITextView) -> String? {
+            htmlSyncWorkItem?.cancel()
+            htmlSyncWorkItem = nil
+            guard !isShowingPlaceholder else { return nil }
+            let html = textView.attributedText.toHTML() ?? ""
+            guard html != lastSyncedHTML else { return nil }
+            lastSyncedHTML = html
+            parent.html    = html
+            return html
+        }
+
         // MARK: Checklist tap
-        
+
         @objc func handleChecklistTap(_ gr: UITapGestureRecognizer) {
             guard let tv = gr.view as? UITextView else { return }
             if RichTextFormatter.handleChecklistTap(at: gr.location(in: tv), in: tv) {
-                parent.html = tv.attributedText.toHTML() ?? ""
-                (tv.inputAccessoryView as? RichTextAccessoryView)?.refreshFromTextView()
+                handleTextChanged(in: tv)
             }
         }
         
@@ -205,8 +304,20 @@ struct RichTextView: UIViewRepresentable {
         
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
-            if text == "\n"         { return handleReturn(textView, range: range) }
-            if text.isEmpty, range.length == 1 { return handleBackspace(textView, range: range) }
+            // ⚠️ Quando gestiamo noi l'inserimento (return `false`) UIKit non
+            //    chiama `textViewDidChange`: senza notifica esplicita la modifica
+            //    non finiva mai nel binding e andava persa se l'utente usciva
+            //    subito dopo aver premuto Invio in una lista.
+            if text == "\n" {
+                let allowDefault = handleReturn(textView, range: range)
+                if !allowDefault { handleTextChanged(in: textView) }
+                return allowDefault
+            }
+            if text.isEmpty, range.length == 1 {
+                let allowDefault = handleBackspace(textView, range: range)
+                if !allowDefault { handleTextChanged(in: textView) }
+                return allowDefault
+            }
             return true
         }
         
@@ -298,8 +409,10 @@ struct RichTextView: UIViewRepresentable {
             if newPara.length > 0, newPara.location + newPara.length <= newLen {
                 ms.addAttribute(.paragraphStyle, value: ps, range: newPara)
             }
+            let offset = tv.contentOffset
             tv.textStorage.setAttributedString(ms)
             tv.selectedRange = NSRange(location: min(prLoc, ms.length), length: 0)
+            RichTextFormatter.restoreScroll(offset, in: tv)
         }
         
         /// Inserisce "\n" + prefix testuale, copiando il paragraphStyle della riga corrente
@@ -357,9 +470,11 @@ struct RichTextView: UIViewRepresentable {
             let loc = max(0, min(sel.location, ns.length))
             let len = max(0, min(sel.length, ns.length - loc))
             ms.replaceCharacters(in: NSRange(location: loc, length: len), with: attributed)
+            let offset = tv.contentOffset
             tv.textStorage.setAttributedString(ms)
             let newCaret = loc + attributed.length
             tv.selectedRange = NSRange(location: min(newCaret, ms.length), length: 0)
+            RichTextFormatter.restoreScroll(offset, in: tv)
         }
         
         // MARK: - Paste
@@ -390,65 +505,130 @@ struct RichTextView: UIViewRepresentable {
                 .paragraphStyle:  psAtCaret
             ])
             ms.replaceCharacters(in: NSRange(location: loc, length: slen), with: pasteAttr)
+            let offset = tv.contentOffset
             tv.textStorage.setAttributedString(ms)
             tv.selectedRange = NSRange(location: loc + (pasted as NSString).length, length: 0)
+            RichTextFormatter.restoreScroll(offset, in: tv)
+            // Il paste è gestito da noi: notifichiamo, altrimenti il testo
+            // incollato non arriverebbe mai al binding.
+            handleTextChanged(in: tv)
             return true
         }
         
         // MARK: - Keyboard scroll handling
         
         private weak var observedTextView: UITextView?
-        
+        private var keyboardOverlap: CGFloat = 0
+
         func registerKeyboardObservers(for tv: UITextView) {
             observedTextView = tv
-            NotificationCenter.default.addObserver(
+            let center = NotificationCenter.default
+            // `willChangeFrame` copre comparsa, cambio altezza (emoji, dettatura,
+            // tastiera hardware, split) e scomparsa: un solo punto di verità.
+            center.addObserver(
                 self,
-                selector: #selector(keyboardWillShow(_:)),
-                name: UIResponder.keyboardWillShowNotification,
+                selector: #selector(keyboardWillChangeFrame(_:)),
+                name: UIResponder.keyboardWillChangeFrameNotification,
                 object: nil
             )
-            NotificationCenter.default.addObserver(
+            center.addObserver(
                 self,
                 selector: #selector(keyboardWillHide(_:)),
                 name: UIResponder.keyboardWillHideNotification,
                 object: nil
             )
         }
-        
-        @objc private func keyboardWillShow(_ n: Notification) {
+
+        @objc private func keyboardWillChangeFrame(_ n: Notification) {
             guard let tv = observedTextView,
+                  let window = tv.window,
                   let info = n.userInfo,
-                  let kbFrame = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue,
-                  let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
-                  let curve = info[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+                  let endFrame = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
             else { return }
-            
-            // ✅ Con ignoresSafeArea(.keyboard) il frame della tv resta invariato.
-            //    Il contentInset.bottom deve essere = altezza tastiera in coordinate locali.
-            //    Usiamo la screen height come riferimento stabile.
-            let screenH   = UIScreen.main.bounds.height
-            let kbH       = max(0, screenH - kbFrame.minY)
-            
-            let options = UIView.AnimationOptions(rawValue: curve << 16)
-            UIView.animate(withDuration: duration, delay: 0, options: options) {
-                tv.contentInset          = UIEdgeInsets(top: 0, left: 0, bottom: kbH, right: 0)
-                tv.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: kbH, right: 0)
-            }
-            // Porta il cursore in vista dopo l'animazione
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.05) {
-                guard let tv = self.observedTextView else { return }
-                tv.scrollRangeToVisible(tv.selectedRange)
+
+            // ✅ Il frame arriva in coordinate di schermo: convertiamolo nello spazio
+            //    della text view. Così l'inset è esattamente la porzione di editor
+            //    coperta — corretto anche su iPad (Split View, Stage Manager,
+            //    tastiera flottante) e senza contare due volte la safe area
+            //    dell'home indicator, come faceva il calcolo su UIScreen.
+            let frameInView = tv.convert(window.convert(endFrame, from: nil), from: window)
+            let overlap     = max(0, tv.bounds.maxY - frameInView.minY)
+            applyKeyboardOverlap(overlap, info: info)
+        }
+
+        @objc private func keyboardWillHide(_ n: Notification) {
+            // `force`: la tastiera sparisce comunque, l'inset va azzerato anche se
+            // l'utente ha ancora il dito sullo schermo (chiusura interattiva).
+            applyKeyboardOverlap(0, info: n.userInfo, force: true)
+        }
+
+        /// Riallinea l'inset a fine trascinamento: se nel frattempo la tastiera è
+        /// sparita senza che abbiamo potuto aggiornarlo, qui recuperiamo.
+        func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate: Bool) {
+            guard let tv = observedTextView, scrollView === tv else { return }
+            if !tv.isFirstResponder, keyboardOverlap != 0 {
+                applyKeyboardOverlap(0, info: nil, force: true)
             }
         }
-        
-        @objc private func keyboardWillHide(_ n: Notification) {
-            guard let tv = observedTextView,
-                  let duration = (n.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double)
-            else { return }
-            UIView.animate(withDuration: duration) {
-                tv.contentInset          = .zero
-                tv.scrollIndicatorInsets = .zero
+
+        private func applyKeyboardOverlap(_ overlap: CGFloat,
+                                          info: [AnyHashable: Any]?,
+                                          force: Bool = false) {
+            guard let tv = observedTextView else { return }
+            let duration = (info?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0
+
+            // Durante la chiusura interattiva (dito sulla tastiera) arrivano
+            // notifiche a raffica con duration 0: cambiare l'inset mentre l'utente
+            // trascina fa saltare lo scroll. L'inset finale lo mette `willHide`.
+            if !force, duration <= 0, tv.isDragging || tv.isTracking { return }
+
+            let previous = keyboardOverlap
+            guard abs(previous - overlap) > 0.5 else { return }
+            keyboardOverlap = overlap
+
+            let applyInsets = {
+                tv.contentInset.bottom                  = overlap
+                tv.verticalScrollIndicatorInsets.bottom = overlap
             }
+            if duration > 0 {
+                let curve = (info?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt) ?? 7
+                UIView.animate(withDuration: duration, delay: 0,
+                               options: UIView.AnimationOptions(rawValue: curve << 16),
+                               animations: applyInsets)
+            } else if force, overlap == 0 {
+                // Chiusura senza animazione dichiarata: una dissolvenza breve
+                // evita che il fondo della nota "salti".
+                UIView.animate(withDuration: 0.2, animations: applyInsets)
+            } else {
+                applyInsets()
+            }
+
+            // Porta il cursore in vista solo se la tastiera lo sta davvero coprendo.
+            guard overlap > previous else { return }
+            DispatchQueue.main.async { [weak self] in self?.scrollCaretIntoViewIfNeeded() }
+        }
+
+        /// Scrolla al cursore **solo** se serve: se è già visibile, o se l'utente
+        /// sta scorrendo a mano, non tocchiamo il contentOffset. Prima uno
+        /// `scrollRangeToVisible` incondizionato (ritardato) riportava la nota sul
+        /// cursore mentre l'utente stava scrollando, sembrando uno scroll bloccato.
+        private func scrollCaretIntoViewIfNeeded() {
+            guard let tv = observedTextView,
+                  tv.isFirstResponder,
+                  !tv.isDragging, !tv.isDecelerating,
+                  let selection = tv.selectedTextRange
+            else { return }
+
+            let caret = tv.caretRect(for: selection.end)
+            guard !caret.isNull, caret.height > 0, caret.height < 10_000 else { return }
+
+            let inset   = tv.adjustedContentInset
+            let visible = CGRect(x: tv.contentOffset.x,
+                                 y: tv.contentOffset.y + inset.top,
+                                 width: tv.bounds.width,
+                                 height: max(0, tv.bounds.height - inset.top - inset.bottom))
+            guard !visible.contains(caret) else { return }
+            tv.scrollRectToVisible(caret.insetBy(dx: 0, dy: -12), animated: true)
         }
     }
 }

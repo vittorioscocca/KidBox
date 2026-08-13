@@ -24,6 +24,16 @@ enum TreatmentSchedulePeriod: Int, CaseIterable {
         }
     }
 
+    /// Etichetta localizzata (usata da `schedulePeriodLabel`, incluse le notifiche locali).
+    var labelLocalized: String {
+        switch self {
+        case .mattina: return String(localized: "Mattina")
+        case .pranzo: return String(localized: "Pranzo")
+        case .sera: return String(localized: "Sera")
+        case .notte: return String(localized: "Notte")
+        }
+    }
+
     /// Ordine lista giornaliera: Mattina → Pranzo → Sera → Notte.
     var sortOrdinal: Int { rawValue }
 
@@ -93,9 +103,14 @@ enum TreatmentSchedulePeriod: Int, CaseIterable {
 }
 
 private func treatmentSlotLabelFor(index: Int) -> String {
-    let labels = ["Mattina", "Pranzo", "Sera", "Notte"]
+    let labels = [
+        String(localized: "Mattina"),
+        String(localized: "Pranzo"),
+        String(localized: "Sera"),
+        String(localized: "Notte"),
+    ]
     if index < labels.count { return labels[index] }
-    return "Dose \(index + 1)"
+    return String(format: String(localized: "Dose %@"), "\(index + 1)")
 }
 
 func schedulePeriodForTime(_ scheduledTime: String, slotIndexFallback: Int = 0) -> TreatmentSchedulePeriod? {
@@ -112,7 +127,7 @@ func schedulePeriodForTime(_ scheduledTime: String, slotIndexFallback: Int = 0) 
 }
 
 func schedulePeriodLabel(_ scheduledTime: String, slotIndexFallback: Int = 0) -> String {
-    TreatmentSchedulePeriod.from(scheduleTime: scheduledTime)?.labelIt
+    TreatmentSchedulePeriod.from(scheduleTime: scheduledTime)?.labelLocalized
         ?? treatmentSlotLabelFor(index: slotIndexFallback)
 }
 
