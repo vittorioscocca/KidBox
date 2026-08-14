@@ -10,6 +10,7 @@
 		7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 7C11ACD42F3629A500EB83F7 /* FirebaseStorage */; };
 		7C1D3C7A2F59BC7C001FB004 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */; };
 		7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7C4C85532F51ABA80054A4C3 /* FacebookLogin */; };
+		7CAC0001AABBCCDD00000001 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAC0002AABBCCDD00000002 /* FirebaseAppCheck */; };
 		7CAF2A092F90C0DE00AB0009 /* KidBoxAutoFill.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CB37F452F72B12F00CD0F7C /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CB37F442F72B12F00CD0F7C /* StoreKit.framework */; };
@@ -301,6 +302,7 @@
 				7CFC51EC2F33DACC0086D687 /* FirebaseFirestore in Frameworks */,
 				7C11ACD52F3629A500EB83F7 /* FirebaseStorage in Frameworks */,
 				7C1D3C7A2F59BC7C001FB004 /* FirebaseRemoteConfig in Frameworks */,
+				7CAC0001AABBCCDD00000001 /* FirebaseAppCheck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,6 +490,7 @@
 				7C4C85532F51ABA80054A4C3 /* FacebookLogin */,
 				7C1D3C792F59BC7C001FB004 /* FirebaseRemoteConfig */,
 				7CED805F2F5B0F2E00CB9923 /* ZIPFoundation */,
+				7CAC0002AABBCCDD00000002 /* FirebaseAppCheck */,
 			);
 			productName = KidBox;
 			productReference = 7CFC515D2F3378CB0086D687 /* KidBox.app */;
@@ -766,7 +769,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxAutoFill;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -795,7 +798,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxAutoFill;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -815,7 +818,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 92;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -827,7 +830,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -846,7 +849,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 92;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -858,7 +861,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxNotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -879,7 +882,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 92;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -891,7 +894,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxControlsExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -911,7 +914,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 92;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -923,7 +926,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxControlsExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -943,7 +946,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 92;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -955,7 +958,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -974,7 +977,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 92;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -986,7 +989,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox.KidBoxShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -1134,7 +1137,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 90;
+				CURRENT_PROJECT_VERSION = 92;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1176,7 +1179,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1203,7 +1206,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 90;
+				CURRENT_PROJECT_VERSION = 92;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1245,7 +1248,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 2.1.2;
+				MARKETING_VERSION = 2.1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = it.vittorioscocca.KidBox;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1504,6 +1507,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7C4C85522F51ABA80054A4C3 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
 			productName = FacebookLogin;
+		};
+		7CAC0002AABBCCDD00000002 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
 		};
 		7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */ = {
 			isa = XCSwiftPackageProductDependency;

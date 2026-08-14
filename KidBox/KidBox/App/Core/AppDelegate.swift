@@ -9,15 +9,19 @@ import Foundation
 import UIKit
 import CoreLocation
 import BackgroundTasks
-import FirebaseCore
-import FirebaseMessaging
 import UserNotifications
 import OSLog
-import FirebaseStorage
-import Firebase
-import FBSDKCoreKit
-import FirebaseAuth
 import SwiftData
+
+// Firebase
+import FirebaseCore
+import FirebaseAppCheck
+import FirebaseAuth
+import FirebaseMessaging
+import FirebaseStorage
+
+// Framework terze parti
+import FBSDKCoreKit
 
 /// UIApplication delegate for KidBox.
 ///
@@ -80,6 +84,10 @@ final class AppDelegate: NSObject,
         
         KBLog.app.kbInfo("App didFinishLaunching")
         
+        // Prima di configure(): la factory App Check va registrata mentre Firebase
+        // non è ancora inizializzato, altrimenti l'SDK usa il provider predefinito.
+        AppCheckInstaller.install()
+
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
 

@@ -4414,6 +4414,82 @@ async function recomputeOwnedFamilies(ownerUid) {
   }
 }
 
+/**
+ * Backfill una tantum dei contatori `user_quotas/{uid}.ownedFamilies`.
+ *
+ * Perché serve: il contatore lo scrivono solo i trigger su create/delete
+ * famiglia, quindi chi possedeva famiglie PRIMA della loro introduzione non ha
+ * il documento. Le rules leggono "assente = 0" (scelta voluta, per non bloccare
+ * gli utenti esistenti), quindi chi ha già più di 2 famiglie potrebbe crearne
+ * un paio in più prima che il trigger allinei da sé il conteggio.
+ *
+ * Idempotente: ricalcola sempre dai dati reali, si può rieseguire senza danni.
+ * Con `dryRun: true` non scrive nulla e restituisce solo il riepilogo.
+ */
+exports.backfillFamilyQuotas = onCall(
+    {region: "europe-west1", invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+
+      const dryRun = request.data?.dryRun === true;
+      const db = admin.firestore();
+
+      // Legge solo `ownerUid`: il resto del documento famiglia non serve e
+      // scaricarlo tutto costerebbe banda inutile.
+      const snap = await db.collection("families").select("ownerUid").get();
+
+      const countByOwner = new Map();
+      let senzaProprietario = 0;
+      snap.forEach((doc) => {
+        const ownerUid = doc.data()?.ownerUid;
+        if (!ownerUid || typeof ownerUid !== "string") {
+          senzaProprietario += 1;
+          return;
+        }
+        countByOwner.set(ownerUid, (countByOwner.get(ownerUid) || 0) + 1);
+      });
+
+      const oltreIlLimite = [];
+      countByOwner.forEach((n, ownerUid) => {
+        if (n > MAX_FAMILIES_PER_USER) oltreIlLimite.push({ownerUid, ownedFamilies: n});
+      });
+
+      let scritti = 0;
+      if (!dryRun) {
+        // Batch da 400 (il limite Firestore è 500): scrittura in blocchi per
+        // non superarlo se il numero di proprietari cresce.
+        const owners = Array.from(countByOwner.entries());
+        for (let i = 0; i < owners.length; i += 400) {
+          const batch = db.batch();
+          for (const [ownerUid, n] of owners.slice(i, i + 400)) {
+            batch.set(db.collection("user_quotas").doc(ownerUid), {
+              ownedFamilies: n,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              backfilledAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, {merge: true});
+          }
+          await batch.commit();
+          scritti += Math.min(400, owners.length - i);
+        }
+      }
+
+      const esito = {
+        dryRun,
+        famiglieTotali: snap.size,
+        proprietariDistinti: countByOwner.size,
+        contatoriScritti: scritti,
+        famiglieSenzaProprietario: senzaProprietario,
+        proprietariOltreIlLimite: oltreIlLimite,
+      };
+      logger.info("backfillFamilyQuotas", esito);
+      return esito;
+    },
+);
+
 exports.onFamilyCreatedQuota = onDocumentCreated(
     {document: "families/{familyId}", region: "europe-west1"},
     async (event) => {

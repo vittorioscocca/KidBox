@@ -373,6 +373,48 @@ window.toggleAdminNotif = async function toggleAdminNotif(btn) {
   }
 }
 
+// ── MANUTENZIONE: contatori famiglie ─────
+// Riallinea `user_quotas/{uid}.ownedFamilies`, che regge il limite di 2 famiglie
+// per account. Serve per chi possedeva famiglie prima dell'introduzione dei
+// trigger: senza il documento le rules leggono 0 e il limite non morde subito.
+// Idempotente: si può rieseguire quando si vuole.
+window.backfillFamilyQuotas = async function backfillFamilyQuotas(btn) {
+  if (!auth?.currentUser) { showErr('Devi essere loggato'); return; }
+
+  const etichetta = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    // Prima una simulazione: mostra cosa verrebbe scritto senza toccare nulla.
+    const prova = (await httpsCallable(functions, 'backfillFamilyQuotas')({ dryRun: true })).data;
+    const oltre = prova.proprietariOltreIlLimite || [];
+
+    const riepilogo =
+      `SIMULAZIONE (nulla è stato scritto)\n\n` +
+      `Famiglie totali: ${prova.famiglieTotali}\n` +
+      `Proprietari distinti: ${prova.proprietariDistinti}\n` +
+      `Proprietari oltre il limite di 2: ${oltre.length}\n` +
+      (oltre.length ? oltre.map(o => `  • ${o.ownerUid}: ${o.ownedFamilies} famiglie`).join('\n') + '\n' : '') +
+      (prova.famiglieSenzaProprietario ? `Famiglie senza ownerUid: ${prova.famiglieSenzaProprietario}\n` : '') +
+      `\nScrivere i ${prova.proprietariDistinti} contatori?`;
+
+    if (!confirm(riepilogo)) {
+      btn.innerHTML = etichetta;
+      return;
+    }
+
+    const esito = (await httpsCallable(functions, 'backfillFamilyQuotas')({ dryRun: false })).data;
+    alert(`✅ Backfill completato\n\nContatori scritti: ${esito.contatoriScritti}\nFamiglie totali: ${esito.famiglieTotali}`);
+    btn.innerHTML = etichetta;
+  } catch(e) {
+    console.error('backfillFamilyQuotas error:', e);
+    showErr('Errore backfill: ' + (e.message || JSON.stringify(e)));
+    btn.innerHTML = etichetta;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function checkAdminNotifStatus() {
   if (!auth?.currentUser) return;
   const btn = document.getElementById('btn-notif');
@@ -2114,6 +2156,9 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div class="sidebar-user" id="user-email">—</div>
       <button id="btn-notif" onclick="toggleAdminNotif(this)" title="Push notification per ticket critical">
         <span>🔔</span> Notifiche push
+      </button>
+      <button id="btn-backfill-quotas" onclick="backfillFamilyQuotas(this)" title="Riallinea i contatori che reggono il limite di 2 famiglie per account. Mostra prima una simulazione.">
+        <span>🧮</span> Ricalcola contatori famiglie
       </button>
       <button id="btn-logout">
         <span>↩</span> Esci
