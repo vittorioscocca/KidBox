@@ -24,6 +24,14 @@ struct FamilySwitcherView: View {
     var body: some View {
         NavigationStack {
             List {
+                // Senza questa spiegazione la sezione è utile solo a chi ha già
+                // capito da sé che può appartenere a più di una famiglia.
+                Section {
+                    Text("Oltre alla famiglia con il tuo partner, qui puoi creare la tua famiglia di provenienza: tuo padre, tua madre, i fratelli e le sorelle. Ogni famiglia ha i suoi dati e resta separata dalle altre.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section {
                     ForEach(families) { family in
                         FamilyRowView(

@@ -310,6 +310,62 @@ struct KidBoxApp: App {
                             }
                             NotificationManager.shared.consumeDeepLink()
 
+                        case .vehicle(let familyId, let vehicleId):
+                            KBLog.navigation.kbInfo("Deep link -> open vehicle vehicleId=\(vehicleId)")
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openVehicleFromPush(
+                                    familyId: familyId,
+                                    vehicleId: vehicleId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .subscriptionExpiring(let familyId):
+                            KBLog.navigation.kbInfo("Deep link -> open profile (subscription expiring) familyId=\(familyId ?? "nil")")
+                            if let familyId, !familyId.isEmpty {
+                                coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                    coordinator.navigate(to: .profile)
+                                }
+                            } else {
+                                coordinator.navigate(to: .profile)
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .housePayment(let familyId, let paymentId):
+                            KBLog.navigation.kbInfo("Deep link -> open house payment paymentId=\(paymentId)")
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openHousePaymentFromPush(
+                                    familyId: familyId,
+                                    paymentId: paymentId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .walletDocument(let familyId, let documentId):
+                            KBLog.navigation.kbInfo("Deep link -> open wallet document documentId=\(documentId)")
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openWalletDocumentFromPush(
+                                    familyId: familyId,
+                                    documentId: documentId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .vaccine(let familyId, let childId, let vaccineId):
+                            KBLog.navigation.kbInfo("Deep link -> open vaccine vaccineId=\(vaccineId)")
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.openVaccineFromPush(
+                                    familyId: familyId,
+                                    childId: childId,
+                                    vaccineId: vaccineId,
+                                    modelContext: modelContainer.mainContext
+                                )
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
                         case .expense(let familyId, let expenseId):
                             KBLog.navigation.kbInfo("Deep link -> open expense expenseId=\(expenseId)")
                             // ✅ Reset badge spese

@@ -44148,6 +44148,28 @@
           }
         }
       }
+    },
+    "Oltre alla famiglia con il tuo partner, qui puoi creare la tua famiglia di provenienza: tuo padre, tua madre, i fratelli e le sorelle. Ogni famiglia ha i suoi dati e resta separata dalle altre.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Besides the family you share with your partner, here you can create the family you come from: your father, your mother, your brothers and sisters. Each family has its own data and stays separate from the others."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Además de la familia que compartes con tu pareja, aquí puedes crear tu familia de origen: tu padre, tu madre, tus hermanos y hermanas. Cada familia tiene sus propios datos y se mantiene separada de las demás."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En plus de la famille que tu partages avec ton partenaire, tu peux créer ici ta famille d'origine : ton père, ta mère, tes frères et sœurs. Chaque famille a ses propres données et reste séparée des autres."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -73,6 +73,9 @@ struct RootHostView: View {
     
     @State private var revokedFamilyName: String?
     @State private var showRevokedAlert = false
+    /// Debounce: ogni listener family-scoped caduto chiede il restart, ma il
+    /// riaggancio va fatto una volta sola per ondata di errori.
+    @State private var realtimeRestartScheduled = false
     @ObservedObject private var crashReportPrompt = CrashReportPromptCenter.shared
     @ObservedObject private var appUpdateChecker = AppUpdateChecker.shared
     
@@ -200,6 +203,21 @@ struct RootHostView: View {
                   let firstId = families.first?.id else { return }
             coordinator.setActiveFamily(firstId)
             KBLog.sync.kbInfo("RootHostView: persisted activeFamilyId on families load familyId=\(firstId)")
+        }
+        // PERMISSION_DENIED fisiologico dopo creazione/join: nessuna espulsione,
+        // ma i listener caduti per quell'errore vanno riagganciati, altrimenti la
+        // famiglia appena creata resta senza sync fino al riavvio dell'app.
+        .onReceive(SyncCenter.shared.familyRealtimeNeedsRestart) { familyId in
+            KBLog.sync.kbInfo("RootHostView: familyRealtimeNeedsRestart familyId=\(familyId)")
+            guard !realtimeRestartScheduled else { return }
+            realtimeRestartScheduled = true
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                realtimeRestartScheduled = false
+                guard resolvedActiveFamilyId == familyId else { return }
+                startedFamilyId = nil
+                startFamilyRealtimeIfPossible()
+            }
         }
         // Espulsione: wipa i dati locali e torna al root da qualsiasi view.
         .onReceive(SyncCenter.shared.currentUserRevoked) { revokedFamilyId in

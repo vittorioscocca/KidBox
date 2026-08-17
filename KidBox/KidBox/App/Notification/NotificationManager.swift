@@ -81,6 +81,16 @@ final class NotificationManager: NSObject, ObservableObject {
         case examReminder(familyId: String, childId: String, examId: String)
         case expense(familyId: String, expenseId: String)
         case walletTicket(familyId: String, ticketId: String)
+        /// Notifica locale promemoria scadenza veicolo (bollo/assicurazione/revisione/tagliando).
+        case vehicle(familyId: String, vehicleId: String)
+        /// Notifica locale promemoria scadenza pagamento casa.
+        case housePayment(familyId: String, paymentId: String)
+        /// Notifica locale promemoria scadenza documento Wallet (Tessera Sanitaria, CI, ecc.).
+        case walletDocument(familyId: String, documentId: String)
+        /// Notifica locale promemoria richiamo vaccino.
+        case vaccine(familyId: String, childId: String, vaccineId: String)
+        /// Notifica locale promemoria scadenza abbonamento — apre il Profilo (sezione Abbonamento).
+        case subscriptionExpiring(familyId: String?)
         /// Apre PlanningAIChatView — usato da sintesi settimanale / briefing / health pattern AI.
         /// `familyId` è la famiglia per cui il contenuto è stato generato: serve a switchare
         /// alla famiglia giusta prima di aprire la chat (la chat usa la famiglia attiva).
@@ -264,6 +274,56 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .examReminder(familyId: familyId, childId: childId, examId: examId)
             KBLog.auth.kbInfo("DeepLink set for examReminder examId=\(examId)")
             
+        } else if type == "vehicle_deadline_reminder" {
+            guard
+                let familyId  = userInfo["familyId"]  as? String,
+                let vehicleId = userInfo["vehicleId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid vehicle_deadline_reminder payload")
+                return
+            }
+            pendingDeepLink = .vehicle(familyId: familyId, vehicleId: vehicleId)
+            KBLog.auth.kbInfo("DeepLink set for vehicle vehicleId=\(vehicleId)")
+
+        } else if type == "house_payment_reminder" {
+            guard
+                let familyId  = userInfo["familyId"]  as? String,
+                let paymentId = userInfo["paymentId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid house_payment_reminder payload")
+                return
+            }
+            pendingDeepLink = .housePayment(familyId: familyId, paymentId: paymentId)
+            KBLog.auth.kbInfo("DeepLink set for housePayment paymentId=\(paymentId)")
+
+        } else if type == "wallet_document_reminder" {
+            guard
+                let familyId   = userInfo["familyId"]   as? String,
+                let documentId = userInfo["documentId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid wallet_document_reminder payload")
+                return
+            }
+            pendingDeepLink = .walletDocument(familyId: familyId, documentId: documentId)
+            KBLog.auth.kbInfo("DeepLink set for walletDocument documentId=\(documentId)")
+
+        } else if type == "vaccine_reminder" {
+            guard
+                let familyId  = userInfo["familyId"]  as? String,
+                let childId   = userInfo["childId"]   as? String,
+                let vaccineId = userInfo["vaccineId"] as? String
+            else {
+                KBLog.auth.kbError("Invalid vaccine_reminder payload")
+                return
+            }
+            pendingDeepLink = .vaccine(familyId: familyId, childId: childId, vaccineId: vaccineId)
+            KBLog.auth.kbInfo("DeepLink set for vaccine vaccineId=\(vaccineId)")
+
+        } else if type == "subscription_expiring" {
+            let familyId = userInfo["familyId"] as? String
+            pendingDeepLink = .subscriptionExpiring(familyId: (familyId?.isEmpty == false) ? familyId : nil)
+            KBLog.auth.kbInfo("DeepLink set for subscriptionExpiring")
+
         } else if type == "new_expense" {
             guard
                 let familyId  = userInfo["familyId"]  as? String,

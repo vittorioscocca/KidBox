@@ -371,13 +371,14 @@ struct OnboardingWalkthroughView: View {
         }
         .buttonStyle(.plain)
         .disabled(isCTADisabled)
-        .opacity(currentPage == 3 && familyPath == nil ? 0.45 : 1.0)
+        .opacity(isCTADisabled ? 0.45 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
         } // end if !isInvitePage
     }
 
     private var isCTADisabled: Bool {
         if currentPage == 3 && familyPath == nil { return true }
+        if currentPage == 4 && familyPath == .create && createdFamilyId == nil { return true }
         return false
     }
     

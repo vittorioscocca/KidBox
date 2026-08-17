@@ -90,7 +90,22 @@ final class SyncCenter: ObservableObject {
     private var accessLostHandled = Set<String>()
     
     private(set) var isFamilyBeingCreated = false
-    
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - Family creation grace window
+    //
+    // Il solo flag booleano non basta: i listener partono su families.first
+    // (SwiftData) appena la famiglia è salvata in locale, quindi PRIMA che il
+    // documento esista su Firestore. Il PERMISSION_DENIED che ne deriva viene
+    // consegnato in modo asincrono e può arrivare DOPO che la scrittura remota
+    // è finita (e quindi dopo endFamilyCreation), mostrando il falso banner
+    // "sei stato rimosso dalla famiglia" subito dopo la creazione.
+    // Per questo la soppressione resta attiva per una finestra di grazia dopo
+    // la creazione, e i listener caduti vengono riavviati.
+    // ─────────────────────────────────────────────────────────────────────────
+    private var creationGraceUntil: [String: Date] = [:]
+    private static let creationGraceInterval: TimeInterval = 30
+
     // ─────────────────────────────────────────────────────────────────────────
     // MARK: - Join guard
     //
@@ -102,8 +117,53 @@ final class SyncCenter: ObservableObject {
     // ─────────────────────────────────────────────────────────────────────────
     private(set) var isJoiningFamily = false
     
-    func beginFamilyCreation() { isFamilyBeingCreated = true }
-    func endFamilyCreation()   { isFamilyBeingCreated = false }
+    func beginFamilyCreation(familyId: String? = nil) {
+        isFamilyBeingCreated = true
+        if let familyId {
+            accessLostHandled.remove(familyId)
+            creationGraceUntil[familyId] = Date().addingTimeInterval(Self.creationGraceInterval)
+        }
+    }
+
+    /// Chiude la creazione ma lascia attiva la finestra di grazia: i
+    /// PERMISSION_DENIED in ritardo dei listener partiti troppo presto non
+    /// devono essere letti come espulsione dell'utente.
+    func endFamilyCreation(familyId: String? = nil) {
+        isFamilyBeingCreated = false
+        if let familyId {
+            creationGraceUntil[familyId] = Date().addingTimeInterval(Self.creationGraceInterval)
+        }
+    }
+
+    /// True se `familyId` è appena stata creata e siamo ancora nella finestra
+    /// in cui le regole Firestore possono non vedere ancora il membro.
+    private func isWithinCreationGrace(_ familyId: String) -> Bool {
+        guard let until = creationGraceUntil[familyId] else { return false }
+        guard Date() < until else {
+            creationGraceUntil.removeValue(forKey: familyId)
+            return false
+        }
+        return true
+    }
+
+    /// Unico punto di verità per capire se una revoca va soppressa perché
+    /// spuria (creazione o join in corso / appena conclusi).
+    @MainActor
+    private func shouldSuppressRevocation(for familyId: String, source: String) -> Bool {
+        if isFamilyBeingCreated {
+            KBLog.sync.kbDebug("Revocation suppressed: family creation in progress source=\(source) familyId=\(familyId)")
+            return true
+        }
+        if isJoiningFamily {
+            KBLog.sync.kbDebug("Revocation suppressed: family join in progress source=\(source) familyId=\(familyId)")
+            return true
+        }
+        if isWithinCreationGrace(familyId) {
+            KBLog.sync.kbInfo("Revocation suppressed: within creation grace window source=\(source) familyId=\(familyId)")
+            return true
+        }
+        return false
+    }
     
     /// Segnala l'inizio di un join. Resetta anche accessLostHandled così un
     /// eventuale revoke legittimo post-join viene correttamente gestito.
@@ -126,14 +186,12 @@ final class SyncCenter: ObservableObject {
     
     @MainActor
     func handleFamilyAccessLost(familyId: String, source: String, error: Error) {
-        guard !isFamilyBeingCreated else {
-            KBLog.sync.kbDebug("handleFamilyAccessLost suppressed: family creation in progress")
-            return
-        }
-        // ← NUOVO: sopprime durante il join per evitare revoche spurie dai
-        //   listener della vecchia famiglia ancora attivi.
-        guard !isJoiningFamily else {
-            KBLog.sync.kbDebug("handleFamilyAccessLost suppressed: family join in progress source=\(source) familyId=\(familyId)")
+        // Creazione/join in corso o appena conclusi: il PERMISSION_DENIED è
+        // fisiologico (le regole non vedono ancora il membro). Il listener che
+        // ha fallito però è morto, quindi va riavviato: senza il restart la
+        // famiglia appena creata resterebbe senza sync fino al riavvio dell'app.
+        if shouldSuppressRevocation(for: familyId, source: "accessLost:\(source)") {
+            Self._familyRealtimeNeedsRestart.send(familyId)
             return
         }
         // Dopo il logout ogni listener rimasto riceve PERMISSION_DENIED per
@@ -361,6 +419,12 @@ final class SyncCenter: ObservableObject {
                         if let local = localById[dto.id] {
                             let wasCurrentUser = local.userId == Auth.auth().currentUser?.uid
                             let famId = local.familyId
+                            // La riga locale va tenuta se la revoca è spuria:
+                            // cancellarla svuoterebbe la famiglia appena creata.
+                            if wasCurrentUser,
+                               shouldSuppressRevocation(for: famId, source: "members.softDelete") {
+                                continue
+                            }
                             modelContext.delete(local)
                             if wasCurrentUser {
                                 KBLog.sync.kbInfo("Current user soft-deleted from family familyId=\(famId)")
@@ -484,12 +548,20 @@ final class SyncCenter: ObservableObject {
                     if let local = localById[id] {
                         let removedUserId = local.userId
                         let famId = local.familyId
+                        let isCurrentUser = removedUserId == Auth.auth().currentUser?.uid
+                        // Durante la creazione il primo snapshot può arrivare dalla
+                        // cache e il successivo dal server senza il membro ancora
+                        // visibile: è un .remove spurio, la riga locale resta.
+                        if isCurrentUser,
+                           shouldSuppressRevocation(for: famId, source: "members.remove") {
+                            continue
+                        }
                         modelContext.delete(local)
-                        
+
                         // If I'm removed: stop listeners to avoid resurrecting, then notify UI
-                        if removedUserId == Auth.auth().currentUser?.uid {
+                        if isCurrentUser {
                             KBLog.sync.kbInfo("Current user removed from family familyId=\(famId)")
-                            
+
                             stopMembersRealtime()
                             stopTodoRealtime()
                             stopChildrenRealtime()
@@ -1489,5 +1561,14 @@ extension SyncCenter {
     /// Observe this in views to trigger automatic sign-out from the family.
     var currentUserRevoked: AnyPublisher<String, Never> {
         Self._currentUserRevoked.eraseToAnyPublisher()
+    }
+
+    /// Emesso quando un PERMISSION_DENIED è stato riconosciuto come fisiologico
+    /// (creazione/join appena avvenuti) e i listener family-scoped, morti per
+    /// quell'errore, vanno riavviati. Payload: familyId da riagganciare.
+    private static var _familyRealtimeNeedsRestart = PassthroughSubject<String, Never>()
+
+    var familyRealtimeNeedsRestart: AnyPublisher<String, Never> {
+        Self._familyRealtimeNeedsRestart.eraseToAnyPublisher()
     }
 }

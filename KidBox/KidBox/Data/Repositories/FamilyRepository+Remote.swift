@@ -106,8 +106,8 @@ final class FamilyCreationService {
         // I listener partono su families.first (SwiftData) che già esiste localmente,
         // ma su Firestore la famiglia non c'è ancora → PERMISSION_DENIED temporaneo.
         // Il flag evita che quel PERMISSION_DENIED venga interpretato come "utente rimosso".
-        SyncCenter.shared.beginFamilyCreation()
-        defer { SyncCenter.shared.endFamilyCreation() }
+        SyncCenter.shared.beginFamilyCreation(familyId: familyId)
+        defer { SyncCenter.shared.endFamilyCreation(familyId: familyId) }
         
         do {
             try await remote.createFamilyWithChild(

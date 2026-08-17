@@ -708,6 +708,12 @@ final class KBSubscriptionManager: ObservableObject {
         let dateStr = formatter.string(from: expirationDate)
         content.body  = "Il tuo abbonamento KidBox \(plan.displayName) scade il \(dateStr). Rinnova per continuare ad usare AI e storage esteso."
         content.sound = .default
+        let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
+            .string(forKey: "activeFamilyId") ?? ""
+        content.userInfo = [
+            "type": "subscription_expiring",
+            "familyId": familyId,
+        ]
         
         var components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
         components.second = 0

@@ -574,6 +574,8 @@ final class AppCoordinator: ObservableObject {
             WalletHomeView(familyId: familyId)
         case .walletTicketDetail(familyId: let familyId, ticketId: let ticketId):
             WalletTicketDetailView(familyId: familyId, ticketId: ticketId)
+        case .walletDocumentDetail(familyId: let familyId, documentId: let documentId):
+            WalletDocumentDetailView(familyId: familyId, documentId: documentId)
         case .passwordsHome(familyId: let familyId):
             PasswordsHomeView(familyId: familyId)
         case .passwordsSecurity(familyId: let familyId):
@@ -975,6 +977,54 @@ final class AppCoordinator: ObservableObject {
         }
     }
 
+    // MARK: - Open House Payment from Push
+
+    /// Apre direttamente la scadenza pagamento casa che ha scatenato il promemoria.
+    /// Path: homeItemsHome → housePaymentDetail
+    @MainActor
+    func openHousePaymentFromPush(familyId: String, paymentId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openHousePaymentFromPush familyId=\(familyId) paymentId=\(paymentId)")
+
+        Task { @MainActor in
+            let pid = paymentId
+            let desc = FetchDescriptor<KBHousePayment>(predicate: #Predicate { $0.id == pid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+
+            path.removeAll()
+            path.append(.homeItemsHome(familyId: familyId))
+            if found {
+                path.append(.housePaymentDetail(familyId: familyId, paymentId: paymentId))
+                KBLog.navigation.kbInfo("openHousePaymentFromPush: navigating to housePaymentDetail")
+            } else {
+                KBLog.navigation.kbError("openHousePaymentFromPush: payment not found, fallback to homeItemsHome")
+            }
+        }
+    }
+
+    // MARK: - Open Wallet Document from Push
+
+    /// Apre direttamente il documento Wallet che ha scatenato il promemoria scadenza.
+    /// Path: walletHome → walletDocumentDetail
+    @MainActor
+    func openWalletDocumentFromPush(familyId: String, documentId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openWalletDocumentFromPush familyId=\(familyId) documentId=\(documentId)")
+
+        Task { @MainActor in
+            let did = documentId
+            let desc = FetchDescriptor<KBDocument>(predicate: #Predicate { $0.id == did })
+            let found = (try? modelContext.fetch(desc).first) != nil
+
+            path.removeAll()
+            path.append(.walletHome(familyId: familyId))
+            if found {
+                path.append(.walletDocumentDetail(familyId: familyId, documentId: documentId))
+                KBLog.navigation.kbInfo("openWalletDocumentFromPush: navigating to walletDocumentDetail")
+            } else {
+                KBLog.navigation.kbError("openWalletDocumentFromPush: document not found, fallback to walletHome")
+            }
+        }
+    }
+
     @MainActor
     func openNoteFromPush(familyId: String, noteId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")
@@ -1137,7 +1187,45 @@ final class AppCoordinator: ObservableObject {
             }
         }
     }
-    
+
+    // MARK: - Open Vaccine from Push
+
+    /// Apre direttamente la lista vaccini del bambino che ha scatenato il promemoria richiamo.
+    /// Path: pediatricHome → pediatricVaccines
+    /// (`PediatricVaccineEditView` richiede un callback `onSaved` legato al presenter della lista,
+    /// quindi non è pushabile standalone: la lista è la destinazione più profonda raggiungibile in sicurezza.)
+    @MainActor
+    func openVaccineFromPush(familyId: String, childId: String, vaccineId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openVaccineFromPush familyId=\(familyId) childId=\(childId) vaccineId=\(vaccineId)")
+        path.removeAll()
+        path.append(.pediatricHome(familyId: familyId, childId: childId))
+        path.append(.pediatricVaccines(familyId: familyId, childId: childId))
+    }
+
+    // MARK: - Open Vehicle from Push
+
+    /// Apre direttamente il veicolo che ha scatenato il promemoria scadenza (bollo/assicurazione/revisione/tagliando).
+    /// Path: vehiclesHome → vehicleDetail
+    @MainActor
+    func openVehicleFromPush(familyId: String, vehicleId: String, modelContext: ModelContext) {
+        KBLog.navigation.kbInfo("openVehicleFromPush familyId=\(familyId) vehicleId=\(vehicleId)")
+
+        Task { @MainActor in
+            let vid = vehicleId
+            let desc = FetchDescriptor<KBVehicle>(predicate: #Predicate { $0.id == vid })
+            let found = (try? modelContext.fetch(desc).first) != nil
+
+            path.removeAll()
+            path.append(.vehiclesHome(familyId: familyId))
+            if found {
+                path.append(.vehicleDetail(familyId: familyId, vehicleId: vehicleId))
+                KBLog.navigation.kbInfo("openVehicleFromPush: navigating to vehicleDetail")
+            } else {
+                KBLog.navigation.kbError("openVehicleFromPush: vehicle not found, fallback to vehiclesHome")
+            }
+        }
+    }
+
     // MARK: - Open Todo from Push
     
     /// Apre direttamente il todo che ha scatenato il promemoria.

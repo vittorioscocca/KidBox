@@ -78,7 +78,7 @@ final class WalletReminderService {
             content.sound = .default
             content.threadIdentifier = "kidbox.wallet"
             content.userInfo = [
-                "type": "wallet_reminder",
+                "type": "wallet_ticket_reminder",
                 "familyId": ticket.familyId,
                 "ticketId": ticketId
             ]
