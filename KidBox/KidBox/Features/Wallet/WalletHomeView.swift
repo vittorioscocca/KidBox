@@ -83,6 +83,7 @@ struct WalletHomeView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
+        .familyKeyMissingGate(familyId: familyId)
         .navigationTitle("Wallet")
         .toolbar {
             if selectedTab == .tickets {

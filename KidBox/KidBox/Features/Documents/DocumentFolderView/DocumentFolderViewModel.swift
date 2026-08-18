@@ -304,12 +304,27 @@ final class DocumentFolderViewModel: ObservableObject {
                 guard let data = try await item.loadTransferable(type: Data.self) else {
                     uploadFailures += 1; uploadDone += 1; continue
                 }
-                let filename = "Foto_\(Int(Date().timeIntervalSince1970)).jpg"
+
+                // Tipo reale dell'immagine scelta. Prima era tutto forzato a
+                // .jpg/image/jpeg: un PNG o un HEIC finiva in archivio con
+                // estensione e MIME sbagliati, e si apriva male altrove.
+                //
+                // Il nome originale del file (IMG_1234.HEIC) non è invece
+                // ottenibile: `PhotosPicker` qui è usato senza
+                // `photoLibrary: .shared()`, quindi gira fuori processo e non
+                // espone `itemIdentifier` né alcun nome. Recuperarlo
+                // richiederebbe l'accesso completo alla libreria foto.
+                let contentType = item.supportedContentTypes.first
+                let ext  = contentType?.preferredFilenameExtension ?? "jpg"
+                let mime = contentType?.preferredMIMEType ?? "image/jpeg"
+
+                let baseName = "Foto_\(Int(Date().timeIntervalSince1970))"
+                let filename = "\(baseName).\(ext)"
                 let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
                 try data.write(to: tmpURL, options: .atomic)
                 uploadCurrentName = filename
-                let ok = await uploadSingleFileFromURL(tmpURL, forcedMime: "image/jpeg",
-                                                       forcedTitle: filename.replacingOccurrences(of: ".jpg", with: ""))
+                let ok = await uploadSingleFileFromURL(tmpURL, forcedMime: mime,
+                                                       forcedTitle: baseName)
                 uploadDone += 1; if !ok { uploadFailures += 1 }
                 try? FileManager.default.removeItem(at: tmpURL)
             } catch { uploadFailures += 1; uploadDone += 1 }

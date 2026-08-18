@@ -25,8 +25,7 @@ enum WalletDocumentFileLoader {
             notes: document.notes, storagePath: document.storagePath)
 
         if !isPlain, !(await FamilyKeyEscrowService.ensureFamilyKeyAvailable(familyId: document.familyId, userId: userId)) {
-            throw NSError(domain: "KidBox", code: -10,
-                          userInfo: [NSLocalizedDescriptionKey: "Chiave famiglia non disponibile su questo dispositivo"])
+            throw FamilyKeyMissing.error()
         }
 
         let cipherData: Data

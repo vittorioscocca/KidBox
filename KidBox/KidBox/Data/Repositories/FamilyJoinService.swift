@@ -12,6 +12,22 @@ import FirebaseAuth
 import OSLog
 import FirebaseFirestore
 
+/// Esito di un join, dal punto di vista dell'accesso ai dati cifrati.
+///
+/// La membership e la chiave di cifratura viaggiano su due canali distinti:
+/// il codice testuale porta solo la membership, il QR porta anche il materiale
+/// crittografico. Chi entra col solo codice diventa membro a tutti gli effetti
+/// ma non può decifrare Password, Documenti e Wallet — un fallimento che prima
+/// restava invisibile perché il join veniva comunque riportato come riuscito.
+enum FamilyJoinOutcome {
+    /// Membership creata e master key disponibile in Keychain: accesso completo.
+    case complete
+
+    /// Membership creata, ma la master key della famiglia non è disponibile:
+    /// i contenuti cifrati resteranno illeggibili finché non si usa un invito QR.
+    case missingVaultKey
+}
+
 /// Joins an existing family using an invite code and bootstraps local state.
 ///
 /// Responsibilities:
@@ -60,7 +76,13 @@ final class FamilyJoinService {
     /// - Note: Wraps the entire flow in `beginFamilyJoin` / `endFamilyJoin` to suppress
     ///   spurious `handleFamilyAccessLost` calls triggered by PERMISSION_DENIED errors
     ///   from the old family's listeners that may still be alive during the transition.
-    func joinFamily(code rawCode: String, coordinator: AppCoordinator) async throws {
+    ///
+    /// - Returns: `.complete` se al termine la master key della famiglia è in Keychain,
+    ///   `.missingVaultKey` se l'utente è entrato ma non può decifrare i contenuti.
+    ///   Il join **non** fallisce in quel caso: la membership è valida, manca solo la
+    ///   chiave, e spetta al chiamante avvisare l'utente.
+    @discardableResult
+    func joinFamily(code rawCode: String, coordinator: AppCoordinator) async throws -> FamilyJoinOutcome {
         // ─────────────────────────────────────────────────────────────────────
         // JOIN GUARD — sopprime handleFamilyAccessLost per tutta la durata del
         // join. I listener della vecchia famiglia possono emettere
@@ -303,8 +325,32 @@ final class FamilyJoinService {
         
         // Stabilizza relazioni KBFamily ↔ KBChild prima che la UI valuti la root.
         try? await Task.sleep(nanoseconds: 500_000_000)
-        
+
+        // ─────────────────────────────────────────────────────────────────────
+        // VERIFICA CHIAVE DI FAMIGLIA
+        // Il codice testuale porta solo la membership. Se l'utente è arrivato
+        // qui senza aver prima scansionato il QR (che è l'unico canale che
+        // trasporta il secret), la master key non è in Keychain e Password,
+        // Documenti e Wallet resteranno illeggibili.
+        // `ensureFamilyKeyAvailable` tenta anche il recupero dall'escrow, che
+        // copre reinstallazione e cambio account di chi la chiave l'aveva già;
+        // per un membro nuovo non esiste backup e restituisce `false`.
+        // Gemello di JoinFamilyViewModel.kt:151 su Android.
+        // ─────────────────────────────────────────────────────────────────────
+        let hasVaultKey = await FamilyKeyEscrowService.ensureFamilyKeyAvailable(
+            familyId: familyId,
+            userId: uid
+        )
+
+        guard hasVaultKey else {
+            KBLog.security.kbError(
+                "joinFamily completed WITHOUT vault key familyId=\(familyId) — membership only, encrypted content unreadable"
+            )
+            return .missingVaultKey
+        }
+
         KBLog.sync.kbInfo("joinFamily completed familyId=\(familyId)")
+        return .complete
     }
     
     // MARK: - Private helpers (Upserts)

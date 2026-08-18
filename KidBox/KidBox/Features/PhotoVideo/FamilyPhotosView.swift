@@ -165,6 +165,7 @@ struct FamilyPhotosView: View {
             if isSelectMode { selectionToolbar }
             if isAlbumSelectMode { albumSelectionToolbar }
         }
+        .familyKeyMissingGate(familyId: familyId)
         .navigationTitle({
             if isSelectMode {
                 return selectedIds.isEmpty ? "Seleziona" : "\(selectedIds.count) selezionat\(selectedIds.count == 1 ? "o" : "i")"

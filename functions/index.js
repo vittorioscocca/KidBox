@@ -4044,6 +4044,15 @@ const FAMILY_SUBCOLLECTIONS = [
   // ── Garage ─────────────────────────────────────────────────────
   "vehicles",
   "vehicleEvents",
+  // ── Wallet ─────────────────────────────────────────────────────
+  "walletTickets",
+  // ── Zone di arrivo ─────────────────────────────────────────────
+  "geofences",
+  "geofenceEvents",
+  // ── Backup cifrati della master key, uno per membro ────────────
+  // Mancavano: alla cancellazione della famiglia restavano orfani, con
+  // dentro la chiave wrappata di ogni membro.
+  "memberKeyBackups",
 ];
 
 /**
@@ -4149,6 +4158,92 @@ async function deleteFamilyCompletely(familyId) {
   await db.collection("ai_usage").doc(`family_${familyId}`).delete().catch(() => {});
 }
 
+/**
+ * Passa la proprietà della famiglia a un altro membro, se serve.
+ *
+ * Senza questo, cancellando l'account del proprietario la famiglia restava con
+ * `ownerUid` che punta a un utente inesistente: `isOwner()` nelle rules non
+ * corrispondeva più a nessuno, quindi nessuno poteva più cancellare le zone di
+ * arrivo o rimuovere altri membri, e la famiglia continuava a pesare sulla
+ * quota `user_quotas` di un account che non c'è più.
+ *
+ * Sceglie il membro attivo più anziano (`createdAt` più vecchio): è un criterio
+ * stabile e prevedibile, e di norma è il secondo genitore entrato.
+ *
+ * @param {string} familyId
+ * @param {string} leavingUid uid dell'account in cancellazione
+ * @return {Promise<string|null>} uid del nuovo proprietario, o null se non serviva
+ */
+async function transferFamilyOwnershipIfNeeded(familyId, leavingUid) {
+  const db = admin.firestore();
+  const familyRef = db.collection("families").doc(familyId);
+  const familySnap = await familyRef.get();
+  if (!familySnap.exists) return null;
+
+  const currentOwner = familySnap.get("ownerUid");
+  if (currentOwner !== leavingUid) return null;
+
+  const membersSnap = await familyRef.collection("members").get();
+  const candidates = membersSnap.docs
+      .filter((d) => d.id !== leavingUid && d.get("isDeleted") !== true)
+      .sort((a, b) => {
+        const ta = a.get("createdAt")?.toMillis?.() ?? 0;
+        const tb = b.get("createdAt")?.toMillis?.() ?? 0;
+        return ta - tb;
+      });
+
+  if (!candidates.length) return null;
+  const newOwner = candidates[0].id;
+
+  await familyRef.set({
+    ownerUid: newOwner,
+    updatedBy: newOwner,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, {merge: true});
+
+  await familyRef.collection("members").doc(newOwner).set({
+    role: "owner",
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, {merge: true});
+
+  await db.collection("users").doc(newOwner)
+      .collection("memberships").doc(familyId)
+      .set({role: "owner"}, {merge: true})
+      .catch(() => {});
+
+  logger.info("ownership transferred", {familyId, from: leavingUid, to: newOwner});
+  return newOwner;
+}
+
+/**
+ * Rimuove i dati personali di un membro da una famiglia che resta in vita.
+ *
+ * Sono documenti indicizzati per uid dentro la famiglia: non sono contenuti
+ * condivisi (quelli — chat, foto, documenti, spese — restano agli altri
+ * membri) ma dati del singolo, che alla cancellazione dell'account devono
+ * sparire. La posizione in particolare è l'ultima nota dell'utente.
+ *
+ * @param {string} familyId
+ * @param {string} uid
+ * @return {Promise<void>}
+ */
+async function deleteMemberPrivateFamilyData(familyId, uid) {
+  const db = admin.firestore();
+  const familyRef = db.collection("families").doc(familyId);
+
+  await Promise.allSettled([
+    // Ultima posizione condivisa sulla mappa di famiglia.
+    familyRef.collection("locations").doc(uid).delete(),
+    // Contatori di notifiche non lette, per utente.
+    familyRef.collection("counters").doc(uid).delete(),
+    // Backup cifrato della master key, derivato dal suo uid.
+    familyRef.collection("memberKeyBackups").doc(uid).delete(),
+  ]);
+
+  // Avatar caricato nel contesto di questa famiglia.
+  await deleteStoragePrefix(`families/${familyId}/avatars/${uid}`).catch(() => {});
+}
+
 exports.deleteAccount = onCall(
     {region: "europe-west1", invoker: "public"},
     async (request) => {
@@ -4162,6 +4257,8 @@ exports.deleteAccount = onCall(
       const membershipsSnap = await membershipsRef.get();
       const familyIds = membershipsSnap.docs.map((d) => d.id);
 
+      const newOwners = new Set();
+
       for (const familyId of familyIds) {
         let memberCount = 0;
         try {
@@ -4171,7 +4268,18 @@ exports.deleteAccount = onCall(
         }
 
         if (memberCount > 1) {
+          // La famiglia sopravvive agli altri membri: se ne esce solo lui.
+          // L'ordine conta — il passaggio di proprietà legge ancora la lista
+          // membri, quindi va fatto PRIMA di rimuovere il suo documento.
+          const promoted = await transferFamilyOwnershipIfNeeded(familyId, uid).catch((e) => {
+            logger.error("ownership transfer failed", {familyId, uid, err: String(e)});
+            return null;
+          });
+          if (promoted) newOwners.add(promoted);
           await db.collection("families").doc(familyId).collection("members").doc(uid).delete().catch(() => {});
+          await deleteMemberPrivateFamilyData(familyId, uid).catch((e) => {
+            logger.warn("member private data cleanup failed", {familyId, uid, err: String(e)});
+          });
         } else {
           await deleteFamilyCompletely(familyId);
         }
@@ -4179,8 +4287,24 @@ exports.deleteAccount = onCall(
         await membershipsRef.doc(familyId).delete().catch(() => {});
       }
 
+      // La quota famiglie possedute non si aggiorna da sola: i trigger
+      // `onFamilyCreatedQuota`/`onFamilyDeletedQuota` scattano solo su creazione
+      // ed eliminazione del documento famiglia, non su un cambio di `ownerUid`.
+      // Senza questo ricalcolo il nuovo proprietario risulterebbe con zero
+      // famiglie possedute e potrebbe superare il limite creandone altre.
+      for (const owner of newOwners) {
+        await recomputeOwnedFamilies(owner).catch((e) => {
+          logger.warn("recomputeOwnedFamilies failed", {owner, err: String(e)});
+        });
+      }
+      await db.collection("user_quotas").doc(uid).delete().catch(() => {});
+
       await deleteCollection(db.collection(`users/${uid}/fcmTokens`)).catch(() => {});
       await deleteCollection(db.collection(`users/${uid}/memberships`)).catch(() => {});
+      // Conversazioni con l'assistente AI: Firestore non cancella le
+      // sottocollezioni insieme al documento padre, quindi senza questa riga
+      // restavano in archivio anche dopo la sparizione di `users/{uid}`.
+      await deleteCollection(db.collection(`users/${uid}/aiConversations`)).catch(() => {});
       await db.collection("users").doc(uid).delete().catch(() => {});
       await deleteStoragePrefix(`users/${uid}/`).catch(() => {});
 
@@ -4199,6 +4323,18 @@ exports.deleteAccount = onCall(
       await purgeAnalyticsForUid(uid).catch((e) => {
         logger.warn("purgeAnalyticsForUid failed", {uid, err: String(e)});
       });
+
+      // ── Ticket di assistenza e crash report ────────────────────────────
+      // Sono dati personali dell'utente — contengono email, log dell'app e
+      // conversazione col supporto — non contenuti condivisi con la famiglia,
+      // quindi rientrano nella stessa promessa della privacy policy.
+      // NOTA: questo cancella anche lo storico visibile nella console admin.
+      await deleteCollection(
+          db.collection("support_tickets").where("uid", "==", uid),
+      ).catch((e) => logger.warn("support_tickets purge failed", {uid, err: String(e)}));
+      await deleteCollection(
+          db.collection("crash_reports").where("userId", "==", uid),
+      ).catch((e) => logger.warn("crash_reports purge failed", {uid, err: String(e)}));
 
       await admin.auth().deleteUser(uid);
 

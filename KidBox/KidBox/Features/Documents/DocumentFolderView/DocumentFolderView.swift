@@ -105,14 +105,14 @@ struct DocumentFolderView: View {
     
     @ViewBuilder
     var keyMissingAlertButtons: some View {
-        Button("Impostazioni") {
-            if let url = URL(string: "App-Prefs:root=CASTLE") { UIApplication.shared.open(url) }
-        }
+        // Prima c'era anche un pulsante "Impostazioni" che apriva iCloud
+        // Portachiavi: mandava l'utente in un posto che non risolve nulla,
+        // perché la chiave si recupera solo da un nuovo invito QR.
         Button("OK", role: .cancel) { }
     }
-    
+
     var keyMissingAlertMessage: Text {
-        Text("Abilita iCloud Keychain in Impostazioni > [Il tuo account] > iCloud > Portachiavi, oppure chiedi al proprietario della famiglia di condividere un QR code con la chiave.")
+        Text(FamilyKeyMissing.message)
     }
     
     // MARK: - Init
@@ -1058,6 +1058,7 @@ private extension DocumentFolderView {
         @ViewBuilder
         private func applyNavAndAppear(_ content: Content) -> some View {
             content
+                .familyKeyMissingGate(familyId: view.familyId)
                 .navigationTitle(view.folderTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .onAppear {

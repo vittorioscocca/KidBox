@@ -282,8 +282,12 @@ service cloud.firestore {
     }
 
     // ── DIAGNOSTICS ────────────────────────────────────────
+    // Chiusa: era `if true`, quindi lettura e scrittura non autenticate da
+    // chiunque conoscesse il project id. L'unico client che la usava era il
+    // ping di `FirestorePingService`, compilato solo sotto `#if DEBUG`:
+    // nessun percorso di produzione tocca questa collection.
     match /diagnostics/{doc} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

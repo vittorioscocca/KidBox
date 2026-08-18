@@ -88,8 +88,14 @@ struct OnboardingWalkthroughView: View {
     
     // Famiglia creata nel flusso "crea", usata dalla pagina invito
     @State private var createdFamilyId: String? = nil
-    
+
     @State private var familyPath: FamilyOnboardingPath? = nil
+
+    // Anagrafica raccolta a pagina 4, salvata dal CTA prima di proseguire.
+    @State private var profileFirstName   = ""
+    @State private var profileLastName    = ""
+    @State private var isSavingProfile    = false
+    @State private var profileSaveError: String? = nil
     
     @Environment(\.colorScheme)  private var colorScheme
     @Environment(\.modelContext) private var modelContext
@@ -108,15 +114,18 @@ struct OnboardingWalkthroughView: View {
         : .white
     }
     
+    // Pagine: 0-2 info · 3 scelta percorso · 4 nome e cognome ·
+    // 5 crea famiglia / entra con codice · 6 invita (solo percorso "crea").
     private var totalPages: Int {
-        familyPath == .join ? 5 : 6
+        familyPath == .join ? 6 : 7
     }
-    
+
     private var isInfoPage: Bool { currentPage < 3 }
     private var isPathPickerPage: Bool { currentPage == 3 }
-    private var isCreatePage: Bool { currentPage == 4 && familyPath == .create }
-    private var isJoinPage: Bool { currentPage == 4 && familyPath == .join }
-    private var isInvitePage: Bool { currentPage == 5 && familyPath == .create }
+    private var isNamePage: Bool { currentPage == 4 }
+    private var isCreatePage: Bool { currentPage == 5 && familyPath == .create }
+    private var isJoinPage: Bool { currentPage == 5 && familyPath == .join }
+    private var isInvitePage: Bool { currentPage == 6 && familyPath == .create }
     private var isLastPage: Bool { currentPage == totalPages - 1 }
     
     private var infoPage: OnboardingPage { infoPages[min(currentPage, infoPages.count - 1)] }
@@ -127,12 +136,15 @@ struct OnboardingWalkthroughView: View {
         case 1: return Color(red: 0.50, green: 0.35, blue: 0.80)
         case 2: return Color(red: 0.20, green: 0.55, blue: 0.38)
         case 3: return Color(red: 0.95, green: 0.38, blue: 0.10)
-        case 4:
+        // 4 = nome e cognome: resta sull'arancio del percorso, il colore del
+        // ramo join entra in gioco solo dalla pagina successiva.
+        case 4: return Color(red: 0.95, green: 0.38, blue: 0.10)
+        case 5:
             if familyPath == .join {
                 return Color(red: 0.55, green: 0.35, blue: 0.9)
             }
             return Color(red: 0.95, green: 0.38, blue: 0.10)
-        case 5: return Color(red: 0.95, green: 0.38, blue: 0.10)
+        case 6: return Color(red: 0.95, green: 0.38, blue: 0.10)
         default: return Color(red: 0.95, green: 0.38, blue: 0.10)
         }
     }
@@ -142,12 +154,13 @@ struct OnboardingWalkthroughView: View {
         case 1: return Color(red: 0.60, green: 0.45, blue: 0.85)
         case 2: return Color(red: 0.30, green: 0.65, blue: 0.45)
         case 3: return Color(red: 1.00, green: 0.75, blue: 0.25)
-        case 4:
+        case 4: return Color(red: 1.00, green: 0.75, blue: 0.25)
+        case 5:
             if familyPath == .join {
                 return Color(red: 0.60, green: 0.45, blue: 0.85)
             }
             return Color(red: 1.00, green: 0.75, blue: 0.25)
-        case 5: return Color(red: 1.00, green: 0.75, blue: 0.25)
+        case 6: return Color(red: 1.00, green: 0.75, blue: 0.25)
         default: return Color(red: 1.00, green: 0.75, blue: 0.25)
         }
     }
@@ -197,6 +210,20 @@ struct OnboardingWalkthroughView: View {
                         .opacity(textOpacity)
                         .offset(y: textOffset)
                         
+                    } else if isNamePage {
+                        NameOnboardingCard(
+                            cardBackground: cardBackground,
+                            accentColor:    currentAccent,
+                            iconColor:      currentIconColor,
+                            firstName:      $profileFirstName,
+                            lastName:       $profileLastName,
+                            isBusy:         isSavingProfile,
+                            errorText:      profileSaveError
+                        )
+                        .padding(.horizontal, 24)
+                        .opacity(textOpacity)
+                        .offset(y: textOffset)
+
                     } else if isCreatePage {
                         CreateFamilyCard(
                             cardBackground: cardBackground,
@@ -206,12 +233,21 @@ struct OnboardingWalkthroughView: View {
                             onFamilyCreated: { familyId in
                                 createdFamilyId = familyId
                                 coordinator.setActiveFamily(familyId)
+                                // Il documento membro è appena nato: ora che la
+                                // famiglia esiste il nome raccolto a pagina 4 può
+                                // arrivarci, altrimenti resterebbe solo su users/{uid}.
+                                Task {
+                                    await UserProfileWriter.propagateDisplayNameToMember(
+                                        familyId: familyId,
+                                        modelContext: modelContext
+                                    )
+                                }
                             }
                         )
                         .padding(.horizontal, 24)
                         .opacity(textOpacity)
                         .offset(y: textOffset)
-                        
+
                     } else if isJoinPage {
                         JoinFamilyOnboardingCard(
                             cardBackground: cardBackground,
@@ -219,6 +255,18 @@ struct OnboardingWalkthroughView: View {
                             modelContext:   modelContext,
                             coordinator:    coordinator,
                             onJoined: {
+                                // Il join ha già fatto `setActiveFamily`, quindi qui
+                                // il familyId è disponibile: ci si aggancia per dare
+                                // un nome al membro appena creato da `addMember`,
+                                // che lo scrive senza `displayName`.
+                                if let joinedId = coordinator.activeFamilyId, !joinedId.isEmpty {
+                                    Task {
+                                        await UserProfileWriter.propagateDisplayNameToMember(
+                                            familyId: joinedId,
+                                            modelContext: modelContext
+                                        )
+                                    }
+                                }
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     bgOpacity = 0
                                     textOpacity = 0
@@ -271,7 +319,10 @@ struct OnboardingWalkthroughView: View {
                 }
             }
         }
-        .onAppear { animateIn() }
+        .onAppear {
+            animateIn()
+            prefillNameFromExistingProfile()
+        }
         // Segnala a RootGateView che siamo nel percorso "crea": così l'inserimento locale
         // della KBFamily (che avviene prima ancora di premere "Continua") non fa completare
         // l'onboarding automaticamente saltando la pagina del QR. Impostato qui, alla scelta
@@ -378,15 +429,26 @@ struct OnboardingWalkthroughView: View {
 
     private var isCTADisabled: Bool {
         if currentPage == 3 && familyPath == nil { return true }
-        if currentPage == 4 && familyPath == .create && createdFamilyId == nil { return true }
+        if currentPage == 4 && !canSubmitName { return true }
+        if currentPage == 5 && familyPath == .create && createdFamilyId == nil { return true }
         return false
     }
-    
+
+    /// Nome e cognome sono entrambi obbligatori: un `displayName` a metà
+    /// (solo nome o solo cognome) è peggio del segnaposto, perché sembra
+    /// completo pur non essendolo.
+    private var canSubmitName: Bool {
+        !profileFirstName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !profileLastName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !isSavingProfile
+    }
+
     private var ctaLabel: String {
         switch currentPage {
         case 3: return "Continua"
-        case 4: return familyPath == .join ? "Inizia" : "Continua"
-        case 5: return "Inizia"
+        case 4: return isSavingProfile ? "Salvataggio…" : "Continua"
+        case 5: return familyPath == .join ? "Inizia" : "Continua"
+        case 6: return "Inizia"
         default: return "Continua"
         }
     }
@@ -399,8 +461,65 @@ struct OnboardingWalkthroughView: View {
                 bgOpacity = 0; textOpacity = 0; iconOpacity = 0; ctaScale = 0.88
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
+        } else if isNamePage {
+            // Si avanza solo a salvataggio riuscito: proseguire dopo un errore
+            // lascerebbe l'utente convinto di aver messo il nome, e la famiglia
+            // nascerebbe comunque con un membro anonimo.
+            Task { await saveNameThenAdvance() }
         } else {
             advancePage()
+        }
+    }
+
+    /// Precompila i campi da quello che già si sa dell'utente.
+    ///
+    /// Il profilo locale ha la precedenza; in mancanza si spezza il
+    /// `displayName` di Firebase Auth, che con Google e Facebook arriva già
+    /// valorizzato. Senza questo, chi entra con un social si troverebbe a
+    /// riscrivere un nome che l'app conosce già.
+    @MainActor
+    private func prefillNameFromExistingProfile() {
+        guard profileFirstName.isEmpty, profileLastName.isEmpty else { return }
+        guard let user = Auth.auth().currentUser else { return }
+
+        let uid = user.uid
+        let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+        if let profile = try? modelContext.fetch(desc).first {
+            let fn = (profile.firstName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let ln = (profile.lastName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !fn.isEmpty || !ln.isEmpty {
+                profileFirstName = fn
+                profileLastName = ln
+                return
+            }
+        }
+
+        let display = (user.displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !display.isEmpty, display != "Utente" else { return }
+        var parts = display.split(separator: " ").map(String.init)
+        guard !parts.isEmpty else { return }
+        profileFirstName = parts.removeFirst()
+        profileLastName = parts.joined(separator: " ")
+    }
+
+    @MainActor
+    private func saveNameThenAdvance() async {
+        guard !isSavingProfile else { return }
+        isSavingProfile = true
+        profileSaveError = nil
+        defer { isSavingProfile = false }
+
+        do {
+            try await UserProfileWriter.saveNames(
+                firstName: profileFirstName,
+                lastName: profileLastName,
+                modelContext: modelContext
+            )
+            KBLog.auth.kbInfo("Onboarding: profile names saved, advancing")
+            advancePage()
+        } catch {
+            profileSaveError = error.localizedDescription
+            KBLog.auth.kbError("Onboarding: profile names save failed: \(error.localizedDescription)")
         }
     }
     
@@ -583,6 +702,37 @@ struct OnboardingWalkthroughView: View {
                         .foregroundStyle(.green)
                         .font(.subheadline.bold())
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // Join senza chiave: qui l'avanzamento automatico è sospeso
+                    // (vedi `onChange` sotto), così l'avviso resta leggibile e
+                    // l'utente prosegue solo dopo averlo visto.
+                    if let warning = vm.vaultKeyWarning {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text(warning)
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Attenzione: \(warning)")
+
+                        Button {
+                            onJoined()
+                        } label: {
+                            Text("Ho capito, continua")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(14)
+                                .background(
+                                    accentColor,
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 } else {
                     Button {
                         Task { await vm.join() }
@@ -641,7 +791,11 @@ struct OnboardingWalkthroughView: View {
                 )
             }
             .onChange(of: vm.didJoin) { _, joined in
-                if joined { onJoined() }
+                // Se manca la chiave l'avanzamento non è automatico: `onJoined()`
+                // dissolve la card in 0.3s e l'avviso non farebbe in tempo a
+                // essere letto. In quel caso avanza il pulsante "Ho capito".
+                guard joined, vm.vaultKeyWarning == nil else { return }
+                onJoined()
             }
         }
         
@@ -684,8 +838,125 @@ private struct OnboardingQRScannerSheet: View {
 // Schermata 4: nome famiglia + nome primo figlio.
 // Chiama FamilyCreationService e salva il familyId nel parent via onFamilyCreated.
 
+// MARK: - NameOnboardingCard
+//
+// Schermata 4: nome e cognome dell'utente, raccolti prima della famiglia.
+//
+// Sta prima apposta: il documento membro nasce alla creazione/join della
+// famiglia, quindi avere già il nome permette di scriverlo lì subito invece di
+// lasciare il membro anonimo agli occhi degli altri finché non apre il Profilo.
+// Il salvataggio vero lo fa il parent nel CTA, via `UserProfileWriter`.
+
+private struct NameOnboardingCard: View {
+
+    let cardBackground: Color
+    let accentColor:    Color
+    let iconColor:      Color
+
+    @Binding var firstName: String
+    @Binding var lastName:  String
+    let isBusy:    Bool
+    let errorText: String?
+
+    @FocusState private var focusedField: Field?
+    private enum Field { case first, last }
+
+    var body: some View {
+        VStack(spacing: 24) {
+
+            // Header
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(LinearGradient(
+                            colors: [iconColor, accentColor],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                }
+                Text("Come ti chiami?")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Text("Il tuo nome è quello che gli altri membri vedranno in chat, nei promemoria e sulla mappa. Potrai cambiarlo dal Profilo.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+            }
+            .padding(.horizontal, 8)
+
+            // Form
+            VStack(spacing: 12) {
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Nome")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(accentColor)
+                            .frame(width: 20)
+                        TextField("Es. Giulia", text: $firstName)
+                            .focused($focusedField, equals: .first)
+                            .textContentType(.givenName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .disabled(isBusy)
+                            .submitLabel(.next)
+                            .onSubmit { focusedField = .last }
+                    }
+                    .padding(14)
+                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(focusedField == .first ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Cognome")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(accentColor)
+                            .frame(width: 20)
+                        TextField("Es. Rossi", text: $lastName)
+                            .focused($focusedField, equals: .last)
+                            .textContentType(.familyName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .disabled(isBusy)
+                            .submitLabel(.done)
+                            .onSubmit { focusedField = nil }
+                    }
+                    .padding(14)
+                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(focusedField == .last ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
+                    )
+                }
+            }
+
+            if let errorText {
+                Text(errorText)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(24)
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 10)
+    }
+}
+
+// MARK: - CreateFamilyCard
+
 private struct CreateFamilyCard: View {
-    
+
     let cardBackground:  Color
     let accentColor:     Color
     let iconColor:       Color

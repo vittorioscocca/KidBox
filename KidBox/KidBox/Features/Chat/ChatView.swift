@@ -78,6 +78,7 @@ struct ChatView: View {
                 .id(activeFamilyId)
             }
         }
+        .familyKeyMissingGate(familyId: activeFamilyId)
         .navigationTitle(chatNavigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

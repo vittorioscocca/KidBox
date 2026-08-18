@@ -141,6 +141,24 @@ private struct JoinFamilyViewBody: View {
                         Text("Sei entrato nella famiglia!")
                     }
                     .listRowBackground(cardBackground)
+
+                    // Join riuscito ma senza chiave: la membership è valida, quindi
+                    // non è un errore rosso — è un avviso che dice cosa manca e come
+                    // rimediare, altrimenti l'utente scopre da solo che Password,
+                    // Documenti e Wallet sono vuoti senza capirne il motivo.
+                    if let warning = vm.vaultKeyWarning {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text(warning)
+                                .font(.footnote)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Attenzione: \(warning)")
+                        .listRowBackground(cardBackground)
+                    }
+
                     Button("Continua") {
                         KBLog.navigation.kbInfo("JoinFamilyView: continue -> resetToRoot")
                         coordinator.resetToRoot()
