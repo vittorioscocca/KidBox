@@ -29,8 +29,15 @@ final class AppCoordinator: ObservableObject {
     // MARK: - Navigation
     
     /// Current navigation path for the app's `NavigationStack`.
-    @Published var path: [Route] = []
-    
+    @Published var path: [Route] = [] {
+        didSet {
+            trackScreenViewIfNeeded()
+        }
+    }
+
+    /// Ultimo `screen_name` inviato a GA4, per evitare fire duplicati su path invariato.
+    private var lastFiredScreenName: String?
+
     // MARK: - Session state
     
     /// Whether there is a currently authenticated Firebase user.
@@ -54,7 +61,14 @@ final class AppCoordinator: ObservableObject {
     /// altrimenti farebbe saltare la pagina del QR mandando l'utente dritto in Home.
     /// In-memory only: si azzera al riavvio (recupero desiderato) e in `completeOnboarding()`.
     @Published var isCreatingFamilyInOnboarding = false
-    
+
+    /// Nome dell'ultimo step di onboarding mostrato, usato per capire se il
+    /// wizard è ancora aperto quando l'app va in background (onboarding_abandoned).
+    @Published var lastOnboardingStepSeen: String?
+
+    /// Timestamp d'apertura del wizard, per calcolare la durata di onboarding_completed.
+    var onboardingStartedAt: Date?
+
     /// Cached Firebase UID of the current user (if authenticated).
     @Published private(set) var uid: String?
     
@@ -173,6 +187,9 @@ final class AppCoordinator: ObservableObject {
         appearanceMode = AppearanceMode(rawValue: rawAppearance) ?? .system
         KBLog.settings.kbDebug("AppCoordinator init appearanceMode=\(rawAppearance)")
         KBLog.navigation.kbInfo("hasSeenOnboarding = \(UserDefaults.standard.bool(forKey: "hasSeenOnboarding"))")
+
+        lastFiredScreenName = "home"
+        AppAnalytics.screenView(name: "home")
     }
     
     // MARK: - Appearance management
@@ -192,6 +209,11 @@ final class AppCoordinator: ObservableObject {
         UserDefaults.standard.set(true, forKey: Self.onboardingKey)
         hasSeenOnboarding = true
         KBLog.navigation.kbInfo("Onboarding completed")
+
+        let duration = onboardingStartedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        AppAnalytics.onboardingCompleted(totalDurationSeconds: duration)
+        lastOnboardingStepSeen = nil
+        onboardingStartedAt = nil
     }
     
     // MARK: - Active family management
@@ -473,11 +495,65 @@ final class AppCoordinator: ObservableObject {
     }
     
     // MARK: - Root + Destinations
-    
+
     func makeRootView() -> some View {
         RootGateView()
     }
-    
+
+    // MARK: - Analytics (screen_view)
+
+    private func trackScreenViewIfNeeded() {
+        let route = path.last
+        let name = route.flatMap { screenName(for: $0) } ?? (path.isEmpty ? "home" : nil)
+        guard let name else { return }
+        guard name != lastFiredScreenName else { return }
+        lastFiredScreenName = name
+        AppAnalytics.screenView(name: name)
+    }
+
+    private func screenName(for route: Route) -> String? {
+        switch route {
+        case .calendar:
+            return "calendar"
+        case .documentsHome, .documentsCategory, .document:
+            return "documents"
+        case .chat, .supportChat, .askExpert:
+            return "chat"
+        case .pediatricChildSelector, .pediatricHome, .pediatricMedicalRecord, .appleHealthApp,
+             .pediatricVisits, .pediatricVisitDetail, .pediatricVaccines, .pediatricTreatments,
+             .pediatricTreatmentDetail, .pediatricExams, .examDetail, .pediatricTimeline,
+             .pediatricClinicalRecord:
+            return "health"
+        case .expensesHome, .expenseDetail:
+            return "expenses"
+        case .passwordsHome, .passwordsSecurity, .passwordDetail:
+            return "passwords"
+        case .walletHome, .walletTicketDetail, .walletDocumentDetail:
+            return "wallet"
+        case .shoppingList:
+            return "grocery"
+        case .notesHome, .noteDetail:
+            return "notes"
+        case .todo, .todoList, .todoSmart:
+            return "todo"
+        case .familyPhotos, .photoAlbumDetail:
+            return "photos"
+        case .petsHome, .petDetail, .petEventDetail:
+            return "pets"
+        case .homeItemsHome, .homeItemDetail, .housePaymentDetail,
+             .vehiclesHome, .vehicleDetail, .vehicleEventsList, .vehicleEventDetail:
+            return "home_vehicles"
+        case .travelList, .travelAllTrips, .travelTripDetail, .travelDiscover, .travelDestinationDetail:
+            return "travel"
+        case .familyLocation:
+            return "location"
+        case .home:
+            return "home"
+        default:
+            return nil
+        }
+    }
+
     @ViewBuilder
     func makeDestination(for route: Route) -> some View {
         switch route {

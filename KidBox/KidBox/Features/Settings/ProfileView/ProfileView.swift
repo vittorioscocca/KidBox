@@ -228,7 +228,7 @@ struct ProfileView: View {
             )
         }
         .sheet(isPresented: $showUpgradeSheet) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "settings_upsell")
                 .environmentObject(subscriptionManager)
         }
     }

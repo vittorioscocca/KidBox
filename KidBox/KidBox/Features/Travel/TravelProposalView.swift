@@ -73,7 +73,10 @@ struct TravelProposalView: View {
                 VStack(spacing: 12) {
                     Text("Piano Pro o Max richiesto per la pianificazione AI.")
                         .foregroundStyle(.secondary)
-                    Button("Scopri Pro e Max") { showUpgrade = true }
+                    Button("Scopri Pro e Max") {
+                        showUpgrade = true
+                        AppAnalytics.aiPaywallShown(context: "travel_agent")
+                    }
                         .buttonStyle(.borderedProminent)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -105,7 +108,7 @@ struct TravelProposalView: View {
             }
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "travel_lock")
                 .environmentObject(subscriptionManager)
         }
         .alert("Rigenerazione giorno", isPresented: $showRegenerateError) {

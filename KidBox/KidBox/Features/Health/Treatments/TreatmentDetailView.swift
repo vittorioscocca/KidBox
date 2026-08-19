@@ -224,6 +224,9 @@ struct TreatmentDetailView: View {
                 let s = await UNUserNotificationCenter.current().notificationSettings()
                 notifGranted = s.authorizationStatus == .authorized
             }
+            if treatment.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: treatment.petId.isEmpty ? "health" : "pets")
+            }
         }
         .onReceive(
             NotificationCenter.default.publisher(for: .treatmentDoseQuickAction)

@@ -85,6 +85,11 @@ struct PetEventDetailView: View {
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Evento")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let event, event.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "pets")
+            }
+        }
         .toolbar {
             if event != nil {
                 ToolbarItem(placement: .topBarTrailing) {

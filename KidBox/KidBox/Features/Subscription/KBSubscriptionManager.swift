@@ -347,6 +347,7 @@ final class KBSubscriptionManager: ObservableObject {
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
+                AppAnalytics.subscriptionStarted(plan: plan.rawValue, trial: transaction.offerType == .introductory)
                 // Alla Cloud Function serve la ricevuta FIRMATA, non l'id transazione:
                 // è la firma di Apple a rendere la prova d'acquisto non falsificabile.
                 await syncPlanWithServer(jwsRepresentation: verification.jwsRepresentation)

@@ -143,6 +143,9 @@ struct VehicleDetailView: View {
         .onAppear {
             SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+            if let vehicle, vehicle.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "home_vehicles")
+            }
         }
     }
 

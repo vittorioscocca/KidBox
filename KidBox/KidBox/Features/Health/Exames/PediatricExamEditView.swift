@@ -421,7 +421,11 @@ struct PediatricExamEditView: View {
         let now = Date()
         
         let exam: KBMedicalExam
-        
+        let isNewExam = examId == nil
+        let isFirstExam = isNewExam && ((try? modelContext.fetchCount(FetchDescriptor<KBMedicalExam>(predicate: #Predicate<KBMedicalExam> {
+            $0.familyId == familyId && $0.isDeleted == false
+        }))) ?? 0) == 0
+
         if let eid = examId,
            let existing = try? modelContext.fetch(
             FetchDescriptor<KBMedicalExam>(predicate: #Predicate { $0.id == eid })
@@ -466,7 +470,13 @@ struct PediatricExamEditView: View {
         
         try? modelContext.save()
         SyncCenter.shared.enqueueMedicalExamUpsert(examId: exam.id, familyId: familyId, modelContext: modelContext)
-        
+        if isNewExam {
+            AppAnalytics.contentCreated(type: "health")
+            if isFirstExam {
+                AppAnalytics.featureFirstUse(feature: "health")
+            }
+        }
+
         // ── Gestione promemoria ──
         if hasDeadline && reminderOn {
             KBExamReminderService.shared.schedule(

@@ -249,6 +249,7 @@ final class MedicalAIChatViewModel: ObservableObject {
                 messages: payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
+            AppAnalytics.aiMessageSent(agentType: "salute", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
             usageTodaySnapshot = response.usageToday
             dailyLimitSnapshot = response.dailyLimit
             

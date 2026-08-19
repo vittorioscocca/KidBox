@@ -159,6 +159,9 @@ struct PetDetailView: View {
         .onAppear {
             SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext)
+            if let pet, pet.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "pets")
+            }
         }
     }
 

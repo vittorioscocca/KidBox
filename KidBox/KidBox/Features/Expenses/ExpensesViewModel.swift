@@ -225,6 +225,9 @@ final class ExpensesViewModel: ObservableObject {
     @discardableResult
     func addExpenseReturning(title: String, amount: Double, date: Date, categoryId: String?,
                              notes: String?, createdByUid: String?) -> KBExpense {
+        let isFirstExpense = ((try? modelContext.fetchCount(FetchDescriptor<KBExpense>(predicate: #Predicate<KBExpense> {
+            $0.familyId == familyId && $0.isDeleted == false
+        }))) ?? 0) == 0
         let exp = KBExpense(
             familyId:           familyId,
             title:              title,
@@ -246,7 +249,11 @@ final class ExpensesViewModel: ObservableObject {
         )
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         // ─────────────────────────────────────────────────────────────────────
-        
+        AppAnalytics.contentCreated(type: "expenses")
+        if isFirstExpense {
+            AppAnalytics.featureFirstUse(feature: "expenses")
+        }
+
         reload()
         return exp
     }

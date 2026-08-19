@@ -30,6 +30,13 @@ struct ExamsAskAIButton: View {
         }
     }
 
+    private var upgradeTriggerFeature: String {
+        switch scope {
+        case .single: return "ai_upgrade_exam_detail"
+        case .all:    return "ai_upgrade_exams_home"
+        }
+    }
+
     var body: some View {
         AskAIControl(
             style: .circle,
@@ -38,7 +45,7 @@ struct ExamsAskAIButton: View {
             handleTap()
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView(contextualMessage: upgradeMessage)
+            UpgradeSheetView(contextualMessage: upgradeMessage, triggerFeature: upgradeTriggerFeature)
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .sheet(isPresented: $showConsent) {
@@ -53,6 +60,10 @@ struct ExamsAskAIButton: View {
         guard !isEmpty else { return }
         guard KBSubscriptionManager.shared.isAIAccessible else {
             showUpgrade = true
+            switch scope {
+            case .single: AppAnalytics.aiPaywallShown(context: "ai_upgrade_exam_detail")
+            case .all:    AppAnalytics.aiPaywallShown(context: "ai_upgrade_exams_home")
+            }
             return
         }
         if !AISettings.shared.consentGiven {

@@ -104,6 +104,11 @@ struct PediatricExamDetailView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Esami")
+        .onAppear {
+            if let exam, exam.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "health")
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             if let exam {
                 ExamsAskAIButton(subjectName: childName, scope: .single(exam))

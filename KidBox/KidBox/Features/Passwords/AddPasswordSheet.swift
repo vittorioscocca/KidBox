@@ -260,6 +260,10 @@ struct AddPasswordSheet: View {
 
             let icon = await resolveFaviconURL(from: website)
 
+            let isFirstPassword = ((try? modelContext.fetchCount(FetchDescriptor<PasswordEntry>(predicate: #Predicate<PasswordEntry> {
+                $0.familyId == familyId && $0.deletedAt == nil
+            }))) ?? 0) == 0
+
             let entry = PasswordEntry(
                 familyId: familyId,
                 createdBy: uid,
@@ -282,6 +286,10 @@ struct AddPasswordSheet: View {
             PasswordsRepository.enqueuePasswordEntryUpsert(entryId: entry.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             Task { await NotificationManager.shared.syncPasswordExpiryNotifications(for: entry) }
+            AppAnalytics.contentCreated(type: "passwords")
+            if isFirstPassword {
+                AppAnalytics.featureFirstUse(feature: "passwords")
+            }
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

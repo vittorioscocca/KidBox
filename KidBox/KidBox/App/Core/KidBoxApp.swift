@@ -528,6 +528,7 @@ struct KidBoxApp: App {
                 SyncCenter.shared.flushGlobal(modelContext: context)
                 BadgeManager.shared.refreshAppBadge()
                 Task { await KBAnalytics.shared.logSessionStart(entryPoint: .icon) }
+                AppAnalytics.trackAppOpen()
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
                 // Throttlato internamente a una chiamata ogni 6 ore.
                 Task { await AppUpdateChecker.shared.checkForUpdate() }
@@ -597,6 +598,9 @@ struct KidBoxApp: App {
                 // Le letture sono bufferizzate in memoria: qui è l'unico punto
                 // in cui partono. Se si perde qualcosa è un costo accettabile.
                 Task { await KBAnalytics.shared.flush() }
+                if let lastStep = coordinator.lastOnboardingStepSeen {
+                    AppAnalytics.onboardingAbandoned(lastStepSeen: lastStep)
+                }
                 SyncCenter.shared.stopAutoFlush()
                 SyncCenter.shared.stopFamilyBundleRealtime()
                 SyncCenter.shared.stopPetsRealtime()

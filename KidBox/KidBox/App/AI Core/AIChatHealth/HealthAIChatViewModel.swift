@@ -292,6 +292,7 @@ final class HealthAIChatViewModel: ObservableObject {
                 messages: payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
+            AppAnalytics.aiMessageSent(agentType: "salute", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
             refreshPayloadCostEstimate(pendingUserText: "")

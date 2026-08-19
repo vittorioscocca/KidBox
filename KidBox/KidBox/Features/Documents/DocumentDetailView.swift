@@ -85,6 +85,9 @@ struct DocumentDetailView: View {
                     entryPoint: origin
                 )
             }
+            if document.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "documents")
+            }
         }
         .sheet(isPresented: $showVisibilityPicker) {
             VisibilityPickerSheet(

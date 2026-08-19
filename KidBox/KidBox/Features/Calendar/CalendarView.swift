@@ -1103,6 +1103,9 @@ struct CalendarEventFormView: View {
             SyncCenter.shared.enqueueCalendarUpsert(
                 eventId: e.id, familyId: familyId, modelContext: modelContext)
         } else {
+            let isFirstCalendarEvent = ((try? modelContext.fetchCount(FetchDescriptor<KBCalendarEvent>(predicate: #Predicate<KBCalendarEvent> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             let newEvent = KBCalendarEvent(
                 familyId:        familyId,
                 title:           title.trimmingCharacters(in: .whitespaces),
@@ -1127,6 +1130,10 @@ struct CalendarEventFormView: View {
             modelContext.insert(newEvent)
             SyncCenter.shared.enqueueCalendarUpsert(
                 eventId: newEvent.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "calendar")
+            if isFirstCalendarEvent {
+                AppAnalytics.featureFirstUse(feature: "calendar")
+            }
         }
         
         try? modelContext.save()

@@ -357,6 +357,7 @@ final class TravelPlanningViewModel: ObservableObject {
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
             AIUsageStore.shared.apply(usageToday: response.usageToday, dailyLimit: response.dailyLimit)
+            AppAnalytics.aiMessageSent(agentType: "viaggi", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
         } catch let error as AIServiceError {
             generationError = error.errorDescription
         } catch {
@@ -517,6 +518,10 @@ final class TravelPlanningViewModel: ObservableObject {
             }
         }
 
+        let isFirstTrip = ((try? modelContext.fetchCount(FetchDescriptor<KBTrip>(predicate: #Predicate<KBTrip> {
+            $0.familyId == familyId
+        }))) ?? 0) == 0
+
         modelContext.insert(trip)
         _ = TravelTripAlbumService.ensureAlbum(for: trip, modelContext: modelContext, userId: uid)
         _ = TravelTripNotesService.ensureNote(for: trip, modelContext: modelContext, userId: uid)
@@ -526,6 +531,11 @@ final class TravelPlanningViewModel: ObservableObject {
         } catch {
             generationError = "Salvataggio viaggio non riuscito. Riprova."
             return nil
+        }
+
+        AppAnalytics.contentCreated(type: "travel")
+        if isFirstTrip {
+            AppAnalytics.featureFirstUse(feature: "travel")
         }
 
         acceptedTrip = trip

@@ -94,6 +94,9 @@ struct HomeItemDetailView: View {
         }
         .onAppear {
             SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
+            if let item, item.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "home_vehicles")
+            }
         }
     }
 

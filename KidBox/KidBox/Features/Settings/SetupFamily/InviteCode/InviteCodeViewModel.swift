@@ -73,6 +73,7 @@ final class InviteCodeViewModel: ObservableObject {
             shareLink = invite.shareLink
             currentInviteId = invite.inviteId
             currentInviteFamilyId = familyId
+            AppAnalytics.inviteGenerated()
             KBLog.sync.kbInfo("InviteCodeVM: qr payload + share link ready familyId=\(familyId) inviteId=\(invite.inviteId)")
             
         } catch {

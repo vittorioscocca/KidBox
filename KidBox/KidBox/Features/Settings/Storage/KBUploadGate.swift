@@ -35,7 +35,7 @@ extension View {
     /// Aggiunge il sheet UpgradeSheetView presentato quando showUpgrade = true.
     func storageUpgradeSheet(_ isPresented: Binding<Bool>) -> some View {
         self.sheet(isPresented: isPresented) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "storage_lock")
                 .environmentObject(KBSubscriptionManager.shared)
         }
     }

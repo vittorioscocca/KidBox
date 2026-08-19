@@ -1116,9 +1116,21 @@ struct FamilyPhotosView: View {
     
     // MARK: - Upload
     
+    @MainActor
+    private func isFamilyMissingAnyPhoto() -> Bool {
+        let fid = familyId
+        return ((try? modelContext.fetchCount(FetchDescriptor<KBFamilyPhoto>(predicate: #Predicate<KBFamilyPhoto> {
+            $0.familyId == fid && $0.isDeleted == false
+        }))) ?? 0) == 0
+    }
+
     private func uploadItems(_ items: [PhotosPickerItem]) async {
         guard !uid.isEmpty else { return }
         let total = Double(items.count); var done = 0.0
+        var isFirstPhoto = false
+        if !items.isEmpty {
+            isFirstPhoto = await MainActor.run { isFamilyMissingAnyPhoto() }
+        }
         await MainActor.run { withAnimation { isUploading = true; uploadProgress = 0 } }
         
         for item in items {
@@ -1219,10 +1231,16 @@ struct FamilyPhotosView: View {
             done += 1
             await MainActor.run { uploadProgress = done / total }
         }
-        
+
+        if !items.isEmpty {
+            AppAnalytics.contentCreated(type: "photos")
+            if isFirstPhoto {
+                AppAnalytics.featureFirstUse(feature: "photos")
+            }
+        }
         await MainActor.run { withAnimation { isUploading = false; uploadProgress = 0 } }
     }
-    
+
     private func uploadFromAppGroup(path: String, fileType: String) async {
         guard !uid.isEmpty else { KBLog.sync.kbError("uploadFromAppGroup: uid empty — abort"); return }
         let fileURL  = URL(fileURLWithPath: path)
@@ -1263,8 +1281,13 @@ struct FamilyPhotosView: View {
             photo.syncState = .synced
             photo.videoDurationSeconds = isVideo ? videoDurationSecs : nil
             if !isVideo { cacheLocally(data: mediaData, photoId: photoId, photo: photo) }
+            let isFirstPhoto = await MainActor.run { isFamilyMissingAnyPhoto() }
             await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
-            
+            AppAnalytics.contentCreated(type: "photos")
+            if isFirstPhoto {
+                AppAnalytics.featureFirstUse(feature: "photos")
+            }
+
             let dto = try await SyncCenter.photoRemote.upload(
                 photoId: photoId, familyId: familyId, userId: uid,
                 imageData: mediaData, fileName: fileName, mimeType: mimeType, takenAt: now,
@@ -1309,7 +1332,12 @@ struct FamilyPhotosView: View {
         photo.syncState = .synced
         if let albumId = targetAlbumId { photo.albumIdsRaw = albumId }
         cacheLocally(data: data, photoId: photoId, photo: photo)
+        let isFirstPhoto = await MainActor.run { isFamilyMissingAnyPhoto() }
         await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
+        AppAnalytics.contentCreated(type: "photos")
+        if isFirstPhoto {
+            AppAnalytics.featureFirstUse(feature: "photos")
+        }
         do {
             let dto = try await SyncCenter.photoRemote.upload(
                 photoId: photoId, familyId: familyId, userId: uid,
@@ -1353,7 +1381,12 @@ struct FamilyPhotosView: View {
         )
         photo.syncState = .synced; photo.videoDurationSeconds = durSecs
         if let albumId = targetAlbumId { photo.albumIdsRaw = albumId }
+        let isFirstPhoto = await MainActor.run { isFamilyMissingAnyPhoto() }
         await MainActor.run { modelContext.insert(photo); try? modelContext.save() }
+        AppAnalytics.contentCreated(type: "photos")
+        if isFirstPhoto {
+            AppAnalytics.featureFirstUse(feature: "photos")
+        }
         do {
             let dto = try await SyncCenter.photoRemote.upload(
                 photoId: photoId, familyId: familyId, userId: uid,

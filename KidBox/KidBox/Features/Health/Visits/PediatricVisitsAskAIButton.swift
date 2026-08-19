@@ -78,7 +78,7 @@ struct PediatricVisitsAskAIButton: View {
             handleTap()
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView(contextualMessage: "ai_upgrade_visits_home")
+            UpgradeSheetView(contextualMessage: "ai_upgrade_visits_home", triggerFeature: "ai_upgrade_visits_home")
                 .environmentObject(KBSubscriptionManager.shared)
         }
     }
@@ -86,6 +86,7 @@ struct PediatricVisitsAskAIButton: View {
     private func handleTap() {
         guard KBSubscriptionManager.shared.isAIAccessible else {
             showUpgrade = true
+            AppAnalytics.aiPaywallShown(context: "ai_upgrade_visits_home")
             return
         }
         action?(person, visits, selectedPeriod)

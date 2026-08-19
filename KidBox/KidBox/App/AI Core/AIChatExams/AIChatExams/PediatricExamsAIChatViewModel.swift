@@ -181,9 +181,10 @@ final class PediatricExamsAIChatViewModel: ObservableObject {
                 messages: payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
+            AppAnalytics.aiMessageSent(agentType: "salute", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
-            
+
             let exams = scope.exams
             let familyId = exams.first?.familyId ?? ""
             let childId = exams.first?.childId

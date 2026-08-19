@@ -40,6 +40,7 @@ struct NoteDetailView: View {
     @State private var loadedTitle: String = ""
     @State private var isDirty            = false
     @State private var note: KBNote?      = nil
+    @State private var isNewNoteAwaitingFirstSave = false
     @State private var bodyFocusTrigger: UUID? = nil
     @State private var shareItem: ShareItem?
     @State private var isViewActive       = false
@@ -119,6 +120,9 @@ struct NoteDetailView: View {
                     createdAt: n.createdAt,
                     entryPoint: origin
                 )
+            }
+            if n.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "notes")
             }
         }
         #if targetEnvironment(macCatalyst)
@@ -274,6 +278,7 @@ struct NoteDetailView: View {
         }
         
         // Crea nuova nota
+        isNewNoteAwaitingFirstSave = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let n = KBNote(
             id: noteId, familyId: familyId,
@@ -360,7 +365,19 @@ struct NoteDetailView: View {
             noteId: note.id, familyId: familyId, modelContext: modelContext
         )
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
-        
+
+        if isNewNoteAwaitingFirstSave {
+            isNewNoteAwaitingFirstSave = false
+            let excludedId = note.id
+            let isFirstNote = ((try? modelContext.fetchCount(FetchDescriptor<KBNote>(predicate: #Predicate<KBNote> {
+                $0.familyId == familyId && $0.isDeleted == false && $0.id != excludedId
+            }))) ?? 0) == 0
+            AppAnalytics.contentCreated(type: "notes")
+            if isFirstNote {
+                AppAnalytics.featureFirstUse(feature: "notes")
+            }
+        }
+
         isDirty            = false
         loadedTitle        = titleText
         pendingRemoteTitle = nil

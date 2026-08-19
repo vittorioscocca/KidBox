@@ -219,9 +219,10 @@ final class PediatricVisitsAIChatViewModel: ObservableObject {
                 messages: payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
+            AppAnalytics.aiMessageSent(agentType: "salute", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
             usageToday = response.usageToday
             dailyLimit = response.dailyLimit
-            
+
             KBLog.ai.kbInfo("AI reply received chars=\(response.reply.count)")
             KBLog.ai.kbInfo("AI usage=\(response.usageToday)/\(response.dailyLimit)")
             

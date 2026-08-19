@@ -72,13 +72,19 @@ struct TravelListView: View {
                             profile: travelProfile,
                             aiAvailable: aiAvailable,
                             onPlanTrip: {
-                                if aiAvailable { showWizard = true } else { showUpgrade = true }
+                                if aiAvailable {
+                                    showWizard = true
+                                } else {
+                                    showUpgrade = true
+                                    AppAnalytics.aiPaywallShown(context: "travel_plan_trip")
+                                }
                             },
                             onDiscover: {
                                 if aiAvailable {
                                     coordinator.navigate(to: .travelDiscover(familyId: familyId))
                                 } else {
                                     showUpgrade = true
+                                    AppAnalytics.aiPaywallShown(context: "travel_discover")
                                 }
                             }
                         )
@@ -149,7 +155,7 @@ struct TravelListView: View {
             )
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "travel_lock")
                 .environmentObject(subscriptionManager)
         }
         .onAppear {

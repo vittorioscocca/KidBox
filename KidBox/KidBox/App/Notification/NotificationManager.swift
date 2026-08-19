@@ -346,6 +346,7 @@ final class NotificationManager: NSObject, ObservableObject {
                 ?? DailyBriefingService.shared.lastBriefingText
             pendingDeepLink = .askExpert(familyId: userInfo["familyId"] as? String)
             KBLog.auth.kbInfo("DeepLink set for dailyBriefing → askExpert familyId=\(userInfo["familyId"] as? String ?? "nil")")
+            AppAnalytics.aiBriefingReceived()
 
         } else if type == "health_pattern" {
             pendingPlanningInitialMessage = (userInfo["fullText"] as? String)

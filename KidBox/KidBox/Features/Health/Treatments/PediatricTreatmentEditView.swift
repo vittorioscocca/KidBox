@@ -857,7 +857,12 @@ struct PediatricTreatmentEditView: View {
         let ed  = isLongTerm ? nil : endDate
         
         let treatment: KBTreatment
-        
+        let isNewTreatment = treatmentId == nil
+        let analyticsType = resolvedPetIdForSave.isEmpty ? "health" : "pets"
+        let isFirstTreatment = isNewTreatment && ((try? modelContext.fetchCount(FetchDescriptor<KBTreatment>(predicate: #Predicate<KBTreatment> {
+            $0.familyId == familyId && $0.isDeleted == false
+        }))) ?? 0) == 0
+
         if let tid = treatmentId {
             let desc = FetchDescriptor<KBTreatment>(predicate: #Predicate { $0.id == tid })
             guard let t = try? modelContext.fetch(desc).first else { return }
@@ -890,6 +895,12 @@ struct PediatricTreatmentEditView: View {
             try modelContext.save()
             SyncCenter.shared.enqueueTreatmentUpsert(treatmentId: treatment.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            if isNewTreatment {
+                AppAnalytics.contentCreated(type: analyticsType)
+                if isFirstTreatment {
+                    AppAnalytics.featureFirstUse(feature: analyticsType)
+                }
+            }
         } catch { return }
         
         if reminderEnabled {

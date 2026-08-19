@@ -154,6 +154,9 @@ struct GroceryEditView: View {
             SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
         } else {
             // Create new
+            let isFirstGroceryItem = ((try? modelContext.fetchCount(FetchDescriptor<KBGroceryItem>(predicate: #Predicate<KBGroceryItem> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             let item = KBGroceryItem(
                 familyId: familyId,
                 name: trimmedName,
@@ -168,6 +171,10 @@ struct GroceryEditView: View {
             modelContext.insert(item)
             try? modelContext.save()
             SyncCenter.shared.enqueueGroceryUpsert(itemId: item.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "grocery")
+            if isFirstGroceryItem {
+                AppAnalytics.featureFirstUse(feature: "grocery")
+            }
         }
         
         await SyncCenter.shared.flushGrocery(modelContext: modelContext)

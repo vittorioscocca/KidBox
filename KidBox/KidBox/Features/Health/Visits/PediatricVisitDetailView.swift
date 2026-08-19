@@ -82,6 +82,9 @@ struct PediatricVisitDetailView: View {
                     entryPoint: origin
                 )
             }
+            if visit.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "health")
+            }
         }
         .overlay(alignment: .bottomTrailing) {
             if let visit, let child = childForAI {

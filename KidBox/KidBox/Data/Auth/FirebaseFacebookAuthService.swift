@@ -39,7 +39,10 @@ final class FirebaseFacebookAuthService: NSObject {
         
         let authResult = try await Auth.auth().signIn(with: credential)
         KBLog.auth.kbInfo("Firebase sign-in OK uid=\(authResult.user.uid)")
-        
+        if authResult.additionalUserInfo?.isNewUser == true {
+            AppAnalytics.signupCompleted(method: "facebook")
+        }
+
         return authResult.user
     }
     

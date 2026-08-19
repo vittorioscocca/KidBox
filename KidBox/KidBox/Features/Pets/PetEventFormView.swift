@@ -167,6 +167,7 @@ struct PetEventFormView: View {
             modelContext.insert(ev)
             try? modelContext.save()
             SyncCenter.shared.enqueuePetEventUpsert(eventId: ev.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "pets")
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()

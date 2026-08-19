@@ -272,7 +272,8 @@ final class PlanningAIChatViewModel: ObservableObject {
                 messages:     payloadMessages,
                 systemPrompt: finalSystemPrompt
             )
-            
+            AppAnalytics.aiMessageSent(agentType: "assistente", plan: KBSubscriptionManager.shared.currentPlan.rawValue)
+
             let outcome = await KidBoxAIActionPipeline.processReply(
                 response.reply,
                 modelContext: modelContext,

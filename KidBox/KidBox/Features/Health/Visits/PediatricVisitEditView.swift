@@ -987,6 +987,9 @@ struct PediatricVisitEditView: View {
         }
         
         // ── Nuova visita ──
+        let isFirstVisit = ((try? modelContext.fetchCount(FetchDescriptor<KBMedicalVisit>(predicate: #Predicate<KBMedicalVisit> {
+            $0.familyId == familyId && $0.isDeleted == false
+        }))) ?? 0) == 0
         let visit = KBMedicalVisit(
             familyId:            familyId,
             childId:             childId,
@@ -1012,6 +1015,10 @@ struct PediatricVisitEditView: View {
         try? modelContext.save()
         SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        AppAnalytics.contentCreated(type: "health")
+        if isFirstVisit {
+            AppAnalytics.featureFirstUse(feature: "health")
+        }
         if visitReminderOn {
             KBVisitReminderService.shared.scheduleVisitReminder(
                 visitId: visit.id, date: visitDate, reason: reason,

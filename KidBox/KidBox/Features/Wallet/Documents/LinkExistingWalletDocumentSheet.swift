@@ -202,7 +202,7 @@ struct LinkExistingWalletDocumentSheet: View {
                 )
             }
             .sheet(isPresented: $showUpgradeSheet) {
-                UpgradeSheetView()
+                UpgradeSheetView(triggerFeature: "ai_lock")
             }
             .confirmationDialog("Lettura con AI", isPresented: $showAICostConfirm, titleVisibility: .visible) {
                 Button("Leggi con AI (\(aiMessageCost) messaggi)") {

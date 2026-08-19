@@ -303,7 +303,7 @@ struct AddWalletDocumentSheet: View {
                 .ignoresSafeArea()
             }
             .sheet(isPresented: $showUpgradeSheet) {
-                UpgradeSheetView()
+                UpgradeSheetView(triggerFeature: "ai_lock")
             }
             .confirmationDialog(
                 "Lettura con AI",
@@ -433,6 +433,10 @@ struct AddWalletDocumentSheet: View {
             let localRelPath = try DocumentLocalCache.write(
                 familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData)
 
+            let isFirstWalletDocument = ((try? modelContext.fetchCount(FetchDescriptor<KBDocument>(predicate: #Predicate<KBDocument> {
+                $0.familyId == familyId && $0.categoryId == categoryId && $0.isDeleted == false
+            }))) ?? 0) == 0
+
             let document = KBDocument(
                 id: documentId,
                 familyId: familyId,
@@ -478,6 +482,10 @@ struct AddWalletDocumentSheet: View {
             SyncCenter.shared.enqueueDocumentUpsert(
                 documentId: document.id, familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "wallet")
+            if isFirstWalletDocument {
+                AppAnalytics.featureFirstUse(feature: "wallet")
+            }
 
             do {
                 let storageService = DocumentStorageService()

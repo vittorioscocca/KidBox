@@ -952,7 +952,11 @@ struct PediatricVaccineEditView: View {
         let uid = Auth.auth().currentUser?.uid ?? "local"
         let now = Date()
         let savedId: String
-        
+        let isNewVaccine = vaccineId == nil
+        let isFirstVaccine = isNewVaccine && ((try? modelContext.fetchCount(FetchDescriptor<KBVaccine>(predicate: #Predicate<KBVaccine> {
+            $0.familyId == familyId && $0.isDeleted == false
+        }))) ?? 0) == 0
+
         if let vid = vaccineId {
             let desc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == vid })
             guard let v = try? modelContext.fetch(desc).first else { return }
@@ -974,6 +978,12 @@ struct PediatricVaccineEditView: View {
         let syncDesc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == savedId })
         if let vv = try? modelContext.fetch(syncDesc).first {
             Task { await KBVaccineReminderService.shared.sync(vaccine: vv, childName: childName) }
+        }
+        if isNewVaccine {
+            AppAnalytics.contentCreated(type: "health")
+            if isFirstVaccine {
+                AppAnalytics.featureFirstUse(feature: "health")
+            }
         }
         onSaved(savedId)
         // Proponi aggiunta al calendario solo per vaccini scheduled o administered

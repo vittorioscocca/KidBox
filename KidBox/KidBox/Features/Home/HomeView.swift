@@ -456,7 +456,10 @@ struct HomeView: View {
                 HomeAIFloatingButton(
                     onOpenAI: { navigate(to: .askExpert) },
                     onLockedTap: {
-                        if KBSubscriptionManager.shared.isFamilyOwner { showAIUpgrade = true }
+                        if KBSubscriptionManager.shared.isFamilyOwner {
+                            showAIUpgrade = true
+                            AppAnalytics.aiPaywallShown(context: "assistant_icon")
+                        }
                     }
                 )
                 .padding(.trailing, 20)
@@ -466,7 +469,7 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showAIUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .toolbar {
@@ -928,7 +931,7 @@ private struct HomeCardGrid: View {
             }
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(subscriptionManager)
         }
     }
@@ -1169,6 +1172,7 @@ private struct HomeCardGrid: View {
                             onNavigate(.travel(familyId: familyId))
                         } else if subscriptionManager.isFamilyOwner {
                             showUpgrade = true
+                            AppAnalytics.aiPaywallShown(context: "home_card_travel")
                         }
                     }
                     if !travelAI {
@@ -1201,6 +1205,7 @@ private struct HomeCardGrid: View {
                         onNavigate(.askExpert)
                     } else if subscriptionManager.isFamilyOwner {
                         showUpgrade = true
+                        AppAnalytics.aiPaywallShown(context: "home_card_expert")
                     }
                 }
                 if !aiAvailable {
@@ -1571,7 +1576,7 @@ private struct HomeCategoryList: View {
             }
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(subscriptionManager)
         }
     }
@@ -1755,6 +1760,7 @@ private struct HomeCategoryList: View {
                 onNavigate(.travel(familyId: familyId))
             } else if subscriptionManager.isFamilyOwner {
                 showUpgrade = true
+                AppAnalytics.aiPaywallShown(context: "home_list_travel")
             }
         case .expert:
             break // ora è il bottone AI flottante

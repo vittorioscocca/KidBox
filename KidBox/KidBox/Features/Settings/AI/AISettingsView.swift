@@ -402,7 +402,7 @@ struct AISettingsView: View {
             }
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "ai_settings")
                 .environmentObject(subscriptionManager)
         }
     }
@@ -526,6 +526,7 @@ struct AISettingsView: View {
             if subscriptionManager.isFamilyOwner {
                 Button {
                     showUpgrade = true
+                    AppAnalytics.aiPaywallShown(context: "ai_settings")
                 } label: {
                     Text("Scopri i piani")
                         .font(.subheadline.bold())
@@ -583,6 +584,7 @@ struct AISettingsView: View {
 struct UpgradeSheetView: View {
 
     var contextualMessage: LocalizedStringKey? = nil
+    var triggerFeature: String = "unknown"
 
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     @Environment(\.dismiss) private var dismiss
@@ -674,6 +676,7 @@ struct UpgradeSheetView: View {
             }
         }
         .task {
+            AppAnalytics.paywallShown(triggerFeature: triggerFeature, planShown: "both")
             await subscriptionManager.loadProducts()
         }
         .offerCodeRedemption(isPresented: $showOfferCodeRedemption) { result in

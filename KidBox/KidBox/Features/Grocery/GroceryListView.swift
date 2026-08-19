@@ -256,6 +256,9 @@ struct GroceryListView: View {
         if lines.count > 1 {
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let now = Date()
+            let isFirstGroceryItem = ((try? modelContext.fetchCount(FetchDescriptor<KBGroceryItem>(predicate: #Predicate<KBGroceryItem> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             for line in lines {
                 let item = KBGroceryItem(
                     familyId: familyId,
@@ -277,6 +280,10 @@ struct GroceryListView: View {
             }
             try? modelContext.save()
             Task { await SyncCenter.shared.flushGrocery(modelContext: modelContext) }
+            AppAnalytics.contentCreated(type: "grocery")
+            if isFirstGroceryItem {
+                AppAnalytics.featureFirstUse(feature: "grocery")
+            }
         } else {
             sharePrefillName = lines.first ?? text
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

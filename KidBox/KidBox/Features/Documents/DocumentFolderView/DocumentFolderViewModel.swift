@@ -836,6 +836,10 @@ final class DocumentFolderViewModel: ObservableObject {
             let localRelPath = try DocumentLocalCache.write(
                 familyId: familyId, docId: documentId, fileName: uploadFileName, data: encryptedData)
 
+            let isFirstDocument = ((try? modelContext.fetchCount(FetchDescriptor<KBDocument>(predicate: #Predicate<KBDocument> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
+
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
                 title: title, fileName: uploadFileName, mimeType: mime, fileSize: size,
@@ -850,6 +854,10 @@ final class DocumentFolderViewModel: ObservableObject {
             try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(
                 documentId: local.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "documents")
+            if isFirstDocument {
+                AppAnalytics.featureFirstUse(feature: "documents")
+            }
 
             do {
                 let (_, downloadURL) = try await storageService.upload(
@@ -945,6 +953,10 @@ final class DocumentFolderViewModel: ObservableObject {
             let localRelPath = try DocumentLocalCache.write(
                 familyId: familyId, docId: documentId, fileName: uploadFileName, data: encryptedData)
 
+            let isFirstDocument = ((try? modelContext.fetchCount(FetchDescriptor<KBDocument>(predicate: #Predicate<KBDocument> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
+
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: nil, categoryId: folderId,
                 title: title, fileName: uploadFileName, mimeType: mime, fileSize: size,
@@ -959,6 +971,10 @@ final class DocumentFolderViewModel: ObservableObject {
             try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(
                 documentId: local.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "documents")
+            if isFirstDocument {
+                AppAnalytics.featureFirstUse(feature: "documents")
+            }
 
             do {
                 let (_, downloadURL) = try await storageService.upload(
@@ -1010,6 +1026,10 @@ final class DocumentFolderViewModel: ObservableObject {
             // Store encrypted bytes so open() can decrypt from cache correctly.
             guard let localPath = try? DocumentLocalCache.write(familyId: familyId, docId: documentId, fileName: fileName, data: encryptedData) else { return false }
 
+            let isFirstDocument = ((try? modelContext.fetchCount(FetchDescriptor<KBDocument>(predicate: #Predicate<KBDocument> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
+
             let local = KBDocument(
                 id: documentId, familyId: familyId, childId: childId, categoryId: folderId,
                 title: title, fileName: fileName, mimeType: mime, fileSize: size,
@@ -1020,6 +1040,10 @@ final class DocumentFolderViewModel: ObservableObject {
             local.syncState = .pendingUpsert; local.lastSyncError = nil; local.localPath = localPath
             modelContext.insert(local); try modelContext.save()
             SyncCenter.shared.enqueueDocumentUpsert(documentId: local.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "documents")
+            if isFirstDocument {
+                AppAnalytics.featureFirstUse(feature: "documents")
+            }
 
             do {
                 let (uploadedPath, downloadURL) = try await storageService.upload(

@@ -413,6 +413,7 @@ struct SetupFamilyView: View {
                 let key = CryptoKit.SymmetricKey(data: masterKey)
                 try FamilyKeychainStore.saveFamilyKey(key, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local")
                 KBLog.crypto.kbInfo("Master key saved to Keychain familyId=\(familyId)")
+                AppAnalytics.familyCreated()
             } catch {
                 KBLog.crypto.kbError(
                     "Master key creation failed familyId=\(familyId) err=\(error.localizedDescription)"

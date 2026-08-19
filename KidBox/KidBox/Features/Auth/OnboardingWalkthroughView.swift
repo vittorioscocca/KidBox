@@ -145,6 +145,23 @@ struct OnboardingWalkthroughView: View {
     private var isLastPage: Bool { currentPage == totalPages - 1 }
     
     private var infoPage: OnboardingPage { infoPages[min(currentPage, infoPages.count - 1)] }
+
+    private func stepName(for page: Int, path: FamilyOnboardingPath?) -> String {
+        switch page {
+        case 0, 1, 2: return "info_\(page)"
+        case 3: return path == .linkJoin ? "link_invite_confirm" : "path_picker"
+        case 4: return "name"
+        case 5: return path == .join ? "join_family" : "create_family"
+        case 6: return "invite"
+        default: return "unknown_\(page)"
+        }
+    }
+
+    private func fireStepShown() {
+        let name = stepName(for: currentPage, path: familyPath)
+        AppAnalytics.onboardingStepShown(stepName: name, stepNumber: currentPage)
+        coordinator.lastOnboardingStepSeen = name
+    }
     
     private var currentAccent: Color {
         switch currentPage {
@@ -228,6 +245,7 @@ struct OnboardingWalkthroughView: View {
                             firstName:      $profileFirstName,
                             lastName:       $profileLastName,
                             onJoined: {
+                                AppAnalytics.onboardingStepCompleted(stepName: "link_invite_confirm")
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     bgOpacity = 0; textOpacity = 0; iconOpacity = 0
                                 }
@@ -275,6 +293,7 @@ struct OnboardingWalkthroughView: View {
                             modelContext:   modelContext,
                             onFamilyCreated: { familyId in
                                 createdFamilyId = familyId
+                                AppAnalytics.onboardingStepCompleted(stepName: "create_family")
                                 coordinator.setActiveFamily(familyId)
                                 // Il documento membro è appena nato: ora che la
                                 // famiglia esiste il nome raccolto a pagina 4 può
@@ -300,6 +319,7 @@ struct OnboardingWalkthroughView: View {
                             onJoined: {
                                 // Il nome sul documento membro lo scrive
                                 // `FamilyInviteLinkJoiner`, attraversato da ogni join.
+                                AppAnalytics.onboardingStepCompleted(stepName: "join_family")
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     bgOpacity = 0
                                     textOpacity = 0
@@ -356,6 +376,10 @@ struct OnboardingWalkthroughView: View {
             animateIn()
             prefillNameFromExistingProfile()
             loadPendingLinkInviteIfAny()
+            if coordinator.onboardingStartedAt == nil {
+                coordinator.onboardingStartedAt = Date()
+            }
+            fireStepShown()
         }
         // Segnala a RootGateView che siamo nel percorso "crea": così l'inserimento locale
         // della KBFamily (che avviene prima ancora di premere "Continua") non fa completare
@@ -363,6 +387,9 @@ struct OnboardingWalkthroughView: View {
         // del percorso, così è già attivo prima che parta FamilyCreationService.
         .onChange(of: familyPath) { _, newPath in
             coordinator.isCreatingFamilyInOnboarding = (newPath == .create)
+        }
+        .onChange(of: currentPage) { _, _ in
+            fireStepShown()
         }
         // Link toccato mentre il wizard era già aperto: senza questo, l'invito
         // resterebbe in attesa fino al riavvio dell'app e l'utente vedrebbe il
@@ -507,6 +534,7 @@ struct OnboardingWalkthroughView: View {
             // nascerebbe comunque con un membro anonimo.
             Task { await saveNameThenAdvance() }
         } else {
+            AppAnalytics.onboardingStepCompleted(stepName: stepName(for: currentPage, path: familyPath))
             advancePage()
         }
     }
@@ -583,6 +611,7 @@ struct OnboardingWalkthroughView: View {
                 modelContext: modelContext
             )
             KBLog.auth.kbInfo("Onboarding: profile names saved, advancing")
+            AppAnalytics.onboardingStepCompleted(stepName: stepName(for: currentPage, path: familyPath))
             advancePage()
         } catch {
             profileSaveError = error.localizedDescription
@@ -1479,10 +1508,14 @@ private struct InviteOnboardingCard: View {
                         )
                         .shadow(color: accentColor.opacity(0.35), radius: 10, x: 0, y: 5)
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        AppAnalytics.inviteShared(channel: "system_share_sheet")
+                    })
 
                     // Copia link (secondario)
                     Button {
                         vm.copyToClipboard()
+                        AppAnalytics.inviteShared(channel: "copy")
                         withAnimation { didCopy = true }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                             withAnimation { didCopy = false }
@@ -1576,7 +1609,10 @@ private struct InviteOnboardingCard: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button { onFinish(false) } label: {
+                    Button {
+                        AppAnalytics.onboardingInviteStepSkipped()
+                        onFinish(false)
+                    } label: {
                         Text("Farlo dopo →")
                             .font(.system(size: 15))
                             .foregroundStyle(.tertiary)
@@ -1590,6 +1626,7 @@ private struct InviteOnboardingCard: View {
         .onAppear {
             guard !didGenerate else { return }
             didGenerate = true
+            AppAnalytics.onboardingInviteStepShown()
             Task { await vm.generateInviteCode() }
         }
     }

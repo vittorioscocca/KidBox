@@ -157,7 +157,7 @@ private struct TravelWizardRootView: View {
             )
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "travel_lock")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .toolbar {
@@ -209,7 +209,10 @@ private struct TravelWizardRootView: View {
                 members: members,
                 children: children,
                 aiAvailable: aiAvailable,
-                onUpgrade: { showUpgrade = true }
+                onUpgrade: {
+                    showUpgrade = true
+                    AppAnalytics.aiPaywallShown(context: "travel_wizard_build_step")
+                }
             )
         }
     }
@@ -222,6 +225,7 @@ private struct TravelWizardRootView: View {
         }
         guard aiAvailable else {
             showUpgrade = true
+            AppAnalytics.aiPaywallShown(context: "travel_wizard_build_step")
             return
         }
         Task { @MainActor in

@@ -40,6 +40,7 @@ enum FamilyInviteLinkJoiner {
         coordinator: AppCoordinator
     ) async throws {
         KBLog.sync.kbInfo("InviteLink: inizio familyId=\(invite.familyId)")
+        AppAnalytics.familyJoinAttempted()
 
         // Già dentro: l'invito è comunque da consumare? No — si esce subito,
         // così un link riaperto per sbaglio non brucia un invito valido né
@@ -49,38 +50,58 @@ enum FamilyInviteLinkJoiner {
         if (try? modelContext.fetch(descriptor).first) != nil {
             KBLog.sync.kbInfo("InviteLink: già membro familyId=\(fid)")
             coordinator.setActiveFamily(fid, force: true)
+            AppAnalytics.familyJoinFailed(reason: "already_member")
             throw JoinLinkError.alreadyMember
         }
 
-        // 1) Chiave: riusa il percorso già collaudato del QR.
-        try await JoinWrapService().join(usingQRPayload: invite.qrEquivalentPayload)
-        KBLog.sync.kbInfo("InviteLink: master key sbloccata familyId=\(fid)")
+        do {
+            // 1) Chiave: riusa il percorso già collaudato del QR.
+            try await JoinWrapService().join(usingQRPayload: invite.qrEquivalentPayload)
+            KBLog.sync.kbInfo("InviteLink: master key sbloccata familyId=\(fid)")
 
-        // 2) Membership + bundle famiglia.
-        let service = FamilyJoinService(
-            inviteRemote: InviteRemoteStore(),
-            readRemote: FamilyReadRemoteStore(),
-            modelContext: modelContext
-        )
-        let outcome = try await service.joinFamily(familyId: fid, coordinator: coordinator)
+            // 2) Membership + bundle famiglia.
+            let service = FamilyJoinService(
+                inviteRemote: InviteRemoteStore(),
+                readRemote: FamilyReadRemoteStore(),
+                modelContext: modelContext
+            )
+            let outcome = try await service.joinFamily(familyId: fid, coordinator: coordinator)
 
-        if case .missingVaultKey = outcome {
-            // Non dovrebbe accadere: il passo 1 ha appena salvato la chiave in
-            // Keychain. Se succede è un problema di Keychain, e va visto nei log
-            // invece di passare inosservato.
-            KBLog.security.kbError("InviteLink: chiave assente DOPO unwrap riuscito familyId=\(fid)")
+            if case .missingVaultKey = outcome {
+                // Non dovrebbe accadere: il passo 1 ha appena salvato la chiave in
+                // Keychain. Se succede è un problema di Keychain, e va visto nei log
+                // invece di passare inosservato.
+                KBLog.security.kbError("InviteLink: chiave assente DOPO unwrap riuscito familyId=\(fid)")
+            }
+
+            // 3) Nome sul documento membro. Sta QUI e non nei chiamanti perché
+            // `addMember` crea il membro senza `displayName`: chi non lo propagava
+            // — il join da QR nelle impostazioni e l'invito consumato in
+            // `RootHostView` — lasciava un membro anonimo agli occhi degli altri.
+            // Questo è l'unico punto attraversato da tutte le strade di join.
+            await UserProfileWriter.propagateDisplayNameToMember(
+                familyId: fid,
+                modelContext: modelContext
+            )
+
+            let vaultKeyAvailable: Bool
+            if case .complete = outcome { vaultKeyAvailable = true } else { vaultKeyAvailable = false }
+            AppAnalytics.familyJoined(vaultKeyAvailable: vaultKeyAvailable)
+            KBLog.sync.kbInfo("InviteLink: completato familyId=\(fid)")
+        } catch {
+            AppAnalytics.familyJoinFailed(reason: joinFailureReason(for: error))
+            throw error
         }
+    }
 
-        // 3) Nome sul documento membro. Sta QUI e non nei chiamanti perché
-        // `addMember` crea il membro senza `displayName`: chi non lo propagava
-        // — il join da QR nelle impostazioni e l'invito consumato in
-        // `RootHostView` — lasciava un membro anonimo agli occhi degli altri.
-        // Questo è l'unico punto attraversato da tutte le strade di join.
-        await UserProfileWriter.propagateDisplayNameToMember(
-            familyId: fid,
-            modelContext: modelContext
-        )
-
-        KBLog.sync.kbInfo("InviteLink: completato familyId=\(fid)")
+    private static func joinFailureReason(for error: Error) -> String {
+        switch error {
+        case JoinInviteError.invalidPayload: return "invalid_payload"
+        case JoinInviteError.expired: return "expired"
+        case JoinInviteError.invalidSecret: return "invalid_secret"
+        case JoinInviteError.alreadyUsed: return "already_used"
+        case JoinLinkError.alreadyMember: return "already_member"
+        default: return "unknown"
+        }
     }
 }

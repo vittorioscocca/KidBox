@@ -193,7 +193,7 @@ private struct StorageGatedModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $showUpgrade) {
-                UpgradeSheetView()
+                UpgradeSheetView(triggerFeature: "storage_lock")
                     .environmentObject(KBSubscriptionManager.shared)
             }
     }
@@ -283,7 +283,7 @@ private struct AIGatedModifier: ViewModifier {
                 )
             }
             .sheet(isPresented: $showUpgrade) {
-                UpgradeSheetView()
+                UpgradeSheetView(triggerFeature: "ai_lock")
                     .environmentObject(KBSubscriptionManager.shared)
             }
     }

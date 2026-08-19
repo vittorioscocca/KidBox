@@ -64,6 +64,7 @@ final class LoginViewModel: ObservableObject {
     
     func signInFacebook(viewController: UIViewController) {
         KBLog.auth.kbInfo("LoginViewModel signInFacebook requested")
+        AppAnalytics.signupStarted(method: "facebook")
         Task {
             isBusy = true
             errorMessage = nil
@@ -105,12 +106,14 @@ final class LoginViewModel: ObservableObject {
     /// Registrazione nuovo utente con email e password.
     func registerEmail(email: String, password: String) async {
         KBLog.auth.kbInfo("LoginViewModel registerEmail requested")
+        AppAnalytics.signupStarted(method: "email")
         isBusy = true
         errorMessage = nil
         defer { isBusy = false }
-        
+
         do {
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
+            AppAnalytics.signupCompleted(method: "email")
             try await result.user.sendEmailVerification()
             KBLog.auth.kbInfo("LoginViewModel registerEmail: verification email sent")
             // Sign out subito — l'utente non può entrare finché non verifica
@@ -163,7 +166,8 @@ final class LoginViewModel: ObservableObject {
     /// Centralised async sign-in logic for Apple and Google (via AuthFacade).
     private func signIn(provider: AuthProvider, presentation: AuthPresentation) async {
         KBLog.auth.kbInfo("Sign-in started provider=\(provider.rawValue)")
-        
+        AppAnalytics.signupStarted(method: provider.rawValue)
+
         isBusy = true
         errorMessage = nil
         

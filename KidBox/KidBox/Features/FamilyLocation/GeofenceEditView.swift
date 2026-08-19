@@ -120,6 +120,9 @@ struct GeofenceEditView: View {
             SyncCenter.shared.startMembersRealtime(familyId: familyId, modelContext: modelContext)
             loadExistingIfNeeded()
             updateCamera(animated: false)
+            if let existing, existing.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "location")
+            }
         }
         .sheet(isPresented: $showMonitorPicker) {
             GeofenceMemberPickerSheet(
@@ -532,6 +535,9 @@ struct GeofenceEditView: View {
                     geofence.notifyMembers = notifyAllMembers ? [] : Array(notifyUserIds).sorted()
                     geofence.updatedAt = Date()
                 } else {
+                    let isFirstGeofence = ((try? modelContext.fetchCount(FetchDescriptor<KBGeofence>(predicate: #Predicate<KBGeofence> {
+                        $0.familyId == familyId && $0.isDeleted == false
+                    }))) ?? 0) == 0
                     geofence = KBGeofence(
                         familyId: familyId,
                         name: trimmedName,
@@ -546,6 +552,10 @@ struct GeofenceEditView: View {
                         createdBy: uid
                     )
                     modelContext.insert(geofence)
+                    AppAnalytics.contentCreated(type: "location")
+                    if isFirstGeofence {
+                        AppAnalytics.featureFirstUse(feature: "location")
+                    }
                 }
 
                 try modelContext.save()

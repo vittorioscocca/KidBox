@@ -159,6 +159,9 @@ struct HomeItemFormView: View {
             try? modelContext.save()
             SyncCenter.shared.enqueueHomeItemUpsert(itemId: ex.id, familyId: familyId, modelContext: modelContext)
         } else {
+            let isFirstHomeItem = ((try? modelContext.fetchCount(FetchDescriptor<KBHomeItem>(predicate: #Predicate<KBHomeItem> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             let row = KBHomeItem(
                 id: attachmentHomeItemId,
                 familyId: familyId,
@@ -180,6 +183,10 @@ struct HomeItemFormView: View {
             modelContext.insert(row)
             try? modelContext.save()
             SyncCenter.shared.enqueueHomeItemUpsert(itemId: row.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "home_vehicles")
+            if isFirstHomeItem {
+                AppAnalytics.featureFirstUse(feature: "home_vehicles")
+            }
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()

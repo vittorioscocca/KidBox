@@ -84,6 +84,9 @@ struct PhotoFullscreenView: View {
                             entryPoint: .list
                         )
                     }
+                    if photo.createdBy != userId {
+                        AppAnalytics.contentSharedRead(type: "photos")
+                    }
                 }
             
             // ── Pager ────────────────────────────────────────────────────────

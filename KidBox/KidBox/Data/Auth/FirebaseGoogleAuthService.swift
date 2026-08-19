@@ -74,9 +74,12 @@ final class FirebaseGoogleAuthService {
         
         KBLog.auth.kbDebug("Signing into Firebase with Google credential")
         let authResult = try await Auth.auth().signIn(with: credential)
-        
+
         KBLog.auth.kbInfo("Google sign-in OK uid=\(authResult.user.uid)")
-        
+        if authResult.additionalUserInfo?.isNewUser == true {
+            AppAnalytics.signupCompleted(method: "google")
+        }
+
         return authResult.user
     }
 }

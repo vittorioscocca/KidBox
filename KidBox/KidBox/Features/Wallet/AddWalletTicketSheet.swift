@@ -245,7 +245,7 @@ struct AddWalletTicketSheet: View {
                 }
             }
             .sheet(isPresented: $showUpgradeSheet) {
-                UpgradeSheetView()
+                UpgradeSheetView(triggerFeature: "ai_lock")
             }
             .confirmationDialog(
                 "Lettura con AI",
@@ -372,6 +372,9 @@ struct AddWalletTicketSheet: View {
 
             let uid = Auth.auth().currentUser?.uid ?? "local"
             let displayName = Auth.auth().currentUser?.displayName ?? ""
+            let isFirstWalletItem = ((try? modelContext.fetchCount(FetchDescriptor<KBWalletTicket>(predicate: #Predicate<KBWalletTicket> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             let ticket = KBWalletTicket(
                 id: ticketId,
                 familyId: familyId,
@@ -419,6 +422,10 @@ struct AddWalletTicketSheet: View {
             // scene .active → user B non vedrebbe il biglietto e la CF
             // notifyNewWalletTicket non partirebbe (niente push).
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "wallet")
+            if isFirstWalletItem {
+                AppAnalytics.featureFirstUse(feature: "wallet")
+            }
 
             await WalletReminderService.shared.scheduleReminders(for: ticket)
             onSaved(ticket.id)

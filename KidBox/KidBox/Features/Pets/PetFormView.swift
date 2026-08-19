@@ -134,6 +134,9 @@ struct PetFormView: View {
             try? modelContext.save()
             SyncCenter.shared.enqueuePetUpsert(petId: existing.id, familyId: familyId, modelContext: modelContext)
         } else {
+            let isFirstPet = ((try? modelContext.fetchCount(FetchDescriptor<KBPet>(predicate: #Predicate<KBPet> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             let pet = KBPet(
                 familyId: familyId,
                 name: trimmedName,
@@ -150,6 +153,10 @@ struct PetFormView: View {
             modelContext.insert(pet)
             try? modelContext.save()
             SyncCenter.shared.enqueuePetUpsert(petId: pet.id, familyId: familyId, modelContext: modelContext)
+            AppAnalytics.contentCreated(type: "pets")
+            if isFirstPet {
+                AppAnalytics.featureFirstUse(feature: "pets")
+            }
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()

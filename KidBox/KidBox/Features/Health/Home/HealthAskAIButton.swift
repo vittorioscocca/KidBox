@@ -26,7 +26,7 @@ struct HealthAskAIButton: View {
             handleTap()
         }
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView(contextualMessage: "ai_upgrade_health_home")
+            UpgradeSheetView(contextualMessage: "ai_upgrade_health_home", triggerFeature: "ai_upgrade_health_home")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         .sheet(isPresented: $showConsent) {
@@ -47,6 +47,7 @@ struct HealthAskAIButton: View {
     private func handleTap() {
         guard KBSubscriptionManager.shared.isAIAccessible else {
             showUpgrade = true
+            AppAnalytics.aiPaywallShown(context: "ai_upgrade_health_home")
             return
         }
         if !AISettings.shared.consentGiven {

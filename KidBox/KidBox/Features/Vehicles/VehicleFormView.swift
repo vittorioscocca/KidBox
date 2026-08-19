@@ -202,6 +202,9 @@ struct VehicleFormView: View {
             SyncCenter.shared.enqueueVehicleUpsert(vehicleId: ex.id, familyId: familyId, modelContext: modelContext)
             Task { await VehicleReminderService.shared.scheduleReminders(for: ex) }
         } else {
+            let isFirstVehicle = ((try? modelContext.fetchCount(FetchDescriptor<KBVehicle>(predicate: #Predicate<KBVehicle> {
+                $0.familyId == familyId && $0.isDeleted == false
+            }))) ?? 0) == 0
             let v = KBVehicle(
                 id: attachmentVehicleId,
                 familyId: familyId,
@@ -231,6 +234,10 @@ struct VehicleFormView: View {
             try? modelContext.save()
             SyncCenter.shared.enqueueVehicleUpsert(vehicleId: v.id, familyId: familyId, modelContext: modelContext)
             Task { await VehicleReminderService.shared.scheduleReminders(for: v) }
+            AppAnalytics.contentCreated(type: "home_vehicles")
+            if isFirstVehicle {
+                AppAnalytics.featureFirstUse(feature: "home_vehicles")
+            }
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()

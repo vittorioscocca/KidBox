@@ -85,7 +85,12 @@ struct PasswordDetailView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle(entry.map { navigationTitle(for: $0) } ?? "Dettaglio")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { retrievalOrigin = coordinator.consumeRetrievalOrigin() }
+        .onAppear {
+            retrievalOrigin = coordinator.consumeRetrievalOrigin()
+            if let e = entry, e.createdBy != currentUid {
+                AppAnalytics.contentSharedRead(type: "passwords")
+            }
+        }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if let e = entry, e.isVisible(to: currentUid) {

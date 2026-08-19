@@ -129,6 +129,11 @@ struct WalletDocumentDetailView: View {
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle(document?.title ?? "Documento")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let document, document.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "wallet")
+            }
+        }
         .toolbar {
             if document != nil {
                 ToolbarItem(placement: .topBarTrailing) {

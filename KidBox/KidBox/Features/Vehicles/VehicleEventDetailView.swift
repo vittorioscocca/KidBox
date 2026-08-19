@@ -82,6 +82,11 @@ struct VehicleEventDetailView: View {
         .background(backgroundColor.ignoresSafeArea())
         .navigationTitle("Intervento")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let event, event.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "home_vehicles")
+            }
+        }
         .toolbar {
             if event != nil {
                 ToolbarItem(placement: .topBarTrailing) {

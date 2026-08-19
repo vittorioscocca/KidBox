@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseAuth
 
 private func expensesAppLocale() -> Locale {
     if let lang = Locale.preferredLanguages.first, !lang.isEmpty {
@@ -104,7 +105,12 @@ struct ExpenseDetailView: View {
                 }
             }
         }
-        .onAppear { loadData() }
+        .onAppear {
+            loadData()
+            if let expense, expense.createdByUid != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "expenses")
+            }
+        }
         .sheet(isPresented: $showEdit, onDismiss: { loadData() }) {
             if let vm, let expense {
                 AddEditExpenseView(vm: vm, expense: expense)

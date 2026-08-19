@@ -67,9 +67,17 @@ final class SwiftDataTodoRepository: TodoRepository {
     /// - Saves the context.
     func createTodo(_ todo: KBTodoItem) throws {
         KBLog.data.kbInfo("createTodo id=\(todo.id)")
+        let familyId = todo.familyId
+        let isFirstTodo = ((try? context.fetchCount(FetchDescriptor<KBTodoItem>(predicate: #Predicate<KBTodoItem> {
+            $0.familyId == familyId && $0.isDeleted == false
+        }))) ?? 0) == 0
         context.insert(todo)
         try context.save()
         KBLog.data.kbDebug("createTodo saved id=\(todo.id)")
+        AppAnalytics.contentCreated(type: "todo")
+        if isFirstTodo {
+            AppAnalytics.featureFirstUse(feature: "todo")
+        }
     }
     
     /// Persists changes to an existing todo and refreshes `updatedAt`.

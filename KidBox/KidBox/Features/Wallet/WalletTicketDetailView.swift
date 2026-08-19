@@ -92,6 +92,9 @@ struct WalletTicketDetailView: View {
                     entryPoint: origin
                 )
             }
+            if ticket.createdBy != currentUid {
+                AppAnalytics.contentSharedRead(type: "wallet")
+            }
         }
         .fullScreenCover(isPresented: $showPDF) {
             NavigationStack {

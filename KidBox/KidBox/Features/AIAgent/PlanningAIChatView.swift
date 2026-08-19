@@ -299,7 +299,7 @@ struct PlanningAIChatView: View {
         .navigationTitle("Assistente")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showUpgrade) {
-            UpgradeSheetView()
+            UpgradeSheetView(triggerFeature: "ai_chat_lock")
                 .environmentObject(KBSubscriptionManager.shared)
         }
         // L'id include il piano: quando `loadPlan()` completa dopo che la view
@@ -403,6 +403,9 @@ struct PlanningAIChatView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            AppAnalytics.aiPaywallShown(context: "planning_chat_locked")
+        }
     }
 }
 

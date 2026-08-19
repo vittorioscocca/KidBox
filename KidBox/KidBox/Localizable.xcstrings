@@ -8240,6 +8240,9 @@
         }
       }
     },
+    "Cerca sezione" : {
+
+    },
     "Cerca viaggio o destinazione…" : {
       "localizations" : {
         "en" : {
@@ -11487,6 +11490,9 @@
           }
         }
       }
+    },
+    "Crea o unisciti a una famiglia per usare questa sezione." : {
+
     },
     "Crea un evento" : {
       "comment" : "AI quick chip",
@@ -19070,6 +19076,9 @@
         }
       }
     },
+    "Home" : {
+
+    },
     "HPV" : {
       "comment" : "Vaccine type",
       "localizations" : {
@@ -26404,6 +26413,9 @@
           }
         }
       }
+    },
+    "Nessuna famiglia attiva" : {
+
     },
     "Nessuna famiglia configurata" : {
       "localizations" : {
@@ -35706,6 +35718,9 @@
         }
       }
     },
+    "Rilascia per allegare" : {
+
+    },
     "Rilascio" : {
       "localizations" : {
         "en" : {
@@ -37824,6 +37839,12 @@
         }
       }
     },
+    "Scegli una sezione dalla barra laterale per iniziare." : {
+
+    },
+    "Scegli una voce dalla barra laterale." : {
+
+    },
     "Scheda Medica" : {
       "localizations" : {
         "en" : {
@@ -38643,6 +38664,9 @@
           }
         }
       }
+    },
+    "Seleziona una sezione" : {
+
     },
     "Seleziona viaggi" : {
       "localizations" : {

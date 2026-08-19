@@ -225,6 +225,11 @@ struct TravelDetailView: View {
             }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
+        .onAppear {
+            if let trip, trip.createdBy != Auth.auth().currentUser?.uid {
+                AppAnalytics.contentSharedRead(type: "travel")
+            }
+        }
     }
 
     @ViewBuilder
