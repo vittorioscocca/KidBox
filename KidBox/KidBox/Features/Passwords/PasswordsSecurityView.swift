@@ -21,6 +21,14 @@ struct PasswordsSecurityView: View {
 
     @Query private var entries: [PasswordEntry]
     @State private var isScanning = false
+
+    /// Interruttore del controllo automatico settimanale.
+    ///
+    /// Il valore di default è `true`: chi non ha mai toccato la preferenza tiene
+    /// la funzione attiva, coerente con [PasswordsSecurityScanner.isWeeklyAutoScanEnabled]
+    /// che tratta la chiave assente come "attivo".
+    @AppStorage(PasswordsSecurityScanner.weeklyScanEnabledKey)
+    private var weeklyScanEnabled = true
     @State private var scanMessage: String?
 
     private var currentUid: String? { Auth.auth().currentUser?.uid }
@@ -74,6 +82,12 @@ struct PasswordsSecurityView: View {
 
             Section("Privacy check HIBP") {
                 Text("La password in chiaro non lascia mai il dispositivo: KidBox invia solo i primi 5 caratteri dell'hash SHA-1 con modello k-anonymity.")
+                    .font(.footnote)
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+
+                Toggle("Controllo automatico settimanale", isOn: $weeklyScanEnabled)
+
+                Text("Se lo disattivi, nessun controllo parte da solo: puoi comunque usare “Scansiona ora” quando vuoi.")
                     .font(.footnote)
                     .foregroundStyle(KBTheme.secondaryText(colorScheme))
             }

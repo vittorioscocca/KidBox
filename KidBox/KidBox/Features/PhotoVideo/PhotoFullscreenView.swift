@@ -91,15 +91,16 @@ struct PhotoFullscreenView: View {
                 ForEach(allPhotos.indices, id: \.self) { i in
                     let p = allPhotos[i]
                     PhotoFullscreenCell(
-                        photo:    p,
-                        image:    imageCache[p.id],
-                        videoURL: videoURLCache[p.id]
+                        photo:     p,
+                        image:     imageCache[p.id],
+                        videoURL:  videoURLCache[p.id],
+                        isCurrent: i == currentIndex,
+                        onToggleChrome: {
+                            withAnimation(.easeInOut(duration: 0.2)) { showChrome.toggle() }
+                        }
                     )
                     .tag(i)
                     .task(id: p.id) { await load(p) }
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) { showChrome.toggle() }
-                    }
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -519,14 +520,21 @@ struct PhotoFullscreenView: View {
 // MARK: - PhotoFullscreenCell
 
 private struct PhotoFullscreenCell: View {
-    
+
     let photo:    KBFamilyPhoto
     let image:    UIImage?
     let videoURL: URL?
-    
+    /// `false` quando la pagina non è quella visibile: serve a riportare lo
+    /// zoom a 1 uscendo, altrimenti tornando indietro la foto resta ingrandita.
+    let isCurrent: Bool
+    /// Mostra/nasconde la chrome. Sta qui e non sul TabView perché sulle foto
+    /// il tocco lo intercetta lo scroll view dello zoom, e una `.onTapGesture`
+    /// applicata al genitore non scatterebbe più.
+    let onToggleChrome: () -> Void
+
     @State private var isPlaying   = false
     @State private var playerReady = false
-    
+
     var body: some View {
         ZStack {
             Color.black
@@ -554,11 +562,24 @@ private struct PhotoFullscreenCell: View {
                 }
             } else {
                 if let img = image {
-                    Image(uiImage: img).resizable().scaledToFit()
+                    ZoomableImageView(
+                        image: img,
+                        isCurrent: isCurrent,
+                        onSingleTap: onToggleChrome
+                    )
                 } else {
-                    thumbnailView.overlay(ProgressView().tint(.white))
+                    thumbnailView
+                        .overlay(ProgressView().tint(.white))
+                        .contentShape(Rectangle())
+                        .onTapGesture { onToggleChrome() }
                 }
             }
+        }
+        // Sul ramo video il tocco resta di competenza di SwiftUI: il pulsante
+        // play continua ad avere la precedenza nella sua area.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if photo.isVideo { onToggleChrome() }
         }
         .ignoresSafeArea()
     }
@@ -569,6 +590,131 @@ private struct PhotoFullscreenCell: View {
             Image(uiImage: img).resizable().scaledToFit()
         } else {
             Color.black
+        }
+    }
+}
+
+// MARK: - ZoomableImageView
+
+/// Foto a schermo intero con pinch-to-zoom, trascinamento e doppio tap.
+///
+/// **Perché `UIScrollView` e non `MagnifyGesture` + `DragGesture`:** la cella
+/// vive dentro un `TabView` in stile pagina. Gesture SwiftUI di ingrandimento e
+/// trascinamento litigherebbero con lo swipe orizzontale del pager, e il
+/// risultato è il classico comportamento a scatti in cui né lo zoom né il
+/// cambio pagina rispondono bene.
+///
+/// Con lo scroll view l'arbitraggio lo fa UIKit ed è quello giusto in entrambi
+/// gli stati: a zoom 1 il contenuto non è scrollabile, il suo `panGestureRecognizer`
+/// fallisce e lo swipe arriva al pager; appena si ingrandisce, il pan resta allo
+/// scroll view e si può spostare la foto senza cambiare pagina. È lo stesso
+/// meccanismo dell'app Foto di sistema.
+private struct ZoomableImageView: UIViewRepresentable {
+
+    let image: UIImage
+    let isCurrent: Bool
+    let onSingleTap: () -> Void
+
+    private static let maxZoom: CGFloat = 4.0
+    /// Livello del doppio tap: ingrandisce in modo percepibile restando sotto il massimo.
+    private static let doubleTapZoom: CGFloat = 2.5
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.delegate = context.coordinator
+        scrollView.minimumZoomScale = 1
+        scrollView.maximumZoomScale = Self.maxZoom
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .clear
+        scrollView.contentInsetAdjustmentBehavior = .never
+        // Il rimbalzo solo quando c'è davvero da scorrere: a zoom 1 lascia la
+        // pagina "ferma" e lo swipe passa pulito al pager.
+        scrollView.bounces = false
+        scrollView.bouncesZoom = true
+
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFit
+        imageView.frame = scrollView.bounds
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        imageView.isUserInteractionEnabled = true
+        scrollView.addSubview(imageView)
+        context.coordinator.imageView = imageView
+
+        let doubleTap = UITapGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleDoubleTap(_:))
+        )
+        doubleTap.numberOfTapsRequired = 2
+        scrollView.addGestureRecognizer(doubleTap)
+
+        let singleTap = UITapGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleSingleTap)
+        )
+        singleTap.numberOfTapsRequired = 1
+        // Senza questo, il tocco singolo scatterebbe anche durante un doppio tap
+        // e la chrome lampeggerebbe a ogni zoom.
+        singleTap.require(toFail: doubleTap)
+        scrollView.addGestureRecognizer(singleTap)
+
+        return scrollView
+    }
+
+    func updateUIView(_ scrollView: UIScrollView, context: Context) {
+        context.coordinator.onSingleTap = onSingleTap
+        context.coordinator.maxZoom = Self.maxZoom
+        context.coordinator.doubleTapZoom = Self.doubleTapZoom
+
+        if context.coordinator.imageView?.image !== image {
+            context.coordinator.imageView?.image = image
+            scrollView.setZoomScale(1, animated: false)
+        }
+
+        // Pagina non più visibile: si azzera lo zoom, così tornandoci la foto
+        // riparte inquadrata intera invece che ingrandita da prima.
+        if !isCurrent && scrollView.zoomScale != 1 {
+            scrollView.setZoomScale(1, animated: false)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onSingleTap: onSingleTap)
+    }
+
+    final class Coordinator: NSObject, UIScrollViewDelegate {
+        var imageView: UIImageView?
+        var onSingleTap: () -> Void
+        var maxZoom: CGFloat = 4.0
+        var doubleTapZoom: CGFloat = 2.5
+
+        init(onSingleTap: @escaping () -> Void) {
+            self.onSingleTap = onSingleTap
+        }
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? { imageView }
+
+        @objc func handleSingleTap() {
+            onSingleTap()
+        }
+
+        @objc func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+            guard let scrollView = gesture.view as? UIScrollView else { return }
+
+            if scrollView.zoomScale > scrollView.minimumZoomScale {
+                scrollView.setZoomScale(scrollView.minimumZoomScale, animated: true)
+                return
+            }
+
+            // Ingrandisce attorno al punto toccato invece che al centro:
+            // toccando un viso si vuole quel viso, non la metà dell'immagine.
+            let point = gesture.location(in: imageView)
+            let size = CGSize(
+                width: scrollView.bounds.width / doubleTapZoom,
+                height: scrollView.bounds.height / doubleTapZoom
+            )
+            let origin = CGPoint(x: point.x - size.width / 2, y: point.y - size.height / 2)
+            scrollView.zoom(to: CGRect(origin: origin, size: size), animated: true)
         }
     }
 }

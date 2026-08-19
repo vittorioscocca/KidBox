@@ -14,11 +14,47 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
     private var credentialListTask: Task<Void, Never>?
     private var otpListTask: Task<Void, Never>?
 
+    /// Continuazioni in attesa che l'estensione sia davvero a schermo.
+    ///
+    /// `prepareCredentialList` viene invocato **prima** che la view compaia. Se
+    /// la richiesta biometrica parte in quel momento, iOS la annulla con
+    /// `LAError.systemCancel` perché la presentazione è ancora in corso: il
+    /// foglio si alzava e si riabbassava subito. Aspettare `viewDidAppear`
+    /// elimina la corsa alla radice.
+    private var didAppearContinuations: [CheckedContinuation<Void, Never>] = []
+    private var hasAppeared = false
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !hasAppeared else { return }
+        hasAppeared = true
+        let pending = didAppearContinuations
+        didAppearContinuations.removeAll()
+        pending.forEach { $0.resume() }
+    }
+
+    deinit {
+        // Se il controller viene distrutto con richieste ancora sospese, le
+        // continuazioni non riprese finirebbero deallocate: Swift lo segnala
+        // come "continuation misuse". Si sbloccano qui, il chiamante troverà
+        // comunque il Task cancellato.
+        didAppearContinuations.forEach { $0.resume() }
+    }
+
+    /// Sospende finché la view non è a schermo. Ritorna subito se lo è già.
+    @MainActor
+    private func waitUntilVisible() async {
+        if hasAppeared { return }
+        await withCheckedContinuation { continuation in
+            didAppearContinuations.append(continuation)
+        }
     }
 
     // MARK: - Configuration onboarding (Impostazioni → AutoFill)
@@ -57,10 +93,30 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
             embedDecryptFailed()
             return
         case .loaded(let snapshot):
-            guard await evaluateBiometry() else {
+            // Lo sblocco parte solo a estensione presentata: chiederlo prima
+            // faceva annullare la richiesta dal sistema.
+            await waitUntilVisible()
+            guard !Task.isCancelled else { return }
+
+            switch await evaluateBiometry() {
+            case .success:
+                break
+            case .userCanceled:
                 cancelUserCanceled()
                 return
+            case .transientFailure:
+                // Non si chiude: si offre di riprovare, altrimenti l'utente
+                // vedrebbe solo il foglio sparire senza capire perché.
+                embedUnlockRetry(canRetry: true) { [weak self] in
+                    guard let self else { return }
+                    self.prepareCredentialList(for: serviceIdentifiers)
+                }
+                return
+            case .unavailable:
+                embedUnlockRetry(canRetry: false, onRetry: nil)
+                return
             }
+
             let requestHost = Self.normalizedHost(from: serviceIdentifiers.first)
             let sorted = Self.sortItems(snapshot.items, requestHost: requestHost)
             let root = AnyView(
@@ -137,8 +193,21 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
             cancelUserCanceled()
             return
         }
-        guard await evaluateBiometry() else {
+        await waitUntilVisible()
+        guard !Task.isCancelled else { return }
+        switch await evaluateBiometry() {
+        case .success:
+            break
+        case .userCanceled:
             cancelUserCanceled()
+            return
+        case .transientFailure:
+            embedUnlockRetry(canRetry: true) { [weak self] in
+                self?.prepareInterfaceToProvideCredential(for: credentialIdentity)
+            }
+            return
+        case .unavailable:
+            embedUnlockRetry(canRetry: false, onRetry: nil)
             return
         }
         let cred = ASPasswordCredential(user: item.username, password: item.password)
@@ -172,8 +241,21 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         case .loaded(let value):
             snapshot = value
         }
-        guard await evaluateBiometry() else {
+        await waitUntilVisible()
+        guard !Task.isCancelled else { return }
+        switch await evaluateBiometry() {
+        case .success:
+            break
+        case .userCanceled:
             cancelUserCanceled()
+            return
+        case .transientFailure:
+            embedUnlockRetry(canRetry: true) { [weak self] in
+                self?.prepareOneTimeCodeCredentialList(for: serviceIdentifiers)
+            }
+            return
+        case .unavailable:
+            embedUnlockRetry(canRetry: false, onRetry: nil)
             return
         }
         let requestHost = Self.normalizedHost(from: serviceIdentifiers.first)
@@ -251,6 +333,22 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         embed(root)
     }
 
+    /// Schermata di ripristino quando lo sblocco non è riuscito.
+    ///
+    /// - Parameter canRetry: `false` quando il dispositivo non può autenticare
+    ///   affatto (nessun codice impostato): lì riprovare non porterebbe a nulla.
+    private func embedUnlockRetry(canRetry: Bool, onRetry: (() -> Void)?) {
+        let root = AnyView(
+            AutoFillUnlockRetryView(
+                canRetry: canRetry,
+                onRetry: { onRetry?() },
+                onCancel: { [weak self] in self?.cancelUserCanceled() }
+            )
+            .environment(\.colorScheme, traitCollection.userInterfaceStyle == .dark ? .dark : .light)
+        )
+        embed(root)
+    }
+
     private func embedDecryptFailed() {
         let root = AnyView(
             AutoFillDecryptFailedView(onDismiss: { [weak self] in
@@ -261,17 +359,55 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         embed(root)
     }
 
-    private func evaluateBiometry() async -> Bool {
+    /// Esito dello sblocco, distinto per causa.
+    ///
+    /// Prima era un semplice `Bool` e **qualsiasi** fallimento portava a
+    /// `cancelUserCanceled()`, cioè alla chiusura immediata dell'estensione. Ma
+    /// un annullamento dell'utente e un `systemCancel` — che iOS emette quando
+    /// la richiesta arriva mentre l'estensione si sta ancora presentando, o
+    /// quando un'altra autenticazione è in corso — non vanno trattati allo
+    /// stesso modo: il primo è una scelta, il secondo un incidente da cui si può
+    /// riprovare.
+    private enum BiometryOutcome {
+        case success
+        /// L'utente ha annullato: chiudere è la risposta giusta.
+        case userCanceled
+        /// Incidente temporaneo: ha senso ritentare.
+        case transientFailure
+        /// Il dispositivo non può autenticare (nessun codice impostato).
+        case unavailable
+    }
+
+    private func evaluateBiometry() async -> BiometryOutcome {
         let ctx = LAContext()
         var err: NSError?
-        guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &err) else { return false }
+        guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &err) else {
+            return .unavailable
+        }
         do {
-            return try await ctx.evaluatePolicy(
+            let ok = try await ctx.evaluatePolicy(
                 .deviceOwnerAuthentication,
                 localizedReason: "Sblocca KidBox per AutoFill."
             )
+            return ok ? .success : .userCanceled
+        } catch let error as LAError {
+            switch error.code {
+            case .userCancel, .appCancel:
+                return .userCanceled
+            case .systemCancel, .invalidContext, .notInteractive:
+                // Non è l'utente ad aver detto no: è il sistema che ha
+                // interrotto. Chiudere qui è ciò che produceva il foglio che
+                // si alza e si riabbassa senza spiegazione.
+                return .transientFailure
+            case .passcodeNotSet, .biometryNotAvailable, .biometryNotEnrolled:
+                return .unavailable
+            default:
+                // authenticationFailed, biometryLockout e simili: l'utente resta
+                // nel flusso e può ritentare (con Face ID o codice).
+                return .transientFailure
+            }
         } catch {
-            return false
+            return .transientFailure
         }
     }
 
@@ -393,6 +529,56 @@ private struct AutoFillLoadingView: View {
             Text("Caricamento password…")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(KBTheme.background(colorScheme))
+    }
+}
+
+private struct AutoFillUnlockRetryView: View {
+    let canRetry: Bool
+    let onRetry: () -> Void
+    let onCancel: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: canRetry ? "faceid" : "exclamationmark.lock.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(KBTheme.bubbleTint)
+
+            Text(canRetry ? "Sblocco non riuscito" : "Sblocco non disponibile")
+                .font(.title3.weight(.semibold))
+                .multilineTextAlignment(.center)
+
+            Text(canRetry
+                 ? "Non è stato possibile completare lo sblocco. Riprova per vedere le tue password."
+                 : "Imposta un codice di sblocco sul dispositivo per usare le password di KidBox.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            if canRetry {
+                Button(action: onRetry) {
+                    Text("Riprova")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(KBTheme.bubbleTint)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .padding(.horizontal, 24)
+            }
+
+            Button(action: onCancel) {
+                Text("Chiudi")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KBTheme.background(colorScheme))

@@ -7,31 +7,42 @@
 
 import Foundation
 import SwiftData
-import CryptoKit
 import FirebaseAuth
 
-/// Performs a local migration to ensure each `KBFamily` has a stored master key.
+/// Allinea il Keychain locale alle chiavi di famiglia già esistenti.
 ///
-/// This migration is **local-only**:
-/// - It inspects all local families in SwiftData.
-/// - For any family missing a key in `FamilyKeychainStore`, it generates a new random 32-byte key
-///   and saves it to the Keychain.
+/// **Solo recupero: non genera mai chiavi.** Il nome è storico — in origine
+/// questa routine, se non trovava la chiave da nessuna parte, ne fabbricava una
+/// nuova a caso. Girando a ogni avvio da `RootHostView`, il risultato era che
+/// un utente entrato in famiglia col solo codice testuale (senza il QR che
+/// trasporta il materiale crittografico) al primo riavvio si ritrovava una
+/// chiave **divergente** da quella vera della famiglia: da lì in poi tutto ciò
+/// che cifrava era illeggibile per gli altri e viceversa, in silenzio. Peggio,
+/// la chiave fasulla veniva anche caricata sull'escrow, rendendo l'errore
+/// permanente e apparentemente legittimo.
 ///
-/// Typical usage (boot time, best effort):
+/// La regola ora è: **una chiave di famiglia nasce una volta sola, quando la
+/// famiglia viene creata.** Ovunque altro il codice può solo recuperarla. Se
+/// non è recuperabile è uno stato da mostrare all'utente — ci pensa
+/// `FamilyKeyMissingGate`, che spiega come farsi reinvitare col QR — non da
+/// tappare fabbricando dati.
+///
+/// Uso tipico (all'avvio, best effort):
 /// ```swift
 /// Task {
 ///   try? await MasterKeyMigration.migrateAllFamilies(modelContext: modelContext)
 /// }
 /// ```
 enum MasterKeyMigration {
-    
-    /// Generates and stores a master key for every local family that doesn't have one yet.
+
+    /// Per ogni famiglia locale: assicura il backup su escrow se la chiave c'è,
+    /// e tenta il recupero dall'escrow se manca.
     ///
-    /// Behavior (logic unchanged):
-    /// - Fetches all families from SwiftData.
-    /// - Skips families that already have a key in `FamilyKeychainStore`.
-    /// - Generates a 32-byte random key and stores it in Keychain for missing ones.
-    /// - Throws if saving fails for any family.
+    /// Comportamento:
+    /// - Chiave presente in Keychain → aggiorna il backup su Firestore.
+    /// - Chiave assente → tenta il recupero dall'escrow e la salva se riesce.
+    /// - Recupero fallito → **non genera nulla**, logga e passa alla famiglia
+    ///   successiva. Una famiglia irrecuperabile non deve fermare le altre.
     static func migrateAllFamilies(modelContext: ModelContext) async throws {
         KBLog.sync.kbInfo("MasterKeyMigration started (checking families)")
 
@@ -43,51 +54,49 @@ enum MasterKeyMigration {
 
         KBLog.sync.kbInfo("MasterKeyMigration families count=\(families.count)")
 
-        var migratedCount = 0
+        var recoveredCount = 0
+        var unrecoverableCount = 0
 
         for family in families {
             let familyId = family.id
 
-            // Controlla se la key esiste già nel Keychain locale
+            // Chiave già in Keychain: si assicura solo che esista il backup.
+            //
+            // Questo ramo non è cosmetico — è l'unico punto in cui la chiave di
+            // chi CREA la famiglia arriva sull'escrow: né `SetupFamilyView` né
+            // la creazione da onboarding fanno il backup, si limitano a salvare
+            // in Keychain. Senza questo, il creatore non potrebbe recuperare la
+            // propria chiave dopo una reinstallazione, finché non genera un invito.
             if let existingKey = FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: uid) {
-                KBLog.sync.kbDebug("MasterKeyMigration skip (already exists) familyId=\(familyId)")
-                // Assicura che esista anche il backup su Firestore (best effort)
+                KBLog.sync.kbDebug("MasterKeyMigration key present, refreshing escrow backup familyId=\(familyId)")
                 await FamilyKeyEscrowService.backup(key: existingKey, familyId: familyId, userId: uid)
                 continue
             }
 
             KBLog.sync.kbInfo("MasterKeyMigration key missing in Keychain — attempting Firestore recovery familyId=\(familyId)")
 
-            // 1️⃣ Tenta il recovery dall'escrow Firestore (account precedente o reinstall)
-            if let recovered = await FamilyKeyEscrowService.recover(familyId: familyId, userId: uid) {
-                do {
-                    try FamilyKeychainStore.saveFamilyKey(recovered, familyId: familyId, userId: uid)
-                    KBLog.sync.kbInfo("MasterKeyMigration key recovered from Firestore escrow familyId=\(familyId)")
-                    migratedCount += 1
-                    continue
-                } catch {
-                    KBLog.sync.kbError("MasterKeyMigration Keychain save after recovery failed familyId=\(familyId) error=\(error.localizedDescription)")
-                    // continua a generare una nuova chiave
-                }
+            // Unica via: recupero dall'escrow (reinstallazione, nuovo dispositivo,
+            // stesso account). Se non c'è backup, la chiave non è ricostruibile
+            // da qui: solo chi ce l'ha può ritrasmetterla con un invito QR.
+            guard let recovered = await FamilyKeyEscrowService.recover(familyId: familyId, userId: uid) else {
+                unrecoverableCount += 1
+                KBLog.security.kbError(
+                    "MasterKeyMigration: no key and no escrow backup familyId=\(familyId) — contenuti cifrati illeggibili finché non arriva un nuovo invito QR"
+                )
+                continue
             }
 
-            // 2️⃣ Ultima risorsa: genera una nuova chiave random e salvala sia nel Keychain
-            //    che sull'escrow Firestore (così i prossimi recovery funzioneranno)
-            KBLog.sync.kbInfo("MasterKeyMigration generating new key (no escrow found) familyId=\(familyId)")
             do {
-                let masterKeyBytes = InviteCrypto.randomBytes(32)
-                let masterKey = CryptoKit.SymmetricKey(data: masterKeyBytes)
-                try FamilyKeychainStore.saveFamilyKey(masterKey, familyId: familyId, userId: uid)
-                // Salva subito il backup così i recovery futuri funzionano
-                await FamilyKeyEscrowService.backup(key: masterKey, familyId: familyId, userId: uid)
-                KBLog.sync.kbInfo("MasterKeyMigration new key created and backed up familyId=\(familyId)")
-                migratedCount += 1
+                try FamilyKeychainStore.saveFamilyKey(recovered, familyId: familyId, userId: uid)
+                recoveredCount += 1
+                KBLog.sync.kbInfo("MasterKeyMigration key recovered from Firestore escrow familyId=\(familyId)")
             } catch {
-                KBLog.sync.kbError("MasterKeyMigration failed familyId=\(familyId) error=\(error.localizedDescription)")
-                throw error
+                // Non si propaga: le altre famiglie devono comunque essere processate.
+                unrecoverableCount += 1
+                KBLog.sync.kbError("MasterKeyMigration Keychain save after recovery failed familyId=\(familyId) error=\(error.localizedDescription)")
             }
         }
 
-        KBLog.sync.kbInfo("MasterKeyMigration completed migrated=\(migratedCount)")
+        KBLog.sync.kbInfo("MasterKeyMigration completed recovered=\(recoveredCount) unrecoverable=\(unrecoverableCount)")
     }
 }

@@ -127,8 +127,12 @@ struct HomeHeroCard: View {
             .frame(maxWidth: .infinity)
             .clipped()
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .task(id: photoURL?.absoluteString) {
-                loader.load(url: photoURL)
+            // L'id include il timestamp: un ritaglio o una nuova foto cambiano
+            // `heroPhotoUpdatedAt` anche quando l'URL resta identico (il path su
+            // Storage è fisso, `hero/hero.jpg`), e senza il timestamp nell'id la
+            // card continuerebbe a mostrare la versione precedente.
+            .task(id: "\(photoURL?.absoluteString ?? "")|\(photoUpdatedAt?.timeIntervalSince1970 ?? 0)") {
+                loader.load(url: photoURL, updatedAt: photoUpdatedAt)
             }
             
         }
@@ -158,11 +162,24 @@ final class HeroImageLoader: ObservableObject {
     
     private var task: Task<Void, Never>?
     
-    func load(url: URL?) {
+    func load(url: URL?, updatedAt: Date?) {
         task?.cancel()
+        guard let url else {
+            image = nil
+            return
+        }
+
+        // Cache valida per questa versione remota: si mostra subito, senza rete.
+        // `image` non viene azzerato prima del controllo, altrimenti il
+        // placeholder lampeggerebbe anche quando la foto è già sul dispositivo.
+        if let cached = HeroImageCache.image(for: url, updatedAt: updatedAt) {
+            image = cached
+            KBLog.sync.kbDebug("HeroImageLoader: cache hit, skipping download")
+            return
+        }
+
         image = nil
-        guard let url else { return }
-        
+
         task = Task {
             // Un solo ritentativo: "network connection lost" e i timeout sono
             // glitch transitori tipici del passaggio Wi-Fi/cellulare, non
@@ -183,6 +200,10 @@ final class HeroImageLoader: ObservableObject {
                         KBLog.sync.kbError("HeroImageLoader: UIImage(data:) returned nil despite \(data.count) bytes")
                     } else {
                         KBLog.sync.kbInfo("HeroImageLoader: image loaded successfully")
+                        // Si salva solo ciò che è stato decodificato davvero:
+                        // mettere in cache byte non validi li farebbe ripresentare
+                        // a ogni avvio senza più passare dalla rete.
+                        HeroImageCache.store(data, for: url, updatedAt: updatedAt)
                     }
                     return
 
