@@ -416,6 +416,10 @@ struct FamilySettingsView: View {
             let service = FamilyLeaveService(modelContext: modelContext)
             try await service.leaveFamily(familyId: familyId)
             KBLog.sync.kbInfo("FamilySettingsView: leave OK familyId=\(familyId)")
+            // Come in deleteFamily: senza azzerarlo `activeFamilyId` resta
+            // puntato alla famiglia appena lasciata e RootHostView riattacca i
+            // listener su dati a cui non abbiamo più accesso.
+            coordinator.setActiveFamily(nil)
             coordinator.resetToRoot()
         } catch {
             KBLog.sync.kbError("FamilySettingsView: leave FAILED familyId=\(familyId) err=\(error.localizedDescription)")
@@ -434,6 +438,7 @@ struct FamilySettingsView: View {
         do {
             let service = FamilyLeaveService(modelContext: modelContext)
             try await service.transferOwnershipAndLeave(familyId: familyId, newOwnerUid: newOwnerUid)
+            coordinator.setActiveFamily(nil)
             coordinator.resetToRoot()
         } catch {
             leaveError = error.localizedDescription

@@ -42,6 +42,7 @@ private struct InviteCodeViewBody: View {
     }
     
     @State private var didLogAppear = false
+    @State private var showRevokeConfirm = false
     
     init(modelContext: ModelContext, coordinator: AppCoordinator) {
         self.modelContext = modelContext
@@ -68,12 +69,43 @@ private struct InviteCodeViewBody: View {
                             Text("Condividi questo codice QR. L'altro genitore lo scannerizzerà per unirsi alla famiglia e ricevere automaticamente la chiave di cifratura.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
+
+                            Label("È il modo più sicuro: la chiave viene letta dalla fotocamera e non passa da chat, email o backup.", systemImage: "lock.shield.fill")
+                                .font(.footnote)
+                                .foregroundStyle(.green)
                         }
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                         
-                        ShareLink(item: qrPayload) {
-                            Label("Condividi QR", systemImage: "square.and.arrow.up")
+                        // Il link è la via principale: funziona a distanza e
+                        // trasporta anche la chiave. Il QR resta per quando si è
+                        // vicini. Si condivide `shareText`, non `qrPayload`.
+                        if vm.shareLink != nil {
+                            Divider()
+
+                            Text("Se non siete vicini, invia il link.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            ShareLink(
+                                item: vm.shareText,
+                                subject: Text(InviteCodeViewModel.shareSubject)
+                            ) {
+                                Label("Invia link d'invito", systemImage: "square.and.arrow.up")
+                            }
+
+                            Button {
+                                vm.copyToClipboard()
+                            } label: {
+                                Label("Copia link", systemImage: "doc.on.doc")
+                            }
+
+                            // Il segreto viaggia dentro il link: va detto, perché
+                            // resta nella conversazione anche dopo l'invio.
+                            Label("Il link contiene la chiave: chi lo riceve può entrare. Resta nella chat o nella posta finché non viene usato. Vale 24 ore, una volta sola, e puoi annullarlo qui sotto.", systemImage: "exclamationmark.triangle.fill")
+                                .font(.footnote)
+                                .foregroundStyle(.orange)
                         }
                     }
                     .padding(.vertical, 12)
@@ -120,6 +152,35 @@ private struct InviteCodeViewBody: View {
                 .disabled(vm.isBusy)
             }
             .listRowBackground(cardBackground)
+
+            // Revoca: il segreto viaggia dentro il link, quindi finché l'invito
+            // è valido chi lo possiede può entrare. Poterlo annullare è la
+            // difesa vera se finisce nella chat sbagliata — più del TTL.
+            if vm.currentInviteId != nil {
+                Section {
+                    Button(role: .destructive) {
+                        showRevokeConfirm = true
+                    } label: {
+                        Label("Revoca invito", systemImage: "xmark.circle")
+                    }
+                    .disabled(vm.isBusy)
+                } footer: {
+                    Text("Il link già inviato smetterà di funzionare. Potrai generarne uno nuovo.")
+                }
+                .listRowBackground(cardBackground)
+            }
+        }
+        .confirmationDialog(
+            "Revocare l'invito?",
+            isPresented: $showRevokeConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Revoca", role: .destructive) {
+                Task { await vm.revokeInvite() }
+            }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("Chi ha ricevuto il link non potrà più usarlo per entrare nella famiglia.")
         }
         .scrollContentBackground(.hidden)
         .background(backgroundColor)

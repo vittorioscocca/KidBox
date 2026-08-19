@@ -30,11 +30,45 @@ struct InviteWrapService {
         let inviteId: String
         let secretBase64url: String
         let qrPayload: String
+        /// Universal Link condivisibile (WhatsApp, mail, messaggi).
+        let shareLink: String
         let expiresAt: Date
+    }
+
+    /// Dominio degli inviti. Deve combaciare con l'entitlement
+    /// `associated-domains` e con `apple-app-site-association`.
+    static let inviteLinkBaseURL = "https://kidbox-landing.web.app/join"
+
+    /// Costruisce il link d'invito con il segreto nel **frammento**.
+    ///
+    /// Il segreto sta dopo `#` e non nella query per una ragione precisa: i
+    /// browser non inviano mai il frammento al server. Così il materiale che
+    /// sblocca la chiave di famiglia non finisce nei log di hosting né — cosa
+    /// più importante — viene visto dai bot che generano le anteprime dei link.
+    /// WhatsApp, iMessage e i client di posta scaricano l'URL condiviso per
+    /// mostrare il riquadro di anteprima: con il segreto nella query lo
+    /// manderemmo alla loro infrastruttura, con il frammento no.
+    ///
+    /// `familyId` e `inviteId` restano nella query: da soli non aprono nulla,
+    /// perché senza segreto la chiave non è ricostruibile.
+    static func shareLink(familyId: String, inviteId: String, secretBase64url: String) -> String {
+        "\(inviteLinkBaseURL)?familyId=\(familyId)&inviteId=\(inviteId)#k=\(secretBase64url)"
     }
     
     /// TTL consigliato: 24h
-    func createInvite(familyId: String, ttlSeconds: TimeInterval = 24 * 3600) async throws -> Result {
+    ///
+    /// `familyName`/`inviterDisplayName` sono denormalizzati sul documento
+    /// invito così chi riceve il link può leggerli PRIMA di entrare — la
+    /// regola di `families/{familyId}` richiede membership, ma quella di
+    /// `invites/{inviteId}` è aperta a ogni utente autenticato. Sono
+    /// informativi (nome famiglia, nome di chi invita), non materiale
+    /// crittografico: nessun rischio nel renderli leggibili pre-join.
+    func createInvite(
+        familyId: String,
+        familyName: String,
+        inviterDisplayName: String,
+        ttlSeconds: TimeInterval = 24 * 3600
+    ) async throws -> Result {
         guard let uid = Auth.auth().currentUser?.uid else {
             KBLog.auth.kbError("Invite create failed: not authenticated")
             throw NSError(domain: "KidBox.Invite", code: -1, userInfo: [
@@ -107,7 +141,10 @@ struct InviteWrapService {
                 "createdAt": Timestamp(date: now),
                 "createdBy": uid,
                 "expiresAt": Timestamp(date: expiresAt),
-                
+
+                "familyName": familyName,
+                "createdByDisplayName": inviterDisplayName,
+
                 "secretHash": secretHash,
                 "kdfSalt": salt.base64EncodedString(),
                 
@@ -133,6 +170,11 @@ struct InviteWrapService {
             inviteId: inviteId,
             secretBase64url: secretB64url,
             qrPayload: qrPayload,
+            shareLink: Self.shareLink(
+                familyId: familyId,
+                inviteId: inviteId,
+                secretBase64url: secretB64url
+            ),
             expiresAt: expiresAt
         )
     }

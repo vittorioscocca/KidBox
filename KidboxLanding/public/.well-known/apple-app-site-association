@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["5WA8KG2G2W.it.vittorioscocca.KidBox"],
+        "components": [
+          {
+            "/": "/join",
+            "comment": "Invito a entrare in una famiglia KidBox"
+          },
+          {
+            "/": "/join/*",
+            "comment": "Invito a entrare in una famiglia KidBox"
+          }
+        ]
+      }
+    ]
+  }
+}

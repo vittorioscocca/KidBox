@@ -206,16 +206,6 @@ service cloud.firestore {
       }
     }
 
-    // ── INVITES (codici testuali flat) ─────────────────────
-    match /invites/{code} {
-      allow read, create: if isSignedIn();
-      allow update: if isSignedIn()
-        && resource.data.usedAt == null
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['usedAt', 'usedBy']);
-      allow delete: if false;
-    }
-
     // ── SUPPORT TICKETS (Assistente & Supporto) ───────────
     match /support_tickets/{ticketId} {
       function supportTicketRequiredKeys() {

@@ -76,6 +76,12 @@ struct RootHostView: View {
     /// Debounce: ogni listener family-scoped caduto chiede il restart, ma il
     /// riaggancio va fatto una volta sola per ondata di errori.
     @State private var realtimeRestartScheduled = false
+
+    /// Esito dell'invito da link, mostrato in un alert.
+    @State private var inviteLinkMessage: String?
+    /// Evita che due inneschi ravvicinati (onAppear + didBecomeActive) applichino
+    /// lo stesso invito due volte.
+    @State private var isConsumingInvite = false
     @ObservedObject private var crashReportPrompt = CrashReportPromptCenter.shared
     @ObservedObject private var appUpdateChecker = AppUpdateChecker.shared
     
@@ -165,9 +171,31 @@ struct RootHostView: View {
             // willEnterForeground non scatta. Controlliamo qui.
             coordinator.handleIncomingShare(modelContext: modelContext)
             coordinator.consumePendingControlWidgetRouteIfNeeded(modelContext: modelContext)
+
+            // Invito arrivato da link mentre l'utente non era ancora
+            // autenticato: qui l'app è pronta e la sessione esiste.
+            Task { await consumePendingInviteIfNeeded() }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             coordinator.consumePendingControlWidgetRouteIfNeeded(modelContext: modelContext)
+            // Ritorno in primo piano subito dopo la registrazione.
+            Task { await consumePendingInviteIfNeeded() }
+        }
+        // Link toccato ad app già aperta: l'URL arriva DOPO il passaggio in
+        // primo piano, quindi il solo `didBecomeActive` lo mancherebbe.
+        .onReceive(NotificationCenter.default.publisher(for: .kbPendingFamilyInviteStored)) { _ in
+            Task { await consumePendingInviteIfNeeded() }
+        }
+        .alert(
+            "Invito famiglia",
+            isPresented: Binding(
+                get: { inviteLinkMessage != nil },
+                set: { if !$0 { inviteLinkMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(inviteLinkMessage ?? "")
         }
         // React to explicit family selection changes (join, switch).
         .onChange(of: coordinator.activeFamilyId) { oldValue, newValue in
@@ -333,6 +361,56 @@ struct RootHostView: View {
     ///
     /// Includes `startChildrenRealtime` so SwiftData child fields (e.g. weight/height) stay in sync
     /// from Firestore without opening Family settings.
+    /// Applica un invito ricevuto via link, se ce n'è uno in sospeso.
+    ///
+    /// Si attiva sia all'apparire della root sia al ritorno in primo piano,
+    /// perché il link può arrivare ad app chiusa (cold start) o già aperta.
+    @MainActor
+    private func consumePendingInviteIfNeeded() async {
+        guard !isConsumingInvite else { return }
+        guard let invite = PendingFamilyInvite.load() else { return }
+        // Serve la sessione: senza, l'invito resta in attesa e si riprova al
+        // prossimo passaggio in primo piano, cioè subito dopo la registrazione.
+        guard Auth.auth().currentUser != nil else {
+            KBLog.sync.kbDebug("Invito in sospeso: utente non ancora autenticato, si attende")
+            return
+        }
+        // Chi non ha una famiglia sta guardando il wizard, che ha la sua
+        // `LinkInviteConfirmCard` (chiede il nome prima di entrare). Se
+        // consumassimo l'invito anche qui, un ritorno in foreground durante la
+        // registrazione (verifica email, Google, Apple) farebbe il join in
+        // silenzio e salterebbe quella richiesta, lasciando il membro senza
+        // nome — lo stesso difetto che questo lavoro doveva eliminare.
+        //
+        // La condizione è "ha una famiglia" e non `hasSeenOnboarding`: quel
+        // flag resta true anche dopo aver eliminato la famiglia, quando si
+        // torna al wizard, e qui manderebbe i due percorsi in conflitto.
+        guard !families.isEmpty else {
+            KBLog.sync.kbDebug("Invito in sospeso: nessuna famiglia, lo gestisce il wizard")
+            return
+        }
+
+        isConsumingInvite = true
+        defer { isConsumingInvite = false }
+
+        do {
+            // La propagazione del nome sul membro la fa `FamilyInviteLinkJoiner`.
+            try await FamilyInviteLinkJoiner.join(
+                invite: invite,
+                modelContext: modelContext,
+                coordinator: coordinator
+            )
+            inviteLinkMessage = String(localized: "Sei entrato nella famiglia.")
+        } catch {
+            inviteLinkMessage = error.localizedDescription
+            KBLog.sync.kbError("Invito da link fallito: \(error.localizedDescription)")
+        }
+
+        // Sempre, anche in caso di errore: l'invito è monouso e a scadenza,
+        // ritentarlo a ogni avvio produrrebbe solo lo stesso errore.
+        PendingFamilyInvite.clear()
+    }
+
     private func startFamilyRealtimeIfPossible() {
         let familyId = resolvedActiveFamilyId
         

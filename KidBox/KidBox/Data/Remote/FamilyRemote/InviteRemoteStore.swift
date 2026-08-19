@@ -10,154 +10,45 @@ import FirebaseFirestore
 import FirebaseAuth
 import OSLog
 
-/// Firestore document representing an invite code.
-struct InviteDoc: Codable {
-    let familyId: String
-    let createdBy: String
-    let revoked: Bool
-}
-
-/// Remote store for invite codes + family membership join.
+/// Scrive la membership quando si entra in una famiglia.
 ///
-/// Responsibilities:
-/// - Create invite codes (with collision retry).
-/// - Resolve invite codes (validates revoked/expiry).
-/// - Add current user as a family member and write membership index.
+/// I codici invito testuali non esistono più: creavano membri privi della
+/// chiave di cifratura, incapaci di leggere password, documenti, wallet e
+/// allegati della chat. Si entra dal QR o dal link, che portano entrambi
+/// `familyId` e il materiale crittografico.
 final class InviteRemoteStore {
-    
+
     /// Firestore handle (computed as in original code).
     private var db: Firestore { Firestore.firestore() }
-    
-    /// Creates an invite code for a family. Retries if a collision happens.
-    ///
-    /// Behavior (unchanged):
-    /// - Requires authenticated user.
-    /// - Tries up to 10 times to generate a unique code.
-    /// - Uses a Firestore transaction to ensure uniqueness.
-    /// - Stores expiresAt (client computed) + createdAt server timestamp.
-    /// - On collision: retries.
-    func createInviteCode(familyId: String, ttlDays: Int = 7) async throws -> String {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            KBLog.auth.kbError("createInviteCode failed: not authenticated")
-            throw NSError(
-                domain: "KidBox",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
-            )
-        }
-        
-        KBLog.sync.kbInfo("createInviteCode started familyId=\(familyId) ttlDays=\(ttlDays)")
-        
-        for attempt in 0..<10 {
-            let code = InviteCodeGenerator.generate()
-            let ref = db.collection("invites").document(code)
-            
-            do {
-                _ = try await db.runTransaction { transaction, errorPointer in
-                    do {
-                        let snap = try transaction.getDocument(ref)
-                        if snap.exists {
-                            errorPointer?.pointee = NSError(domain: "KidBox", code: 409)
-                            return nil
-                        }
-                    } catch {
-                        errorPointer?.pointee = error as NSError
-                        return nil
-                    }
-                    
-                    let expiresAt = Calendar.current.date(byAdding: .day, value: ttlDays, to: Date()) ?? Date()
-                    
-                    transaction.setData([
-                        "familyId": familyId,
-                        "createdBy": uid,
-                        "revoked": false,
-                        "createdAt": FieldValue.serverTimestamp(),
-                        "expiresAt": Timestamp(date: expiresAt)
-                    ], forDocument: ref)
-                    
-                    return nil
-                }
-                
-                KBLog.sync.kbInfo("Invite created familyId=\(familyId) code=\(code)")
-                return code
-                
-            } catch {
-                // Keep original behavior: treat as collision / retry
-                KBLog.sync.kbDebug("Invite collision, retrying attempt=\(attempt + 1)")
-                continue
-            }
-        }
-        
-        KBLog.sync.kbError("createInviteCode failed: unable to generate unique code familyId=\(familyId)")
-        throw NSError(
-            domain: "KidBox",
-            code: -2,
-            userInfo: [NSLocalizedDescriptionKey: "Unable to generate unique invite code"]
-        )
+
+    /// Info mostrabili PRIMA del join: nome famiglia e di chi ha invitato.
+    struct InvitePreview {
+        let familyName: String?
+        let inviterDisplayName: String?
     }
-    
-    /// Resolves an invite code to a `familyId` and validates revoked/expiry.
+
+    /// Legge il documento invito senza consumarlo, per mostrare a chi riceve
+    /// il link "stai per entrare nella famiglia di…" prima che confermi.
     ///
-    /// Behavior (unchanged):
-    /// - Requires authenticated user.
-    /// - Throws:
-    ///   - 404 if code not found
-    ///   - 410 if revoked or expired
-    ///   - -3 if malformed doc (missing familyId)
-    func resolveInvite(code: String) async throws -> String {
-        guard Auth.auth().currentUser != nil else {
-            KBLog.auth.kbError("resolveInvite failed: not authenticated")
-            throw NSError(
-                domain: "KidBox",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
+    /// `families/{familyId}/invites/{inviteId}` è leggibile da ogni utente
+    /// autenticato (non solo dai membri): è la stessa regola che permette a
+    /// QR e link di funzionare per chi non è ancora dentro la famiglia.
+    func fetchInvitePreview(familyId: String, inviteId: String) async -> InvitePreview {
+        do {
+            let doc = try await db.collection("families").document(familyId)
+                .collection("invites").document(inviteId)
+                .getDocument()
+            let data = doc.data() ?? [:]
+            return InvitePreview(
+                familyName: data["familyName"] as? String,
+                inviterDisplayName: data["createdByDisplayName"] as? String
             )
+        } catch {
+            KBLog.sync.kbError("InviteRemoteStore: fetchInvitePreview failed: \(error.localizedDescription)")
+            return InvitePreview(familyName: nil, inviterDisplayName: nil)
         }
-        
-        KBLog.sync.kbInfo("resolveInvite started code=\(code)")
-        
-        let snap = try await db.collection("invites").document(code).getDocument()
-        guard let data = snap.data() else {
-            KBLog.sync.kbDebug("resolveInvite invalid code=\(code)")
-            throw NSError(
-                domain: "KidBox",
-                code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Codice non valido"]
-            )
-        }
-        
-        if (data["revoked"] as? Bool) == true {
-            KBLog.sync.kbDebug("resolveInvite revoked code=\(code)")
-            throw NSError(
-                domain: "KidBox",
-                code: 410,
-                userInfo: [NSLocalizedDescriptionKey: "Codice revocato"]
-            )
-        }
-        
-        if let expiresAt = data["expiresAt"] as? Timestamp,
-           expiresAt.dateValue() < Date() {
-            KBLog.sync.kbDebug("resolveInvite expired code=\(code)")
-            throw NSError(
-                domain: "KidBox",
-                code: 410,
-                userInfo: [NSLocalizedDescriptionKey: "Codice scaduto"]
-            )
-        }
-        
-        guard let familyId = data["familyId"] as? String else {
-            KBLog.sync.kbError("resolveInvite malformed invite code=\(code)")
-            throw NSError(
-                domain: "KidBox",
-                code: -3,
-                userInfo: [NSLocalizedDescriptionKey: "Invite malformato"]
-            )
-        }
-        
-        KBLog.sync.kbInfo("resolveInvite OK code=\(code) familyId=\(familyId)")
-        return familyId
     }
-    
+
     /// Adds current user as member of the family and writes the membership index.
     ///
     /// Behavior (unchanged):

@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "it.vittorioscocca.kidbox",
+      "sha256_cert_fingerprints": [
+        "ED:B8:11:C0:3A:ED:27:BE:A6:56:9C:8E:BE:2E:FA:03:47:02:66:9A:5A:1D:01:48:A6:66:D6:47:64:28:80:99",
+        "2C:A8:CB:62:13:CA:C2:B9:08:AE:EF:03:C8:78:40:11:C0:0C:FA:02:E4:E3:AF:2A:48:29:C5:7A:B3:12:F8:B6"
+      ]
+    }
+  }
+]

@@ -14,24 +14,22 @@ import FirebaseFirestore
 
 /// Esito di un join, dal punto di vista dell'accesso ai dati cifrati.
 ///
-/// La membership e la chiave di cifratura viaggiano su due canali distinti:
-/// il codice testuale porta solo la membership, il QR porta anche il materiale
-/// crittografico. Chi entra col solo codice diventa membro a tutti gli effetti
-/// ma non può decifrare Password, Documenti e Wallet — un fallimento che prima
-/// restava invisibile perché il join veniva comunque riportato come riuscito.
+/// Con QR e link — le due sole strade rimaste — la chiave viaggia insieme
+/// all'invito, quindi `.missingVaultKey` non dovrebbe più presentarsi. Resta
+/// come rete di sicurezza: se il Keychain fallisse dopo un unwrap riuscito, è
+/// meglio accorgersene da un valore di ritorno che da contenuti vuoti.
 enum FamilyJoinOutcome {
     /// Membership creata e master key disponibile in Keychain: accesso completo.
     case complete
 
-    /// Membership creata, ma la master key della famiglia non è disponibile:
-    /// i contenuti cifrati resteranno illeggibili finché non si usa un invito QR.
+    /// Membership creata ma master key non disponibile: i contenuti cifrati
+    /// resteranno illeggibili.
     case missingVaultKey
 }
 
-/// Joins an existing family using an invite code and bootstraps local state.
+/// Entra in una famiglia esistente e prepara lo stato locale.
 ///
 /// Responsibilities:
-/// - Normalize and resolve invite codes.
 /// - Ensure user becomes a member on Firestore.
 /// - Perform a one-shot family doc refresh (including hero fields).
 /// - Fetch and upsert minimal family bundle (family, children, routines, todos, events) into SwiftData.
@@ -58,31 +56,14 @@ final class FamilyJoinService {
     
     // MARK: - Public API
     
-    /// Joins a family from an invite `code` and bootstraps local data.
+    /// Entra in una famiglia il cui id è già noto.
     ///
-    /// Behavior:
-    /// 1) Normalize code, ensure authenticated.
-    /// 2) Resolve invite -> familyId; rimuovi `KBSyncOp` non appartenenti alla nuova famiglia e,
-    ///    se si cambia famiglia, wipe locale di routine/todo/event/doseLog della famiglia precedente.
-    /// 3) One-shot refresh of family doc fields (name + hero) in a detached Task.
-    /// 4) Add member on server.
-    /// 5) Fetch minimal family bundle from server.
-    /// 6) Upsert local family + children + routines/todos/events.
-    /// 7) **Pin `familyId` as active on the coordinator** — this must happen before
-    ///    bootstrap so that RootHostView does not flip back to the old family.
-    /// 8) Start realtime bundle + members; flush.
-    /// 9) Bootstrap remaining memberships (syncs old families in background, does NOT change active).
-    ///
-    /// - Note: Wraps the entire flow in `beginFamilyJoin` / `endFamilyJoin` to suppress
-    ///   spurious `handleFamilyAccessLost` calls triggered by PERMISSION_DENIED errors
-    ///   from the old family's listeners that may still be alive during the transition.
-    ///
-    /// - Returns: `.complete` se al termine la master key della famiglia è in Keychain,
-    ///   `.missingVaultKey` se l'utente è entrato ma non può decifrare i contenuti.
-    ///   Il join **non** fallisce in quel caso: la membership è valida, manca solo la
-    ///   chiave, e spetta al chiamante avvisare l'utente.
+    /// `familyId` arriva dal QR o dal link d'invito, che lo portano entrambi
+    /// nel payload. Il codice testuale non esiste più: creava membri senza la
+    /// chiave di cifratura, quindi incapaci di leggere password, documenti,
+    /// wallet e allegati della chat.
     @discardableResult
-    func joinFamily(code rawCode: String, coordinator: AppCoordinator) async throws -> FamilyJoinOutcome {
+    func joinFamily(familyId: String, coordinator: AppCoordinator) async throws -> FamilyJoinOutcome {
         // ─────────────────────────────────────────────────────────────────────
         // JOIN GUARD — sopprime handleFamilyAccessLost per tutta la durata del
         // join. I listener della vecchia famiglia possono emettere
@@ -93,13 +74,7 @@ final class FamilyJoinService {
         // ─────────────────────────────────────────────────────────────────────
         SyncCenter.shared.beginFamilyJoin()
         defer { SyncCenter.shared.endFamilyJoin() }
-        
-        let code = rawCode
-            .uppercased()
-            .filter { !$0.isWhitespace && $0 != "-" }
-        
-        KBLog.sync.kbInfo("joinFamily start normalizedCodeLen=\(code.count)")
-        
+
         guard let uid = Auth.auth().currentUser?.uid else {
             KBLog.auth.kbError("joinFamily failed: not authenticated")
             throw NSError(
@@ -108,12 +83,7 @@ final class FamilyJoinService {
                 userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
             )
         }
-        
-        // 1) Resolve invite -> familyId
-        KBLog.sync.kbDebug("Resolving invite code")
-        let familyId = try await inviteRemote.resolveInvite(code: code)
-        KBLog.sync.kbInfo("Invite resolved familyId=\(familyId)")
-        
+
         // ─ Outbox + dati locali “stale” della vecchia famiglia ─────────────────
         // Evita che flushGlobal (dopo il join) processi ancora KBSyncOp (es. doseLog) con
         // familyId precedente → Permission Denied su Firestore.

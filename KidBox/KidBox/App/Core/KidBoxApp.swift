@@ -104,9 +104,39 @@ struct KidBoxApp: App {
                     }
                 // ──────────────────────────────────────────────────────────
                 
+                // MARK: Universal Link — invito famiglia
+                //
+                // Il link viene solo messo da parte, non applicato qui: chi lo
+                // riceve di norma non ha ancora un account, e il join richiede
+                // l'utente autenticato. Chi non ha ancora finito l'onboarding
+                // lo trova in `OnboardingWalkthroughView` (LinkInviteConfirmCard);
+                // chi ce l'ha già finito, in `RootHostView`. Vedi `PendingFamilyInvite`.
+                    .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                        guard let url = activity.webpageURL else { return }
+                        guard let invite = PendingFamilyInvite.parse(from: url) else {
+                            KBLog.sync.kbDebug("Universal link ignorato (non è un invito): \(url.path)")
+                            return
+                        }
+                        KBLog.sync.kbInfo("Universal link invito ricevuto familyId=\(invite.familyId)")
+                        invite.store()
+                    }
+
                 // MARK: URL handling
                     .onOpenURL { url in
                         KBLog.auth.kbInfo("[KidBoxApp] onOpenURL -> \(url.absoluteString)")
+
+                        // Invito da link. Va gestito QUI e non solo in
+                        // `onContinueUserActivity`: SwiftUI consegna gli
+                        // Universal Link a `onOpenURL` in diversi casi — è quello
+                        // che succede davvero, e finora il link finiva dritto al
+                        // gestore di Google Sign-In, che lo ignorava. Risultato:
+                        // nessun invito messo da parte e wizard manuale.
+                        if let invite = PendingFamilyInvite.parse(from: url) {
+                            KBLog.sync.kbInfo("onOpenURL: invito da link familyId=\(invite.familyId)")
+                            invite.store()
+                            return
+                        }
+
                         if url.scheme == "kidbox", url.host == "share" {
                             KBLog.sync.kbInfo("onOpenURL share scheme -> handleIncomingShare")
                             coordinator.handleIncomingShare(

@@ -12,70 +12,55 @@ import OSLog
 
 @MainActor
 final class JoinFamilyViewModel: ObservableObject {
-    /// Testo mostrato quando si entra con il solo codice testuale, senza chiave.
-    /// Nomina la schermata e il pulsante reali ("Invita genitore" →
-    /// "Genera codice QR") così l'utente sa esattamente cosa chiedere.
-    static let missingVaultKeyMessage = """
-        Sei entrato nella famiglia, ma questo invito non conteneva la chiave di \
-        cifratura: Password, Documenti e Wallet condivisi resteranno illeggibili. \
-        Chiedi a chi ti ha invitato di aprire "Invita genitore" e generare un \
-        codice QR, poi scansionalo da questa schermata.
-        """
 
-    @Published var code: String = ""
     @Published var isBusy = false
     @Published var errorMessage: String?
     @Published var didJoin = false
 
-    /// Avviso non bloccante mostrato quando il join riesce ma senza chiave di
-    /// cifratura: l'utente è membro, però i contenuti cifrati restano illeggibili.
-    /// Distinto da `errorMessage` perché il join **non** è fallito.
-    @Published var vaultKeyWarning: String?
-
     var coordinator: AppCoordinator
-    
-    private let service: FamilyJoinService
-    
-    init(service: FamilyJoinService, coordinator: AppCoordinator) {
-        self.service = service
+    private let modelContext: ModelContext
+
+    init(modelContext: ModelContext, coordinator: AppCoordinator) {
+        self.modelContext = modelContext
         self.coordinator = coordinator
         KBLog.auth.kbDebug("JoinFamilyViewModel init")
     }
-    
-    /// Attempts to join a family using the current `code`.
+
+    /// Entra in famiglia dal QR inquadrato.
     ///
-    /// - Note: The code is normalized (trim + uppercase) before being sent to `FamilyJoinService`.
-    /// - Important: Never log the invite code content; it can be sensitive. If needed, log only its length.
-    func join() async {
-        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard !trimmed.isEmpty else {
-            KBLog.auth.kbDebug("JoinFamilyViewModel join skipped: empty code")
+    /// Il codice testuale non esiste più: prima questo flusso estraeva un `code`
+    /// dal payload e faceva un secondo giro per creare la membership, mentre il
+    /// QR conteneva già `familyId`. Ora il payload viene ricondotto a
+    /// `PendingFamilyInvite` e gestito dallo stesso percorso del link
+    /// d'invito — chiave prima, membership poi.
+    ///
+    /// - Important: Non registrare mai il payload: contiene il segreto.
+    func joinFromQR(payload raw: String) async {
+        guard let invite = PendingFamilyInvite.parse(fromQRPayload: raw) else {
+            errorMessage = String(localized: "Questo QR non è un invito KidBox valido.")
+            KBLog.sync.kbError("JoinFamilyViewModel: QR non valido")
             return
         }
-        
-        // Log only metadata (length), not the code.
-        KBLog.sync.kbInfo("JoinFamilyViewModel join start codeLen=\(trimmed.count)")
-        
+
         isBusy = true
         errorMessage = nil
-        vaultKeyWarning = nil
         didJoin = false
         defer {
             isBusy = false
-            KBLog.sync.kbDebug("JoinFamilyViewModel join end didJoin=\(self.didJoin)")
+            KBLog.sync.kbDebug("JoinFamilyViewModel joinFromQR end didJoin=\(self.didJoin)")
         }
 
         do {
-            let outcome = try await service.joinFamily(code: trimmed, coordinator: coordinator)
-            if case .missingVaultKey = outcome {
-                vaultKeyWarning = Self.missingVaultKeyMessage
-                KBLog.sync.kbError("JoinFamilyViewModel join OK but vault key missing")
-            }
+            try await FamilyInviteLinkJoiner.join(
+                invite: invite,
+                modelContext: modelContext,
+                coordinator: coordinator
+            )
             didJoin = true
-            KBLog.sync.kbInfo("JoinFamilyViewModel join OK")
+            KBLog.sync.kbInfo("JoinFamilyViewModel: join da QR riuscito")
         } catch {
             errorMessage = error.localizedDescription
-            KBLog.sync.kbError("JoinFamilyViewModel join failed: \(error.localizedDescription)")
+            KBLog.sync.kbError("JoinFamilyViewModel: join da QR fallito: \(error.localizedDescription)")
         }
     }
 }

@@ -16,7 +16,7 @@ struct JoinFamilyView: View {
     var body: some View {
         JoinFamilyViewBody(modelContext: modelContext, coordinator: coordinator)
             .environmentObject(coordinator)
-            .navigationTitle("Entra con codice")
+            .navigationTitle("Entra in famiglia")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 KBLog.ui.kbDebug("JoinFamilyView appeared")
@@ -48,27 +48,24 @@ private struct JoinFamilyViewBody: View {
     init(modelContext: ModelContext, coordinator: AppCoordinator) {
         self.modelContext = modelContext
         _vm = StateObject(wrappedValue: JoinFamilyViewModel(
-            service: FamilyJoinService(
-                inviteRemote: InviteRemoteStore(),
-                readRemote: FamilyReadRemoteStore(),
-                modelContext: modelContext
-            ), coordinator: coordinator
+            modelContext: modelContext,
+            coordinator: coordinator
         ))
         self.coordinator = coordinator
     }
     
     var body: some View {
         Form {
-            Section("Codice invito") {
-                TextField("Es. K7P4D2", text: $vm.code)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .onChange(of: vm.code) { _, newValue in
-                        KBLog.ui.kbDebug("JoinFamilyView code changed len=\(newValue.count)")
-                    }
+            // Il codice testuale non esiste più: entrava in famiglia senza
+            // trasportare la chiave di cifratura. Restano due strade complete —
+            // il link d'invito (che apre l'app da solo) e il QR qui sotto.
+            Section {
+                Text("Chiedi a chi ti invita di mandarti il link d'invito, oppure inquadra il suo codice QR.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             .listRowBackground(cardBackground)
-            
+
             Button {
                 showScanner = true
                 KBLog.ui.kbInfo("JoinFamilyView: open QR scanner")
@@ -79,39 +76,8 @@ private struct JoinFamilyViewBody: View {
             .sheet(isPresented: $showScanner) {
                 QRScannerSheet(
                     onDetected: { raw in
-                        Task {
-                            do {
-                                KBLog.ui.kbInfo("JoinFamilyView: QR scanned (processing)")
-                                
-                                KBLog.sync.kbInfo("JoinFamilyView: unwrap master key from encrypted invite (start)")
-                                try await JoinWrapService().join(usingQRPayload: raw)
-                                KBLog.sync.kbInfo("JoinFamilyView: master key saved to Keychain (ok)")
-                                
-                                KBLog.sync.kbDebug("JoinFamilyView: extract membership code from QR payload")
-                                guard let code = JoinPayloadParser.extractCode(from: raw) else {
-                                    showScanner = false
-                                    vm.errorMessage = "QR valido ma senza codice invito."
-                                    KBLog.sync.kbError("JoinFamilyView: QR missing membership code")
-                                    return
-                                }
-                                
-                                KBLog.sync.kbInfo("JoinFamilyView: membership code extracted len=\(code.count)")
-                                
-                                vm.code = code
-                                showScanner = false
-                                
-                                try? await Task.sleep(nanoseconds: 500_000_000)
-                                
-                                KBLog.sync.kbInfo("JoinFamilyView: starting membership join")
-                                await vm.join()
-                                KBLog.sync.kbInfo("JoinFamilyView: join completed")
-                                
-                            } catch {
-                                showScanner = false
-                                vm.errorMessage = error.localizedDescription
-                                KBLog.sync.kbError("JoinFamilyView: join failed \(error.localizedDescription)")
-                            }
-                        }
+                        showScanner = false
+                        Task { await vm.joinFromQR(payload: raw) }
                     },
                     onClose: {
                         showScanner = false
@@ -119,7 +85,7 @@ private struct JoinFamilyViewBody: View {
                     }
                 )
             }
-            
+
             if let err = vm.errorMessage {
                 Section {
                     HStack(spacing: 8) {
@@ -142,35 +108,22 @@ private struct JoinFamilyViewBody: View {
                     }
                     .listRowBackground(cardBackground)
 
-                    // Join riuscito ma senza chiave: la membership è valida, quindi
-                    // non è un errore rosso — è un avviso che dice cosa manca e come
-                    // rimediare, altrimenti l'utente scopre da solo che Password,
-                    // Documenti e Wallet sono vuoti senza capirne il motivo.
-                    if let warning = vm.vaultKeyWarning {
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text(warning)
-                                .font(.footnote)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Attenzione: \(warning)")
-                        .listRowBackground(cardBackground)
-                    }
-
                     Button("Continua") {
                         KBLog.navigation.kbInfo("JoinFamilyView: continue -> resetToRoot")
                         coordinator.resetToRoot()
                     }
                     .listRowBackground(cardBackground)
                 }
-            } else {
-                Button(vm.isBusy ? "Ingresso…" : "Entra") {
-                    KBLog.sync.kbInfo("JoinFamilyView: join button tapped")
-                    Task { await vm.join() }
+            }
+
+            if vm.isBusy {
+                Section {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Ingresso in corso…")
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .disabled(vm.isBusy || vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .listRowBackground(cardBackground)
             }
         }

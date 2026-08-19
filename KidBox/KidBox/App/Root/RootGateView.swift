@@ -41,10 +41,19 @@ struct RootGateView: View {
     private var hasAnyLocalFamily: Bool {
         !families.isEmpty
     }
-    
-    /// Mostra la Home se onboarding completato **oppure** c’è una famiglia attiva coerente nel DB (nessuna lista selezione dopo join).
+
+    /// Mostra la Home solo se esiste davvero una famiglia in SwiftData.
+    ///
+    /// `hasSeenOnboarding` **non** basta più a sbloccare la Home. Prima era la
+    /// prima condizione e usciva subito con `true`: chi eliminava la famiglia o
+    /// ne usciva restava dentro l'app senza famiglia, in una Home vuota da cui
+    /// non si tornava più al wizard. Android non ha mai avuto il problema perché
+    /// dopo l'uscita riavvia l'app e al riavvio controlla `!hasFamily`.
+    ///
+    /// La presenza in SwiftData è persistente, quindi al lancio di un utente con
+    /// famiglia la Home compare subito: non c'è un lampeggio del wizard in attesa
+    /// del sync.
     private var shouldShowHome: Bool {
-        if coordinator.hasSeenOnboarding { return true }
         // Percorso "crea": la KBFamily viene inserita localmente già a pagina 4 (e pinnata come
         // active family) prima della pagina QR. Senza questo guard `pinnedFamilyReadyInStore`
         // diventa subito true e manderebbe l'utente in Home saltando la pagina del QR.

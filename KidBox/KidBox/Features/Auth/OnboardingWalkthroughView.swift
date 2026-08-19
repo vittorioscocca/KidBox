@@ -7,7 +7,7 @@
 //  Pagina 0 — Benvenuto
 //  Pagina 1 — Foto condivise
 //  Pagina 2 — Salute e spese
-//  Pagina 3 — Scelta percorso: crea famiglia vs entra con codice/QR
+//  Pagina 3 — Scelta percorso: crea famiglia vs entra con link/QR
 //  Pagina 4 — Crea famiglia (percorso .create) oppure Join (percorso .join)
 //  Pagina 5 — Invita partner (solo percorso .create; QR da InviteCodeViewModel)
 //
@@ -44,6 +44,9 @@ struct OnboardingWalkthroughView: View {
     private enum FamilyOnboardingPath: Equatable {
         case create
         case join
+        /// Impostato in automatico quando c'è un `PendingFamilyInvite` da
+        /// link: sostituisce la scelta percorso con la conferma d'invito.
+        case linkJoin
     }
     
     let onFinish: () -> Void
@@ -91,6 +94,10 @@ struct OnboardingWalkthroughView: View {
 
     @State private var familyPath: FamilyOnboardingPath? = nil
 
+    // Invito da link, se il wizard è partito da un Universal Link.
+    @State private var pendingLinkInvite: PendingFamilyInvite? = nil
+    @State private var linkInvitePreview: InviteRemoteStore.InvitePreview? = nil
+
     // Anagrafica raccolta a pagina 4, salvata dal CTA prima di proseguire.
     @State private var profileFirstName   = ""
     @State private var profileLastName    = ""
@@ -114,14 +121,23 @@ struct OnboardingWalkthroughView: View {
         : .white
     }
     
-    // Pagine: 0-2 info · 3 scelta percorso · 4 nome e cognome ·
-    // 5 crea famiglia / entra con codice · 6 invita (solo percorso "crea").
+    // Pagine: 0-2 info · 3 scelta percorso (o conferma invito da link) ·
+    // 4 nome e cognome · 5 crea famiglia / entra con link o QR ·
+    // 6 invita (solo percorso "crea").
+    //
+    // Percorso `.linkJoin`: solo 4 pagine (0-2 info + 3), perché la 3 chiede
+    // già nome e cognome e fa il join — non serve altro.
     private var totalPages: Int {
-        familyPath == .join ? 6 : 7
+        switch familyPath {
+        case .linkJoin: return 4
+        case .join: return 6
+        default: return 7
+        }
     }
 
     private var isInfoPage: Bool { currentPage < 3 }
-    private var isPathPickerPage: Bool { currentPage == 3 }
+    private var isLinkJoinPage: Bool { currentPage == 3 && familyPath == .linkJoin }
+    private var isPathPickerPage: Bool { currentPage == 3 && familyPath != .linkJoin }
     private var isNamePage: Bool { currentPage == 4 }
     private var isCreatePage: Bool { currentPage == 5 && familyPath == .create }
     private var isJoinPage: Bool { currentPage == 5 && familyPath == .join }
@@ -200,6 +216,33 @@ struct OnboardingWalkthroughView: View {
                             .opacity(textOpacity)
                             .offset(y: textOffset)
                         
+                    } else if isLinkJoinPage, let invite = pendingLinkInvite {
+                        LinkInviteConfirmCard(
+                            cardBackground: cardBackground,
+                            accentColor:    currentAccent,
+                            iconColor:      currentIconColor,
+                            invite:         invite,
+                            preview:        linkInvitePreview,
+                            modelContext:   modelContext,
+                            coordinator:    coordinator,
+                            firstName:      $profileFirstName,
+                            lastName:       $profileLastName,
+                            onJoined: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    bgOpacity = 0; textOpacity = 0; iconOpacity = 0
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onFinish() }
+                            },
+                            onFallbackToManual: {
+                                PendingFamilyInvite.clear()
+                                pendingLinkInvite = nil
+                                familyPath = nil
+                            }
+                        )
+                        .padding(.horizontal, 24)
+                        .opacity(textOpacity)
+                        .offset(y: textOffset)
+
                     } else if isPathPickerPage {
                         FamilyPathPickerCard(
                             cardBackground: cardBackground,
@@ -255,18 +298,8 @@ struct OnboardingWalkthroughView: View {
                             modelContext:   modelContext,
                             coordinator:    coordinator,
                             onJoined: {
-                                // Il join ha già fatto `setActiveFamily`, quindi qui
-                                // il familyId è disponibile: ci si aggancia per dare
-                                // un nome al membro appena creato da `addMember`,
-                                // che lo scrive senza `displayName`.
-                                if let joinedId = coordinator.activeFamilyId, !joinedId.isEmpty {
-                                    Task {
-                                        await UserProfileWriter.propagateDisplayNameToMember(
-                                            familyId: joinedId,
-                                            modelContext: modelContext
-                                        )
-                                    }
-                                }
+                                // Il nome sul documento membro lo scrive
+                                // `FamilyInviteLinkJoiner`, attraversato da ogni join.
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     bgOpacity = 0
                                     textOpacity = 0
@@ -306,7 +339,7 @@ struct OnboardingWalkthroughView: View {
                 pageIndicators
                     .padding(.bottom, 32)
                 
-                if isJoinPage {
+                if isJoinPage || isLinkJoinPage {
                     Spacer()
                         .frame(height: 56)
                         .padding(.horizontal, 28)
@@ -322,6 +355,7 @@ struct OnboardingWalkthroughView: View {
         .onAppear {
             animateIn()
             prefillNameFromExistingProfile()
+            loadPendingLinkInviteIfAny()
         }
         // Segnala a RootGateView che siamo nel percorso "crea": così l'inserimento locale
         // della KBFamily (che avviene prima ancora di premere "Continua") non fa completare
@@ -329,6 +363,12 @@ struct OnboardingWalkthroughView: View {
         // del percorso, così è già attivo prima che parta FamilyCreationService.
         .onChange(of: familyPath) { _, newPath in
             coordinator.isCreatingFamilyInOnboarding = (newPath == .create)
+        }
+        // Link toccato mentre il wizard era già aperto: senza questo, l'invito
+        // resterebbe in attesa fino al riavvio dell'app e l'utente vedrebbe il
+        // percorso manuale pur avendo appena cliccato l'invito.
+        .onReceive(NotificationCenter.default.publisher(for: .kbPendingFamilyInviteStored)) { _ in
+            loadPendingLinkInviteIfAny(force: true)
         }
     }
 
@@ -502,6 +542,33 @@ struct OnboardingWalkthroughView: View {
         profileLastName = parts.joined(separator: " ")
     }
 
+    /// Se il wizard è partito da un Universal Link, salta la scelta percorso
+    /// e mostra direttamente la conferma d'invito (pagina 3, `.linkJoin`).
+    ///
+    /// Il controllo va fatto una volta sola all'apertura: `familyPath` diventa
+    /// poi lo stato di navigazione, e un secondo tocco sul link a wizard già
+    /// avviato non deve resettare la pagina in cui l'utente si trova.
+    @MainActor
+    private func loadPendingLinkInviteIfAny(force: Bool = false) {
+        // `force` serve quando il link arriva ad app già aperta: lì il percorso
+        // può essere già stato scelto, e va comunque scavalcato — l'utente ha
+        // appena toccato un invito, è quello che vuole fare.
+        guard force || familyPath == nil else { return }
+        guard let invite = PendingFamilyInvite.load() else { return }
+        pendingLinkInvite = invite
+        familyPath = .linkJoin
+        // `.linkJoin` ha 4 pagine (0-2 + conferma): se l'utente era più avanti
+        // nel percorso manuale, il pager resterebbe su un indice inesistente.
+        if currentPage > 3 { currentPage = 3 }
+        Task {
+            let preview = await InviteRemoteStore().fetchInvitePreview(
+                familyId: invite.familyId,
+                inviteId: invite.inviteId
+            )
+            await MainActor.run { linkInvitePreview = preview }
+        }
+    }
+
     @MainActor
     private func saveNameThenAdvance() async {
         guard !isSavingProfile else { return }
@@ -579,7 +646,7 @@ struct OnboardingWalkthroughView: View {
                     icon: "qrcode.viewfinder",
                     color: Color(red: 0.55, green: 0.35, blue: 0.9),
                     title: "Entra in una famiglia",
-                    subtitle: "Hai un codice QR o un codice testuale? Usalo per unirti."
+                    subtitle: "Hai un link d'invito o un codice QR? Usalo per unirti."
                 )
             }
             .padding(24)
@@ -655,11 +722,7 @@ struct OnboardingWalkthroughView: View {
             self.coordinator = coordinator
             self.onJoined = onJoined
             _vm = StateObject(wrappedValue: JoinFamilyViewModel(
-                service: FamilyJoinService(
-                    inviteRemote: InviteRemoteStore(),
-                    readRemote: FamilyReadRemoteStore(),
-                    modelContext: modelContext
-                ),
+                modelContext: modelContext,
                 coordinator: coordinator
             ))
         }
@@ -670,12 +733,12 @@ struct OnboardingWalkthroughView: View {
                     .font(.title2.bold())
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                TextField("Codice invito", text: $vm.code)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .disabled(vm.didJoin)
-                    .padding(14)
-                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                // Niente più codice da digitare: si entra dal link d'invito —
+                // che apre l'app da solo — oppure inquadrando il QR.
+                Text("Hai ricevuto un link d'invito? Aprilo e ti porta qui dentro. Altrimenti inquadra il codice QR di chi ti invita.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Button {
                     showScanner = true
@@ -702,65 +765,14 @@ struct OnboardingWalkthroughView: View {
                         .foregroundStyle(.green)
                         .font(.subheadline.bold())
                         .frame(maxWidth: .infinity, alignment: .leading)
-
-                    // Join senza chiave: qui l'avanzamento automatico è sospeso
-                    // (vedi `onChange` sotto), così l'avviso resta leggibile e
-                    // l'utente prosegue solo dopo averlo visto.
-                    if let warning = vm.vaultKeyWarning {
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text(warning)
-                                .font(.caption)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Attenzione: \(warning)")
-
-                        Button {
-                            onJoined()
-                        } label: {
-                            Text("Ho capito, continua")
-                                .font(.subheadline.bold())
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(14)
-                                .background(
-                                    accentColor,
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                )
-                        }
-                        .buttonStyle(.plain)
+                } else if vm.isBusy {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Ingresso in corso…")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                } else {
-                    Button {
-                        Task { await vm.join() }
-                    } label: {
-                        Group {
-                            if vm.isBusy {
-                                ProgressView().tint(.white)
-                            } else {
-                                Text("Entra")
-                                    .font(.subheadline.bold())
-                            }
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(14)
-                        .background(
-                            LinearGradient(
-                                colors: canSubmitJoin
-                                ? [joinTint, accentColor]
-                                : [Color.secondary.opacity(0.35), Color.secondary.opacity(0.35)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!canSubmitJoin)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(24)
@@ -769,40 +781,19 @@ struct OnboardingWalkthroughView: View {
             .sheet(isPresented: $showScanner) {
                 OnboardingQRScannerSheet(
                     onDetected: { raw in
-                        Task {
-                            do {
-                                try await JoinWrapService().join(usingQRPayload: raw)
-                                guard let code = JoinPayloadParser.extractCode(from: raw) else {
-                                    showScanner = false
-                                    vm.errorMessage = "QR valido ma senza codice invito."
-                                    return
-                                }
-                                vm.code = code
-                                showScanner = false
-                                try? await Task.sleep(nanoseconds: 500_000_000)
-                                await vm.join()
-                            } catch {
-                                showScanner = false
-                                vm.errorMessage = error.localizedDescription
-                            }
-                        }
+                        showScanner = false
+                        Task { await vm.joinFromQR(payload: raw) }
                     },
                     onClose: { showScanner = false }
                 )
             }
             .onChange(of: vm.didJoin) { _, joined in
-                // Se manca la chiave l'avanzamento non è automatico: `onJoined()`
-                // dissolve la card in 0.3s e l'avviso non farebbe in tempo a
-                // essere letto. In quel caso avanza il pulsante "Ho capito".
-                guard joined, vm.vaultKeyWarning == nil else { return }
+                // L'avviso "senza chiave" non serve più: entrambe le strade
+                // rimaste (link e QR) trasportano la chiave, quindi un join
+                // riuscito è sempre completo.
+                guard joined else { return }
                 onJoined()
             }
-        }
-        
-        private var canSubmitJoin: Bool {
-            !vm.isBusy
-            && !vm.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !vm.didJoin
         }
     }
 }
@@ -833,6 +824,199 @@ private struct OnboardingQRScannerSheet: View {
     }
 }
 
+// MARK: - LinkInviteConfirmCard
+//
+// Sostituisce la scelta percorso quando il wizard parte da un Universal Link:
+// mostra la famiglia (e chi ha invitato, se noti), chiede nome e cognome e fa
+// il join in un solo passaggio — niente QR, niente scelta manuale.
+
+private struct LinkInviteConfirmCard: View {
+    let cardBackground: Color
+    let accentColor: Color
+    let iconColor: Color
+    let invite: PendingFamilyInvite
+    let preview: InviteRemoteStore.InvitePreview?
+    let modelContext: ModelContext
+    let coordinator: AppCoordinator
+    @Binding var firstName: String
+    @Binding var lastName: String
+    let onJoined: () -> Void
+    let onFallbackToManual: () -> Void
+
+    @State private var isBusy = false
+    @State private var errorText: String?
+
+    @FocusState private var focusedField: Field?
+    private enum Field { case first, last }
+
+    private var canSubmit: Bool {
+        !firstName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !lastName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !isBusy
+    }
+
+    var body: some View {
+        VStack(spacing: 24) {
+
+            // Header
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(iconColor.opacity(0.15)).frame(width: 72, height: 72)
+                    Image(systemName: "envelope.open.fill")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(LinearGradient(
+                            colors: [iconColor, accentColor],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                }
+                if let familyName = preview?.familyName, !familyName.isEmpty {
+                    Text("Stai per entrare nella famiglia di \(familyName)")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                } else {
+                    Text("Stai per entrare in una famiglia")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                }
+                if let inviter = preview?.inviterDisplayName, !inviter.isEmpty {
+                    Text("Invitato da \(inviter). Dicci come ti chiami ed entri subito.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                } else {
+                    Text("Dicci come ti chiami ed entri subito.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.horizontal, 8)
+
+            // Nome / Cognome
+            VStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Nome")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(accentColor)
+                            .frame(width: 20)
+                        TextField("Es. Giulia", text: $firstName)
+                            .focused($focusedField, equals: .first)
+                            .textContentType(.givenName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .disabled(isBusy)
+                            .submitLabel(.next)
+                            .onSubmit { focusedField = .last }
+                    }
+                    .padding(14)
+                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(focusedField == .first ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
+                    )
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Cognome")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(accentColor)
+                            .frame(width: 20)
+                        TextField("Es. Rossi", text: $lastName)
+                            .focused($focusedField, equals: .last)
+                            .textContentType(.familyName)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .disabled(isBusy)
+                            .submitLabel(.done)
+                            .onSubmit { focusedField = nil }
+                    }
+                    .padding(14)
+                    .background(cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(focusedField == .last ? accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
+                    )
+                }
+            }
+
+            if let errorText {
+                Text(errorText)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button {
+                Task { await joinFamily() }
+            } label: {
+                HStack(spacing: 10) {
+                    if isBusy {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Entra nella famiglia")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity).frame(height: 52)
+                .background(
+                    LinearGradient(colors: [iconColor, accentColor],
+                                   startPoint: .leading, endPoint: .trailing),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .shadow(color: accentColor.opacity(canSubmit ? 0.35 : 0), radius: 10, x: 0, y: 5)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSubmit)
+            .opacity(canSubmit ? 1.0 : 0.5)
+
+            Button("Non funziona? Passa al metodo manuale", action: onFallbackToManual)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .disabled(isBusy)
+        }
+        .padding(24)
+        .background(cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: accentColor.opacity(0.12), radius: 20, x: 0, y: 10)
+    }
+
+    @MainActor
+    private func joinFamily() async {
+        guard !isBusy else { return }
+        isBusy = true
+        errorText = nil
+        defer { isBusy = false }
+
+        do {
+            try await UserProfileWriter.saveNames(
+                firstName: firstName,
+                lastName: lastName,
+                modelContext: modelContext
+            )
+            // Il nome è già salvato sopra, e `FamilyInviteLinkJoiner` lo porta
+            // sul documento membro appena creato.
+            try await FamilyInviteLinkJoiner.join(
+                invite: invite,
+                modelContext: modelContext,
+                coordinator: coordinator
+            )
+            PendingFamilyInvite.clear()
+            KBLog.sync.kbInfo("LinkInviteConfirmCard: join riuscito familyId=\(invite.familyId)")
+            onJoined()
+        } catch {
+            errorText = error.localizedDescription
+            KBLog.sync.kbError("LinkInviteConfirmCard: join fallito: \(error.localizedDescription)")
+        }
+    }
+}
+
 // MARK: - CreateFamilyCard
 //
 // Schermata 4: nome famiglia + nome primo figlio.
@@ -847,7 +1031,7 @@ private struct OnboardingQRScannerSheet: View {
 // lasciare il membro anonimo agli occhi degli altri finché non apre il Profilo.
 // Il salvataggio vero lo fa il parent nel CTA, via `UserProfileWriter`.
 
-private struct NameOnboardingCard: View {
+struct NameOnboardingCard: View {
 
     let cardBackground: Color
     let accentColor:    Color
@@ -1276,7 +1460,10 @@ private struct InviteOnboardingCard: View {
                     .background(Color.secondary.opacity(0.08),
                                 in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 } else if !vm.shareText.isEmpty {
-                    ShareLink(item: vm.shareText) {
+                    ShareLink(
+                        item: vm.shareText,
+                        subject: Text(InviteCodeViewModel.shareSubject)
+                    ) {
                         HStack(spacing: 10) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 17, weight: .semibold))
@@ -1293,7 +1480,7 @@ private struct InviteOnboardingCard: View {
                         .shadow(color: accentColor.opacity(0.35), radius: 10, x: 0, y: 5)
                     }
 
-                    // Copia codice (secondario)
+                    // Copia link (secondario)
                     Button {
                         vm.copyToClipboard()
                         withAnimation { didCopy = true }
@@ -1304,7 +1491,7 @@ private struct InviteOnboardingCard: View {
                         HStack(spacing: 8) {
                             Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
                                 .font(.system(size: 14, weight: .semibold))
-                            Text(didCopy ? "Copiato!" : "Copia codice")
+                            Text(didCopy ? "Copiato!" : "Copia link")
                                 .font(.system(size: 14, weight: .semibold))
                         }
                         .foregroundStyle(didCopy ? .green : .secondary)
@@ -1313,6 +1500,13 @@ private struct InviteOnboardingCard: View {
                                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
+
+                    // Il segreto viaggia dentro il link: chi lo riceve entra.
+                    Text("Il link contiene la chiave: vale 24 ore, una volta sola. Mandalo solo alla persona giusta.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 2)
                 } else if let err = vm.errorMessage {
                     VStack(spacing: 8) {
                         Text(err).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -1328,7 +1522,7 @@ private struct InviteOnboardingCard: View {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { showQR.toggle() }
                     } label: {
                         HStack {
-                            Text("Oppure mostra il QR se siete vicini")
+                            Text("Oppure mostra il QR se siete vicini — più sicuro")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                             Spacer()
@@ -1346,6 +1540,11 @@ private struct InviteOnboardingCard: View {
                                 .frame(width: 140, height: 140)
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             Text("Valido 24 ore").font(.caption).foregroundStyle(.secondary)
+                            Text("La chiave viene letta dalla fotocamera: non passa da chat, email o backup.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 12)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
