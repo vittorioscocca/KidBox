@@ -38,19 +38,15 @@ final class WalletReminderService {
     /// (Ri)schedula tutti i promemoria per un biglietto.
     /// Idempotente: rimuove sempre prima le notifiche esistenti del ticket.
     ///
-    /// Rispetta la preferenza utente `kb_notifyOnWalletReminder` (default ON).
-    /// Se l'utente ha disattivato i promemoria Wallet in Settings, nessuna
-    /// richiesta viene aggiunta — ma la cancellazione preventiva resta, così
-    /// togliamo eventuali richieste pendenti rimaste prima del toggle off.
+    /// La scelta è per-biglietto (`ticket.reminderOffsetHours`), non più un
+    /// toggle globale in Settings:
+    /// - `nil` → legacy, usa `kind.defaultReminderOffsets` (comportamento di
+    ///   sempre, per non regredire i biglietti esistenti mai toccati).
+    /// - `0` → nessun promemoria, scelta esplicita dell'utente.
+    /// - altrimenti un singolo promemoria a `-hours` ore da `eventDate`.
     func scheduleReminders(for ticket: KBWalletTicket) async {
         let ticketId = ticket.id
         await cancelReminders(ticketId: ticketId)
-
-        let prefEnabled = (UserDefaults.standard.object(forKey: "kb_notifyOnWalletReminder") as? Bool) ?? true
-        guard prefEnabled else {
-            KBLog.sync.kbDebug("[WalletReminder] skip: user disabled wallet reminders ticketId=\(ticketId)")
-            return
-        }
 
         guard !ticket.isDeleted, let eventDate = ticket.eventDate else {
             KBLog.sync.kbDebug("[WalletReminder] skip: no eventDate or deleted ticketId=\(ticketId)")
@@ -59,7 +55,16 @@ final class WalletReminderService {
 
         let now = Date()
         let kind = ticket.kind
-        let offsets = kind.defaultReminderOffsets
+        let offsets: [TimeInterval]
+        if let hours = ticket.reminderOffsetHours {
+            guard hours > 0 else {
+                KBLog.sync.kbDebug("[WalletReminder] skip: reminder disabled for ticket ticketId=\(ticketId)")
+                return
+            }
+            offsets = [-Double(hours) * 3600]
+        } else {
+            offsets = kind.defaultReminderOffsets
+        }
 
         // Verifica permessi locali
         let settings = await center.notificationSettings()
@@ -117,7 +122,6 @@ final class WalletReminderService {
     }
 
     /// Cancella TUTTE le notifiche locali Wallet pending (qualsiasi ticket).
-    /// Usata quando l'utente disabilita "Promemoria Wallet" in Settings.
     func cancelAllReminders() async {
         let pending = await center.pendingNotificationRequests()
         let toRemove = pending

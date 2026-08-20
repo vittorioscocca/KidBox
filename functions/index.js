@@ -350,7 +350,7 @@ exports.notifyNewDocument = onDocumentCreated(
       const messagesToSend = [];
 
       for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewDocs");
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnWallet");
         if (tokens.length === 0) continue;
 
         const badge = await incrementCounterAndGetBadge({familyId, uid, field: "documents"});
@@ -4960,7 +4960,7 @@ exports.notifyNewWalletTicket = onDocumentCreated(
       const messagesToSend = [];
 
       for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewWalletTicket");
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnWallet");
         if (tokens.length === 0) {
           logger.info("notifyNewWalletTicket: user opted out or no tokens", {uid}); continue;
         }
@@ -4992,10 +4992,91 @@ exports.notifyNewWalletTicket = onDocumentCreated(
     },
 );
 
+// Notifica i membri della famiglia all'aggiunta di una nuova carta fedeltà.
+// Mirror strutturale di notifyNewWalletTicket: stesso badge "wallet" (le carte
+// fedeltà vivono nella stessa sezione Wallet lato client) e stessa preferenza
+// unificata "notifyOnWallet".
+exports.notifyNewLoyaltyCard = onDocumentCreated(
+    {
+      document: "families/{familyId}/loyaltyCards/{cardId}",
+      region: "europe-west1",
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const cardId = event.params.cardId;
+
+      const cardData = event.data ? event.data.data() : null;
+      if (!cardData) {
+        logger.warn("notifyNewLoyaltyCard: missing card data"); return;
+      }
+      if (cardData.isDeleted) {
+        logger.info("notifyNewLoyaltyCard: isDeleted=true, skip", {familyId, cardId}); return;
+      }
+
+      const creatorUid = cardData.createdBy || cardData.updatedBy || null;
+      if (!creatorUid) {
+        logger.warn("notifyNewLoyaltyCard: missing creatorUid", {familyId, cardId}); return;
+      }
+
+      logger.info("notifyNewLoyaltyCard triggered", {familyId, cardId, creatorUid});
+
+      const membersSnap = await admin.firestore()
+          .collection("families").doc(familyId).collection("members").get();
+
+      if (membersSnap.empty) {
+        logger.warn("notifyNewLoyaltyCard: members subcollection is empty", {familyId}); return;
+      }
+
+      const memberUids = membersSnap.docs.map((d) => d.id).filter((uid) => uid && uid !== creatorUid);
+      if (memberUids.length === 0) {
+        logger.info("notifyNewLoyaltyCard: no targets (only creator)", {familyId}); return;
+      }
+
+      const title = "Nuova carta fedeltà";
+      const body = (cardData.brandName || "").toString().trim() || "Carta fedeltà";
+
+      const messagesToSend = [];
+
+      for (const uid of memberUids) {
+        const tokens = await getUserTokensIfEnabled(uid, "notifyOnWallet");
+        if (tokens.length === 0) {
+          logger.info("notifyNewLoyaltyCard: user opted out or no tokens", {uid}); continue;
+        }
+
+        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "wallet"});
+        messagesToSend.push({
+          tokens,
+          notification: {title, body},
+          data: {type: "new_loyalty_card", familyId, cardId},
+          apns: {payload: {aps: {badge, sound: "default"}}},
+          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
+        });
+      }
+
+      if (messagesToSend.length === 0) {
+        logger.info("notifyNewLoyaltyCard: no per-user notifications to send", {familyId}); return;
+      }
+
+      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
+      let totalSuccess = 0; let totalFailure = 0;
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
+        } else {
+          totalFailure += 1;
+        }
+      });
+      logger.info("notifyNewLoyaltyCard: send result", {familyId, cardId, successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
+    },
+);
+
 // Scheduler orario: invia promemoria per biglietti wallet imminenti.
-// Finestre: T-24h (23h30–24h30) e T-2h (1h30–2h30). Usa i flag
-// `reminded24h` / `reminded2h` sul doc per evitare duplicati (idempotenza
-// garantita a livello di documento, indipendentemente dal numero di membri).
+// Finestre legacy: T-24h (23h30–24h30) e T-2h (1h30–2h30) per i biglietti senza
+// reminderOffsetHours (campo assente = biglietto non ancora toccato dall'utente).
+// Se reminderOffsetHours è presente: 0 = nessun promemoria (skip), >0 = finestra
+// dinamica singola attorno a eventDate - reminderOffsetHours (±30min), idempotenza
+// via `remindedCustom`. Il gate è solo sull'esistenza di token FCM validi
+// (getUserTokens), la preferenza notifyOnWalletReminder non esiste più lato client.
 exports.notifyUpcomingWalletTickets = onSchedule(
     {
       schedule: "every 60 minutes",
@@ -5027,7 +5108,7 @@ exports.notifyUpcomingWalletTickets = onSchedule(
 
       logger.info("notifyUpcomingWalletTickets: scanning", {count: snap.size});
 
-      let total24h = 0; let total2h = 0;
+      let total24h = 0; let total2h = 0; let totalCustom = 0;
 
       for (const doc of snap.docs) {
         const data = doc.data();
@@ -5044,11 +5125,27 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         const diffMs = eventDate.getTime() - now.getTime();
         const diffH = diffMs / (60 * 60 * 1000);
 
+        const offsetHours = data.reminderOffsetHours;
+
         let windowType = null;
-        if (diffH >= 23.5 && diffH <= 24.5 && !data.reminded24h) {
-          windowType = "24h";
-        } else if (diffH >= 1.5 && diffH <= 2.5 && !data.reminded2h) {
-          windowType = "2h";
+        if (offsetHours === undefined) {
+          // Biglietto legacy: comportamento invariato, doppia finestra fissa.
+          if (diffH >= 23.5 && diffH <= 24.5 && !data.reminded24h) {
+            windowType = "24h";
+          } else if (diffH >= 1.5 && diffH <= 2.5 && !data.reminded2h) {
+            windowType = "2h";
+          } else {
+            continue;
+          }
+        } else if (offsetHours === 0) {
+          // Utente ha scelto esplicitamente "Nessun promemoria".
+          continue;
+        } else if (offsetHours > 0) {
+          if (diffH >= offsetHours - 0.5 && diffH <= offsetHours + 0.5 && !data.remindedCustom) {
+            windowType = "custom";
+          } else {
+            continue;
+          }
         } else {
           continue;
         }
@@ -5056,9 +5153,22 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         const kindLabel = walletKindLabel(data.kind);
         const emitter = (data.emitter || "").toString().trim();
         const kindWithEmitter = emitter ? `${emitter} · ${kindLabel}` : kindLabel;
-        const title = windowType === "24h" ?
-          "⏰ Biglietto domani" :
-          "⏰ Biglietto tra 2 ore";
+        let title;
+        if (windowType === "24h") {
+          title = "⏰ Biglietto domani";
+        } else if (windowType === "2h") {
+          title = "⏰ Biglietto tra 2 ore";
+        } else {
+          // Custom: adatta il testo in base all'offset (ore o giorni).
+          if (offsetHours < 1) {
+            title = "⏰ Biglietto a breve";
+          } else if (offsetHours % 24 === 0) {
+            const days = offsetHours / 24;
+            title = days === 1 ? "⏰ Biglietto domani" : `⏰ Biglietto tra ${days} giorni`;
+          } else {
+            title = `⏰ Biglietto tra ${offsetHours} ore`;
+          }
+        }
         const body = `${kindWithEmitter} — ${formatWalletDate(eventDate)}`;
 
         const membersSnap = await db.collection("families").doc(familyId).collection("members").get();
@@ -5071,7 +5181,7 @@ exports.notifyUpcomingWalletTickets = onSchedule(
 
         const messagesToSend = [];
         for (const uid of memberUids) {
-          const tokens = await getUserTokensIfEnabled(uid, "notifyOnWalletReminder");
+          const tokens = await getTokensForUser(uid);
           if (tokens.length === 0) continue;
 
           // NOTA: niente incrementCounterAndGetBadge qui — un reminder non è
@@ -5102,7 +5212,14 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         }
 
         // Idempotenza: flag il doc come promemoria inviato per questa finestra.
-        const flagField = windowType === "24h" ? "reminded24h" : "reminded2h";
+        let flagField;
+        if (windowType === "24h") {
+          flagField = "reminded24h";
+        } else if (windowType === "2h") {
+          flagField = "reminded2h";
+        } else {
+          flagField = "remindedCustom";
+        }
         try {
           await ref.set({
             [flagField]: true,
@@ -5112,10 +5229,16 @@ exports.notifyUpcomingWalletTickets = onSchedule(
           logger.warn("notifyUpcomingWalletTickets: flag write failed", {familyId, ticketId, window: windowType, err: e.message});
         }
 
-        if (windowType === "24h") total24h++; else total2h++;
+        if (windowType === "24h") {
+          total24h++;
+        } else if (windowType === "2h") {
+          total2h++;
+        } else {
+          totalCustom++;
+        }
       }
 
-      logger.info("notifyUpcomingWalletTickets: complete", {total24h, total2h});
+      logger.info("notifyUpcomingWalletTickets: complete", {total24h, total2h, totalCustom});
     },
 );
 

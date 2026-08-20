@@ -739,6 +739,17 @@
         }
       }
     },
+    "%lld carte fedeltà eliminate." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld loyalty cards deleted."
+          }
+        }
+      }
+    },
     "%lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -2005,6 +2016,29 @@
         }
       }
     },
+    "1 giorno prima" : {
+      "comment" : "Wallet ticket reminder: 1 day before",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 día antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 jour avant"
+          }
+        }
+      }
+    },
     "1 membro collegato." : {
       "localizations" : {
         "en" : {
@@ -2045,6 +2079,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 mois"
+          }
+        }
+      }
+    },
+    "1 ora prima" : {
+      "comment" : "Wallet ticket reminder: 1 hour before",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 hour before"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 hora antes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 heure avant"
           }
         }
       }
@@ -2095,6 +2152,7 @@
       }
     },
     "2 giorni prima" : {
+      "comment" : "Wallet ticket reminder: 2 days before",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3734,6 +3792,9 @@
         }
       }
     },
+    "Aggiungi le carte fedeltà del supermercato, dell'elettronica o del negozio preferito: saranno visibili a tutta la famiglia." : {
+
+    },
     "Aggiungi le categorie (A, B, C, …) con le rispettive date." : {
       "localizations" : {
         "en" : {
@@ -4105,6 +4166,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajoutez un événement au calendrier"
+          }
+        }
+      }
+    },
+    "Aggiungi una carta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir una tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une carte"
           }
         }
       }
@@ -7038,6 +7122,9 @@
         }
       }
     },
+    "Biglietti" : {
+      "comment" : "Wallet tab: tickets"
+    },
     "Biglietti e prenotazioni" : {
       "localizations" : {
         "en" : {
@@ -7798,6 +7885,9 @@
         }
       }
     },
+    "Carta" : {
+      "comment" : "Fallback nav title when no loyalty card brand is set yet"
+    },
     "Carta d'identità (cartacea)" : {
       "comment" : "Document kind",
       "localizations" : {
@@ -7820,6 +7910,112 @@
           }
         }
       }
+    },
+    "Carta fedeltà" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loyalty card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta de fidelidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte de fidélité"
+          }
+        }
+      }
+    },
+    "Carta fedeltà eliminata." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loyalty card deleted."
+          }
+        }
+      }
+    },
+    "Carta non disponibile" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta no disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte indisponible"
+          }
+        }
+      }
+    },
+    "Carta non in elenco? Aggiungila manualmente" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card not listed? Add it manually"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿La tarjeta no está en la lista? Añádela manualmente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte absente de la liste ? Ajoutez-la manuellement"
+          }
+        }
+      }
+    },
+    "Carta non trovata" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card not found"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta no encontrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte introuvable"
+          }
+        }
+      }
+    },
+    "Carte" : {
+      "comment" : "Wallet tab: loyalty cards"
     },
     "Carte d'identità e biglietti nel Wallet" : {
       "extractionState" : "manual",
@@ -7865,6 +8061,9 @@
           }
         }
       }
+    },
+    "Carte più popolari" : {
+
     },
     "Cartella clinica" : {
       "localizations" : {
@@ -8241,6 +8440,12 @@
       }
     },
     "Cerca sezione" : {
+
+    },
+    "Cerca un negozio" : {
+
+    },
+    "Cerca una carta" : {
 
     },
     "Cerca viaggio o destinazione…" : {
@@ -9270,6 +9475,29 @@
         }
       }
     },
+    "Codice carta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de la tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code de la carte"
+          }
+        }
+      }
+    },
     "Codice di accesso" : {
       "localizations" : {
         "en" : {
@@ -9605,6 +9833,9 @@
           }
         }
       }
+    },
+    "Colore carta" : {
+
     },
     "Colore: %@" : {
       "localizations" : {
@@ -12934,6 +13165,9 @@
         }
       }
     },
+    "Descrizione (opzionale)" : {
+
+    },
     "Deseleziona" : {
       "localizations" : {
         "en" : {
@@ -13424,6 +13658,7 @@
       }
     },
     "Documenti" : {
+      "comment" : "Wallet tab: documents",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14309,6 +14544,29 @@
         }
       }
     },
+    "Elimina carta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la carte"
+          }
+        }
+      }
+    },
     "Elimina cartella" : {
       "localizations" : {
         "en" : {
@@ -14459,6 +14717,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer l'enfant"
+          }
+        }
+      }
+    },
+    "Elimina foto" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer la photo"
           }
         }
       }
@@ -14661,6 +14942,17 @@
         }
       }
     },
+    "Eliminare %lld carte fedeltà?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete %lld loyalty cards?"
+          }
+        }
+      }
+    },
     "Eliminare %lld cur%@?" : {
       "localizations" : {
         "en" : {
@@ -14855,6 +15147,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer la famille ?"
+          }
+        }
+      }
+    },
+    "Eliminare questa carta fedeltà?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this loyalty card?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar esta tarjeta de fidelidad?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer cette carte de fidélité ?"
           }
         }
       }
@@ -15977,6 +16292,9 @@
           }
         }
       }
+    },
+    "Es. tessera intestata a..." : {
+
     },
     "Es. Vacanza estate 2025" : {
       "localizations" : {
@@ -17640,6 +17958,29 @@
         }
       }
     },
+    "Foto della tessera" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card photos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotos de la tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos de la carte"
+          }
+        }
+      }
+    },
     "Foto e video" : {
       "localizations" : {
         "en" : {
@@ -17793,6 +18134,9 @@
           }
         }
       }
+    },
+    "Fronte" : {
+
     },
     "Frutta e Verdura" : {
       "comment" : "Grocery category",
@@ -19840,6 +20184,12 @@
         }
       }
     },
+    "Impossibile salvare la carta: %@" : {
+      "comment" : "Loyalty card save error, %@ = underlying error description"
+    },
+    "Impossibile salvare la foto: %@" : {
+      "comment" : "Loyalty card photo upload error, %@ = underlying error description"
+    },
     "Imposta gli orari per %lld dos%@ giornalier%@" : {
       "localizations" : {
         "en" : {
@@ -20815,6 +21165,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Début de la conversation"
+          }
+        }
+      }
+    },
+    "Inquadra il codice a barre sul retro della carta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point the camera at the barcode on the back of the card"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enfoca el código de barras del reverso de la tarjeta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visez le code-barres au dos de la carte"
           }
         }
       }
@@ -22506,6 +22879,29 @@
         }
       }
     },
+    "La scansione non funziona? Inserisci i dati manualmente" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanning not working? Enter the details manually"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿No funciona el escaneo? Introduce los datos manualmente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La numérisation ne fonctionne pas ? Saisissez les données manuellement"
+          }
+        }
+      }
+    },
     "La spesa potrebbe essere stata eliminata." : {
       "localizations" : {
         "en" : {
@@ -23480,6 +23876,9 @@
     },
     "Locali reali con le valutazioni di Google, ordinati per voto." : {
 
+    },
+    "Logo %@" : {
+      "comment" : "Accessibility label for a loyalty card brand logo, %@ = brand name"
     },
     "Logout" : {
       "localizations" : {
@@ -25461,6 +25860,9 @@
         }
       }
     },
+    "Negozio" : {
+
+    },
     "Nessun allegato" : {
       "localizations" : {
         "en" : {
@@ -26304,6 +26706,29 @@
         }
       }
     },
+    "Nessuna carta fedeltà" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No loyalty cards"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay tarjetas de fidelidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune carte de fidélité"
+          }
+        }
+      }
+    },
     "Nessuna cura aggiunta" : {
       "localizations" : {
         "en" : {
@@ -26729,6 +27154,7 @@
       }
     },
     "Nessuno" : {
+      "comment" : "Wallet ticket reminder: none",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -26815,6 +27241,9 @@
           }
         }
       }
+    },
+    "Nome A-Z" : {
+      "comment" : "Loyalty cards sort option: alphabetical"
     },
     "Nome album" : {
       "localizations" : {
@@ -27124,6 +27553,9 @@
         }
       }
     },
+    "Nome negozio" : {
+
+    },
     "Nome prodotto" : {
       "localizations" : {
         "en" : {
@@ -27415,6 +27847,29 @@
     },
     "Non funziona? Passa al metodo manuale" : {
 
+    },
+    "Non hai accesso a questa carta fedeltà." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have access to this loyalty card."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tienes acceso a esta tarjeta de fidelidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous n'avez pas accès à cette carte de fidélité."
+          }
+        }
+      }
     },
     "Non hai accesso a questa voce." : {
       "localizations" : {
@@ -27857,6 +28312,7 @@
       }
     },
     "Notifica nuovi documenti" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27967,6 +28423,7 @@
       }
     },
     "Notifiche attive." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -28124,6 +28581,7 @@
       }
     },
     "Notifiche disattivate." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -28279,6 +28737,7 @@
       }
     },
     "Notifiche nuovo biglietto Wallet" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -28542,6 +29001,28 @@
         }
       }
     },
+    "Notifiche Wallet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet notifications"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificaciones de Wallet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications Wallet"
+          }
+        }
+      }
+    },
     "Notifiche Wallet attive." : {
       "localizations" : {
         "en" : {
@@ -28652,6 +29133,9 @@
         }
       }
     },
+    "Numero carta" : {
+
+    },
     "Numero di serie" : {
       "localizations" : {
         "en" : {
@@ -28761,6 +29245,9 @@
           }
         }
       }
+    },
+    "Nuova carta" : {
+      "comment" : "Fallback nav title for a new loyalty card form when no brand is set"
     },
     "Nuova cartella" : {
       "localizations" : {
@@ -30195,6 +30682,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Heure du rappel"
+          }
+        }
+      }
+    },
+    "Ordina" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordenar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trier"
           }
         }
       }
@@ -32108,6 +32618,9 @@
         }
       }
     },
+    "Più recenti" : {
+      "comment" : "Loyalty cards sort option: most recent"
+    },
     "Più vecchie" : {
       "localizations" : {
         "en" : {
@@ -32347,6 +32860,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Déjeuner"
+          }
+        }
+      }
+    },
+    "Predefinito" : {
+      "comment" : "Wallet ticket reminder: default per category",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par défaut"
           }
         }
       }
@@ -33285,6 +33821,7 @@
       }
     },
     "Promemoria biglietti Wallet" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -33417,6 +33954,7 @@
       }
     },
     "Promemoria Wallet attivi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -33439,6 +33977,7 @@
       }
     },
     "Promemoria Wallet disattivati." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -35010,6 +35549,9 @@
         }
       }
     },
+    "Retro" : {
+
+    },
     "Rette, visite, extra" : {
       "localizations" : {
         "en" : {
@@ -35298,6 +35840,7 @@
       }
     },
     "Ricevi promemoria locali e push prima della partenza/evento (es. 24h e 2h prima)." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -35323,6 +35866,7 @@
 
     },
     "Ricevi una notifica quando un membro aggiunge un nuovo biglietto al Wallet." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -35406,6 +35950,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recevez une notification quand un membre enregistre une nouvelle dépense familiale."
+          }
+        }
+      }
+    },
+    "Ricevi una notifica quando viene aggiunto un nuovo contenuto al Wallet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get a notification when new content is added to Wallet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibe una notificación cuando se añade contenido nuevo a Wallet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recevez une notification quand un nouveau contenu est ajouté à Wallet."
           }
         }
       }
@@ -37751,6 +38317,29 @@
         }
       }
     },
+    "Scegli il negozio" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige la tienda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez le magasin"
+          }
+        }
+      }
+    },
     "Scegli le date del viaggio" : {
       "localizations" : {
         "en" : {
@@ -39483,6 +40072,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Administrés"
+          }
+        }
+      }
+    },
+    "Sostituisci foto" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sustituir foto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplacer la photo"
           }
         }
       }

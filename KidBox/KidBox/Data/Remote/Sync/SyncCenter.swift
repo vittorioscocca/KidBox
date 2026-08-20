@@ -59,6 +59,11 @@ final class SyncCenter: ObservableObject {
     let expenseRemote = ExpenseRemoteStore()
     var walletListener: ListenerRegistration?
     let walletRemote = WalletRemoteStore()
+    var loyaltyCardListener: ListenerRegistration?
+    let loyaltyCardRemote = LoyaltyCardRemoteStore()
+    /// Foto fronte/retro cifrate delle carte fedeltà su Storage: serve al
+    /// cleanup best-effort quando la carta viene eliminata.
+    let loyaltyCardPhotoStore = LoyaltyCardPhotoStore()
     let passwordRemote = PasswordRemoteStore()
     var passwordEntriesListener: ListenerRegistration?
     var passwordGroupsListener: ListenerRegistration?
@@ -234,6 +239,7 @@ final class SyncCenter: ObservableObject {
         stopPhotosRealtime()
         stopExpensesRealtime()
         stopWalletRealtime()
+        stopLoyaltyCardsRealtime()
         stopPasswordsRealtime()
         stopHousePaymentsRealtime()
         stopTripsRealtime()
@@ -916,6 +922,9 @@ final class SyncCenter: ObservableObject {
                 
             case SyncEntityType.walletTicket.rawValue:
                 try await processWalletTicket(op: op, modelContext: modelContext)
+
+            case SyncEntityType.loyaltyCard.rawValue:
+                try await processLoyaltyCard(op: op, modelContext: modelContext)
 
             case SyncEntityType.passwordEntry.rawValue:
                 try await processPasswordEntry(op: op, modelContext: modelContext)

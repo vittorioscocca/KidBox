@@ -263,6 +263,11 @@ final class AppDelegate: NSObject,
         return launchOptions?[key] != nil
     }
     
+    /// Alza la capacità di `URLCache.shared` (default di sistema: pochi MB su
+    /// disco). Serve alle immagini remote scaricate con `AsyncImage`/URLSession:
+    /// oltre alle media, i loghi delle carte fedeltà — una carta si usa alla
+    /// cassa, spesso con poco o nessun segnale, quindi un logo già visto deve
+    /// restare disponibile offline.
     func configureMediaURLCache() {
         let memory = 100 * 1024 * 1024   // 100 MB
         let disk   = 300 * 1024 * 1024   // 300 MB

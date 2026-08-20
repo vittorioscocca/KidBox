@@ -21,7 +21,6 @@ final class SettingsViewModel: ObservableObject {
     // Tutte le preferenze di notifica nascono ATTIVE, coerenti con il server
     // (`getUserTokensIfEnabled`: preferenza assente = attiva). Un default a
     // `false` qui mostrerebbe spento ciò che invece sta arrivando.
-    @Published var notifyOnNewDocs: Bool = true
     @Published var infoText: String? = nil
     @Published var isLoading: Bool = false
     @Published var notifyOnNewMessages: Bool = true
@@ -31,8 +30,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnNewNote: Bool = true
     @Published var notifyOnNewExpense: Bool = true
     @Published var notifyOnNewCalendarEvent: Bool = true
-    @Published var notifyOnNewWalletTicket: Bool = true
-    @Published var notifyOnWalletReminder: Bool = true
+    @Published var notifyOnWallet: Bool = true
     @Published var audioTranscriptionEnabled: Bool = true
     @Published var appearanceMode: AppearanceMode = .system
     
@@ -41,7 +39,6 @@ final class SettingsViewModel: ObservableObject {
     
     // MARK: - Local cache keys
     private enum LocalKeys {
-        static let notifyOnNewDocs          = "kb_notifyOnNewDocs"
         static let notifyOnNewMessages      = "kb_notifyOnNewMessages"
         static let notifyOnLocationSharing  = "kb_notifyOnLocationSharing"
         static let notifyOnTodos            = "kb_notifyOnTodos"
@@ -49,8 +46,7 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnNewNote          = "kb_notifyOnNewNote"
         static let notifyOnNewExpense       = "kb_notifyOnNewExpense"
         static let notifyOnNewCalendarEvent = "kb_notifyOnNewCalendarEvent"
-        static let notifyOnNewWalletTicket  = "kb_notifyOnNewWalletTicket"
-        static let notifyOnWalletReminder   = "kb_notifyOnWalletReminder"
+        static let notifyOnWallet           = "kb_notifyOnWallet"
         static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"
         static let appearanceMode           = "kb_appearanceMode"
     }
@@ -59,10 +55,6 @@ final class SettingsViewModel: ObservableObject {
     init() {
         // `bool(forKey:)` non distingue "mai scritta" da "false": userebbe
         // sempre `false` alla prima installazione. `object(forKey:)` sì.
-        let cached = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewDocs) as? Bool ?? true
-        self.notifyOnNewDocs = cached
-        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewDocs=\(cached)")
-        
         let cachedChat = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewMessages) as? Bool ?? true
         self.notifyOnNewMessages = cachedChat
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewMessages=\(cachedChat)")
@@ -91,13 +83,9 @@ final class SettingsViewModel: ObservableObject {
         self.notifyOnNewCalendarEvent = cachedCalendar
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewCalendarEvent=\(cachedCalendar)")
 
-        let cachedWalletNew = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewWalletTicket) as? Bool ?? true
-        self.notifyOnNewWalletTicket = cachedWalletNew
-        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewWalletTicket=\(cachedWalletNew)")
-
-        let cachedWalletReminder = UserDefaults.standard.object(forKey: LocalKeys.notifyOnWalletReminder) as? Bool ?? true
-        self.notifyOnWalletReminder = cachedWalletReminder
-        KBLog.settings.kbDebug("SettingsVM init cached notifyOnWalletReminder=\(cachedWalletReminder)")
+        let cachedWallet = UserDefaults.standard.object(forKey: LocalKeys.notifyOnWallet) as? Bool ?? true
+        self.notifyOnWallet = cachedWallet
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnWallet=\(cachedWallet)")
 
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
         self.audioTranscriptionEnabled = cachedTranscription
@@ -111,9 +99,6 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Load
     func load() {
         KBLog.settings.kbDebug("SettingsVM load requested")
-        
-        let cached = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewDocs) as? Bool ?? true
-        if notifyOnNewDocs != cached { notifyOnNewDocs = cached }
         
         let cachedTranscription = UserDefaults.standard.object(forKey: LocalKeys.audioTranscriptionEnabled) as? Bool ?? true
         if audioTranscriptionEnabled != cachedTranscription { audioTranscriptionEnabled = cachedTranscription }
@@ -129,11 +114,7 @@ final class SettingsViewModel: ObservableObject {
             infoText = nil
             
             await notifications.refreshAuthorizationStatus()
-            
-            let remoteValue = await notifications.fetchNotifyOnNewDocsPreference()
-            if notifyOnNewDocs != remoteValue { notifyOnNewDocs = remoteValue }
-            UserDefaults.standard.set(remoteValue, forKey: LocalKeys.notifyOnNewDocs)
-            
+
             let remoteChat = await notifications.fetchNotifyOnNewMessagesPreference()
             if notifyOnNewMessages != remoteChat { notifyOnNewMessages = remoteChat }
             UserDefaults.standard.set(remoteChat, forKey: LocalKeys.notifyOnNewMessages)
@@ -162,38 +143,14 @@ final class SettingsViewModel: ObservableObject {
             if notifyOnNewCalendarEvent != remoteCalendar { notifyOnNewCalendarEvent = remoteCalendar }
             UserDefaults.standard.set(remoteCalendar, forKey: LocalKeys.notifyOnNewCalendarEvent)
 
-            let remoteWalletNew = await notifications.fetchNotifyOnNewWalletTicketPreference()
-            KBLog.settings.kbInfo("SettingsVM fetch remote walletNew pref=\(remoteWalletNew)")
-            if notifyOnNewWalletTicket != remoteWalletNew { notifyOnNewWalletTicket = remoteWalletNew }
-            UserDefaults.standard.set(remoteWalletNew, forKey: LocalKeys.notifyOnNewWalletTicket)
-
-            let remoteWalletReminder = await notifications.fetchNotifyOnWalletReminderPreference()
-            KBLog.settings.kbInfo("SettingsVM fetch remote walletReminder pref=\(remoteWalletReminder)")
-            if notifyOnWalletReminder != remoteWalletReminder { notifyOnWalletReminder = remoteWalletReminder }
-            UserDefaults.standard.set(remoteWalletReminder, forKey: LocalKeys.notifyOnWalletReminder)
+            let remoteWallet = await notifications.fetchNotifyOnWalletPreference()
+            KBLog.settings.kbInfo("SettingsVM fetch remote wallet pref=\(remoteWallet)")
+            if notifyOnWallet != remoteWallet { notifyOnWallet = remoteWallet }
+            UserDefaults.standard.set(remoteWallet, forKey: LocalKeys.notifyOnWallet)
         }
     }
     
     // MARK: - User actions
-    
-    func toggleNotifyOnNewDocs(_ enabled: Bool) {
-        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewDocs enabled=\(enabled)")
-        infoText = nil
-        notifyOnNewDocs = enabled
-        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewDocs)
-        
-        Task { @MainActor in
-            do {
-                try await notifications.setNotifyOnNewDocs(enabled)
-                infoText = enabled ? NSLocalizedString("Notifiche attive.", comment: "") : NSLocalizedString("Notifiche disattivate.", comment: "")
-            } catch {
-                notifyOnNewDocs = false
-                UserDefaults.standard.set(false, forKey: LocalKeys.notifyOnNewDocs)
-                infoText = error.localizedDescription
-                KBLog.settings.kbError("SettingsVM setNotifyOnNewDocs failed: \(error.localizedDescription)")
-            }
-        }
-    }
     
     func toggleNotifyOnNewMessages(_ enabled: Bool) {
         notifyOnNewMessages = enabled
@@ -322,46 +279,26 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Wallet toggles
+    // MARK: - Wallet toggle
+    // Unico toggle: copre biglietti, documenti (Wallet e Documenti, stessa
+    // collezione Firestore `documents`) e carte fedeltà — sostituisce i tre
+    // toggle separati che c'erano prima ("Notifica nuovi documenti",
+    // "Notifica nuovo biglietto Wallet", "Promemoria biglietti Wallet").
 
-    func toggleNotifyOnNewWalletTicket(_ enabled: Bool) {
-        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewWalletTicket enabled=\(enabled)")
-        notifyOnNewWalletTicket = enabled
-        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewWalletTicket)
+    func toggleNotifyOnWallet(_ enabled: Bool) {
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnWallet enabled=\(enabled)")
+        notifyOnWallet = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnWallet)
 
         Task { @MainActor in
             do {
-                try await notifications.setNotifyOnNewWalletTicket(enabled)
+                try await notifications.setNotifyOnWallet(enabled)
                 infoText = enabled ? NSLocalizedString("Notifiche Wallet attive.", comment: "") : NSLocalizedString("Notifiche Wallet disattivate.", comment: "")
             } catch {
-                notifyOnNewWalletTicket = true
-                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewWalletTicket)
+                notifyOnWallet = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnWallet)
                 infoText = error.localizedDescription
-                KBLog.settings.kbError("SettingsVM setNotifyOnNewWalletTicket failed: \(error.localizedDescription)")
-            }
-        }
-    }
-
-    func toggleNotifyOnWalletReminder(_ enabled: Bool) {
-        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnWalletReminder enabled=\(enabled)")
-        notifyOnWalletReminder = enabled
-        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnWalletReminder)
-
-        Task { @MainActor in
-            do {
-                try await notifications.setNotifyOnWalletReminder(enabled)
-                infoText = enabled ? NSLocalizedString("Promemoria Wallet attivi.", comment: "") : NSLocalizedString("Promemoria Wallet disattivati.", comment: "")
-
-                // Disabilitato → cancella anche le notifiche locali già schedulate.
-                // (Le push schedulate dalla CF rispettano già la preferenza remota.)
-                if !enabled {
-                    await WalletReminderService.shared.cancelAllReminders()
-                }
-            } catch {
-                notifyOnWalletReminder = true
-                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnWalletReminder)
-                infoText = error.localizedDescription
-                KBLog.settings.kbError("SettingsVM setNotifyOnWalletReminder failed: \(error.localizedDescription)")
+                KBLog.settings.kbError("SettingsVM setNotifyOnWallet failed: \(error.localizedDescription)")
             }
         }
     }

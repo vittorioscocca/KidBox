@@ -613,6 +613,36 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
 
+    /// Preferenza unificata "Notifiche Wallet": copre biglietti, documenti
+    /// (Wallet e Documenti generali — stessa collezione Firestore `documents`)
+    /// e carte fedeltà. Sostituisce `notifyOnNewDocs`/`notifyOnNewWalletTicket`/
+    /// `notifyOnWalletReminder` in Settings. Default ON.
+    func fetchNotifyOnWalletPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            if let prefs = snap.get("notificationPrefs") as? [String: Any],
+               let v = prefs["notifyOnWallet"] as? Bool {
+                return v
+            }
+            return true   // default ON
+        } catch {
+            return true
+        }
+    }
+
+    func setNotifyOnWallet(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnWallet": enabled]
+        ], merge: true)
+
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+
     // MARK: - Existing preferences (unchanged)
     
     /// Clears current deep link after navigation is handled.

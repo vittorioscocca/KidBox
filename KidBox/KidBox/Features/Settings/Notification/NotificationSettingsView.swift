@@ -70,20 +70,6 @@ struct NotificationSettingsView: View {
             }
 
             Toggle(
-                "Notifica nuovi documenti",
-                isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewDocs },
-                    set: { newValue in
-                        KBLog.settings.kbInfo("Toggle notifyOnNewDocs set=\(newValue)")
-                        vm.notifyOnNewDocs = newValue
-                        vm.toggleNotifyOnNewDocs(newValue)
-                    }
-                )
-            )
-            .disabled(vm.isLoading || systemDenied)
-            .listRowBackground(cardBackground)
-            
-            Toggle(
                 "Notifica nuovi messaggi in chat",
                 isOn: Binding(
                     get: { !systemDenied && vm.notifyOnNewMessages },
@@ -174,31 +160,17 @@ struct NotificationSettingsView: View {
             .listRowBackground(cardBackground)
 
             Toggle(
-                "Notifiche nuovo biglietto Wallet",
+                "Notifiche Wallet",
                 isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewWalletTicket },
+                    get: { !systemDenied && vm.notifyOnWallet },
                     set: { newValue in
-                        KBLog.settings.kbInfo("Toggle notifyOnNewWalletTicket set=\(newValue)")
-                        vm.toggleNotifyOnNewWalletTicket(newValue)
+                        KBLog.settings.kbInfo("Toggle notifyOnWallet set=\(newValue)")
+                        vm.toggleNotifyOnWallet(newValue)
                     }
                 )
             )
             .disabled(vm.isLoading || systemDenied)
-            .accessibilityHint("Ricevi una notifica quando un membro aggiunge un nuovo biglietto al Wallet.")
-            .listRowBackground(cardBackground)
-
-            Toggle(
-                "Promemoria biglietti Wallet",
-                isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnWalletReminder },
-                    set: { newValue in
-                        KBLog.settings.kbInfo("Toggle notifyOnWalletReminder set=\(newValue)")
-                        vm.toggleNotifyOnWalletReminder(newValue)
-                    }
-                )
-            )
-            .disabled(vm.isLoading || systemDenied)
-            .accessibilityHint("Ricevi promemoria locali e push prima della partenza/evento (es. 24h e 2h prima).")
+            .accessibilityHint("Ricevi una notifica quando viene aggiunto un nuovo contenuto al Wallet.")
             .listRowBackground(cardBackground)
 
             // Separato dagli altri: le preferenze sopra sono lato server e

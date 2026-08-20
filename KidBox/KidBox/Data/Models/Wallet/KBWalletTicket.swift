@@ -51,6 +51,13 @@ final class KBWalletTicket {
     /// senza dover scaricare e riparsare il PDF.
     var emitter: String?
 
+    /// Scelta del promemoria per QUESTO biglietto, in ore prima di `eventDate`:
+    /// `nil` → legacy, usa `kind.defaultReminderOffsets` (comportamento di sempre,
+    /// per non regredire i biglietti esistenti mai toccati dall'utente).
+    /// `0` → nessun promemoria (scelta esplicita).
+    /// `1`/`24`/`48` → singolo promemoria 1 ora / 1 giorno / 2 giorni prima.
+    var reminderOffsetHours: Int?
+
     /// `"family"` | `"members"` | `"private"`. Default `"private"` (personale).
     /// Opzionale per migrazione SwiftData: ai record precedenti può mancare nel DB (`nil` → normalizzato in lettura).
     var visibilityScope: String?
@@ -129,6 +136,7 @@ final class KBWalletTicket {
         holderName: String? = nil,
         notes: String? = nil,
         emitter: String? = nil,
+        reminderOffsetHours: Int? = nil,
         visibilityScope: String = KBVisibilityScope.onlyCreator,
         visibilityMemberIds: [String] = [],
         pdfStorageURL: String? = nil,
@@ -159,6 +167,7 @@ final class KBWalletTicket {
         self.holderName = holderName
         self.notes = notes
         self.emitter = emitter
+        self.reminderOffsetHours = reminderOffsetHours
         self.visibilityScope = Self.normalizedVisibilityScopeForWallet(visibilityScope)
         self.visibilityMemberIds = visibilityMemberIds
         self.pdfStorageURL = pdfStorageURL

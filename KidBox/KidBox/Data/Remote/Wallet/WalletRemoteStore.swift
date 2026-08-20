@@ -32,6 +32,7 @@ struct WalletTicketDTO {
     // Plaintext metadata (server-readable)
     let kindRaw: String?
     let emitter: String?
+    let reminderOffsetHours: Int?
     let eventDate: Date?
     let eventEndDate: Date?
     let pdfStorageURL: String?
@@ -79,6 +80,19 @@ final class WalletRemoteStore {
         if let v = any as? Int { return Int64(v) }
         if let v = any as? Double { return Int64(v) }
         return 0
+    }
+
+    /// Firestore può restituire interi come `Int64`/`NSNumber`: `as? Int` fallisce
+    /// per quei tipi e il campo verrebbe scartato in silenzio.
+    private func optionalIntValue(_ any: Any?) -> Int? {
+        switch any {
+        case let i as Int: return i
+        case let i as Int32: return Int(i)
+        case let i as Int64: return Int(i)
+        case let d as Double: return Int(d)
+        case let n as NSNumber: return n.intValue
+        default: return nil
+        }
     }
 
     private func stringArray(_ any: Any?) -> [String] {
@@ -140,6 +154,7 @@ final class WalletRemoteStore {
             // Plaintext (server-readable for CF / queries / security)
             "kind":                ticket.kindRaw,
             "emitter":             ticket.emitter as Any,
+            "reminderOffsetHours": ticket.reminderOffsetHours as Any,
             "eventDate":           ticket.eventDate.map { Timestamp(date: $0) } as Any,
             "eventEndDate":        ticket.eventEndDate.map { Timestamp(date: $0) } as Any,
             "pdfStorageURL":       ticket.pdfStorageURL as Any,
@@ -221,6 +236,7 @@ final class WalletRemoteStore {
                         fileNameEnc:        d["fileNameEnc"]     as? String,
                         kindRaw:            d["kind"]            as? String,
                         emitter:            d["emitter"]         as? String,
+                        reminderOffsetHours: self.optionalIntValue(d["reminderOffsetHours"]),
                         eventDate:          (d["eventDate"]      as? Timestamp)?.dateValue(),
                         eventEndDate:       (d["eventEndDate"]   as? Timestamp)?.dateValue(),
                         pdfStorageURL:      d["pdfStorageURL"]   as? String,
@@ -276,6 +292,7 @@ final class WalletRemoteStore {
                 fileNameEnc:        d["fileNameEnc"]     as? String,
                 kindRaw:            d["kind"]            as? String,
                 emitter:            d["emitter"]         as? String,
+                reminderOffsetHours: optionalIntValue(d["reminderOffsetHours"]),
                 eventDate:          (d["eventDate"]      as? Timestamp)?.dateValue(),
                 eventEndDate:       (d["eventEndDate"]   as? Timestamp)?.dateValue(),
                 pdfStorageURL:      d["pdfStorageURL"]   as? String,

@@ -212,6 +212,7 @@ extension SyncCenter {
                             existing.kindRaw = kindRaw
                         }
                         existing.emitter = dto.emitter
+                        existing.reminderOffsetHours = dto.reminderOffsetHours
                         existing.eventDate = dto.eventDate
                         existing.eventEndDate = dto.eventEndDate
                         existing.pdfStorageURL = dto.pdfStorageURL
@@ -258,6 +259,7 @@ extension SyncCenter {
                             holderName: holderName,
                             notes: notes,
                             emitter: dto.emitter,
+                            reminderOffsetHours: dto.reminderOffsetHours,
                             visibilityScope: KBWalletTicket.normalizedVisibilityScopeForWallet(dto.visibilityScope),
                             visibilityMemberIds: dto.visibilityMemberIds ?? [],
                             pdfStorageURL: dto.pdfStorageURL,

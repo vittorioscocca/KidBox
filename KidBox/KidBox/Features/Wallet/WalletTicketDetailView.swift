@@ -191,6 +191,7 @@ struct WalletTicketDetailView: View {
                         }
 
                         detailsBlock(for: ticket)
+                        reminderBlock(for: ticket)
                         actionsBlock(for: ticket)
                         destructiveBlock(for: ticket)
                     }
@@ -303,6 +304,66 @@ struct WalletTicketDetailView: View {
                     .stroke(KBTheme.separator(colorScheme).opacity(0.3), lineWidth: 0.5)
             )
         }
+    }
+
+    /// Opzioni del picker promemoria. `nil` = legacy (default per categoria),
+    /// coerente con `WalletReminderService.scheduleReminders(for:)`.
+    private static let reminderOptions: [(label: String, hours: Int?)] = [
+        (NSLocalizedString("Predefinito", comment: "Wallet ticket reminder: default per category"), nil),
+        (NSLocalizedString("Nessuno", comment: "Wallet ticket reminder: none"), 0),
+        (NSLocalizedString("1 ora prima", comment: "Wallet ticket reminder: 1 hour before"), 1),
+        (NSLocalizedString("1 giorno prima", comment: "Wallet ticket reminder: 1 day before"), 24),
+        (NSLocalizedString("2 giorni prima", comment: "Wallet ticket reminder: 2 days before"), 48)
+    ]
+
+    @ViewBuilder
+    private func reminderBlock(for ticket: KBWalletTicket) -> some View {
+        // Solo se c'è una data evento: senza `eventDate` non c'è nulla da schedulare.
+        if ticket.eventDate != nil {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Promemoria")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Picker("Promemoria", selection: Binding(
+                    get: { ticket.reminderOffsetHours },
+                    set: { newValue in applyReminderOffset(ticket: ticket, hours: newValue) }
+                )) {
+                    ForEach(Self.reminderOptions, id: \.hours) { option in
+                        Text(option.label).tag(option.hours)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(KBTheme.cardBackground(colorScheme), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(KBTheme.separator(colorScheme).opacity(0.3), lineWidth: 0.5)
+            )
+        }
+    }
+
+    private func applyReminderOffset(ticket: KBWalletTicket, hours: Int?) {
+        ticket.reminderOffsetHours = hours
+        if let uid = Auth.auth().currentUser?.uid {
+            ticket.updatedBy = uid
+            ticket.updatedByName = Auth.auth().currentUser?.displayName ?? ""
+        }
+        ticket.updatedAt = .now
+        ticket.syncState = .pendingUpsert
+        try? modelContext.save()
+        SyncCenter.shared.enqueueWalletTicketUpsert(
+            ticketId: ticket.id,
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+
+        Task { await WalletReminderService.shared.scheduleReminders(for: ticket) }
     }
 
     private func detailRow(icon: String, title: String, value: String, monospaced: Bool = false) -> some View {

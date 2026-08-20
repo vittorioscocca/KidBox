@@ -27,6 +27,21 @@ struct WalletHomeView: View {
     private enum WalletTab: String, CaseIterable {
         case tickets = "Biglietti"
         case documents = "Documenti"
+        case loyaltyCards = "Carte"
+
+        /// `Text(rawValue)` non viene localizzato automaticamente da SwiftUI
+        /// (a differenza di un literal passato direttamente a `Text`), quindi
+        /// qui serve un lookup esplicito nello String Catalog.
+        var localizedTitle: String {
+            switch self {
+            case .tickets:
+                return NSLocalizedString("Biglietti", comment: "Wallet tab: tickets")
+            case .documents:
+                return NSLocalizedString("Documenti", comment: "Wallet tab: documents")
+            case .loyaltyCards:
+                return NSLocalizedString("Carte", comment: "Wallet tab: loyalty cards")
+            }
+        }
     }
     @State private var selectedTab: WalletTab = .tickets
 
@@ -57,7 +72,7 @@ struct WalletHomeView: View {
         VStack(spacing: 0) {
             Picker("Sezione", selection: $selectedTab) {
                 ForEach(WalletTab.allCases, id: \.self) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    Text(tab.localizedTitle).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
@@ -78,6 +93,8 @@ struct WalletHomeView: View {
                     }
                 case .documents:
                     WalletDocumentsSectionView(familyId: familyId)
+                case .loyaltyCards:
+                    LoyaltyCardsSectionView(familyId: familyId)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

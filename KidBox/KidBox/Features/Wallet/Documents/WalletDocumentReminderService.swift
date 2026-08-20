@@ -29,9 +29,6 @@ final class WalletDocumentReminderService {
     func scheduleReminders(documentId: String, familyId: String, title: String, kind: KBWalletDocumentKind, expiryDate: Date) async {
         await cancelReminders(documentId: documentId)
 
-        let prefEnabled = (UserDefaults.standard.object(forKey: "kb_notifyOnWalletReminder") as? Bool) ?? true
-        guard prefEnabled else { return }
-
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
 

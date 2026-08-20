@@ -85,6 +85,7 @@ enum Route: Hashable {
     case walletHome(familyId: String)
     case walletTicketDetail(familyId: String, ticketId: String)
     case walletDocumentDetail(familyId: String, documentId: String)
+    case loyaltyCardDetail(familyId: String, cardId: String)
 
     // MARK: - Password
     case passwordsHome(familyId: String)
