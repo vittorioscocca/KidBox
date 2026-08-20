@@ -71,6 +71,11 @@ struct LoyaltyCardDetailView: View {
         }
         .navigationTitle("Carta fedeltà")
         .navigationBarTitleDisplayMode(.inline)
+        // Schermo al massimo finché la carta è aperta: i lettori alla cassa
+        // faticano ad agganciare un codice su schermo poco luminoso.
+        // Sospeso mentre sheet/fullscreen coprono il codice: quelle
+        // presentazioni non generano `onDisappear` su questa view.
+        .maxScreenBrightnessWhileVisible(isActive: !showEditSheet && fullscreenSide == nil)
         .toolbar {
             if let card, card.isVisible(to: currentUid) {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -173,6 +178,17 @@ struct LoyaltyCardDetailView: View {
                         stretchOneDimensionalToWidth: true
                     )
                     .frame(maxWidth: .infinity)
+
+                    // Numero carta in chiaro sotto il codice, come su Android:
+                    // serve quando il lettore alla cassa non riesce a leggere il
+                    // barcode e l'addetto deve digitarlo a mano.
+                    if !card.cardNumber.isEmpty {
+                        Text(card.cardNumber)
+                            .font(.system(.footnote, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
                 .padding(16)
                 .background(KBTheme.cardBackground(colorScheme), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
