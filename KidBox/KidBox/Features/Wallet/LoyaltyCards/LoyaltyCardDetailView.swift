@@ -168,7 +168,9 @@ struct LoyaltyCardDetailView: View {
 
                     WalletBarcodeView(
                         text: card.cardNumber,
-                        format: card.barcodeFormat
+                        format: card.barcodeFormat,
+                        maxWidth: .infinity,
+                        stretchOneDimensionalToWidth: true
                     )
                     .frame(maxWidth: .infinity)
                 }

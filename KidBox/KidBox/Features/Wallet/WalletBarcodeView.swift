@@ -22,23 +22,52 @@ import UIKit
 struct WalletBarcodeView: View {
     let text: String
     let format: String?
+    /// Larghezza massima del codice. Default 320pt (aspetto compatto dei
+    /// biglietti); le carte fedeltà passano `.infinity`.
+    var maxWidth: CGFloat = 320
+    /// Se `true`, un codice **monodimensionale** riempie tutta la larghezza
+    /// disponibile mantenendo l'altezza fissa, invece di scalare in proporzione.
+    ///
+    /// Serve perché con `scaledToFit` le proporzioni sono vincolate: allargare
+    /// il codice lo farebbe crescere anche in altezza. In un barcode 1D
+    /// l'altezza però non porta informazione — i dati stanno tutti nella
+    /// sequenza orizzontale di barre — quindi allungare le barre in orizzontale
+    /// e tenere l'altezza fissa è lecito e resta perfettamente scansionabile.
+    /// Sui codici 2D (QR/Aztec/PDF417) il parametro è ignorato: lì la
+    /// proporzione è parte della codifica e deformarli li renderebbe illeggibili.
+    var stretchOneDimensionalToWidth: Bool = false
 
     @State private var uiImage: UIImage?
     @State private var copiedFlash = false
 
+    private var fixedHeight: CGFloat { isOneDimensional ? 120 : 240 }
+
+    /// Riempimento non uniforme solo dove è sicuro farlo.
+    private var shouldStretch: Bool { stretchOneDimensionalToWidth && isOneDimensional }
+
     var body: some View {
         VStack(spacing: 10) {
             if let uiImage {
-                Image(uiImage: uiImage)
-                    .interpolation(.none)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: 320, maxHeight: isOneDimensional ? 120 : 240)
-                    .padding(12)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
-                    .accessibilityLabel("Codice \(displayFormat)")
-                    .accessibilityValue(text)
+                Group {
+                    if shouldStretch {
+                        Image(uiImage: uiImage)
+                            .interpolation(.none)
+                            .resizable()   // niente scaledToFit: riempie in larghezza
+                            .frame(maxWidth: .infinity)
+                            .frame(height: fixedHeight)
+                    } else {
+                        Image(uiImage: uiImage)
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: maxWidth, maxHeight: fixedHeight)
+                    }
+                }
+                .padding(12)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+                .accessibilityLabel("Codice \(displayFormat)")
+                .accessibilityValue(text)
             } else {
                 // Fallback: formato non generabile o testo vuoto.
                 VStack(alignment: .leading, spacing: 6) {
