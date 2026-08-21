@@ -35,6 +35,11 @@ const admin = require("firebase-admin");
 const REGION = "europe-west1";
 const EVENTS_COLLECTION = "analyticsEvents";
 
+// Tetto esplicito: senza, un import massivo o un loop di scritture scalerebbe
+// questi 16 trigger senza limite. Gli eventi in eccesso vengono accodati da
+// Eventarc, non persi.
+const MAX_INSTANCES = 20;
+
 // Ritenzione degli eventi grezzi. Servono solo a calcolare i rollup giornalieri
 // (`metrics/daily/{date}`), che sono l'artefatto durevole; 90 giorni bastano a
 // ricalcolare all'indietro se la definizione cambia o si trova un bug.
@@ -161,6 +166,7 @@ function makeTrigger(spec) {
       {
         document: `families/{familyId}/${spec.coll}/{docId}`,
         region: REGION,
+        maxInstances: MAX_INSTANCES,
       },
       async (event) => {
         const familyId = event.params.familyId;
@@ -221,6 +227,7 @@ const familyMemberJoined = onDocumentCreated(
     {
       document: "families/{familyId}/members/{uid}",
       region: REGION,
+      maxInstances: MAX_INSTANCES,
     },
     async (event) => {
       const {familyId, uid} = event.params;

@@ -292,6 +292,7 @@ exports.analyticsRollupDaily = onSchedule(
       schedule: "15 3 * * *",
       timeZone: TZ,
       region: REGION,
+      maxInstances: 1,
     },
     async () => {
       const yesterday = addDays(localDateStr(new Date()), -1);
@@ -303,7 +304,7 @@ exports.analyticsRollupDaily = onSchedule(
 // Serve per il primo giorno, per i backfill dopo un cambio di definizione, e
 // per vedere i numeri di oggi dalla console. Idempotente: riscrive il doc.
 exports.runAnalyticsRollup = onCall(
-    {region: REGION, invoker: "public"},
+    {region: REGION, invoker: "public", maxInstances: 1},
     async (request) => {
       const uid = request.auth && request.auth.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Login richiesto.");

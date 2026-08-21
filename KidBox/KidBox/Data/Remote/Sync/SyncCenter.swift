@@ -1109,7 +1109,10 @@ final class SyncCenter: ObservableObject {
             }
             
             try modelContext.save()
-            
+            // Stesso nudge di applyTodoInbound: forza le view con @Query a
+            // vedere subito una lista appena inserita dal listener realtime.
+            modelContext.processPendingChanges()
+
         } catch {
             KBLog.sync.kbError("applyTodoListInbound failed: \(error.localizedDescription)")
         }
@@ -1445,17 +1448,24 @@ final class SyncCenter: ObservableObject {
             
             do {
                 try modelContext.save()
+                // Nudge SwiftData: senza questo, un `@Query` in una view già
+                // visibile a volte non si accorge subito di un INSERT arrivato
+                // dal listener realtime (gli update su oggetti già tracciati
+                // invece propagano sempre all'istante). Costringe il context a
+                // processare le modifiche pendenti così le view che osservano
+                // @Query si aggiornano senza dover uscire e rientrare.
+                modelContext.processPendingChanges()
                 KBLog.sync.kbInfo("[todo][inbound][\(batch)] SAVE OK")
             } catch {
                 KBLog.sync.kbError("[todo][inbound][\(batch)] SAVE FAIL err=\(String(describing: error))")
             }
-            
+
         } catch {
             KBLog.sync.kbError("[todo][inbound][\(batch)] APPLY FAIL err=\(String(describing: error))")
         }
     }
-    
-    
+
+
     private func fetchTodo(id: String, modelContext: ModelContext) throws -> KBTodoItem? {
         let pid = id
         let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == pid })

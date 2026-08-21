@@ -13,6 +13,13 @@ const STORAGE_BUCKET = "kidbox-42cd7-eu";
 /** Stima foto visita pediatrica (allineata a initStorageUsage / client). */
 const VISIT_PHOTO_ESTIMATE_BYTES = 200 * 1024;
 
+/**
+ * Pagina per le cancellazioni massive. Il limite duro di un batch Firestore è
+ * 500 operazioni: si sta sotto con margine, così un eventuale write aggiuntivo
+ * nello stesso batch non fa saltare il commit.
+ */
+const BATCH_DELETE_PAGE = 450;
+
 admin.initializeApp();
 
 /**
@@ -214,28 +221,95 @@ async function incrementCounterAndGetBadge({familyId, uid, field}) {
 }
 
 /**
+ * Incrementa il contatore di più destinatari in parallelo.
+ *
+ * Ogni destinatario resta una transazione a sé: il badge deve restare esatto
+ * anche con due notifiche in volo sullo stesso utente, e la transazione è ciò
+ * che lo garantisce. Quello che cambia è che non sono più in SERIE — un
+ * messaggio in una famiglia da 5 rispondeva a 5 round trip uno dopo l'altro.
+ * @param {{familyId: string, uids: string[], field: string}} params
+ * @return {Promise<Map<string, number>>} uid → badge
+ */
+async function incrementCountersAndGetBadges({familyId, uids, field}) {
+  const entries = await Promise.all(uids.map(async (uid) => [
+    uid,
+    await incrementCounterAndGetBadge({familyId, uid, field}),
+  ]));
+  return new Map(entries);
+}
+
+/**
+ * Token FCM di più utenti in una volta sola.
+ *
+ * Prima ogni destinatario costava 2 round trip in serie (doc `users/{uid}`
+ * per le preferenze + query sui token). Qui le preferenze arrivano da un solo
+ * `getAll` e le query sui token vanno in parallelo: le letture FATTURATE sono
+ * le stesse, la latenza no — ed è la latenza che si paga in GB-secondi.
+ *
+ * Ritorna anche i `DocumentReference` dei token, così `pruneInvalidFcmTokens`
+ * non deve rileggerli dopo l'invio.
+ * @param {string[]} uids
+ * @param {?string} prefField campo di `notificationPrefs` da rispettare;
+ *     `null` per ignorare le preferenze (notifiche non disattivabili).
+ * @return {Promise<Map<string, {tokens: string[],
+ *     refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
+ */
+async function getTokensForUsers(uids, prefField = null) {
+  const out = new Map();
+  const unique = [...new Set(uids.filter(Boolean))];
+  if (unique.length === 0) return out;
+
+  const db = admin.firestore();
+  const userRefs = unique.map((uid) => db.collection("users").doc(uid));
+
+  // Le preferenze di TUTTI i destinatari in una sola chiamata.
+  const userSnaps = prefField ? await db.getAll(...userRefs) : [];
+
+  const wanted = [];
+  unique.forEach((uid, i) => {
+    if (!prefField) {
+      wanted.push(uid);
+      return;
+    }
+    const snap = userSnaps[i];
+    const prefs = snap && snap.exists ? snap.get("notificationPrefs") : null;
+    // Assenza di preferenze = tutto attivo: è il default storico, cambiarlo
+    // silenzierebbe gli utenti che non hanno mai aperto le impostazioni.
+    if (!prefs || prefs[prefField] !== false) wanted.push(uid);
+  });
+
+  // A blocchi: `sendBroadcast` arriva a 2000 destinatari e 2000 query
+  // simultanee saturerebbero il pool di connessioni gRPC. 50 alla volta è
+  // già due ordini di grandezza meglio della versione in serie.
+  const CHUNK = 50;
+  for (let i = 0; i < wanted.length; i += CHUNK) {
+    await Promise.all(wanted.slice(i, i + CHUNK).map(async (uid) => {
+      const tokensSnap = await db.collection("users").doc(uid)
+          .collection("fcmTokens").get();
+      const tokens = [];
+      const refsByToken = new Map();
+      tokensSnap.forEach((t) => {
+        const tok = t.get("token");
+        if (!tok) return;
+        tokens.push(tok);
+        refsByToken.set(tok, t.ref);
+      });
+      out.set(uid, {tokens, refsByToken});
+    }));
+  }
+
+  return out;
+}
+
+/**
  * Returns FCM tokens for a user if the given notification preference is enabled.
  * @param {string} uid
  * @param {string} prefField
  * @return {Promise<string[]>}
  */
 async function getUserTokensIfEnabled(uid, prefField) {
-  const userRef = admin.firestore().collection("users").doc(uid);
-  const userSnap = await userRef.get();
-
-  const prefs = userSnap.exists ? userSnap.get("notificationPrefs") : null;
-
-  const enabled = !prefs || prefs[prefField] !== false;
-  if (!enabled) return [];
-
-  const tokensSnap = await userRef.collection("fcmTokens").get();
-  const tokens = [];
-  tokensSnap.forEach((t) => {
-    const tok = t.get("token");
-    if (tok) tokens.push(tok);
-  });
-
-  return tokens;
+  const byUid = await getTokensForUsers([uid], prefField);
+  return byUid.get(uid)?.tokens || [];
 }
 
 /**
@@ -244,14 +318,8 @@ async function getUserTokensIfEnabled(uid, prefField) {
  * @return {Promise<string[]>}
  */
 async function getTokensForUser(uid) {
-  const userRef = admin.firestore().collection("users").doc(uid);
-  const tokensSnap = await userRef.collection("fcmTokens").get();
-  const tokens = [];
-  tokensSnap.forEach((t) => {
-    const tok = t.get("token");
-    if (tok) tokens.push(tok);
-  });
-  return tokens;
+  const byUid = await getTokensForUsers([uid], null);
+  return byUid.get(uid)?.tokens || [];
 }
 
 /**
@@ -259,21 +327,27 @@ async function getTokensForUser(uid) {
  * @param {string} uid
  * @param {string[]} tokens
  * @param {import("firebase-admin/messaging").SendResponse[]} responses
+ * @param {?Map<string, FirebaseFirestore.DocumentReference>} refsByToken
+ *     riferimenti già noti da `getTokensForUsers`. Se mancano, i token
+ *     vengono riletti — una query in più per ogni invio con token morti.
  * @return {Promise<void>}
  */
-async function pruneInvalidFcmTokens(uid, tokens, responses) {
+async function pruneInvalidFcmTokens(uid, tokens, responses, refsByToken = null) {
   const invalidCodes = new Set([
     "messaging/registration-token-not-registered",
     "messaging/invalid-registration-token",
   ]);
 
-  const userRef = admin.firestore().collection("users").doc(uid);
-  const tokensSnap = await userRef.collection("fcmTokens").get();
-  const tokenToRef = new Map();
-  tokensSnap.forEach((t) => {
-    const tok = t.get("token");
-    if (tok) tokenToRef.set(tok, t.ref);
-  });
+  let tokenToRef = refsByToken;
+  if (!tokenToRef) {
+    const userRef = admin.firestore().collection("users").doc(uid);
+    const tokensSnap = await userRef.collection("fcmTokens").get();
+    tokenToRef = new Map();
+    tokensSnap.forEach((t) => {
+      const tok = t.get("token");
+      if (tok) tokenToRef.set(tok, t.ref);
+    });
+  }
 
   const batch = admin.firestore().batch();
   let removed = 0;
@@ -304,6 +378,7 @@ exports.notifyNewDocument = onDocumentCreated(
     {
       document: "families/{familyId}/documents/{docId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -349,11 +424,17 @@ exports.notifyNewDocument = onDocumentCreated(
       const body = docData.title || docData.fileName || "Documento";
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnWallet");
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnWallet");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "documents"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "documents"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
 
         messagesToSend.push({
           tokens,
@@ -392,6 +473,7 @@ exports.onDocumentHardDeleted = onDocumentWritten(
     {
       document: "families/{familyId}/documents/{docId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -416,6 +498,7 @@ exports.onDocumentSoftDeleted = onDocumentWritten(
     {
       document: "families/{familyId}/documents/{docId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -442,6 +525,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
     {
       document: "families/{familyId}/chatMessages/{messageId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -527,11 +611,17 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewMessages");
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnNewMessages");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "chat"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "chat"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         const isMention = mentionedSet.has(uid);
         const pushType = isMention ? "chat_mention" : "new_chat_message";
         const title = isMention ? `${senderName} ti ha menzionato` : senderName;
@@ -559,8 +649,8 @@ exports.notifyNewChatMessage = onDocumentCreated(
                 // mutable-content tells iOS to invoke the Notification Service Extension
                 // so it can decrypt textEnc client-side before the notification is displayed.
                 "mutable-content": 1,
-                alert: {title, body},
-                sound: "default",
+                "alert": {title, body},
+                "sound": "default",
                 badge,
               },
             },
@@ -606,6 +696,7 @@ exports.onChatMessageSoftDeleted = onDocumentWritten(
     {
       document: "families/{familyId}/chatMessages/{messageId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -649,6 +740,7 @@ exports.onPhotoCreated = onDocumentCreated(
     {
       document: "families/{familyId}/photos/{photoId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -666,6 +758,7 @@ exports.onPhotoHardDeleted = onDocumentWritten(
     {
       document: "families/{familyId}/photos/{photoId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -690,6 +783,7 @@ exports.onPhotoSoftDeleted = onDocumentWritten(
     {
       document: "families/{familyId}/photos/{photoId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -718,6 +812,7 @@ exports.onMedicalVisitWritten = onDocumentWritten(
     {
       document: "families/{familyId}/medicalVisits/{visitId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -757,6 +852,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
     {
       document: "families/{familyId}/locations/{uid}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -826,11 +922,17 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
       const expiresAt = after.expiresAt || null;
       const messagesToSend = [];
 
-      for (const uid of targetUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnLocationSharing");
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(targetUids, "notifyOnLocationSharing");
+      const recipients = targetUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "location"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "location"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
 
         messagesToSend.push({
           tokens,
@@ -876,6 +978,7 @@ exports.expireTemporaryLocations = onSchedule(
     {
       schedule: "every 5 minutes",
       region: "europe-west1",
+      maxInstances: 1,
       timeZone: "Europe/Rome",
     },
     async () => {
@@ -929,6 +1032,7 @@ exports.onGeofenceEvent = onDocumentCreated(
     {
       document: "families/{familyId}/geofenceEvents/{eventId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -1036,15 +1140,22 @@ exports.onGeofenceEvent = onDocumentCreated(
 
       const messagesToSend = [];
 
-      for (const uid of targetUids) {
-        const tokens = await getTokensForUser(uid);
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(targetUids, null);
+      const recipients = targetUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "location"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "location"});
+      for (const uid of recipients) {
+        const {tokens, refsByToken} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
 
         messagesToSend.push({
           uid,
           tokens,
+          refsByToken,
           notification: {title, body},
           data: {
             type: "geofenceEvent",
@@ -1076,7 +1187,9 @@ exports.onGeofenceEvent = onDocumentCreated(
         totalSuccess += result.successCount;
         totalFailure += result.failureCount;
 
-        await pruneInvalidFcmTokens(msg.uid, msg.tokens, result.responses);
+        // `refsByToken` arriva già da getTokensForUsers: senza, il prune
+        // rileggerebbe la sottocollezione token appena letta.
+        await pruneInvalidFcmTokens(msg.uid, msg.tokens, result.responses, msg.refsByToken);
       }
 
       logger.info("onGeofenceEvent: send result", {
@@ -1098,6 +1211,7 @@ exports.notifyTodoAssigned = onDocumentWritten(
     {
       document: "families/{familyId}/todos/{todoId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -1204,6 +1318,7 @@ exports.notifyNewGroceryItem = onDocumentCreated(
     {
       document: "families/{familyId}/groceries/{itemId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -1241,11 +1356,17 @@ exports.notifyNewGroceryItem = onDocumentCreated(
       const body = `${creatorName} ha aggiunto: ${itemName}`;
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewGroceryItem");
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnNewGroceryItem");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "shopping"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "shopping"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push({
           tokens,
           notification: {title, body},
@@ -1280,6 +1401,7 @@ exports.notifyNewNote = onDocumentCreated(
     {
       document: "families/{familyId}/notes/{noteId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -1316,11 +1438,17 @@ exports.notifyNewNote = onDocumentCreated(
       const body = `${creatorName} ha aggiunto una nuova nota`;
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewNote");
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnNewNote");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "notes"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "notes"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push({
           tokens,
           notification: {title, body},
@@ -1746,6 +1874,7 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
 exports.askAI = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       secrets: [ANTHROPIC_API_KEY],
       timeoutSeconds: 120,
@@ -2017,6 +2146,13 @@ function travelMessageCostForPlannedDays(plannedDayCount) {
   return travelPlanningBlocks(plannedDayCount) * TRAVEL_PLANNING_MESSAGES_PER_BLOCK;
 }
 
+/**
+ * System prompt per la pianificazione di un viaggio.
+ * @param {Object} wizardData dati raccolti dal wizard (date, mete, stile)
+ * @param {Object} familyContext contesto famiglia (partecipanti, preferenze)
+ * @param {boolean} regenerateSingleDay se true genera un solo giorno
+ * @return {string} prompt di sistema
+ */
 function buildTravelSystemPrompt(wizardData, familyContext, regenerateSingleDay = false) {
   const totalDays = wizardData?.startDate && wizardData?.endDate ?
     inclusiveTripDayCount(wizardData.startDate, wizardData.endDate) :
@@ -2382,6 +2518,7 @@ function trackAnthropicCosts(
 exports.generateTravelPlan = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       secrets: [ANTHROPIC_API_KEY],
       timeoutSeconds: 120,
@@ -2616,6 +2753,7 @@ REGOLE:
 exports.suggestTravelDestinations = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       secrets: [ANTHROPIC_API_KEY],
       timeoutSeconds: 90,
@@ -3325,6 +3463,7 @@ async function googlePlacesAutocomplete(input, apiKey, languageCode) {
 exports.searchTravelDestinations = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       secrets: [GOOGLE_PLACES_API_KEY],
       timeoutSeconds: 20,
@@ -3378,6 +3517,7 @@ exports.searchTravelDestinations = onCall(
 exports.searchTravelPlaces = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       secrets: [GOOGLE_PLACES_API_KEY],
       timeoutSeconds: 30,
@@ -3463,6 +3603,7 @@ exports.searchTravelPlaces = onCall(
 exports.getTravelPlaceDetails = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       secrets: [GOOGLE_PLACES_API_KEY],
       timeoutSeconds: 30,
@@ -3509,7 +3650,7 @@ exports.getTravelPlaceDetails = onCall(
 );
 
 exports.getAIUsage = onCall(
-    {region: "europe-west1", invoker: "public"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
@@ -3555,6 +3696,7 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
     {
       document: "families/{familyId}/calendarEvents/{eventId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -3601,11 +3743,17 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
 
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewCalendarEvent");
-        if (tokens.length === 0) continue;
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnNewCalendarEvent");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "calendar"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "calendar"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push({
           tokens,
           notification: {title, body},
@@ -3640,6 +3788,7 @@ exports.notifyNewExpense = onDocumentCreated(
     {
       document: "families/{familyId}/expenses/{expenseId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -3680,13 +3829,21 @@ exports.notifyNewExpense = onDocumentCreated(
 
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnNewExpense");
-        if (tokens.length === 0) {
-          logger.info("notifyNewExpense: user opted out or no tokens", {uid}); continue;
-        }
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnNewExpense");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const skipped = memberUids.filter((uid) => !recipients.includes(uid));
+      if (skipped.length > 0) {
+        logger.info("notifyNewExpense: opted out or no tokens", {uids: skipped});
+      }
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "expenses"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "expenses"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push({
           tokens,
           notification: {title, body},
@@ -3718,7 +3875,7 @@ exports.notifyNewExpense = onDocumentCreated(
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.getStorageUsage = onCall(
-    {region: "europe-west1", invoker: "public"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
@@ -3861,7 +4018,7 @@ exports.getStorageUsage = onCall(
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.initStorageUsage = onCall(
-    {region: "europe-west1", invoker: "public"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
@@ -3944,7 +4101,7 @@ exports.initStorageUsage = onCall(
 const ADMIN_UIDS = ["efw85HN41nb1rmslevC3wkFpVUo1"]; // aggiungi il tuo UID Firebase Auth
 
 exports.initStorageUsageAdmin = onCall(
-    {region: "europe-west1", invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
@@ -4148,6 +4305,14 @@ async function countActiveMembers(familyId) {
 async function deleteFamilyCompletely(familyId) {
   const db = admin.firestore();
   for (const sub of FAMILY_SUBCOLLECTIONS) {
+    if (sub === "locations") {
+      // Ogni doc `locations/{uid}` ha una sottocollezione `live/current` con
+      // le coordinate correnti: `deleteCollection` cancella solo i doc di
+      // primo livello e lascerebbe quei figli orfani. `recursiveDelete`
+      // sull'intera collection scende in ogni doc.
+      await db.recursiveDelete(db.collection(`families/${familyId}/locations`));
+      continue;
+    }
     await deleteCollection(db.collection(`families/${familyId}/${sub}`));
   }
   await db.collection("families").doc(familyId).delete().catch(() => {});
@@ -4232,8 +4397,10 @@ async function deleteMemberPrivateFamilyData(familyId, uid) {
   const familyRef = db.collection("families").doc(familyId);
 
   await Promise.allSettled([
-    // Ultima posizione condivisa sulla mappa di famiglia.
-    familyRef.collection("locations").doc(uid).delete(),
+    // Ultima posizione condivisa sulla mappa di famiglia. `recursiveDelete`
+    // e non `.delete()`: il doc ha una sottocollezione `live/current` con le
+    // coordinate correnti, che un delete semplice lascerebbe orfana.
+    db.recursiveDelete(familyRef.collection("locations").doc(uid)),
     // Contatori di notifiche non lette, per utente.
     familyRef.collection("counters").doc(uid).delete(),
     // Backup cifrato della master key, derivato dal suo uid.
@@ -4245,7 +4412,7 @@ async function deleteMemberPrivateFamilyData(familyId, uid) {
 }
 
 exports.deleteAccount = onCall(
-    {region: "europe-west1", invoker: "public"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Not authenticated");
@@ -4344,7 +4511,7 @@ exports.deleteAccount = onCall(
 );
 
 exports.deleteFamily = onCall(
-    {region: "europe-west1", invoker: "public"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
       const uid = request.auth?.uid;
       if (!uid) throw new HttpsError("unauthenticated", "Not authenticated");
@@ -4414,6 +4581,7 @@ const {
 exports.validatePurchase = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       // Identità dedicata invece del default condiviso da tutte le altre
       // function: solo questa può interrogare la Play Developer API, e solo
@@ -4563,7 +4731,7 @@ async function recomputeOwnedFamilies(ownerUid) {
  * Con `dryRun: true` non scrive nulla e restituisce solo il riepilogo.
  */
 exports.backfillFamilyQuotas = onCall(
-    {region: "europe-west1", invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
     async (request) => {
       const callerUid = request.auth?.uid;
       if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
@@ -4627,14 +4795,14 @@ exports.backfillFamilyQuotas = onCall(
 );
 
 exports.onFamilyCreatedQuota = onDocumentCreated(
-    {document: "families/{familyId}", region: "europe-west1"},
+    {document: "families/{familyId}", region: "europe-west1", maxInstances: 20},
     async (event) => {
       await recomputeOwnedFamilies(event.data?.data()?.ownerUid);
     },
 );
 
 exports.onFamilyDeletedQuota = onDocumentDeleted(
-    {document: "families/{familyId}", region: "europe-west1"},
+    {document: "families/{familyId}", region: "europe-west1", maxInstances: 20},
     async (event) => {
       // Liberare lo slot alla cancellazione: il limite è "famiglie attive",
       // non "famiglie mai create".
@@ -4643,7 +4811,7 @@ exports.onFamilyDeletedQuota = onDocumentDeleted(
 );
 
 exports.setFamilyPlanOverride = onCall(
-    {region: "europe-west1", invoker: "public"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
       const callerUid = request.auth?.uid;
       if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
@@ -4679,143 +4847,152 @@ exports.setFamilyPlanOverride = onCall(
 // GARBAGE COLLECTOR NOTTURNO
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * familyId di un doc che sta in `families/{familyId}/{collection}/{docId}`.
+ * Una collectionGroup pesca per NOME ovunque nel database: senza questo
+ * controllo una futura collection omonima annidata altrove verrebbe
+ * cancellata dal GC.
+ * @param {FirebaseFirestore.DocumentReference} ref
+ * @param {string} collection
+ * @return {string|null}
+ */
+function familyIdFromPath(ref, collection) {
+  const parts = ref.path.split("/");
+  if (parts.length !== 4) return null;
+  if (parts[0] !== "families" || parts[2] !== collection) return null;
+  return parts[1];
+}
+
+/**
+ * Hard-delete paginato dei doc `isDeleted == true` di una collection, con il
+ * blob Storage associato.
+ *
+ * Perché collectionGroup e non un loop sulle famiglie: la versione precedente
+ * faceva 1 + 4N query (N = numero famiglie), quasi tutte a vuoto e tutte in
+ * serie — a poche migliaia di famiglie non rientrava più nei 540 s e la
+ * pulizia smetteva di completare. Qui le query sono 1 per pagina di lavoro
+ * EFFETTIVO: se non c'è niente da cancellare, è una query sola.
+ *
+ * @param {{collection: string,
+ *          storagePathFor: function(string, string, Object): string,
+ *          deadlineAt: number}} spec
+ * @return {Promise<{docsDeleted: number, blobsDeleted: number,
+ *                   exhausted: boolean}>}
+ */
+async function gcSoftDeleted({collection, storagePathFor, deadlineAt}) {
+  const db = admin.firestore();
+  const bucket = admin.storage().bucket(STORAGE_BUCKET);
+
+  let docsDeleted = 0;
+  let blobsDeleted = 0;
+  let exhausted = true;
+
+  for (;;) {
+    if (Date.now() >= deadlineAt) {
+      exhausted = false;
+      break;
+    }
+
+    // I doc cancellati escono dal result set: la stessa query ripetuta
+    // avanza da sola, non serve un cursore.
+    const snap = await db.collectionGroup(collection)
+        .where("isDeleted", "==", true)
+        .limit(BATCH_DELETE_PAGE)
+        .get();
+
+    if (snap.empty) break;
+
+    const targets = [];
+    for (const doc of snap.docs) {
+      const familyId = familyIdFromPath(doc.ref, collection);
+      if (!familyId) continue;
+      targets.push({doc, familyId});
+    }
+
+    // Pagina intera di doc fuori da `families/`: senza questa uscita la
+    // stessa pagina tornerebbe all'infinito.
+    if (targets.length === 0) break;
+
+    // ── 1. Blob su Storage, in parallelo ──────────────────────────────────
+    await Promise.all(targets.map(async ({doc, familyId}) => {
+      const path = storagePathFor(familyId, doc.id, doc.data());
+      if (!path) return;
+      try {
+        await bucket.file(path).delete();
+        blobsDeleted++;
+      } catch (e) {
+        if (e.code !== 404) {
+          logger.warn("GC: Storage delete failed", {collection, familyId, path, err: e.message});
+        }
+      }
+    }));
+
+    // ── 2. Doc Firestore in batch ─────────────────────────────────────────
+    // La cancellazione fa scattare onDocumentHardDeleted / onPhotoHardDeleted,
+    // che aggiornano i contatori storage: non serve toccarli qui.
+    const batch = db.batch();
+    for (const {doc} of targets) batch.delete(doc.ref);
+    await batch.commit();
+    docsDeleted += targets.length;
+
+    if (snap.size < BATCH_DELETE_PAGE) break;
+  }
+
+  return {docsDeleted, blobsDeleted, exhausted};
+}
+
+/** Collection ripulite dal GC, con il path del blob associato a ogni doc. */
+const GC_SPECS = [
+  {
+    collection: "documents",
+    storagePathFor: (fid, id, d) => d.storagePath || d.firebasePath || "",
+  },
+  {
+    collection: "chatMessages",
+    storagePathFor: (fid, id, d) => d.mediaStoragePath || "",
+  },
+  {
+    collection: "photos",
+    storagePathFor: (fid, id, d) => d.storagePath || "",
+  },
+  {
+    // Il PDF cifrato non è referenziato dal doc: il path è convenzionale.
+    collection: "walletTickets",
+    storagePathFor: (fid, id) => `families/${fid}/wallet/${id}/ticket.pdf.kbenc`,
+  },
+];
+
 exports.garbageCollectDeleted = onSchedule(
     {
       schedule: "0 3 */5 * *",
       timeZone: "Europe/Rome",
       region: "europe-west1",
+      maxInstances: 1,
       timeoutSeconds: 540,
       memory: "512MiB",
     },
     async () => {
-      const bucket = admin.storage().bucket(STORAGE_BUCKET);
-      const db = admin.firestore();
+      const startedAt = Date.now();
+      // Margine sui 540 s di timeout: ci si ferma prima e si lascia il resto
+      // al giro successivo, invece di essere uccisi a metà di un batch.
+      const deadlineAt = startedAt + 480 * 1000;
 
       logger.info("garbageCollectDeleted: start");
 
-      const familiesSnap = await db.collection("families").get();
-      logger.info("garbageCollectDeleted: families to scan", {count: familiesSnap.size});
+      const summary = {};
+      let complete = true;
 
-      let totalDocsDeleted = 0;
-      let totalChatDeleted = 0;
-      let totalPhotosDeleted = 0;
-      let totalWalletDeleted = 0;
-
-      for (const familyDoc of familiesSnap.docs) {
-        const familyId = familyDoc.id;
-
-        // ── 1. Documenti soft-deleted ──────────────────────────────────────────
-        // onDocumentHardDeleted aggiorna già il contatore storage quando il doc
-        // viene eliminato da Firestore — non serve chiamare updateStorageBytes qui.
-        const docsSnap = await db.collection("families").doc(familyId)
-            .collection("documents")
-            .where("isDeleted", "==", true)
-            .get();
-
-        logger.info("GC: documents to delete", {familyId, count: docsSnap.size});
-
-        for (const doc of docsSnap.docs) {
-          const data = doc.data();
-          const storagePath = data.storagePath || data.firebasePath || "";
-
-          if (storagePath) {
-            try {
-              await bucket.file(storagePath).delete();
-              logger.info("GC: deleted Storage blob", {familyId, storagePath});
-            } catch (e) {
-              if (e.code !== 404) logger.warn("GC: Storage delete failed", {familyId, storagePath, err: e.message});
-            }
-          }
-
-          await doc.ref.delete();
-          totalDocsDeleted++;
-        }
-
-        // ── 2. Chat media soft-deleted ─────────────────────────────────────────
-        // onChatMessageSoftDeleted ha già sottratto i bytes al momento della
-        // soft-deletion. Qui solo pulizia del blob su Storage e del doc Firestore.
-        const chatSnap = await db.collection("families").doc(familyId)
-            .collection("chatMessages")
-            .where("isDeleted", "==", true)
-            .get();
-
-        logger.info("GC: chatMessages to delete", {familyId, count: chatSnap.size});
-
-        for (const msg of chatSnap.docs) {
-          const data = msg.data();
-          const mediaPath = data.mediaStoragePath || "";
-
-          if (mediaPath) {
-            try {
-              await bucket.file(mediaPath).delete();
-              logger.info("GC: deleted chat media blob", {familyId, mediaPath});
-              totalChatDeleted++;
-            } catch (e) {
-              if (e.code !== 404) logger.warn("GC: chat media delete failed", {familyId, mediaPath, err: e.message});
-            }
-          }
-          await msg.ref.delete();
-        }
-
-        // ── 3. Foto album condiviso soft-deleted ───────────────────────────────
-        // onPhotoHardDeleted aggiorna già il contatore storage quando la foto
-        // viene eliminata da Firestore — non serve chiamare updateStorageBytes qui.
-        const photosSnap = await db.collection("families").doc(familyId)
-            .collection("photos")
-            .where("isDeleted", "==", true)
-            .get();
-
-        logger.info("GC: photos to delete", {familyId, count: photosSnap.size});
-
-        for (const photo of photosSnap.docs) {
-          const data = photo.data();
-          const storagePath = data.storagePath || "";
-
-          if (storagePath) {
-            try {
-              await bucket.file(storagePath).delete();
-              logger.info("GC: deleted photo blob", {familyId, storagePath});
-            } catch (e) {
-              if (e.code !== 404) logger.warn("GC: photo delete failed", {familyId, storagePath, err: e.message});
-            }
-          }
-
-          await photo.ref.delete();
-          totalPhotosDeleted++;
-        }
-
-        // ── 4. Wallet tickets soft-deleted ─────────────────────────────────────
-        // Cleanup del PDF cifrato su Storage (path:
-        // families/{familyId}/wallet/{ticketId}/ticket.pdf.kbenc) e del doc Firestore.
-        const walletSnap = await db.collection("families").doc(familyId)
-            .collection("walletTickets")
-            .where("isDeleted", "==", true)
-            .get();
-
-        logger.info("GC: walletTickets to delete", {familyId, count: walletSnap.size});
-
-        for (const ticket of walletSnap.docs) {
-          const ticketId = ticket.id;
-          const pdfPath = `families/${familyId}/wallet/${ticketId}/ticket.pdf.kbenc`;
-
-          try {
-            await bucket.file(pdfPath).delete();
-            logger.info("GC: deleted wallet PDF blob", {familyId, ticketId, pdfPath});
-          } catch (e) {
-            if (e.code !== 404) logger.warn("GC: wallet PDF delete failed", {familyId, ticketId, pdfPath, err: e.message});
-          }
-
-          await ticket.ref.delete();
-          totalWalletDeleted++;
-        }
+      for (const spec of GC_SPECS) {
+        const res = await gcSoftDeleted({...spec, deadlineAt});
+        summary[spec.collection] = res.docsDeleted;
+        summary[`${spec.collection}Blobs`] = res.blobsDeleted;
+        if (!res.exhausted) complete = false;
       }
 
       logger.info("garbageCollectDeleted: complete", {
-        totalDocsDeleted,
-        totalChatDeleted,
-        totalPhotosDeleted,
-        totalWalletDeleted,
-        families: familiesSnap.size,
+        ...summary,
+        complete,
+        elapsedMs: Date.now() - startedAt,
       });
     },
 );
@@ -4832,6 +5009,7 @@ exports.onWalletTicketStorageChanged = onDocumentWritten(
     {
       document: "families/{familyId}/walletTickets/{ticketId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -4914,6 +5092,7 @@ exports.notifyNewWalletTicket = onDocumentCreated(
     {
       document: "families/{familyId}/walletTickets/{ticketId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -4959,13 +5138,21 @@ exports.notifyNewWalletTicket = onDocumentCreated(
 
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnWallet");
-        if (tokens.length === 0) {
-          logger.info("notifyNewWalletTicket: user opted out or no tokens", {uid}); continue;
-        }
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnWallet");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const skipped = memberUids.filter((uid) => !recipients.includes(uid));
+      if (skipped.length > 0) {
+        logger.info("notifyNewWalletTicket: opted out or no tokens", {uids: skipped});
+      }
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "wallet"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "wallet"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push({
           tokens,
           notification: {title, body},
@@ -5000,6 +5187,7 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
     {
       document: "families/{familyId}/loyaltyCards/{cardId}",
       region: "europe-west1",
+      maxInstances: 20,
     },
     async (event) => {
       const familyId = event.params.familyId;
@@ -5037,13 +5225,21 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
 
       const messagesToSend = [];
 
-      for (const uid of memberUids) {
-        const tokens = await getUserTokensIfEnabled(uid, "notifyOnWallet");
-        if (tokens.length === 0) {
-          logger.info("notifyNewLoyaltyCard: user opted out or no tokens", {uid}); continue;
-        }
+      // Preferenze e token di tutti i destinatari in una volta sola, poi i
+      // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
+      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnWallet");
+      const recipients = memberUids.filter(
+          (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
+      const skipped = memberUids.filter((uid) => !recipients.includes(uid));
+      if (skipped.length > 0) {
+        logger.info("notifyNewLoyaltyCard: opted out or no tokens", {uids: skipped});
+      }
+      const badgeByUid = await incrementCountersAndGetBadges(
+          {familyId, uids: recipients, field: "wallet"});
 
-        const badge = await incrementCounterAndGetBadge({familyId, uid, field: "wallet"});
+      for (const uid of recipients) {
+        const {tokens} = tokensByUid.get(uid);
+        const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push({
           tokens,
           notification: {title, body},
@@ -5081,12 +5277,44 @@ exports.notifyUpcomingWalletTickets = onSchedule(
     {
       schedule: "every 60 minutes",
       region: "europe-west1",
+      maxInstances: 1,
       timeZone: "Europe/Rome",
     },
     async () => {
       const db = admin.firestore();
       const now = new Date();
       const nowTs = admin.firestore.Timestamp.fromDate(now);
+
+      // Cache per singola esecuzione: più biglietti della stessa famiglia che
+      // scattano nella stessa ora rileggevano membri e token una volta each.
+      const membersCache = new Map(); // familyId → uid[]
+      const tokensCache = new Map(); // uid → token[]
+
+      /**
+       * Uid dei membri di una famiglia, letti una sola volta per esecuzione.
+       * @param {string} familyId
+       * @return {Promise<string[]>}
+       */
+      const memberUidsOf = async (familyId) => {
+        if (membersCache.has(familyId)) return membersCache.get(familyId);
+        const snap = await db.collection("families").doc(familyId)
+            .collection("members").get();
+        const uids = snap.docs.map((d) => d.id).filter(Boolean);
+        membersCache.set(familyId, uids);
+        return uids;
+      };
+
+      /**
+       * Token FCM di un utente, letti una sola volta per esecuzione.
+       * @param {string} uid
+       * @return {Promise<string[]>}
+       */
+      const tokensOf = async (uid) => {
+        if (tokensCache.has(uid)) return tokensCache.get(uid);
+        const tokens = await getTokensForUser(uid);
+        tokensCache.set(uid, tokens);
+        return tokens;
+      };
 
       // Finestra massima: i prossimi 25 ore (copre 24h +30min).
       const upperBound = admin.firestore.Timestamp.fromDate(
@@ -5171,17 +5399,17 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         }
         const body = `${kindWithEmitter} — ${formatWalletDate(eventDate)}`;
 
-        const membersSnap = await db.collection("families").doc(familyId).collection("members").get();
-        if (membersSnap.empty) {
+        const memberUids = await memberUidsOf(familyId);
+        if (memberUids.length === 0) {
           logger.warn("notifyUpcomingWalletTickets: no members", {familyId, ticketId}); continue;
         }
 
-        const memberUids = membersSnap.docs.map((d) => d.id).filter(Boolean);
-        if (memberUids.length === 0) continue;
+        // I token dei membri in parallelo: erano N letture in serie, una per
+        // membro, ripetute per ogni biglietto della stessa famiglia.
+        const tokensPerMember = await Promise.all(memberUids.map(tokensOf));
 
         const messagesToSend = [];
-        for (const uid of memberUids) {
-          const tokens = await getTokensForUser(uid);
+        for (const tokens of tokensPerMember) {
           if (tokens.length === 0) continue;
 
           // NOTA: niente incrementCounterAndGetBadge qui — un reminder non è
@@ -5249,6 +5477,7 @@ exports.notifyUpcomingWalletTickets = onSchedule(
 exports.analyzeLogs = onCall(
     {
       region: "europe-west1",
+      maxInstances: 20,
       invoker: "public",
       timeoutSeconds: 30,
     },
@@ -5271,168 +5500,191 @@ const db = admin.firestore();
  * Trigger: nuovo crash_report → crea o aggiorna caso in /cases
  */
 exports.onNewCrashReport = onDocumentCreated(
-  { document: "crash_reports/{reportId}", region: "europe-west1" },
-  async (event) => {
-    const report = event.data.data();
-    const reportId = event.params.reportId;
-    if (!report || !report.issues || report.issues.length === 0) return;
+    {document: "crash_reports/{reportId}", region: "europe-west1", maxInstances: 20},
+    async (event) => {
+      const report = event.data.data();
+      const reportId = event.params.reportId;
+      if (!report || !report.issues || report.issues.length === 0) return;
 
-    for (const issue of report.issues) {
-      if (!issue.affectedModule) continue;
+      for (const issue of report.issues) {
+        if (!issue.affectedModule) continue;
 
-      // Deduplication: stesso modulo + piattaforma nelle ultime 24h non risolto
-      // Se l'indice non è ancora pronto, salta la dedup e crea un nuovo caso
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      let existing = { empty: true };
-      try {
-        existing = await db.collection("cases")
-          .where("affectedModule", "==", issue.affectedModule)
-          .where("platform", "==", report.platform)
-          .where("status", "in", ["new", "taken"])
-          .where("createdAt", ">", admin.firestore.Timestamp.fromDate(since))
-          .limit(1)
-          .get();
-      } catch (dedupErr) {
-        logger.warn("onNewCrashReport: dedup query fallita (indice non pronto?), creo nuovo caso", { error: dedupErr.message });
-      }
+        // Deduplication: stesso modulo + piattaforma nelle ultime 24h non risolto
+        // Se l'indice non è ancora pronto, salta la dedup e crea un nuovo caso
+        const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        let existing = {empty: true};
+        try {
+          existing = await db.collection("cases")
+              .where("affectedModule", "==", issue.affectedModule)
+              .where("platform", "==", report.platform)
+              .where("status", "in", ["new", "taken"])
+              .where("createdAt", ">", admin.firestore.Timestamp.fromDate(since))
+              .limit(1)
+              .get();
+        } catch (dedupErr) {
+          logger.warn("onNewCrashReport: dedup query fallita (indice non pronto?), creo nuovo caso", {error: dedupErr.message});
+        }
 
-      if (!existing.empty) {
-        await existing.docs[0].ref.update({
-          occurrences: admin.firestore.FieldValue.increment(1),
+        if (!existing.empty) {
+          await existing.docs[0].ref.update({
+            occurrences: admin.firestore.FieldValue.increment(1),
+            lastSeenAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastReportId: reportId,
+          });
+          logger.info("onNewCrashReport: aggiornato caso esistente", {module: issue.affectedModule});
+          continue;
+        }
+
+        // Crea nuovo caso
+        await db.collection("cases").add({
+          reportId,
+          platform: report.platform || "unknown",
+          appVersion: report.appVersion || "—",
+          osVersion: report.osVersion || "—",
+          device: report.device || "—",
+          type: issue.type || "error",
+          severity: issue.severity || "medium",
+          category: issue.category || "app",
+          affectedModule: issue.affectedModule,
+          summary: issue.summary || "Nessuna descrizione",
+          detail: issue.detail || "",
+          status: "new",
+          occurrences: 1,
+          assignedTo: null,
+          notes: "",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
           lastSeenAt: admin.firestore.FieldValue.serverTimestamp(),
+          resolvedAt: null,
           lastReportId: reportId,
         });
-        logger.info("onNewCrashReport: aggiornato caso esistente", { module: issue.affectedModule });
-        continue;
+        logger.info("onNewCrashReport: creato nuovo caso", {module: issue.affectedModule, severity: issue.severity});
       }
-
-      // Crea nuovo caso
-      await db.collection("cases").add({
-        reportId,
-        platform: report.platform || "unknown",
-        appVersion: report.appVersion || "—",
-        osVersion: report.osVersion || "—",
-        device: report.device || "—",
-        type: issue.type || "error",
-        severity: issue.severity || "medium",
-        category: issue.category || "app",
-        affectedModule: issue.affectedModule,
-        summary: issue.summary || "Nessuna descrizione",
-        detail: issue.detail || "",
-        status: "new",
-        occurrences: 1,
-        assignedTo: null,
-        notes: "",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastSeenAt: admin.firestore.FieldValue.serverTimestamp(),
-        resolvedAt: null,
-        lastReportId: reportId,
-      });
-      logger.info("onNewCrashReport: creato nuovo caso", { module: issue.affectedModule, severity: issue.severity });
-    }
-  },
+    },
 );
 
 /**
  * Trigger: caso risolto → elimina raw logs, schedula cleanup
  */
 exports.onCaseStatusChange = onDocumentWritten(
-  { document: "cases/{caseId}", region: "europe-west1" },
-  async (event) => {
-    const before = event.data.before.exists ? event.data.before.data() : null;
-    const after  = event.data.after.exists  ? event.data.after.data()  : null;
-    if (!before || !after) return;
-    if (before.status === after.status) return;
+    {document: "cases/{caseId}", region: "europe-west1", maxInstances: 20},
+    async (event) => {
+      const before = event.data.before.exists ? event.data.before.data() : null;
+      const after = event.data.after.exists ? event.data.after.data() : null;
+      if (!before || !after) return;
+      if (before.status === after.status) return;
 
-    if (after.status === "resolved") {
+      if (after.status === "resolved") {
       // Segna resolvedAt
-      await event.data.after.ref.update({
-        resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      // Elimina i raw logs dal crash_report collegato
-      if (after.reportId) {
-        try {
-          await db.collection("crash_reports").doc(after.reportId).delete();
-          logger.info("onCaseStatusChange: crash_report eliminato", { reportId: after.reportId });
-        } catch (e) {
-          logger.warn("onCaseStatusChange: impossibile eliminare crash_report", { err: e.message });
+        await event.data.after.ref.update({
+          resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        // Elimina i raw logs dal crash_report collegato
+        if (after.reportId) {
+          try {
+            await db.collection("crash_reports").doc(after.reportId).delete();
+            logger.info("onCaseStatusChange: crash_report eliminato", {reportId: after.reportId});
+          } catch (e) {
+            logger.warn("onCaseStatusChange: impossibile eliminare crash_report", {err: e.message});
+          }
         }
       }
-    }
-  },
+    },
 );
 
 /**
  * Callable: prendi in carico un caso (status → taken)
  */
 exports.takeCase = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
-    const { caseId } = request.data;
-    if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
-    await db.collection("cases").doc(caseId).update({
-      status: "taken",
-      assignedTo: request.auth.token.email || request.auth.uid,
-      takenAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    return { ok: true };
-  },
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+      const {caseId} = request.data;
+      if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
+      await db.collection("cases").doc(caseId).update({
+        status: "taken",
+        assignedTo: request.auth.token.email || request.auth.uid,
+        takenAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return {ok: true};
+    },
 );
 
 /**
  * Callable: risolvi un caso (status → resolved)
  */
 exports.resolveCase = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
-    const { caseId, notes } = request.data;
-    if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
-    await db.collection("cases").doc(caseId).update({
-      status: "resolved",
-      resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
-      notes: notes || "",
-      assignedTo: request.auth.token.email || request.auth.uid,
-    });
-    return { ok: true };
-  },
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+      const {caseId, notes} = request.data;
+      if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
+      await db.collection("cases").doc(caseId).update({
+        status: "resolved",
+        resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        notes: notes || "",
+        assignedTo: request.auth.token.email || request.auth.uid,
+      });
+      return {ok: true};
+    },
 );
 
 /**
  * Callable: elimina un caso manualmente
  */
 exports.deleteCase = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
-    const { caseId } = request.data;
-    if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
-    const snap = await db.collection("cases").doc(caseId).get();
-    if (snap.exists && snap.data().reportId) {
-      try { await db.collection("crash_reports").doc(snap.data().reportId).delete(); } catch {}
-    }
-    await db.collection("cases").doc(caseId).delete();
-    return { ok: true };
-  },
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+      const {caseId} = request.data;
+      if (!caseId) throw new HttpsError("invalid-argument", "caseId mancante");
+      const snap = await db.collection("cases").doc(caseId).get();
+      if (snap.exists && snap.data().reportId) {
+        try {
+          await db.collection("crash_reports").doc(snap.data().reportId).delete();
+        } catch {
+          // Il crash report può essere già stato cancellato: il caso va
+          // comunque rimosso, quindi l'errore qui non è un fallimento.
+        }
+      }
+      await db.collection("cases").doc(caseId).delete();
+      return {ok: true};
+    },
 );
 
 /**
  * Cron giornaliero: elimina i casi risolti da più di 7 giorni
  */
 exports.cleanupResolvedCases = onSchedule(
-  { schedule: "every 24 hours", region: "europe-west1" },
-  async () => {
-    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const snap = await db.collection("cases")
-      .where("status", "==", "resolved")
-      .where("resolvedAt", "<=", admin.firestore.Timestamp.fromDate(cutoff))
-      .get();
-    const batch = db.batch();
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    logger.info("cleanupResolvedCases: eliminati", { count: snap.size });
-  },
+    {schedule: "every 24 hours", region: "europe-west1", maxInstances: 1},
+    async () => {
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      // Un batch Firestore accetta al massimo 500 operazioni: con una singola
+      // query non paginata, oltre quella soglia il commit fallisce e la pulizia
+      // non avviene PIÙ, per sempre. Si cancella a pagine.
+      const PAGE = BATCH_DELETE_PAGE;
+      let total = 0;
+
+      for (;;) {
+      // I doc cancellati escono dal result set, quindi la stessa query
+      // ripetuta avanza da sola: non serve un cursore.
+        const snap = await db.collection("cases")
+            .where("status", "==", "resolved")
+            .where("resolvedAt", "<=", admin.firestore.Timestamp.fromDate(cutoff))
+            .limit(PAGE)
+            .get();
+
+        if (snap.empty) break;
+
+        const batch = db.batch();
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+        total += snap.size;
+
+        if (snap.size < PAGE) break;
+      }
+
+      logger.info("cleanupResolvedCases: eliminati", {count: total});
+    },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5443,121 +5695,123 @@ exports.cleanupResolvedCases = onSchedule(
  * Trigger: nuovo caso critical → push a tutti gli admin registrati
  */
 exports.notifyCriticalCase = onDocumentCreated(
-  { document: "cases/{caseId}", region: "europe-west1" },
-  async (event) => {
-    const c = event.data.data();
-    if (!c || c.severity !== "critical") return;
+    {document: "cases/{caseId}", region: "europe-west1", maxInstances: 20},
+    async (event) => {
+      const c = event.data.data();
+      if (!c || c.severity !== "critical") return;
 
-    // Leggi uid admin da /admin/config
-    const cfgSnap = await db.collection("admin").doc("config").get();
-    if (!cfgSnap.exists) {
-      logger.warn("notifyCriticalCase: /admin/config non trovato");
-      return;
-    }
-    const notifyUids = cfgSnap.data().notifyUids || [];
-    if (notifyUids.length === 0) return;
+      // Leggi uid admin da /admin/config
+      const cfgSnap = await db.collection("admin").doc("config").get();
+      if (!cfgSnap.exists) {
+        logger.warn("notifyCriticalCase: /admin/config non trovato");
+        return;
+      }
+      const notifyUids = cfgSnap.data().notifyUids || [];
+      if (notifyUids.length === 0) return;
 
-    // Raccogli tutti i FCM token degli admin
-    const tokens = [];
-    for (const uid of notifyUids) {
-      const tSnap = await db.collection("users").doc(uid)
-        .collection("fcmTokens").get();
-      tSnap.forEach(t => { if (t.get("token")) tokens.push(t.get("token")); });
-    }
-    if (tokens.length === 0) {
-      logger.warn("notifyCriticalCase: nessun token FCM admin trovato");
-      return;
-    }
+      // Raccogli tutti i FCM token degli admin
+      const tokens = [];
+      for (const uid of notifyUids) {
+        const tSnap = await db.collection("users").doc(uid)
+            .collection("fcmTokens").get();
+        tSnap.forEach((t) => {
+          if (t.get("token")) tokens.push(t.get("token"));
+        });
+      }
+      if (tokens.length === 0) {
+        logger.warn("notifyCriticalCase: nessun token FCM admin trovato");
+        return;
+      }
 
-    const platform = c.platform === "ios" ? "🍎 iOS" : "🤖 Android";
-    const payload = {
-      tokens,
-      notification: {
-        title: `🚨 Ticket Critical — ${c.affectedModule || "Unknown"}`,
-        body: `${platform} · ${c.summary || "Nessuna descrizione"}`,
-      },
-      data: {
-        type: "critical_case",
-        caseId: event.params.caseId,
-        affectedModule: c.affectedModule || "",
-        platform: c.platform || "",
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-            badge: 1,
+      const platform = c.platform === "ios" ? "🍎 iOS" : "🤖 Android";
+      const payload = {
+        tokens,
+        notification: {
+          title: `🚨 Ticket Critical — ${c.affectedModule || "Unknown"}`,
+          body: `${platform} · ${c.summary || "Nessuna descrizione"}`,
+        },
+        data: {
+          type: "critical_case",
+          caseId: event.params.caseId,
+          affectedModule: c.affectedModule || "",
+          platform: c.platform || "",
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: "default",
+              badge: 1,
+            },
           },
         },
-      },
-      android: {
-        priority: "high",
-        notification: {
-          sound: "default",
-          channelId: "critical_alerts",
+        android: {
+          priority: "high",
+          notification: {
+            sound: "default",
+            channelId: "critical_alerts",
+          },
         },
-      },
-    };
+      };
 
-    const result = await admin.messaging().sendEachForMulticast(payload);
-    logger.info("notifyCriticalCase: push inviata", {
-      success: result.successCount,
-      failure: result.failureCount,
-      module: c.affectedModule,
-    });
-  },
+      const result = await admin.messaging().sendEachForMulticast(payload);
+      logger.info("notifyCriticalCase: push inviata", {
+        success: result.successCount,
+        failure: result.failureCount,
+        module: c.affectedModule,
+      });
+    },
 );
 
 /**
  * Callable: registra l'utente corrente come admin destinatario notifiche
  */
 exports.registerAdminNotifications = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
-    const uid = request.auth.uid;
-    const email = request.auth.token.email || "";
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+      const uid = request.auth.uid;
+      const email = request.auth.token.email || "";
 
-    await db.collection("admin").doc("config").set({
-      notifyUids: admin.firestore.FieldValue.arrayUnion(uid),
-      [`adminEmails.${uid}`]: email,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+      await db.collection("admin").doc("config").set({
+        notifyUids: admin.firestore.FieldValue.arrayUnion(uid),
+        [`adminEmails.${uid}`]: email,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, {merge: true});
 
-    logger.info("registerAdminNotifications: registrato", { uid, email });
-    return { ok: true, uid, email };
-  },
+      logger.info("registerAdminNotifications: registrato", {uid, email});
+      return {ok: true, uid, email};
+    },
 );
 
 /**
  * Callable: verifica se l'utente corrente è registrato per le notifiche admin
  */
 exports.checkAdminNotifStatus = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
-    const uid = request.auth.uid;
-    const cfgSnap = await db.collection("admin").doc("config").get();
-    const notifyUids = cfgSnap.exists ? (cfgSnap.data().notifyUids || []) : [];
-    return { registered: notifyUids.includes(uid), uid };
-  },
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+      const uid = request.auth.uid;
+      const cfgSnap = await db.collection("admin").doc("config").get();
+      const notifyUids = cfgSnap.exists ? (cfgSnap.data().notifyUids || []) : [];
+      return {registered: notifyUids.includes(uid), uid};
+    },
 );
 
 /**
  * Callable: rimuovi l'utente corrente dagli admin notifiche
  */
 exports.unregisterAdminNotifications = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
-    const uid = request.auth.uid;
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      if (!request.auth) throw new HttpsError("unauthenticated", "Login richiesto");
+      const uid = request.auth.uid;
 
-    await db.collection("admin").doc("config").set({
-      notifyUids: admin.firestore.FieldValue.arrayRemove(uid),
-    }, { merge: true });
+      await db.collection("admin").doc("config").set({
+        notifyUids: admin.firestore.FieldValue.arrayRemove(uid),
+      }, {merge: true});
 
-    return { ok: true };
-  },
+      return {ok: true};
+    },
 );
 
 /**
@@ -5565,29 +5819,29 @@ exports.unregisterAdminNotifications = onCall(
  * Usato dalla console per mostrare la data di prima registrazione.
  */
 exports.getAuthUsersData = onCall(
-  { region: "europe-west1" },
-  async (request) => {
-    const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
-    if (!ADMIN_UIDS.includes(uid)) throw new HttpsError("permission-denied", "Non autorizzato.");
+    {region: "europe-west1", maxInstances: 20},
+    async (request) => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
+      if (!ADMIN_UIDS.includes(uid)) throw new HttpsError("permission-denied", "Non autorizzato.");
 
-    const result = [];
-    let pageToken;
-    do {
-      const listResult = await admin.auth().listUsers(1000, pageToken);
-      for (const u of listResult.users) {
-        result.push({
-          uid: u.uid,
-          createdAt: parseInt(u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : 0, 10),
-          email: u.email || "",
-          displayName: u.displayName || "",
-        });
-      }
-      pageToken = listResult.pageToken;
-    } while (pageToken);
+      const result = [];
+      let pageToken;
+      do {
+        const listResult = await admin.auth().listUsers(1000, pageToken);
+        for (const u of listResult.users) {
+          result.push({
+            uid: u.uid,
+            createdAt: parseInt(u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : 0, 10),
+            email: u.email || "",
+            displayName: u.displayName || "",
+          });
+        }
+        pageToken = listResult.pageToken;
+      } while (pageToken);
 
-    return { users: result };
-  },
+      return {users: result};
+    },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5691,7 +5945,7 @@ async function resolveBroadcastTargets(target) {
 }
 
 exports.sendBroadcast = onCall(
-    {region: "europe-west1", invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
+    {region: "europe-west1", maxInstances: 20, invoker: "public", timeoutSeconds: 540, memory: "512MiB"},
     async (request) => {
       const callerUid = request.auth?.uid;
       if (!callerUid) throw new HttpsError("unauthenticated", "Autenticazione richiesta.");
@@ -5725,14 +5979,16 @@ exports.sendBroadcast = onCall(
 
       // Token per utente: servono separati per poter ripulire quelli morti
       // sull'utente giusto dopo l'invio.
+      // Erano fino a 2000 query in SERIE: da sole potevano superare il
+      // timeout della funzione prima ancora di spedire qualcosa.
+      const tokensInfo = await getTokensForUsers(uids, null);
       const tokensByUid = new Map();
       let tokenCount = 0;
       for (const uid of uids) {
-        const toks = await getTokensForUser(uid);
-        if (toks.length) {
-          tokensByUid.set(uid, toks);
-          tokenCount += toks.length;
-        }
+        const info = tokensInfo.get(uid);
+        if (!info || info.tokens.length === 0) continue;
+        tokensByUid.set(uid, info);
+        tokenCount += info.tokens.length;
       }
 
       if (dryRun) {
@@ -5770,7 +6026,7 @@ exports.sendBroadcast = onCall(
       let sent = 0;
       let failed = 0;
 
-      for (const [uid, tokens] of tokensByUid.entries()) {
+      for (const [uid, {tokens, refsByToken}] of tokensByUid.entries()) {
         try {
           const result = await admin.messaging().sendEachForMulticast({
             tokens,
@@ -5789,7 +6045,7 @@ exports.sendBroadcast = onCall(
           sent += result.successCount;
           failed += result.failureCount;
           if (result.failureCount > 0) {
-            await pruneInvalidFcmTokens(uid, tokens, result.responses).catch(() => {});
+            await pruneInvalidFcmTokens(uid, tokens, result.responses, refsByToken).catch(() => {});
           }
         } catch (err) {
           failed += tokens.length;

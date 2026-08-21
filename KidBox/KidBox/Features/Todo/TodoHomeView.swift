@@ -70,13 +70,16 @@ struct TodoHomeView: View {
 
     private var currentUid: String? { Auth.auth().currentUser?.uid }
     
+    // Nota: childId può essere "" quando la famiglia non ha ancora un bambino —
+    // non è un caso di errore, è un valore di scoping valido come un altro:
+    // liste/todo creati con childId="" restano visibili qui allo stesso modo.
     private var todosInFamilyChild: [KBTodoItem] {
-        guard !familyId.isEmpty, !childId.isEmpty else { return [] }
+        guard !familyId.isEmpty else { return [] }
         return allTodos.filter { $0.familyId == familyId && $0.childId == childId && !$0.isDeleted }
     }
-    
+
     private var visibleLists: [KBTodoList] {
-        guard !familyId.isEmpty, !childId.isEmpty else { return [] }
+        guard !familyId.isEmpty else { return [] }
         return allLists.filter { list in
             guard list.familyId == familyId && list.childId == childId && !list.isDeleted else { return false }
             return TodoListExposure.memberCanSeeListRow(
@@ -86,9 +89,9 @@ struct TodoHomeView: View {
             )
         }
     }
-    
+
     private var visibleTodos: [KBTodoItem] {
-        guard !familyId.isEmpty, !childId.isEmpty else { return [] }
+        guard !familyId.isEmpty else { return [] }
         return allTodos.filter {
             $0.familyId == familyId &&
             $0.childId == childId &&
@@ -195,7 +198,7 @@ struct TodoHomeView: View {
                 }
         }
         .sheet(isPresented: $showShareTodoSheet) {
-            if !familyId.isEmpty, !childId.isEmpty,
+            if !familyId.isEmpty,
                let list = visibleLists.first {
                 TodoEditView(
                     familyId: familyId,
@@ -214,7 +217,7 @@ struct TodoHomeView: View {
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] allLists.count changed -> \(newValue) visible=\(visibleLists.count)")
         }
         .onReceive(coordinator.$pendingShareTodoDraft.compactMap { $0 }) { draft in
-            guard !familyId.isEmpty, !childId.isEmpty else { return }
+            guard !familyId.isEmpty else { return }
             guard visibleLists.first != nil else {
                 KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] pendingShareTodoDraft received but no lists yet — keeping for TodoListView")
                 return
@@ -234,8 +237,8 @@ struct TodoHomeView: View {
             KBLog.sync.kbDebug("[TodoHomeView][\(viewTrace)] startRealtimeIfNeeded skipped: didStartRealtime=true")
             return
         }
-        guard !familyId.isEmpty, !childId.isEmpty else {
-            KBLog.sync.kbInfo("[TodoHomeView][\(viewTrace)] startRealtimeIfNeeded skipped: missing familyId/childId familyId=\(familyId) childId=\(childId)")
+        guard !familyId.isEmpty else {
+            KBLog.sync.kbInfo("[TodoHomeView][\(viewTrace)] startRealtimeIfNeeded skipped: missing familyId familyId=\(familyId) childId=\(childId)")
             return
         }
         
@@ -404,7 +407,7 @@ struct TodoHomeView: View {
             Text("Le mie liste")
                 .font(.headline)
             
-            if familyId.isEmpty || childId.isEmpty {
+            if familyId.isEmpty {
                 Text("Crea o unisciti a una famiglia per usare i To-Do.")
                     .foregroundStyle(.secondary)
             } else if visibleLists.isEmpty {
@@ -480,8 +483,8 @@ struct TodoHomeView: View {
     // MARK: - Actions
     
     private func saveList() {
-        guard !familyId.isEmpty, !childId.isEmpty else {
-            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] saveList aborted: missing familyId/childId")
+        guard !familyId.isEmpty else {
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] saveList aborted: missing familyId")
             return
         }
         

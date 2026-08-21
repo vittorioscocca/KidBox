@@ -49,7 +49,7 @@ npm run lint      # eslint
 - **Chat**: `notifyNewChatMessage` (payload cifrato `textEnc` + mention, `mutable-content` per la NSE iOS), `onChatMessageSoftDeleted`.
 - **Foto**: `onPhotoCreated`, `onPhotoSoftDeleted`, `onPhotoHardDeleted` (→ `stats/storage.sections.photos`).
 - **Salute**: `onMedicalVisitWritten` (→ `sections.salute` da `photoURLs.length * 200 KB`).
-- **Posizione**: `notifyLocationSharingChanged` (cooldown 15 s), `onGeofenceEvent` (→ push membri).
+- **Posizione**: `notifyLocationSharingChanged` (cooldown 15 s), `onGeofenceEvent` (→ push membri). ⚠️ **`families/{familyId}/locations/{uid}` è solo lo STATO** (`isSharing`, `mode`, `name`, `expiresAt`, `avatarURL`) — scritto solo da start/stop sharing e cambio nome, quindi raro. Le coordinate correnti vivono un livello sotto, in `locations/{uid}/live/current` (`lat`, `lon`, `accuracy`, `lastUpdateAt`), che i client scrivono a ogni fix GPS (ogni 5-10s durante la condivisione) e che **nessuna function osserva**. Prima dello split coordinate e stato erano nello stesso doc: con la condivisione attiva, `notifyLocationSharingChanged` arrivava al 94% di tutte le invocazioni Functions del progetto. Se aggiungi un trigger su `locations/{uid}`, verifica di volerlo far scattare anche sulle coordinate — di norma no.
 - **Altre sezioni**: `notifyTodoAssigned`, `notifyNewGroceryItem`, `notifyNewNote`, `notifyNewCalendarEvent` (Europe/Rome), `notifyNewExpense` (€), `notifyNewWalletTicket`, `onWalletTicketStorageChanged`.
 - **Crash triage**: `onNewCrashReport` (dedup su `cases/{caseId}`), `onCaseStatusChange`, `notifyCriticalCase` (push admin).
 
@@ -58,19 +58,42 @@ npm run lint      # eslint
 | Funzione | Cadenza | Scopo |
 |---|---|---|
 | `expireTemporaryLocations` | ogni 5 min | `collectionGroup("locations")`, scade `mode == "temporary"` con `expiresAt <= now`. |
-| `garbageCollectDeleted` | `0 3 */5 * *` (540 s, 512 MiB) | Hard-delete `isDeleted == true` in `documents`, `chatMessages`, `photos`, `walletTickets` + blob Storage. |
+| `garbageCollectDeleted` | `0 3 */5 * *` (540 s, 512 MiB) | Hard-delete `isDeleted == true` in `documents`, `chatMessages`, `photos`, `walletTickets` + blob Storage. Una `collectionGroup` per collection, paginata a 450 doc, con deadline interna a 480 s: il lavoro non finito passa al giro dopo. |
 | `notifyUpcomingWalletTickets` | ogni 60 min | Promemoria wallet T-24h / T-2h (flag idempotenti). |
-| `cleanupResolvedCases` | ogni 24 h | Pulizia `cases` risolti. |
+| `cleanupResolvedCases` | ogni 24 h | Pulizia `cases` risolti da > 7 gg, a pagine di 450 (limite batch Firestore). |
+
+### 2.4 Limiti di scala
+
+- **`maxInstances`**: impostato esplicitamente su **ogni** funzione — `1` sugli scheduler (nessuna sovrapposizione fra esecuzioni), `20` su trigger e callable. È protezione dal costo runaway: senza tetto, un import massivo o un loop di scritture scala senza limite. Gli eventi in eccesso vengono accodati da Eventarc, non persi.
+- **`BATCH_DELETE_PAGE = 450`**: pagina delle cancellazioni massive. Il limite duro di un batch Firestore è 500 operazioni — una query non paginata oltre quella soglia fa fallire il commit e la pulizia non avviene più.
+- **Indici collection group**: le query `collectionGroup(...).where("isDeleted", "==", true)` del GC richiedono un single-field index con scope `COLLECTION_GROUP`, che Firestore **non** crea da solo. Sono dichiarati in `../firestore.indexes.json` → `fieldOverrides`. ⚠️ Un `fieldOverride` sostituisce l'indicizzazione automatica di quel campo: le voci con scope `COLLECTION` vanno mantenute, o le query a scope singolo perdono l'indice.
+
+### 2.5 Monitoring e alert
+
+Vivono su Cloud Monitoring del progetto `kidbox-42cd7`, **non nel repo** — non c'è un file da versionare, si gestiscono dalla console (Monitoring → Alerting) o via API.
+
+Canale di notifica: email a `ing.vittorioscocca@gmail.com`.
+
+| Policy | Scatta quando | Perché quella soglia |
+|---|---|---|
+| **funzione in errore** | una funzione ha ≥ 1 esecuzione con `status != ok` in un'ora | Nessuna soglia: a questo volume gli errori devono essere zero. È l'alert che sarebbe servito — tre scheduler sono rimasti rotti per settimane per un indice mancante e nessuno se n'è accorto. |
+| **invocazioni functions** | > 1.500/ora per 1 h | ~36.000/giorno proiettati, ~55% del free tier (2M/mese). Baseline: ~24/ora. |
+| **letture Firestore** | > 1.500/ora per 2 h | ~36.000/giorno, ~72% del free tier (50.000/giorno). Baseline: ~830/ora. |
+| **scritture Firestore** | > 600/ora per 2 h | ~14.400/giorno, ~72% del free tier (20.000/giorno). Baseline: ~42/ora. Un backfill massivo lo fa scattare: è voluto. |
+
+⚠️ Le soglie sono tarate sul traffico di agosto 2026 (~580 invocazioni/giorno, 118 famiglie). Se la base utenti cresce di un ordine di grandezza vanno rialzate, altrimenti diventano rumore e si smette di guardarle.
 
 ---
 
 ## 3. Convenzioni & vincoli
 
-- **`FAMILY_SUBCOLLECTIONS`** (`index.js` ~3679-3723): whitelist delle sottocollezioni cancellate da `deleteFamilyCompletely`. ⚠️ **Se aggiungi una nuova sottocollezione di famiglia con dati, DEVI estendere questo array** o lascerai orphan data dopo `deleteFamily`/`deleteAccount`.
+- **`FAMILY_SUBCOLLECTIONS`** (`index.js` ~3679-3723): whitelist delle sottocollezioni cancellate da `deleteFamilyCompletely`. ⚠️ **Se aggiungi una nuova sottocollezione di famiglia con dati, DEVI estendere questo array** o lascerai orphan data dopo `deleteFamily`/`deleteAccount`. Nota: `deleteCollection` cancella solo i doc di primo livello — se la nuova sottocollezione ha a sua volta figli nidificati (come `locations/{uid}/live/current`), serve `db.recursiveDelete(...)` invece del giro `deleteCollection` generico, altrimenti i figli restano orfani.
 - **`deleteStoragePrefix`** (~3746): cancellazione massiva blob, usata da `deleteAccount` / `deleteFamily`.
 - **Contatori & storage stats** (`families/{fid}/counters/{uid}`, `families/{fid}/stats/storage`) sono **server-only**: il client non ha rule di write (vedi `firestore.rules`). Solo le functions li scrivono.
 - **`ai_usage/{userId-or-family_*}/daily/{YYYY-MM-DD}`**: contatore quota AI giornaliera (key giornata in Europe/Rome). **`ai_costs/{monthKey}/families/{fid}`**: tracking costi AI mensili (letto dalla console admin).
 - **Push**: i token FCM stanno in `users/{uid}/fcmTokens/{tokenId}`; le notifiche rispettano `users/{uid}.notificationPrefs`.
+- **Helper notifiche — usare le versioni in blocco.** `getTokensForUsers(uids, prefField)` legge le preferenze di TUTTI i destinatari con un solo `getAll` e le query sui token in parallelo (a blocchi di 50); `incrementCountersAndGetBadges({familyId, uids, field})` fa gli incrementi in parallelo, una transazione per utente — la transazione resta perché è ciò che tiene esatto il badge con due notifiche in volo sullo stesso utente. Le versioni singole (`getUserTokensIfEnabled`, `getTokensForUser`, `incrementCounterAndGetBadge`) restano per i casi a un destinatario e delegano alle stesse funzioni. ⚠️ Un nuovo trigger di notifica NON deve rimettere il ciclo `for (uid) { await getTokens…; await incrementCounter… }`: era ~3 round trip in serie per membro.
+- **`pruneInvalidFcmTokens(uid, tokens, responses, refsByToken)`**: passare sempre il quarto argomento se i token vengono da `getTokensForUsers`, altrimenti rilegge la sottocollezione appena letta.
 
 ---
 

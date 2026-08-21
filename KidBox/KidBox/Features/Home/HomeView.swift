@@ -315,10 +315,11 @@ struct HomeView: View {
         } label: {
             Image(systemName: systemImage)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(selected ? Color.primary : Color.secondary)
+                .foregroundStyle(selected ? Color.white : Color.secondary)
                 .frame(width: 32, height: 32)
                 .background(
-                    Circle().fill(selected ? Color(.systemBackground) : Color.clear)
+                    // Stesso arancio della selezione lista/griglia su Android (0xFFFF6B00).
+                    Circle().fill(selected ? (Color(hex: "#FF6B00") ?? .orange) : Color.clear)
                 )
         }
         .buttonStyle(.plain)

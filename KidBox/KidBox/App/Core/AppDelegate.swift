@@ -284,13 +284,15 @@ final class AppDelegate: NSObject,
         
         KBLog.app.kbInfo("Background location received lat=\(location.coordinate.latitude) lon=\(location.coordinate.longitude)")
         
-        // Leggi uid/familyId/displayName da UserDefaults
-        // (salvati dal FamilyLocationViewModel quando l'utente attiva la condivisione)
+        // Leggi uid/familyId da UserDefaults (salvati dal FamilyLocationViewModel
+        // quando l'utente attiva la condivisione). `displayName` non serve più qui
+        // (updateLocation scrive solo le coordinate) ma la sua presenza resta un
+        // segnale che il setup della condivisione è completo.
         let defaults = UserDefaults.standard
         guard
-            let uid         = defaults.string(forKey: KBLocationDefaults.uid),
-            let familyId    = defaults.string(forKey: KBLocationDefaults.familyId),
-            let displayName = defaults.string(forKey: KBLocationDefaults.displayName),
+            let uid = defaults.string(forKey: KBLocationDefaults.uid),
+            let familyId = defaults.string(forKey: KBLocationDefaults.familyId),
+            defaults.string(forKey: KBLocationDefaults.displayName) != nil,
             defaults.bool(forKey: KBLocationDefaults.isSharing)
         else {
             KBLog.app.kbDebug("Background location: no active sharing session, skipping")
@@ -302,8 +304,7 @@ final class AppDelegate: NSObject,
             await store.updateLocation(
                 familyId: familyId,
                 uid: uid,
-                location: location,
-                displayName: displayName
+                location: location
             )
             KBLog.app.kbInfo("Background location: Firestore update sent uid=\(uid)")
         }

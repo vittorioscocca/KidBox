@@ -40,8 +40,11 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     private var shouldStartLocationUpdates = false
     private var expiryTask: Task<Void, Never>?
     
-    /// Manteniamo il nome canonico (SwiftData) passato dalla View,
-    /// così lo riscriviamo anche durante updateLocation (self-healing).
+    /// Nome canonico (SwiftData) passato dalla View. Il self-healing avviene
+    /// in `healRemoteDisplayNameIfNeeded()`, guidato dal listener: prima veniva
+    /// riscritto a ogni fix GPS dentro `updateLocation`, ma quella scrittura
+    /// finiva sul documento di stato e faceva scattare
+    /// `notifyLocationSharingChanged` ogni pochi secondi.
     private(set) var myCurrentDisplayName: String = "Utente"
     
     // MARK: - Init
@@ -97,6 +100,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
                 guard let self else { return }
                 self.sharedUsers = users
                 self.applyRemoteStateForMeIfNeeded()
+                self.healRemoteDisplayNameIfNeeded()
             }
         }
     }
@@ -239,8 +243,29 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         syncGeofenceMonitor()
     }
     
+    /// Riallinea il nome su Firestore se è rimasto indietro rispetto a quello
+    /// canonico locale (es. profilo rinominato mentre la condivisione era già
+    /// attiva su un altro device). È una scrittura sul documento di STATO,
+    /// quindi fa scattare il trigger server: si esegue solo quando i due nomi
+    /// divergono davvero, non a ogni aggiornamento di posizione.
+    private func healRemoteDisplayNameIfNeeded() {
+        guard isSharing, myCurrentDisplayName != "Utente",
+              let uid = Auth.auth().currentUser?.uid, !uid.isEmpty,
+              let me = sharedUsers.first(where: { $0.id == uid }),
+              me.name != myCurrentDisplayName
+        else { return }
+
+        Task {
+            await remote.updateDisplayName(
+                familyId: familyId,
+                uid: uid,
+                displayName: myCurrentDisplayName
+            )
+        }
+    }
+
     // MARK: - Actions
-    
+
     func startRealtime(displayName: String) async {
         guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
         
@@ -504,8 +529,7 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             await remote.updateLocation(
                 familyId: familyId,
                 uid: uid,
-                location: location,
-                displayName: myCurrentDisplayName
+                location: location
             )
         }
     }
