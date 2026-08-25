@@ -208,6 +208,13 @@ struct RootHostView: View {
         .onChange(of: coordinator.rootDataRefreshToken) { _, _ in
             KBLog.sync.kbInfo("RootHostView: rootDataRefreshToken — forcing realtime rebind")
             startedFamilyId = nil
+            // Rebind davvero forzato: `startedFamilyId = nil` fa cadere il guard
+            // di questa view, ma i listener hanno anche un guard interno per
+            // scope. Senza invalidare i binding, a parità di famiglia il
+            // riaggancio verrebbe saltato — ed è proprio su questo bump che
+            // `switchFamilyIfNeededThenNavigate` aspetta prima di eseguire
+            // l'azione del deep link da notifica.
+            SyncCenter.shared.invalidateListenerBindings()
             startFamilyRealtimeIfPossible()
         }
         // React to SwiftData families list changes (covers first-run fallback).
@@ -244,6 +251,10 @@ struct RootHostView: View {
                 realtimeRestartScheduled = false
                 guard resolvedActiveFamilyId == familyId else { return }
                 startedFamilyId = nil
+                // Stessa ragione del bump di `rootDataRefreshToken`: qui i
+                // listener sono caduti per PERMISSION_DENIED e vanno ricreati
+                // anche se la famiglia non è cambiata.
+                SyncCenter.shared.invalidateListenerBindings()
                 startFamilyRealtimeIfPossible()
             }
         }

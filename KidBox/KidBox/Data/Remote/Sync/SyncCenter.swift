@@ -28,6 +28,50 @@ final class SyncCenter: ObservableObject {
     
     static let shared = SyncCenter()
     private init() {}
+
+    // MARK: - Binding dei listener realtime
+
+    /// Ambito (di norma il `familyId`) a cui è agganciato ciascun listener.
+    private var listenerScopes: [String: String] = [:]
+
+    /// `true` se il listener `key` è già agganciato a `scope`: in quel caso
+    /// ricrearlo è puro spreco e va saltato.
+    ///
+    /// Serve perché le view di feature chiamano `start…Realtime` a ogni
+    /// `onAppear` mentre `RootHostView` l'ha già chiamato all'avvio. Senza
+    /// questo controllo ogni ingresso in una sezione faceva `stop` + `start`, e
+    /// un `addSnapshotListener` appena creato rilegge dal server l'INTERA
+    /// collection: era il moltiplicatore principale delle letture Firestore.
+    ///
+    /// Richiede **entrambe** le condizioni, e non è pignoleria:
+    /// - `attached`: un listener spento da altri (`stopFamilyBundleRealtime`
+    ///   ne ferma cinque in blocco) deve poter essere ricreato anche se lo
+    ///   scope registrato coincide ancora;
+    /// - stesso `scope`: uno switch di famiglia — o di figlio, per i listener
+    ///   che ne dipendono — non deve mai essere saltato.
+    func isListenerBound(_ key: String, to scope: String, attached: Bool) -> Bool {
+        guard attached, listenerScopes[key] == scope else { return false }
+        KBLog.sync.kbDebug("listener '\(key)' già attivo su scope=\(scope) — salto il re-attach")
+        return true
+    }
+
+    /// Registra l'ambito di un listener appena (ri)creato.
+    func bindListener(_ key: String, to scope: String) {
+        listenerScopes[key] = scope
+    }
+
+    /// Dimentica tutti i binding, così il prossimo `start…Realtime` ricrea per
+    /// davvero i listener anche a parità di famiglia.
+    ///
+    /// Va chiamata SOLO dai percorsi che vogliono un rebind forzato: il bump di
+    /// `rootDataRefreshToken` (deep link da push e post-join) e il recupero dopo
+    /// `PERMISSION_DENIED`. Quei percorsi azzerano `startedFamilyId` proprio per
+    /// far ripartire i listener da zero; senza questa invalidazione il guard qui
+    /// sopra li salterebbe e il deep link resterebbe agganciato ai dati vecchi.
+    func invalidateListenerBindings() {
+        KBLog.sync.kbInfo("invalidateListenerBindings — rebind forzato dei listener realtime")
+        listenerScopes.removeAll()
+    }
     
     // MARK: - Realtime (Inbound)
     
@@ -255,6 +299,10 @@ final class SyncCenter: ObservableObject {
         modelContext: ModelContext,
         remote: TodoRemoteStore
     ) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("todo", to: "\(familyId)|\(childId)", attached: todoListener != nil) { return }
+        bindListener("todo", to: "\(familyId)|\(childId)")
         KBLog.sync.kbInfo("startTodoRealtime familyId=\(familyId) childId=\(childId)")
         stopTodoRealtime()
         
@@ -345,6 +393,10 @@ final class SyncCenter: ObservableObject {
     /// Also attempts a best-effort upsert of the current user's profile fields on Firestore,
     /// usando il nome da KBUserProfile (SwiftData) come fonte di verità.
     func startMembersRealtime(familyId: String, modelContext: ModelContext) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("members", to: familyId, attached: membersListener != nil) { return }
+        bindListener("members", to: familyId)
         KBLog.sync.kbInfo("startMembersRealtime familyId=\(familyId)")
         stopMembersRealtime()
         

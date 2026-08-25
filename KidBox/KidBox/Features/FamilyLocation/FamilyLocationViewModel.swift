@@ -46,6 +46,21 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     /// indipendentemente da quanti fix GPS arrivano nel frattempo.
     private static let locationUploadInterval: TimeInterval = 45
     private var lastLocationUploadDate: Date?
+
+    /// Distanza minima dall'ultima posizione **effettivamente scritta** perché
+    /// valga la pena scriverne una nuova.
+    ///
+    /// Il `distanceFilter` del `CLLocationManager` non basta: quello confronta
+    /// il fix nuovo con l'ultimo **consegnato**, e con `kCLLocationAccuracyBest`
+    /// il jitter GPS da fermo (indoor, tra i palazzi) supera regolarmente i 10m.
+    /// CoreLocation continua quindi a consegnare, e il throttle temporale da
+    /// solo trasforma quel rumore in 80 scritture/ora per device a tempo
+    /// indeterminato, anche con il telefono appoggiato su un tavolo.
+    /// Confrontando con l'ultima posizione scritta, un device fermo scrive zero.
+    /// È lo stesso gate che Android ha già in `LocationSharingService`
+    /// (`lastWrittenLocation` + `distanceTo`).
+    private static let minUploadDistanceMeters: CLLocationDistance = 10
+    private var lastUploadedLocation: CLLocation?
     
     /// Nome canonico (SwiftData) passato dalla View. Il self-healing avviene
     /// in `healRemoteDisplayNameIfNeeded()`, guidato dal listener: prima veniva
@@ -451,6 +466,10 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             // Il primo fix di una nuova sessione di condivisione va sempre
             // inviato subito, non bloccato da un throttle rimasto da prima.
             lastLocationUploadDate = nil
+            // Anche il gate di distanza va azzerato, altrimenti riattivando la
+            // condivisione da fermi il primo fix verrebbe scartato e gli altri
+            // membri resterebbero senza posizione.
+            lastUploadedLocation = nil
             locationManager.startUpdatingLocation()
             locationManager.requestLocation()
             shouldStartLocationUpdates = false
@@ -542,7 +561,19 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         if let last = lastLocationUploadDate, now.timeIntervalSince(last) < Self.locationUploadInterval {
             return
         }
+
+        // Gate di distanza. Volutamente DOPO quello temporale e volutamente
+        // senza toccare `lastLocationUploadDate`: se restiamo fermi non si
+        // scrive, ma il prossimo fix rivaluta subito la distanza invece di
+        // aspettare altri 45s. Così, appena ci si muove davvero, la posizione
+        // parte al primo fix utile e la mappa degli altri non resta indietro.
+        if let lastUploaded = lastUploadedLocation,
+           location.distance(from: lastUploaded) < Self.minUploadDistanceMeters {
+            return
+        }
+
         lastLocationUploadDate = now
+        lastUploadedLocation = location
 
         Task {
             await remote.updateLocation(

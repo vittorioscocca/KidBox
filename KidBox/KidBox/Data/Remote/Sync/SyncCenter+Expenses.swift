@@ -32,7 +32,6 @@ extension SyncCenter {
     
     func startExpensesRealtime(familyId: String, modelContext: ModelContext) {
         KBLog.sync.kbInfo("▶️ [expenses][listener] startExpensesRealtime familyId=\(familyId)")
-        stopExpensesRealtime()
         
         // ── Seed categorie con ID deterministici ─────────────────────────────
         // Eseguito qui (oltre che nel VM) così le categorie sono pronte
@@ -70,6 +69,15 @@ extension SyncCenter {
         }
         // ─────────────────────────────────────────────────────────────────────
         
+        // Il guard sta QUI e non in testa alla funzione di proposito: i due seed
+        // qui sopra hanno effetti che dipendono dallo stato locale (la root
+        // «Spese» viene creata solo quando esiste almeno una spesa), quindi
+        // devono continuare a girare a ogni chiamata come prima. Si salta solo
+        // il re-attach del listener, che è la parte che costa letture.
+        if isListenerBound("expenses", to: familyId, attached: expenseListener != nil) { return }
+        bindListener("expenses", to: familyId)
+        stopExpensesRealtime()
+
         expenseListener = expenseRemote.listen(
             familyId: familyId,
             onChange: { [weak self] changes in

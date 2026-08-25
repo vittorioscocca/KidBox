@@ -16,6 +16,10 @@ extension SyncCenter {
     // MARK: - Listener lifecycle
 
     func startPetsRealtime(familyId: String, modelContext: ModelContext) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("pets", to: familyId, attached: petListener != nil) { return }
+        bindListener("pets", to: familyId)
         KBLog.sync.kbInfo("startPetsRealtime familyId=\(familyId)")
         stopPetsRealtime()
 
@@ -47,6 +51,10 @@ extension SyncCenter {
     }
 
     func startPetEventsRealtime(familyId: String, modelContext: ModelContext) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("petEvents", to: familyId, attached: petEventListener != nil) { return }
+        bindListener("petEvents", to: familyId)
         KBLog.sync.kbInfo("startPetEventsRealtime familyId=\(familyId)")
         stopPetEventsRealtime()
 

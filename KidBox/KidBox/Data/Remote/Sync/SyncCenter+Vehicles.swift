@@ -14,6 +14,10 @@ internal import FirebaseFirestoreInternal
 extension SyncCenter {
 
     func startVehiclesRealtime(familyId: String, modelContext: ModelContext) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("vehicles", to: familyId, attached: vehicleListener != nil) { return }
+        bindListener("vehicles", to: familyId)
         KBLog.sync.kbInfo("startVehiclesRealtime familyId=\(familyId)")
         stopVehiclesRealtime()
 
@@ -45,6 +49,10 @@ extension SyncCenter {
     }
 
     func startVehicleEventsRealtime(familyId: String, modelContext: ModelContext) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("vehicleEvents", to: familyId, attached: vehicleEventListener != nil) { return }
+        bindListener("vehicleEvents", to: familyId)
         KBLog.sync.kbInfo("startVehicleEventsRealtime familyId=\(familyId)")
         stopVehicleEventsRealtime()
 

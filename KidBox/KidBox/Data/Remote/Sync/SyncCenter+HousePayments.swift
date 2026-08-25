@@ -10,6 +10,10 @@ internal import FirebaseFirestoreInternal
 extension SyncCenter {
 
     func startHousePaymentsRealtime(familyId: String, modelContext: ModelContext) {
+        // Già agganciato a questo scope: ricreare il listener rileggerebbe
+        // l'intera collection dal server senza alcun dato nuovo.
+        if isListenerBound("housePayments", to: familyId, attached: housePaymentListener != nil) { return }
+        bindListener("housePayments", to: familyId)
         KBLog.sync.kbInfo("startHousePaymentsRealtime familyId=\(familyId)")
         stopHousePaymentsRealtime()
 
