@@ -96,6 +96,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7C76416C303DE7D70006C0D8 /* Screenshot 2026-08-25 alle 17.10.11.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Screenshot 2026-08-25 alle 17.10.11.png"; path = "../../../../var/folders/j0/hpc5d3213kx18zqxzlwfz3c40000gp/T/TemporaryItems/NSIRD_screencaptureui_Qoq0Xt/Screenshot 2026-08-25 alle 17.10.11.png"; sourceTree = "<group>"; };
 		7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxAutoFill.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CB37F442F72B12F00CD0F7C /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		7CD6455D2F88195600AF9B23 /* KidBoxNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KidBoxNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -357,6 +358,7 @@
 		7CFC51F52F33E9000086D687 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7C76416C303DE7D70006C0D8 /* Screenshot 2026-08-25 alle 17.10.11.png */,
 				7CE0B0182F3378CB0086D687 /* AppIntents.framework */,
 				7CB37F442F72B12F00CD0F7C /* StoreKit.framework */,
 				7CE0B01A2F3378CB0086D687 /* SwiftUI.framework */,
@@ -762,7 +764,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
@@ -791,7 +793,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
@@ -821,7 +823,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -852,7 +854,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -885,7 +887,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -917,7 +919,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -949,7 +951,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -980,7 +982,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;

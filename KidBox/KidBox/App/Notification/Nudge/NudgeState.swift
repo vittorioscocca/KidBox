@@ -100,16 +100,19 @@ enum NudgeState {
         return fires.filter { $0.at > cutoff }.count
     }
 
-#if DEBUG
-    /// Solo per i test manuali: azzera lo storico e riporta l'installazione a
-    /// `daysAgo` giorni fa, così la sequenza riparte senza reinstallare l'app.
     /// Azzera lo storico degli invii al logout: i nudge già mostrati appartengono
     /// al profilo precedente e non devono contare per il prossimo. `optedOut` e
     /// `installDate` restano: sono preferenze del dispositivo, non dell'account.
+    ///
+    /// Serve anche in Release — la chiama `KidBoxLocalNotificationsCleanup` — quindi
+    /// sta fuori da `#if DEBUG`.
     static func clearFireHistory() {
         defaults.removeObject(forKey: Key.fires)
     }
 
+#if DEBUG
+    /// Solo per i test manuali: azzera lo storico e riporta l'installazione a
+    /// `installedDaysAgo` giorni fa, così la sequenza riparte senza reinstallare l'app.
     static func resetForTesting(installedDaysAgo: Int = 30) {
         defaults.removeObject(forKey: Key.fires)
         let d = Calendar.current.date(byAdding: .day, value: -installedDaysAgo, to: Date()) ?? Date()
