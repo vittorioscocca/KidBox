@@ -84,6 +84,6 @@ final class KBVaccineReminderService {
             content: content,
             trigger: trigger,
         )
-        try? await UNUserNotificationCenter.current().add(request)
+        await KBLocalNotificationBudget.shared.add(request, priority: .deadline)
     }
 }

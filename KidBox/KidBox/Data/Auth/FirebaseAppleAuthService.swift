@@ -62,6 +62,8 @@ final class FirebaseAppleAuthService: NSObject {
         KBLog.auth.kbInfo("Firebase sign-in OK uid=\(authResult.user.uid)")
         // isNewUser distingue un primo accesso (signup) da un semplice login con Apple.
         if authResult.additionalUserInfo?.isNewUser == true {
+            AppAnalytics.signupStarted(method: "apple")
+            AppAnalytics.signupMethodSelected(method: "apple")
             AppAnalytics.signupCompleted(method: "apple")
         }
 

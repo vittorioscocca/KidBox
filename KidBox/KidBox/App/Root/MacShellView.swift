@@ -169,7 +169,7 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .health:    return .pediatricChildSelector(familyId: familyId)
         case .chat:      return .chat
         case .documents: return .documentsHome
-        case .expenses:  return .expensesHome(familyId: familyId)
+        case .expenses:  return .expensesHome(familyId: familyId, highlightExpenseId: nil)
         case .wallet:    return .walletHome(familyId: familyId)
         case .passwords: return .passwordsHome(familyId: familyId)
         case .location:  return .familyLocation(familyId: familyId)
@@ -374,7 +374,10 @@ private struct MacDashboardView: View {
                     title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
                     subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
                     dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(kbDeviceLocale())),
-                    rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
+                    // `String(localized:)` per passare dal catalogo di
+                    // localizzazione: risolve le 4 lingue e il singolare "1
+                    // membro" vs plurale "N membri" (stesso fix di HomeView).
+                    rightBadgeText: hasFamily ? String(localized: "\(activeMembersCount) membri") : "",
                     photoURL: heroPhotoURL,
                     photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,
                     scale: activeFamily?.heroPhotoScale ?? 1.0,

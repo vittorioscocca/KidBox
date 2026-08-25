@@ -12,37 +12,38 @@ import UserNotifications
 enum KidBoxLocalNotificationsCleanup {
 
     private static let weeklySummaryNotifDefaultsKey = "kb_weeklySummary_notifId"
+    private static let dailyBriefingNotifDefaultsKey = "kb_dailyBriefing_notifId"
+    private static let healthPatternNotifDefaultsKey = "kb_healthPattern_notifId"
 
-    /// Cancella tutte le richieste locali KidBox (pending + delivered) e il riferimento
-    /// UserDefaults alla notifica sintesi settimanale.
+    /// Cancella **tutte** le notifiche locali dell'app (pendenti e già consegnate)
+    /// e i riferimenti in `UserDefaults` che le accompagnano.
+    ///
+    /// Non c'è una lista di prefissi da tenere aggiornata: ogni notifica locale in
+    /// coda è stata schedulata da KidBox per l'utente che sta uscendo, quindi si
+    /// azzera tutto. La versione precedente filtrava per prefisso e ne dimenticava
+    /// sei famiglie — documenti Wallet, veicoli, pagamenti casa, nudge, briefing e
+    /// insight continuavano ad arrivare dopo il logout.
     @MainActor
     static func cancelAllScheduledAccountReminders() async {
         let center = UNUserNotificationCenter.current()
-        let requests = await center.pendingNotificationRequests()
-        let ids = requests.map(\.identifier).filter { isKidBoxScheduledReminderIdentifier($0) }
+        let pendingCount = await center.pendingNotificationRequests().count
 
-        if !ids.isEmpty {
-            center.removePendingNotificationRequests(withIdentifiers: ids)
-            center.removeDeliveredNotifications(withIdentifiers: ids)
-            KBLog.auth.kbInfo("KidBoxLocalNotificationsCleanup: removed \(ids.count) notification id(s)")
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
+
+        // Il registro di cosa è armato su questo device e i puntatori alle
+        // notifiche AI: senza questi, al login successivo l'app crederebbe di
+        // avere ancora in coda notifiche che non esistono più.
+        KBDeviceReminderLedger.clear()
+        NudgeState.clearFireHistory()
+        for key in [
+            weeklySummaryNotifDefaultsKey,
+            dailyBriefingNotifDefaultsKey,
+            healthPatternNotifDefaultsKey,
+        ] {
+            UserDefaults.standard.removeObject(forKey: key)
         }
 
-        UserDefaults.standard.removeObject(forKey: weeklySummaryNotifDefaultsKey)
-    }
-
-    nonisolated private static func isKidBoxScheduledReminderIdentifier(_ id: String) -> Bool {
-        if id == "kb.subscription.expiring" { return true }
-        if id == "kb-weekly-summary" { return true }
-        if id.hasPrefix("todo.reminder.") { return true }
-        if id.hasPrefix("kb.exam.reminder.") { return true }
-        if id.hasPrefix("visit-reminder-") { return true }
-        if id.hasPrefix("next-visit-") { return true }
-        if id.hasPrefix("treatment-") { return true }
-        if id.hasPrefix("wallet.") { return true }
-        if id.hasPrefix("kb-weekly-summary-") { return true }
-        if id.hasPrefix("kb.vaccine.reminder.") { return true }
-        if id.hasPrefix("kb.password.expiry.") { return true }
-        if id.hasPrefix("kb.password.security.summary.") { return true }
-        return false
+        KBLog.auth.kbInfo("KidBoxLocalNotificationsCleanup: rimosse tutte le notifiche locali (\(pendingCount) pendenti)")
     }
 }

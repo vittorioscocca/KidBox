@@ -435,12 +435,9 @@ final class WeeklySummaryService {
             trigger:    trigger
         )
         
-        do {
-            try await center.add(request)
+        if await KBLocalNotificationBudget.shared.add(request, priority: .background) {
             UserDefaults.standard.set(notifId, forKey: Keys.notifId)
             KBLog.ai.kbInfo("WeeklySummaryService: notification scheduled id=\(notifId)")
-        } catch {
-            KBLog.ai.kbError("WeeklySummaryService: schedule failed \(error.localizedDescription)")
         }
     }
     

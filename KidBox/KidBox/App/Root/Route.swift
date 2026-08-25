@@ -78,7 +78,9 @@ enum Route: Hashable {
     case askExpert
 
     // MARK: - Spese
-    case expensesHome(familyId: String)
+    /// `highlightExpenseId`: spesa arrivata da notifica, che la home apre
+    /// appena la sincronizzazione la porta in locale.
+    case expensesHome(familyId: String, highlightExpenseId: String?)
     case expenseDetail(familyId: String, expenseId: String)
 
     // MARK: - Wallet

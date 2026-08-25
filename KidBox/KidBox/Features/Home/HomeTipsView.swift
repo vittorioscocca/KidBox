@@ -27,6 +27,7 @@ struct HomeTipItem: Identifiable, Hashable {
     /// di portare da qualche parte a caso.
     func destination(familyId: String) -> HomeDestination? {
         switch id {
+        case "chat":       return .chat
         case "note":       return .notes(familyId: familyId)
         case "todo":       return .todo
         case "shopping":   return .shopping(familyId: familyId)
@@ -51,6 +52,8 @@ struct HomeTipItem: Identifiable, Hashable {
 
 enum HomeTipsCatalog {
     static let items: [HomeTipItem] = [
+        .init(id: "chat", title: "Chat", symbol: "message.fill", tint: .green,
+              tip: "Chatta con la famiglia in tempo reale: testo, foto, audio, video e reazioni. Le conversazioni sono cifrate end-to-end e ogni membro vede subito i nuovi messaggi."),
         .init(id: "note", title: "Note", symbol: "note.text", tint: .yellow,
               tip: "Scrivi note libere o formattate (grassetto, corsivo, liste) e scegli se condividerle con tutta la famiglia o tenerle solo per te."),
         .init(id: "todo", title: "To-Do", symbol: "checklist", tint: .blue,

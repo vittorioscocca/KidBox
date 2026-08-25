@@ -226,7 +226,10 @@ struct HomeView: View {
                 title: hasFamily ? (activeFamily?.name ?? "La tua famiglia") : "Benvenuto 👋",
                 subtitle: hasFamily ? "" : "Crea o unisciti a una famiglia per iniziare.",
                 dateText: Date().formatted(.dateTime.weekday(.wide).day().month(.wide).locale(kbDeviceLocale())),
-                rightBadgeText: hasFamily ? "\(activeMembersCount) membri" : "",
+                // `String(localized:)` (non semplice interpolazione) per passare
+                // dal catalogo di localizzazione: risolve sia le 4 lingue sia il
+                // singolare "1 membro" vs plurale "N membri" in base al conteggio.
+                rightBadgeText: hasFamily ? String(localized: "\(activeMembersCount) membri") : "",
                 photoURL: heroPhotoURL,
                 photoUpdatedAt: activeFamily?.heroPhotoUpdatedAt,
                 scale: activeFamily?.heroPhotoScale ?? 1.0,
@@ -755,7 +758,7 @@ enum HomeDestination {
         case .care:                          return .familySettings  // legacy, non usato
         case .chat:                          return .chat
         case .document:                      return .document
-        case .expenses(let familyId):        return .expensesHome(familyId: familyId)
+        case .expenses(let familyId):        return .expensesHome(familyId: familyId, highlightExpenseId: nil)
         case .wallet(let familyId):          return .walletHome(familyId: familyId)
         case .passwords(let familyId):      return .passwordsHome(familyId: familyId)
         case .pets(let fid):                 return .petsHome(familyId: fid)

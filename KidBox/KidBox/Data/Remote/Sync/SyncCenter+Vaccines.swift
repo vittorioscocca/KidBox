@@ -132,17 +132,8 @@ extension SyncCenter {
             
             for change in changes {
                 if case .upsert(let dto) = change, !dto.isDeleted {
-                    let vid = dto.id
-                    let desc = FetchDescriptor<KBVaccine>(predicate: #Predicate { $0.id == vid })
-                    if let v = try? modelContext.fetch(desc).first {
-                        let childIdForLookup = v.childId
-                        let childName = (try? modelContext.fetch(
-                            FetchDescriptor<KBChild>(predicate: #Predicate<KBChild> { $0.id == childIdForLookup })
-                        ).first?.name) ?? ""
-                        Task { @MainActor in
-                            await KBVaccineReminderService.shared.sync(vaccine: v, childName: childName)
-                        }
-                    }
+                    // Nessun promemoria armato qui: i promemoria locali sono del
+                    // device che li ha creati, il sync non ne genera mai.
                 }
                 if case .remove(let id) = change {
                     KBVaccineReminderService.shared.cancel(vaccineId: id)

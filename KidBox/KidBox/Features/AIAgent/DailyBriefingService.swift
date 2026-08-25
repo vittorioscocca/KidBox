@@ -331,12 +331,9 @@ final class DailyBriefingService {
             trigger: trigger
         )
 
-        do {
-            try await center.add(request)
+        if await KBLocalNotificationBudget.shared.add(request, priority: .background) {
             UserDefaults.standard.set(notifId, forKey: Keys.notifId)
             KBLog.ai.kbInfo("DailyBriefingService: notification scheduled id=\(notifId)")
-        } catch {
-            KBLog.ai.kbError("DailyBriefingService: schedule failed \(error.localizedDescription)")
         }
     }
 

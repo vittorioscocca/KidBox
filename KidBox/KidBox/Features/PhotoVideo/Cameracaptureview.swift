@@ -32,34 +32,6 @@ enum CameraCaptureResult {
     case cancelled
 }
 
-// MARK: - Host (presentazione modale corretta della camera)
-
-/// `UIImagePickerController` con `sourceType == .camera` va **presentato modally** in fullscreen
-/// da un `UIViewController` nella finestra attiva. Usarlo come root di un `UIViewControllerRepresentable`
-/// (es. dentro `fullScreenCover`) spesso rompe scatto / controlli — soprattutto dopo cold open da URL/widget.
-private final class CameraPickerHostViewController: UIViewController {
-    private let picker: UIImagePickerController
-    private var didPresentPicker = false
-
-    init(picker: UIImagePickerController) {
-        self.picker = picker
-        super.init(nibName: nil, bundle: nil)
-        modalPresentationStyle = .fullScreen
-        view.backgroundColor = .black
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError("init(coder:)") }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        guard !didPresentPicker else { return }
-        didPresentPicker = true
-        picker.modalPresentationStyle = .fullScreen
-        present(picker, animated: true)
-    }
-}
-
 // MARK: - View
 
 struct CameraCaptureView: UIViewControllerRepresentable {
@@ -73,14 +45,19 @@ struct CameraCaptureView: UIViewControllerRepresentable {
     }
     
     func makeUIViewController(context: Context) -> UIViewController {
-        let picker = UIImagePickerController()
-        picker.sourceType = .camera
-        picker.mediaTypes = mediaTypes
-        picker.videoQuality = .typeMedium          // equivale a AVAssetExportPresetMediumQuality
-        picker.videoMaximumDuration = 300          // max 5 minuti
-        picker.allowsEditing = false
-        picker.delegate = context.coordinator
-        return CameraPickerHostViewController(picker: picker)
+        return CameraPermissionGateViewController(
+            makePicker: {
+                let picker = UIImagePickerController()
+                picker.sourceType = .camera
+                picker.mediaTypes = self.mediaTypes
+                picker.videoQuality = .typeMedium      // equivale a AVAssetExportPresetMediumQuality
+                picker.videoMaximumDuration = 300      // max 5 minuti
+                picker.allowsEditing = false
+                picker.delegate = context.coordinator
+                return picker
+            },
+            onCancelled: { [onResult] in onResult(.cancelled) }
+        )
     }
     
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

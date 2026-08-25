@@ -980,6 +980,9 @@
         }
       }
     },
+    "%lld membri" : {
+
+    },
     "%lld membri collegati." : {
       "localizations" : {
         "en" : {
@@ -2040,6 +2043,7 @@
       }
     },
     "1 membro collegato." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2866,6 +2870,7 @@
       }
     },
     "Acquisisci la Tessera Sanitaria o un altro documento d'identità." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3374,6 +3379,7 @@
       }
     },
     "Aggiungi animale domestico" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3462,6 +3468,7 @@
       }
     },
     "Aggiungi elemento" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3659,6 +3666,9 @@
         }
       }
     },
+    "Aggiungi foto famiglia" : {
+
+    },
     "Aggiungi foto, PDF o documenti alla spesa" : {
       "localizations" : {
         "en" : {
@@ -3749,6 +3759,7 @@
       }
     },
     "Aggiungi la prima spesa con il tasto +" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3792,9 +3803,6 @@
         }
       }
     },
-    "Aggiungi le carte fedeltà del supermercato, dell'elettronica o del negozio preferito: saranno visibili a tutta la famiglia." : {
-
-    },
     "Aggiungi le categorie (A, B, C, …) con le rispettive date." : {
       "localizations" : {
         "en" : {
@@ -3818,6 +3826,7 @@
       }
     },
     "Aggiungi le prime foto condivise della famiglia." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4038,6 +4047,7 @@
       }
     },
     "Aggiungi scadenza o pagamento" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4194,6 +4204,7 @@
       }
     },
     "Aggiungi una foto famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5238,6 +5249,9 @@
         }
       }
     },
+    "Animale domestico" : {
+
+    },
     "Animale domestico non trovato" : {
       "localizations" : {
         "en" : {
@@ -6056,6 +6070,12 @@
           }
         }
       }
+    },
+    "Apro l'evento…" : {
+
+    },
+    "Apro la spesa…" : {
+
     },
     "aree" : {
       "localizations" : {
@@ -8563,6 +8583,9 @@
           }
         }
       }
+    },
+    "Chatta con la famiglia in tempo reale: testo, foto, audio, video e reazioni. Le conversazioni sono cifrate end-to-end e ogni membro vede subito i nuovi messaggi." : {
+
     },
     "Chi ha ricevuto il link non potrà più usarlo per entrare nella famiglia." : {
       "localizations" : {
@@ -11613,6 +11636,7 @@
       }
     },
     "Crea la prima nota della famiglia\ntoccando il tasto in alto a destra." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11633,6 +11657,9 @@
           }
         }
       }
+    },
+    "Crea la prima nota. Puoi scegliere se condividerla con tutta la famiglia, con membri specifici, oppure mantenerla privata. Ogni nota è crittografata end-to-end." : {
+
     },
     "Crea la tua famiglia" : {
       "localizations" : {
@@ -11677,6 +11704,9 @@
           }
         }
       }
+    },
+    "Crea liste di attività e assegnale a un membro della famiglia. Scegli se condividerle con tutti, con membri specifici o tenerle private. Ogni attività è crittografata end-to-end." : {
+
     },
     "Crea nuova famiglia" : {
       "localizations" : {
@@ -12255,6 +12285,9 @@
           }
         }
       }
+    },
+    "Da dove vuoi scegliere?" : {
+
     },
     "Da eseguire entro" : {
       "localizations" : {
@@ -17382,6 +17415,7 @@
       }
     },
     "Family settings" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20075,6 +20109,7 @@
       }
     },
     "Importa un PDF di biglietto (Trenitalia, Italo, Ryanair, cinema, concerti…)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -21589,6 +21624,9 @@
         }
       }
     },
+    "Invia (%lld)" : {
+
+    },
     "Invia contatto" : {
       "localizations" : {
         "en" : {
@@ -21964,6 +22002,28 @@
         }
       }
     },
+    "Invita la tua famiglia per iniziare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite your family to get started"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invita a tu familia para empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitez votre famille pour commencer"
+          }
+        }
+      }
+    },
     "Invita un familiare" : {
       "localizations" : {
         "en" : {
@@ -22117,6 +22177,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "KidBox — Politique de confidentialité"
+          }
+        }
+      }
+    },
+    "KidBox funziona davvero quando la famiglia è al completo: appena inviti l'altro genitore, calendario, spese, liste, documenti e chat si aggiornano per tutti in tempo reale. Da solo vedi solo la tua metà dell'organizzazione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox works best when the whole family is on board: as soon as you invite the other parent, calendar, expenses, lists, documents and chat update for everyone in real time. On your own you only see half of the picture."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox funciona de verdad cuando la familia está completa: en cuanto invitas al otro progenitor, el calendario, los gastos, las listas, los documentos y el chat se actualizan para todos en tiempo real. Solo, ves únicamente tu mitad de la organización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox prend tout son sens quand la famille est au complet : dès que vous invitez l'autre parent, calendrier, dépenses, listes, documents et discussions se mettent à jour pour tout le monde en temps réel. Seul, vous ne voyez que la moitié de l'organisation."
           }
         }
       }
@@ -22678,6 +22760,9 @@
           }
         }
       }
+    },
+    "La foto verrà rimossa subito, anche per gli altri membri della famiglia." : {
+
     },
     "La lingua viene applicata subito in tutta l'app." : {
       "localizations" : {
@@ -25930,6 +26015,7 @@
       }
     },
     "Nessun animale domestico ancora" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -26084,6 +26170,7 @@
       }
     },
     "Nessun elemento ancora" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -26307,6 +26394,9 @@
       }
     },
     "Nessun luogo da mostrare" : {
+
+    },
+    "Nessun media in KidBox" : {
 
     },
     "Nessun medico aggiunto" : {
@@ -26596,6 +26686,7 @@
       }
     },
     "Nessun veicolo ancora" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27756,6 +27847,9 @@
           }
         }
       }
+    },
+    "Non ci sono ancora foto o video in KidBox." : {
+
     },
     "Non completati" : {
       "localizations" : {
@@ -31957,6 +32051,9 @@
         }
       }
     },
+    "Per salvare questo contatto in Rubrica devi consentire l'accesso ai Contatti dalle Impostazioni." : {
+
+    },
     "Per selezionare un contatto, abilita l'accesso ai contatti nelle impostazioni." : {
       "localizations" : {
         "en" : {
@@ -32132,6 +32229,9 @@
           }
         }
       }
+    },
+    "Permesso Contatti necessario" : {
+
     },
     "persona" : {
       "localizations" : {
@@ -32977,6 +33077,7 @@
       }
     },
     "Premi + per creare cartelle o caricare documenti." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -35085,27 +35186,8 @@
         }
       }
     },
-    "Qui gestisci la famiglia e inviti l'altro genitore." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Here you manage the family and invite the other parent."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aquí gestionas la familia e invitas al otro progenitor."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ici vous gérez la famille et invitez l'autre parent."
-          }
-        }
-      }
+    "Raccogli le foto e i video di famiglia in album condivisi, senza affidarli a un social. Tutto è cifrato end-to-end e resta solo tra voi." : {
+
     },
     "Raccogli le foto e i video importanti della famiglia in album condivisi, organizzati automaticamente per data." : {
       "localizations" : {
@@ -36376,6 +36458,9 @@
         }
       }
     },
+    "Rimuovere la foto profilo?" : {
+
+    },
     "Rimuovere OTP da questa voce?" : {
       "localizations" : {
         "en" : {
@@ -36485,6 +36570,9 @@
           }
         }
       }
+    },
+    "Rimuovi foto" : {
+
     },
     "Rimuovi OTP" : {
       "localizations" : {
@@ -45246,6 +45334,7 @@
       }
     },
     "Wallet vuoto" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

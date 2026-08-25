@@ -277,28 +277,17 @@ struct NoteDetailView: View {
             return
         }
         
-        // Crea nuova nota
+        // Nota nuova: NON creata subito (allineato ad Android). La riga in
+        // SwiftData nasce solo al primo salvataggio reale, in `commitSave()`
+        // — così tornare indietro senza aver scritto nulla non lascia una
+        // nota vuota nella lista.
         isNewNoteAwaitingFirstSave = true
-        let uid = Auth.auth().currentUser?.uid ?? "local"
-        let n = KBNote(
-            id: noteId, familyId: familyId,
-            title: "", body: "",
-            createdBy: uid, createdByName: "",
-            updatedBy: uid, updatedByName: "",
-            createdAt: .now, updatedAt: .now,
-            isDeleted: false
-        )
-        n.syncState     = .synced
-        n.lastSyncError = nil
-        modelContext.insert(n)
-        try? modelContext.save()
-        
-        note        = n
+        note        = nil
         titleText   = ""
         loadedTitle = ""
         bodyHTML    = ""
-        selectedVisibilityScope = KBVisibilityScope.normalized(n.visibilityScope)
-        selectedVisibilityMemberIds = Set(n.visibilityMemberIds ?? [])
+        selectedVisibilityScope = KBVisibilityScope.family
+        selectedVisibilityMemberIds = []
         isDirty   = false
     }
     
@@ -341,34 +330,51 @@ struct NoteDetailView: View {
     // MARK: - Save
 
     private func commitSave(bodyOverride: String? = nil) {
-        guard let note else { return }
-        let latestBody = bodyOverride ?? richTextStore.flushPendingHTML?() ?? bodyHTML
         guard isDirty else { return }
-
+        let latestBody = bodyOverride ?? richTextStore.flushPendingHTML?() ?? bodyHTML
         let uid = Auth.auth().currentUser?.uid ?? "local"
 
-        note.title         = titleText
-        note.body          = latestBody
-        note.updatedAt     = .now
-        note.updatedBy     = uid
-        note.updatedByName = ""
-        note.visibilityScope = selectedVisibilityScope
-        note.visibilityMemberIds = selectedVisibilityScope == KBVisibilityScope.members
+        // Nota nuova mai salvata: la riga in SwiftData nasce solo adesso, al
+        // primo salvataggio reale (vedi `loadOrCreate`), non prima.
+        let targetNote: KBNote
+        if let existing = note {
+            targetNote = existing
+        } else {
+            let n = KBNote(
+                id: noteId, familyId: familyId,
+                title: "", body: "",
+                createdBy: uid, createdByName: "",
+                updatedBy: uid, updatedByName: "",
+                createdAt: .now, updatedAt: .now,
+                isDeleted: false
+            )
+            modelContext.insert(n)
+            note = n
+            targetNote = n
+        }
+
+        targetNote.title         = titleText
+        targetNote.body          = latestBody
+        targetNote.updatedAt     = .now
+        targetNote.updatedBy     = uid
+        targetNote.updatedByName = ""
+        targetNote.visibilityScope = selectedVisibilityScope
+        targetNote.visibilityMemberIds = selectedVisibilityScope == KBVisibilityScope.members
         ? Array(selectedVisibilityMemberIds).sorted()
         : []
-        note.syncState     = .pendingUpsert
-        note.lastSyncError = nil
-        
+        targetNote.syncState     = .pendingUpsert
+        targetNote.lastSyncError = nil
+
         try? modelContext.save()
         
         SyncCenter.shared.enqueueNoteUpsert(
-            noteId: note.id, familyId: familyId, modelContext: modelContext
+            noteId: targetNote.id, familyId: familyId, modelContext: modelContext
         )
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
 
         if isNewNoteAwaitingFirstSave {
             isNewNoteAwaitingFirstSave = false
-            let excludedId = note.id
+            let excludedId = targetNote.id
             let isFirstNote = ((try? modelContext.fetchCount(FetchDescriptor<KBNote>(predicate: #Predicate<KBNote> {
                 $0.familyId == familyId && $0.isDeleted == false && $0.id != excludedId
             }))) ?? 0) == 0

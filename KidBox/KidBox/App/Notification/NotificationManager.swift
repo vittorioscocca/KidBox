@@ -81,6 +81,8 @@ final class NotificationManager: NSObject, ObservableObject {
         case examReminder(familyId: String, childId: String, examId: String)
         case expense(familyId: String, expenseId: String)
         case walletTicket(familyId: String, ticketId: String)
+        /// Nuova carta fedeltà aggiunta da un altro membro.
+        case loyaltyCard(familyId: String, cardId: String)
         /// Notifica locale promemoria scadenza veicolo (bollo/assicurazione/revisione/tagliando).
         case vehicle(familyId: String, vehicleId: String)
         /// Notifica locale promemoria scadenza pagamento casa.
@@ -364,6 +366,17 @@ final class NotificationManager: NSObject, ObservableObject {
             }
             pendingDeepLink = .walletTicket(familyId: familyId, ticketId: ticketId)
             KBLog.auth.kbInfo("DeepLink set for walletTicket familyId=\(familyId) ticketId=\(ticketId)")
+
+        } else if type == "new_loyalty_card" {
+            guard
+                let familyId = userInfo["familyId"] as? String,
+                let cardId   = userInfo["cardId"]   as? String
+            else {
+                KBLog.auth.kbError("Invalid new_loyalty_card payload")
+                return
+            }
+            pendingDeepLink = .loyaltyCard(familyId: familyId, cardId: cardId)
+            KBLog.auth.kbInfo("DeepLink set for loyaltyCard familyId=\(familyId) cardId=\(cardId)")
 
         } else if type == "password_expiry_reminder" {
             guard
@@ -1105,11 +1118,8 @@ extension NotificationManager {
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
             let identifier = "\(Self.passwordExpiryIdPrefix(entryId: entry.id))d\(days)"
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-            do {
-                try await center.add(request)
+            if await KBLocalNotificationBudget.shared.add(request, priority: .deadline) {
                 KBLog.auth.kbInfo("[PasswordExpiry] scheduled id=\(identifier) fire=\(fireDate)")
-            } catch {
-                KBLog.auth.kbError("[PasswordExpiry] schedule failed: \(error.localizedDescription)")
             }
         }
     }
@@ -1148,12 +1158,9 @@ extension NotificationManager {
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
-        do {
-            center.removePendingNotificationRequests(withIdentifiers: [id])
-            try await center.add(request)
+        center.removePendingNotificationRequests(withIdentifiers: [id])
+        if await KBLocalNotificationBudget.shared.add(request, priority: .informational) {
             KBLog.auth.kbInfo("[PasswordSecurity] summary notification scheduled newly=\(newlyCompromised)")
-        } catch {
-            KBLog.auth.kbError("[PasswordSecurity] schedule summary failed: \(error.localizedDescription)")
         }
     }
 }

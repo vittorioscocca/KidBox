@@ -151,4 +151,27 @@ extension AvatarRemoteStore {
             throw error
         }
     }
+
+    /// Rimuove il file dell'avatar da Storage.
+    ///
+    /// Prova ENTRAMBI i percorsi possibili perché quello usato dipende dal fatto
+    /// che al momento del caricamento ci fosse una famiglia attiva: chi ha
+    /// cambiato famiglia nel frattempo potrebbe avere il file nell'altro.
+    ///
+    /// Non solleva se il file non c'è: l'obiettivo è che dopo la chiamata
+    /// l'avatar non esista, e un file già assente soddisfa la condizione.
+    func deleteAvatar(uid: String, familyId: String?) async {
+        var paths: [String] = []
+        if let familyId, !familyId.isEmpty {
+            paths.append("families/\(familyId)/avatars/\(uid).jpg")
+        }
+        paths.append("users/\(uid)/avatar.jpg")
+        for path in paths {
+            do {
+                try await storage.reference().child(path).delete()
+            } catch {
+                KBLog.app.kbDebug("AvatarRemoteStore.deleteAvatar: \(path) non rimosso (\(error.localizedDescription))")
+            }
+        }
+    }
 }

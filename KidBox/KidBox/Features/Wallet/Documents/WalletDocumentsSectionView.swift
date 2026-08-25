@@ -64,10 +64,13 @@ struct WalletDocumentsSectionView: View {
     var body: some View {
         Group {
             if walletDocuments.isEmpty {
-                ContentUnavailableView(
-                    "Nessun documento",
+                KBEmptyStateView(
                     systemImage: "cross.case",
-                    description: Text("Acquisisci la Tessera Sanitaria o un altro documento d'identità.")
+                    title: "Nessun documento",
+                    message: "Carta d'identità, patente, tessera sanitaria e passaporto di tutta la famiglia, sempre con te. Cifrati end-to-end, con l'avviso prima della scadenza.",
+                    actionTitle: "Aggiungi documento",
+                    actionSystemImage: "plus.circle.fill",
+                    action: { showAddSheet = true }
                 )
             } else {
                 cardStack

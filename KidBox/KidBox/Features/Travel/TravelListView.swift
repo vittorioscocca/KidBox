@@ -141,7 +141,9 @@ struct TravelListView: View {
                 }
             }
         }
-        .toolbar(needsOnboarding == true ? .hidden : .visible, for: .navigationBar)
+        // La barra resta visibile anche durante la configurazione iniziale: senza,
+        // non c'era alcun modo di uscire da Viaggi (niente «Indietro»).
+        .toolbar(.visible, for: .navigationBar)
         .sheet(isPresented: $showWizard) {
             TravelWizardView(
                 familyId: familyId,

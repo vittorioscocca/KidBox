@@ -171,6 +171,7 @@ struct TodoListRemoteDTO {
     let childId: String
     let name: String
     let isDeleted: Bool
+    let createdBy: String?
     let updatedAt: Date?
 }
 
@@ -203,6 +204,8 @@ extension TodoRemoteStore {
             "childId": list.childId,
             "name": list.name,
             "isDeleted": list.isDeleted,
+            // Serve a decidere chi vede una lista ancora vuota.
+            "createdBy": list.createdBy ?? uid,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
@@ -288,6 +291,7 @@ extension TodoRemoteStore {
                         childId: cid,
                         name: name,
                         isDeleted: d["isDeleted"] as? Bool ?? false,
+                        createdBy: (d["createdBy"] as? String)?.trimmingCharacters(in: .whitespaces).nilIfEmpty,
                         updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue()
                     )
                     
@@ -331,6 +335,7 @@ extension TodoRemoteStore {
                 childId: cid,
                 name: name,
                 isDeleted: d["isDeleted"] as? Bool ?? false,
+                createdBy: (d["createdBy"] as? String)?.trimmingCharacters(in: .whitespaces).nilIfEmpty,
                 updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue()
             )
         }

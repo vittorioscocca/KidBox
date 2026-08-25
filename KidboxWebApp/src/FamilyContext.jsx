@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, onSnapshot } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
 import { db } from "./firebase";
 
@@ -52,6 +52,25 @@ export function FamilyProvider({ children }) {
       setCurrentFamilyId(families[0].id);
     }
   }, [families, currentFamilyId]);
+
+  // Il documento della famiglia attiva va seguito in realtime, non letto una volta
+  // sola: la foto hero e il nome possono cambiare da un altro device e devono
+  // comparire qui senza ricaricare la pagina.
+  useEffect(() => {
+    if (!currentFamilyId) return;
+    const unsub = onSnapshot(
+      doc(db, "families", currentFamilyId),
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        setFamilies((prev) =>
+          prev?.map((f) => (f.id === snap.id ? { ...f, ...data } : f)) ?? prev
+        );
+      },
+      (err) => setError(err.message)
+    );
+    return unsub;
+  }, [currentFamilyId]);
 
   const selectFamily = (id) => {
     localStorage.setItem("kidbox:currentFamilyId", id);

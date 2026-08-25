@@ -105,6 +105,26 @@ final class AppCoordinator: ObservableObject {
     /// Titolo o filename suggerito per il ticket Wallet importato dalla share extension.
     @Published var pendingShareWalletTitle: String? = nil
     @Published var globalBannerMessage: String? = nil
+
+    /// Testo dello spinner mostrato mentre si aspetta che la risorsa di una
+    /// notifica arrivi dalla sincronizzazione; `nil` quando non si aspetta
+    /// nulla. Senza un segnale visibile l'utente resta fermo sulla panoramica
+    /// senza capire che sta per succedere qualcosa. Gemello del Dialog di
+    /// attesa in `AppNavGraph` su Android.
+    @Published var deepLinkLoadingMessage: String? = nil
+
+    /// Attesa in corso di una risorsa da notifica, per poterla annullare
+    /// quando l'utente tocca fuori dallo spinner.
+    private var deepLinkResolutionTask: Task<Void, Never>?
+
+    /// L'utente ha rinunciato ad aspettare la risorsa della notifica.
+    @MainActor
+    func cancelDeepLinkResolution() {
+        KBLog.navigation.kbInfo("[push] attesa risorsa annullata dall'utente")
+        deepLinkResolutionTask?.cancel()
+        deepLinkResolutionTask = nil
+        deepLinkLoadingMessage = nil
+    }
     
     /// URL temporaneo decriptato di un documento da inviare in chat.
     /// Impostato da DocumentFolderViewModel.sendToChat, consumato da ChatView.
@@ -513,42 +533,72 @@ final class AppCoordinator: ObservableObject {
 
     private func screenName(for route: Route) -> String? {
         switch route {
+        case .home:
+            return "home"
         case .calendar:
-            return "calendar"
+            return "calendario"
         case .documentsHome, .documentsCategory, .document:
-            return "documents"
-        case .chat, .supportChat, .askExpert:
-            return "chat"
-        case .pediatricChildSelector, .pediatricHome, .pediatricMedicalRecord, .appleHealthApp,
-             .pediatricVisits, .pediatricVisitDetail, .pediatricVaccines, .pediatricTreatments,
-             .pediatricTreatmentDetail, .pediatricExams, .examDetail, .pediatricTimeline,
-             .pediatricClinicalRecord:
-            return "health"
+            return "documenti"
+        case .chat:
+            return "chat_famiglia"
+        case .supportChat:
+            return "chat_supporto"
+        case .askExpert:
+            return "assistente_ai"
         case .expensesHome, .expenseDetail:
-            return "expenses"
+            return "spese"
+        case .shoppingList:
+            return "lista_spesa"
         case .passwordsHome, .passwordsSecurity, .passwordDetail:
-            return "passwords"
+            return "password"
         case .walletHome, .walletTicketDetail, .walletDocumentDetail, .loyaltyCardDetail:
             return "wallet"
-        case .shoppingList:
-            return "grocery"
         case .notesHome, .noteDetail:
-            return "notes"
+            return "note"
         case .todo, .todoList, .todoSmart:
             return "todo"
         case .familyPhotos, .photoAlbumDetail:
-            return "photos"
+            return "foto"
         case .petsHome, .petDetail, .petEventDetail:
-            return "pets"
-        case .homeItemsHome, .homeItemDetail, .housePaymentDetail,
-             .vehiclesHome, .vehicleDetail, .vehicleEventsList, .vehicleEventDetail:
-            return "home_vehicles"
-        case .travelList, .travelAllTrips, .travelTripDetail, .travelDiscover, .travelDestinationDetail:
-            return "travel"
+            return "animali"
+        case .homeItemsHome, .homeItemDetail, .housePaymentDetail:
+            return "casa"
+        case .vehiclesHome, .vehicleDetail, .vehicleEventsList, .vehicleEventDetail:
+            return "veicoli"
+        case .travelList:
+            return "viaggi"
+        case .travelAllTrips:
+            return "viaggi_tutti"
+        case .travelTripDetail:
+            return "viaggi_dettaglio"
+        case .travelDiscover:
+            return "viaggi_scopri"
+        case .travelDestinationDetail:
+            return "viaggi_destinazione"
         case .familyLocation:
-            return "location"
-        case .home:
-            return "home"
+            return "posizione"
+        case .familySettings:
+            return "impostazioni_famiglia"
+        case .pediatricChildSelector, .pediatricHome:
+            return "salute"
+        case .pediatricVisits:
+            return "salute_visite"
+        case .pediatricVisitDetail:
+            return "salute_visita_dettaglio"
+        case .pediatricExams:
+            return "salute_esami"
+        case .examDetail:
+            return "salute_esame_dettaglio"
+        case .pediatricVaccines:
+            return "salute_vaccini"
+        case .pediatricTreatments:
+            return "salute_trattamenti"
+        case .pediatricTreatmentDetail:
+            return "salute_trattamento_dettaglio"
+        case .pediatricTimeline:
+            return "salute_timeline"
+        case .pediatricClinicalRecord, .pediatricMedicalRecord, .appleHealthApp:
+            return "salute_cartella_clinica"
         default:
             return nil
         }
@@ -642,8 +692,8 @@ final class AppCoordinator: ObservableObject {
             PediatricTimelineDestinationView(familyId: familyId, childId: childId)
         case .pediatricClinicalRecord(familyId: let familyId, childId: let childId):
             ClinicalRecordView(familyId: familyId, childId: childId)
-        case .expensesHome(familyId: let familyId):
-            ExpensesHomeView(familyId: familyId)
+        case .expensesHome(familyId: let familyId, highlightExpenseId: let highlightExpenseId):
+            ExpensesHomeView(familyId: familyId, highlightExpenseId: highlightExpenseId)
         case .expenseDetail(familyId: let familyId, expenseId: let expenseId):
             ExpenseDetailView(familyId: familyId, expenseId: expenseId)
         case .walletHome(familyId: let familyId):
@@ -959,6 +1009,21 @@ final class AppCoordinator: ObservableObject {
         KBLog.navigation.kbDebug("Path updated count=\(self.path.count)")
     }
 
+    /// Sostituisce l’ultima destinazione invece di impilarne una nuova.
+    ///
+    /// Serve alle schermate «di passaggio» che si aprono da sé (es. il selettore
+    /// Salute quando il soggetto è uno solo): restando nello stack, il tap su
+    /// «Indietro» ci rientrerebbe e verrebbe subito rilanciata la stessa
+    /// navigazione, bloccando l’utente.
+    func replaceTop(with route: Route) {
+        KBLog.navigation.kbInfo("Replace top with route=\(String(describing: route))")
+        if path.isEmpty {
+            path = [route]
+        } else {
+            path[path.count - 1] = route
+        }
+    }
+
     /// Rimuove l’ultima destinazione dallo stack (equivalente al tap su «Indietro»).
     func navigateBack() {
         guard !path.isEmpty else { return }
@@ -1107,28 +1172,45 @@ final class AppCoordinator: ObservableObject {
     func openNoteFromPush(familyId: String, noteId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openNoteFromPush familyId=\(familyId) noteId=\(noteId)")
         setRetrievalOrigin(.notification)
-        
-        Task { @MainActor in
-            let nid = noteId
-            let desc = FetchDescriptor<KBNote>(predicate: #Predicate { $0.id == nid })
-            let currentUid = Auth.auth().currentUser?.uid
-            var found = (try? modelContext.fetch(desc).first)
 
-            if found == nil || !(found?.isVisible(to: currentUid) ?? false) {
-                await SyncCenter.shared.fetchNotesOnce(familyId: familyId, modelContext: modelContext)
-                found = try? modelContext.fetch(desc).first
+        // Come per i to-do: si apre subito la lista note e si aspetta lì, con
+        // lo spinner. Da background e soprattutto ad app killata la nota non fa
+        // in tempo ad arrivare — prima si tentava una sola `fetchNotesOnce` e
+        // poi si mostrava "contenuto non più disponibile" per una nota che
+        // sarebbe comparsa un attimo dopo.
+        path.removeAll()
+        path.append(.notesHome(familyId: familyId))
+
+        startPushResolution(message: "Apro la nota…") { [weak self] in
+            guard let self else { return }
+            let currentUid = Auth.auth().currentUser?.uid
+            let resolved = await self.awaitPushResource(
+                label: "nota",
+                fetch: { () -> KBNote? in
+                    let nid = noteId
+                    let desc = FetchDescriptor<KBNote>(predicate: #Predicate<KBNote> { $0.id == nid })
+                    guard let note = try? modelContext.fetch(desc).first else { return nil }
+                    // Una nota già in locale ma non ancora visibile (permessi
+                    // arrivati con la riga vecchia) non va accettata: si
+                    // continua ad aspettare l'aggiornamento.
+                    return note.isVisible(to: currentUid) ? note : nil
+                },
+                refresh: {
+                    await SyncCenter.shared.fetchNotesOnce(familyId: familyId, modelContext: modelContext)
+                }
+            )
+            guard !Task.isCancelled else { return }
+
+            guard resolved != nil else {
+                self.globalBannerMessage = "Questo contenuto non è più disponibile."
+                KBLog.navigation.kbError("openNoteFromPush: note missing or not visible, resto su notesHome")
+                return
             }
-            
-            path.removeAll()
-            if let found, found.isVisible(to: currentUid) {
-                path.append(.notesHome(familyId: familyId))
-                path.append(.noteDetail(familyId: familyId, noteId: noteId, isNewNote: false))
-                KBLog.navigation.kbInfo("openNoteFromPush: navigating to noteDetail")
-            } else {
-                path.append(.notesHome(familyId: familyId))
-                globalBannerMessage = "Questo contenuto non è più disponibile."
-                KBLog.navigation.kbError("openNoteFromPush: note missing or not visible, fallback to notesHome")
-            }
+
+            self.path.removeAll()
+            self.path.append(.notesHome(familyId: familyId))
+            self.path.append(.noteDetail(familyId: familyId, noteId: noteId, isNewNote: false))
+            KBLog.navigation.kbInfo("openNoteFromPush: navigating to noteDetail")
         }
     }
     
@@ -1136,53 +1218,13 @@ final class AppCoordinator: ObservableObject {
     @MainActor
     func openCalendarEventFromPush(familyId: String, eventId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openCalendarEventFromPush familyId=\(familyId) eventId=\(eventId)")
-        
-        Task { @MainActor in
-            let maxAttempts = 8
-            var resolved: KBCalendarEvent?
-            for attempt in 1...maxAttempts {
-                let eid = eventId
-                let desc = FetchDescriptor<KBCalendarEvent>(predicate: #Predicate { $0.id == eid })
-                resolved = try? modelContext.fetch(desc).first
-                if resolved != nil {
-                    KBLog.navigation.kbDebug("openCalendarEventFromPush: event found attempt=\(attempt)")
-                    break
-                }
-                KBLog.navigation.kbDebug("openCalendarEventFromPush: event not yet local attempt=\(attempt)/\(maxAttempts)")
-                if attempt < maxAttempts {
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                }
-            }
-            
-            let currentUid = Auth.auth().currentUser?.uid
-            let fid = familyId
-            
-            /// Evidenzia la data/evento solo se l'evento esiste in locale, appartiene alla famiglia ed è visibile.
-            /// Se non è ancora in locale dopo i retry, apri comunque il calendario con evidenziazione (può comparire dopo il sync).
-            let shouldHighlight: Bool = {
-                guard let resolved else { return true }
-                guard resolved.familyId == fid else { return false }
-                return resolved.isVisible(to: currentUid)
-            }()
-            
-            let isHiddenToUser: Bool = {
-                guard let resolved else { return false }
-                guard resolved.familyId == fid else { return false }
-                return !resolved.isVisible(to: currentUid)
-            }()
-            
-            if isHiddenToUser {
-                globalBannerMessage = "Questo contenuto non è più disponibile."
-                KBLog.navigation.kbError("openCalendarEventFromPush: event present but not visible eventId=\(eventId)")
-            }
-            
-            path.removeAll()
-            path.append(.calendar(familyId: familyId, highlightEventId: shouldHighlight ? eventId : nil))
-            KBLog.navigation.kbInfo("""
-            [openCalendarEventFromPush] path rebuilt highlight=\(shouldHighlight) \
-            resolved=\(resolved != nil) hiddenToUser=\(isHiddenToUser)
-            """)
-        }
+
+        // Nessuna attesa qui: a sapere se l'evento c'è è la `@Query` che disegna
+        // il calendario, non una lettura separata del contesto. Si naviga e
+        // basta, poi `CalendarView` aspetta e apre la scheda dell'evento —
+        // spinner compreso. Stessa divisione di `CalendarScreen` su Android.
+        path.removeAll()
+        path.append(.calendar(familyId: familyId, highlightEventId: eventId))
     }
     
     // MARK: - Open Visit from Push
@@ -1304,61 +1346,127 @@ final class AppCoordinator: ObservableObject {
         }
     }
 
+    // MARK: - Attesa di una risorsa arrivata da notifica
+
+    /// Quanto si aspetta la risorsa di una notifica prima di rinunciare. Oltre
+    /// questo limite è più probabile che non arrivi mai (cancellata, non
+    /// visibile, sync mai completata) che non un ritardo: meglio lasciare
+    /// l'utente libero che tenerlo appeso.
+    private static let pushResourceTimeout: TimeInterval = 25
+    private static let pushResourcePollInterval: UInt64 = 500_000_000
+    /// Ogni quanti giri di polling si ritenta anche una fetch una tantum.
+    private static let pushResourceRefreshEvery = 4
+
+    /// Aspetta che `fetch` trovi in locale la risorsa di una notifica.
+    ///
+    /// Si ASPETTA invece di leggere una volta sola: ad app chiusa la notifica
+    /// viene toccata molto prima che la sincronizzazione abbia portato il
+    /// contenuto in SwiftData — a freddo il grosso del tempo se ne va nel
+    /// login e nel primo giro di sync — quindi una lettura immediata
+    /// fallirebbe quasi sempre e si finiva sulla panoramica con "contenuto non
+    /// più disponibile". Stessa attesa di `TodoDeepLinkResolverViewModel` su
+    /// Android.
+    ///
+    /// - Parameter refresh: fetch una tantum da ritentare periodicamente, per
+    ///   le sezioni il cui realtime potrebbe non essere ancora partito.
+    @MainActor
+    private func awaitPushResource<T>(
+        label: String,
+        fetch: @MainActor () -> T?,
+        refresh: (@MainActor () async -> Void)? = nil
+    ) async -> T? {
+        let deadline = Date().addingTimeInterval(Self.pushResourceTimeout)
+        var attempt = 0
+        while !Task.isCancelled {
+            attempt += 1
+            if let found = fetch() {
+                KBLog.navigation.kbDebug("[push] \(label) trovato attempt=\(attempt)")
+                return found
+            }
+            guard Date() < deadline else {
+                KBLog.navigation.kbInfo("[push] \(label): timeout dopo \(attempt) tentativi")
+                return nil
+            }
+            if let refresh, attempt % Self.pushResourceRefreshEvery == 0 {
+                await refresh()
+                if Task.isCancelled { return nil }
+                continue
+            }
+            try? await Task.sleep(nanoseconds: Self.pushResourcePollInterval)
+        }
+        return nil
+    }
+
+    /// Avvia un'attesa mostrando lo spinner, sostituendo quella eventualmente
+    /// in corso. Lo spinner si spegne da sé quando `body` termina.
+    @MainActor
+    private func startPushResolution(message: String, body: @escaping @MainActor () async -> Void) {
+        deepLinkResolutionTask?.cancel()
+        deepLinkLoadingMessage = message
+        deepLinkResolutionTask = Task { @MainActor in
+            defer {
+                deepLinkLoadingMessage = nil
+                deepLinkResolutionTask = nil
+            }
+            await body()
+        }
+    }
+
     // MARK: - Open Todo from Push
-    
+
     /// Apre direttamente il todo che ha scatenato il promemoria.
     /// Path: todo → todoList (con highlight sul todo specifico)
     @MainActor
     func openTodoFromPush(familyId: String, childId: String, listId: String, todoId: String, modelContext: ModelContext) {
         KBLog.navigation.kbInfo("openTodoFromPush familyId=\(familyId) childId=\(childId) listId=\(listId) todoId=\(todoId)")
-        
-        Task { @MainActor in
-            // Aspetta che il todo sia disponibile in SwiftData (max 4 tentativi × 500ms)
-            let maxAttempts = 4
-            var resolved: KBTodoItem?
-            for attempt in 1...maxAttempts {
+
+        // Si apre subito la panoramica To-Do: dà un contesto mentre si aspetta,
+        // invece di lasciare l'utente dov'era senza spiegazioni. È anche ciò
+        // che fa partire `startTodoRealtime`, cioè la sync che porterà il to-do.
+        path.removeAll()
+        path.append(.todo)
+
+        startPushResolution(message: "Apro il to-do…") { [weak self] in
+            guard let self else { return }
+            let resolved = await self.awaitPushResource(label: "todo") {
                 let tid = todoId
-                let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate { $0.id == tid })
-                resolved = try? modelContext.fetch(desc).first
-                if resolved != nil {
-                    KBLog.navigation.kbDebug("openTodoFromPush: todo found attempt=\(attempt)")
-                    break
-                }
-                KBLog.navigation.kbDebug("openTodoFromPush: todo not found yet attempt=\(attempt)/\(maxAttempts)")
-                if attempt < maxAttempts {
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                }
+                let desc = FetchDescriptor<KBTodoItem>(predicate: #Predicate<KBTodoItem> { $0.id == tid })
+                return try? modelContext.fetch(desc).first
             }
-            
+            guard !Task.isCancelled else { return }
+
             let currentUid = Auth.auth().currentUser?.uid
-            let shouldOpenList = resolved?.isVisible(to: currentUid) == true
-            
-            if shouldOpenList {
-                TodoHighlightStore.shared.set(todoId)
-            } else {
+            guard let resolved, resolved.isVisible(to: currentUid) else {
                 TodoHighlightStore.shared.set(nil)
-                globalBannerMessage = "Questo contenuto non è più disponibile."
-            }
-            
-            path.removeAll()
-            path.append(.todo)
-            if shouldOpenList {
-                path.append(.todoList(familyId: familyId, childId: childId, listId: listId))
-            }
-            KBLog.navigation.kbInfo("""
-            [openTodoFromPush] path rebuilt count=\(path.count) \
-            resolved=\(resolved != nil) visible=\(shouldOpenList) \
-            routes=\(path.map { String(describing: $0) }.joined(separator: " → "))
-            """)
-            
-            if !shouldOpenList {
+                self.globalBannerMessage = "Questo contenuto non è più disponibile."
                 KBLog.navigation.kbError("openTodoFromPush: todo missing or not visible todoId=\(todoId)")
-            } else {
-                KBLog.navigation.kbInfo("openTodoFromPush: navigating to todoList and highlighting todoId=\(todoId)")
+                return
             }
+
+            // `listId` e `childId` si prendono dal to-do vero: il payload del
+            // server manda `after.listId || ""`, e con la stringa vuota la
+            // rotta punterebbe a una lista che non esiste. Il valore della
+            // notifica resta solo come ripiego.
+            let resolvedListId = (resolved.listId?.isEmpty == false) ? resolved.listId! : listId
+            let resolvedChildId = resolved.childId.isEmpty ? childId : resolved.childId
+            guard !resolvedListId.isEmpty else {
+                TodoHighlightStore.shared.set(nil)
+                self.globalBannerMessage = "Questo contenuto non è più disponibile."
+                KBLog.navigation.kbError("openTodoFromPush: listId non risolto todoId=\(todoId)")
+                return
+            }
+
+            // L'highlight va impostato PRIMA della push: `TodoListView` lo
+            // legge già al primo `onAppear`, così il flash parte da solo.
+            TodoHighlightStore.shared.set(todoId)
+            self.path.removeAll()
+            self.path.append(.todo)
+            self.path.append(.todoList(familyId: resolved.familyId, childId: resolvedChildId, listId: resolvedListId))
+            KBLog.navigation.kbInfo("openTodoFromPush: aperta todoList listId=\(resolvedListId) todoId=\(todoId)")
         }
     }
-    
+
+
     func resetToRoot() {
         KBLog.navigation.kbInfo("Reset to root (clearing path)")
         openFamilyPhotosCameraForFamilyId = nil

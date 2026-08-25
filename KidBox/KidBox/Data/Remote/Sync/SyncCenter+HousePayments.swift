@@ -155,8 +155,8 @@ extension SyncCenter {
                         existing.syncState = .synced
                         existing.lastSyncError = nil
 
+                        // Nessun promemoria armato qui: sono del device che li ha creati.
                         KBLog.sync.kbDebug("[housePayment][inbound] UPDATED id=\(dto.id)")
-                        Task { await HousePaymentReminderService.shared.scheduleNext(for: existing) }
 
                     } else {
                         let now = dto.updatedAt ?? Date()
@@ -183,7 +183,6 @@ extension SyncCenter {
                         row.syncState = .synced
                         modelContext.insert(row)
                         KBLog.sync.kbDebug("[housePayment][inbound] CREATED id=\(dto.id)")
-                        Task { await HousePaymentReminderService.shared.scheduleNext(for: row) }
                     }
 
                 case .remove(let id):

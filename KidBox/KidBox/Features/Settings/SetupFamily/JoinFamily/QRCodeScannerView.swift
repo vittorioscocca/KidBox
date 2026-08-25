@@ -62,46 +62,72 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> UIViewController {
         KBLog.navigation.kbDebug("QRCodeScannerView makeUIViewController")
-        
+
         let viewController = UIViewController()
         viewController.view.backgroundColor = .black
-        
+
+        // Without this check, a previously-denied camera permission leaves the
+        // preview black forever with no feedback: startRunning() just never
+        // produces frames. Request/verify access first, then build the session.
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            startSession(on: viewController, context: context)
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        self.startSession(on: viewController, context: context)
+                    } else {
+                        self.showPermissionDeniedMessage(on: viewController)
+                    }
+                }
+            }
+        case .denied, .restricted:
+            showPermissionDeniedMessage(on: viewController)
+        @unknown default:
+            showPermissionDeniedMessage(on: viewController)
+        }
+
+        return viewController
+    }
+
+    private func startSession(on viewController: UIViewController, context: Context) {
         let captureSession = AVCaptureSession()
-        
+
         guard let videoDevice = AVCaptureDevice.default(for: .video) else {
             KBLog.navigation.kbError("QRCodeScannerView: no video device available")
-            return viewController
+            return
         }
-        
+
         guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
             KBLog.navigation.kbError("QRCodeScannerView: cannot create video input")
-            return viewController
+            return
         }
-        
+
         guard captureSession.canAddInput(videoInput) else {
             KBLog.navigation.kbError("QRCodeScannerView: cannot add video input to session")
-            return viewController
+            return
         }
         captureSession.addInput(videoInput)
-        
+
         let metadataOutput = AVCaptureMetadataOutput()
         guard captureSession.canAddOutput(metadataOutput) else {
             KBLog.navigation.kbError("QRCodeScannerView: cannot add metadata output to session")
-            return viewController
+            return
         }
         captureSession.addOutput(metadataOutput)
-        
+
         metadataOutput.setMetadataObjectsDelegate(context.coordinator, queue: .main)
         metadataOutput.metadataObjectTypes = [.qr]
-        
+
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer.videoGravity = .resizeAspectFill
         previewLayer.frame = viewController.view.layer.bounds
         viewController.view.layer.addSublayer(previewLayer)
-        
+
         captureSession.startRunning()
         KBLog.navigation.kbInfo("QRCodeScannerView session started")
-        
+
         // Manteniamo viva la sessione per la lifetime del VC
         objc_setAssociatedObject(
             viewController,
@@ -109,7 +135,7 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
             captureSession,
             .OBJC_ASSOCIATION_RETAIN_NONATOMIC
         )
-        
+
         // Manteniamo viva anche la previewLayer (evita deallocazioni strane)
         objc_setAssociatedObject(
             viewController,
@@ -117,10 +143,41 @@ struct QRCodeScannerView: UIViewControllerRepresentable {
             previewLayer,
             .OBJC_ASSOCIATION_RETAIN_NONATOMIC
         )
-        
-        return viewController
     }
-    
+
+    private func showPermissionDeniedMessage(on viewController: UIViewController) {
+        let label = UILabel()
+        label.text = "Permesso fotocamera necessario.\nAttivalo dalle Impostazioni per scansionare il QR."
+        label.textColor = .white
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let button = UIButton(type: .system)
+        button.setTitle("Apri Impostazioni", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addAction(UIAction { _ in
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        }, for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [label, button])
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        viewController.view.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: viewController.view.centerYAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: viewController.view.leadingAnchor, constant: 32),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: viewController.view.trailingAnchor, constant: -32),
+        ])
+    }
+
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
         // Intentionally empty.
         // If you need to reset scanning while the VC stays alive, you'd reset `didDetect`

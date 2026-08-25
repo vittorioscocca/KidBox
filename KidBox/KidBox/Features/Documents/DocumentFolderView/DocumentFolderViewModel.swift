@@ -248,6 +248,22 @@ final class DocumentFolderViewModel: ObservableObject {
                 }
             }
 
+            // La root «Spese» esiste solo se c'è almeno una spesa: se resta da una
+            // versione precedente non deve comparire finché non se ne salva una.
+            if folderId == nil {
+                let expenseRootId = "exp-root-\(fid)"
+                if folderList.contains(where: { $0.id == expenseRootId }) {
+                    var anyExpenseDesc = FetchDescriptor<KBExpense>(
+                        predicate: #Predicate<KBExpense> { $0.familyId == fid && $0.isDeleted == false }
+                    )
+                    anyExpenseDesc.fetchLimit = 1
+                    let hasExpenses = !((try? modelContext.fetch(anyExpenseDesc)) ?? []).isEmpty
+                    if !hasExpenses {
+                        folderList.removeAll { $0.id == expenseRootId }
+                    }
+                }
+            }
+
             folders = folderList
             docs    = try fetchDocs(modelContext: modelContext)
             applySort()

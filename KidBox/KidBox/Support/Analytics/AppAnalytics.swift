@@ -16,6 +16,26 @@ enum AppAnalytics {
         Analytics.logEvent("signup_completed", parameters: ["method": method])
     }
 
+    /// Tap su un provider OAuth (Google/Apple/Facebook): a differenza di
+    /// `signupStarted`, questo scatta sempre, anche per un login di un utente
+    /// già esistente — non si può sapere se è un nuovo account finché Firebase
+    /// non risponde con `isNewUser`.
+    static func loginAttempted(method: String) {
+        Analytics.logEvent("login_attempted", parameters: ["method": method])
+    }
+
+    static func signupMethodSelected(method: String) {
+        Analytics.logEvent("signup_method_selected", parameters: ["method": method])
+    }
+
+    static func preSignupScreenShown(screenName: String) {
+        Analytics.logEvent("pre_signup_screen_shown", parameters: ["screen_name": screenName])
+    }
+
+    static func preSignupScreenDismissed(screenName: String) {
+        Analytics.logEvent("pre_signup_screen_dismissed", parameters: ["screen_name": screenName])
+    }
+
     static func onboardingStepShown(stepName: String, stepNumber: Int) {
         Analytics.logEvent("onboarding_step_shown", parameters: [
             "step_name": stepName,

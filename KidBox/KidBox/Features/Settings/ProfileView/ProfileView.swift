@@ -106,6 +106,7 @@ struct ProfileView: View {
     @State private var email: String = ""
     @State private var lastLoginAt: Date?
     @State private var saveErrorText: String?
+    @State private var showRemoveAvatarConfirm = false
     @State private var didLoadInitial = false
     @State private var isDirty = false
     @State private var savedFirstName: String = ""
@@ -197,6 +198,16 @@ struct ProfileView: View {
         } message: {
             Text("Verrai reindirizzato alla schermata di accesso.")
         }
+        .confirmationDialog(
+            "Rimuovere la foto profilo?",
+            isPresented: $showRemoveAvatarConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Rimuovi foto", role: .destructive) { removeAvatar() }
+            Button("Annulla", role: .cancel) { }
+        } message: {
+            Text("La foto verrà rimossa subito, anche per gli altri membri della famiglia.")
+        }
         .sheet(isPresented: $showDeleteAccountSheet) {
             DeleteAccountConfirmSheet(
                 confirmText: $deleteConfirmText,
@@ -273,7 +284,21 @@ struct ProfileView: View {
                 Spacer()
             }
             .padding(.top, 24)
-            .padding(.bottom, 20)
+            .padding(.bottom, 8)
+
+            // Compare solo se c'è davvero una foto da togliere: offrire
+            // "Rimuovi" su un avatar già vuoto sarebbe un comando inerte.
+            if avatarData != nil {
+                Button(role: .destructive) {
+                    showRemoveAvatarConfirm = true
+                } label: {
+                    Text("Rimuovi foto")
+                        .font(.subheadline)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+                .padding(.bottom, 12)
+            }
             
             Divider().padding(.horizontal, 20)
             
@@ -762,6 +787,48 @@ struct ProfileView: View {
         }
     }
     
+    /// Elimina la foto profilo corrente.
+    ///
+    /// Agisce SUBITO, senza attendere il salvataggio del modulo: una foto è un
+    /// contenuto già pubblicato agli altri membri, e chi la rimuove si aspetta
+    /// che sparisca adesso.
+    private func removeAvatar() {
+        avatarData = nil
+        selectedPhotoItem = nil
+        guard let uid = Auth.auth().currentUser?.uid, !uid.isEmpty else { return }
+        let familyId = resolvedFamilyId()
+
+        Task {
+            // Prima si sgancia il riferimento, poi si cancella il file: se
+            // fallisse la cancellazione resterebbe un file orfano — spiacevole
+            // ma invisibile — mentre l'ordine inverso lascerebbe i client a
+            // puntare a un'immagine che non esiste più.
+            do {
+                try await Firestore.firestore()
+                    .collection("users").document(uid)
+                    .setData(["avatarURL": "", "updatedAt": Timestamp(date: Date())], merge: true)
+                if let familyId {
+                    try await Firestore.firestore()
+                        .collection("families").document(familyId)
+                        .collection("locations").document(uid)
+                        .setData(["avatarURL": ""], merge: true)
+                }
+            } catch {
+                KBLog.app.kbError("Profile: azzeramento avatarURL fallito: \(error.localizedDescription)")
+            }
+            await avatarRemoteStore.deleteAvatar(uid: uid, familyId: familyId)
+
+            await MainActor.run {
+                let desc = FetchDescriptor<KBUserProfile>(predicate: #Predicate { $0.uid == uid })
+                if let profile = try? modelContext.fetch(desc).first {
+                    profile.avatarData = nil
+                    profile.updatedAt = Date()
+                    try? modelContext.save()
+                }
+            }
+        }
+    }
+
     private func resolvedFamilyId() -> String? {
         if let active = coordinator.activeFamilyId, !active.isEmpty { return active }
         let descriptor = FetchDescriptor<KBFamily>()

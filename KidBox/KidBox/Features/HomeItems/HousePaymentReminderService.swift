@@ -18,6 +18,7 @@ final class HousePaymentReminderService {
     private let center = UNUserNotificationCenter.current()
 
     func cancelAll(paymentId: String) async {
+        KBDeviceReminderLedger.forget(KBDeviceReminderLedger.housePayment(paymentId))
         let prefix = Self.idPrefix(paymentId: paymentId)
         let pending = await center.pendingNotificationRequests()
         let ids = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
@@ -33,10 +34,12 @@ final class HousePaymentReminderService {
             predicate: #Predicate { $0.isDeleted == false && $0.reminderOn == true }
         )
         guard let rows = try? modelContext.fetch(desc) else { return }
-        for p in rows {
+        // Solo ciò che è già armato su questo device: il refresh rinnova, non crea.
+        let mine = rows.filter { KBDeviceReminderLedger.contains(KBDeviceReminderLedger.housePayment($0.id)) }
+        for p in mine {
             await scheduleNext(for: p)
         }
-        KBLog.sync.kbDebug("[HousePaymentReminder] rescheduleAllActive count=\(rows.count)")
+        KBLog.sync.kbDebug("[HousePaymentReminder] rescheduleAllActive count=\(mine.count)/\(rows.count)")
     }
 
     func scheduleNext(for payment: KBHousePayment) async {
@@ -72,11 +75,9 @@ final class HousePaymentReminderService {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let identifier = "\(Self.idPrefix(paymentId: payment.id))next"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-        do {
-            try await center.add(request)
+        if await KBLocalNotificationBudget.shared.add(request, priority: .deadline) {
+            KBDeviceReminderLedger.record(KBDeviceReminderLedger.housePayment(payment.id))
             KBLog.sync.kbDebug("[HousePaymentReminder] scheduled id=\(identifier) fire=\(fire)")
-        } catch {
-            KBLog.sync.kbError("[HousePaymentReminder] schedule FAIL id=\(payment.id) err=\(error.localizedDescription)")
         }
     }
 

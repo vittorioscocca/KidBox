@@ -77,6 +77,8 @@ final class FirebaseGoogleAuthService {
 
         KBLog.auth.kbInfo("Google sign-in OK uid=\(authResult.user.uid)")
         if authResult.additionalUserInfo?.isNewUser == true {
+            AppAnalytics.signupStarted(method: "google")
+            AppAnalytics.signupMethodSelected(method: "google")
             AppAnalytics.signupCompleted(method: "google")
         }
 

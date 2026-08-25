@@ -53,11 +53,7 @@ final class WalletDocumentReminderService {
             let identifier = Self.identifier(documentId: documentId, offset: offset)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-            do {
-                try await center.add(request)
-            } catch {
-                KBLog.sync.kbError("[WalletDocumentReminder] schedule FAIL \(identifier) err=\(error.localizedDescription)")
-            }
+            await KBLocalNotificationBudget.shared.add(request, priority: .deadline)
         }
     }
 

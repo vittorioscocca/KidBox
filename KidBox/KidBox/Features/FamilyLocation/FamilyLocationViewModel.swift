@@ -39,6 +39,13 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
     
     private var shouldStartLocationUpdates = false
     private var expiryTask: Task<Void, Never>?
+
+    /// `distanceFilter` da solo può far scattare un invio a Firestore molto
+    /// più spesso di quanto serva (basta muoversi di 10m). Questo throttle
+    /// temporale limita la scrittura remota a una ogni `locationUploadInterval`,
+    /// indipendentemente da quanti fix GPS arrivano nel frattempo.
+    private static let locationUploadInterval: TimeInterval = 45
+    private var lastLocationUploadDate: Date?
     
     /// Nome canonico (SwiftData) passato dalla View. Il self-healing avviene
     /// in `healRemoteDisplayNameIfNeeded()`, guidato dal listener: prima veniva
@@ -441,6 +448,9 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
         
         switch status {
         case .authorizedWhenInUse, .authorizedAlways:
+            // Il primo fix di una nuova sessione di condivisione va sempre
+            // inviato subito, non bloccato da un throttle rimasto da prima.
+            lastLocationUploadDate = nil
             locationManager.startUpdatingLocation()
             locationManager.requestLocation()
             shouldStartLocationUpdates = false
@@ -525,6 +535,15 @@ final class FamilyLocationViewModel: NSObject, ObservableObject, CLLocationManag
             }
         }
         
+        // Primo fix dopo l'avvio della condivisione: va inviato subito, non
+        // aspettando i 45s, altrimenti gli altri membri vedrebbero la card
+        // "in attesa di posizione" più a lungo del necessario.
+        let now = Date()
+        if let last = lastLocationUploadDate, now.timeIntervalSince(last) < Self.locationUploadInterval {
+            return
+        }
+        lastLocationUploadDate = now
+
         Task {
             await remote.updateLocation(
                 familyId: familyId,

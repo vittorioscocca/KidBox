@@ -21,6 +21,9 @@ struct ExpensesHomeView: View {
     let familyId: String
     /// Se valorizzato, filtra subito per questa categoria (es. Viaggi dal dettaglio viaggio).
     let initialCategoryId: String?
+    /// Spesa arrivata da notifica. La si apre appena la sincronizzazione la
+    /// porta in locale; fino ad allora si aspetta qui, con lo spinner.
+    let highlightExpenseId: String?
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
@@ -30,10 +33,16 @@ struct ExpensesHomeView: View {
     // lo stesso approccio usato da DocumentFolderView con bind(modelContext:).
     @StateObject private var vm: ExpensesViewModel
     @State private var syncCancellable: AnyCancellable? = nil
+    /// Spesa da notifica già aperta: evita di riaprirne il dettaglio a ogni
+    /// reload della lista. Gemello di `consumedHighlightExpenseId` su Android.
+    @State private var openedPushExpenseId: String? = nil
+    /// Si sta aspettando che la sincronizzazione porti la spesa della notifica.
+    @State private var isWaitingForPushExpense = false
     
-    init(familyId: String, initialCategoryId: String? = nil) {
+    init(familyId: String, initialCategoryId: String? = nil, highlightExpenseId: String? = nil) {
         self.familyId = familyId
         self.initialCategoryId = initialCategoryId
+        self.highlightExpenseId = highlightExpenseId
         // Inizializzazione con un context temporaneo in-memory: viene subito
         // sostituito dal bind(modelContext:) nell'onAppear con il context reale.
         _vm = StateObject(wrappedValue: ExpensesViewModel(
@@ -54,28 +63,33 @@ struct ExpensesHomeView: View {
             
             ScrollView {
                 VStack(spacing: 20) {
-                    // Period picker
-                    PeriodPickerView(vm: vm)
-                    
-                    // Summary card
-                    TotalSummaryCard(vm: vm)
-                    
-                    // Bar chart
-                    if !vm.monthlyBars.isEmpty {
-                        MonthlyBarChartView(vm: vm)
+                    // Nessuna spesa in assoluto: restano solo il messaggio e il
+                    // pulsante, senza periodo, totale, grafici e barra selezione.
+                    if vm.hasAnyExpense {
+                        // Period picker
+                        PeriodPickerView(vm: vm)
+
+                        // Summary card
+                        TotalSummaryCard(vm: vm)
+
+                        // Bar chart
+                        if !vm.monthlyBars.isEmpty {
+                            MonthlyBarChartView(vm: vm)
+                        }
+
+                        // Category breakdown
+                        if !vm.categorySlices.isEmpty {
+                            CategoryBreakdownView(vm: vm)
+                        }
                     }
-                    
-                    // Category breakdown
-                    if !vm.categorySlices.isEmpty {
-                        CategoryBreakdownView(vm: vm)
-                    }
-                    
+
                     // Expense list
                     ExpenseListSection(vm: vm)
                 }
                 .padding()
             }
         }
+        .trackSectionPresence(.expenses, familyId: familyId)
         .navigationTitle("Spese di famiglia")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -108,6 +122,42 @@ struct ExpensesHomeView: View {
                 vm.selectedCategoryFilter = catId
             }
             vm.reload()
+            startPushExpenseWait()
+        }
+        // Attesa della spesa arrivata da notifica. Vive QUI e non nel dettaglio
+        // perché è questa schermata a tenere acceso `startExpensesRealtime`:
+        // andando dritti al dettaglio la sync delle spese non partiva nemmeno,
+        // quindi da background o ad app chiusa la spesa non poteva arrivare e
+        // restava "Spesa non trovata". Come `ExpensesHomeScreen` su Android.
+        .overlay {
+            if isWaitingForPushExpense {
+                ZStack {
+                    Color.black.opacity(0.25).ignoresSafeArea()
+                    HStack(spacing: 14) {
+                        ProgressView()
+                        Text("Apro la spesa…").font(.subheadline)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .shadow(radius: 12, y: 4)
+                }
+                .transition(.opacity)
+                // Toccando fuori si rinuncia ad aspettare.
+                .onTapGesture { isWaitingForPushExpense = false }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isWaitingForPushExpense)
+        .onChange(of: vm.expenses.count) { _, _ in openPushExpenseIfNeeded() }
+        .onChange(of: highlightExpenseId) { _, _ in startPushExpenseWait() }
+        // Scaduta l'attesa si smette di bloccare l'utente: resta la lista spese.
+        .task(id: highlightExpenseId) {
+            guard highlightExpenseId?.isEmpty == false else { return }
+            try? await Task.sleep(nanoseconds: Self.pushExpenseWaitTimeout)
+            guard !Task.isCancelled, isWaitingForPushExpense else { return }
+            isWaitingForPushExpense = false
+            coordinator.globalBannerMessage = "Questo contenuto non è più disponibile."
+            KBLog.navigation.kbError("ExpensesHomeView: spesa da push mai arrivata expenseId=\(highlightExpenseId ?? "nil")")
         }
         .onChange(of: vm.period)       { vm.reload() }
         .onChange(of: vm.customStart)  { vm.reload() }
@@ -119,6 +169,36 @@ struct ExpensesHomeView: View {
         }
         .environment(\.locale, expensesAppLocale())
     }
+
+    // MARK: - Spesa da notifica
+
+    /// Apre il dettaglio della spesa della notifica, una volta sola.
+    private func openPushExpenseIfNeeded() {
+        guard let eid = highlightExpenseId, openedPushExpenseId != eid else { return }
+        guard vm.expenses.contains(where: { $0.id == eid }) else { return }
+        openedPushExpenseId = eid
+        isWaitingForPushExpense = false
+        // La push non parte durante la transizione di ingresso della schermata:
+        // si aspetta che sia finita.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            coordinator.navigate(to: .expenseDetail(familyId: familyId, expenseId: eid))
+        }
+        KBLog.navigation.kbInfo("ExpensesHomeView: apertura dettaglio spesa da push expenseId=\(eid)")
+    }
+
+    /// Accende l'attesa se la notifica punta a una spesa non ancora in locale.
+    private func startPushExpenseWait() {
+        guard let eid = highlightExpenseId, !eid.isEmpty, openedPushExpenseId != eid else { return }
+        if vm.expenses.contains(where: { $0.id == eid }) {
+            openPushExpenseIfNeeded()
+        } else {
+            isWaitingForPushExpense = true
+        }
+    }
+
+    /// Oltre questo limite è più probabile che la spesa non arrivi mai
+    /// (cancellata, non visibile) che non un ritardo della sincronizzazione.
+    private static let pushExpenseWaitTimeout: UInt64 = 25_000_000_000
 }
 
 // MARK: - Period Picker
@@ -395,8 +475,9 @@ private struct ExpenseListSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            
+
             // ── Header ────────────────────────────────────────────────────────
+            if vm.hasAnyExpense {
             HStack {
                 Label(filteredLabel, systemImage: "list.bullet")
                     .font(.headline)
@@ -421,15 +502,18 @@ private struct ExpenseListSection: View {
                     .foregroundStyle(Color.accentColor)
                 }
             }
-            
+            }
+
             // ── Lista ─────────────────────────────────────────────────────────
             if vm.expenses.isEmpty {
-                ContentUnavailableView(
-                    "Nessuna spesa",
+                KBEmptyStateView(
                     systemImage: "receipt",
-                    description: Text("Aggiungi la prima spesa con il tasto +")
+                    title: "Nessuna spesa",
+                    message: "Tieni traccia di quanto esce e per cosa, diviso per categoria. Vedi subito l'andamento del mese e chi ha pagato che cosa.",
+                    actionTitle: "Nuova spesa",
+                    actionSystemImage: "plus.circle.fill",
+                    action: { vm.showAddExpense = true }
                 )
-                .padding(.vertical, 20)
             } else {
                 VStack(spacing: 0) {
                     ForEach(vm.expenses) { expense in
@@ -485,10 +569,12 @@ private struct ExpenseListSection: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .padding(20)
-        .background(cardBg)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        // Senza spese la sezione non è una card: messaggio e pulsante stanno sullo
+        // stesso sfondo della pagina, come nell'empty state di Documenti.
+        .padding(vm.hasAnyExpense ? 20 : 0)
+        .background(vm.hasAnyExpense ? AnyShapeStyle(cardBg) : AnyShapeStyle(Color.clear))
+        .clipShape(RoundedRectangle(cornerRadius: vm.hasAnyExpense ? 16 : 0, style: .continuous))
+        .shadow(color: .black.opacity(vm.hasAnyExpense ? 0.06 : 0), radius: 8, x: 0, y: 2)
         .animation(.easeInOut(duration: 0.2), value: vm.isSelecting)
         // ── Confirmation dialog eliminazione multipla ─────────────────────────
         .confirmationDialog(

@@ -2,10 +2,12 @@ import { useState } from "react";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { todoListsCol } from "../hooks/useTodoLists";
 import { useAuth } from "../AuthContext";
+import { useTranslation } from "../i18n/LocaleContext";
 import Modal from "./Modal";
 
 export default function NewListModal({ familyId, childId, onClose }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [error, setError] = useState(null);
 
@@ -34,14 +36,14 @@ export default function NewListModal({ familyId, childId, onClose }) {
           ✕
         </button>
         <button className="modal-save-btn" disabled={!name.trim()} onClick={save}>
-          Salva
+          {t.todo.save}
         </button>
       </div>
-      <div className="modal-title">Nuova lista</div>
+      <div className="modal-title">{t.todo.newList}</div>
       {error && <p className="error">{error}</p>}
       <input
         className="modal-field"
-        placeholder="Nome lista"
+        placeholder={t.todo.listName}
         value={name}
         autoFocus
         onChange={(e) => setName(e.target.value)}

@@ -851,7 +851,9 @@ struct FamilyPhotosView: View {
             Image(systemName: "photo.stack.fill")
                 .font(.system(size: 64)).foregroundStyle(.quaternary)
             Text("Nessuna foto").font(.title3.weight(.semibold))
-            Text("Aggiungi le prime foto condivise della famiglia.")
+            // Stesso testo di `KBEmptyStateView`, ma la struttura resta a mano:
+            // il pulsante primario è un `PhotosPicker`, non un Button.
+            Text("Raccogli le foto e i video di famiglia in album condivisi, senza affidarli a un social. Tutto è cifrato end-to-end e resta solo tra voi.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .any(of: [.images, .videos])) {
                 Label("Aggiungi foto e video", systemImage: "plus.circle.fill")

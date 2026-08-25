@@ -118,7 +118,6 @@ struct FamilySettingsView: View {
                 .padding()
             }
         }
-        .navigationTitle("Family")
         .onAppear {
             syncMyMemberName()
         }
@@ -239,7 +238,7 @@ struct FamilySettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Famiglia")
                 .font(.title2).bold()
-            Text("Qui gestisci la famiglia e inviti l'altro genitore.")
+            Text("KidBox funziona davvero quando la famiglia è al completo: appena inviti l'altro genitore, calendario, spese, liste, documenti e chat si aggiornano per tutti in tempo reale. Da solo vedi solo la tua metà dell'organizzazione.")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -542,7 +541,9 @@ struct FamilySettingsView: View {
 
     private func membersSubtitle(list: [KBFamilyMember]) -> LocalizedStringKey {
         if list.isEmpty { return "Chi può accedere ai dati della famiglia." }
-        if list.count == 1 { return "1 membro collegato." }
+        // L'interpolazione dentro `LocalizedStringKey` risolve dal catalogo la
+        // variazione plurale ("%lld membri collegati.") già impostata con
+        // singolare/plurale per tutte le lingue — niente più caso speciale per 1.
         return "\(list.count) membri collegati."
     }
 

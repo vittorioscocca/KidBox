@@ -119,7 +119,10 @@ struct LoginView: View {
         .sheet(isPresented: $showEmailAuth) {
             EmailAuthView(vm: vm)
         }
-        .onAppear { KBLog.navigation.kbDebug("LoginView appeared") }
+        .onAppear {
+            KBLog.navigation.kbDebug("LoginView appeared")
+            AppAnalytics.preSignupScreenShown(screenName: "login")
+        }
         .onDisappear { KBLog.navigation.kbDebug("LoginView disappeared") }
         .animation(.default, value: vm.isBusy)
     }

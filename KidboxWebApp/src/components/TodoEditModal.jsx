@@ -3,6 +3,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { todosCol } from "../hooks/useTodos";
 import { useAuth } from "../AuthContext";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
+import { useTranslation } from "../i18n/LocaleContext";
 import Modal from "./Modal";
 
 function toLocalInputValue(date) {
@@ -10,19 +11,18 @@ function toLocalInputValue(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const VISIBILITY_OPTIONS = [
-  { scope: "family", label: "👨‍👩‍👧 Tutta la famiglia" },
-  { scope: "members", label: "👥 Membri selezionati" },
-  { scope: "private", label: "🔒 Solo io" },
-];
-
-function chipLabel(scope) {
-  return VISIBILITY_OPTIONS.find((o) => o.scope === scope)?.label || VISIBILITY_OPTIONS[0].label;
-}
-
 export default function TodoEditModal({ familyId, childId, listId, listName, onClose }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const members = useFamilyMembers(familyId);
+
+  const VISIBILITY_OPTIONS = [
+    { scope: "family", label: t.todo.family },
+    { scope: "members", label: t.todo.members },
+    { scope: "private", label: t.todo.onlyMe },
+  ];
+  const chipLabel = (scope) =>
+    VISIBILITY_OPTIONS.find((o) => o.scope === scope)?.label || VISIBILITY_OPTIONS[0].label;
 
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -36,9 +36,9 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
   const [error, setError] = useState(null);
 
   const assigneeLabel = () => {
-    if (!assignedTo) return "Nessuno";
-    if (assignedTo === user.uid) return "Me";
-    return members.find((m) => m.id === assignedTo)?.displayName || "Membro";
+    if (!assignedTo) return t.todo.none;
+    if (assignedTo === user.uid) return t.todo.me;
+    return members.find((m) => m.id === assignedTo)?.displayName || t.todo.none;
   };
 
   const toggleVisibilityMember = (uid) => {
@@ -91,7 +91,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
             ‹
           </button>
         </div>
-        <div className="modal-title">Assegna a</div>
+        <div className="modal-title">{t.todo.assignTo}</div>
         <div className="modal-section">
           <button
             className="modal-option"
@@ -100,7 +100,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
               setView("main");
             }}
           >
-            Nessuno {!assignedTo && "✓"}
+            {t.todo.none} {!assignedTo && "✓"}
           </button>
           <button
             className="modal-option"
@@ -109,7 +109,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
               setView("main");
             }}
           >
-            Me ({user.displayName || user.email}) {assignedTo === user.uid && "✓"}
+            {t.todo.me} ({user.displayName || user.email}) {assignedTo === user.uid && "✓"}
           </button>
           {members
             .filter((m) => m.id !== user.uid)
@@ -122,7 +122,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
                   setView("main");
                 }}
               >
-                {m.displayName || "Membro"} {assignedTo === m.id && "✓"}
+                {m.displayName || t.todo.none} {assignedTo === m.id && "✓"}
               </button>
             ))}
         </div>
@@ -135,14 +135,14 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
       <Modal onClose={() => setView("main")}>
         <div className="modal-header">
           <button className="modal-text-btn" onClick={() => setView("main")}>
-            Annulla
+            {t.todo.cancel}
           </button>
           <button className="modal-save-btn" onClick={() => setView("main")}>
-            Conferma
+            {t.todo.confirm}
           </button>
         </div>
-        <div className="modal-title">Visibilità</div>
-        <div className="modal-label">Chi può vedere questo to-do</div>
+        <div className="modal-title">{t.todo.visibility}</div>
+        <div className="modal-label">{t.todo.whoCanSee}</div>
         <div className="modal-section">
           {VISIBILITY_OPTIONS.map((opt) => (
             <button
@@ -161,7 +161,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
 
         {visibilityScope === "members" && (
           <>
-            <div className="modal-label">Seleziona membri</div>
+            <div className="modal-label">{t.todo.selectMembers}</div>
             <div className="modal-section">
               {members.map((m) => (
                 <button
@@ -169,7 +169,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
                   className="modal-option"
                   onClick={() => toggleVisibilityMember(m.id)}
                 >
-                  <span>{m.id === user.uid ? "Me" : m.displayName || "Membro"}</span>
+                  <span>{m.id === user.uid ? t.todo.me : m.displayName || t.todo.none}</span>
                   <span>{visibilityMemberIds.has(m.id) ? "●" : "○"}</span>
                 </button>
               ))}
@@ -190,7 +190,7 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
           ✓
         </button>
       </div>
-      <div className="modal-title">Nuovo in {listName || "Lista"}</div>
+      <div className="modal-title">{t.todo.newInList(listName || t.todo.list)}</div>
       {error && <p className="error">{error}</p>}
 
       <button className="modal-chip" onClick={() => setView("visibility")}>
@@ -199,24 +199,24 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
 
       <input
         className="modal-field"
-        placeholder="Titolo"
+        placeholder={t.todo.titlePlaceholder}
         value={title}
         autoFocus
         onChange={(e) => setTitle(e.target.value)}
       />
 
-      <div className="modal-label">Note</div>
+      <div className="modal-label">{t.todo.notes}</div>
       <textarea
         className="modal-field"
-        placeholder="Scrivi qui dettagli, promemoria o un elenco puntato..."
+        placeholder={t.todo.notesPlaceholder}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
 
-      <div className="modal-label">Scadenza</div>
+      <div className="modal-label">{t.todo.dueDate}</div>
       <div className="modal-section">
         <div className="modal-row clickable" onClick={() => setHasDate((v) => !v)}>
-          <span>Imposta scadenza</span>
+          <span>{t.todo.setDueDate}</span>
           <span className={`modal-check ${hasDate ? "on" : "off"}`}>✓</span>
         </div>
         {hasDate && (
@@ -232,12 +232,12 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
 
       <div className="modal-section">
         <div className="modal-row clickable" onClick={() => setIsUrgent((v) => !v)}>
-          <span>Urgente</span>
+          <span>{t.todo.urgent}</span>
           <span className={`modal-check ${isUrgent ? "on" : "off"}`}>✓</span>
         </div>
       </div>
 
-      <div className="modal-label">Assegnato a</div>
+      <div className="modal-label">{t.todo.assignedTo}</div>
       <div className="modal-section">
         <div className="modal-row clickable" onClick={() => setView("assignee")}>
           <span>{assigneeLabel()}</span>

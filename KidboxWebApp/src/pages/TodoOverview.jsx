@@ -8,12 +8,14 @@ import { useTodos, todosCol } from "../hooks/useTodos";
 import { useTodoLists, todoListsCol } from "../hooks/useTodoLists";
 import { useChildren } from "../hooks/useChildren";
 import { TODO_FILTERS, filterTodos } from "../todoFilters";
+import { useTranslation } from "../i18n/LocaleContext";
 import NewListModal from "../components/NewListModal";
 import "./TodoOverview.css";
 
 export default function TodoOverview() {
   const { currentFamilyId } = useFamily();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const children = useChildren(currentFamilyId);
   const childId = children[0]?.id ?? "";
   const { todos, error } = useTodos(currentFamilyId, childId);
@@ -27,10 +29,10 @@ export default function TodoOverview() {
     // i to-do al suo interno, non solo la lista.
     const batch = writeBatch(db);
     todos
-      .filter((t) => t.listId === list.id)
-      .forEach((t) => {
+      .filter((todo) => todo.listId === list.id)
+      .forEach((todo) => {
         batch.set(
-          doc(todosCol(currentFamilyId), t.id),
+          doc(todosCol(currentFamilyId), todo.id),
           { isDeleted: true, updatedBy: user.uid, updatedAt: serverTimestamp() },
           { merge: true }
         );
@@ -40,20 +42,24 @@ export default function TodoOverview() {
       { isDeleted: true, updatedBy: user.uid, updatedAt: serverTimestamp() },
       { merge: true }
     );
-    await batch.commit();
+    try {
+      await batch.commit();
+    } catch (err) {
+      console.error("deleteList batch failed", err);
+    }
   };
 
   return (
     <div>
       <div className="overview-header">
-        <h1>To-Do</h1>
-        <button className="round-btn" onClick={() => setShowNewList(true)} title="Nuova lista">
-          +
+        <h1>{t.todo.title}</h1>
+        <button className="new-btn" onClick={() => setShowNewList(true)}>
+          {t.todo.new}
         </button>
       </div>
       {error && <p className="error">{error}</p>}
 
-      <h2 className="section-title">Panoramica</h2>
+      <h2 className="section-title">{t.todo.overview}</h2>
       <div className="todo-grid">
         {TODO_FILTERS.map((f) => (
           <button
@@ -64,7 +70,7 @@ export default function TodoOverview() {
             <span className="todo-card-icon" style={{ background: `${f.color}22`, color: f.color }}>
               {f.icon}
             </span>
-            <span className="todo-card-label">{f.label}</span>
+            <span className="todo-card-label">{t.todo.filters[f.key]}</span>
             <span className="todo-card-count" style={{ background: f.color }}>
               {filterTodos(todos, f.key, user.uid).length}
             </span>
@@ -74,7 +80,7 @@ export default function TodoOverview() {
 
       {lists.length > 0 && (
         <>
-          <h2 className="section-title">Le mie liste</h2>
+          <h2 className="section-title">{t.todo.myLists}</h2>
           <div className="todo-list-rows">
             {lists.map((l) => (
               <div
@@ -87,7 +93,7 @@ export default function TodoOverview() {
                 <button
                   className="row-delete-btn"
                   onClick={(e) => deleteList(e, l)}
-                  title="Elimina lista"
+                  title={t.todo.deleteList}
                 >
                   🗑
                 </button>

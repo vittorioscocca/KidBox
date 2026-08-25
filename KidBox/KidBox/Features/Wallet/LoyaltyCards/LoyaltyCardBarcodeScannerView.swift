@@ -123,28 +123,53 @@ private struct LoyaltyCardBarcodeScannerRepresentable: UIViewControllerRepresent
         let viewController = UIViewController()
         viewController.view.backgroundColor = .black
 
+        // Senza questo check, un permesso già negato lascia il preview nero per
+        // sempre: startRunning() semplicemente non produce frame, senza errore.
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            startSession(on: viewController, context: context)
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        self.startSession(on: viewController, context: context)
+                    } else {
+                        self.showPermissionDeniedMessage(on: viewController)
+                    }
+                }
+            }
+        case .denied, .restricted:
+            showPermissionDeniedMessage(on: viewController)
+        @unknown default:
+            showPermissionDeniedMessage(on: viewController)
+        }
+
+        return viewController
+    }
+
+    private func startSession(on viewController: UIViewController, context: Context) {
         let captureSession = AVCaptureSession()
 
         guard let videoDevice = AVCaptureDevice.default(for: .video) else {
             KBLog.navigation.kbError("LoyaltyCardBarcodeScannerView: no video device available")
-            return viewController
+            return
         }
 
         guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
             KBLog.navigation.kbError("LoyaltyCardBarcodeScannerView: cannot create video input")
-            return viewController
+            return
         }
 
         guard captureSession.canAddInput(videoInput) else {
             KBLog.navigation.kbError("LoyaltyCardBarcodeScannerView: cannot add video input to session")
-            return viewController
+            return
         }
         captureSession.addInput(videoInput)
 
         let metadataOutput = AVCaptureMetadataOutput()
         guard captureSession.canAddOutput(metadataOutput) else {
             KBLog.navigation.kbError("LoyaltyCardBarcodeScannerView: cannot add metadata output to session")
-            return viewController
+            return
         }
         captureSession.addOutput(metadataOutput)
 
@@ -165,8 +190,39 @@ private struct LoyaltyCardBarcodeScannerRepresentable: UIViewControllerRepresent
 
         objc_setAssociatedObject(viewController, "kidbox_loyalty_scan_session", captureSession, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         objc_setAssociatedObject(viewController, "kidbox_loyalty_scan_preview", previewLayer, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
 
-        return viewController
+    private func showPermissionDeniedMessage(on viewController: UIViewController) {
+        let label = UILabel()
+        label.text = "Permesso fotocamera necessario.\nAttivalo dalle Impostazioni per scansionare il codice."
+        label.textColor = .white
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        let button = UIButton(type: .system)
+        button.setTitle("Apri Impostazioni", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addAction(UIAction { _ in
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        }, for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [label, button])
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        viewController.view.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: viewController.view.centerYAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: viewController.view.leadingAnchor, constant: 32),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: viewController.view.trailingAnchor, constant: -32),
+        ])
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {

@@ -79,6 +79,10 @@ struct ChatView: View {
             }
         }
         .familyKeyMissingGate(familyId: activeFamilyId)
+        // Niente banner per un messaggio che l'utente sta già leggendo.
+        // Legato alla comparsa/scomparsa della schermata: con la chat aperta ma
+        // l'app in background la notifica la mostra comunque il sistema.
+        .trackSectionPresence(.chat, familyId: activeFamilyId)
         .navigationTitle(chatNavigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -471,6 +475,32 @@ private struct ChatConversationView: View {
             .onAppear { refreshMentionCandidates() }
     }
 
+    /// `true` quando in famiglia c'è solo l'utente corrente: non c'è nessuno con
+    /// cui chattare, quindi la chat resta di fatto inerte.
+    private var isSoloFamily: Bool {
+        familyMembers.filter { !$0.userId.isEmpty }.count <= 1
+    }
+
+    /// Messaggio mostrato a famiglia «solitaria»: stesso testo del suggerimento
+    /// «Chat» della lampadina in Home, così la spiegazione è una sola.
+    private var soloFamilyHint: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "message.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+            Text("Invita la tua famiglia per iniziare")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+            if let chatTip = HomeTipsCatalog.items.first(where: { $0.id == "chat" })?.tip {
+                Text(chatTip)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.horizontal, 32)
+    }
+
     /// Calcola la lista di candidati alle menzioni a partire dai `KBFamilyMember`
     /// attivi della famiglia, escludendo l'utente corrente (non ha senso citare
     /// se stessi). Mantiene l'ordine alfabetico per stabilità del picker.
@@ -489,6 +519,8 @@ private struct ChatConversationView: View {
     
     // Media picker
     @State private var showMediaPicker = false
+    @State private var showMediaSourceDialog = false
+    @State private var showKidBoxMediaPicker = false
     @State private var mediaPickerItems: [PhotosPickerItem] = []
     struct PendingMediaItem: Identifiable, Equatable {
         let id = UUID()
@@ -589,6 +621,14 @@ private struct ChatConversationView: View {
             .contentShape(Rectangle())
             .onTapGesture { isInputFocused = false }
             .scrollDismissesKeyboard(.interactively)
+            .overlay {
+                // Con un solo membro in famiglia la chat non ha destinatari: invece
+                // di una schermata vuota mostriamo la spiegazione dei suggerimenti
+                // (lampadina in Home), così è chiaro a cosa serve e cosa manca.
+                if isSoloFamily && viewModel.messages.isEmpty {
+                    soloFamilyHint
+                }
+            }
             
             errorBanner
             uploadProgress
@@ -736,6 +776,27 @@ private struct ChatConversationView: View {
             .presentationDetents([.height(120)])
         }
         // MODIFICATO: maxSelectionCount 1 → 10
+        .sheet(isPresented: $showMediaSourceDialog) {
+            MediaSourceSheet(
+                onPickPhoneGallery: {
+                    showMediaSourceDialog = false
+                    showMediaPicker = true
+                },
+                onPickKidBox: {
+                    showMediaSourceDialog = false
+                    showKidBoxMediaPicker = true
+                }
+            )
+            // Foglio compatto come gli altri della chat: due voci non
+            // giustificano una schermata a tutta altezza.
+            .presentationDetents([.height(190)])
+        }
+        .sheet(isPresented: $showKidBoxMediaPicker) {
+            KidBoxMediaPickerSheet(familyId: familyId) { picked in
+                showKidBoxMediaPicker = false
+                Task { await sendKidBoxMedia(picked) }
+            }
+        }
         .photosPicker(
             isPresented: $showMediaPicker,
             selection: $mediaPickerItems,
@@ -1186,6 +1247,49 @@ private struct ChatConversationView: View {
     
     // MARK: - handlePickedMediaItems (NUOVO — sostituisce handlePickedMedia)
     
+    /// Invia in chat media già presenti nella libreria KidBox.
+    ///
+    /// Usa il file locale se c'è, altrimenti scarica e decifra l'originale —
+    /// stesso percorso della sezione Foto e Video. Da lì in poi il flusso è
+    /// identico a un allegato scelto dalla galleria del telefono.
+    ///
+    /// I media che non si riescono a leggere vengono saltati: meglio inviare
+    /// quelli disponibili che far fallire l'intero gruppo.
+    private func sendKidBoxMedia(_ photos: [KBFamilyPhoto]) async {
+        guard !photos.isEmpty else { return }
+        await MainActor.run { isLoadingMedia = true }
+        var loaded: [(data: Data, type: KBChatMessageType)] = []
+        for photo in photos {
+            let isVideo = photo.mimeType.hasPrefix("video/")
+            let msgType: KBChatMessageType = isVideo ? .video : .photo
+            if let localPath = photo.localPath,
+               FileManager.default.fileExists(atPath: localPath),
+               let data = FileManager.default.contents(atPath: localPath) {
+                loaded.append((data: data, type: msgType))
+                continue
+            }
+            guard !photo.storagePath.isEmpty else { continue }
+            if let data = try? await SyncCenter.photoRemote.download(
+                storagePath: photo.storagePath, familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "") {
+                loaded.append((data: data, type: msgType))
+            }
+        }
+        await MainActor.run {
+            isLoadingMedia = false
+            guard !loaded.isEmpty else { return }
+            if loaded.count == 1 && pendingGroupItems.isEmpty {
+                viewModel.sendMedia(data: loaded[0].data, type: loaded[0].type)
+            } else {
+                let freeSlots = 10 - pendingGroupItems.count
+                let toAdd = loaded
+                    .prefix(freeSlots)
+                    .map { PendingMediaItem(data: $0.data, type: $0.type) }
+                withAnimation { pendingGroupItems.append(contentsOf: toAdd) }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+        }
+    }
+
     private func handlePickedMediaItems(_ items: [PhotosPickerItem]) async {
         await MainActor.run {
             isLoadingMedia = true
@@ -1729,7 +1833,7 @@ private struct ChatConversationView: View {
             onCancelRecord: { viewModel.cancelRecording() },
             onMediaTap: {
                 checkUploadAllowed(modelContext: modelContext, familyId: familyId, showUpgrade: $showStorageUpgrade) {
-                    showMediaPicker = true
+                    showMediaSourceDialog = true
                 }
             },
             onCameraTap: {
@@ -1749,6 +1853,10 @@ private struct ChatConversationView: View {
             onMentionPicked: { viewModel.registerMention($0) }
         )
         .focused($isInputFocused)
+        // Con un solo membro in famiglia non c'è nessun destinatario: campo,
+        // allegati, invio e registrazione restano visibili ma inerti, in
+        // coerenza col messaggio mostrato sulla lista.
+        .disabled(isSoloFamily)
         .sheet(isPresented: $showLocationSheet) {
             LocationPickerSheet { lat, lon in
                 viewModel.sendLocation(latitude: lat, longitude: lon)
@@ -2033,18 +2141,20 @@ private struct CameraPicker: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     @Binding var videoURL: URL?
     
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let p = UIImagePickerController()
-        p.sourceType = .camera
-        p.mediaTypes = ["public.image", "public.movie"]
-        p.cameraCaptureMode = .photo
-        p.videoQuality = .typeHigh
-        p.videoMaximumDuration = 60
-        p.delegate = context.coordinator
-        return p
+    func makeUIViewController(context: Context) -> UIViewController {
+        CameraPermissionGateViewController(makePicker: {
+            let p = UIImagePickerController()
+            p.sourceType = .camera
+            p.mediaTypes = ["public.image", "public.movie"]
+            p.cameraCaptureMode = .photo
+            p.videoQuality = .typeHigh
+            p.videoMaximumDuration = 60
+            p.delegate = context.coordinator
+            return p
+        })
     }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     
     final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {

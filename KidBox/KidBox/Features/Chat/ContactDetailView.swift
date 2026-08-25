@@ -8,6 +8,7 @@ struct ContactDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showAddToContacts = false
     @State private var isAlreadySaved = false
+    @State private var showContactsPermissionAlert = false
     
     var body: some View {
         NavigationStack {
@@ -56,7 +57,7 @@ struct ContactDetailView: View {
                 if !isAlreadySaved {
                     Section {
                         Button("Aggiungi ai Contatti") {
-                            showAddToContacts = true
+                            requestContactsAccessThenAdd()
                         }
                         .fontWeight(.semibold)
                     }
@@ -72,9 +73,45 @@ struct ContactDetailView: View {
             .sheet(isPresented: $showAddToContacts) {
                 AddToContactsViewControllerRepresentable(payload: payload)
             }
+            .alert("Permesso Contatti necessario", isPresented: $showContactsPermissionAlert) {
+                Button("Apri Impostazioni") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Annulla", role: .cancel) {}
+            } message: {
+                Text("Per salvare questo contatto in Rubrica devi consentire l'accesso ai Contatti dalle Impostazioni.")
+            }
             .task {
+                // Il lookup silenzioso all'apertura della vista non deve mai
+                // innescare il prompt di sistema al posto dell'utente: gira solo
+                // se il permesso è già stato concesso in precedenza.
+                guard CNContactStore.authorizationStatus(for: .contacts) == .authorized else { return }
                 isAlreadySaved = await ContactStoreLookup.isSaved(payload: payload)
             }
+        }
+    }
+
+    /// Chiamata solo dal tap esplicito su "Aggiungi ai Contatti": è il punto
+    /// giusto per richiedere il permesso, non l'apertura automatica della vista.
+    private func requestContactsAccessThenAdd() {
+        let store = CNContactStore()
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized:
+            showAddToContacts = true
+        case .notDetermined:
+            store.requestAccess(for: .contacts) { granted, _ in
+                DispatchQueue.main.async {
+                    if granted {
+                        showAddToContacts = true
+                    } else {
+                        showContactsPermissionAlert = true
+                    }
+                }
+            }
+        default:
+            showContactsPermissionAlert = true
         }
     }
     

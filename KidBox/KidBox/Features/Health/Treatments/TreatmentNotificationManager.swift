@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftData
 import UserNotifications
 import OSLog
 
@@ -38,6 +39,7 @@ enum TreatmentNotificationManager {
     static func schedule(treatment: KBTreatment, childName: String) {
         cancel(treatmentId: treatment.id)
         guard treatment.reminderEnabled, treatment.isActive else { return }
+        KBDeviceReminderLedger.record(KBDeviceReminderLedger.treatment(treatment.id))
         
         let cal   = Calendar.current
         let today = cal.startOfDay(for: Date())
@@ -116,10 +118,48 @@ enum TreatmentNotificationManager {
         }
     }
     
+    /// Avanza la finestra di tutte le cure attive (o di una sola, se `treatmentId`
+    /// è valorizzato), risolvendo il nome del bambino o dell'animale.
+    ///
+    /// iOS non può ripianificare da solo mentre l'app è chiusa: questo è il punto
+    /// unico da cui la finestra avanza, richiamato al rientro in app e al tap su
+    /// una notifica dose.
+    @MainActor
+    static func rescheduleActiveTreatments(context: ModelContext, treatmentId: String? = nil) {
+        let descriptor = FetchDescriptor<KBTreatment>(
+            predicate: #Predicate {
+                $0.reminderEnabled == true &&
+                $0.isActive        == true &&
+                $0.isDeleted       == false
+            }
+        )
+        guard let treatments = try? context.fetch(descriptor) else { return }
+        // Solo le cure già armate su questo device: il refresh rinnova, non crea.
+        // Una cura arrivata dal sync non deve iniziare ad avvisare qui.
+        for treatment in treatments
+        where (treatmentId == nil || treatment.id == treatmentId)
+            && KBDeviceReminderLedger.contains(KBDeviceReminderLedger.treatment(treatment.id)) {
+            rescheduleIfNeeded(treatment: treatment, childName: displayName(for: treatment, context: context))
+        }
+    }
+
+    @MainActor
+    private static func displayName(for treatment: KBTreatment, context: ModelContext) -> String {
+        if treatment.petId.isEmpty {
+            let childId = treatment.childId
+            let descriptor = FetchDescriptor<KBChild>(predicate: #Predicate { $0.id == childId })
+            return (try? context.fetch(descriptor).first?.name) ?? ""
+        }
+        let petId = treatment.petId
+        let descriptor = FetchDescriptor<KBPet>(predicate: #Predicate { $0.id == petId })
+        return ((try? context.fetch(descriptor).first?.name) ?? nil) ?? String(localized: "Animale domestico")
+    }
+
     // MARK: - Cancella
     
     /// Rimuove tutte le notifiche (normali + sentinella) di questa cura.
     static func cancel(treatmentId: String) {
+        KBDeviceReminderLedger.forget(KBDeviceReminderLedger.treatment(treatmentId))
         let prefix = notificationPrefix(for: treatmentId)
         UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
             let ids = requests
@@ -152,8 +192,7 @@ enum TreatmentNotificationManager {
         windowStart: Date,
         careEnd:     Date?
     ) {
-        let center = UNUserNotificationCenter.current()
-        let cal    = Calendar.current
+        let cal = Calendar.current
         // Fine della finestra = min(windowStart + windowDays, careEnd)
         var windowEndCandidate = cal.date(byAdding: .day, value: windowDays - 1, to: windowStart)!
         if let end = careEnd {
@@ -163,7 +202,9 @@ enum TreatmentNotificationManager {
         
         // Itera i giorni della finestra
         var currentDay = windowStart
-        var lastRequest: UNNotificationRequest? = nil
+        // Le richieste si accumulano e partono in un solo lotto: il budget vede
+        // la finestra intera e sacrifica la coda, invece di scartare a caso.
+        var requests: [UNNotificationRequest] = []
         
         while currentDay <= windowEnd {
             let dayOffset = cal.dateComponents([.day], from: cal.startOfDay(for: treatment.startDate), to: currentDay).day ?? 0
@@ -214,11 +255,7 @@ enum TreatmentNotificationManager {
                 let reqId = notificationId(for: treatment.id, dayOffset: dayOffset, slotIndex: slotIdx)
                 let request = UNNotificationRequest(identifier: reqId, content: content, trigger: trigger)
 
-                center.add(request) { err in
-                    if let err { log.error("schedule failed id=\(reqId): \(err.localizedDescription)") }
-                }
-
-                lastRequest = request
+                requests.append(request)
 
                 currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
                 continue
@@ -254,56 +291,26 @@ enum TreatmentNotificationManager {
                 let reqId   = notificationId(for: treatment.id, dayOffset: dayOffset, slotIndex: slotIdx)
                 let request = UNNotificationRequest(identifier: reqId, content: content, trigger: trigger)
                 
-                center.add(request) { err in
-                    if let err { log.error("schedule failed id=\(reqId): \(err.localizedDescription)") }
-                }
-                
-                lastRequest = request
+                requests.append(request)
             }
             
             currentDay = cal.date(byAdding: .day, value: 1, to: currentDay)!
         }
         
-        // ── Sentinella ────────────────────────────────────────────────────────
-        // Notifica silenziosa che, quando scatta, triggera rescheduleIfNeeded()
-        // dal delegate. Deve avere contenuto non vuoto per essere consegnata
-        // in modo affidabile da iOS (anche in DND / Low Power Mode).
-        if let last = lastRequest,
-           let lastTrigger = last.trigger as? UNCalendarNotificationTrigger,
-           let lastFire    = cal.date(from: lastTrigger.dateComponents) {
-            
-            // La sentinella scatta 1 minuto dopo l'ultimo slot pianificato
-            let sentinelFire = lastFire.addingTimeInterval(60)
-            guard sentinelFire > Date() else { return }
-            
-            let sentinelContent                = UNMutableNotificationContent()
-            // Titolo e body non vuoti: iOS garantisce la consegna anche in background.
-            // La categoria "silent" può essere configurata per non mostrare banner.
-            // Se non vuoi che l'utente la veda, usa interruptionLevel = .passive
-            sentinelContent.title              = " "   // spazio — non vuoto ma invisibile
-            sentinelContent.body               = " "
-            sentinelContent.sound              = nil   // nessun suono
-            if #available(iOS 15.0, *) {
-                sentinelContent.interruptionLevel = .passive  // nessun banner, nessun suono
-            }
-            sentinelContent.userInfo           = [
-                "type":        "treatment_reschedule_sentinel",
-                "treatmentId": treatment.id,
-                "familyId":    treatment.familyId,
-                "childId":     treatment.childId
-            ]
-            
-            let sentinelDc      = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: sentinelFire)
-            let sentinelTrigger = UNCalendarNotificationTrigger(dateMatching: sentinelDc, repeats: false)
-            let sentinelId      = notificationPrefix(for: treatment.id) + "sentinel"
-            let sentinelReq     = UNNotificationRequest(identifier: sentinelId, content: sentinelContent, trigger: sentinelTrigger)
-            
-            center.add(sentinelReq) { err in
-                if let err { log.error("sentinel schedule failed: \(err.localizedDescription)") }
-                else       { log.info("sentinel scheduled at \(sentinelFire) for treatment=\(treatment.id)") }
-            }
+        // Nessuna sentinella: una notifica locale `.passive` non risveglia l'app.
+        // `didReceive` scatta solo se l'utente tocca la notifica e `willPresent`
+        // solo se l'app è già in primo piano, quindi una sentinella silenziosa non
+        // può ripianificare nulla — occupava uno dei 64 slot senza fare il suo
+        // lavoro. La finestra ora avanza da `KidBoxApp` a ogni rientro in app e
+        // dal tap su una notifica dose (vedi AppDelegate).
+
+        let batch = requests
+        let treatmentId = treatment.id
+        Task {
+            let accepted = await KBLocalNotificationBudget.shared.add(batch, priority: .critical)
+            log.info("scheduleWindow: treatment=\(treatmentId) pianificate \(accepted)/\(batch.count)")
         }
-        
+
         log.info("scheduleWindow: treatment=\(treatment.id) from=\(windowStart) to=\(windowEnd)")
     }
     

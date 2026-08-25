@@ -86,6 +86,7 @@ struct TodoHomeView: View {
                 listId: list.id,
                 todos: todosInFamilyChild,
                 currentUid: currentUid,
+                listCreatedBy: list.createdBy
             )
         }
     }
@@ -130,13 +131,22 @@ struct TodoHomeView: View {
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 16) {
-                    cardsSection
-                    listsSection
+
+            if !familyId.isEmpty && visibleLists.isEmpty {
+                TodoEmptyStateView {
+                    editingListId = nil
+                    listNameDraft = ""
+                    showListEditor = true
                 }
-                .padding()
+                .background(backgroundColor)
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        cardsSection
+                        listsSection
+                    }
+                    .padding()
+                }
             }
         }
         .navigationTitle("To-Do")
@@ -410,9 +420,6 @@ struct TodoHomeView: View {
             if familyId.isEmpty {
                 Text("Crea o unisciti a una famiglia per usare i To-Do.")
                     .foregroundStyle(.secondary)
-            } else if visibleLists.isEmpty {
-                Text("Nessuna lista")
-                    .foregroundStyle(.secondary)
             } else {
                 VStack(spacing: 10) {
                     ForEach(visibleLists) { list in
@@ -504,7 +511,12 @@ struct TodoHomeView: View {
             list.updatedAt = now
             listId = list.id
         } else {
-            let list = KBTodoList(familyId: familyId, childId: childId, name: name)
+            let list = KBTodoList(
+                familyId: familyId,
+                childId: childId,
+                name: name,
+                createdBy: Auth.auth().currentUser?.uid
+            )
             modelContext.insert(list)
             listId = list.id
             KBLog.todo.kbDebug("[TodoHomeView][\(viewTrace)] saveList create listId=\(listId)")
@@ -590,5 +602,30 @@ struct TodoHomeView: View {
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] deleteList DONE listId=\(listId)")
             logCounters("after deleteList flush")
         }
+    }
+}
+
+// MARK: - Empty state
+
+// Stessa struttura dell'empty state Note (NotesEmptyStateView): icona,
+// titolo, testo descrittivo, pulsante di creazione. Sostituisce l'intera
+// schermata (cards "Panoramica" incluse) quando non c'è ancora nessuna lista.
+private struct TodoEmptyStateView: View {
+    let onNewList: () -> Void
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "checklist")
+                .font(.system(size: 52)).foregroundStyle(.secondary)
+            Text("Nessuna lista").font(.title3).fontWeight(.semibold)
+            Text("Crea liste di attività e assegnale a un membro della famiglia. Scegli se condividerle con tutti, con membri specifici o tenerle private. Ogni attività è crittografata end-to-end.")
+                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Button { onNewList() } label: {
+                Label("Nuova lista", systemImage: "plus.circle.fill")
+                    .font(.subheadline).fontWeight(.medium)
+                    .padding(.horizontal, 20).padding(.vertical, 10)
+                    .background(Color.accentColor).foregroundStyle(.white).clipShape(Capsule())
+            }
+        }
+        .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

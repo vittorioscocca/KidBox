@@ -25,37 +25,36 @@ struct KBNoteCardView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             // Titolo bold
             Text(highlightedText(note.title.isEmpty ? "Senza titolo" : note.title))
                 .font(.system(.body, design: .default, weight: .semibold))
                 .lineLimit(1)
                 .foregroundStyle(.primary)
             
-            // Data + anteprima corpo
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // Anteprima corpo, poi data sotto (stesso ordine di Android)
+            Text(highlightedText(previewPlain))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            // Orario e chi ha creato/condiviso la nota sulla stessa riga,
+            // allineati a sinistra (icona cartella + nome — stile Apple Notes).
+            let editorName = resolvedName(uid: note.updatedBy)
+            HStack(spacing: 4) {
                 Text(formattedDate(note.updatedAt))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                
-                Text(highlightedText(previewPlain))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            
-            // Autore con icona cartella — stile Apple Notes
-            let editorName = resolvedName(uid: note.updatedBy)
-            if !editorName.isEmpty {
-                HStack(spacing: 4) {
+
+                if !editorName.isEmpty {
                     Image(systemName: "folder")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
+                        .padding(.leading, 2)
                     Text(editorName)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(.top, 1)
             }
         }
         .padding(.vertical, 6)

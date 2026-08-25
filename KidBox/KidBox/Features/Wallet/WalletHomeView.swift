@@ -83,10 +83,13 @@ struct WalletHomeView: View {
                 switch selectedTab {
                 case .tickets:
                     if visibleTickets.isEmpty {
-                        ContentUnavailableView(
-                            "Wallet vuoto",
+                        KBEmptyStateView(
                             systemImage: "wallet.pass",
-                            description: Text("Importa un PDF di biglietto (Trenitalia, Italo, Ryanair, cinema, concerti…)")
+                            title: "Nessun biglietto",
+                            message: "Salva biglietti di viaggio, concerti e cinema: li ritrovi qui anche offline, con il promemoria che arriva prima della partenza. Tutto cifrato end-to-end.",
+                            actionTitle: "Aggiungi biglietto",
+                            actionSystemImage: "plus.circle.fill",
+                            action: { showAddSheet = true }
                         )
                     } else {
                         cardStack
@@ -101,6 +104,7 @@ struct WalletHomeView: View {
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .familyKeyMissingGate(familyId: familyId)
+        .trackSectionPresence(.wallet, familyId: familyId)
         .navigationTitle("Wallet")
         .toolbar {
             if selectedTab == .tickets {

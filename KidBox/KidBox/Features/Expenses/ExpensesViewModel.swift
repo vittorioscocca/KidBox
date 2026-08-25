@@ -78,6 +78,9 @@ final class ExpensesViewModel: ObservableObject {
     @Published var customEnd: Date = Date()
     
     @Published var expenses:       [KBExpense]         = []
+    /// `true` finché la famiglia non ha nemmeno una spesa (a prescindere da periodo
+    /// e filtro categoria): la schermata mostra allora solo il messaggio e il pulsante.
+    @Published var hasAnyExpense:  Bool                = false
     @Published var categories:     [KBExpenseCategory] = []
     @Published var monthlyBars:    [MonthlyExpenseBar] = []
     @Published var categorySlices: [CategorySlice]     = []
@@ -156,6 +159,14 @@ final class ExpensesViewModel: ObservableObject {
             expenses = fetched
         }
         
+        // Conteggio complessivo, indipendente da periodo e filtro: serve a decidere
+        // se la schermata è "vuota" davvero o solo per i filtri attivi.
+        var anyDescriptor = FetchDescriptor<KBExpense>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        anyDescriptor.fetchLimit = 1
+        hasAnyExpense = !((try? modelContext.fetch(anyDescriptor)) ?? []).isEmpty
+
         let catDescriptor = FetchDescriptor<KBExpenseCategory>(
             predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false },
             sortBy: [SortDescriptor(\.sortIndex)]

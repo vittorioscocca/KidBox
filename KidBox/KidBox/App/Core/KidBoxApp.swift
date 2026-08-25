@@ -403,8 +403,14 @@ struct KidBoxApp: App {
                                 BadgeManager.shared.clearExpenses()
                                 await CountersService.shared.reset(familyId: familyId, field: .expenses)
                             }
+                            // Si passa dalla lista spese e non dritti al dettaglio:
+                            // è la lista a tenere acceso il realtime delle spese,
+                            // quindi è lì che la spesa può arrivare quando la push
+                            // precede la sincronizzazione. La home apre poi il
+                            // dettaglio da sé. Come su Android.
                             coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
-                                coordinator.navigate(to: .expenseDetail(familyId: familyId, expenseId: expenseId))
+                                coordinator.navigate(
+                                    to: .expensesHome(familyId: familyId, highlightExpenseId: expenseId))
                             }
                             NotificationManager.shared.consumeDeepLink()
 
@@ -433,6 +439,17 @@ struct KidBoxApp: App {
                                     ticketId: ticketId,
                                     modelContext: modelContainer.mainContext
                                 )
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
+                        case .loyaltyCard(let familyId, let cardId):
+                            KBLog.navigation.kbInfo("Deep link -> open loyalty card cardId=\(cardId)")
+                            Task { @MainActor in
+                                BadgeManager.shared.clearWallet()
+                                await CountersService.shared.reset(familyId: familyId, field: .wallet)
+                            }
+                            coordinator.switchFamilyIfNeededThenNavigate(to: familyId) {
+                                coordinator.navigate(to: .loyaltyCardDetail(familyId: familyId, cardId: cardId))
                             }
                             NotificationManager.shared.consumeDeepLink()
 
@@ -548,39 +565,15 @@ struct KidBoxApp: App {
                     lastForegroundMaintenanceAt = now
                     // ── Rischedula notifiche cure (finestra scorrevole) ──────────────
                     // Avanza la finestra di 7 giorni se le notifiche pendenti sono poche.
-                    Task {
-                        let descriptor = FetchDescriptor<KBTreatment>(
-                            predicate: #Predicate {
-                                $0.reminderEnabled == true &&
-                                $0.isActive        == true &&
-                                $0.isDeleted       == false
-                            }
-                        )
-                        guard let treatments = try? context.fetch(descriptor) else { return }
-                        for treatment in treatments {
-                            let displayName: String
-                            if treatment.petId.isEmpty {
-                                let cid = treatment.childId
-                                let childDesc = FetchDescriptor<KBChild>(
-                                    predicate: #Predicate { $0.id == cid }
-                                )
-                                displayName = (try? context.fetch(childDesc).first?.name) ?? ""
-                            } else {
-                                let pid = treatment.petId
-                                let petDesc = FetchDescriptor<KBPet>(
-                                    predicate: #Predicate { $0.id == pid }
-                                )
-                                displayName = (try? context.fetch(petDesc).first?.name) ?? "Animale domestico"
-                            }
-                            TreatmentNotificationManager.rescheduleIfNeeded(
-                                treatment: treatment,
-                                childName: displayName
-                            )
-                        }
-                        KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
-                    }
                     Task { @MainActor in
+                        // Prima dei refresh: le notifiche già in coda vanno riconosciute
+                        // come armate da questo device, altrimenti i filtri qui sotto le
+                        // ignorerebbero e nessuno le rinnoverebbe più.
+                        await KBDeviceReminderLedger.adoptExistingPendingIfNeeded()
+                        TreatmentNotificationManager.rescheduleActiveTreatments(context: context)
+                        KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
                         await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
+                        await VehicleReminderService.shared.rescheduleAllActive(modelContext: context)
                     }
                     // Ricalcolo della coda nudge. Sta dentro il throttle dei
                     // 120s come il resto della manutenzione: è una lettura

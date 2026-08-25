@@ -91,6 +91,7 @@ struct TodoListView: View {
             listId: listId,
             todos: todos.filter { !$0.isDeleted },
             currentUid: currentUid,
+            listCreatedBy: allLists.first(where: { $0.id == listId })?.createdBy
         )
     }
     
@@ -192,6 +193,9 @@ struct TodoListView: View {
         }
             }
         }
+        // Con la lista aperta le notifiche di QUESTA lista sono rumore: il
+        // to-do compare da solo. Quelle delle altre liste devono passare.
+        .trackSectionPresence(.todoList, familyId: familyId, scopeId: listId)
     }
     
     private var listAccessDeniedContent: some View {

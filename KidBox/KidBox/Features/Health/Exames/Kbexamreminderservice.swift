@@ -204,8 +204,9 @@ final class KBExamReminderService {
             trigger:    trigger
         )
         
-        UNUserNotificationCenter.current().add(request) { error in
-            DispatchQueue.main.async { completion(error == nil) }
+        Task {
+            let scheduled = await KBLocalNotificationBudget.shared.add(request, priority: .deadline)
+            await MainActor.run { completion(scheduled) }
         }
     }
     

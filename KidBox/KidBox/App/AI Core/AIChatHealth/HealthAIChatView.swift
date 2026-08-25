@@ -93,6 +93,7 @@ struct HealthAIChatView: View {
             } message: {
                 Text("La cronologia di questa conversazione verrà eliminata.")
             }
+            .onAppear { AppAnalytics.screenView(name: "salute_ai") }
         }
     }
 }

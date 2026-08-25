@@ -726,11 +726,8 @@ final class KBSubscriptionManager: ObservableObject {
             trigger:    trigger
         )
         
-        do {
-            try await center.add(request)
+        if await KBLocalNotificationBudget.shared.add(request, priority: .informational) {
             KBLog.app.kbInfo("SubscriptionManager: expiration notification scheduled for \(triggerDate)")
-        } catch {
-            KBLog.app.kbError("SubscriptionManager: failed to schedule expiration notification: \(error.localizedDescription)")
         }
     }
     

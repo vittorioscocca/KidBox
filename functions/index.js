@@ -323,6 +323,73 @@ async function getTokensForUser(uid) {
 }
 
 /**
+ * Action dichiarata da `MainActivity` in AndroidManifest.xml per il tap sulle
+ * notifiche mostrate dal sistema (app in background o killed).
+ *
+ * Senza `clickAction`, l'SDK Firebase usa l'intent MAIN/LAUNCHER: con il task
+ * già esistente Android lo riporta avanti SENZA consegnare l'intent, quindi gli
+ * extra col `type`/`familyId` non arrivano e il deep link non parte. Deve
+ * restare identica alla stringa nel manifest.
+ */
+const ANDROID_NOTIFICATION_CLICK_ACTION = "it.vittorioscocca.kidbox.NOTIFICATION_CLICK";
+
+/**
+ * Costruisce un messaggio FCM con `notification` + `data` insieme.
+ *
+ * `notification` (e `android.notification`) restano necessari per
+ * l'affidabilità di consegna: è il sistema a mostrare la push quando l'app è
+ * in background o KILLED, senza eseguire codice dell'app — con un messaggio
+ * di soli dati, invece, serve che il sistema svegli il processo per farlo
+ * passare da `onMessageReceived`, e su diverse ROM Android (es. Xiaomi
+ * HyperOS/MIUI) questo risveglio in background è bloccato di default senza
+ * il permesso "avvio automatico"/l'esenzione risparmio energia: a processo
+ * killed la push non arriverebbe proprio.
+ *
+ * Il deep link funziona comunque anche quando è il sistema a mostrare la
+ * notifica: `data` viaggia sempre nell'intent di lancio (letto da
+ * `NotificationDeepLinkRouter` con fallback alle chiavi raw, es. `familyId`
+ * oltre a `push_family_id`), quindi non serve che sia `onMessageReceived` a
+ * girare per navigare nella sezione giusta. `title`/`body` restano anche
+ * dentro `data` per quando è invece il nostro `onMessageReceived` a costruire
+ * la notifica (app in foreground).
+ * @param {object} params
+ * @param {string[]} params.tokens
+ * @param {string} params.title
+ * @param {string} params.body
+ * @param {Object<string, string>} params.data
+ * @param {?number} params.badge omesso per i reminder, che non toccano il
+ *     contatore: mettere `0` esplicito azzererebbe un badge già accumulato.
+ * @return {object} messaggio pronto per `sendEachForMulticast`
+ */
+function buildDataOnlyMessage({tokens, title, body, data, badge}) {
+  const aps = {alert: {title, body}, sound: "default"};
+  if (typeof badge === "number") aps.badge = badge;
+  return {
+    tokens,
+    notification: {title, body},
+    data: {...data, title, body},
+    apns: {payload: {aps}},
+    android: {
+      priority: "high",
+      notification: {
+        sound: "default",
+        channelId: "family_updates_v2",
+        clickAction: ANDROID_NOTIFICATION_CLICK_ACTION,
+        // `priority` sopra è la priorità di CONSEGNA del messaggio; questa è la
+        // priorità della notifica mostrata. Da Android 8 a decidere il banner
+        // "heads-up" è l'importanza del canale, ma diverse ROM (Xiaomi in
+        // testa) guardano ancora questo campo per gli avvisi flottanti,
+        // soprattutto quando l'app non è in esecuzione.
+        notificationPriority: "PRIORITY_MAX",
+        defaultSound: true,
+        defaultVibrateTimings: true,
+        visibility: "PUBLIC",
+      },
+    },
+  };
+}
+
+/**
  * Removes invalid FCM token documents after a multicast send.
  * @param {string} uid
  * @param {string[]} tokens
@@ -436,13 +503,13 @@ exports.notifyNewDocument = onDocumentCreated(
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_document", familyId, docId},
-          apns: {payload: {aps: {sound: "default", badge}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -641,6 +708,12 @@ exports.notifyNewChatMessage = onDocumentCreated(
 
         messagesToSend.push({
           tokens,
+          // `notification` + `android.notification` restano necessari per l'affidabilità
+          // di consegna a processo killed (vedi commento su `buildDataOnlyMessage`): li
+          // mostra il sistema senza eseguire codice dell'app. Il deep link funziona
+          // comunque, perché `NotificationDeepLinkRouter` legge `data` dall'intent di
+          // lancio con fallback alle chiavi raw (`familyId`, `type`) anche quando è il
+          // sistema a costruire quell'intent, non solo quando gira `onMessageReceived`.
           notification: {title, body},
           data,
           apns: {
@@ -657,7 +730,11 @@ exports.notifyNewChatMessage = onDocumentCreated(
           },
           android: {
             priority: "high",
-            notification: {sound: "default", channelId: "family_updates"},
+            notification: {
+              sound: "default",
+              channelId: "family_updates_v2",
+              clickAction: ANDROID_NOTIFICATION_CLICK_ACTION,
+            },
           },
         });
       }
@@ -934,9 +1011,10 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {
             type: afterIsSharing ? "location_sharing_started" : "location_sharing_stopped",
             familyId,
@@ -945,9 +1023,8 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
             mode: mode ? String(mode) : "",
             expiresAt: expiresAt ? String(expiresAt.seconds || "") : "",
           },
-          apns: {payload: {aps: {sound: "default", badge}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -1154,17 +1231,19 @@ exports.onGeofenceEvent = onDocumentCreated(
 
         messagesToSend.push({
           uid,
-          tokens,
           refsByToken,
-          notification: {title, body},
-          data: {
-            type: "geofenceEvent",
-            familyId,
-            geofenceId,
-            geofenceEventId,
-          },
-          apns: {payload: {aps: {sound: "default", badge}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
+          ...buildDataOnlyMessage({
+            tokens,
+            title,
+            body,
+            data: {
+              type: "geofenceEvent",
+              familyId,
+              geofenceId,
+              geofenceEventId,
+            },
+            badge,
+          }),
         });
       }
 
@@ -1182,6 +1261,7 @@ exports.onGeofenceEvent = onDocumentCreated(
           notification: msg.notification,
           data: msg.data,
           apns: msg.apns,
+          android: msg.android,
         });
 
         totalSuccess += result.successCount;
@@ -1257,13 +1337,13 @@ exports.notifyTodoAssigned = onDocumentWritten(
 
       const badge = await incrementCounterAndGetBadge({familyId, uid: newAssignee, field: "todos"});
 
-      const payload = {
+      const payload = buildDataOnlyMessage({
         tokens,
-        notification: {title: "Nuovo To-Do", body: after.title || "Hai un nuovo promemoria"},
+        title: "Nuovo To-Do",
+        body: after.title || "Hai un nuovo promemoria",
         data: {type: notificationType, familyId, childId: after.childId || "", listId: after.listId || "", todoId},
-        apns: {payload: {aps: {sound: "default", badge}}},
-        android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-      };
+        badge,
+      });
 
       const result = await admin.messaging().sendEachForMulticast(payload);
       result.responses.forEach((resp) => {
@@ -1367,13 +1447,13 @@ exports.notifyNewGroceryItem = onDocumentCreated(
       for (const uid of recipients) {
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_grocery_item", familyId, itemId},
-          apns: {payload: {aps: {sound: "default", badge}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -1449,13 +1529,13 @@ exports.notifyNewNote = onDocumentCreated(
       for (const uid of recipients) {
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_note", familyId, noteId},
-          apns: {payload: {aps: {sound: "default", badge}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -3754,13 +3834,13 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
       for (const uid of recipients) {
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_calendar_event", familyId, eventId},
-          apns: {payload: {aps: {sound: "default", badge}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -3844,13 +3924,13 @@ exports.notifyNewExpense = onDocumentCreated(
       for (const uid of recipients) {
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_expense", familyId, expenseId},
-          apns: {payload: {aps: {badge, sound: "default"}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -5153,13 +5233,13 @@ exports.notifyNewWalletTicket = onDocumentCreated(
       for (const uid of recipients) {
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_wallet_ticket", familyId, ticketId},
-          apns: {payload: {aps: {badge, sound: "default"}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -5240,13 +5320,13 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
       for (const uid of recipients) {
         const {tokens} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push({
+        messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          notification: {title, body},
+          title,
+          body,
           data: {type: "new_loyalty_card", familyId, cardId},
-          apns: {payload: {aps: {badge, sound: "default"}}},
-          android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-        });
+          badge,
+        }));
       }
 
       if (messagesToSend.length === 0) {
@@ -5415,13 +5495,12 @@ exports.notifyUpcomingWalletTickets = onSchedule(
           // NOTA: niente incrementCounterAndGetBadge qui — un reminder non è
           // un nuovo elemento in app, quindi il contatore wallet non cresce.
           // Il badge sistema verrà rinfrescato dal client all'apertura.
-          messagesToSend.push({
+          messagesToSend.push(buildDataOnlyMessage({
             tokens,
-            notification: {title, body},
+            title,
+            body,
             data: {type: "wallet_ticket_reminder", familyId, ticketId, window: windowType},
-            apns: {payload: {aps: {sound: "default"}}},
-            android: {priority: "high", notification: {sound: "default", channelId: "family_updates"}},
-          });
+          }));
         }
 
         if (messagesToSend.length > 0) {

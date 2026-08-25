@@ -22,6 +22,7 @@ struct EmailAuthView: View {
     @State private var password      = ""
     @State private var confirmPwd    = ""
     @State private var showPassword  = false
+    @State private var reachedSuccess = false
     
     private var sheetBackground: Color {
         colorScheme == .dark
@@ -167,9 +168,13 @@ struct EmailAuthView: View {
                     Task {
                         if isRegistering {
                             await vm.registerEmail(email: email, password: password)
+                            if vm.errorMessage == nil { reachedSuccess = true }
                         } else {
                             await vm.signInEmail(email: email, password: password)
-                            if vm.errorMessage == nil { dismiss() }
+                            if vm.errorMessage == nil {
+                                reachedSuccess = true
+                                dismiss()
+                            }
                         }
                     }
                 } label: {
@@ -239,6 +244,12 @@ struct EmailAuthView: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)   // gestiamo noi il handle sopra
         .onTapGesture { hideKeyboard() }
+        .onAppear { AppAnalytics.preSignupScreenShown(screenName: "email_form") }
+        .onDisappear {
+            if !reachedSuccess {
+                AppAnalytics.preSignupScreenDismissed(screenName: "email_form")
+            }
+        }
     }
     
     private func hideKeyboard() {

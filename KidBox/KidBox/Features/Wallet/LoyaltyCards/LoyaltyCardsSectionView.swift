@@ -78,7 +78,11 @@ struct LoyaltyCardsSectionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            searchAndSortBar
+            // Ricerca e ordinamento hanno senso solo con almeno una carta: senza,
+            // resta il solo messaggio con il pulsante.
+            if !cards.isEmpty {
+                searchAndSortBar
+            }
 
             if cards.isEmpty {
                 emptyState
@@ -242,12 +246,13 @@ struct LoyaltyCardsSectionView: View {
     }
 
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Nessuna carta fedeltà", systemImage: "creditcard")
-        } description: {
-            // Nessun bottone qui: si aggiunge dal "+" in toolbar, come nella
-            // sezione Documenti del Wallet.
-            Text("Aggiungi le carte fedeltà del supermercato, dell'elettronica o del negozio preferito: saranno visibili a tutta la famiglia.")
-        }
+        KBEmptyStateView(
+            systemImage: "creditcard",
+            title: "Nessuna carta",
+            message: "Raccogli le carte fedeltà dei negozi e mostra il codice a barre alla cassa, senza portarti dietro il portafoglio. Le foto delle carte sono cifrate end-to-end.",
+            actionTitle: "Aggiungi carta",
+            actionSystemImage: "plus.circle.fill",
+            action: { showBrandPicker = true }
+        )
     }
 }

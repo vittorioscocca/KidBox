@@ -85,7 +85,7 @@ struct SettingsView: View {
                     Image(systemName: "person.2.fill")
                         .foregroundStyle(KBTheme.bubbleTint)
                         .frame(width: 22)
-                    Text("Family settings")
+                    Text("Impostazioni famiglia")
                         .foregroundStyle(.primary)
                     Spacer()
                 }

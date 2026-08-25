@@ -156,6 +156,7 @@ struct FamilyLocationView: View {
                 }
             )
         }
+        .trackSectionPresence(.familyLocation, familyId: familyId)
         .navigationTitle("Posizione")
         .navigationBarTitleDisplayMode(.inline)
         // Guardare dov'è un familiare è cross-member per definizione: non c'è un

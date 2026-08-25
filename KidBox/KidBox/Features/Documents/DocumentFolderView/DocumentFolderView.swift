@@ -187,9 +187,13 @@ struct DocumentFolderView: View {
                     .padding(.top, 8)
             }
             
-            header
-            
-            if viewModel.folders.isEmpty && viewModel.docs.isEmpty {
+            // Cartella vuota: restano solo icona, testo e pulsante — niente
+            // modalità di visualizzazione, contatori e filtri di ordinamento.
+            if !isEmptyFolder {
+                header
+            }
+
+            if isEmptyFolder {
                 emptyState
             } else {
                 content
@@ -204,8 +208,13 @@ struct DocumentFolderView: View {
         .animation(.easeInOut(duration: 0.15), value: viewModel.canUnlockSelectedAsPDF)
     }
     
+    /// Nessuna cartella e nessun documento in questo livello.
+    var isEmptyFolder: Bool {
+        viewModel.folders.isEmpty && viewModel.docs.isEmpty
+    }
+
     // MARK: - Header
-    
+
     private var header: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
@@ -306,18 +315,14 @@ struct DocumentFolderView: View {
     // MARK: - Empty state
     
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                Circle().fill(pillBackground).frame(width: 72, height: 72)
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.title2).foregroundStyle(.secondary)
-            }
-            Text("Nessun contenuto").font(.headline)
-            Text("Premi + per creare cartelle o caricare documenti.")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
+        KBEmptyStateView(
+            systemImage: "folder",
+            title: "Nessun documento",
+            message: "Conserva referti, contratti, certificati e ricevute in un posto solo, organizzati in cartelle. I file sono cifrati end-to-end: solo la tua famiglia può aprirli.",
+            actionTitle: "Aggiungi documento",
+            actionSystemImage: "plus.circle.fill",
+            action: { showImporter = true }
+        )
     }
     
     // MARK: - Content switch
@@ -728,12 +733,14 @@ struct DocumentFolderView: View {
     // MARK: - Camera Picker
     private struct CameraPicker: UIViewControllerRepresentable {
         @Binding var image: UIImage?
-        func makeUIViewController(context: Context) -> UIImagePickerController {
-            let picker = UIImagePickerController()
-            picker.sourceType = .camera; picker.cameraCaptureMode = .photo; picker.delegate = context.coordinator
-            return picker
+        func makeUIViewController(context: Context) -> UIViewController {
+            CameraPermissionGateViewController(makePicker: {
+                let picker = UIImagePickerController()
+                picker.sourceType = .camera; picker.cameraCaptureMode = .photo; picker.delegate = context.coordinator
+                return picker
+            })
         }
-        func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+        func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
         func makeCoordinator() -> Coordinator { Coordinator(self) }
         final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
             let parent: CameraPicker
@@ -755,12 +762,14 @@ private extension DocumentFolderView {
     var topToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             
-            // Seleziona / Annulla
-            Button {
-                if viewModel.isSelecting { viewModel.exitSelectionMode() }
-                else { viewModel.enterSelectionMode() }
-            } label: {
-                Text(viewModel.isSelecting ? "Annulla" : "Seleziona")
+            // Seleziona / Annulla — inutile quando non c'è nulla da selezionare
+            if !isEmptyFolder {
+                Button {
+                    if viewModel.isSelecting { viewModel.exitSelectionMode() }
+                    else { viewModel.enterSelectionMode() }
+                } label: {
+                    Text(viewModel.isSelecting ? "Annulla" : "Seleziona")
+                }
             }
             
             // Menu + (disabilitato durante selezione)

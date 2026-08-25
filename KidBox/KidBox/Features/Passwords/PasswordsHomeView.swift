@@ -214,13 +214,27 @@ struct PasswordsHomeView: View {
         VStack(spacing: 10) {
             groupFilterBar
             if flatEntries.isEmpty {
-                ContentUnavailableView(
-                    emptyPasswordsTitle,
-                    systemImage: "key.fill",
-                    description: emptyPasswordsDescription
-                )
-                .frame(maxWidth: .infinity)
-                .padding(.top, 8)
+                // Solo la sezione davvero vuota merita il messaggio di benvenuto
+                // col pulsante: filtri e ricerca senza risultati restano brevi.
+                if searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   listScope == .all {
+                    KBEmptyStateView(
+                        systemImage: "key.fill",
+                        title: "Nessuna password",
+                        message: "Salva le credenziali di casa e condividile solo con chi decidi tu. Tutto è cifrato end-to-end e KidBox può compilarle per te nelle app e sul web.",
+                        actionTitle: "Nuova password",
+                        actionSystemImage: "plus.circle.fill",
+                        action: { showAdd = true }
+                    )
+                } else {
+                    ContentUnavailableView(
+                        emptyPasswordsTitle,
+                        systemImage: "key.fill",
+                        description: emptyPasswordsDescription
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
+                }
             } else {
                 passwordEntriesList
             }
@@ -335,8 +349,9 @@ struct PasswordsHomeView: View {
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(Circle().fill(KBTheme.tint))
-                        .shadow(color: KBTheme.tint.opacity(0.35), radius: 10, x: 0, y: 4)
+                        // Stesso colore del pulsante «Nuova password» dell'empty state.
+                        .background(Circle().fill(Color.accentColor))
+                        .shadow(color: Color.accentColor.opacity(0.35), radius: 10, x: 0, y: 4)
                 }
                 .padding(.trailing, 20)
                 .padding(.bottom, 24)

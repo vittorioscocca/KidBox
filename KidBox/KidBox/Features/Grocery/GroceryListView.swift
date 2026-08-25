@@ -81,9 +81,16 @@ struct GroceryListView: View {
         List {
             // ── Da acquistare ──
             if toBuy.isEmpty && purchased.isEmpty {
-                Text("Lista vuota")
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(cardBackground)
+                KBEmptyStateView(
+                    systemImage: "cart",
+                    title: "Lista vuota",
+                    message: "Aggiungi quello che manca e spuntalo mentre sei al supermercato. La lista è condivisa: se qualcuno prende il latte, lo vedi sparire dal tuo telefono.",
+                    actionTitle: "Aggiungi articolo",
+                    actionSystemImage: "plus.circle.fill",
+                    action: { showAddSheet = true }
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
             
             if !toBuy.isEmpty {
@@ -128,6 +135,7 @@ struct GroceryListView: View {
         }
         .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
         .background(backgroundColor)
+        .trackSectionPresence(.shoppingList, familyId: familyId)
         .navigationTitle("Spesa")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

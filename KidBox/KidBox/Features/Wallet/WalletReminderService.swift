@@ -97,11 +97,8 @@ final class WalletReminderService {
             let identifier = Self.identifier(ticketId: ticketId, offset: offset)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-            do {
-                try await center.add(request)
+            if await KBLocalNotificationBudget.shared.add(request, priority: .deadline) {
                 KBLog.sync.kbDebug("[WalletReminder] scheduled \(identifier) fireDate=\(fireDate)")
-            } catch {
-                KBLog.sync.kbError("[WalletReminder] schedule FAIL \(identifier) err=\(error.localizedDescription)")
             }
         }
     }

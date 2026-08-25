@@ -92,7 +92,7 @@ struct HomeHeroCard: View {
                             
                             HStack(spacing: 8) {
                                 Image(systemName: "photo")
-                                Text(isBusy ? "Caricamento…" : "Tocca per cambiare foto")
+                                Text(badgeText)
                             }
                             .font(.subheadline).bold()
                             .foregroundStyle(.white)
@@ -138,19 +138,23 @@ struct HomeHeroCard: View {
         }
         .buttonStyle(.plain)
     }
-    
+
+    // Stessa dicitura dinamica del badge in basso: se non c'è ancora una foto
+    // il tasto deve invitare ad aggiungerla, non a "cambiarla".
+    // Tipizzato `LocalizedStringKey` (non `String`) per restare risolto dal
+    // catalogo di localizzazione invece di essere trattato come testo verbatim.
+    private var badgeText: LocalizedStringKey {
+        if isBusy { return "Caricamento…" }
+        return loader.image == nil ? "Aggiungi foto famiglia" : "Tocca per cambiare foto"
+    }
+
     private var placeholder: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
-            VStack(spacing: 6) {
-                Image(systemName: "person.2.fill")
-                    .font(.title)
-                    .foregroundStyle(.secondary)
-                Text("Aggiungi una foto famiglia")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            Image(systemName: "person.2.fill")
+                .font(.title)
+                .foregroundStyle(.secondary)
         }
         .frame(height: 300)
     }

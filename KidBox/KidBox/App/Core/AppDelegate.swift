@@ -353,6 +353,18 @@ final class AppDelegate: NSObject,
         await MainActor.run {
             NotificationManager.shared.handleNotificationUserInfo(userInfo)
         }
+
+        // Occasione utile per far avanzare la finestra delle dosi: iOS non può
+        // ripianificare da solo con l'app chiusa, quindi ogni interazione conta.
+        if notifType == "treatment_reminder", let container = modelContainer {
+            let treatmentId = userInfo["treatmentId"] as? String
+            await MainActor.run {
+                TreatmentNotificationManager.rescheduleActiveTreatments(
+                    context: container.mainContext,
+                    treatmentId: treatmentId
+                )
+            }
+        }
     }
     
     // MARK: - Foreground presentation
@@ -361,18 +373,70 @@ final class AppDelegate: NSObject,
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        let type = notification.request.content.userInfo["type"] as? String
-        switch type {
-        case "visit_reminder", "treatment_reminder", "todo_reminder":
-            // Mostra banner + suono anche con l'app aperta in foreground
-            KBLog.auth.kbDebug("Notification in foreground: \(type ?? "") → show banner")
-            return [.banner, .sound, .badge]
-        default:
-            KBLog.auth.kbDebug("Notification received in foreground (suppressed) type=\(type ?? "nil")")
+        let userInfo = notification.request.content.userInfo
+        let type = userInfo["type"] as? String
+
+        // Con l'app in primo piano la notifica si vede comunque, come su
+        // Android: un documento caricato da un altro membro o una nota nuova
+        // non devono passare inosservati solo perché l'app è aperta su
+        // un'altra schermata. L'unica eccezione è essere GIÀ DENTRO la sezione
+        // in cui il contenuto è appena stato creato: lì compare da solo nella
+        // lista e il banner sarebbe solo rumore.
+        if isAlreadyOnScreen(type: type, userInfo: userInfo) {
+            KBLog.auth.kbDebug("Notification in foreground: sezione già aperta type=\(type ?? "nil") → nessun banner")
             return []
         }
+        KBLog.auth.kbDebug("Notification in foreground: type=\(type ?? "nil") → show banner")
+        return [.banner, .list, .sound, .badge]
     }
-    
+
+    /// True se la notifica riguarda la sezione che l'utente ha già davanti.
+    ///
+    /// I to-do sono gli unici `scoped`: stare in una lista non deve zittire le
+    /// notifiche delle altre liste, quindi si sopprime solo quando combacia
+    /// anche il `listId`.
+    ///
+    /// I tipi non elencati (promemoria, scadenze, annunci, contenuti generati
+    /// dall'AI) non vengono mai soppressi: non nascono da qualcosa che stai
+    /// guardando comparire, quindi vale la pena mostrarli comunque.
+    ///
+    /// Gemello di `isAlreadyOnScreen` in `KidBoxFirebaseMessagingService` su Android.
+    private func isAlreadyOnScreen(type: String?, userInfo: [AnyHashable: Any]) -> Bool {
+        let familyId = userInfo["familyId"] as? String
+        func viewing(_ section: KBAppSection) -> Bool {
+            SectionPresenceTracker.shared.isViewing(section: section, familyId: familyId)
+        }
+
+        switch type {
+        // Le menzioni si vedono comunque a schermo come i messaggi normali.
+        case "new_chat_message", "chat_mention":
+            return viewing(.chat)
+        case "todo_assigned", "todo_reassigned", "todo_due_changed":
+            return SectionPresenceTracker.shared.isViewing(
+                section:  .todoList,
+                familyId: familyId,
+                scopeId:  userInfo["listId"] as? String,
+                scoped:   true
+            )
+        case "new_grocery_item":
+            return viewing(.shoppingList)
+        case "new_calendar_event", "calendar_event":
+            return viewing(.calendar)
+        case "new_note":
+            return viewing(.notes)
+        case "new_expense":
+            return viewing(.expenses)
+        case "new_document":
+            return viewing(.documents)
+        case "new_wallet_ticket", "new_loyalty_card":
+            return viewing(.wallet)
+        case "location_sharing_started", "location_sharing_stopped", "geofenceEvent":
+            return viewing(.familyLocation)
+        default:
+            return false
+        }
+    }
+
     // MARK: - APNs registration
     
     func application(

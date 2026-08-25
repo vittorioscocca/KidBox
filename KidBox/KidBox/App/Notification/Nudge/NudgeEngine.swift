@@ -292,19 +292,18 @@ final class NudgeEngine {
             trigger: trigger
         )
 
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            // Si registra alla PIANIFICAZIONE, non alla consegna: al momento
-            // della consegna l'app può essere chiusa e non ci sarebbe nessuno
-            // ad aggiornare lo stato, col risultato di ripianificare all'infinito
-            // lo stesso nudge.
-            NudgeState.recordFire(campaignId: item.campaign.id, at: item.fireDate)
-            // `KBAnalytics` è un actor: l'hop è obbligato.
-            await KBAnalytics.shared.logNudge(
-                name: "nudge_scheduled", campaignId: item.campaign.id)
-        } catch {
-            KBLog.app.kbError("[Nudge] pianificazione fallita: \(error.localizedDescription)")
+        guard await KBLocalNotificationBudget.shared.add(request, priority: .background) else {
+            KBLog.app.kbDebug("[Nudge] scartato dal budget notifiche: \(item.campaign.id)")
+            return
         }
+        // Si registra alla PIANIFICAZIONE, non alla consegna: al momento
+        // della consegna l'app può essere chiusa e non ci sarebbe nessuno
+        // ad aggiornare lo stato, col risultato di ripianificare all'infinito
+        // lo stesso nudge.
+        NudgeState.recordFire(campaignId: item.campaign.id, at: item.fireDate)
+        // `KBAnalytics` è un actor: l'hop è obbligato.
+        await KBAnalytics.shared.logNudge(
+            name: "nudge_scheduled", campaignId: item.campaign.id)
     }
 
     /// Cancella solo i pendenti con il nostro prefisso.

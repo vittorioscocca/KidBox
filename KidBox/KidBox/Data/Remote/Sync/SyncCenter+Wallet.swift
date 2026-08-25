@@ -234,10 +234,7 @@ extension SyncCenter {
                         existing.syncState = .synced
                         existing.lastSyncError = nil
 
-                        // Re-schedula i promemoria locali se la data è cambiata
-                        let snapshotForReminder = existing
-                        Task { await WalletReminderService.shared.scheduleReminders(for: snapshotForReminder) }
-
+                        // Nessun promemoria armato qui: sono del device che li ha creati.
                         KBLog.sync.kbDebug("[wallet][inbound] UPDATED id=\(dto.id)")
 
                     } else {
@@ -280,9 +277,6 @@ extension SyncCenter {
                         ticket.syncState = .synced
 
                         modelContext.insert(ticket)
-
-                        let snapshotForReminder = ticket
-                        Task { await WalletReminderService.shared.scheduleReminders(for: snapshotForReminder) }
 
                         KBLog.sync.kbDebug("[wallet][inbound] CREATED id=\(dto.id)")
                     }

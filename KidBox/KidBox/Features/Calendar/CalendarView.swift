@@ -67,6 +67,13 @@ struct CalendarView: View {
     @State private var addSheetDate: AddSheetDate?
     @State private var editingEvent: KBCalendarEvent?
     @State private var viewMode: CalendarViewMode = .month
+    /// Evento già aperto dalla notifica. Una sola apertura: senza questo,
+    /// chiudere la scheda la farebbe riaprire al primo aggiornamento della
+    /// lista eventi. Equivale a `openedEventId` di `CalendarScreen` su Android.
+    @State private var openedPushEventId: String? = nil
+    /// Si sta aspettando che la sincronizzazione porti l'evento della notifica.
+    /// Gemello di `waitingForEvent` su Android.
+    @State private var isWaitingForPushEvent = false
 
     /// Wrapper Identifiable per presentare la sheet "nuovo evento" con `.sheet(item:)`,
     /// così la data iniziale viene letta sempre fresca (evita lo stale di `isPresented`).
@@ -110,11 +117,13 @@ struct CalendarView: View {
                         cardBackground:  cardBackground,
                         familyId:        familyId,
                         onEditEvent:     { editingEvent = $0 },
-                        onDeleteEvent:   { deleteEvent($0) }
+                        onDeleteEvent:   { deleteEvent($0) },
+                        onAddEvent:      { addSheetDate = AddSheetDate(date: $0) }
                     )
                 }
             }
         }
+        .trackSectionPresence(.calendar, familyId: familyId)
         .navigationTitle("Calendario")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -150,16 +159,51 @@ struct CalendarView: View {
                 addSheetDate = AddSheetDate(date: sharePrefillDate ?? selectedDate)
             }
         }
+        // Attesa dell'evento arrivato da notifica. L'attesa vive QUI e non nel
+        // coordinator: chi sa davvero se l'evento c'è è la `@Query` che disegna
+        // questa schermata, non una lettura separata del contesto. È anche il
+        // motivo per cui prima non si apriva nulla — il coordinator navigava
+        // due volte sulla stessa rotta, la view veniva riusata senza un nuovo
+        // `onAppear` e nessun trigger scattava. Come `CalendarScreen` su Android.
+        .overlay {
+            if isWaitingForPushEvent {
+                ZStack {
+                    Color.black.opacity(0.25).ignoresSafeArea()
+                    HStack(spacing: 14) {
+                        ProgressView()
+                        Text("Apro l'evento…").font(.subheadline)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .shadow(radius: 12, y: 4)
+                }
+                .transition(.opacity)
+                // Toccando fuori si rinuncia ad aspettare.
+                .onTapGesture { isWaitingForPushEvent = false }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isWaitingForPushEvent)
+        // `events.count` copre l'evento che arriva dalla sync;
+        // `highlightEventId` la notifica toccata con il calendario già aperto.
+        .onChange(of: events.count) { _, _ in openPushEventIfNeeded() }
+        .onChange(of: highlightEventId) { _, _ in startPushEventWait() }
+        // Scaduta l'attesa si smette di bloccare l'utente: resta la vista mese.
+        .task(id: highlightEventId) {
+            guard highlightEventId?.isEmpty == false else { return }
+            try? await Task.sleep(nanoseconds: Self.pushEventWaitTimeout)
+            guard !Task.isCancelled, isWaitingForPushEvent else { return }
+            isWaitingForPushEvent = false
+            coordinator.globalBannerMessage = "Questo contenuto non è più disponibile."
+            KBLog.navigation.kbError("CalendarView: evento da push mai arrivato eventId=\(highlightEventId ?? "nil")")
+        }
         .onAppear {
             KBLog.sync.kbInfo("CalendarView.onAppear familyId=\(familyId)")
             Task {
                 BadgeManager.shared.clearCalendar()
                 await CountersService.shared.reset(familyId: familyId, field: .calendar)
             }
-            if let eid = highlightEventId,
-               let match = events.first(where: { $0.id == eid }) {
-                selectedDate = match.startDate
-            }
+            startPushEventWait()
             if let pending = coordinator.pendingShareText {
                 sharePrefillTitle = pending
                 coordinator.pendingShareText = nil
@@ -180,6 +224,37 @@ struct CalendarView: View {
         }
     }
     
+    /// Apre la scheda dell'evento arrivato da notifica, invece di fermarsi al
+    /// calendario con l'evento evidenziato sotto: la notifica parla di QUEL
+    /// evento, quindi si apre quello. Come `CalendarScreen` su Android.
+    private func openPushEventIfNeeded() {
+        guard let eid = highlightEventId, openedPushEventId != eid else { return }
+        guard let match = events.first(where: { $0.id == eid }) else { return }
+        openedPushEventId = eid
+        isWaitingForPushEvent = false
+        selectedDate = match.startDate
+        // La sheet non si presenta durante la transizione di push: aspetta che
+        // sia finita, come già fa qui sotto il draft condiviso.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            editingEvent = match
+        }
+        KBLog.navigation.kbInfo("CalendarView: apertura scheda evento da push eventId=\(eid)")
+    }
+
+    /// Accende l'attesa se la notifica punta a un evento non ancora in locale.
+    private func startPushEventWait() {
+        guard let eid = highlightEventId, !eid.isEmpty, openedPushEventId != eid else { return }
+        if events.contains(where: { $0.id == eid }) {
+            openPushEventIfNeeded()
+        } else {
+            isWaitingForPushEvent = true
+        }
+    }
+
+    /// Oltre questo limite è più probabile che l'evento non arrivi mai
+    /// (cancellato, non visibile) che non un ritardo della sincronizzazione.
+    private static let pushEventWaitTimeout: UInt64 = 25_000_000_000
+
     private func deleteEvent(_ event: KBCalendarEvent) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let eventId = event.id
@@ -398,6 +473,7 @@ private struct MonthDetailView: View {
     let familyId:                String
     let onEditEvent:             (KBCalendarEvent) -> Void
     let onDeleteEvent:           (KBCalendarEvent) -> Void
+    let onAddEvent:              (Date) -> Void
     
     @State private var displayedMonth = Date()
     
@@ -508,17 +584,14 @@ private struct MonthDetailView: View {
     private var dayEventsList: some View {
         Group {
             if eventsOnSelectedDate.isEmpty {
-                VStack {
-                    Spacer()
-                    Image(systemName: "calendar.badge.plus")
-                        .font(.largeTitle)
-                        .foregroundStyle(.tertiary)
-                    Text("Nessun evento")
-                        .foregroundStyle(.secondary)
-                        .font(.subheadline)
-                        .padding(.top, 4)
-                    Spacer()
-                }
+                KBEmptyStateView(
+                    systemImage: "calendar",
+                    title: "Nessun evento",
+                    message: "Segna appuntamenti, impegni e ricorrenze della famiglia. Ogni evento ha una categoria e un colore, così capisci a colpo d'occhio di chi è la giornata piena.",
+                    actionTitle: "Nuovo evento",
+                    actionSystemImage: "plus.circle.fill",
+                    action: { onAddEvent(selectedDate) }
+                )
             } else {
                 List {
                     ForEach(eventsOnSelectedDate) { event in
@@ -671,6 +744,10 @@ struct CalendarEventFormView: View {
     @State private var location      = ""
     @State private var startDate     = Date()
     @State private var endDate       = Date().addingTimeInterval(3600)
+    /// Abilita l'allineamento automatico fine→inizio solo DOPO `populateFields()`:
+    /// durante il caricamento le due date cambiano insieme, e correggerle in quel
+    /// momento falserebbe i valori dell'evento appena aperto.
+    @State private var dateAutoAdjustEnabled = false
     @State private var isAllDay      = false
     @State private var category      = KBEventCategory.family
     @State private var recurrence    = KBEventRecurrence.none
@@ -901,6 +978,27 @@ struct CalendarEventFormView: View {
                 guard !didPopulateFields else { return }
                 didPopulateFields = true
                 populateFields()
+                // Sul giro successivo del runloop: `onChange` scatta dopo
+                // l'aggiornamento della vista, quindi abilitarlo subito lo
+                // farebbe reagire alle assegnazioni di `populateFields`.
+                DispatchQueue.main.async { dateAutoAdjustEnabled = true }
+            }
+            // Un evento non può finire prima di iniziare.
+            //
+            // Spostando l'INIZIO si trascina la fine mantenendo la durata:
+            // cambiando la data di inizio senza toccare la fine si otteneva
+            // altrimenti un evento che comincia dopo essere finito. Toccando
+            // invece direttamente la FINE la si blocca all'inizio, che è il
+            // minimo sensato. Il secondo `onChange` non innesca un ciclo: dopo
+            // la correzione la condizione è già soddisfatta.
+            .onChange(of: startDate) { oldStart, newStart in
+                guard dateAutoAdjustEnabled else { return }
+                let duration = max(0, endDate.timeIntervalSince(oldStart))
+                endDate = newStart.addingTimeInterval(duration)
+            }
+            .onChange(of: endDate) { _, newEnd in
+                guard dateAutoAdjustEnabled else { return }
+                if newEnd < startDate { endDate = startDate }
             }
             // Push the picker within the SAME NavigationStack instead of a nested sheet/fullScreenCover.
             // This avoids the iOS "sheet-in-sheet" problem where a second presentation inside
@@ -1080,13 +1178,17 @@ struct CalendarEventFormView: View {
         let uid  = Auth.auth().currentUser?.uid ?? ""
         let now  = Date()
         let mins = hasReminder ? reminderOptions[reminderIndex].minutes : nil
-        
+        // Rete di sicurezza: i picker già impediscono una fine anteriore
+        // all'inizio, ma qui si chiude comunque la porta a un evento salvato
+        // con le date invertite.
+        let safeEndDate = max(endDate, startDate)
+
         if let e = event {
             e.title           = title.trimmingCharacters(in: .whitespaces)
             e.notes           = notes.isEmpty    ? nil : notes
             e.location        = location.isEmpty ? nil : location
             e.startDate       = startDate
-            e.endDate         = endDate
+            e.endDate         = safeEndDate
             e.isAllDay        = isAllDay
             e.category        = category
             e.recurrence      = recurrence
@@ -1112,7 +1214,7 @@ struct CalendarEventFormView: View {
                 notes:           notes.isEmpty    ? nil : notes,
                 location:        location.isEmpty ? nil : location,
                 startDate:       startDate,
-                endDate:         endDate,
+                endDate:         safeEndDate,
                 isAllDay:        isAllDay,
                 category:        category,
                 recurrence:      recurrence,

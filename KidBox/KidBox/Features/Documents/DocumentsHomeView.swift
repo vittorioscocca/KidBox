@@ -34,6 +34,7 @@ struct DocumentsHomeView: View {
                     .id("root-\(familyId)")
             }
         }
+        .trackSectionPresence(.documents, familyId: familyId)
         .navigationTitle("Documenti")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

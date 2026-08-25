@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { FamilyProvider } from "./FamilyContext";
+import { LocaleProvider } from "./i18n/LocaleContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import TodoOverview from "./pages/TodoOverview";
@@ -167,8 +168,10 @@ function AppShell() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppShell />
-    </AuthProvider>
+    <LocaleProvider>
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
+    </LocaleProvider>
   );
 }

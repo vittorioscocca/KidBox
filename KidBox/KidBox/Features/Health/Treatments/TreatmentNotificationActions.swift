@@ -166,10 +166,8 @@ enum TreatmentDoseActionHandler {
             trigger: trigger
         )
         
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error {
-                log.error("TreatmentDoseActionHandler: snooze failed \(error.localizedDescription)")
-            } else {
+        Task {
+            if await KBLocalNotificationBudget.shared.add(request, priority: .critical) {
                 log.info("TreatmentDoseActionHandler: snooze scheduled in 10min treatmentId=\(treatmentId)")
             }
         }

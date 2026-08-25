@@ -103,6 +103,12 @@ struct NotesHomeView: View {
         sectioned.flatMap { $0.1 }.map { $0.id }
     }
 
+    /// La ricerca non ha senso finché non c'è nemmeno una nota: mostrarla
+    /// comunque suggerirebbe una funzione utilizzabile su una lista vuota.
+    private var hasAnyNotes: Bool {
+        !notes.filter { !$0.isDeleted && $0.isVisible(to: currentUid) }.isEmpty
+    }
+
     private var currentUid: String? {
         Auth.auth().currentUser?.uid
     }
@@ -123,10 +129,16 @@ struct NotesHomeView: View {
     // MARK: - Body
     
     var body: some View {
-        contentView
+        Group {
+            if hasAnyNotes {
+                contentView.searchable(text: $searchQuery, prompt: "Cerca nelle note")
+            } else {
+                contentView
+            }
+        }
             .background(backgroundColor.ignoresSafeArea())
+            .trackSectionPresence(.notes, familyId: familyId)
             .navigationTitle("Note")
-            .searchable(text: $searchQuery, prompt: "Cerca nelle note")
             .onAppear {
                 #if DEBUG
                 if NotesCrashLogTest.forceCrashOnOpen {
@@ -216,7 +228,7 @@ struct NotesHomeView: View {
     
     @ViewBuilder
     private var contentView: some View {
-        if notes.filter({ !$0.isDeleted && $0.isVisible(to: currentUid) }).isEmpty {
+        if !hasAnyNotes {
             NotesEmptyStateView { createNewNote() }
                 .background(backgroundColor)
         } else if sectioned.isEmpty {
@@ -372,7 +384,7 @@ private struct NotesEmptyStateView: View {
             Image(systemName: "note.text")
                 .font(.system(size: 52)).foregroundStyle(.secondary)
             Text("Nessuna nota").font(.title3).fontWeight(.semibold)
-            Text("Crea la prima nota della famiglia\ntoccando il tasto in alto a destra.")
+            Text("Crea la prima nota. Puoi scegliere se condividerla con tutta la famiglia, con membri specifici, oppure mantenerla privata. Ogni nota è crittografata end-to-end.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             Button { onNewNote() } label: {
                 Label("Nuova nota", systemImage: "square.and.pencil")

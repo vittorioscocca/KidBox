@@ -7,7 +7,8 @@ import { useTodos, todosCol } from "../hooks/useTodos";
 import { useTodoLists } from "../hooks/useTodoLists";
 import { useChildren } from "../hooks/useChildren";
 import { useFamilyMembers } from "../hooks/useFamilyMembers";
-import { TODO_FILTERS, filterTodosForList } from "../todoFilters";
+import { filterTodosForList } from "../todoFilters";
+import { useTranslation } from "../i18n/LocaleContext";
 import TodoEditModal from "../components/TodoEditModal";
 import "./TodoDetail.css";
 
@@ -23,6 +24,7 @@ export default function TodoDetail({ mode }) {
   const navigate = useNavigate();
   const { currentFamilyId } = useFamily();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const children = useChildren(currentFamilyId);
   const childId = children[0]?.id ?? "";
   const { todos, error } = useTodos(currentFamilyId, childId);
@@ -31,19 +33,18 @@ export default function TodoDetail({ mode }) {
   const [showAdd, setShowAdd] = useState(false);
 
   const list = mode === "list" ? lists.find((l) => l.id === listId) : null;
-  const filter = mode === "filter" ? TODO_FILTERS.find((f) => f.key === filterKey) : null;
 
   const items =
     mode === "filter"
       ? filterTodosForList(todos, filterKey, user.uid)
       : todos.filter((t) => t.listId === listId);
 
-  const heading = mode === "filter" ? filter?.label : list?.name;
+  const heading = mode === "filter" ? t.todo.filters[filterKey] : list?.name;
   const canAdd = !(mode === "filter" && filterKey === "completati");
 
   const assigneeName = (uid) => {
     if (!uid) return null;
-    if (uid === user.uid) return user.displayName || "Me";
+    if (uid === user.uid) return user.displayName || t.todo.me;
     return members.find((m) => m.id === uid)?.displayName || null;
   };
 
@@ -77,8 +78,8 @@ export default function TodoDetail({ mode }) {
         </button>
         <h1 style={{ flex: 1 }}>{heading}</h1>
         {canAdd && (
-          <button className="back-btn" onClick={() => setShowAdd(true)}>
-            +
+          <button className="new-btn" onClick={() => setShowAdd(true)}>
+            {t.todo.new}
           </button>
         )}
       </div>
@@ -86,21 +87,21 @@ export default function TodoDetail({ mode }) {
       {error && <p className="error">{error}</p>}
 
       <ul className="detail-list">
-        {items.map((t) => {
-          const assignee = assigneeName(t.assignedTo);
-          const due = t.dueAt?.toDate?.();
-          const isUrgent = (t.priority ?? 0) === 1;
-          const notes = (t.notes || "").trim();
+        {items.map((todo) => {
+          const assignee = assigneeName(todo.assignedTo);
+          const due = todo.dueAt?.toDate?.();
+          const isUrgent = (todo.priority ?? 0) === 1;
+          const notes = (todo.notes || "").trim();
 
           return (
-            <li key={t.id}>
-              <button className="check-circle" onClick={() => toggleDone(t)}>
-                {t.isDone ? "●" : "○"}
+            <li key={todo.id}>
+              <button className="check-circle" onClick={() => toggleDone(todo)}>
+                {todo.isDone ? "●" : "○"}
               </button>
               <div className="todo-item-body">
                 <div className="todo-item-title-row">
-                  <span className={t.isDone ? "done" : ""}>{t.title}</span>
-                  {isUrgent && <span className="urgent-badge">Urgente</span>}
+                  <span className={todo.isDone ? "done" : ""}>{todo.title}</span>
+                  {isUrgent && <span className="urgent-badge">{t.todo.urgent}</span>}
                 </div>
                 {(assignee || due) && (
                   <div className="todo-item-meta">
@@ -112,15 +113,15 @@ export default function TodoDetail({ mode }) {
               </div>
               <button
                 className="row-delete-btn"
-                onClick={() => deleteTodo(t)}
-                title="Elimina to-do"
+                onClick={() => deleteTodo(todo)}
+                title={t.todo.deleteTodo}
               >
                 🗑
               </button>
             </li>
           );
         })}
-        {items.length === 0 && <p className="hint">Nessun elemento qui.</p>}
+        {items.length === 0 && <p className="hint">{t.todo.noItemsHere}</p>}
       </ul>
 
       {showAdd && (
@@ -128,7 +129,7 @@ export default function TodoDetail({ mode }) {
           familyId={currentFamilyId}
           childId={list?.childId ?? childId}
           listId={mode === "list" ? listId : ""}
-          listName={mode === "list" ? list?.name : "Lista"}
+          listName={mode === "list" ? list?.name : t.todo.list}
           onClose={() => setShowAdd(false)}
         />
       )}

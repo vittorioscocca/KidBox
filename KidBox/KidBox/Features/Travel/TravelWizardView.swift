@@ -78,6 +78,7 @@ struct TravelWizardView: View {
             }
         }
         .onAppear {
+            AppAnalytics.screenView(name: "viaggi_wizard")
             if vm == nil {
                 let model = TravelPlanningViewModel(modelContext: modelContext, coordinator: coordinator)
                 if let place = prefillDestinationName, !place.isEmpty {

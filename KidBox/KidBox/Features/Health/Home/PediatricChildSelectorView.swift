@@ -66,6 +66,8 @@ struct PediatricChildSelectorView: View {
     
     let familyId: String
     
+    @State private var didAutoNavigate = false
+
     @Query private var children: [KBChild]
     @Query private var members:  [KBFamilyMember]
     
@@ -76,8 +78,10 @@ struct PediatricChildSelectorView: View {
             filter: #Predicate<KBChild> { $0.familyId == fid },
             sort: [SortDescriptor(\KBChild.name)]
         )
+        // Solo membri attivi: i record eliminati facevano contare due soggetti
+        // dove ce n'era uno, e il salto diretto non scattava.
         _members = Query(
-            filter: #Predicate<KBFamilyMember> { $0.familyId == fid },
+            filter: #Predicate<KBFamilyMember> { $0.familyId == fid && $0.isDeleted == false },
             sort: [SortDescriptor(\KBFamilyMember.displayName)]
         )
     }
@@ -94,7 +98,17 @@ struct PediatricChildSelectorView: View {
             if allPersons.isEmpty {
                 emptyState
             } else if allPersons.count == 1, let person = allPersons.first {
-                Color.clear.onAppear { navigate(to: person) }
+                // Soggetto unico: si entra direttamente nella sua scheda, come su
+                // Android. Il selettore viene *sostituito* nello stack, altrimenti
+                // «Indietro» ci rientra e rilancia subito la stessa navigazione.
+                Color.clear
+                    .task(id: person.personId) {
+                        guard !didAutoNavigate else { return }
+                        didAutoNavigate = true
+                        coordinator.replaceTop(
+                            with: .pediatricHome(familyId: familyId, childId: person.personId)
+                        )
+                    }
             } else {
                 personList
             }

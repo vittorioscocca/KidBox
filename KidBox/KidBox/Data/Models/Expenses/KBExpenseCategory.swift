@@ -54,6 +54,11 @@ extension KBExpenseCategory {
         ("spesa",           "Spesa",          "cart.fill",              "#4CAF50"),
         ("casa",            "Casa",           "house.fill",             "#2196F3"),
         ("trasporti",       "Trasporti",      "car.fill",               "#FF9800"),
+        // Distinta da "Trasporti" (biglietti, mezzi pubblici): qui vanno i costi
+        // dell'auto — carburante, assicurazione, manutenzione. Slug, nome, icona
+        // e colore devono restare identici ad Android: le categorie viaggiano su
+        // Firestore con ID deterministico `expcat-{familyId}-{slug}`.
+        ("automobile",      "Automobile",     "fuelpump.fill",          "#D32F2F"),
         ("salute",          "Salute",         "heart.fill",             "#E91E63"),
         ("istruzione",      "Istruzione",     "book.fill",              "#9C27B0"),
         ("sport",           "Sport",          "figure.run",             "#00BCD4"),

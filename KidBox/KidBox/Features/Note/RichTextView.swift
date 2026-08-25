@@ -248,9 +248,76 @@ struct RichTextView: UIViewRepresentable {
         /// programmatica (continuazione liste, paste, comandi toolbar, checklist).
         func handleTextChanged(in textView: UITextView) {
             guard !isShowingPlaceholder else { return }
+            renumberLists(in: textView)
             parent.onEdit?()
             refreshToolbars(in: textView)
             scheduleHTMLSync(from: textView)
+        }
+
+        // MARK: - Rinumerazione liste
+
+        /// Rinumera in sequenza (1, 2, 3, …) i blocchi contigui di righe che
+        /// iniziano con un marcatore numerato ("12. testo"). I numeri sono
+        /// caratteri letterali scritti nel testo (non calcolati dal layout),
+        /// quindi senza questo passaggio cancellare un elemento in mezzo alla
+        /// lista lascia un "buco" (es. 1, 3, 4 invece di 1, 2, 3). Chiamata a
+        /// ogni modifica — idempotente: se la numerazione è già corretta non
+        /// tocca il textStorage.
+        private func renumberLists(in tv: UITextView) {
+            let ns = (tv.attributedText?.string ?? "") as NSString
+            guard ns.length > 0 else { return }
+            guard let pattern = try? NSRegularExpression(pattern: #"^(\d+)\.[ \t]"#) else { return }
+
+            let ms = NSMutableAttributedString(attributedString: tv.attributedText)
+            let selection = tv.selectedRange
+
+            var idx = 0
+            var expectedNumber = 1
+            var lengthDelta = 0
+            var cursorAdjustment = 0
+            var didChange = false
+
+            while idx < ns.length {
+                let para = ns.paragraphRange(for: NSRange(location: idx, length: 0))
+                guard para.length > 0 else { break }
+                var line = ns.substring(with: para)
+                let hasNL = line.hasSuffix("\n")
+                if hasNL { line.removeLast() }
+                let lineLoc = para.location
+
+                let lineNS = line as NSString
+                if let match = pattern.firstMatch(in: line, range: NSRange(location: 0, length: lineNS.length)) {
+                    let numberRange = match.range(at: 1)
+                    let currentNumberStr = lineNS.substring(with: numberRange)
+                    let expectedStr = String(expectedNumber)
+                    if currentNumberStr != expectedStr {
+                        let absoluteNumberLoc = lineLoc + numberRange.location
+                        let delta = (expectedStr as NSString).length - numberRange.length
+                        let replaceRange = NSRange(location: absoluteNumberLoc + lengthDelta, length: numberRange.length)
+                        ms.replaceCharacters(in: replaceRange, with: expectedStr)
+                        lengthDelta += delta
+                        didChange = true
+                        if absoluteNumberLoc < selection.location {
+                            cursorAdjustment += delta
+                        }
+                    }
+                    expectedNumber += 1
+                } else {
+                    expectedNumber = 1
+                }
+
+                let next = para.location + para.length
+                if next <= idx { break }
+                idx = next
+            }
+
+            guard didChange else { return }
+            let offset = tv.contentOffset
+            tv.textStorage.setAttributedString(ms)
+            let newLen = ms.length
+            let loc = min(max(0, selection.location + cursorAdjustment), newLen)
+            tv.selectedRange = NSRange(location: loc, length: min(selection.length, newLen - loc))
+            RichTextFormatter.restoreScroll(offset, in: tv)
         }
 
         private func refreshToolbars(in textView: UITextView) {

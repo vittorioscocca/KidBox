@@ -65,7 +65,7 @@ enum TodoReminderService {
         let comps   = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: dueAt)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         let req     = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
-        try await UNUserNotificationCenter.current().add(req)
+        await KBLocalNotificationBudget.shared.add(req, priority: .deadline)
         
         KBLog.todo.kbInfo("[Reminder] scheduled id=\(id) dueAt=\(dueAt)")
         return id

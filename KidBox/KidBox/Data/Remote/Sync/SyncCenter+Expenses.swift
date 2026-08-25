@@ -49,14 +49,25 @@ extension SyncCenter {
         // sul dispositivo ricevente PRIMA che arrivino allegati inbound.
         // Senza questo, ensureExpensesFolder veniva chiamato solo durante
         // upload() sul dispositivo mittente, mai sul ricevente.
-        KBLog.sync.kbDebug("📁 [expenses][listener] ensuring Spese folder familyId=\(familyId)")
-        _ = ExpenseAttachmentService.shared.ensureExpensesFolder(
-            familyId:      familyId,
-            expenseId:     "",       // stringa vuota = crea solo la root "Spese", non la subfolder
-            expenseTitle:  "",
-            modelContext:  modelContext
+        // …ma solo se una spesa esiste davvero: la cartella «Spese» non deve
+        // comparire in Documenti finché non se ne salva la prima.
+        var anyExpenseDesc = FetchDescriptor<KBExpense>(
+            predicate: #Predicate { $0.familyId == familyId && $0.isDeleted == false }
         )
-        try? modelContext.save()
+        anyExpenseDesc.fetchLimit = 1
+        let hasExpenses = !((try? modelContext.fetch(anyExpenseDesc)) ?? []).isEmpty
+        if hasExpenses {
+            KBLog.sync.kbDebug("📁 [expenses][listener] ensuring Spese folder familyId=\(familyId)")
+            _ = ExpenseAttachmentService.shared.ensureExpensesFolder(
+                familyId:      familyId,
+                expenseId:     "",       // stringa vuota = crea solo la root "Spese", non la subfolder
+                expenseTitle:  "",
+                modelContext:  modelContext
+            )
+            try? modelContext.save()
+        } else {
+            KBLog.sync.kbDebug("📁 [expenses][listener] nessuna spesa: root «Spese» non creata familyId=\(familyId)")
+        }
         // ─────────────────────────────────────────────────────────────────────
         
         expenseListener = expenseRemote.listen(

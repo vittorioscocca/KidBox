@@ -58,7 +58,6 @@ struct TravelOnboardingView: View {
             footer
         }
         .background(backgroundColor.ignoresSafeArea())
-        .navigationBarBackButtonHidden(true)
     }
 
     private var header: some View {

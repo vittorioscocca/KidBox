@@ -530,12 +530,9 @@ final class HealthPatternAnalyzerService {
             trigger: trigger
         )
 
-        do {
-            try await center.add(request)
+        if await KBLocalNotificationBudget.shared.add(request, priority: .background) {
             UserDefaults.standard.set(notifId, forKey: Self.notifId)
             KBLog.ai.kbInfo("HealthPatternAnalyzer: notification scheduled id=\(notifId)")
-        } catch {
-            KBLog.ai.kbError("HealthPatternAnalyzer: schedule failed \(error.localizedDescription)")
         }
     }
 

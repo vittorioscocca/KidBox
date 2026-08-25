@@ -1083,6 +1083,9 @@ final class SyncCenter: ObservableObject {
                             existing.name = dto.name
                             existing.isDeleted = dto.isDeleted
                             existing.updatedAt = remoteTs
+                            // Non si azzera con un remoto privo del campo: le liste
+                            // vecchie non lo hanno e perderemmo il proprietario.
+                            if let creator = dto.createdBy { existing.createdBy = creator }
                         }
                     } else if !dto.isDeleted {
                         // nuova lista arrivata dal remoto: la creiamo localmente
@@ -1093,7 +1096,8 @@ final class SyncCenter: ObservableObject {
                             name: dto.name,
                             createdAt: dto.updatedAt ?? Date(),
                             updatedAt: dto.updatedAt ?? Date(),
-                            isDeleted: false
+                            isDeleted: false,
+                            createdBy: dto.createdBy
                         )
                         modelContext.insert(list)
                         KBLog.sync.kbDebug("applyTodoListInbound: inserita lista remota name=\(dto.name) id=\(dto.id)")
@@ -1337,8 +1341,18 @@ final class SyncCenter: ObservableObject {
                         // Compare timestamps safely (nil remote means "unknown/old" -> do not override newer local)
                         let remoteUpdatedAt = dto.updatedAt ?? Date.distantPast
                         let localUpdatedAt  = existing.updatedAt
-                        
-                        if remoteUpdatedAt >= localUpdatedAt {
+
+                        // LWW sul timestamp SOLO se questo device ha ancora scritture da
+                        // inviare. Altrimenti lo skew fra l'orologio locale (con cui si
+                        // scrive `updatedAt` in locale) e il serverTimestamp di Firestore
+                        // blocca gli aggiornamenti remoti: un device con l'orologio avanti
+                        // scarta per sempre le modifiche fatte dagli altri, e resta sulla
+                        // propria copia fino al re-entry nella schermata. Stesso guard già
+                        // presente su Android (TodoRepository.applyTodoInbound).
+                        let localHasPendingOutbound =
+                            existing.syncState == .pendingUpsert || existing.syncState == .error
+
+                        if !localHasPendingOutbound || remoteUpdatedAt >= localUpdatedAt {
                             KBLog.sync.kbDebug("[todo][inbound][\(batch)] APPLY existing remote>=local remoteUpdatedAt=\(remoteUpdatedAt) localUpdatedAt=\(localUpdatedAt)")
                             
                             existing.familyId = dto.familyId

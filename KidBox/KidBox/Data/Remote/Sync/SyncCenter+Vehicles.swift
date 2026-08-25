@@ -251,8 +251,8 @@ extension SyncCenter {
                         existing.syncState = .synced
                         existing.lastSyncError = nil
 
+                        // Nessun promemoria armato qui: sono del device che li ha creati.
                         KBLog.sync.kbDebug("[vehicle][inbound] UPDATED id=\(dto.id)")
-                        await VehicleReminderService.shared.scheduleReminders(for: existing)
 
                     } else {
                         let now = dto.updatedAt ?? Date()
@@ -288,7 +288,6 @@ extension SyncCenter {
                         row.syncState = .synced
                         modelContext.insert(row)
                         KBLog.sync.kbDebug("[vehicle][inbound] CREATED id=\(dto.id)")
-                        await VehicleReminderService.shared.scheduleReminders(for: row)
                     }
 
                 case .remove(let id):

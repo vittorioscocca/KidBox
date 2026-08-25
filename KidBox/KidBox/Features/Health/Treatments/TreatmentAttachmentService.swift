@@ -595,15 +595,21 @@ struct ImagePickerView: UIViewControllerRepresentable {
     let onPick: (UIImage) -> Void
     
     func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = sourceType
-        picker.delegate   = context.coordinator
-        return picker
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let makePicker: () -> UIViewController = {
+            let picker = UIImagePickerController()
+            picker.sourceType = sourceType
+            picker.delegate   = context.coordinator
+            return picker
+        }
+        // La libreria foto non richiede il permesso camera: solo lo scatto va
+        // fatto passare dal gate, altrimenti si chiederebbe un permesso inutile.
+        guard sourceType == .camera else { return makePicker() }
+        return CameraPermissionGateViewController(makePicker: makePicker)
     }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
     
     class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let onPick: (UIImage) -> Void

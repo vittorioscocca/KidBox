@@ -154,37 +154,21 @@ struct HomeItemsHomeView: View {
         }
     }
 
+    // Casa è l'unica sezione con due modi di iniziare: un elemento
+    // (elettrodomestico, garanzia) oppure una scadenza ricorrente.
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "house.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(Color(hex: "#8B6914") ?? .brown)
-            Text("Nessun elemento ancora")
-                .font(.custom("Nunito", size: 18).weight(.semibold))
-                .foregroundStyle(titleInk)
-            VStack(spacing: 12) {
-                Button { showAdd = true } label: {
-                    Text("Aggiungi elemento")
-                        .font(.custom("Nunito", size: 16).weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(accentOrange, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                Button { showAddPayment = true } label: {
-                    Text("Aggiungi scadenza o pagamento")
-                        .font(.custom("Nunito", size: 16).weight(.semibold))
-                        .foregroundStyle(accentOrange)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(paymentCardBackground, in: Capsule())
-                        .overlay(Capsule().stroke(accentOrange, lineWidth: 1.5))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        KBEmptyStateView(
+            systemImage: "house.fill",
+            title: "Casa è ancora vuota",
+            message: "Registra elettrodomestici, garanzie e manutenzioni, e tieni sotto controllo le scadenze ricorrenti come affitto, bollette e condominio.",
+            actionTitle: "Nuovo elemento",
+            actionSystemImage: "plus.circle.fill",
+            action: { showAdd = true },
+            accent: accentOrange,
+            secondaryTitle: "Nuova scadenza",
+            secondarySystemImage: "calendar.badge.clock",
+            secondaryAction: { showAddPayment = true }
+        )
     }
 
     @ViewBuilder

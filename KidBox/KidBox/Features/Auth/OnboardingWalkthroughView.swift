@@ -143,6 +143,13 @@ struct OnboardingWalkthroughView: View {
     private var isJoinPage: Bool { currentPage == 5 && familyPath == .join }
     private var isInvitePage: Bool { currentPage == 6 && familyPath == .create }
     private var isLastPage: Bool { currentPage == totalPages - 1 }
+
+    // Una volta creata la famiglia (o completato un join) non si torna più
+    // indietro: la scrittura su Firestore è già avvenuta, e riproporre le
+    // pagine precedenti farebbe pensare all'utente di poterla ancora annullare.
+    private var canGoBack: Bool {
+        currentPage > 0 && !isTransitioning && !isSavingProfile && createdFamilyId == nil
+    }
     
     private var infoPage: OnboardingPage { infoPages[min(currentPage, infoPages.count - 1)] }
 
@@ -216,9 +223,21 @@ struct OnboardingWalkthroughView: View {
                 Spacer()
             }
             
+            VStack {
+                HStack {
+                    if canGoBack {
+                        backButton
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                Spacer()
+            }
+
             VStack(spacing: 0) {
                 Spacer()
-                
+
                 // Contenuto principale
                 Group {
                     if isInfoPage {
@@ -448,6 +467,20 @@ struct OnboardingWalkthroughView: View {
         .padding(.horizontal, 32)
     }
     
+    // MARK: - Back button
+
+    private var backButton: some View {
+        Button(action: goBack) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(currentAccent)
+                .frame(width: 36, height: 36)
+                .background(cardBackground, in: Circle())
+                .shadow(color: currentAccent.opacity(0.12), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Page indicators
     
     private var pageIndicators: some View {
@@ -638,6 +671,25 @@ struct OnboardingWalkthroughView: View {
         }
     }
     
+    private func goBack() {
+        guard canGoBack else { return }
+        isTransitioning = true
+
+        withAnimation(.easeIn(duration: 0.18)) {
+            textOpacity = 0; textOffset = 16; iconScale = 0.85; iconOpacity = 0.3
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            currentPage -= 1
+            textOffset = -28; iconScale = 0.5
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) {
+                iconScale = 1.0; iconOpacity = 1.0; textOpacity = 1.0; textOffset = 0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isTransitioning = false
+            }
+        }
+    }
+
     private func animateIn() {
         withAnimation(.spring(response: 0.6, dampingFraction: 0.68).delay(0.1)) {
             iconScale = 1.0; iconOpacity = 1.0

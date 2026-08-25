@@ -105,6 +105,7 @@ struct DocumentIntelligenceSheet: View {
             }
         }
         .interactiveDismissDisabled(isExecuting)
+        .onAppear { AppAnalytics.screenView(name: "document_intelligence") }
     }
 
     @ViewBuilder

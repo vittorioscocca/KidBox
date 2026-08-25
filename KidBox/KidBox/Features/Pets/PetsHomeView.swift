@@ -93,26 +93,15 @@ struct PetsHomeView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "pawprint.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(accentOrange)
-            Text("Nessun animale domestico ancora")
-                .font(.custom("Nunito", size: 18).weight(.semibold))
-                .foregroundStyle(titleInk)
-            Button {
-                showAddSheet = true
-            } label: {
-                Text("Aggiungi animale domestico")
-                    .font(.custom("Nunito", size: 16).weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(accentOrange, in: Capsule())
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        KBEmptyStateView(
+            systemImage: "pawprint.fill",
+            title: "Nessun animale",
+            message: "Aggiungi cani, gatti e tutti gli altri di casa: libretto sanitario, vaccini, terapie e visite dal veterinario, sempre a portata di mano.",
+            actionTitle: "Aggiungi animale",
+            actionSystemImage: "plus.circle.fill",
+            action: { showAddSheet = true },
+            accent: accentOrange
+        )
     }
 
     @ViewBuilder

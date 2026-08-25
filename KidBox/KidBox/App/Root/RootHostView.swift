@@ -314,6 +314,30 @@ struct RootHostView: View {
             .padding(.top, 12)
             .padding(.horizontal, 12)
         }
+        // Attesa della sincronizzazione della risorsa arrivata da notifica:
+        // senza un segnale visibile l'utente resta fermo sulla panoramica
+        // senza capire che sta per succedere qualcosa. Toccando fuori si
+        // annulla l'attesa. Gemello del Dialog in `AppNavGraph` su Android.
+        .overlay {
+            if let message = coordinator.deepLinkLoadingMessage {
+                ZStack {
+                    Color.black.opacity(0.25)
+                        .ignoresSafeArea()
+                        .onTapGesture { coordinator.cancelDeepLinkResolution() }
+                    HStack(spacing: 14) {
+                        ProgressView()
+                        Text(message)
+                            .font(.subheadline)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .shadow(radius: 12, y: 4)
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: coordinator.deepLinkLoadingMessage)
         .animation(.spring(), value: showRevokedAlert)
         .animation(.spring(), value: coordinator.globalBannerMessage)
         .onChange(of: coordinator.globalBannerMessage) { _, newValue in

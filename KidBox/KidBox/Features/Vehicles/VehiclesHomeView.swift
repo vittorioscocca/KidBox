@@ -84,24 +84,15 @@ struct VehiclesHomeView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "car.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(titleInk)
-            Text("Nessun veicolo ancora")
-                .font(.custom("Nunito", size: 18).weight(.semibold))
-                .foregroundStyle(titleInk)
-            Button { showAdd = true } label: {
-                Text("Aggiungi veicolo")
-                    .font(.custom("Nunito", size: 16).weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(accentOrange, in: Capsule())
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        KBEmptyStateView(
+            systemImage: "car.fill",
+            title: "Nessun veicolo",
+            message: "Aggiungi auto, moto e bici: assicurazione, revisione, bollo e tagliando in un colpo d'occhio, con il promemoria prima di ogni scadenza.",
+            actionTitle: "Aggiungi veicolo",
+            actionSystemImage: "plus.circle.fill",
+            action: { showAdd = true },
+            accent: accentOrange
+        )
     }
 
     @ViewBuilder
