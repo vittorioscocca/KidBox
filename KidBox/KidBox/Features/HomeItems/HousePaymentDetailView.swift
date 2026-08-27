@@ -118,7 +118,7 @@ struct HousePaymentDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             if let st = p.subtypeRaw, !st.isEmpty {
-                line("Tipo", st)
+                line("Tipologia", KidBoxHousePaymentType.subtypeTitle(st))
             }
             if let imp = p.importo {
                 line("Importo", Self.formatEuro(imp))
@@ -135,7 +135,7 @@ struct HousePaymentDetailView: View {
         .background(cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private func line(_ k: String, _ v: String) -> some View {
+    private func line(_ k: LocalizedStringKey, _ v: String) -> some View {
         HStack {
             Text(k).foregroundStyle(.secondary)
             Spacer()
@@ -144,7 +144,7 @@ struct HousePaymentDetailView: View {
     }
 
     @ViewBuilder
-    private func deadlineRow(_ title: String, _ date: Date?) -> some View {
+    private func deadlineRow(_ title: LocalizedStringKey, _ date: Date?) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.caption).foregroundStyle(.secondary)

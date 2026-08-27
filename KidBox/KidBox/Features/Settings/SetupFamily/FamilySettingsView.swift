@@ -63,12 +63,12 @@ struct FamilySettingsView: View {
             .map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         
-        if kids.isEmpty { return "Nessun figlio configurato." }
-        if kids.count == 1 { return "Figlio: \(kids[0])" }
-        if kids.count <= 3 { return "Figli: " + kids.joined(separator: ", ") }
+        if kids.isEmpty { return String(localized: "Nessun figlio configurato.") }
+        if kids.count == 1 { return String(localized: "Figlio: \(kids[0])") }
+        if kids.count <= 3 { return String(localized: "Figli: \(kids.joined(separator: ", "))") }
         
         let firstThree = kids.prefix(3).joined(separator: ", ")
-        return "Figli: \(firstThree) +\(kids.count - 3)"
+        return String(localized: "Figli: \(firstThree) +\(kids.count - 3)")
     }
     
     private var currentUid: String { Auth.auth().currentUser?.uid ?? "" }
@@ -239,6 +239,8 @@ struct FamilySettingsView: View {
             Text("Famiglia")
                 .font(.title2).bold()
             Text("KidBox funziona davvero quando la famiglia è al completo: appena inviti l'altro genitore, calendario, spese, liste, documenti e chat si aggiornano per tutti in tempo reale. Da solo vedi solo la tua metà dell'organizzazione.")
+                // 13pt: stessa dimensione del 13.sp di FamilySettingsScreen su Android.
+                .font(.footnote)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

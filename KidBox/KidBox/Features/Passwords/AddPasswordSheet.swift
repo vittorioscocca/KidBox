@@ -61,8 +61,8 @@ struct AddPasswordSheet: View {
 
     private var sortedGroups: [PasswordGroup] {
         visibleGroups.sorted { a, b in
-            let na = (try? a.decryptName()) ?? a.id
-            let nb = (try? b.decryptName()) ?? b.id
+            let na = a.displayName
+            let nb = b.displayName
             return na.localizedCaseInsensitiveCompare(nb) == .orderedAscending
         }
     }
@@ -300,7 +300,7 @@ struct AddPasswordSheet: View {
         guard let groupSelection else {
             return NSLocalizedString("passwords.group.unassigned", comment: "")
         }
-        return (try? sortedGroups.first(where: { $0.id == groupSelection })?.decryptName()) ?? "Gruppo"
+        return sortedGroups.first(where: { $0.id == groupSelection })?.displayName ?? String(localized: "Gruppo")
     }
 
     private func resolveFaviconURL(from websiteRaw: String) async -> String? {

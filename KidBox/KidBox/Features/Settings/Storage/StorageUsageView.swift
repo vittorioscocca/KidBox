@@ -398,7 +398,7 @@ struct StorageUsageView: View {
                         }
                     }
                     HStack(spacing: 8) {
-                        Label(plan.storageLabel + " storage", systemImage: "internaldrive")
+                        Label(String(format: NSLocalizedString("%@ storage", comment: "Storage quota label (%@ = formatted size)"), plan.storageLabel), systemImage: "internaldrive")
                             .font(.caption).foregroundStyle(.secondary)
                         Label(plan.aiQuotaLabel, systemImage: "sparkles")
                             .font(.caption).foregroundStyle(.secondary)
@@ -426,7 +426,7 @@ struct StorageUsageView: View {
             if subscriptionManager.isPurchasing {
                 ProgressView().controlSize(.small)
             } else if let product {
-                Text(product.displayPrice + "/mese")
+                Text(String(format: NSLocalizedString("%@/mese", comment: "Monthly price suffix (%@ = StoreKit localized price)"), product.displayPrice))
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12).padding(.vertical, 6)
@@ -626,7 +626,7 @@ private struct SectionRow: View {
                 }
                 .frame(height: 4)
                 
-                Text("\(section.recordCount) \(section.recordCount == 1 ? "elemento" : "elementi")")
+                Text(section.recordCount == 1 ? String(localized: "\(section.recordCount) elemento") : String(localized: "\(section.recordCount) elementi"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

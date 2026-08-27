@@ -191,7 +191,7 @@ private struct AmountHeroCard: View {
                 .foregroundStyle(.primary)
             
             if let cat = category {
-                Text(cat.name)
+                Text(cat.displayName)
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 5)
@@ -233,7 +233,7 @@ private struct DetailsCard: View {
                 DetailRow(
                     icon: cat.icon,
                     label: "Categoria",
-                    value: cat.name,
+                    value: cat.displayName,
                     iconColor: Color(hex: cat.colorHex) ?? .accentColor
                 )
             }

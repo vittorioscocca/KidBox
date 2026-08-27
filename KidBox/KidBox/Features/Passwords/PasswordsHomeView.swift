@@ -139,8 +139,8 @@ struct PasswordsHomeView: View {
         var result: [PasswordSection] = []
 
         let sortedGroups = visibleGroups.sorted { a, b in
-            let na = (try? a.decryptName()) ?? a.id
-            let nb = (try? b.decryptName()) ?? b.id
+            let na = a.displayName
+            let nb = b.displayName
             if PasswordGroupsService.isUnassigned(a, familyId: familyId) { return false }
             if PasswordGroupsService.isUnassigned(b, familyId: familyId) { return true }
             return na.localizedCaseInsensitiveCompare(nb) == .orderedAscending
@@ -148,7 +148,7 @@ struct PasswordsHomeView: View {
 
         for g in sortedGroups {
             guard let list = bucket[g.id], !list.isEmpty else { continue }
-            let title = (try? g.decryptName()) ?? "Gruppo"
+            let title = g.displayName
             let hex = g.color
             let tint = Color(hex: hex) ?? KBTheme.tint
             result.append(PasswordSection(id: g.id, title: title, headerTint: tint, headerIcon: g.icon, entries: list.sorted { $0.updatedAt > $1.updatedAt }))
@@ -416,7 +416,7 @@ struct PasswordsHomeView: View {
                 }
                 ForEach(visibleGroups, id: \.id) { group in
                     filterChip(
-                        title: (try? group.decryptName()) ?? "Gruppo",
+                        title: group.displayName,
                         selected: {
                             if case .group(let gid) = listScope { return gid == group.id }
                             return false

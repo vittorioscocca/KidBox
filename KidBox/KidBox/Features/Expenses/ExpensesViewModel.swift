@@ -220,7 +220,7 @@ final class ExpensesViewModel: ObservableObject {
                                      percentage: total > 0 ? amount / total * 100 : 0)
             }
             guard let cat = categories.first(where: { $0.id == catId }) else { return nil }
-            return CategorySlice(id: catId, name: cat.name, colorHex: cat.colorHex, icon: cat.icon,
+            return CategorySlice(id: catId, name: cat.displayName, colorHex: cat.colorHex, icon: cat.icon,
                                  total: amount, percentage: total > 0 ? amount / total * 100 : 0)
         }.sorted { $0.total > $1.total }
     }

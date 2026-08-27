@@ -40,7 +40,7 @@ private struct ContactCard: View {
             Text(payload.fullName)
                 .font(.title3.bold())
                 .multilineTextAlignment(.center)
-            Text(payload.primaryPhone ?? "Nessun numero")
+            Text(payload.primaryPhone ?? String(localized: "Nessun numero"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

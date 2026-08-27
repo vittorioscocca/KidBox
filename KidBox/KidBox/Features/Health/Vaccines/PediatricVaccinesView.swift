@@ -848,7 +848,7 @@ struct PediatricVaccineEditView: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05)))
     }
     
-    private func stepperField(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+    private func stepperField(label: LocalizedStringKey, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
         VStack(spacing: 6) {
             Text(label).font(.caption).foregroundStyle(.secondary)
             HStack(spacing: 12) {
@@ -1030,9 +1030,9 @@ struct PediatricVaccineEditView: View {
 extension VaccineStatus {
     var displayName: String {
         switch self {
-        case .administered: return "Somministrato"
-        case .scheduled:    return "Appuntamento"
-        case .planned:      return "Da programmare"
+        case .administered: return String(localized: "Somministrato")
+        case .scheduled:    return String(localized: "Appuntamento")
+        case .planned:      return String(localized: "Da programmare")
         }
     }
 }

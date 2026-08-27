@@ -7,7 +7,7 @@ enum PasswordGroupsService {
     static let unassignedSlug = "unassigned"
     private static let seededKeyPrefix = "kb.passwords.defaultGroupsSeeded."
 
-    struct SeedDefinition {
+    struct SeedDefinition: Sendable {
         let slug: String
         let localizationKey: String
         let icon: String
@@ -15,7 +15,7 @@ enum PasswordGroupsService {
         let sortIndex: Int
     }
 
-    static let seedDefinitions: [SeedDefinition] = [
+    nonisolated static let seedDefinitions: [SeedDefinition] = [
         .init(slug: "unassigned", localizationKey: "passwords.group.unassigned", icon: "tray", color: "#8E8E93", sortIndex: 0),
         .init(slug: "work", localizationKey: "passwords.group.work", icon: "briefcase.fill", color: "#0A84FF", sortIndex: 1),
         .init(slug: "personal", localizationKey: "passwords.group.personal", icon: "person.fill", color: "#34C759", sortIndex: 2),
@@ -32,8 +32,36 @@ enum PasswordGroupsService {
         group.id == groupId(familyId: familyId, slug: unassignedSlug)
     }
 
-    static func localizedDefaultName(for key: String) -> String {
+    nonisolated static func localizedDefaultName(for key: String) -> String {
         NSLocalizedString(key, comment: "")
+    }
+
+    /// Seed corrispondente a un gruppo, ricavato dall'ID deterministico.
+    nonisolated static func seedDefinition(forGroupId id: String, familyId: String) -> SeedDefinition? {
+        let prefix = "kb.password.group.\(familyId)."
+        guard id.hasPrefix(prefix) else { return nil }
+        let slug = String(id.dropFirst(prefix.count))
+        return seedDefinitions.first { $0.slug == slug }
+    }
+
+    /// `true` se `name` è ancora uno dei nomi con cui il gruppo può essere stato
+    /// seedato — cioè il valore di `key` in una qualsiasi lingua dell'app.
+    /// Serve a distinguere un gruppo mai toccato da uno rinominato dall'utente.
+    nonisolated static func isUnrenamedSeedName(_ name: String, key: String) -> Bool {
+        seedNames(forKey: key).contains(name)
+    }
+
+    /// Il valore di `key` in tutte le localizzazioni presenti nel bundle, così
+    /// aggiungere una lingua non richiede di toccare questo file.
+    nonisolated private static func seedNames(forKey key: String) -> Set<String> {
+        var names: Set<String> = []
+        for lang in Bundle.main.localizations {
+            guard let path = Bundle.main.path(forResource: lang, ofType: "lproj"),
+                  let bundle = Bundle(path: path) else { continue }
+            let value = bundle.localizedString(forKey: key, value: key, table: nil)
+            if value != key { names.insert(value) }
+        }
+        return names
     }
 
     static func seedDefaultGroupsIfNeeded(familyId: String, modelContext: ModelContext) {

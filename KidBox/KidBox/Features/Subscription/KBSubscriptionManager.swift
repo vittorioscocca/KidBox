@@ -13,7 +13,7 @@
 //    it.vittorioscocca.kidbox.max.monthly
 //
 //  Il piano è per famiglia: un solo acquisto copre tutti i membri.
-//  Lo storage è condiviso; i messaggi AI sono per membro (uid).
+//  Storage e messaggi AI sono entrambi di famiglia, condivisi tra tutti i membri.
 
 import Foundation
 import StoreKit
@@ -90,7 +90,11 @@ enum KBPlan: String, CaseIterable {
             )
             return String(format: format, aiMessageLimit)
         }
-        return "\(aiMessageLimit) msg AI/giorno"
+        let format = NSLocalizedString(
+            "%lld msg AI/giorno",
+            comment: "AI quota label, daily limit (%lld = message count)"
+        )
+        return String(format: format, aiMessageLimit)
     }
     
     var storageLabel: String { storageQuota.formattedFileSize }

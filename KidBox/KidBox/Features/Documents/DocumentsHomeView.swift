@@ -30,7 +30,7 @@ struct DocumentsHomeView: View {
             if familyId.isEmpty {
                 emptyNoFamily
             } else {
-                DocumentFolderView(familyId: familyId, folderId: nil, folderTitle: "Documenti")
+                DocumentFolderView(familyId: familyId, folderId: nil, folderTitle: String(localized: "Documenti"))
                     .id("root-\(familyId)")
             }
         }

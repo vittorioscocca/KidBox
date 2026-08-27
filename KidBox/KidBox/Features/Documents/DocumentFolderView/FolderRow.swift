@@ -23,7 +23,7 @@ struct FolderRow: View {
                 .frame(width: 44, height: 44)
             
             VStack(alignment: .leading, spacing: 3) {
-                Text(title.isEmpty ? "Senza nome" : title)
+                Text(title.isEmpty ? String(localized: "Senza nome") : title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)

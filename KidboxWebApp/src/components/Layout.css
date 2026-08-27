@@ -1,12 +1,23 @@
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  /* Altezza fissa, non minima: così a scorrere è il contenuto dentro
+     .app-content e non la pagina intera, che lascerebbe indietro la sidebar
+     (alta 100vh) con una fascia vuota sotto. */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+
+  /* Padding del contenuto, esposto come variabile: le pagine a tutta pagina
+     (Note, Calendario) lo annullano con margini negativi e devono restare
+     allineate a ogni breakpoint. */
+  --content-pad-y: 24px;
+  --content-pad-x: 32px;
 }
 
 .app-content {
   flex: 1;
   min-width: 0;
-  padding: 24px 32px;
+  padding: var(--content-pad-y) var(--content-pad-x);
   overflow-y: auto;
 }
 
@@ -14,4 +25,23 @@
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 20px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .app-shell {
+    --content-pad-y: 16px;
+    --content-pad-x: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    --content-pad-y: 12px;
+    --content-pad-x: 12px;
+  }
+
+  .app-content h1 {
+    font-size: 1.25rem;
+  }
 }

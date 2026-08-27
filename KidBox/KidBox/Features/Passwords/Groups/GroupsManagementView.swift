@@ -34,8 +34,8 @@ struct GroupsManagementView: View {
         groups.filter { $0.isVisible(to: currentUid) }.sorted { a, b in
             if PasswordGroupsService.isUnassigned(a, familyId: familyId) { return false }
             if PasswordGroupsService.isUnassigned(b, familyId: familyId) { return true }
-            let an = (try? a.decryptName()) ?? a.id
-            let bn = (try? b.decryptName()) ?? b.id
+            let an = a.displayName
+            let bn = b.displayName
             return an.localizedCaseInsensitiveCompare(bn) == .orderedAscending
         }
     }
@@ -52,7 +52,7 @@ struct GroupsManagementView: View {
                     HStack(spacing: 12) {
                         Image(systemName: group.icon).foregroundStyle(Color(hex: group.color) ?? KBTheme.tint)
                         Circle().fill(Color(hex: group.color) ?? KBTheme.tint).frame(width: 8, height: 8)
-                        Text((try? group.decryptName()) ?? "Gruppo")
+                        Text(group.displayName)
                         Spacer()
                         Text("\(passwordCount(for: group))")
                             .font(.caption.bold())
@@ -96,7 +96,7 @@ struct GroupsManagementView: View {
         }
         .confirmationDialog("Sposta password prima di eliminare", isPresented: $showReassignmentDialog, titleVisibility: .visible) {
             ForEach(reassignmentCandidates(), id: \.id) { g in
-                Button((try? g.decryptName()) ?? "Gruppo") {
+                Button(g.displayName) {
                     reassignmentTargetId = g.id
                     executeDeleteWithReassignment()
                 }

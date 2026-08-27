@@ -1,0 +1,319 @@
+.photos-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.photo-group {
+  margin-bottom: 22px;
+}
+
+.photo-group h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* Mosaico: celle quadrate che riempiono la riga, come la griglia iOS. */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 4px;
+}
+
+.photo-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: none;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 90%, var(--text) 10%);
+  cursor: pointer;
+}
+
+.photo-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-cell:hover img {
+  opacity: 0.85;
+}
+
+.photo-placeholder {
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.photo-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.7rem;
+}
+
+/* ── Album ── */
+.albums-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.album-card {
+  position: relative;
+}
+
+.album-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0;
+  background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%);
+  cursor: pointer;
+  display: block;
+}
+
+.album-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.album-cover:hover {
+  border-color: var(--accent);
+}
+
+.album-placeholder {
+  font-size: 2.2rem;
+}
+
+.album-info {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.album-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.album-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.album-card .card-actions {
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+}
+
+.album-card:hover .card-actions {
+  opacity: 1;
+}
+
+.album-card .card-actions button {
+  color: #fff;
+}
+
+/* ── Visore ── */
+.viewer-body video {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.viewer-albums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.viewer-caption {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.viewer-caption input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.dim {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* Cella in modalità selezione */
+.photo-cell.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.photo-tick {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.9rem;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Il selettore di raggruppamento sta in toolbar accanto ai tab. */
+.group-picker {
+  margin: 0;
+}
+
+/* ── Livello "Anni": una copertina per anno ── */
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.year-card {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--bg) 90%, var(--text) 10%);
+}
+
+.year-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.year-card:hover img {
+  transform: scale(1.03);
+  transition: transform 0.2s ease-out;
+}
+
+/* Sfumatura in basso: il testo bianco resta leggibile su qualunque foto. */
+.year-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  color: #fff;
+}
+
+.year-label {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.year-count {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+/* ── Livello "Mesi": anteprime, non l'intero rullino ── */
+.month-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.month-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  padding: 12px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.month-card:hover {
+  border-color: var(--accent);
+}
+
+.month-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.month-card-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.month-card-count {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.month-card-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.month-thumb {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.month-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.month-more {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding-left: 4px;
+}
+
+@media (max-width: 520px) {
+  .month-thumb {
+    width: 54px;
+    height: 54px;
+  }
+}

@@ -15,15 +15,6 @@ enum TreatmentSchedulePeriod: Int, CaseIterable {
     case sera
     case notte
 
-    var labelIt: String {
-        switch self {
-        case .mattina: return "Mattina"
-        case .pranzo: return "Pranzo"
-        case .sera: return "Sera"
-        case .notte: return "Notte"
-        }
-    }
-
     /// Etichetta localizzata (usata da `schedulePeriodLabel`, incluse le notifiche locali).
     var labelLocalized: String {
         switch self {
@@ -157,7 +148,7 @@ struct TreatmentPeriodBadge: View {
     let period: TreatmentSchedulePeriod
 
     var body: some View {
-        Text(period.labelIt)
+        Text(period.labelLocalized)
             .font(.caption.weight(.semibold))
             .foregroundStyle(period.badgeForeground)
             .padding(.horizontal, 10)

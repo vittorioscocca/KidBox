@@ -419,7 +419,7 @@ private struct AmountInputCard: View {
 // MARK: - Form Field Row
 
 private struct FormFieldRow<Content: View>: View {
-    let label: String
+    let label: LocalizedStringKey
     let systemImage: String
     @ViewBuilder let content: () -> Content
     
@@ -459,12 +459,12 @@ private struct CategorySelectorCard: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    CategoryPill(name: "Nessuna", icon: "xmark.circle",
+                    CategoryPill(name: String(localized: "Nessuna"), icon: "xmark.circle",
                                  colorHex: "#9E9E9E", isSelected: selectedId == nil) {
                         selectedId = nil
                     }
                     ForEach(categories) { cat in
-                        CategoryPill(name: cat.name, icon: cat.icon,
+                        CategoryPill(name: cat.displayName, icon: cat.icon,
                                      colorHex: cat.colorHex, isSelected: selectedId == cat.id) {
                             selectedId = cat.id
                         }

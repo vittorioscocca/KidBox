@@ -171,11 +171,108 @@ enum KidBoxHousePaymentType: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .mutuo: return "Mutuo"
-        case .affitto: return "Affitto"
-        case .bolletta: return "Bolletta"
-        case .tassa: return "Tassa"
-        case .altro: return "Altro"
+        case .mutuo: return String(localized: "Mutuo")
+        case .affitto: return String(localized: "Affitto")
+        case .bolletta: return String(localized: "Bolletta")
+        case .tassa: return String(localized: "Tassa")
+        case .altro: return String(localized: "Altro")
         }
+    }
+
+    /// Sottotipi proposti dal form per questo tipo.
+    ///
+    /// `raw` è il valore **salvato** su Firestore e condiviso con Android: resta
+    /// in italiano minuscolo e non va tradotto. `title` è solo l'etichetta a
+    /// video. Unica fonte di verità per form, lista e dettaglio, così le tre
+    /// schermate non possono divergere.
+    var presetSubtypes: [(raw: String, title: String)] {
+        switch self {
+        case .bolletta:
+            return [
+                ("luce",       String(localized: "Luce")),
+                ("gas",        String(localized: "Gas")),
+                ("internet",   String(localized: "Internet")),
+                ("telefono",   String(localized: "Telefono")),
+                ("acqua",      String(localized: "Acqua")),
+                ("condominio", String(localized: "Condominio")),
+            ]
+        case .tassa:
+            return [
+                ("IMU",  "IMU"),
+                ("TARI", "TARI"),
+                ("dichiarazione redditi", String(localized: "Dichiarazione redditi")),
+                ("bollo auto",            String(localized: "Bollo auto")),
+                ("altre",                 String(localized: "Altre")),
+            ]
+        case .mutuo, .affitto, .altro:
+            return []
+        }
+    }
+
+    /// Etichetta da mostrare per un sottotipo salvato: tradotta se è uno dei
+    /// preset, altrimenti il testo libero scritto dall'utente.
+    static func subtypeTitle(_ raw: String) -> String {
+        for type in allCases {
+            if let match = type.presetSubtypes.first(where: { $0.raw == raw }) { return match.title }
+        }
+        return raw
+    }
+
+    /// `true` se `raw` è un sottotipo predefinito di un tipo qualsiasi.
+    ///
+    /// Serve al form per non trascinarsi dietro il sottotipo quando si cambia
+    /// tipo: senza questo controllo, scegliendo Mutuo restava attaccato il
+    /// "luce" preimpostato da Bolletta e finiva salvato.
+    static func isPresetSubtype(_ raw: String) -> Bool {
+        allCases.contains { $0.presetSubtypes.contains { $0.raw == raw } }
+    }
+}
+
+// MARK: - Bonifica dei sottotipi ereditati
+
+extension KBHousePayment {
+
+    /// Ripulisce i sottotipi rimasti attaccati da un tipo precedente.
+    ///
+    /// Il form partiva su Bolletta con `subtypeRaw = "luce"` e, cambiando tipo in
+    /// Mutuo/Affitto/Altro, non lo azzerava: il valore finiva salvato e poi a
+    /// video ("luce" su un mutuo). Il form è corretto, ma i record già scritti
+    /// restano sporchi — qui si puliscono, e la modifica risale su Firestore così
+    /// la correzione arriva anche agli altri dispositivi e ad Android.
+    ///
+    /// Si tocca solo un sottotipo che è **esattamente** un preset di un altro
+    /// tipo: il testo libero scritto dall'utente non viene mai perso.
+    @MainActor
+    static func cleanupInheritedSubtypes(familyId: String, context: ModelContext) {
+        let flagKey = "kb.housePayments.subtypeCleanup.\(familyId)"
+        guard !UserDefaults.standard.bool(forKey: flagKey) else { return }
+
+        let fid = familyId
+        let descriptor = FetchDescriptor<KBHousePayment>(
+            predicate: #Predicate { $0.familyId == fid && $0.isDeleted == false }
+        )
+        let payments = (try? context.fetch(descriptor)) ?? []
+
+        var fixed = 0
+        for payment in payments {
+            guard let raw = payment.subtypeRaw, !raw.isEmpty,
+                  let type = KidBoxHousePaymentType(rawValue: payment.typeRaw),
+                  type.presetSubtypes.isEmpty,
+                  KidBoxHousePaymentType.isPresetSubtype(raw)
+            else { continue }
+            payment.subtypeRaw = nil
+            payment.updatedAt = Date()
+            SyncCenter.shared.enqueueHousePaymentUpsert(
+                paymentId: payment.id, familyId: familyId, modelContext: context
+            )
+            fixed += 1
+        }
+
+        if fixed > 0 {
+            try? context.save()
+            SyncCenter.shared.flushGlobal(modelContext: context)
+            KBLog.persistence.kbInfo("housePayments: ripuliti \(fixed) sottotipi ereditati familyId=\(familyId)")
+        }
+        UserDefaults.standard.set(true, forKey: flagKey)
     }
 }

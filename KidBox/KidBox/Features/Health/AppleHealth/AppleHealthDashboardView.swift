@@ -138,9 +138,11 @@ struct AppleHealthDashboardView: View {
         return "\(count)"
     }
 
-    private var workoutsSummarySubtitle: String {
+    private var workoutsSummarySubtitle: LocalizedStringKey {
         guard let last = snapshot.recentWorkouts.first else { return "12 mesi" }
-        return last.title
+        // Nome dell'allenamento come arriva da HealthKit: gia' localizzato dal
+        // sistema, quindi la chiave non esiste nel catalogo e ricade su se stessa.
+        return LocalizedStringKey(last.title)
     }
 
     private var hasExpandableHistory: Bool {
@@ -273,9 +275,9 @@ struct AppleHealthDashboardView: View {
     }
 
     private func metricTile(
-        title: String,
+        title: LocalizedStringKey,
         value: String,
-        subtitle: String,
+        subtitle: LocalizedStringKey,
         systemImage: String,
         tint: Color
     ) -> some View {

@@ -13,7 +13,7 @@ struct DocumentUploadView: View {
     let currentUid: String?
     /// `true`: chip apre `VisibilityPickerSheet`. Dopo il salvataggio la visibilità resta modificabile da `DocumentDetailView`.
     let isNewDocument: Bool
-    let scopeSectionTitle: String
+    let scopeSectionTitle: LocalizedStringKey
     let onContinue: () -> Void
     
     @State private var isVisibilitySheetPresented = false

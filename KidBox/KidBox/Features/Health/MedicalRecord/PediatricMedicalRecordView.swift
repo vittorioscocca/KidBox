@@ -40,7 +40,7 @@ struct PediatricMedicalRecordView: View {
     @State private var linkedBirthDate = Date()
     @State private var hasHealthLink = false
 
-    private let bloodGroups = ["Non specificato", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+    private let bloodGroups = [String(localized: "Non specificato"), "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
 
     private var linkedAgeDescription: String {
         KBHealthAgeFormatting.ageDescription(from: linkedBirthDate)
@@ -51,18 +51,18 @@ struct PediatricMedicalRecordView: View {
     }
 
     private var referenceDoctorSectionTitle: String {
-        isChild ? "Pediatra di riferimento" : "Medico di riferimento"
+        isChild ? String(localized: "Pediatra di riferimento") : String(localized: "Medico di riferimento")
     }
 
     private var addReferenceDoctorTitle: String {
         if doctorDraft.name.isEmpty {
             return isChild
-                ? "Aggiungi Pediatra di riferimento"
-                : "Aggiungi Medico di riferimento"
+                ? String(localized: "Aggiungi Pediatra di riferimento")
+                : String(localized: "Aggiungi Medico di riferimento")
         }
         return isChild
-            ? "Modifica Pediatra di riferimento"
-            : "Modifica Medico di riferimento"
+            ? String(localized: "Modifica Pediatra di riferimento")
+            : String(localized: "Modifica Medico di riferimento")
     }
 
     var body: some View {

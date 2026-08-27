@@ -106,7 +106,7 @@ struct TodoEditView: View {
     }
     
     private var assigneeLabel: String {
-        guard let assignedTo else { return "Nessuno" }
+        guard let assignedTo else { return String(localized: "Nessuno") }
         if assignedTo == currentUID { return "Me" }
         return resolvedMemberName(uid: assignedTo)
     }

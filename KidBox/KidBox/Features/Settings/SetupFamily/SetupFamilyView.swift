@@ -298,7 +298,7 @@ struct SetupFamilyView: View {
                                     .foregroundStyle(.secondary)
                                 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(r.name.isEmpty ? "Senza nome" : r.name)
+                                    Text(r.name.isEmpty ? String(localized: "Senza nome") : r.name)
                                         .font(.subheadline)
                                     
                                     if let birth = r.birthDate {

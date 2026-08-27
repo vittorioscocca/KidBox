@@ -66,10 +66,10 @@ struct PediatricTreatmentEditView: View {
     
     private let tint        = KBTheme.tint
     private let units       = ["ml", "mg", "gocce", "compresse", "bustine"]
-    private let freqOptions = [(1, "1 volta al giorno",   "mattina"),
-                               (2, "2 volte al giorno",   "mattina, sera"),
-                               (3, "3 volte al giorno",   "mattina, pranzo, sera"),
-                               (4, "4 volte al giorno",   "mattina, pranzo, sera, notte")]
+    private let freqOptions = [(1, String(localized: "1 volta al giorno"),   String(localized: "mattina")),
+                               (2, String(localized: "2 volte al giorno"),   String(localized: "mattina, sera")),
+                               (3, String(localized: "3 volte al giorno"),   String(localized: "mattina, pranzo, sera")),
+                               (4, String(localized: "4 volte al giorno"),   String(localized: "mattina, pranzo, sera, notte"))]
     
     private var defaultTimes: [String] {
         switch dailyFrequency {
@@ -259,7 +259,7 @@ struct PediatricTreatmentEditView: View {
                             .background(KBTheme.inputBackground(colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         Picker("Unità", selection: $dosageUnit) {
-                            ForEach(units, id: \.self) { Text($0).tag($0) }
+                            ForEach(units, id: \.self) { Text(LocalizedStringKey($0)).tag($0) }
                         }
                         .pickerStyle(.menu)
                     }
@@ -381,7 +381,7 @@ struct PediatricTreatmentEditView: View {
                             .background(KBTheme.inputBackground(colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         Picker("Unità", selection: $dosageUnit) {
-                            ForEach(units, id: \.self) { Text($0).tag($0) }
+                            ForEach(units, id: \.self) { Text(LocalizedStringKey($0)).tag($0) }
                         }
                         .pickerStyle(.menu)
                     }
@@ -456,10 +456,10 @@ struct PediatricTreatmentEditView: View {
             
             styledGroupBox(title: "Riepilogo") {
                 VStack(spacing: 6) {
-                    summaryRow(label: "Durata",      value: isLongTerm ? "A lungo termine (senza fine)" : "\(durationDays) giorni")
+                    summaryRow(label: "Durata",      value: isLongTerm ? String(localized: "A lungo termine (senza fine)") : String(localized: "\(durationDays) giorni"))
                     summaryRow(label: "Data inizio", value: localizedDayMonthYear(startDate))
                     if isLongTerm {
-                        summaryRow(label: "Data fine", value: "Nessuna — cura permanente")
+                        summaryRow(label: "Data fine", value: String(localized: "Nessuna — cura permanente"))
                     } else {
                         summaryRow(label: "Data fine",   value: localizedDayMonthYear(endDate))
                         summaryRow(label: "Dosi totali", value: "\(totalDoses)")
@@ -493,9 +493,9 @@ struct PediatricTreatmentEditView: View {
                     }
                     Divider()
                     summaryRow(label: "Dosaggio",  value: "\(dosageValue, default: "%.0f") \(dosageUnit)")
-                    summaryRow(label: "Tipo", value: isLongTerm ? "A lungo termine ∞" : "\(durationDays) giorni")
+                    summaryRow(label: "Tipo", value: isLongTerm ? String(localized: "A lungo termine ∞") : String(localized: "\(durationDays) giorni"))
                     if isLongTerm {
-                        summaryRow(label: "Fine", value: "Senza fine — cura permanente")
+                        summaryRow(label: "Fine", value: String(localized: "Senza fine — cura permanente"))
                     }
                     summaryRow(label: "Frequenza", value: frequencySummaryLabel)
                     Divider()

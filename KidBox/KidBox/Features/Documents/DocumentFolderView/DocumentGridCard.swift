@@ -49,7 +49,7 @@ struct DocumentGridCard: View {
                     }
                 }
                 
-                Text(doc.title.isEmpty ? "Senza titolo" : doc.title)
+                Text(doc.title.isEmpty ? String(localized: "Senza titolo") : doc.title)
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(2)

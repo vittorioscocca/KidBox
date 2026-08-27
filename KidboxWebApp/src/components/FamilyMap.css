@@ -1,0 +1,53 @@
+.family-map {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  border-radius: 12px;
+  z-index: 0;
+}
+
+/* Leaflet imposta uno sfondo chiaro fisso: va allineato al tema. */
+.family-map.leaflet-container {
+  background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);
+}
+
+.person-pin {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.leaflet-control-attribution {
+  font-size: 0.62rem;
+}
+
+.person-pin {
+  position: relative;
+}
+
+.pin-initial {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sopra l'iniziale: se l'immagine non carica viene rimossa e resta il pin. */
+.person-pin img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}

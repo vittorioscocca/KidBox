@@ -16,15 +16,15 @@ import SwiftUI
 /// può aggiungere sia un elemento sia una scadenza.
 struct KBEmptyStateView: View {
     let systemImage: String
-    let title: String
-    let message: String
-    let actionTitle: String
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
+    let actionTitle: LocalizedStringKey
     let actionSystemImage: String
     let action: () -> Void
 
     /// Tinta della sezione: Animali e Garage usano l'arancio, il resto l'accento KidBox.
     var accent: Color = .accentColor
-    var secondaryTitle: String? = nil
+    var secondaryTitle: LocalizedStringKey? = nil
     var secondarySystemImage: String? = nil
     var secondaryAction: (() -> Void)? = nil
 

@@ -46,6 +46,36 @@ final class KBExpenseCategory {
     }
 }
 
+// MARK: - Localized display name
+
+extension KBExpenseCategory {
+
+    /// Nome da mostrare in UI.
+    ///
+    /// `name` resta in italiano anche in app inglese: è la chiave con cui la
+    /// categoria viaggia su Firestore e viene riconosciuta da Android, e la
+    /// migrazione degli ID deterministici ci fa matching per nome. Qui si
+    /// traduce solo l'etichetta, e solo per le categorie predefinite: quelle
+    /// create dall'utente si mostrano com'è stato scritto il nome.
+    var displayName: String {
+        guard isDefault, let slug = defaultSlug else { return name }
+        let key = "expense.category.\(slug)"
+        let localized = NSLocalizedString(key, comment: "Expense category name")
+        // La chiave e' dinamica, quindi Xcode la marca "stale" e a ogni estrazione
+        // puo' ripulire la voce dal catalogo: se la lookup non trova nulla torna
+        // la chiave stessa, e in quel caso si ricade sul nome salvato (italiano).
+        return localized == key ? name : localized
+    }
+
+    /// Slug della categoria predefinita, ricavato dall'ID `expcat-{familyId}-{slug}`.
+    private var defaultSlug: String? {
+        let prefix = "expcat-\(familyId)-"
+        guard id.hasPrefix(prefix) else { return nil }
+        let slug = String(id.dropFirst(prefix.count))
+        return Self.defaultCategories.contains { $0.slug == slug } ? slug : nil
+    }
+}
+
 // MARK: - Default categories helper
 
 extension KBExpenseCategory {

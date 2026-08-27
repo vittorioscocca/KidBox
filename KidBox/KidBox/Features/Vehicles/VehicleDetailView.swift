@@ -191,7 +191,7 @@ struct VehicleDetailView: View {
         .background(cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private func sectionHeader(_ t: String) -> some View {
+    private func sectionHeader(_ t: LocalizedStringKey) -> some View {
         Text(t)
             .font(.custom("Nunito", size: 13).weight(.semibold))
             .foregroundStyle(.secondary)
@@ -199,7 +199,7 @@ struct VehicleDetailView: View {
     }
 
     @ViewBuilder
-    private func deadline(_ title: String, _ date: Date?) -> some View {
+    private func deadline(_ title: LocalizedStringKey, _ date: Date?) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.caption).foregroundStyle(.secondary)
@@ -302,10 +302,10 @@ enum KidBoxVehicleFuel {
     static func localized(_ raw: String) -> String {
         switch raw.lowercased() {
         case "diesel": return "Diesel"
-        case "elettrica": return "Elettrica"
-        case "ibrida": return "Ibrida"
+        case "elettrica": return String(localized: "Elettrica")
+        case "ibrida": return String(localized: "Ibrida")
         case "gpl": return "GPL"
-        default: return "Benzina"
+        default: return String(localized: "Benzina")
         }
     }
 }

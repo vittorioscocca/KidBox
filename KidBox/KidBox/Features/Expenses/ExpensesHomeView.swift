@@ -468,9 +468,9 @@ private struct ExpenseListSection: View {
     private var filteredLabel: String {
         if let catId = vm.selectedCategoryFilter,
            let cat = vm.categories.first(where: { $0.id == catId }) {
-            return "Spese · \(cat.name)"
+            return String(localized: "Spese · \(cat.displayName)")
         }
-        return "Tutte le spese"
+        return String(localized: "Tutte le spese")
     }
     
     var body: some View {

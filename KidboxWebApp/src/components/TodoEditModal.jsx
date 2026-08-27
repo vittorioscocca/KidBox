@@ -11,7 +11,8 @@ function toLocalInputValue(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export default function TodoEditModal({ familyId, childId, listId, listName, onClose }) {
+export default function TodoEditModal({ familyId, childId, listId, listName, todo, onClose }) {
+  const isEdit = Boolean(todo);
   const { user } = useAuth();
   const { t } = useTranslation();
   const members = useFamilyMembers(familyId);
@@ -24,14 +25,18 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
   const chipLabel = (scope) =>
     VISIBILITY_OPTIONS.find((o) => o.scope === scope)?.label || VISIBILITY_OPTIONS[0].label;
 
-  const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
-  const [hasDate, setHasDate] = useState(false);
-  const [dueDate, setDueDate] = useState(toLocalInputValue(new Date()));
-  const [isUrgent, setIsUrgent] = useState(false);
-  const [assignedTo, setAssignedTo] = useState(null);
-  const [visibilityScope, setVisibilityScope] = useState("family");
-  const [visibilityMemberIds, setVisibilityMemberIds] = useState(new Set());
+  const [title, setTitle] = useState(todo?.title ?? "");
+  const [notes, setNotes] = useState(todo?.notes ?? "");
+  const [hasDate, setHasDate] = useState(Boolean(todo?.dueAt));
+  const [dueDate, setDueDate] = useState(
+    toLocalInputValue(todo?.dueAt?.toDate?.() ?? new Date())
+  );
+  const [isUrgent, setIsUrgent] = useState((todo?.priority ?? 0) === 1);
+  const [assignedTo, setAssignedTo] = useState(todo?.assignedTo ?? null);
+  const [visibilityScope, setVisibilityScope] = useState(todo?.visibilityScope ?? "family");
+  const [visibilityMemberIds, setVisibilityMemberIds] = useState(
+    new Set(todo?.visibilityMemberIds ?? [])
+  );
   const [view, setView] = useState("main"); // main | assignee | visibility
   const [error, setError] = useState(null);
 
@@ -44,7 +49,8 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
   const toggleVisibilityMember = (uid) => {
     setVisibilityMemberIds((prev) => {
       const next = new Set(prev);
-      next.has(uid) ? next.delete(uid) : next.add(uid);
+      if (next.has(uid)) next.delete(uid);
+      else next.add(uid);
       return next;
     });
   };
@@ -52,31 +58,36 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
   const save = async () => {
     const trimmed = title.trim();
     if (!trimmed) return;
-    const id = crypto.randomUUID();
+    const id = isEdit ? todo.id : crypto.randomUUID();
     const finalMemberIds =
       visibilityScope === "members"
         ? [...visibilityMemberIds].filter((uid) => uid !== user.uid)
         : [];
     try {
-      await setDoc(doc(todosCol(familyId), id), {
-        childId,
+      const payload = {
+        childId: isEdit ? todo.childId : childId,
         title: trimmed,
-        listId: listId || "",
-        isDone: false,
+        listId: isEdit ? todo.listId ?? "" : listId || "",
+        isDone: isEdit ? todo.isDone ?? false : false,
         isDeleted: false,
         notes: notes.trim() || null,
         dueAt: hasDate ? new Date(dueDate) : null,
-        doneAt: null,
-        doneBy: null,
         assignedTo,
         priority: isUrgent ? 1 : 0,
         visibilityScope,
         visibilityMemberIds: finalMemberIds,
-        createdBy: user.uid,
         updatedBy: user.uid,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
+      // In modifica non si toccano creatore e stato di completamento: li
+      // sovrascriverebbe chi ha solo cambiato il titolo.
+      if (!isEdit) {
+        payload.doneAt = null;
+        payload.doneBy = null;
+        payload.createdBy = user.uid;
+        payload.createdAt = serverTimestamp();
+      }
+      await setDoc(doc(todosCol(familyId), id), payload, { merge: true });
       onClose();
     } catch (err) {
       setError(err.message);
@@ -190,7 +201,9 @@ export default function TodoEditModal({ familyId, childId, listId, listName, onC
           ✓
         </button>
       </div>
-      <div className="modal-title">{t.todo.newInList(listName || t.todo.list)}</div>
+      <div className="modal-title">
+        {isEdit ? t.todo.editTodo : t.todo.newInList(listName || t.todo.list)}
+      </div>
       {error && <p className="error">{error}</p>}
 
       <button className="modal-chip" onClick={() => setView("visibility")}>

@@ -1,0 +1,254 @@
+/* Due colonne come Note di macOS: elenco a sinistra, editor a destra. */
+.notes-page {
+  display: flex;
+  height: 100vh;
+  margin: calc(var(--content-pad-y) * -1) calc(var(--content-pad-x) * -1);
+}
+
+/* ── Elenco ── */
+.notes-list {
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+}
+
+.notes-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 8px;
+}
+
+.notes-list-head strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.notes-count {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.notes-new {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.notes-new:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.notes-search {
+  margin: 0 12px 8px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.notes-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+
+.notes-group-title {
+  padding: 10px 14px 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.note-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: calc(100% - 12px);
+  margin: 1px 6px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-row:hover {
+  background: var(--border);
+}
+
+.note-row.active {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.note-row-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-row-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.note-row-stamp {
+  flex-shrink: 0;
+}
+
+.note-row-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notes-empty {
+  padding: 30px 18px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.notes-empty p {
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
+
+/* ── Editor ── */
+.note-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 28px 20px;
+  overflow-y: auto;
+}
+
+.note-editor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.note-editor-date {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.note-delete {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.note-delete:hover {
+  color: #c0392b;
+}
+
+.note-title-input,
+.note-body-input {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  resize: none;
+}
+
+.note-title-input {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.note-body-input {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  min-height: 300px;
+}
+
+.note-placeholder {
+  margin: auto;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ── Chiave di famiglia assente ── */
+.notes-locked {
+  max-width: 460px;
+  margin: 60px auto;
+  text-align: center;
+  color: var(--muted);
+}
+
+.notes-locked h2 {
+  color: var(--text);
+  font-size: 1.15rem;
+  margin: 10px 0 8px;
+}
+
+.notes-locked p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.locked-icon {
+  font-size: 2.4rem;
+}
+
+/* ── Responsive ──
+   Sotto i 760px le due colonne non convivono: si mostra l'elenco a tutta
+   larghezza e l'editor sotto, invece di comprimere entrambi. */
+@media (max-width: 900px) {
+  .notes-list {
+    width: 240px;
+  }
+
+  .note-editor {
+    padding: 14px 16px 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  .notes-page {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .notes-list {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 44vh;
+  }
+
+  .note-body-input {
+    min-height: 220px;
+  }
+}

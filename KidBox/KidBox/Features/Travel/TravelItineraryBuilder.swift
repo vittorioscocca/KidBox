@@ -280,7 +280,7 @@ enum TravelItineraryBuilder {
                     ),
                     stop(
                         time: "14:30",
-                        title: destination.tagline.isEmpty ? "Esplora il centro storico" : destination.tagline,
+                        title: destination.tagline.isEmpty ? String(localized: "Esplora il centro storico") : destination.tagline,
                         minutes: 120,
                         cost: "~\(Int(budget * 0.06))",
                         category: "culture"

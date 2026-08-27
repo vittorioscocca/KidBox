@@ -58,10 +58,10 @@ struct VehicleFormView: View {
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     private let fuels: [(String, String)] = [
-        ("Benzina", "benzina"),
+        (String(localized: "Benzina"), "benzina"),
         ("Diesel", "diesel"),
-        ("Elettrica", "elettrica"),
-        ("Ibrida", "ibrida"),
+        (String(localized: "Elettrica"), "elettrica"),
+        (String(localized: "Ibrida"), "ibrida"),
         ("GPL", "gpl"),
     ]
 

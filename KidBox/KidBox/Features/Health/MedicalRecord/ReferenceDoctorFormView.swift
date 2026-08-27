@@ -27,7 +27,7 @@ struct ReferenceDoctorFormView: View {
     @State private var officeHours: [KBDoctorOfficeHourSlot] = []
 
     private var title: String {
-        isChild ? "Pediatra di riferimento" : "Medico di riferimento"
+        isChild ? String(localized: "Pediatra di riferimento") : String(localized: "Medico di riferimento")
     }
 
     private var canSave: Bool {

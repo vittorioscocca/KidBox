@@ -300,7 +300,7 @@ struct AISettingsView: View {
                 
                 infoRow(icon: "gauge.with.dots.needle.bottom.50percent", color: .blue,
                         title: "Limite giornaliero",
-                        body: "Ogni piano include un numero di messaggi AI al giorno per membro. Il contatore si azzera a mezzanotte.")
+                        body: "Ogni piano include un numero di messaggi AI al giorno per famiglia, condivisi tra tutti i membri. Il contatore si azzera a mezzanotte.")
                 .listRowBackground(cardBackground)
                 
                 infoRow(icon: "exclamationmark.triangle", color: .orange,
@@ -629,12 +629,22 @@ struct UpgradeSheetView: View {
                         .padding(.horizontal)
                     }
                     
+                    // Piano Free — sempre in lista (come su Android) così l'utente vede
+                    // da cosa parte; non è acquistabile, si evidenzia solo se è l'attuale.
+                    planCard(
+                        plan:        .free,
+                        color:       .secondary,
+                        icon:        "gift.circle.fill",
+                        features:    ["200 MB storage famiglia", "\(KBPlan.free.aiMessageLimit) msg AI una tantum per famiglia"],
+                        purchasable: false
+                    )
+
                     // Piano Pro
                     planCard(
                         plan:     .pro,
                         color:    tint,
                         icon:     "star.circle.fill",
-                        features: ["5 GB storage famiglia", "20 msg AI/giorno per membro", "Sintesi settimanale AI"]
+                        features: ["5 GB storage famiglia", "\(KBPlan.pro.aiMessageLimit) msg AI/giorno per famiglia", "Sintesi settimanale AI"]
                     )
                     
                     // Piano Max
@@ -642,7 +652,7 @@ struct UpgradeSheetView: View {
                         plan:     .max,
                         color:    maxColor,
                         icon:     "crown.fill",
-                        features: ["20 GB storage famiglia", "100 msg AI/giorno per membro", "Sintesi settimanale AI", "Supporto prioritario"]
+                        features: ["20 GB storage famiglia", "\(KBPlan.max.aiMessageLimit) msg AI/giorno per famiglia", "Sintesi settimanale AI", "Supporto prioritario"]
                     )
                     
                     // Ripristina
@@ -703,7 +713,13 @@ struct UpgradeSheetView: View {
     // MARK: - Plan card
     
     @ViewBuilder
-    private func planCard(plan: KBPlan, color: Color, icon: String, features: [String]) -> some View {
+    private func planCard(
+        plan: KBPlan,
+        color: Color,
+        icon: String,
+        features: [LocalizedStringKey],
+        purchasable: Bool = true
+    ) -> some View {
         let isCurrent   = subscriptionManager.currentPlan == plan
         let isCancelled = isCurrent && subscriptionManager.isCancelledButActive
         let expiryDate  = subscriptionManager.subscriptionExpirationDate
@@ -748,14 +764,14 @@ struct UpgradeSheetView: View {
             }
             
             // Feature list
-            ForEach(features, id: \.self) { f in
+            ForEach(Array(features.enumerated()), id: \.offset) { _, f in
                 Label(f, systemImage: "checkmark")
                     .font(.subheadline)
                     .foregroundStyle(.primary)
             }
             
             // Bottone acquisto — solo testo, niente legalFooter dentro
-            if !isCurrent || isCancelled {
+            if purchasable, !isCurrent || isCancelled {
                 if subscriptionManager.isFamilyOwner {
                     Button {
                         Task { await subscriptionManager.purchase(plan) }

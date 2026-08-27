@@ -147,6 +147,7 @@ struct HomeItemsHomeView: View {
         .onAppear {
             SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)
+            KBHousePayment.cleanupInheritedSubtypes(familyId: familyId, context: modelContext)
         }
         .onDisappear {
             SyncCenter.shared.stopHomeItemsRealtime()
@@ -223,7 +224,7 @@ struct HomeItemsHomeView: View {
                         .font(.custom("Nunito", size: 16).weight(.semibold))
                         .foregroundStyle(titleInk)
                     if let st = pay.subtypeRaw, !st.isEmpty {
-                        Text(st)
+                        Text(KidBoxHousePaymentType.subtypeTitle(st))
                             .font(.custom("Nunito", size: 13))
                             .foregroundStyle(.secondary)
                     }

@@ -27,7 +27,7 @@ struct KBNoteCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             // Titolo bold
-            Text(highlightedText(note.title.isEmpty ? "Senza titolo" : note.title))
+            Text(highlightedText(note.title.isEmpty ? String(localized: "Senza titolo") : note.title))
                 .font(.system(.body, design: .default, weight: .semibold))
                 .lineLimit(1)
                 .foregroundStyle(.primary)

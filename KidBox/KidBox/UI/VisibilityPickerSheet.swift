@@ -13,7 +13,7 @@ struct VisibilityPickerSheet: View {
     @Binding var selectedMemberIds: Set<String>
     let members: [KBFamilyMember]
     let currentUid: String?
-    let scopeSectionTitle: String
+    let scopeSectionTitle: LocalizedStringKey
     /// When true the view is pushed via `navigationDestination` and must NOT have its own NavigationStack.
     var embedded: Bool = false
     /// Se valorizzato, mostra solo queste opzioni (ordine preservato). Es. Password v1: `[family, onlyCreator]`.
@@ -24,10 +24,10 @@ struct VisibilityPickerSheet: View {
 
     private var visibilityOptions: [(scope: String, title: String)] {
         let all: [(String, String)] = [
-            (KBVisibilityScope.family, "👨‍👩‍👧 Tutta la famiglia"),
-            (KBVisibilityScope.members, "👥 Membri selezionati"),
-            (KBVisibilityScope.onlyCreator, "🔒 Solo io"),
-        ]
+            KBVisibilityScope.family,
+            KBVisibilityScope.members,
+            KBVisibilityScope.onlyCreator,
+        ].map { ($0, KBVisibilityScope.chipLabel(for: $0)) }
         if let allowed = allowedScopes, !allowed.isEmpty {
             return all.filter { allowed.contains($0.0) }
         }

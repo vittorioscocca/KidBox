@@ -315,7 +315,7 @@ struct CustomDrugSheet: View {
         return Button {
             selectedCategory = isSelected ? "" : cat
         } label: {
-            Text(cat)
+            Text(LocalizedStringKey(cat))
                 .font(.caption)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -335,7 +335,7 @@ struct CustomDrugSheet: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: icon).font(.caption2)
-                Text(form).font(.caption)
+                Text(LocalizedStringKey(form)).font(.caption)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)

@@ -1,0 +1,83 @@
+.rte {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rte-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.rte-btn {
+  min-width: 30px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.rte-btn:hover {
+  background: var(--border);
+}
+
+.rte-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+.rte-body {
+  flex: 1;
+  min-height: 300px;
+  outline: none;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.rte-body:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* L'HTML arriva dai client nativi: si normalizzano le spaziature per non
+   ritrovarsi margini enormi fra i paragrafi. */
+.rte-body p {
+  margin: 0 0 0.4em;
+}
+
+.rte-body ul,
+.rte-body ol {
+  margin: 0 0 0.5em;
+  padding-left: 1.4em;
+}
+
+.rte-body h1,
+.rte-body h2,
+.rte-body h3 {
+  margin: 0.6em 0 0.3em;
+  line-height: 1.3;
+}
+
+.rte-body h1 { font-size: 1.3rem; }
+.rte-body h2 { font-size: 1.15rem; }
+.rte-body h3 { font-size: 1rem; }
+
+.rte-body blockquote {
+  margin: 0 0 0.5em;
+  padding-left: 12px;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}

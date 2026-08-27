@@ -32,7 +32,7 @@ struct FolderGridCard: View {
                 }
                 .frame(width: 72, height: 64)
                 
-                Text(title.isEmpty ? "Senza nome" : title)
+                Text(title.isEmpty ? String(localized: "Senza nome") : title)
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(2)

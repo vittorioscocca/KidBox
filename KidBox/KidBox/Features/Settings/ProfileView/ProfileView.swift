@@ -531,7 +531,7 @@ struct ProfileView: View {
                         Text("Piano \(subscriptionManager.currentPlan.displayName)")
                             .font(.system(size: 15, weight: .semibold))
                         HStack(spacing: 4) {
-                            Text(subscriptionManager.currentPlan.storageLabel + " storage")
+                            Text(String(format: NSLocalizedString("%@ storage", comment: "Storage quota label (%@ = formatted size)"), subscriptionManager.currentPlan.storageLabel))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text("·").foregroundStyle(.secondary)

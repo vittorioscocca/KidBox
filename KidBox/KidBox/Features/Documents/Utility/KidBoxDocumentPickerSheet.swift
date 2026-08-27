@@ -42,7 +42,7 @@ struct KidBoxDocumentPickerSheet: View {
             KidBoxFolderPickerLevel(
                 familyId: familyId,
                 folderId: nil,
-                folderTitle: "Documenti",
+                folderTitle: String(localized: "Documenti"),
                 pdfOnly: pdfOnly,
                 isLoading: $isLoading,
                 errorText: $errorText,

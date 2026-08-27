@@ -31,7 +31,7 @@ struct DocumentRow: View {
             .frame(width: 44, height: 44)
             
             VStack(alignment: .leading, spacing: 3) {
-                Text(doc.title.isEmpty ? "Senza titolo" : doc.title)
+                Text(doc.title.isEmpty ? String(localized: "Senza titolo") : doc.title)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)

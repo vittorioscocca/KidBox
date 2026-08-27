@@ -183,3 +183,21 @@ textarea.modal-field {
 .modal-option + .modal-option {
   border-top: 1px solid var(--border);
 }
+
+.modal-delete-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  background: color-mix(in srgb, #c0392b 14%, transparent);
+  color: #c0392b;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-delete-btn:hover {
+  background: color-mix(in srgb, #c0392b 22%, transparent);
+}

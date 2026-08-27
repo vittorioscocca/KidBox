@@ -45,10 +45,10 @@ struct HomeItemFormView: View {
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     private let cats: [(String, String)] = [
-        ("Elettrodomestico", "appliance"),
-        ("Impianto", "system"),
-        ("Contratto", "contract"),
-        ("Altro", "other"),
+        (String(localized: "Elettrodomestico"), "appliance"),
+        (String(localized: "Impianto"), "system"),
+        (String(localized: "Contratto"), "contract"),
+        (String(localized: "Altro"), "other"),
     ]
 
     init(familyId: String, existing: KBHomeItem?) {

@@ -5,9 +5,14 @@ import { FamilyProvider } from "./FamilyContext";
 import { LocaleProvider } from "./i18n/LocaleContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
-import TodoOverview from "./pages/TodoOverview";
-import TodoDetail from "./pages/TodoDetail";
+import TodoPage from "./pages/TodoPage";
 import Calendario from "./pages/Calendario";
+import Note from "./pages/Note";
+import Documenti from "./pages/Documenti";
+import Spesa from "./pages/Spesa";
+import Foto from "./pages/Foto";
+import Spese from "./pages/Spese";
+import Posizione from "./pages/Posizione";
 import Placeholder from "./pages/Placeholder";
 import { NAV_SECTIONS, ACCOUNT_SECTIONS } from "./nav";
 import "./App.css";
@@ -144,10 +149,14 @@ function AuthedApp() {
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/calendario" element={<Calendario />} />
-            <Route path="/todo" element={<TodoOverview />} />
-            <Route path="/todo/filtro/:filterKey" element={<TodoDetail mode="filter" />} />
-            <Route path="/todo/lista/:listId" element={<TodoDetail mode="list" />} />
-            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo").map((s) => (
+            <Route path="/note" element={<Note />} />
+            <Route path="/documenti" element={<Documenti />} />
+            <Route path="/spesa" element={<Spesa />} />
+            <Route path="/foto" element={<Foto />} />
+            <Route path="/spese" element={<Spese />} />
+            <Route path="/posizione" element={<Posizione />} />
+            <Route path="/todo" element={<TodoPage />} />
+            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione").map((s) => (
               <Route key={s.key} path={s.path} element={<Placeholder title={s.label} />} />
             ))}
             {ACCOUNT_SECTIONS.map((s) => (

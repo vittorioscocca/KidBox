@@ -1,0 +1,186 @@
+.gallery-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gallery-panel {
+  width: min(1200px, 100%);
+  height: min(92vh, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.gallery-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gallery-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gallery-position {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.gallery-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);
+}
+
+.gallery-media {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.gallery-media img,
+.gallery-media video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.gallery-loading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Miniatura ingrandita mentre l'originale si decifra. */
+.gallery-preview {
+  filter: blur(8px);
+  opacity: 0.6;
+  max-height: 60vh;
+}
+
+.gallery-spinner {
+  position: absolute;
+  color: var(--text);
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.gallery-nav {
+  width: 48px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 2rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.gallery-nav:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.gallery-nav:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* Striscia miniature: scorre in orizzontale e segue l'elemento corrente. */
+.gallery-strip {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.strip-thumb {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 0;
+  background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);
+  cursor: pointer;
+}
+
+.strip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.strip-thumb.active {
+  border-color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .gallery-nav {
+    width: 36px;
+    font-size: 1.5rem;
+  }
+
+  .strip-thumb {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ── Zoom ── */
+.gallery-media .zoomable {
+  transform-origin: center;
+  transition: transform 0.12s ease-out;
+  cursor: zoom-in;
+  touch-action: none;
+}
+
+.gallery-media .zoomable.zoomed {
+  cursor: grab;
+  /* Da ingrandita il trascinamento deve essere immediato, senza inseguimento. */
+  transition: none;
+}
+
+.gallery-media .zoomable.zoomed:active {
+  cursor: grabbing;
+}
+
+.zoom-level {
+  font-size: 0.72rem;
+  color: var(--muted);
+  min-width: 40px;
+  text-align: center;
+}
+
+.viewer-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

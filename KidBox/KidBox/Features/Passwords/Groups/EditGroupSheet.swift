@@ -156,7 +156,7 @@ struct EditGroupSheet: View {
 
     private func hydrate() {
         guard case .edit(let group) = mode else { return }
-        name = (try? group.decryptName()) ?? ""
+        name = group.displayName
         icon = group.icon
         color = group.color
         visibility = PasswordEntry.normalizedPasswordVisibility(group.visibility)

@@ -1,7 +1,7 @@
 .sidebar {
   width: 260px;
   flex-shrink: 0;
-  height: 100vh;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   background: color-mix(in srgb, var(--bg) 92%, var(--text) 8%);
@@ -196,4 +196,44 @@
 
 .logout-item {
   color: #c0392b;
+}
+
+/* ── Responsive ──
+   Sotto i 900px la barra si riduce alle sole icone senza toccare lo stato
+   scelto dall'utente col pulsante: qui è lo spazio a non bastare, e al ritorno
+   su schermo largo la preferenza manuale resta quella di prima. */
+@media (max-width: 900px) {
+  .sidebar {
+    width: 60px;
+    padding: 10px 6px;
+  }
+
+  .sidebar .nav-item,
+  .sidebar .family-switcher-btn {
+    justify-content: center;
+    padding: 10px 0;
+  }
+
+  /* Nasconde le etichette testuali lasciando le icone. */
+  .sidebar .nav-item {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .sidebar .nav-icon {
+    font-size: 1rem;
+  }
+
+  .sidebar .family-text,
+  .sidebar .chevron,
+  .sidebar .collapse-btn {
+    display: none;
+  }
+
+  .sidebar .family-list {
+    left: 100%;
+    top: 0;
+    width: 200px;
+    margin-left: 8px;
+  }
 }

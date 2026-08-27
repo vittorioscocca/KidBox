@@ -42,14 +42,6 @@ struct HousePaymentFormView: View {
 
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-    private let billSubtypes: [(String, String)] = [
-        ("Luce", "luce"), ("Gas", "gas"), ("Internet", "internet"), ("Telefono", "telefono"),
-        ("Acqua", "acqua"), ("Condominio", "condominio"),
-    ]
-    private let taxSubtypes: [(String, String)] = [
-        ("IMU", "IMU"), ("TARI", "TARI"), ("Dichiarazione redditi", "dichiarazione redditi"),
-        ("Bollo auto", "bollo auto"), ("Altre", "altre"),
-    ]
 
     init(familyId: String, existing: KBHousePayment?) {
         self.familyId = familyId
@@ -68,27 +60,24 @@ struct HousePaymentFormView: View {
                         }
                     }
                     .onChange(of: typeRaw) { _, new in
-                        if KidBoxHousePaymentType(rawValue: new) == .bolletta {
-                            if subtypeRaw.isEmpty || taxSubtypes.contains(where: { $0.1 == subtypeRaw }) {
-                                subtypeRaw = "luce"
-                            }
-                        } else if KidBoxHousePaymentType(rawValue: new) == .tassa {
-                            if subtypeRaw.isEmpty || billSubtypes.contains(where: { $0.1 == subtypeRaw }) {
-                                subtypeRaw = "IMU"
-                            }
+                        guard let type = KidBoxHousePaymentType(rawValue: new) else { return }
+                        let presets = type.presetSubtypes
+                        // Il sottotipo corrente vale solo se appartiene al nuovo
+                        // tipo: altrimenti è un residuo del tipo precedente.
+                        if presets.contains(where: { $0.raw == subtypeRaw }) { return }
+                        if let first = presets.first {
+                            subtypeRaw = first.raw
+                        } else if subtypeRaw.isEmpty || KidBoxHousePaymentType.isPresetSubtype(subtypeRaw) {
+                            // Mutuo/Affitto/Altro hanno testo libero: si riparte
+                            // vuoti, senza ereditare il "luce" di Bolletta.
+                            subtypeRaw = ""
                         }
                     }
 
-                    if KidBoxHousePaymentType(rawValue: typeRaw) == .bolletta {
+                    if let presets = KidBoxHousePaymentType(rawValue: typeRaw)?.presetSubtypes, !presets.isEmpty {
                         Picker("Tipologia", selection: $subtypeRaw) {
-                            ForEach(billSubtypes, id: \.1) { pair in
-                                Text(pair.0).tag(pair.1)
-                            }
-                        }
-                    } else if KidBoxHousePaymentType(rawValue: typeRaw) == .tassa {
-                        Picker("Tipologia", selection: $subtypeRaw) {
-                            ForEach(taxSubtypes, id: \.1) { pair in
-                                Text(pair.0).tag(pair.1)
+                            ForEach(presets, id: \.raw) { preset in
+                                Text(preset.title).tag(preset.raw)
                             }
                         }
                     } else if KidBoxHousePaymentType(rawValue: typeRaw) == .altro {
@@ -156,8 +145,7 @@ struct HousePaymentFormView: View {
             }
             .onAppear {
                 guard let e = existing else {
-                    if KidBoxHousePaymentType(rawValue: typeRaw) == .bolletta { subtypeRaw = "luce" }
-                    if KidBoxHousePaymentType(rawValue: typeRaw) == .tassa { subtypeRaw = "IMU" }
+                    subtypeRaw = KidBoxHousePaymentType(rawValue: typeRaw)?.presetSubtypes.first?.raw ?? ""
                     return
                 }
                 name = e.name

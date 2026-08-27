@@ -9,7 +9,7 @@ import SwiftUI
 /// (es. referti testuali della Salute). Funziona su iPhone e Mac Catalyst.
 struct CopyToClipboardButton: View {
     let text: String
-    var accessibilityLabel: String = "Copia"
+    var accessibilityLabel: LocalizedStringKey = "Copia"
 
     @State private var copied = false
 

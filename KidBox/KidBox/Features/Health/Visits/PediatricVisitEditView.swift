@@ -461,7 +461,8 @@ struct PediatricVisitEditView: View {
             }
             .padding(.horizontal).padding(.top, 12)
             
-            let tabs   = ["Farmaci", "Al bisogno", "Tipo di Terapia", "Esami Prescritti"]
+            let tabs   = [String(localized: "Farmaci"), String(localized: "Al bisogno"),
+                          String(localized: "Tipo di Terapia"), String(localized: "Esami Prescritti")]
             let icons  = ["pills.fill", "cross.vial.fill", "figure.walk", "testtube.2"]
             let counts = [linkedTreatmentIds.count, asNeededDrugs.count, therapyTypes.count, linkedExamIds.count]
             
@@ -1075,7 +1076,7 @@ struct PediatricVisitEditView: View {
         .padding(.horizontal)
     }
     
-    private func emptyPrescriptionState(icon: String, text: String) -> some View {
+    private func emptyPrescriptionState(icon: String, text: LocalizedStringKey) -> some View {
         VStack(spacing: 10) {
             Image(systemName: icon).font(.system(size: 28)).foregroundStyle(.secondary.opacity(0.5))
             Text(text).font(.subheadline).foregroundStyle(.secondary)
