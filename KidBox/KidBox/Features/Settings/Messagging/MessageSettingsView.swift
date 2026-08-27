@@ -12,6 +12,10 @@ struct MessageSettingsView: View {
     
     @StateObject private var viewModel = SettingsViewModel()
     @Environment(\.colorScheme) private var colorScheme
+
+    /// Interruttore locale della chat: `@AppStorage` così Home e le altre view
+    /// che leggono la stessa chiave si aggiornano da sole.
+    @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
     
     // MARK: - Dynamic theme (same as LoginView)
     
@@ -29,6 +33,35 @@ struct MessageSettingsView: View {
     
     var body: some View {
         List {
+            Section {
+                Toggle(isOn: Binding(
+                    get: { chatEnabled },
+                    set: { KBChatAvailability.set($0) }
+                )) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Chat di famiglia")
+                                .foregroundStyle(.primary)
+                            Text("Permette di abilitare/disabilitare la chat di famiglia")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .tint(KBTheme.bubbleTint)
+                .listRowBackground(cardBackground)
+            } header: {
+                Text("Chat")
+            } footer: {
+                Text("La scelta vale su tutti i tuoi dispositivi. Gli altri membri continuano a scriversi e ritrovi i messaggi riattivandola.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 Toggle(isOn: Binding(
                     get: { viewModel.audioTranscriptionEnabled },
@@ -72,5 +105,6 @@ struct MessageSettingsView: View {
         .navigationTitle("Messaggi")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.load() }
+        .task { await KBChatAvailability.refreshFromRemote() }
     }
 }

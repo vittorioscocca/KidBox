@@ -13,6 +13,7 @@ internal import os
 
 struct NotificationSettingsView: View {
     @StateObject private var vm = SettingsViewModel()
+    @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     /// Specchio di `NudgeState.isOptedOut`, che è una `static` su UserDefaults
@@ -69,14 +70,23 @@ struct NotificationSettingsView: View {
                 .listRowBackground(cardBackground)
             }
 
-            Toggle(
-                "Notifica nuovi messaggi in chat",
-                isOn: Binding(
-                    get: { !systemDenied && vm.notifyOnNewMessages },
-                    set: { vm.toggleNotifyOnNewMessages($0) }
+            // Con la chat spenta la riga resta ma non si tocca: riaccenderla
+            // manderebbe notifiche per una schermata che si rifiuta di aprirsi.
+            VStack(alignment: .leading, spacing: 4) {
+                Toggle(
+                    "Notifica nuovi messaggi in chat",
+                    isOn: Binding(
+                        get: { !systemDenied && chatEnabled && vm.notifyOnNewMessages },
+                        set: { vm.toggleNotifyOnNewMessages($0) }
+                    )
                 )
-            )
-            .disabled(vm.isLoading || systemDenied)
+                .disabled(vm.isLoading || systemDenied || !chatEnabled)
+                if !chatEnabled {
+                    Text("La chat è disattivata in Impostazioni → Messaggi.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             .listRowBackground(cardBackground)
             
             Toggle(

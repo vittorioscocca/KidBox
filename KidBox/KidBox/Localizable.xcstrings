@@ -51114,6 +51114,94 @@
           }
         }
       }
+    },
+    "Chat di famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussion familiale"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat de familia"
+          }
+        }
+      }
+    },
+    "La scelta vale su tutti i tuoi dispositivi. Gli altri membri continuano a scriversi e ritrovi i messaggi riattivandola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The choice applies to all your devices. Other members keep chatting with each other, and you'll find the messages again when you turn it back on."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le choix s'applique à tous vos appareils. Les autres membres continuent de discuter entre eux, et vous retrouverez les messages en la réactivant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La elección se aplica a todos tus dispositivos. Los demás miembros siguen chateando entre ellos y recuperarás los mensajes al reactivarlo."
+          }
+        }
+      }
+    },
+    "La chat è disattivata in Impostazioni → Messaggi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat is turned off in Settings → Messages."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La discussion est désactivée dans Réglages → Messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El chat está desactivado en Ajustes → Mensajes."
+          }
+        }
+      }
+    },
+    "Permette di abilitare/disabilitare la chat di famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lets you turn the family chat on or off"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet d'activer ou de désactiver la discussion familiale"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permite activar o desactivar el chat de familia"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -878,6 +878,15 @@ private struct HomeCardGrid: View {
     @State private var dragged: HomeCardID?
     @State private var showUpgrade = false
 
+    /// Chat spenta da Impostazioni → Messaggi: la card non compare.
+    @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
+
+    /// L'ordine salvato resta intatto: si filtra solo al momento di disegnare,
+    /// così riaccendendo la chat la card torna dov'era.
+    private var visibleOrder: [HomeCardID] {
+        chatEnabled ? order : order.filter { $0 != .chat }
+    }
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
@@ -911,7 +920,7 @@ private struct HomeCardGrid: View {
     
     var body: some View {
         LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(order, id: \.self) { id in
+            ForEach(visibleOrder, id: \.self) { id in
                 cardView(for: id)
                     .homeCardMasked() // ✅ QUI, non dentro HomeCardView
                     .onDrag {
@@ -1504,6 +1513,7 @@ private struct HomeCategoryList: View {
     @ObservedObject private var subscriptionManager = KBSubscriptionManager.shared
     @ObservedObject private var shortcutUsage = HomeShortcutUsage.shared
     @StateObject private var locationObserver = LocationSharingObserver()
+    @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
     @Query private var passwordEntries: [PasswordEntry]
     @State private var showUpgrade = false
 
@@ -1533,7 +1543,9 @@ private struct HomeCategoryList: View {
     }
 
     private var shortcutIDs: [HomeCardID] {
-        let candidates = HomeCatalog.shortcutDefaultPriority
+        let candidates = chatEnabled
+            ? HomeCatalog.shortcutDefaultPriority
+            : HomeCatalog.shortcutDefaultPriority.filter { $0 != .chat }
         return candidates.enumerated().sorted { a, b in
             let ua = usageCount(a.element), ub = usageCount(b.element)
             if ua != ub { return ua > ub }
@@ -1558,12 +1570,13 @@ private struct HomeCategoryList: View {
 
             // Gruppi tematici
             ForEach(HomeCatalog.groups, id: \.ids) { group in
+                let ids = chatEnabled ? group.ids : group.ids.filter { $0 != .chat }
                 VStack(alignment: .leading, spacing: 6) {
                     eyebrow(group.name)
                     VStack(spacing: 0) {
-                        ForEach(Array(group.ids.enumerated()), id: \.element) { idx, id in
+                        ForEach(Array(ids.enumerated()), id: \.element) { idx, id in
                             groupRow(HomeCatalog.meta(id))
-                            if idx != group.ids.count - 1 {
+                            if idx != ids.count - 1 {
                                 Divider().padding(.leading, 48)
                             }
                         }

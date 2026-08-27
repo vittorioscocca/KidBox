@@ -371,6 +371,11 @@ final class AppCoordinator: ObservableObject {
                     try? await Firestore.firestore().collection("users").document(user.uid)
                         .setData(["platform": "ios"], merge: true)
 
+                    // La chat è una preferenza dell'account: si allinea qui, prima
+                    // che la Home disegni le sue card, così su un dispositivo nuovo
+                    // non compare per un istante se l'utente l'aveva spenta altrove.
+                    await KBChatAvailability.refreshFromRemote()
+
                     KBLog.sync.kbDebug("Calling FamilyBootstrapService.bootstrapIfNeeded")
                     await FamilyBootstrapService(modelContext: modelContext).bootstrapIfNeeded()
                     
@@ -1004,6 +1009,13 @@ final class AppCoordinator: ObservableObject {
     // MARK: - Navigation actions
 
     func navigate(to route: Route) {
+        // Chat spenta da Impostazioni → Messaggi: si blocca qui, l'unico imbuto
+        // della navigazione, così restano fuori anche deep link, notifiche push,
+        // share extension e scorciatoie — non solo la card in Home.
+        if route == .chat && !KBChatAvailability.isEnabled {
+            KBLog.navigation.kbInfo("Navigate to chat ignorata: chat disattivata su questo dispositivo")
+            return
+        }
         KBLog.navigation.kbInfo("Navigate to route=\(String(describing: route))")
         path.append(route)
         KBLog.navigation.kbDebug("Path updated count=\(self.path.count)")

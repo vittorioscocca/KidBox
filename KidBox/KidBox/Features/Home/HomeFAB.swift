@@ -88,6 +88,7 @@ struct HomeFAB: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
     
     @StateObject private var tracker = FABUsageTracker.shared
     @State private var showAddExpense = false
@@ -97,7 +98,8 @@ struct HomeFAB: View {
     
     /// Le 4 azioni più usate — si riordinano automaticamente ad ogni utilizzo
     private var visibleActions: [FABAction] {
-        tracker.topActions(from: FABAction.all, count: 4)
+        let catalog = chatEnabled ? FABAction.all : FABAction.all.filter { $0.id != "chat" }
+        return tracker.topActions(from: catalog, count: 4)
     }
     
     // MARK: Body

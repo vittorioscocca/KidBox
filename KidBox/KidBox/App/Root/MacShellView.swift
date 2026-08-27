@@ -199,6 +199,7 @@ struct MacShellView: View {
     @State private var selection: MacSection? = .dashboard
     @State private var searchText: String = ""
     @State private var showFamilySwitcher = false
+    @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
 
     private var resolvedFamilyId: String? {
         coordinator.activeFamilyId ?? families.first?.id
@@ -258,7 +259,8 @@ struct MacShellView: View {
 
             Divider()
 
-            let mainResults = filtered(MacSection.main)
+            let available = chatEnabled ? MacSection.main : MacSection.main.filter { $0 != .chat }
+            let mainResults = filtered(available)
             let accountResults = filtered(MacSection.account)
             List(selection: $selection) {
                 if mainResults.isEmpty && accountResults.isEmpty {
