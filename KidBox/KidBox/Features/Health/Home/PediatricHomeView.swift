@@ -280,6 +280,14 @@ struct PediatricHomeView: View {
                         coordinator.navigate(to: .pediatricClinicalRecord(familyId: familyId, childId: childId))
                     }
                     moduleCard(
+                        title: "Piano Alimentare",
+                        subtitle: "Dieta AI su misura",
+                        systemImage: "fork.knife",
+                        tint: Color(red: 0.4, green: 0.72, blue: 0.5)
+                    ) {
+                        coordinator.navigate(to: .pediatricMealPlan(familyId: familyId, childId: childId))
+                    }
+                    moduleCard(
                         title: "Storico Salute",
                         subtitle: "\(timelineEvents.count) eventi",
                         systemImage: "timeline.selection",

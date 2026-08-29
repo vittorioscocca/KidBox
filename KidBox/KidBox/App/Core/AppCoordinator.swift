@@ -604,6 +604,8 @@ final class AppCoordinator: ObservableObject {
             return "salute_timeline"
         case .pediatricClinicalRecord, .pediatricMedicalRecord, .appleHealthApp:
             return "salute_cartella_clinica"
+        case .pediatricMealPlan:
+            return "salute_piano_alimentare"
         default:
             return nil
         }
@@ -697,6 +699,8 @@ final class AppCoordinator: ObservableObject {
             PediatricTimelineDestinationView(familyId: familyId, childId: childId)
         case .pediatricClinicalRecord(familyId: let familyId, childId: let childId):
             ClinicalRecordView(familyId: familyId, childId: childId)
+        case .pediatricMealPlan(familyId: let familyId, childId: let childId):
+            MealPlanView(familyId: familyId, childId: childId)
         case .expensesHome(familyId: let familyId, highlightExpenseId: let highlightExpenseId):
             ExpensesHomeView(familyId: familyId, highlightExpenseId: highlightExpenseId)
         case .expenseDetail(familyId: let familyId, expenseId: let expenseId):

@@ -20,6 +20,10 @@ enum AIAskAIPayload {
     /// Parity con `CLINICAL_RECORD_MIN_UNITS` in `functions/index.js`.
     static let clinicalRecordMinUnits = 3
 
+    /// Unità minime per il piano alimentare (Sonnet + output lungo: piano 90 giorni).
+    /// Parity con `MEAL_PLAN_MIN_UNITS` in `functions/index.js`.
+    static let mealPlanMinUnits = 5
+
     static func totalChars(systemPrompt: String, messages: [KBAIMessage], pendingUserText: String = "") -> Int {
         let history = messages.reduce(0) { $0 + $1.content.count }
         let pending = pendingUserText.trimmingCharacters(in: .whitespacesAndNewlines).count
@@ -39,6 +43,12 @@ enum AIAskAIPayload {
     /// oppure le unità del payload se il contesto è molto grande.
     static func clinicalRecordMessageUnits(totalChars: Int) -> Int {
         max(clinicalRecordMinUnits, messageUnits(totalChars: totalChars))
+    }
+
+    /// Unità per il piano alimentare: minimo fisso `mealPlanMinUnits`,
+    /// oppure le unità del payload se il contesto è molto grande.
+    static func mealPlanMessageUnits(totalChars: Int) -> Int {
+        max(mealPlanMinUnits, messageUnits(totalChars: totalChars))
     }
 
     /// Testo da mostrare sopra l'input quando il contesto supera lo standard.

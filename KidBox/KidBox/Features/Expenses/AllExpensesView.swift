@@ -34,16 +34,11 @@ struct AllExpensesView: View {
                 PeriodPickerView(vm: vm)
                     .padding(.horizontal, 16)
 
-                HStack {
-                    Text("\(vm.expenses.count) spese")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(vm.totalAmount.formatted(.currency(code: "EUR")))
-                        .font(.subheadline.weight(.semibold))
-                        .monospacedDigit()
-                }
-                .padding(.horizontal, 16)
+                // Stessa card della home: il totale del periodo scelto va letto
+                // anche qui, altrimenti cambiando filtro non si sa su cosa si
+                // sta guardando la lista.
+                TotalSummaryCard(vm: vm)
+                    .padding(.horizontal, 16)
 
                 if vm.expenses.isEmpty {
                     Text("Nessuna spesa nel periodo scelto")

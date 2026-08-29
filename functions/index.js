@@ -1581,6 +1581,11 @@ const CHAT_MAX_TOKENS = 4096;
 // Unità minime scalate dal limite giornaliero per una generazione cartella clinica.
 // Sonnet costa ~3× Haiku per token + niente caching (one-shot) → costo fisso più alto.
 const CLINICAL_RECORD_MIN_UNITS = 3;
+// Piano alimentare: gira su Sonnet come la cartella clinica, ma con output molto
+// più lungo (piano 90 giorni + pasti + macro + lista spesa) → max_tokens doppio e
+// costo fisso più alto in unità. Parity con `AIAskAIPayload.mealPlanMinUnits`.
+const MEAL_PLAN_MIN_UNITS = 5;
+const MEAL_PLAN_MAX_TOKENS = 8192;
 
 /** Regole server aggiunte al system prompt cartella clinica (affiancano il prompt client). */
 const CLINICAL_RECORD_SYSTEM_RULES = `
@@ -1597,6 +1602,18 @@ Se >4 misure PA nello stesso anno: range min-max, ultimo valore, tendenza (non e
 APPLE HEALTH: sezione opzionale con disclaimer wearable consumer; FC a riposo, VO2, minuti attività, SpO2 notturna, passi, HRV; fasce età per VO2; sintesi attività fisica.
 `.trim();
 
+/** Regole server aggiunte al system prompt piano alimentare (affiancano il prompt client). */
+const MEAL_PLAN_SYSTEM_RULES = `
+VINCOLI SERVER (piano alimentare):
+Non sei un medico e non formuli diagnosi: il piano è educativo e va validato dal medico o dal nutrizionista curante.
+VIETATO proporre diete estreme, digiuni prolungati, restrizioni sotto il fabbisogno minimo, integratori da prescrizione o metodi pericolosi.
+VIETATO generare piani ipocalorici per minori di 18 anni, in gravidanza o allattamento: in questi casi fornisci solo indicazioni educative su equilibrio dei pasti e rimanda al pediatra o allo specialista.
+Usa INTERVALLI (es. 1800-2000 kcal) invece di falsa precisione, e ricorda le normali fluttuazioni del peso corporeo.
+Non usare mai valori clinici assenti nei dati forniti: se un dato manca, dillo esplicitamente e spiega come procedere senza.
+Se emergono condizioni cliniche, terapie in corso o allergie nei dati, adatta il piano e segnala esplicitamente l'adattamento.
+Priorità a progresso sostenibile, mantenimento della massa muscolare e salute generale.
+`.trim();
+
 /**
  * Sonnet solo per generazione cartella clinica (non chat Salute: visite, esami, home).
  * Il client deve inviare purpose esplicito; niente euristica su testo/prompt.
@@ -1605,6 +1622,40 @@ APPLE HEALTH: sezione opzionale con disclaimer wearable consumer; FC a riposo, V
  */
 function isClinicalRecordAskAI(data) {
   return data?.purpose === "clinicalRecord";
+}
+
+/**
+ * Sonnet + max_tokens esteso per la generazione del piano alimentare.
+ * Il client deve inviare purpose esplicito; niente euristica su testo/prompt.
+ * @param {object} data body della callable
+ * @return {boolean}
+ */
+function isMealPlanAskAI(data) {
+  return data?.purpose === "mealPlan";
+}
+
+/**
+ * Surface analytics per askAI.
+ * @param {boolean} clinicalRecord
+ * @param {boolean} mealPlan
+ * @return {string}
+ */
+function askAISurface(clinicalRecord, mealPlan) {
+  if (clinicalRecord) return "clinicalRecord";
+  if (mealPlan) return "mealPlan";
+  return "chat";
+}
+
+/**
+ * Purpose restituito al client (undefined per le chat standard).
+ * @param {boolean} clinicalRecord
+ * @param {boolean} mealPlan
+ * @return {string|undefined}
+ */
+function askAIPurposeEcho(clinicalRecord, mealPlan) {
+  if (clinicalRecord) return "clinicalRecord";
+  if (mealPlan) return "mealPlan";
+  return undefined;
 }
 
 /**
@@ -1996,37 +2047,54 @@ exports.askAI = onCall(
       }
 
       const clinicalRecord = isClinicalRecordAskAI({purpose});
+      const mealPlan = isMealPlanAskAI({purpose});
+      // Entrambi one-shot su Sonnet: stesso modello, stesso pricing, niente caching.
+      const premiumGeneration = clinicalRecord || mealPlan;
 
       // Unità base calcolate sulla dimensione del payload.
       const payloadUnits = askAIMessageUnitsForPayload(totalChars);
-      // La cartella clinica gira su Sonnet (~3× il costo per token di Haiku) e
-      // non beneficia del prompt caching (chiamata one-shot): la facciamo costare
-      // un minimo fisso di unità per riflettere il costo reale a prescindere dal payload.
-      const messageUnits = clinicalRecord ?
-        Math.max(CLINICAL_RECORD_MIN_UNITS, payloadUnits) :
-        payloadUnits;
+      // Cartella clinica e piano alimentare girano su Sonnet (~3× il costo per
+      // token di Haiku) e non beneficiano del prompt caching (chiamata one-shot):
+      // le facciamo costare un minimo fisso di unità per riflettere il costo reale
+      // a prescindere dal payload.
+      let messageUnits = payloadUnits;
+      if (clinicalRecord) messageUnits = Math.max(CLINICAL_RECORD_MIN_UNITS, payloadUnits);
+      if (mealPlan) messageUnits = Math.max(MEAL_PLAN_MIN_UNITS, payloadUnits);
       const isLargeContext = messageUnits > 1;
 
       await assertFamilyMember(uid, familyId);
 
       const quota = await resolveAIQuota(uid, familyId);
+      // Il piano alimentare è una feature dei soli piani a pagamento: su Free la
+      // quota è `lifetime` (bonus una tantum), quindi la usiamo come discriminante.
+      if (mealPlan && quota.period === "lifetime") {
+        throw new HttpsError(
+            "permission-denied",
+            "Il Piano Alimentare è incluso nei piani Pro e Max. Passa a Pro per generarlo.",
+        );
+      }
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, quota, messageUnits);
 
-      const anthropicModel = clinicalRecord ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
-      const maxTokens = clinicalRecord ? CLINICAL_RECORD_MAX_TOKENS : CHAT_MAX_TOKENS;
-      const effectiveSystemPrompt = clinicalRecord ?
-        `${systemPrompt.trim()}\n\n${CLINICAL_RECORD_SYSTEM_RULES}` :
-        systemPrompt;
-      const inputUsdPer1M = clinicalRecord ?
+      const anthropicModel = premiumGeneration ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
+      let maxTokens = CHAT_MAX_TOKENS;
+      if (clinicalRecord) maxTokens = CLINICAL_RECORD_MAX_TOKENS;
+      if (mealPlan) maxTokens = MEAL_PLAN_MAX_TOKENS;
+      let effectiveSystemPrompt = systemPrompt;
+      if (clinicalRecord) {
+        effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${CLINICAL_RECORD_SYSTEM_RULES}`;
+      } else if (mealPlan) {
+        effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${MEAL_PLAN_SYSTEM_RULES}`;
+      }
+      const inputUsdPer1M = premiumGeneration ?
         ANTHROPIC_INPUT_USD_PER_1M_SONNET :
         ANTHROPIC_INPUT_USD_PER_1M_HAIKU;
-      const outputUsdPer1M = clinicalRecord ?
+      const outputUsdPer1M = premiumGeneration ?
         ANTHROPIC_OUTPUT_USD_PER_1M_SONNET :
         ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU;
 
       logger.info("askAI request", {
         uid, familyId, usageCount, quota, msgCount: messages.length,
-        totalChars, messageUnits, isLargeContext, clinicalRecord, anthropicModel,
+        totalChars, messageUnits, isLargeContext, clinicalRecord, mealPlan, anthropicModel,
       });
 
       const apiKey = ANTHROPIC_API_KEY.value();
@@ -2052,10 +2120,10 @@ exports.askAI = onCall(
             // (tools+system) e sull'ultimo messaggio (storico) → input ripetuto a
             // ~0.1× su cache hit. La cartella clinica è one-shot su Sonnet: il
             // write premium (1.25×) senza re-read sarebbe uno spreco → niente cache.
-            system: clinicalRecord ?
+            system: premiumGeneration ?
               effectiveSystemPrompt :
               cacheableSystem(effectiveSystemPrompt),
-            messages: clinicalRecord ?
+            messages: premiumGeneration ?
               messages.map((m) => ({role: m.role, content: m.content})) :
               messagesWithCacheBreakpoint(messages),
           }),
@@ -2078,7 +2146,7 @@ exports.askAI = onCall(
         // Lo logghiamo per poter alzare CHAT_MAX_TOKENS se ricapita.
         if (json?.stop_reason === "max_tokens") {
           logger.warn("askAI reply truncated by max_tokens", {
-            uid, familyId, clinicalRecord, maxTokens,
+            uid, familyId, clinicalRecord, mealPlan, maxTokens,
             outputTokens: json?.usage?.output_tokens || 0,
           });
         }
@@ -2125,7 +2193,7 @@ exports.askAI = onCall(
           cacheReadTokens, cacheWriteTokens,
           cacheHitRatio: (inputTokens + cacheReadTokens) > 0 ?
             (cacheReadTokens / (inputTokens + cacheReadTokens)).toFixed(2) : "0",
-          costUsd: costUsd.toFixed(6), clinicalRecord, model: anthropicModel,
+          costUsd: costUsd.toFixed(6), clinicalRecord, mealPlan, model: anthropicModel,
         });
       } catch (e) {
         if (e instanceof HttpsError) throw e;
@@ -2134,7 +2202,7 @@ exports.askAI = onCall(
       }
 
       logger.info("askAI success", {
-        uid, usageCount, messageUnits, clinicalRecord,
+        uid, usageCount, messageUnits, clinicalRecord, mealPlan,
         totalPayloadChars: totalChars,
       });
 
@@ -2148,7 +2216,7 @@ exports.askAI = onCall(
         familyId,
         feature: "chat",
         props: {
-          surface: clinicalRecord ? "clinicalRecord" : "chat",
+          surface: askAISurface(clinicalRecord, mealPlan),
           actionType: "message",
         },
       });
@@ -2161,7 +2229,7 @@ exports.askAI = onCall(
         messageUnitsConsumed: messageUnits,
         isLargeContext,
         totalPayloadChars: totalChars,
-        purpose: clinicalRecord ? "clinicalRecord" : undefined,
+        purpose: askAIPurposeEcho(clinicalRecord, mealPlan),
       };
     },
 );

@@ -256,7 +256,9 @@ struct PeriodPickerView: View {
 
 // MARK: - Total Summary Card
 
-private struct TotalSummaryCard: View {
+/// Non più `private`: la usa anche `AllExpensesView`, che deve mostrare lo
+/// stesso totale della home — è lo stesso periodo.
+struct TotalSummaryCard: View {
     @ObservedObject var vm: ExpensesViewModel
     @Environment(\.colorScheme) private var colorScheme
     

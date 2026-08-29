@@ -10,6 +10,7 @@ struct AppleHealthDashboardView: View {
     let snapshot: KBHealthImportSnapshot
     let childAgeDescription: String?
     let childWeightKg: Double?
+    let childHeightCm: Double?
     @Environment(\.colorScheme) private var colorScheme
     @State private var showHistorySheet = false
 
@@ -58,6 +59,13 @@ struct AppleHealthDashboardView: View {
                         subtitle: "Corpo",
                         systemImage: "scalemass.fill",
                         tint: Color(red: 0.35, green: 0.55, blue: 0.95)
+                    )
+                    metricTile(
+                        title: "Altezza",
+                        value: heightValue,
+                        subtitle: "Corpo",
+                        systemImage: "ruler.fill",
+                        tint: Color(red: 0.35, green: 0.7, blue: 0.85)
                     )
                     metricTile(
                         title: "Battiti",
@@ -156,6 +164,14 @@ struct AppleHealthDashboardView: View {
         let kg = childWeightKg ?? snapshot.weightKg
         guard let kg else { return "—" }
         return String(format: "%.1f kg", kg)
+    }
+
+    /// Prima il valore in scheda, poi quello importato: se qualcuno l'ha
+    /// corretto a mano, la correzione vince su Salute.
+    private var heightValue: String {
+        let cm = childHeightCm ?? snapshot.heightCm
+        guard let cm else { return "—" }
+        return String(format: "%.0f cm", cm)
     }
 
     @ViewBuilder

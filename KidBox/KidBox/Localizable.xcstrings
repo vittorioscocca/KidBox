@@ -666,6 +666,52 @@
         }
       }
     },
+    "%1$d messaggi AI · %2$d/%3$d oggi" : {
+      "comment" : "Meal plan AI usage summary",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d AI messages · %2$d/%3$d today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d mensajes de IA · %2$d/%3$d hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d messages IA · %2$d/%3$d aujourd’hui"
+          }
+        }
+      }
+    },
+    "%d anni" : {
+      "comment" : "Age in years",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d years"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d años"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d ans"
+          }
+        }
+      }
+    },
     "%d articoli" : {
       "localizations" : {
         "en" : {
@@ -5667,6 +5713,50 @@
         }
       }
     },
+    "Alimenti che ti piacciono" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foods you like"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alimentos que te gustan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aliments que vous aimez"
+          }
+        }
+      }
+    },
+    "Alimenti da evitare o intolleranze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foods to avoid or intolerances"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alimentos a evitar o intolerancias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aliments à éviter ou intolérances"
+          }
+        }
+      }
+    },
     "All'arrivo in zona" : {
       "localizations" : {
         "en" : {
@@ -5930,6 +6020,9 @@
           }
         }
       }
+    },
+    "Altezza" : {
+
     },
     "Altre" : {
       "localizations" : {
@@ -7915,6 +8008,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Actif jusqu'au %@"
+          }
+        }
+      }
+    },
+    "Massa magra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lean mass"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masa magra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masse maigre"
           }
         }
       }
@@ -13083,6 +13198,29 @@
         }
       }
     },
+    "Contesto troppo grande (%1$@ caratteri, max %2$@). Riduci i documenti allegati in Salute." : {
+      "comment" : "Meal plan payload error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Context too large (%1$@ characters, max %2$@). Reduce the documents attached in Health."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexto demasiado grande (%1$@ caracteres, máx. %2$@). Reduce los documentos adjuntos en Salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contexte trop volumineux (%1$@ caractères, max %2$@). Réduisez les documents joints dans Santé."
+          }
+        }
+      }
+    },
     "Continua" : {
       "localizations" : {
         "en" : {
@@ -14097,6 +14235,28 @@
         }
       }
     },
+    "Crea piano alimentare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create meal plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear plan de alimentación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer le plan alimentaire"
+          }
+        }
+      }
+    },
     "Crea un evento" : {
       "comment" : "AI quick chip",
       "localizations" : {
@@ -14186,6 +14346,28 @@
         }
       }
     },
+    "Creato dall'AI sui tuoi dati di salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Created by AI from your health data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creado por la IA a partir de tus datos de salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créé par l’IA à partir de vos données de santé"
+          }
+        }
+      }
+    },
     "Creato: %@" : {
       "localizations" : {
         "en" : {
@@ -14204,6 +14386,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Créé : %@"
+          }
+        }
+      }
+    },
+    "Creazione del piano alimentare in corso…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating your meal plan…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creando el plan de alimentación…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Création du plan alimentaire…"
           }
         }
       }
@@ -14536,6 +14740,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Traitements"
+          }
+        }
+      }
+    },
+    "Cure attive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active treatments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tratamientos activos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traitements actifs"
           }
         }
       }
@@ -15510,6 +15736,28 @@
         }
       }
     },
+    "Dati usati per il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data used for the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datos usados para el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Données utilisées pour le plan"
+          }
+        }
+      }
+    },
     "Debole" : {
       "comment" : "Password strength: weak",
       "localizations" : {
@@ -16059,6 +16307,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Régime"
+          }
+        }
+      }
+    },
+    "Dieta AI su misura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-tailored diet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieta a medida con IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Régime sur mesure par IA"
           }
         }
       }
@@ -22041,6 +22311,29 @@
         }
       }
     },
+    "Generare il piano costa %d messaggi AI" : {
+      "comment" : "Meal plan AI cost",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating the plan costs %d AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar el plan cuesta %d mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer le plan coûte %d messages IA"
+          }
+        }
+      }
+    },
     "Generata %@ — tocca Aggiorna per rigenerare" : {
       "localizations" : {
         "en" : {
@@ -22059,6 +22352,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Généré %@ — touchez Actualiser pour régénérer"
+          }
+        }
+      }
+    },
+    "Generato il %@" : {
+      "comment" : "Meal plan generated at",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generated on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generado el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Généré le %@"
           }
         }
       }
@@ -23355,6 +23671,28 @@
         }
       }
     },
+    "I messaggi sono scalati dal limite giornaliero della famiglia. Il piano resta salvato: rigeneralo solo quando cambiano peso, allenamenti o obiettivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages are deducted from the family daily limit. The plan stays saved: regenerate it only when weight, workouts or goal change."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los mensajes se descuentan del límite diario de la familia. El plan queda guardado: regenéralo solo cuando cambien el peso, los entrenamientos o el objetivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les messages sont déduits de la limite quotidienne de la famille. Le plan reste enregistré : régénérez-le seulement si le poids, les entraînements ou l’objectif changent."
+          }
+        }
+      }
+    },
     "I messaggi usano la quota AI giornaliera del piano famiglia (Pro o Max)." : {
       "localizations" : {
         "en" : {
@@ -23709,6 +24047,73 @@
         }
       }
     },
+    "Il Piano Alimentare è disponibile solo con un piano a pagamento. Passa a Pro o Max per generarlo con l'AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Meal Plan is available only on a paid plan. Upgrade to Pro or Max to generate it with AI."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Plan de alimentación solo está disponible en los planes de pago. Cambia a Pro o Max para generarlo con la IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Plan alimentaire est réservé aux formules payantes. Passez à Pro ou Max pour le générer avec l’IA."
+          }
+        }
+      }
+    },
+    "Il Piano Alimentare è incluso nei piani Pro e Max. Passa a Pro per generarlo." : {
+      "comment" : "Meal plan paid-plan error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Meal Plan is included in the Pro and Max plans. Upgrade to Pro to generate it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Plan de alimentación está incluido en los planes Pro y Max. Cambia a Pro para generarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Plan alimentaire est inclus dans les formules Pro et Max. Passez à Pro pour le générer."
+          }
+        }
+      }
+    },
+    "Il piano è educativo: validalo sempre con il tuo medico o nutrizionista." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The plan is educational: always validate it with your doctor or dietitian."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan es educativo: valídalo siempre con tu médico o nutricionista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan est éducatif : validez-le toujours avec votre médecin ou votre diététicien."
+          }
+        }
+      }
+    },
     "Il tuo controllo" : {
       "localizations" : {
         "en" : {
@@ -23771,6 +24176,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre nom est celui que les autres membres verront dans les conversations, les rappels et sur la carte. Vous pourrez le changer depuis le Profil."
+          }
+        }
+      }
+    },
+    "Il tuo piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre plan"
           }
         }
       }
@@ -24620,6 +25047,28 @@
         }
       }
     },
+    "In questa sezione l'assistente AI crea un piano alimentare personalizzato partendo dalle informazioni già presenti in Salute: visite mediche, cure in corso, analisi ed esami, peso, altezza, età e gli allenamenti registrati nell'app Salute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In this section the AI assistant creates a personalised meal plan from the information already in Health: medical visits, ongoing treatments, lab tests and exams, weight, height, age and the workouts recorded in the Health app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En esta sección el asistente de IA crea un plan de alimentación personalizado a partir de la información ya presente en Salud: visitas médicas, tratamientos en curso, análisis y pruebas, peso, altura, edad y los entrenamientos registrados en la app Salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans cette section, l’assistant IA crée un plan alimentaire personnalisé à partir des informations déjà présentes dans Santé : consultations médicales, traitements en cours, analyses et examens, poids, taille, âge et entraînements enregistrés dans l’app Santé."
+          }
+        }
+      }
+    },
     "In Salute → Condivisione dati → KidBox attiva «Allenamento», poi tocca Aggiorna dati." : {
       "localizations" : {
         "en" : {
@@ -24704,6 +25153,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inactif"
+          }
+        }
+      }
+    },
+    "Incluso in Pro e Max" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Included in Pro and Max"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluido en Pro y Max"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inclus dans Pro et Max"
           }
         }
       }
@@ -27560,6 +28031,28 @@
         }
       }
     },
+    "Le tue preferenze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your preferences"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus preferencias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos préférences"
+          }
+        }
+      }
+    },
     "Le visite verranno rimosse da tutti i dispositivi." : {
       "localizations" : {
         "en" : {
@@ -27578,6 +28071,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les visites seront supprimées de tous les appareils."
+          }
+        }
+      }
+    },
+    "Leggero" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ligero"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Léger"
           }
         }
       }
@@ -28089,6 +28604,28 @@
         }
       }
     },
+    "Livello di attività" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity level"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nivel de actividad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niveau d’activité"
+          }
+        }
+      }
+    },
     "Lo sapevi?" : {
       "comment" : "Travel tip title",
       "localizations" : {
@@ -28529,6 +29066,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Envoyez le lien à votre partenaire"
+          }
+        }
+      }
+    },
+    "Mantenere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintain"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantener"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir"
           }
         }
       }
@@ -29599,6 +30158,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modèle"
+          }
+        }
+      }
+    },
+    "Moderato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moderate"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moderado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modéré"
           }
         }
       }
@@ -33158,6 +33739,29 @@
         }
       }
     },
+    "non disponibile" : {
+      "comment" : "Missing health data value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "not available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "non disponible"
+          }
+        }
+      }
+    },
     "Non disponibile" : {
       "localizations" : {
         "en" : {
@@ -35408,6 +36012,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ou"
+          }
+        }
+      }
+    },
+    "Obiettivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objectif"
           }
         }
       }
@@ -37695,6 +38321,28 @@
         }
       }
     },
+    "Perdere grasso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lose fat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perder grasa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perdre de la graisse"
+          }
+        }
+      }
+    },
     "Perfetto. Pianificheremo per %lld %@." : {
       "localizations" : {
         "en" : {
@@ -38025,6 +38673,28 @@
         }
       }
     },
+    "Peso e altezza sono obbligatori: aggiornali in Apple App Salute o nella Scheda Medica." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight and height are required: update them in the Apple Health app or in the Medical Card."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El peso y la altura son obligatorios: actualízalos en la app Salud de Apple o en la Ficha médica."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le poids et la taille sont obligatoires : mettez-les à jour dans l’app Santé d’Apple ou dans la Fiche médicale."
+          }
+        }
+      }
+    },
     "Piani disponibili" : {
       "localizations" : {
         "en" : {
@@ -38219,6 +38889,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Forfait %@ · %@"
+          }
+        }
+      }
+    },
+    "Piano Alimentare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meal Plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan de alimentación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan alimentaire"
           }
         }
       }
@@ -41854,6 +42546,28 @@
         }
       }
     },
+    "Ricevi la stima delle calorie di mantenimento, un deficit realistico, gli obiettivi di proteine, carboidrati e grassi, i pasti con porzioni e alternative, gli spuntini proteici, le opzioni pre e post allenamento, l'idratazione, la lista della spesa e una progressione su 90 giorni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You get an estimate of your maintenance calories, a realistic deficit, protein, carb and fat targets, meals with portions and alternatives, high-protein snacks, pre- and post-workout options, hydration guidance, a shopping list and a 90-day progression."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibes la estimación de tus calorías de mantenimiento, un déficit realista, los objetivos de proteínas, carbohidratos y grasas, las comidas con porciones y alternativas, los tentempiés proteicos, las opciones pre y post entrenamiento, la hidratación, la lista de la compra y una progresión de 90 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous obtenez l’estimation de vos calories de maintien, un déficit réaliste, des objectifs de protéines, glucides et lipides, des repas avec portions et alternatives, des collations protéinées, des options avant et après l’entraînement, des conseils d’hydratation, une liste de courses et une progression sur 90 jours."
+          }
+        }
+      }
+    },
     "Ricevi promemoria locali e push prima della partenza/evento (es. 24h e 2h prima)." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -42226,6 +42940,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Régénérer"
+          }
+        }
+      }
+    },
+    "Rigenera piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerate plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerar plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Régénérer le plan"
           }
         }
       }
@@ -45210,6 +45946,28 @@
         }
       }
     },
+    "Sedentario" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sedentary"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sedentario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sédentaire"
+          }
+        }
+      }
+    },
     "Segna appuntamenti, impegni e ricorrenze della famiglia. Ogni evento ha una categoria e un colore, così capisci a colpo d'occhio di chi è la giornata piena." : {
       "localizations" : {
         "en" : {
@@ -45845,6 +46603,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Soir"
+          }
+        }
+      }
+    },
+    "Servono %1$d messaggi AI per generare il piano ma ne restano %2$d su %3$d oggi. Riprova domani." : {
+      "comment" : "Meal plan quota error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating the plan needs %1$d AI messages but only %2$d of %3$d are left today. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar el plan requiere %1$d mensajes de IA, pero solo quedan %2$d de %3$d hoy. Inténtalo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La génération du plan nécessite %1$d messages IA, mais il n’en reste que %2$d sur %3$d aujourd’hui. Réessayez demain."
+          }
+        }
+      }
+    },
+    "Servono almeno peso e altezza per creare il piano. Aggiornali nell'app Salute o nella Scheda Medica." : {
+      "comment" : "Meal plan missing data error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight and height are needed to create the plan. Update them in the Health app or in the Medical Card."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se necesitan peso y altura para crear el plan. Actualízalos en la app Salud o en la Ficha médica."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le poids et la taille sont nécessaires pour créer le plan. Mettez-les à jour dans l’app Santé ou dans la Fiche médicale."
           }
         }
       }
@@ -51863,6 +52667,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visites"
+          }
+        }
+      }
+    },
+    "Visite mediche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medical visits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visitas médicas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consultations médicales"
           }
         }
       }

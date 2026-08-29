@@ -39,6 +39,9 @@ struct KBHealthImportSnapshot: Sendable, Equatable, Codable {
     var birthDate: Date?
     var weightKg: Double?
     var weightMeasuredAt: Date?
+    /// Altezza in centimetri, dall'app Salute.
+    var heightCm: Double?
+    var heightMeasuredAt: Date?
     var bloodGroup: String?
     var heartRateBpm: Double?
     var heartRateMeasuredAt: Date?

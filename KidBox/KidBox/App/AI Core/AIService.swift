@@ -126,6 +126,8 @@ final class AIService {
     private static let travelPlanClientTimeout: TimeInterval = 150
     /// Cartella clinica Sonnet: allineato a `timeoutSeconds: 120` su askAI.
     private static let clinicalRecordClientTimeout: TimeInterval = 120
+    /// Piano alimentare Sonnet: output lungo (max_tokens 8192), stesso timeout server.
+    private static let mealPlanClientTimeout: TimeInterval = 120
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
@@ -201,7 +203,7 @@ final class AIService {
     // MARK: - Send message
     
     /// Sends the conversation to the AI and returns the assistant reply.
-    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server (solo cartella clinica); `nil` = Haiku (chat Salute, visite, esami, ecc.).
+    /// - Parameter purpose: `"clinicalRecord"` e `"mealPlan"` usano Sonnet lato server; `nil` = Haiku (chat Salute, visite, esami, ecc.).
     func sendMessage(
         messages: [KBAIMessage],
         systemPrompt: String,
@@ -251,6 +253,8 @@ final class AIService {
         let callable = functions.httpsCallable("askAI")
         if purpose == "clinicalRecord" {
             callable.timeoutInterval = Self.clinicalRecordClientTimeout
+        } else if purpose == "mealPlan" {
+            callable.timeoutInterval = Self.mealPlanClientTimeout
         }
         KBLog.ai.kbDebug(
             "Calling Firebase Function askAI payloadMessagesCount=\(messages.count) timeout=\(callable.timeoutInterval)s"

@@ -33,6 +33,7 @@ final class KBHealthKitService {
         if let steps = HKQuantityType.quantityType(forIdentifier: .stepCount) { types.insert(steps) }
         if let energy = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) { types.insert(energy) }
         if let weight = HKQuantityType.quantityType(forIdentifier: .bodyMass) { types.insert(weight) }
+        if let height = HKQuantityType.quantityType(forIdentifier: .height) { types.insert(height) }
         if let blood = HKObjectType.characteristicType(forIdentifier: .bloodType) { types.insert(blood) }
         if let dob = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) { types.insert(dob) }
         if let sys = HKQuantityType.quantityType(forIdentifier: .bloodPressureSystolic) { types.insert(sys) }
@@ -74,6 +75,7 @@ final class KBHealthKitService {
         let stepsType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
         let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
         let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass)!
+        let heightType = HKQuantityType.quantityType(forIdentifier: .height)!
         let bpmUnit = HKUnit.count().unitDivided(by: .minute())
         let mmHg = HKUnit.millimeterOfMercury()
         let percent = HKUnit.percent()
@@ -82,7 +84,12 @@ final class KBHealthKitService {
             .unitDivided(by: .minute())
 
         async let heartRates = recentHeartRates(type: heartType, unit: bpmUnit, limit: 15)
-        async let weight = latestQuantitySample(type: weightType, unit: .gramUnit(with: .kilo))
+        // Senza finestra temporale: peso e altezza si inseriscono di rado, e
+        // l'ultimo valore vale finché non ne arriva un altro.
+        async let weight = latestQuantitySample(type: weightType, unit: .gramUnit(with: .kilo), lookbackDays: nil)
+        // In centimetri: l'altezza in Salute è in metri, ma nella scheda si legge
+        // "172 cm", non "1,72 m".
+        async let height = latestQuantitySample(type: heightType, unit: .meterUnit(with: .centi), lookbackDays: nil)
         async let steps = stepsToday(type: stepsType)
         async let energy = sumToday(type: energyType, unit: .kilocalorie())
         async let daily = dailyActivityLastDays(days: 7, stepsType: stepsType, energyType: energyType)
@@ -108,6 +115,7 @@ final class KBHealthKitService {
         let (
             heartList,
             weightSample,
+            heightSample,
             stepsCount,
             energySum,
             dailyList,
@@ -124,7 +132,7 @@ final class KBHealthKitService {
             daily90List,
             weeklyExerciseVal
         ) = try await (
-            heartRates, weight, steps, energy, daily, workouts, ecgs, resting, spo2, vo2, bp,
+            heartRates, weight, height, steps, energy, daily, workouts, ecgs, resting, spo2, vo2, bp,
             restingAvg90, vo2Avg90, hrvAvg90, nightlySpO2, daily90, weeklyExercise
         )
 
@@ -133,6 +141,8 @@ final class KBHealthKitService {
         var snapshot = KBHealthImportSnapshot(
             weightKg: weightSample?.value,
             weightMeasuredAt: weightSample?.date,
+            heightCm: heightSample?.value,
+            heightMeasuredAt: heightSample?.date,
             heartRateBpm: latestHeart?.bpm,
             heartRateMeasuredAt: latestHeart?.measuredAt,
             restingHeartRateBpm: restingSample?.value,
@@ -227,15 +237,22 @@ final class KBHealthKitService {
         }
     }
 
+    /// - Parameter lookbackDays: `nil` = nessun limite indietro nel tempo. Serve
+    ///   alle misure del corpo (peso, altezza), che si registrano una volta ogni
+    ///   tanto: con una finestra di 30 giorni un peso di due mesi fa non esiste,
+    ///   e la scheda mostra un trattino pur avendo il dato in Salute.
     private func recentQuantitySamples(
         type: HKQuantityType,
         unit: HKUnit,
         limit: Int,
-        lookbackDays: Int = 30
+        lookbackDays: Int? = 30
     ) async throws -> [QuantityPoint] {
         let end = Date()
-        let start = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: end) ?? end
-        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictEndDate)
+        let predicate: NSPredicate? = {
+            guard let lookbackDays else { return nil }
+            let start = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: end) ?? end
+            return HKQuery.predicateForSamples(withStart: start, end: end, options: .strictEndDate)
+        }()
         let sort = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -264,7 +281,7 @@ final class KBHealthKitService {
     private func latestQuantitySample(
         type: HKQuantityType,
         unit: HKUnit,
-        lookbackDays: Int = 30
+        lookbackDays: Int? = 30
     ) async throws -> QuantityPoint? {
         try await recentQuantitySamples(type: type, unit: unit, limit: 1, lookbackDays: lookbackDays).first
     }

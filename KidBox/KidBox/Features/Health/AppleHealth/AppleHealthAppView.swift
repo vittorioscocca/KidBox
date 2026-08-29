@@ -38,7 +38,8 @@ struct AppleHealthAppView: View {
                     AppleHealthDashboardView(
                         snapshot: snapshot,
                         childAgeDescription: childProfileAge,
-                        childWeightKg: child?.weightKg
+                        childWeightKg: child?.weightKg,
+                        childHeightCm: child?.heightCm
                     )
                 } else {
                     connectPrompt
@@ -195,6 +196,10 @@ struct AppleHealthAppView: View {
         var changed = false
         if let weight = imported.weightKg {
             child.weightKg = weight
+            changed = true
+        }
+        if let height = imported.heightCm {
+            child.heightCm = height
             changed = true
         }
         if let dob = imported.birthDate {
