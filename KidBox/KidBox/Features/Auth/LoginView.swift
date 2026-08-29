@@ -22,6 +22,12 @@ struct LoginView: View {
     
     @State private var showEmailAuth = false
     @Environment(\.colorScheme) private var colorScheme
+
+    /// Interruttore remoto del pulsante Facebook, vedi `KBFeatureFlags`.
+    /// `@AppStorage` e non una lettura secca perché il valore può arrivare da
+    /// Remote Config mentre questa schermata è già a video: così si ridisegna.
+    @AppStorage(KBFeatureFlags.facebookLoginDefaultsKey)
+    private var isFacebookLoginEnabled = false
     
     // MARK: - Dynamic theme
     
@@ -64,7 +70,13 @@ struct LoginView: View {
                     VStack(spacing: 12) {
                         googleButton
                         appleButton
-                        facebookButton
+                        // Nascosto finché l'app Meta è in modalità sviluppo: chi
+                        // lo toccava riceveva «questa app non funziona», che si
+                        // legge come un guasto di KidBox. Torna da solo quando il
+                        // flag remoto passa a true, senza nuova release.
+                        if isFacebookLoginEnabled {
+                            facebookButton
+                        }
                     }
                     .padding(.horizontal, 28)
                     

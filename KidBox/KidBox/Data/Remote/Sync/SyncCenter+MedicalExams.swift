@@ -90,6 +90,8 @@ extension SyncCenter {
                             local.deadline           = dto.deadline
                             local.preparation        = dto.preparation
                             local.notes              = dto.notes
+                            local.cost               = dto.cost
+                            local.linkedExpenseId    = dto.linkedExpenseId
                             local.location           = dto.location
                             local.statusRaw          = dto.statusRaw
                             local.resultText         = dto.resultText
@@ -124,6 +126,8 @@ extension SyncCenter {
                         createdBy:          dto.createdBy
                     )
                     exam.id         = dto.id
+                    exam.cost       = dto.cost
+                    exam.linkedExpenseId = dto.linkedExpenseId
                     exam.isDeleted  = false
                     exam.syncState  = .synced
                     modelContext.insert(exam)
@@ -189,6 +193,8 @@ extension SyncCenter {
                 deadline:           e.deadline,
                 preparation:        e.preparation,
                 notes:              e.notes,
+                cost:               e.cost,
+                linkedExpenseId:    e.linkedExpenseId,
                 location:           e.location,
                 statusRaw:          e.statusRaw,
                 resultText:         e.resultText,

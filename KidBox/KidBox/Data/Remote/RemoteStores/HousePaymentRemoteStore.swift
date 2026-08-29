@@ -14,6 +14,7 @@ struct HousePaymentRemoteDTO {
     let typeRaw: String
     let subtypeRaw: String?
     let importo: Double?
+    let linkedExpenseId: String?
     let giornoDiScadenzaMensile: Int?
     let dataScadenza: Date?
     let dataScadenzaContratto: Date?
@@ -71,6 +72,7 @@ final class HousePaymentRemoteStore {
 
         data["subtypeRaw"] = item.subtypeRaw as Any
         data["importo"] = item.importo as Any
+        data["linkedExpenseId"] = item.linkedExpenseId as Any
         data["giornoDiScadenzaMensile"] = item.giornoDiScadenzaMensile as Any
         data["dataScadenza"] = item.dataScadenza.map { Timestamp(date: $0) } as Any
         data["dataScadenzaContratto"] = item.dataScadenzaContratto.map { Timestamp(date: $0) } as Any
@@ -143,6 +145,7 @@ final class HousePaymentRemoteStore {
                         typeRaw: typeRaw,
                         subtypeRaw: d["subtypeRaw"] as? String,
                         importo: importo,
+                        linkedExpenseId: d["linkedExpenseId"] as? String,
                         giornoDiScadenzaMensile: giorno,
                         dataScadenza: (d["dataScadenza"] as? Timestamp)?.dateValue(),
                         dataScadenzaContratto: (d["dataScadenzaContratto"] as? Timestamp)?.dateValue(),

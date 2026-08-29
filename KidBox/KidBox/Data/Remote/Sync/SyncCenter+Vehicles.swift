@@ -362,6 +362,7 @@ extension SyncCenter {
                         existing.date = dto.date
                         existing.km = dto.km
                         existing.cost = dto.cost
+                        existing.linkedExpenseId = dto.linkedExpenseId
                         existing.garageName = dto.garageName
                         existing.notes = dto.notes
                         existing.isDeleted = false
@@ -393,6 +394,7 @@ extension SyncCenter {
                             createdBy: dto.createdBy ?? "",
                             updatedBy: dto.updatedBy ?? ""
                         )
+                        row.linkedExpenseId = dto.linkedExpenseId
                         row.syncState = .synced
                         modelContext.insert(row)
                         KBLog.sync.kbDebug("[vehicleEvent][inbound] CREATED id=\(dto.id)")

@@ -20,6 +20,7 @@ struct VehicleEventRemoteDTO {
     let date: Date
     let km: Int?
     let cost: Double?
+    let linkedExpenseId: String?
     let garageName: String?
     let notes: String?
     let isDeleted: Bool
@@ -78,6 +79,7 @@ final class VehicleEventRemoteStore {
 
         data["km"] = item.km as Any
         data["cost"] = item.cost as Any
+        data["linkedExpenseId"] = item.linkedExpenseId as Any
         data["garageName"] = item.garageName as Any
         data["notes"] = item.notes as Any
 
@@ -165,6 +167,7 @@ final class VehicleEventRemoteStore {
                         date: date,
                         km: km,
                         cost: cost,
+                        linkedExpenseId: d["linkedExpenseId"] as? String,
                         garageName: d["garageName"] as? String,
                         notes: d["notes"] as? String,
                         isDeleted: d["isDeleted"] as? Bool ?? false,

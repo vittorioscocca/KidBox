@@ -72,9 +72,11 @@ struct ExpensesHomeView: View {
                         // Summary card
                         TotalSummaryCard(vm: vm)
 
-                        // Bar chart
+                        // Due grafici, non due card: sono la stessa domanda
+                        // ("quanto spendiamo") vista in due modi, e affiancarle
+                        // in verticale avrebbe allungato la pagina per niente.
                         if !vm.monthlyBars.isEmpty {
-                            MonthlyBarChartView(vm: vm)
+                            ExpenseChartsCarousel(vm: vm)
                         }
 
                         // Category breakdown
@@ -203,7 +205,9 @@ struct ExpensesHomeView: View {
 
 // MARK: - Period Picker
 
-private struct PeriodPickerView: View {
+/// Non più `private`: la usa anche `AllExpensesView`, che è la stessa lista
+/// senza il tetto delle quattro righe.
+struct PeriodPickerView: View {
     @ObservedObject var vm: ExpensesViewModel
     
     var body: some View {
@@ -356,6 +360,118 @@ private struct MonthlyBarChartView: View {
     }
 }
 
+// MARK: - Carosello grafici
+
+/// Due pagine: l'andamento mese per mese e la media mensile del periodo scelto.
+private struct ExpenseChartsCarousel: View {
+    @ObservedObject var vm: ExpensesViewModel
+    @State private var page = 0
+
+    var body: some View {
+        VStack(spacing: 8) {
+            TabView(selection: $page) {
+                MonthlyBarChartView(vm: vm).tag(0)
+                MonthlyAverageChartView(vm: vm).tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            // Altezza fissa: dentro uno `ScrollView` un `TabView` senza misura
+            // collassa a zero.
+            .frame(height: 300)
+
+            HStack(spacing: 6) {
+                ForEach(0..<2, id: \.self) { index in
+                    Circle()
+                        .fill(index == page ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .frame(width: 7, height: 7)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Media mensile
+
+private struct MonthlyAverageChartView: View {
+    @ObservedObject var vm: ExpensesViewModel
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var cardBg: Color {
+        colorScheme == .dark ? Color(red: 0.18, green: 0.18, blue: 0.18) : .white
+    }
+
+    /// La media si calcola sui mesi del periodo scelto, compresi quelli a zero:
+    /// un mese senza spese è un mese in cui non si è speso, non un mese che non
+    /// esiste, e ignorarlo gonfierebbe la media.
+    private var average: Double {
+        guard !vm.monthlyBars.isEmpty else { return 0 }
+        return vm.monthlyBars.reduce(0) { $0 + $1.total } / Double(vm.monthlyBars.count)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Media mensile", systemImage: "chart.line.uptrend.xyaxis")
+                    .font(.headline)
+                Spacer()
+                Text(average.formatted(.currency(code: "EUR").precision(.fractionLength(0))))
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.accentColor)
+            }
+
+            Chart {
+                ForEach(vm.monthlyBars) { bar in
+                    LineMark(
+                        x: .value("Mese", bar.label),
+                        y: .value("Importo", bar.total)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(Color.accentColor)
+
+                    PointMark(
+                        x: .value("Mese", bar.label),
+                        y: .value("Importo", bar.total)
+                    )
+                    .foregroundStyle(Color.accentColor)
+                }
+
+                // La linea della media: serve a vedere quali mesi stanno sopra.
+                RuleMark(y: .value("Media", average))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                    .foregroundStyle(.secondary)
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { val in
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
+                    AxisValueLabel {
+                        if let v = val.as(Double.self) {
+                            Text(v.kbCompact).font(.caption2)
+                        }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks { val in
+                    AxisValueLabel {
+                        if let s = val.as(String.self) {
+                            Text(s).font(.caption2).lineLimit(1)
+                        }
+                    }
+                }
+            }
+            .frame(height: 200)
+
+            Text("Media dei mesi nel periodo scelto.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+}
+
 // MARK: - Category Breakdown
 
 private struct CategoryBreakdownView: View {
@@ -456,7 +572,10 @@ private struct CategoryBreakdownView: View {
 
 // MARK: - Expense List Section
 
-private struct ExpenseListSection: View {
+struct ExpenseListSection: View {
+    /// Quante spese stanno in home prima di "Vedi tutte".
+    static let previewCount = 4
+
     @ObservedObject var vm: ExpensesViewModel
     @Environment(\.colorScheme) private var colorScheme
     @State private var showDeleteConfirm = false
@@ -515,13 +634,36 @@ private struct ExpenseListSection: View {
                     action: { vm.showAddExpense = true }
                 )
             } else {
+                // In home solo le ultime quattro: l'elenco completo di un anno
+                // di spese farebbe scorrere questa pagina per minuti, e sopra
+                // ci sono i totali che si vengono a vedere.
+                let preview = Array(vm.expenses.prefix(Self.previewCount))
                 VStack(spacing: 0) {
-                    ForEach(vm.expenses) { expense in
+                    ForEach(preview) { expense in
                         ExpenseRowView(expense: expense, vm: vm)
-                        if expense.id != vm.expenses.last?.id {
+                        if expense.id != preview.last?.id {
                             Divider().padding(.leading, vm.isSelecting ? 68 : 56)
                         }
                     }
+                }
+
+                if vm.expenses.count > Self.previewCount, !vm.isSelecting {
+                    Divider().padding(.leading, 56)
+                    NavigationLink {
+                        AllExpensesView(vm: vm)
+                    } label: {
+                        HStack {
+                            Text("Vedi tutte (\(vm.expenses.count))")
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             
@@ -594,7 +736,7 @@ private struct ExpenseListSection: View {
 
 // MARK: - Expense Row
 
-private struct ExpenseRowView: View {
+struct ExpenseRowView: View {
     let expense: KBExpense
     @ObservedObject var vm: ExpensesViewModel
     @EnvironmentObject private var coordinator: AppCoordinator

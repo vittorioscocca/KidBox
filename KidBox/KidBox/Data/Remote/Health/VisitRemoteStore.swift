@@ -27,6 +27,8 @@ struct RemoteVisitDTO {
     let prescribedExamsData:    Data?
     let photoURLs:              [String]
     let notes:                  String?
+    let cost:                   Double?
+    let linkedExpenseId:        String?
     let nextVisitDate:          Date?
     let nextVisitReason:        String?
     /// Valore coerente con `KBVisitStatus.rawValue` (etichette italiane) dopo normalizzazione da Firestore.
@@ -105,6 +107,8 @@ final class VisitRemoteStore {
         if let v = dto.diagnosis               { data["diagnosis"]               = v }
         if let v = dto.recommendations         { data["recommendations"]         = v }
         if let v = dto.notes                   { data["notes"]                   = v }
+        if let v = dto.cost                    { data["cost"]                    = v }
+        if let v = dto.linkedExpenseId         { data["linkedExpenseId"]         = v }
         if let v = dto.nextVisitDate           { data["nextVisitDate"]           = Timestamp(date: v) }
         if let v = dto.nextVisitReason         { data["nextVisitReason"]         = v }
         if let v = dto.createdBy               { data["createdBy"]               = v }
@@ -205,6 +209,8 @@ final class VisitRemoteStore {
             prescribedExamsData:     data64("prescribedExamsData"),
             photoURLs:               photoURLs,
             notes:                   d["notes"]                   as? String,
+            cost:                    (d["cost"] as? NSNumber)?.doubleValue,
+            linkedExpenseId:         d["linkedExpenseId"]         as? String,
             nextVisitDate:           (d["nextVisitDate"]          as? Timestamp)?.dateValue(),
             nextVisitReason:         d["nextVisitReason"]         as? String,
             visitStatusRaw:          visitStatusRaw,

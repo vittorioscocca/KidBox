@@ -52,6 +52,9 @@ final class KBMedicalExam {
     var deadline:                     Date?
     var preparation:                  String?
     var notes:                        String?
+    /// Costo dell'esame. Quando c'è, genera la voce in Spese famiglia.
+    var cost:                         Double?
+    var linkedExpenseId:              String?
     var location:                     String?   // ← NUOVO: luogo dell'esame
     
     // Status lifecycle
@@ -137,6 +140,8 @@ struct KBMedicalExamDTO {
     let deadline:           Date?
     let preparation:        String?
     let notes:              String?
+    let cost:               Double?
+    let linkedExpenseId:    String?
     let location:           String?   // ← NUOVO
     let statusRaw:          String
     let resultText:         String?
@@ -160,6 +165,8 @@ extension KBMedicalExam {
             deadline:           deadline,
             preparation:        preparation,
             notes:              notes,
+            cost:               cost,
+            linkedExpenseId:    linkedExpenseId,
             location:           location,
             statusRaw:          statusRaw,
             resultText:         resultText,

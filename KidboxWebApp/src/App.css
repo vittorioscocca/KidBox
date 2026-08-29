@@ -117,28 +117,7 @@
   max-width: 320px;
 }
 
-.dashboard {
-  max-width: 480px;
-  margin: 4rem auto;
-  padding: 0 1.5rem;
-}
 
-.dashboard header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-
-.dashboard button {
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  font-family: inherit;
-}
 
 .loading {
   min-height: 100vh;

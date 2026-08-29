@@ -54,14 +54,27 @@ final class LocationRemoteStore {
         uid: String,
         location: CLLocation
     ) async {
+        // La batteria viaggia dentro questa stessa scrittura: nessun documento
+        // nuovo, nessuna scrittura in più, nessun tocco al documento di stato
+        // (che è quello osservato dalle Cloud Functions).
+        let battery = await DeviceBattery.snapshot()
+
+        var payload: [String: Any] = [
+            "lat": location.coordinate.latitude,
+            "lon": location.coordinate.longitude,
+            "accuracy": location.horizontalAccuracy,
+            "lastUpdateAt": FieldValue.serverTimestamp()
+        ]
+        // Il campo si omette quando il livello non è noto: scrivere un valore
+        // finto farebbe apparire in mappa una percentuale inventata.
+        if let percentage = battery.percentage {
+            payload["battery"] = percentage
+            payload["batteryCharging"] = battery.isCharging
+        }
+
         do {
             try await liveLocationRef(familyId: familyId, uid: uid)
-                .setData([
-                    "lat": location.coordinate.latitude,
-                    "lon": location.coordinate.longitude,
-                    "accuracy": location.horizontalAccuracy,
-                    "lastUpdateAt": FieldValue.serverTimestamp()
-                ], merge: true)
+                .setData(payload, merge: true)
         } catch {
             KBLog.app.kbError("LocationRemoteStore updateLocation failed: \(error.localizedDescription)")
         }
@@ -113,7 +126,7 @@ final class LocationRemoteStore {
 
         var statusByUid: [String: Status] = [:]
         var coordListeners: [String: ListenerRegistration] = [:]
-        var coordByUid: [String: (lat: Double, lon: Double)] = [:]
+        var coordByUid: [String: (lat: Double, lon: Double, battery: Int?, charging: Bool)] = [:]
 
         // Riferimenti catturati come valori: le closure dei listener vivono
         // finché non si chiama `remove()`, e catturare `self` terrebbe in vita
@@ -135,7 +148,9 @@ final class LocationRemoteStore {
                     longitude: coord.lon,
                     mode: status.mode,
                     expiresAt: status.expiresAt,
-                    avatarURL: status.avatarURL
+                    avatarURL: status.avatarURL,
+                    batteryLevel: coord.battery,
+                    isCharging: coord.charging
                 )
             }
             onChange(users)
@@ -166,7 +181,21 @@ final class LocationRemoteStore {
                             emit()
                             return
                         }
-                        coordByUid[uid] = (lat, lon)
+                        // `as? Int` da solo non basta: il numero arriva come
+                        // `NSNumber`, e a seconda di come l'ha scritto il
+                        // dispositivo che condivide (iOS o Android) il cast
+                        // diretto può non riuscire.
+                        let battery = (data["battery"] as? NSNumber)?.intValue
+                            ?? (data["battery"] as? Int)
+
+                        coordByUid[uid] = (
+                            lat,
+                            lon,
+                            battery,
+                            (data["batteryCharging"] as? NSNumber)?.boolValue
+                                ?? (data["batteryCharging"] as? Bool)
+                                ?? false
+                        )
                         emit()
                     }
                 coordListeners[uid] = reg

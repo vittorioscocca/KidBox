@@ -108,6 +108,8 @@ extension SyncCenter {
                             createdBy:       dto.createdBy ?? dto.updatedBy
                         )
                         v.id                      = dto.id
+                        v.cost                    = dto.cost
+                        v.linkedExpenseId         = dto.linkedExpenseId
                         v.doctorSpecializationRaw = dto.doctorSpecializationRaw
                         v.linkedTreatmentIds      = dto.linkedTreatmentIds
                         v.linkedExamIds           = dto.linkedExamIds
@@ -157,6 +159,8 @@ extension SyncCenter {
         local.prescribedExamsData     = dto.prescribedExamsData
         local.photoURLs               = dto.photoURLs
         local.notes                   = dto.notes
+        local.cost                    = dto.cost
+        local.linkedExpenseId         = dto.linkedExpenseId
         local.nextVisitDate           = dto.nextVisitDate
         local.nextVisitReason         = dto.nextVisitReason
         local.visitStatusRaw          = dto.visitStatusRaw
@@ -215,6 +219,8 @@ extension SyncCenter {
                 prescribedExamsData:     v.prescribedExamsData,
                 photoURLs:               v.photoURLs,
                 notes:                   v.notes,
+                cost:                    v.cost,
+                linkedExpenseId:         v.linkedExpenseId,
                 nextVisitDate:           v.nextVisitDate,
                 nextVisitReason:         v.nextVisitReason,
                 visitStatusRaw:          v.visitStatusRaw,

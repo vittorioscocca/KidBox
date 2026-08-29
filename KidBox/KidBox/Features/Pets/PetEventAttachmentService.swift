@@ -16,6 +16,16 @@ import QuickLook
 
 // MARK: - Tags (notes su KBDocument)
 
+/// Allegati della scheda animale: libretto sanitario, pedigree, microchip.
+/// Vivono nella stessa cartella degli allegati degli eventi — per chi guarda
+/// Documenti sono la stessa cosa, roba dell'animale.
+enum PetAttachmentTag {
+    static func make(_ petId: String) -> String { "pet:\(petId)" }
+    static func matches(_ doc: KBDocument, petId: String) -> Bool {
+        doc.notes == make(petId) && !doc.isDeleted
+    }
+}
+
 enum PetEventAttachmentTag {
     static func make(_ eventId: String) -> String { "petEvent:\(eventId)" }
     static func matches(_ doc: KBDocument, eventId: String) -> Bool {
@@ -85,6 +95,13 @@ final class PetEventAttachmentService {
                         }
                     }
                 }
+                if case .petAttachmentPending(let urls, let petId, let familyId) = event {
+                    Task {
+                        for url in urls {
+                            _ = await self.uploadPet(url: url, petId: petId, familyId: familyId, modelContext: modelContext)
+                        }
+                    }
+                }
             }
             .store(in: &cancellables)
     }
@@ -100,6 +117,21 @@ final class PetEventAttachmentService {
             familyId: familyId,
             notesTag: PetEventAttachmentTag.make(eventId),
             storageScope: "pet-event-attachments/\(eventId)",
+            modelContext: modelContext
+        )
+    }
+
+    func uploadPet(
+        url: URL,
+        petId: String,
+        familyId: String,
+        modelContext: ModelContext
+    ) async -> KBDocument? {
+        await uploadCommon(
+            url: url,
+            familyId: familyId,
+            notesTag: PetAttachmentTag.make(petId),
+            storageScope: "pet-attachments/\(petId)",
             modelContext: modelContext
         )
     }
@@ -239,6 +271,22 @@ final class PetEventAttachmentService {
         }
     }
 
+    func fetchPetAttachments(petId: String, familyId: String, modelContext: ModelContext) -> [KBDocument] {
+        let fid = familyId
+        let desc = FetchDescriptor<KBDocument>(
+            predicate: #Predicate<KBDocument> { $0.familyId == fid && $0.isDeleted == false },
+            sortBy: [SortDescriptor(\KBDocument.createdAt, order: .reverse)]
+        )
+        let all = (try? modelContext.fetch(desc)) ?? []
+        return all.filter { PetAttachmentTag.matches($0, petId: petId) }
+    }
+
+    func deleteAllForPet(petId: String, familyId: String, modelContext: ModelContext) {
+        for d in fetchPetAttachments(petId: petId, familyId: familyId, modelContext: modelContext) {
+            delete(d, modelContext: modelContext)
+        }
+    }
+
     func fetchPetEventAttachments(eventId: String, familyId: String, modelContext: ModelContext) -> [KBDocument] {
         let fid = familyId
         let desc = FetchDescriptor<KBDocument>(
@@ -298,8 +346,21 @@ final class PetEventAttachmentService {
 
 // MARK: - UI allegati evento animale
 
+/// A chi appartengono gli allegati mostrati dalla sezione.
+enum PetAttachmentSubject: Equatable {
+    case pet(String)
+    case event(String)
+
+    var tag: String {
+        switch self {
+        case .pet(let id):   return PetAttachmentTag.make(id)
+        case .event(let id): return PetEventAttachmentTag.make(id)
+        }
+    }
+}
+
 struct PetEventAttachmentsSection: View {
-    let eventId: String
+    let subject: PetAttachmentSubject
     let familyId: String
 
     @Environment(\.modelContext) private var modelContext
@@ -321,8 +382,8 @@ struct PetEventAttachmentsSection: View {
     private let tint = Color(hex: "#FF6B00") ?? .orange
     private let service = PetEventAttachmentService.shared
 
-    init(eventId: String, familyId: String) {
-        self.eventId = eventId
+    init(subject: PetAttachmentSubject, familyId: String) {
+        self.subject = subject
         self.familyId = familyId
         let fid = familyId
         _attachments = Query(
@@ -334,7 +395,8 @@ struct PetEventAttachmentsSection: View {
     }
 
     private var rows: [KBDocument] {
-        attachments.filter { PetEventAttachmentTag.matches($0, eventId: eventId) }
+        let tag = subject.tag
+        return attachments.filter { $0.notes == tag && !$0.isDeleted }
     }
 
     var body: some View {
@@ -435,7 +497,14 @@ struct PetEventAttachmentsSection: View {
             Text("Chiave di crittografia non trovata. Verifica le impostazioni famiglia.")
         }
         .onReceive(KBEventBus.shared.stream) { (event: KBAppEvent) in
-            if case .petEventAttachmentPending(_, let eid, _) = event, eid == eventId {
+            let isMine: Bool = {
+                switch (event, subject) {
+                case (.petEventAttachmentPending(_, let eid, _), .event(let id)): return eid == id
+                case (.petAttachmentPending(_, let pid, _), .pet(let id)):        return pid == id
+                default: return false
+                }
+            }()
+            if isMine {
                 isUploading = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) { isUploading = false }
             }
@@ -445,7 +514,12 @@ struct PetEventAttachmentsSection: View {
 
     private func emitUpload(urls: [URL]) {
         isUploading = true
-        KBEventBus.shared.emit(KBAppEvent.petEventAttachmentPending(urls: urls, eventId: eventId, familyId: familyId))
+        switch subject {
+        case .pet(let id):
+            KBEventBus.shared.emit(KBAppEvent.petAttachmentPending(urls: urls, petId: id, familyId: familyId))
+        case .event(let id):
+            KBEventBus.shared.emit(KBAppEvent.petEventAttachmentPending(urls: urls, eventId: id, familyId: familyId))
+        }
     }
 
     private func saveImageToTemp(_ image: UIImage) -> URL? {

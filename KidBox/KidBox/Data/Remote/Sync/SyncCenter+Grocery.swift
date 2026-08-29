@@ -153,6 +153,7 @@ extension SyncCenter {
                         existing.name        = dto.name
                         existing.category    = dto.category
                         existing.notes       = dto.notes
+                        existing.quantity    = dto.quantity
                         existing.isPurchased = dto.isPurchased
                         existing.isDeleted   = false
                         existing.purchasedAt = dto.purchasedAt
@@ -173,6 +174,7 @@ extension SyncCenter {
                             name: dto.name,
                             category: dto.category,
                             notes: dto.notes,
+                            quantity: dto.quantity,
                             isPurchased: dto.isPurchased,
                             purchasedAt: dto.purchasedAt,
                             purchasedBy: dto.purchasedBy,

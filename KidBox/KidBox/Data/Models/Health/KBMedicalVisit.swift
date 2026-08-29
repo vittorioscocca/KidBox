@@ -34,6 +34,9 @@ final class KBMedicalVisit {
     // MARK: Step 4 · Foto & Appunti
     var photoURLs: [String]
     var notes: String?
+    /// Costo della visita. Quando c'è, genera la voce in Spese famiglia.
+    var cost: Double?
+    var linkedExpenseId: String?
     
     // MARK: Step 5 · Prossima visita
     var nextVisitDate: Date?

@@ -84,6 +84,12 @@ struct PetDetailView: View {
                             }
                             .background(cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
+
+                        // In fondo come su Android: sopra c'è quello che si
+                        // consulta ogni giorno, gli allegati si cercano quando
+                        // servono. Finiscono in Documenti › Animali domestici,
+                        // la stessa cartella degli allegati degli eventi.
+                        PetEventAttachmentsSection(subject: .pet(p.id), familyId: familyId)
                     }
                     .padding()
                 }
@@ -356,8 +362,16 @@ struct PetDetailView: View {
             ev.updatedAt = now
             ev.updatedBy = uid
             ev.syncState = .pendingDelete
+            PetEventAttachmentService.shared.deleteAllForPetEvent(
+                eventId: ev.id, familyId: familyId, modelContext: modelContext
+            )
             SyncCenter.shared.enqueuePetEventDelete(eventId: ev.id, familyId: familyId, modelContext: modelContext)
         }
+        // Gli allegati se ne vanno con l'animale: da soli resterebbero in
+        // Documenti senza più niente che li spieghi.
+        PetEventAttachmentService.shared.deleteAllForPet(
+            petId: p.id, familyId: familyId, modelContext: modelContext
+        )
         p.isDeleted = true
         p.updatedAt = now
         p.updatedBy = uid

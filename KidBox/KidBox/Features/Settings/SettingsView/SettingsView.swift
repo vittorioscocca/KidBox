@@ -41,6 +41,13 @@ struct SettingsView: View {
     
     var body: some View {
         List {
+            // La famiglia sta in una card sua, sopra l'elenco: è la prima cosa
+            // che si viene a cercare qui, e una riga fra le altre non lo diceva.
+            Section {
+                SettingsFamilyCard()
+                    .listRowBackground(cardBackground)
+            }
+
             NavigationLink {
                 AppearanceSettingsView()
             } label: {
@@ -77,22 +84,6 @@ struct SettingsView: View {
             }
             .listRowBackground(cardBackground)
 
-            Button {
-                KBLog.navigation.kbDebug("Settings -> Family settings tap")
-                coordinator.navigate(to: .familySettings)
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "person.2.fill")
-                        .foregroundStyle(KBTheme.bubbleTint)
-                        .frame(width: 22)
-                    Text("Impostazioni famiglia")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                }
-            }
-            .accessibilityLabel("Apri impostazioni famiglia")
-            .listRowBackground(cardBackground)
-            
             NavigationLink {
                 MessageSettingsView()
             } label: {

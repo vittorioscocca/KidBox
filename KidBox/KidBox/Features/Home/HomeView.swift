@@ -48,6 +48,7 @@ struct HomeView: View {
     
     // Picker + cropper
     @State private var showHeroPicker = false
+    @State private var showQuickInvite = false
     @State private var pickedHeroItem: PhotosPickerItem?
     @State private var pendingHeroImageData: Data?
     @State private var showHeroCropper = false
@@ -68,6 +69,11 @@ struct HomeView: View {
 
     /// Vista Home: lista raggruppata o griglia di card riordinabili. Preferenza locale al dispositivo.
     @AppStorage("kb_homeLayoutMode") private var homeLayoutMode: HomeLayoutMode = .list
+
+    /// Dashboard in Home: spenta di default. Chi la vuole la accende da
+    /// Impostazioni > Tema > Home. Preferenza locale al dispositivo, come il
+    /// selettore lista/griglia.
+    @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
 
     // MARK: - Home carousel (foto famiglia + slide promozionali), circolare
     @State private var homeCarouselIndex: Int = 0
@@ -235,7 +241,8 @@ struct HomeView: View {
                 scale: activeFamily?.heroPhotoScale ?? 1.0,
                 offsetX: activeFamily?.heroPhotoOffsetX ?? 0.0,
                 offsetY: activeFamily?.heroPhotoOffsetY ?? 0.0,
-                isBusy: isUploadingHero
+                isBusy: isUploadingHero,
+                onInvite: hasFamily ? { showQuickInvite = true } : nil
             ) {
                 if hasFamily {
                     KBLog.navigation.kbDebug("Home: tap hero -> open picker familyId=\(activeFamilyId)")
@@ -397,6 +404,17 @@ struct HomeView: View {
                         homeCarouselDots
                     }
 
+                    // Riepilogo: cosa c'è dentro le sezioni, prima delle sezioni.
+                    // Vale per entrambe le modalità, lista e griglia.
+                    // Finché la checklist è viva resta fuori, come le slide
+                    // promozionali: una famiglia appena creata avrebbe sei
+                    // tessere vuote proprio dove le serve una spinta.
+                    if showHomeDashboard, hasFamily, !onboarding.isVisible {
+                        HomeSummaryGrid(familyId: activeFamilyId) { destination in
+                            navigate(to: destination)
+                        }
+                    }
+
                     // Sopra le sezioni, non in fondo: il senso della checklist è
                     // farsi vedere da chi apre la Home e non sa da dove partire.
                     if onboarding.isVisible {
@@ -550,6 +568,10 @@ struct HomeView: View {
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             Task { await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId) }
+        }
+        // ✅ Invito rapido dal "+" sulla foto di famiglia
+        .sheet(isPresented: $showQuickInvite) {
+            QuickInviteSheet(modelContext: modelContext, coordinator: coordinator)
         }
         // ✅ Picker
         .photosPicker(isPresented: $showHeroPicker, selection: $pickedHeroItem, matching: .images)
@@ -831,7 +853,7 @@ final class LocationSharingObserver: ObservableObject {
     }
 }
 
-private enum HomeCardID: String, CaseIterable, Codable {
+enum HomeCardID: String, CaseIterable, Codable {
     case note
     case todo
     case shopping
@@ -919,6 +941,15 @@ private struct HomeCardGrid: View {
     }
     
     var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HomeEyebrow("Sezioni")
+            grid
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Elenco piatto: l'ordine lo decide chi trascina, non i gruppi tematici.
+    private var grid: some View {
         LazyVGrid(columns: columns, spacing: 12) {
             ForEach(visibleOrder, id: \.self) { id in
                 cardView(for: id)
@@ -1422,9 +1453,29 @@ private struct HeroCropperSheet: View {
     }
 }
 
+// MARK: - Occhiello di sezione
+
+/// L'etichettina maiuscola che intitola i blocchi della Home (SCORCIATOIE,
+/// ORGANIZZAZIONE, DASHBOARD, SEZIONI). Sta qui perché la usano tre viste
+/// diverse e devono restare identiche.
+struct HomeEyebrow: View {
+    let text: LocalizedStringKey
+
+    init(_ text: LocalizedStringKey) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .textCase(.uppercase)
+            .font(.system(size: 11, weight: .heavy))
+            .kerning(0.8)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 2)
+    }
+}
+
 // MARK: - Home category metadata (variante C)
 
-private struct HomeCatMeta {
+struct HomeCatMeta {
     let id: HomeCardID
     let title: LocalizedStringKey
     let short: LocalizedStringKey
@@ -1434,7 +1485,7 @@ private struct HomeCatMeta {
     let usageKey: String?
 }
 
-private enum HomeCatalog {
+enum HomeCatalog {
     static func meta(_ id: HomeCardID) -> HomeCatMeta {
         switch id {
         case .note:      return .init(id: id, title: "Note", short: "Note", symbol: "note.text", tint: .yellow, usageKey: "note")
@@ -1601,12 +1652,7 @@ private struct HomeCategoryList: View {
     // MARK: Sub-views
 
     private func eyebrow(_ text: LocalizedStringKey) -> some View {
-        Text(text)
-            .textCase(.uppercase)
-            .font(.system(size: 11, weight: .heavy))
-            .kerning(0.8)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 2)
+        HomeEyebrow(text)
     }
 
     private func shortcut(_ meta: HomeCatMeta) -> some View {

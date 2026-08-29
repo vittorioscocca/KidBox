@@ -142,6 +142,7 @@ enum ModelContainerProvider {
             KBSyncOp.self,
             KBChatMessage.self,
             KBGroceryItem.self,
+            KBShoppingTrip.self,
             KBNote.self,
             KBTreatment.self,
             KBMedicalVisit.self,

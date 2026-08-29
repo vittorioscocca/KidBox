@@ -25,6 +25,8 @@ final class KBHousePayment {
     var dataScadenzaContratto: Date?
     var fornitore: String?
     var note: String?
+    /// La spesa creata in Spese famiglia quando la scadenza ha un importo.
+    var linkedExpenseId: String?
 
     var reminderOn: Bool
 

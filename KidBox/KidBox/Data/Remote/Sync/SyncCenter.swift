@@ -79,6 +79,7 @@ final class SyncCenter: ObservableObject {
     private var todoListListener: ListenerRegistration?
     private var membersListener: ListenerRegistration?
     var groceryListener: ListenerRegistration?
+    var shoppingTripListener: ListenerRegistration?
     var notesListener: ListenerRegistration?
     var treatmentListener: ListenerRegistration?
     var doseLogListener:   ListenerRegistration?
@@ -995,6 +996,15 @@ final class SyncCenter: ObservableObject {
                 try await processVehicle(op: op, modelContext: modelContext)
             case SyncEntityType.vehicleEvent.rawValue:
                 try await processVehicleEvent(op: op, modelContext: modelContext)
+
+                // Anche se lista spesa e spese fatte hanno un flush dedicato,
+                // il flush globale deve saperle gestire: senza questi due casi
+                // le operazioni restano in coda a fallire con "Unknown
+                // entityType" a ogni giro.
+            case SyncEntityType.grocery.rawValue:
+                try await processGrocery(op: op, modelContext: modelContext)
+            case SyncEntityType.shoppingTrip.rawValue:
+                try await processShoppingTrip(op: op, modelContext: modelContext)
                 
                 // MARK: - Photos (SyncCenter+Photos.swift)
             case "photo", "photoAlbum":

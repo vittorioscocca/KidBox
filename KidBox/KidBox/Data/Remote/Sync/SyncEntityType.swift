@@ -32,4 +32,5 @@ enum SyncEntityType: String {
     case housePayment = "housePayment"
     case vehicle = "vehicle"
     case vehicleEvent = "vehicleEvent"
+    case shoppingTrip = "shoppingTrip"
 }

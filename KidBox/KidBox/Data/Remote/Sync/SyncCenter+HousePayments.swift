@@ -146,6 +146,7 @@ extension SyncCenter {
                         existing.typeRaw = dto.typeRaw
                         existing.subtypeRaw = dto.subtypeRaw
                         existing.importo = dto.importo
+                        existing.linkedExpenseId = dto.linkedExpenseId
                         existing.giornoDiScadenzaMensile = dto.giornoDiScadenzaMensile
                         existing.dataScadenza = dto.dataScadenza
                         existing.dataScadenzaContratto = dto.dataScadenzaContratto
@@ -184,6 +185,7 @@ extension SyncCenter {
                             createdBy: dto.createdBy ?? "",
                             updatedBy: dto.updatedBy ?? ""
                         )
+                        row.linkedExpenseId = dto.linkedExpenseId
                         row.syncState = .synced
                         modelContext.insert(row)
                         KBLog.sync.kbDebug("[housePayment][inbound] CREATED id=\(dto.id)")

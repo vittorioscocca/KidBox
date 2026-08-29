@@ -13,6 +13,10 @@ struct AppearanceSettingsView: View {
     @EnvironmentObject private var coordinator: AppCoordinator
     @StateObject private var vm = SettingsViewModel()
     @Environment(\.colorScheme) private var colorScheme
+
+    /// Dashboard in Home: spenta di default, come l'ha voluta chi ha già
+    /// imparato la Home di oggi. Stessa chiave letta da `HomeView`.
+    @AppStorage(KBHomeDashboardPreference.key) private var showHomeDashboard = false
     
     // MARK: - Dynamic theme (same as LoginView)
     
@@ -30,30 +34,48 @@ struct AppearanceSettingsView: View {
     
     var body: some View {
         List {
-            ForEach(AppearanceMode.allCases) { mode in
-                Button {
-                    vm.setAppearanceMode(mode, coordinator: coordinator)
-                } label: {
+            Section {
+                ForEach(AppearanceMode.allCases) { mode in
+                    Button {
+                        vm.setAppearanceMode(mode, coordinator: coordinator)
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: mode.icon)
+                                .font(.title3)
+                                .foregroundStyle(KBTheme.bubbleTint)
+                                .frame(width: 28)
+
+                            Text(mode.label)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            if vm.appearanceMode == mode {
+                                Image(systemName: "checkmark")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(KBTheme.bubbleTint)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(cardBackground)
+                }
+            }
+
+            Section("Home") {
+                Toggle(isOn: $showHomeDashboard) {
                     HStack(spacing: 14) {
-                        Image(systemName: mode.icon)
+                        Image(systemName: "square.grid.2x2.fill")
                             .font(.title3)
                             .foregroundStyle(KBTheme.bubbleTint)
                             .frame(width: 28)
-                        
-                        Text(mode.label)
+
+                        Text("Visualizza Dashboard in home page")
                             .foregroundStyle(.primary)
-                        
-                        Spacer()
-                        
-                        if vm.appearanceMode == mode {
-                            Image(systemName: "checkmark")
-                                .font(.subheadline.bold())
-                                .foregroundStyle(KBTheme.bubbleTint)
-                        }
                     }
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .tint(KBTheme.bubbleTint)
                 .listRowBackground(cardBackground)
             }
         }

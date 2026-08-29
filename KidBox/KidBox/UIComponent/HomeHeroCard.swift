@@ -24,12 +24,18 @@ struct HomeHeroCard: View {
     let offsetY: Double
     
     let isBusy: Bool
+    /// Quando c'è, sulla foto compare il "+" che apre l'invito. `nil` finché
+    /// non c'è una famiglia: non si invita nessuno in una casa che non esiste.
+    var onInvite: (() -> Void)? = nil
     let action: () -> Void
     
     @StateObject private var loader = HeroImageLoader()
     
     var body: some View {
-        Button(action: action) {
+        // Niente `Button` attorno alla card: dentro ci vive il "+" dell'invito,
+        // e due bottoni annidati si contendono lo stesso tocco. Il tap sulla
+        // foto è una gesture, che il bottone interno intercetta per primo.
+        Group {
             ZStack(alignment: .topLeading) {
                 
                 if let ui = loader.image {
@@ -90,16 +96,32 @@ struct HomeHeroCard: View {
                                 .foregroundStyle(.white.opacity(0.90))
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            HStack(spacing: 8) {
-                                Image(systemName: "photo")
-                                Text(badgeText)
+                            HStack(spacing: 10) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "photo")
+                                    Text(badgeText)
+                                }
+                                .font(.subheadline).bold()
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(.white.opacity(0.18))
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                if let onInvite {
+                                    Button(action: onInvite) {
+                                        Image(systemName: "plus")
+                                            .font(.headline.weight(.bold))
+                                            .foregroundStyle(.white)
+                                            .frame(width: 40, height: 40)
+                                            .background(KBTheme.bubbleTint, in: Circle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Invita un familiare")
+                                }
+
+                                Spacer(minLength: 0)
                             }
-                            .font(.subheadline).bold()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(14)
@@ -136,7 +158,9 @@ struct HomeHeroCard: View {
             }
             
         }
-        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture(perform: action)
+        .accessibilityAddTraits(.isButton)
     }
 
     // Stessa dicitura dinamica del badge in basso: se non c'è ancora una foto

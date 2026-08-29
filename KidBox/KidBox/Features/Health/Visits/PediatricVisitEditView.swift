@@ -59,6 +59,7 @@ struct PediatricVisitEditView: View {
     
     // ── Step 4: Foto & Appunti ──
     @State private var notes = ""
+    @State private var costText = ""
     @State private var pendingAttachmentURLs:  [URL]  = []
     @State private var showAttachmentPicker   = false
     @State private var showAttachmentGallery  = false
@@ -702,6 +703,18 @@ struct PediatricVisitEditView: View {
                 sectionCard(icon: "square.and.pencil", title: "Appunti della Visita") {
                     TextField("Aggiungi note sulla visita...", text: $notes, axis: .vertical).lineLimit(4...8)
                 }
+                // Il costo genera la voce in Spese famiglia: si scrive qui, una
+                // volta sola, e non va riportato a mano fra le spese.
+                sectionCard(icon: "eurosign.circle", title: "Costo visita") {
+                    HStack {
+                        TextField("0,00", text: $costText)
+                            .keyboardType(.decimalPad)
+                        Text("€").foregroundStyle(.secondary)
+                    }
+                    Text("Se lo indichi, la visita compare anche in Spese famiglia.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(.vertical)
         }
@@ -894,6 +907,7 @@ struct PediatricVisitEditView: View {
         therapyTypes       = v.therapyTypes
         linkedExamIds      = v.linkedExamIds   // ← legge linkedExamIds da KBMedicalVisit
         notes              = v.notes ?? ""
+        costText = v.cost.map { KidBoxDecimalFormat.string(from: $0) } ?? ""
         hasNextVisit       = v.nextVisitDate != nil
         nextVisitDate      = v.nextVisitDate ?? Date()
         visitStatus        = v.visitStatus ?? .pending
@@ -901,6 +915,28 @@ struct PediatricVisitEditView: View {
         nextVisitReminder  = v.nextVisitReminderOn
     }
     
+    /// La visita che costa qualcosa è anche una spesa di famiglia, categoria
+    /// Salute. L'importo si scrive nella scheda, la voce in Spese si allinea.
+    private func linkVisitExpense(_ visit: KBMedicalVisit) {
+        let doctor = visit.doctorName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let reason = visit.reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = doctor.isEmpty ? reason : (reason.isEmpty ? doctor : "\(reason) — \(doctor)")
+
+        visit.linkedExpenseId = KBLinkedExpense.sync(
+            linkedExpenseId: visit.linkedExpenseId,
+            amount: visit.cost,
+            title: title,
+            fallbackTitle: String(localized: "Visita medica"),
+            date: visit.date,
+            notes: visit.notes,
+            categorySlug: "salute",
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        try? modelContext.save()
+        SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
+    }
+
     private func save() {
         isSaving = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
@@ -944,6 +980,7 @@ struct PediatricVisitEditView: View {
             v.therapyTypes       = therapyTypes
             v.linkedExamIds      = linkedExamIds
             v.notes              = notes.isEmpty ? nil : notes
+            v.cost               = KidBoxDecimalFormat.parse(costText)
             v.nextVisitDate      = hasNextVisit ? nextVisitDate : nil
             v.visitStatus        = visitStatus
             v.reminderOn         = visitReminderOn
@@ -953,6 +990,7 @@ struct PediatricVisitEditView: View {
             linkTreatmentsToVisit(vid)
             try? modelContext.save()
             SyncCenter.shared.enqueueVisitUpsert(visitId: v.id, familyId: familyId, modelContext: modelContext)
+            linkVisitExpense(v)
             SyncCenter.shared.flushGlobal(modelContext: modelContext)
             // Promemoria data visita — usa KBVisitReminderService (stesso pattern di KBExamReminderService)
             if visitReminderOn {
@@ -1010,11 +1048,13 @@ struct PediatricVisitEditView: View {
             nextVisitReminderOn: hasNextVisit && nextVisitReminder,
             createdAt:           now, updatedAt: now, updatedBy: uid, createdBy: uid
         )
+        visit.cost = KidBoxDecimalFormat.parse(costText)
         modelContext.insert(visit)
         linkExamsToVisit(visit.id)
         linkTreatmentsToVisit(visit.id)
         try? modelContext.save()
         SyncCenter.shared.enqueueVisitUpsert(visitId: visit.id, familyId: familyId, modelContext: modelContext)
+        linkVisitExpense(visit)
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         AppAnalytics.contentCreated(type: "health")
         if isFirstVisit {

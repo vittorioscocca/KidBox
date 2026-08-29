@@ -866,6 +866,28 @@
         }
       }
     },
+    "%lld da prendere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld to pick up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld por comprar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld à prendre"
+          }
+        }
+      }
+    },
     "%lld di %lld" : {
       "localizations" : {
         "en" : {
@@ -1182,24 +1204,6 @@
     },
     "%lld membri" : {
       "localizations" : {
-        "it" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld membro"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld membri"
-                }
-              }
-            }
-          }
-        },
         "en" : {
           "variations" : {
             "plural" : {
@@ -1213,6 +1217,24 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld members"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld miembro"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld miembros"
                 }
               }
             }
@@ -1236,19 +1258,19 @@
             }
           }
         },
-        "es" : {
+        "it" : {
           "variations" : {
             "plural" : {
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld miembro"
+                  "value" : "%lld membro"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld miembros"
+                  "value" : "%lld membri"
                 }
               }
             }
@@ -1308,16 +1330,16 @@
             "value" : "%lld one-time AI msg for the family"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld msg IA à vie pour la famille"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld msg IA por única vez para la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld msg IA à vie pour la famille"
           }
         }
       }
@@ -1385,6 +1407,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld pas"
+          }
+        }
+      }
+    },
+    "%lld presi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld taken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld comprados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pris"
           }
         }
       }
@@ -2880,16 +2924,16 @@
             "value" : "200 MB family storage"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "200 Mo de stockage familial"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "200 MB de almacenamiento familiar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "200 Mo de stockage familial"
           }
         }
       }
@@ -3022,6 +3066,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aa"
+          }
+        }
+      }
+    },
+    "Abbandona famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abandonar familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitter la famille"
           }
         }
       }
@@ -3491,6 +3557,7 @@
       }
     },
     "Acquistati (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5169,6 +5236,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter une zone"
+          }
+        }
+      }
+    },
+    "aggiunte ieri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "added yesterday"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "añadidas ayer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajoutées hier"
+          }
+        }
+      }
+    },
+    "aggiunte oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "added today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "añadidas hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ajoutées aujourd'hui"
           }
         }
       }
@@ -6880,6 +6991,7 @@
       }
     },
     "Apri impostazioni famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10139,6 +10251,28 @@
         }
       }
     },
+    "Chat di famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat de familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussion familiale"
+          }
+        }
+      }
+    },
     "Chat Salute AI" : {
       "localizations" : {
         "en" : {
@@ -10179,6 +10313,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Discutez avec votre famille en temps réel : texte, photos, audio, vidéo et réactions. Les conversations sont chiffrées de bout en bout et chaque membre voit les nouveaux messages immédiatement."
+          }
+        }
+      }
+    },
+    "Chi apre il link entra nella famiglia e riceve la chiave di cifratura." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Whoever opens the link joins the family and receives the encryption key."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quien abra el enlace entra en la familia y recibe la clave de cifrado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celui qui ouvre le lien rejoint la famille et reçoit la clé de chiffrement."
           }
         }
       }
@@ -12221,6 +12377,7 @@
       }
     },
     "Condivisa da" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13499,6 +13656,28 @@
         }
       }
     },
+    "Costo esame" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test cost"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coste de la prueba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût de l’examen"
+          }
+        }
+      }
+    },
     "Costo totale del viaggio" : {
       "localizations" : {
         "en" : {
@@ -13517,6 +13696,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coût total du voyage"
+          }
+        }
+      }
+    },
+    "Costo visita" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visit cost"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coste de la visita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût de la visite"
           }
         }
       }
@@ -13649,6 +13850,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Créez votre plan"
+          }
+        }
+      }
+    },
+    "Crea invito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create invite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear invitación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer une invitation"
           }
         }
       }
@@ -13981,6 +14204,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Créé : %@"
+          }
+        }
+      }
+    },
+    "Creazione invito…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating invite…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creando invitación…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Création de l’invitation…"
           }
         }
       }
@@ -14666,6 +14911,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "De"
+          }
+        }
+      }
+    },
+    "Dashboard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panel"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tableau de bord"
           }
         }
       }
@@ -16130,6 +16397,50 @@
         }
       }
     },
+    "domani" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tomorrow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mañana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "demain"
+          }
+        }
+      }
+    },
+    "domani %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tomorrow %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mañana %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "demain %@"
+          }
+        }
+      }
+    },
     "Domani alle %@ c'è \"%@\" per %@." : {
       "localizations" : {
         "en" : {
@@ -17499,6 +17810,7 @@
       }
     },
     "Eliminare la famiglia?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -18426,6 +18738,28 @@
         }
       }
     },
+    "Es. Conad, Esselunga…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Tesco, Lidl…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "P. ej. Mercadona, Lidl…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. Carrefour, Lidl…"
+          }
+        }
+      }
+    },
     "Es. Documenti identità" : {
       "localizations" : {
         "en" : {
@@ -18648,6 +18982,7 @@
       }
     },
     "Es. marca preferita, quantità…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -18665,6 +19000,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ex. marque préférée, quantité…"
+          }
+        }
+      }
+    },
+    "Es. marca preferita, scadenza…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. preferred brand, expiry…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "P. ej. marca preferida, caducidad…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. marque préférée, péremption…"
           }
         }
       }
@@ -18885,6 +19242,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Examen"
+          }
+        }
+      }
+    },
+    "Esame medico" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medical test"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba médica"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Examen médical"
           }
         }
       }
@@ -20884,6 +21263,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fournisseur"
+          }
+        }
+      }
+    },
+    "Fornitore / Banca" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provider / Bank"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proveedor / Banco"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fournisseur / Banque"
           }
         }
       }
@@ -23197,6 +23598,28 @@
         }
       }
     },
+    "Il link contiene la chiave: vale 24 ore e una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link carries the key: valid for 24 hours, once only."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El enlace contiene la clave: válido 24 horas y una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien contient la clé : valable 24 heures, une seule fois."
+          }
+        }
+      }
+    },
     "Il link contiene la chiave: vale 24 ore, una volta sola. Mandalo solo alla persona giusta." : {
       "localizations" : {
         "en" : {
@@ -25103,6 +25526,28 @@
         }
       }
     },
+    "Intervento auto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Car service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervención del coche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervention auto"
+          }
+        }
+      }
+    },
     "Intervento non trovato" : {
       "localizations" : {
         "en" : {
@@ -25253,6 +25698,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Envoyer au chat"
+          }
+        }
+      }
+    },
+    "Invia link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar enlace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer le lien"
           }
         }
       }
@@ -26185,6 +26652,28 @@
         }
       }
     },
+    "La chat è disattivata in Impostazioni → Messaggi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat is turned off in Settings → Messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El chat está desactivado en Ajustes → Mensajes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La discussion est désactivée dans Réglages → Messages."
+          }
+        }
+      }
+    },
     "La chiave viene letta dalla fotocamera: non passa da chat, email o backup." : {
       "localizations" : {
         "en" : {
@@ -26603,6 +27092,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La numérisation ne fonctionne pas ? Saisissez les données manuellement"
+          }
+        }
+      }
+    },
+    "La scelta vale su tutti i tuoi dispositivi. Gli altri membri continuano a scriversi e ritrovi i messaggi riattivandola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The choice applies to all your devices. Other members keep chatting with each other, and you'll find the messages again when you turn it back on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La elección se aplica a todos tus dispositivos. Los demás miembros siguen chateando entre ellos y recuperarás los mensajes al reactivarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le choix s'applique à tous vos appareils. Les autres membres continuent de discuter entre eux, et vous retrouverez les messages en la réactivant."
           }
         }
       }
@@ -28328,6 +28839,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moi"
+          }
+        }
+      }
+    },
+    "Media" : {
+
+    },
+    "Media dei mesi nel periodo scelto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average of the months in the selected period."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media de los meses del periodo elegido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyenne des mois de la période choisie."
+          }
+        }
+      }
+    },
+    "Media mensile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monthly average"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media mensual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyenne mensuelle"
           }
         }
       }
@@ -30813,6 +31371,28 @@
         }
       }
     },
+    "Nessun prodotto registrato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No items recorded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún producto registrado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun produit enregistré"
+          }
+        }
+      }
+    },
     "Nessun profilo disponibile" : {
       "localizations" : {
         "en" : {
@@ -31542,6 +32122,28 @@
         }
       }
     },
+    "Nessuna scadenza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No deadlines"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin vencimientos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune échéance"
+          }
+        }
+      }
+    },
     "Nessuna scheda disponibile per questa località." : {
       "localizations" : {
         "en" : {
@@ -31582,6 +32184,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune dépense"
+          }
+        }
+      }
+    },
+    "Nessuna spesa a %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No expenses in %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin gastos en %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense en %@"
+          }
+        }
+      }
+    },
+    "Nessuna spesa nel periodo scelto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No expenses in the selected period"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún gasto en el periodo elegido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense sur la période choisie"
+          }
+        }
+      }
+    },
+    "Nessuna spesa salvata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No shopping saved yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna compra guardada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune course enregistrée"
           }
         }
       }
@@ -31649,6 +32317,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun"
+          }
+        }
+      }
+    },
+    "Niente da fare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada que hacer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à faire"
+          }
+        }
+      }
+    },
+    "Niente da prendere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to pick up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada que comprar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à prendre"
+          }
+        }
+      }
+    },
+    "Niente di già preso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing taken yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada comprado todavía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien de déjà pris"
+          }
+        }
+      }
+    },
+    "Niente di recente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing recent"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada reciente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien de récent"
+          }
+        }
+      }
+    },
+    "Niente in agenda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing scheduled"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada en la agenda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à l'agenda"
+          }
+        }
+      }
+    },
+    "Niente in arrivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing coming up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada a la vista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à venir"
           }
         }
       }
@@ -32513,6 +33313,28 @@
         }
       }
     },
+    "Non indicato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not specified"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin indicar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non indiqué"
+          }
+        }
+      }
+    },
     "Non ora" : {
       "localizations" : {
         "en" : {
@@ -32619,6 +33441,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non précisé"
+          }
+        }
+      }
+    },
+    "Non stai condividendo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're not sharing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No estás compartiendo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne partagez pas"
           }
         }
       }
@@ -34653,6 +35497,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aujourd'hui"
+          }
+        }
+      }
+    },
+    "oggi %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hoy %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "aujourd'hui %@"
           }
         }
       }
@@ -36939,6 +37805,28 @@
         }
       }
     },
+    "Permette di abilitare/disabilitare la chat di famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lets you turn the family chat on or off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permite activar o desactivar el chat de familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet d'activer ou de désactiver la discussion familiale"
+          }
+        }
+      }
+    },
     "persona" : {
       "localizations" : {
         "en" : {
@@ -38201,6 +39089,28 @@
         }
       }
     },
+    "Presi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pris"
+          }
+        }
+      }
+    },
     "Pressione" : {
       "comment" : "Clinical topic: blood pressure",
       "localizations" : {
@@ -38552,6 +39462,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Problèmes et bugs"
+          }
+        }
+      }
+    },
+    "Prodotti (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Items (%lld)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Productos (%lld)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produits (%lld)"
+          }
+        }
+      }
+    },
+    "Prodotti presi (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Items taken (%lld)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Productos comprados (%lld)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produits pris (%lld)"
           }
         }
       }
@@ -38951,6 +39905,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prochaine échéance"
+          }
+        }
+      }
+    },
+    "Prossima scadenza annuale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next annual due date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximo vencimiento anual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prochaine échéance annuelle"
+          }
+        }
+      }
+    },
+    "Prossima scadenza mensile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next monthly due date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximo vencimiento mensual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prochaine échéance mensuelle"
           }
         }
       }
@@ -39618,6 +40616,28 @@
         }
       }
     },
+    "Quando spunti i prodotti e tocchi «Salva spesa», lo scontrino finisce qui: negozio, totale e cosa avevi preso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you tick items and tap “Save shopping”, the receipt lands here: shop, total and what you took."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando marcas los productos y tocas «Guardar compra», el tique aparece aquí: tienda, total y qué llevaste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand tu coches les produits et touches « Enregistrer les courses », le ticket arrive ici : magasin, total et ce que tu as pris."
+          }
+        }
+      }
+    },
     "Quantità" : {
       "localizations" : {
         "en" : {
@@ -39685,6 +40705,7 @@
       }
     },
     "Questa azione elimina la famiglia per tutti i membri." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -40364,6 +41385,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrez votre première dépense"
+          }
+        }
+      }
+    },
+    "Registrata anche nelle Spese" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also recorded in Expenses"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También registrada en Gastos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aussi enregistrée dans Dépenses"
           }
         }
       }
@@ -42513,6 +43556,50 @@
         }
       }
     },
+    "Salva spesa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save shopping"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar compra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer les courses"
+          }
+        }
+      }
+    },
+    "Salvando, questi prodotti escono dalla lista e restano nello storico. Viene creata anche una spesa nella sezione Spese." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On saving, these items leave the list and stay in the history. An expense is also created in the Expenses section."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al guardar, estos productos salen de la lista y quedan en el historial. También se crea un gasto en la sección Gastos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À l’enregistrement, ces produits quittent la liste et restent dans l’historique. Une dépense est aussi créée dans la section Dépenses."
+          }
+        }
+      }
+    },
     "Salvataggio non riuscito" : {
       "localizations" : {
         "en" : {
@@ -42839,6 +43926,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échéance"
+          }
+        }
+      }
+    },
+    "Scadenza casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home bill"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vencimiento del hogar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échéance maison"
           }
         }
       }
@@ -44013,6 +45122,50 @@
         }
       }
     },
+    "Se lo indichi, l'esame compare anche in Spese famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you enter it, the test also appears in Family expenses."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si lo indicas, la prueba también aparece en Gastos de familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si tu l’indiques, l’examen apparaît aussi dans Dépenses de la famille."
+          }
+        }
+      }
+    },
+    "Se lo indichi, la visita compare anche in Spese famiglia." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you enter it, the visit also appears in Family expenses."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si lo indicas, la visita también aparece en Gastos de familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si tu l’indiques, la visite apparaît aussi dans Dépenses de la famille."
+          }
+        }
+      }
+    },
     "Se non siete vicini, invia il link." : {
       "localizations" : {
         "en" : {
@@ -44781,6 +45934,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Section"
+          }
+        }
+      }
+    },
+    "Sezioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sections"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sections"
           }
         }
       }
@@ -45846,6 +47021,28 @@
         }
       }
     },
+    "Spese salvate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved shopping"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compras guardadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Courses enregistrées"
+          }
+        }
+      }
+    },
     "SpO₂" : {
       "localizations" : {
         "en" : {
@@ -45953,6 +47150,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stable"
+          }
+        }
+      }
+    },
+    "Stai condividendo la posizione" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sharing your location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás compartiendo tu ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous partagez votre position"
           }
         }
       }
@@ -48702,6 +49921,28 @@
         }
       }
     },
+    "ultima il %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "last on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "última el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dernière le %@"
+          }
+        }
+      }
+    },
     "Ultimi 3 mesi" : {
       "localizations" : {
         "en" : {
@@ -49649,6 +50890,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aller à la vue calendrier"
+          }
+        }
+      }
+    },
+    "Vale 24 ore e una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid for 24 hours, once only."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Válido 24 horas y una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valable 24 heures, une seule fois."
           }
         }
       }
@@ -50760,6 +52023,28 @@
         }
       }
     },
+    "Visualizza Dashboard in home page" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the Dashboard on the home page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el Panel en la página de inicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le tableau de bord sur la page d'accueil"
+          }
+        }
+      }
+    },
     "Vita notturna" : {
       "comment" : "Travel style",
       "localizations" : {
@@ -51005,6 +52290,28 @@
         }
       }
     },
+    "x %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "x %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "x %lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "x %lld"
+          }
+        }
+      }
+    },
     "Zona Pericolosa" : {
       "localizations" : {
         "en" : {
@@ -51045,160 +52352,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
-          }
-        }
-      }
-    },
-    "Fornitore / Banca" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provider / Bank"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fournisseur / Banque"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Proveedor / Banco"
-          }
-        }
-      }
-    },
-    "Prossima scadenza annuale" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next annual due date"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prochaine échéance annuelle"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Próximo vencimiento anual"
-          }
-        }
-      }
-    },
-    "Prossima scadenza mensile" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next monthly due date"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prochaine échéance mensuelle"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Próximo vencimiento mensual"
-          }
-        }
-      }
-    },
-    "Chat di famiglia" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Family chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discussion familiale"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat de familia"
-          }
-        }
-      }
-    },
-    "La scelta vale su tutti i tuoi dispositivi. Gli altri membri continuano a scriversi e ritrovi i messaggi riattivandola." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The choice applies to all your devices. Other members keep chatting with each other, and you'll find the messages again when you turn it back on."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le choix s'applique à tous vos appareils. Les autres membres continuent de discuter entre eux, et vous retrouverez les messages en la réactivant."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La elección se aplica a todos tus dispositivos. Los demás miembros siguen chateando entre ellos y recuperarás los mensajes al reactivarlo."
-          }
-        }
-      }
-    },
-    "La chat è disattivata in Impostazioni → Messaggi." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat is turned off in Settings → Messages."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La discussion est désactivée dans Réglages → Messages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El chat está desactivado en Ajustes → Mensajes."
-          }
-        }
-      }
-    },
-    "Permette di abilitare/disabilitare la chat di famiglia" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lets you turn the family chat on or off"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Permet d'activer ou de désactiver la discussion familiale"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Permite activar o desactivar el chat de familia"
           }
         }
       }

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Model
 final class KBGroceryItem {
@@ -19,6 +20,9 @@ final class KBGroceryItem {
     var name: String
     var category: String?
     var notes: String?
+    /// Quante confezioni servono. `nil` (o 1) significa una sola: la lista non
+    /// scrive "x 1", che sarebbe rumore su quasi tutte le righe.
+    var quantity: Int?
     
     // MARK: - State
     var isPurchased: Bool
@@ -48,6 +52,7 @@ final class KBGroceryItem {
         name: String,
         category: String? = nil,
         notes: String? = nil,
+        quantity: Int? = nil,
         isPurchased: Bool = false,
         purchasedAt: Date? = nil,
         purchasedBy: String? = nil,
@@ -62,6 +67,7 @@ final class KBGroceryItem {
         self.name = name
         self.category = category
         self.notes = notes
+        self.quantity = quantity
         self.isPurchased = isPurchased
         self.purchasedAt = purchasedAt
         self.purchasedBy = purchasedBy
@@ -89,6 +95,45 @@ enum KBGroceryCategory {
 
     /// Etichetta per categoria "non specificata" (item senza `category`).
     static let uncategorized = "Altro"
+
+    /// Simbolo e tinta per categoria: sono il segno che si legge da lontano
+    /// mentre si spinge il carrello, dove il nome della categoria è già scritto
+    /// sopra il gruppo. Simboli SF e non emoji, come nel resto dell'app: si
+    /// tingono, seguono il peso del testo e non dipendono dal font di sistema.
+    static func symbol(for category: String?) -> String {
+        switch normalized(category) {
+        case "Frutta e Verdura": return "carrot.fill"
+        case "Carne e Pesce":    return "fish.fill"
+        case "Latticini":        return "waterbottle.fill"
+        case "Pane e Cereali":   return "fork.knife"
+        case "Surgelati":        return "snowflake"
+        case "Bevande":          return "cup.and.saucer.fill"
+        case "Dolci e Snack":    return "birthday.cake.fill"
+        case "Pulizia":          return "bubbles.and.sparkles.fill"
+        case "Cura Personale":   return "comb.fill"
+        default:                 return "cart.fill"
+        }
+    }
+
+    static func tint(for category: String?) -> Color {
+        switch normalized(category) {
+        case "Frutta e Verdura": return .green
+        case "Carne e Pesce":    return .red
+        case "Latticini":        return .blue
+        case "Pane e Cereali":   return .orange
+        case "Surgelati":        return .cyan
+        case "Bevande":          return .teal
+        case "Dolci e Snack":    return .pink
+        case "Pulizia":          return .mint
+        case "Cura Personale":   return .purple
+        default:                 return .gray
+        }
+    }
+
+    private static func normalized(_ category: String?) -> String {
+        let trimmed = category?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? uncategorized : trimmed
+    }
 
     static func displayName(for category: String) -> String {
         switch category {

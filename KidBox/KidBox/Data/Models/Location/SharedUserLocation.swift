@@ -16,6 +16,10 @@ struct SharedUserLocation: Identifiable, Equatable {
     let mode: ShareMode
     let expiresAt: Date?
     let avatarURL: String?      // URL Firebase Storage, nil se non ancora caricato
+    /// Carica del dispositivo che sta condividendo, 0…100. `nil` finché quel
+    /// dispositivo non ne ha ancora spedita una (versioni precedenti incluse).
+    let batteryLevel: Int?
+    let isCharging: Bool
     
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)

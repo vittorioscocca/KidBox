@@ -113,6 +113,14 @@ struct VehicleEventFormView: View {
         }
     }
 
+    /// Nome del veicolo, per il titolo della spesa: senza, in Spese si
+    /// leggerebbe "Tagliando" e basta.
+    private func vehicleName() -> String? {
+        let vid = vehicleId
+        let desc = FetchDescriptor<KBVehicle>(predicate: #Predicate { $0.id == vid })
+        return try? modelContext.fetch(desc).first?.name
+    }
+
     private func save() {
         saveCompleted = true
         let uid = Auth.auth().currentUser?.uid ?? "local"
@@ -137,6 +145,12 @@ struct VehicleEventFormView: View {
             ex.lastSyncError = nil
             try? modelContext.save()
             SyncCenter.shared.enqueueVehicleEventUpsert(eventId: ex.id, familyId: familyId, modelContext: modelContext)
+            VehicleEventExpenseLink.sync(
+                event: ex,
+                vehicleName: vehicleName(),
+                familyId: familyId,
+                modelContext: modelContext
+            )
         } else {
             let ev = KBVehicleEvent(
                 id: attachmentEventId,
@@ -155,6 +169,12 @@ struct VehicleEventFormView: View {
             modelContext.insert(ev)
             try? modelContext.save()
             SyncCenter.shared.enqueueVehicleEventUpsert(eventId: ev.id, familyId: familyId, modelContext: modelContext)
+            VehicleEventExpenseLink.sync(
+                event: ev,
+                vehicleName: vehicleName(),
+                familyId: familyId,
+                modelContext: modelContext
+            )
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
         dismiss()

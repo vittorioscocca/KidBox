@@ -38,6 +38,8 @@ final class MedicalExamRemoteStore {
         data["deadline"]           = dto.deadline.map { Timestamp(date: $0) } ?? FieldValue.delete()
         data["preparation"]        = dto.preparation        ?? FieldValue.delete()
         data["notes"]              = dto.notes              ?? FieldValue.delete()
+        data["cost"]               = dto.cost                ?? FieldValue.delete()
+        data["linkedExpenseId"]    = dto.linkedExpenseId     ?? FieldValue.delete()
         data["location"]           = dto.location           ?? FieldValue.delete()  // ← NUOVO
         data["resultText"]         = dto.resultText         ?? FieldValue.delete()
         data["resultDate"]         = dto.resultDate.map { Timestamp(date: $0) } ?? FieldValue.delete()
@@ -106,6 +108,8 @@ final class MedicalExamRemoteStore {
             deadline:           ts("deadline"),
             preparation:        d["preparation"]        as? String,
             notes:              d["notes"]              as? String,
+            cost:               (d["cost"] as? NSNumber)?.doubleValue,
+            linkedExpenseId:    d["linkedExpenseId"]    as? String,
             location:           d["location"]           as? String,  // ← NUOVO
             statusRaw:          d["statusRaw"]          as? String ?? KBExamStatus.pending.rawValue,
             resultText:         d["resultText"]         as? String,

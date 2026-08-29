@@ -231,6 +231,7 @@ struct HousePaymentFormView: View {
             ex.lastSyncError = nil
             try? modelContext.save()
             SyncCenter.shared.enqueueHousePaymentUpsert(paymentId: ex.id, familyId: familyId, modelContext: modelContext)
+            HousePaymentExpenseLink.sync(payment: ex, familyId: familyId, modelContext: modelContext)
             Task { await HousePaymentReminderService.shared.scheduleNext(for: ex) }
         } else {
             let row = KBHousePayment(
@@ -252,6 +253,7 @@ struct HousePaymentFormView: View {
             modelContext.insert(row)
             try? modelContext.save()
             SyncCenter.shared.enqueueHousePaymentUpsert(paymentId: row.id, familyId: familyId, modelContext: modelContext)
+            HousePaymentExpenseLink.sync(payment: row, familyId: familyId, modelContext: modelContext)
             Task { await HousePaymentReminderService.shared.scheduleNext(for: row) }
         }
         SyncCenter.shared.flushGlobal(modelContext: modelContext)

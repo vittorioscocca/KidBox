@@ -18,6 +18,7 @@ struct GroceryRemoteDTO {
     let name: String
     let category: String?
     let notes: String?
+    let quantity: Int?
     let isPurchased: Bool
     let isDeleted: Bool
     let purchasedAt: Date?
@@ -75,6 +76,7 @@ final class GroceryRemoteStore {
         
         data["category"] = item.category as Any
         data["notes"] = item.notes as Any
+        data["quantity"] = item.quantity as Any
         data["purchasedAt"] = item.purchasedAt.map { Timestamp(date: $0) } as Any
         data["purchasedBy"] = item.purchasedBy as Any
         
@@ -138,6 +140,7 @@ final class GroceryRemoteStore {
                         name: name,
                         category: d["category"] as? String,
                         notes: d["notes"] as? String,
+                        quantity: (d["quantity"] as? NSNumber)?.intValue,
                         isPurchased: d["isPurchased"] as? Bool ?? false,
                         isDeleted: d["isDeleted"] as? Bool ?? false,
                         purchasedAt: (d["purchasedAt"] as? Timestamp)?.dateValue(),

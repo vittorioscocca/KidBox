@@ -133,7 +133,6 @@ struct FamilyLocationView: View {
                 myCurrentAddress: viewModel.myCurrentAddress,
                 othersStatusLine: othersSharingLine,
                 hasAnySharedPositions: !viewModel.sharedUsers.isEmpty,
-                deviceName: "Questo iPhone",
                 onToggleChanged: { isOn in
                     if isOn {
                         showShareAlert = true
@@ -238,6 +237,15 @@ struct FamilyLocationView: View {
                             .font(.system(size: 13, weight: .semibold))
                         Text(user.name.components(separatedBy: " ").first ?? user.name)
                             .font(.system(size: 13, weight: .semibold))
+                        // La carica è quella di chi condivide: `others` esclude
+                        // già il dispositivo che sta guardando la mappa.
+                        if let level = user.batteryLevel {
+                            BatteryBadge(
+                                level: level,
+                                isCharging: user.isCharging,
+                                onOrange: followingUserId == user.id
+                            )
+                        }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -434,7 +442,6 @@ struct FindMyBottomCard: View {
     let myCurrentAddress: String?
     let othersStatusLine: String?
     let hasAnySharedPositions: Bool
-    let deviceName: String
     let onToggleChanged: (Bool) -> Void
     /// Tap sulla card "La mia posizione" → centra mappa su di me
     var onTapMyLocation: (() -> Void)? = nil
@@ -507,16 +514,6 @@ struct FindMyBottomCard: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
-                }
-                
-                HStack {
-                    Text("Condivisa da")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(deviceName)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
                 
                 if let othersStatusLine {
@@ -623,4 +620,51 @@ private struct AvatarMarker: View {
             print("AvatarMarker: download failed — \(error.localizedDescription)")
         }
     }
+}
+
+// MARK: - Batteria
+
+/// Pila e percentuale accanto al nome di chi condivide. Rossa sotto il 20% e
+/// non in carica: è l'unico caso in cui la carica di un altro cambia quello che
+/// fai. Sul pill attivo (fondo arancione) rosso e grigio sparirebbero, quindi lì
+/// si passa al bianco: il livello lo dice comunque il numero.
+private struct BatteryBadge: View {
+    let level: Int
+    let isCharging: Bool
+    var onOrange: Bool = false
+
+    var body: some View {
+        HStack(spacing: 1) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+            Text("\(level)%")
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(tint)
+    }
+
+    private var symbol: String {
+        if isCharging { return "battery.100.bolt" }
+        switch level {
+        case ...10: return "battery.0"
+        case ...35: return "battery.25"
+        case ...65: return "battery.50"
+        case ...85: return "battery.75"
+        default: return "battery.100"
+        }
+    }
+
+    private var tint: Color {
+        if onOrange { return .white }
+        if isCharging { return Self.chargingGreen }
+        return level <= 20 ? .red : .secondary
+    }
+
+    /// Il verde di sistema su fondo chiaro si legge male. Qui è più scuro in
+    /// chiaro e più acceso in scuro, dove un verde cupo sparirebbe.
+    private static let chargingGreen = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.29, green: 0.80, blue: 0.47, alpha: 1)
+            : UIColor(red: 0.09, green: 0.50, blue: 0.24, alpha: 1)
+    })
 }

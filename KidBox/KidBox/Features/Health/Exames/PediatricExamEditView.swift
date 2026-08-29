@@ -37,6 +37,7 @@ struct PediatricExamEditView: View {
     @State private var reminderTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var preparation = ""
     @State private var notes       = ""
+    @State private var costText    = ""
     @State private var location    = ""   // ← NUOVO
     @State private var status      = KBExamStatus.pending
     @State private var resultText  = ""
@@ -155,6 +156,20 @@ struct PediatricExamEditView: View {
                         .lineLimit(2...4)
                     TextField("Note aggiuntive", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
+                }
+
+                // Il costo genera la voce in Spese famiglia: si scrive qui, una
+                // volta sola, e non va riportato a mano fra le spese.
+                Section {
+                    HStack {
+                        TextField("0,00", text: $costText)
+                            .keyboardType(.decimalPad)
+                        Text("€").foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Costo esame")
+                } footer: {
+                    Text("Se lo indichi, l'esame compare anche in Spese famiglia.")
                 }
                 
                 // ── Stato / Risultato ──
@@ -389,6 +404,7 @@ struct PediatricExamEditView: View {
         deadline    = e.deadline ?? Date()
         preparation = e.preparation ?? ""
         notes       = e.notes ?? ""
+        costText    = e.cost.map { KidBoxDecimalFormat.string(from: $0) } ?? ""
         location    = e.location ?? ""
         status      = e.status
         hasResult   = e.resultText != nil
@@ -414,6 +430,25 @@ struct PediatricExamEditView: View {
         }
     }
     
+    /// L'esame che costa qualcosa è anche una spesa di famiglia, categoria
+    /// Salute. L'importo si scrive nella scheda, la voce in Spese si allinea.
+    private func linkExamExpense(_ exam: KBMedicalExam) {
+        exam.linkedExpenseId = KBLinkedExpense.sync(
+            linkedExpenseId: exam.linkedExpenseId,
+            amount: exam.cost,
+            title: exam.name,
+            fallbackTitle: String(localized: "Esame medico"),
+            // La scadenza dell'esame se c'è: è la data in cui si paga.
+            date: exam.deadline ?? exam.createdAt,
+            notes: exam.location ?? exam.notes,
+            categorySlug: "salute",
+            familyId: familyId,
+            modelContext: modelContext
+        )
+        try? modelContext.save()
+        SyncCenter.shared.enqueueMedicalExamUpsert(examId: exam.id, familyId: familyId, modelContext: modelContext)
+    }
+
     private func save() {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         isSaving = true
@@ -436,6 +471,7 @@ struct PediatricExamEditView: View {
             existing.deadline    = hasDeadline ? deadline : nil
             existing.preparation = preparation.isEmpty ? nil : preparation
             existing.notes       = notes.isEmpty ? nil : notes
+            existing.cost        = KidBoxDecimalFormat.parse(costText)
             existing.location    = location.isEmpty ? nil : location   // ← NUOVO
             existing.status      = status
             existing.resultText  = hasResult && !resultText.isEmpty ? resultText : nil
@@ -464,12 +500,14 @@ struct PediatricExamEditView: View {
                 updatedBy:          uid,
                 createdBy:          uid
             )
+            newExam.cost = KidBoxDecimalFormat.parse(costText)
             modelContext.insert(newExam)
             exam = newExam
         }
         
         try? modelContext.save()
         SyncCenter.shared.enqueueMedicalExamUpsert(examId: exam.id, familyId: familyId, modelContext: modelContext)
+        linkExamExpense(exam)
         if isNewExam {
             AppAnalytics.contentCreated(type: "health")
             if isFirstExam {

@@ -31,13 +31,7 @@ struct FamilySettingsView: View {
     @Query private var members: [KBFamilyMember]
     @Query private var allChildren: [KBChild]
     
-    @State private var showLeaveFamilyConfirm = false
-    @State private var showOwnerLeaveOptions = false
-    @State private var showOwnerAloneDeleteConfirm = false
-    @State private var showDeleteFamilyConfirm = false
-    @State private var showTransferSheet = false
-    @State private var selectedNewOwner: KBFamilyMember?
-    @State private var leaveError: String?
+    @StateObject private var leaveFlow = FamilyLeaveFlow()
     @State private var memberToRevoke: KBFamilyMember?
     @State private var showRevokeConfirm = false
     @State private var revokeError: String?
@@ -92,11 +86,6 @@ struct FamilySettingsView: View {
             .sorted { displayLabel(for: $0) < displayLabel(for: $1) }
     }
     
-    private var canLeave: Bool { activeMembers.count >= 2 }
-    private var otherMembers: [KBFamilyMember] {
-        activeMembers.filter { $0.userId != currentUid }
-    }
-    
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
@@ -141,78 +130,12 @@ struct FamilySettingsView: View {
             }
         }
         // MARK: - Alerts
-        .alert("Uscire dalla famiglia?", isPresented: $showLeaveFamilyConfirm) {
-            Button("Annulla", role: .cancel) { }
-            Button("Esci", role: .destructive) {
-                Task { @MainActor in await leaveFamily() }
-            }
-        } message: {
-            Text("Verrai rimosso dalla famiglia e tutti i dati associati verranno eliminati da questo dispositivo.")
-        }
-        .alert("Non puoi uscire ora", isPresented: $showOwnerAloneDeleteConfirm) {
-            Button("Annulla", role: .cancel) { }
-            Button("Elimina famiglia", role: .destructive) {
-                Task { @MainActor in await deleteFamily() }
-            }
-        } message: {
-            Text("Sei l'unico membro. Per uscire devi eliminare la famiglia.")
-        }
-        .alert("Eliminare la famiglia?", isPresented: $showDeleteFamilyConfirm) {
-            Button("Annulla", role: .cancel) { }
-            Button("Elimina famiglia", role: .destructive) {
-                Task { @MainActor in await deleteFamily() }
-            }
-        } message: {
-            Text("Questa azione elimina la famiglia per tutti i membri.")
-        }
-        .alert("Sei il creatore della famiglia", isPresented: $showOwnerLeaveOptions) {
-            Button("Trasferisci ownership") {
-                showOwnerLeaveOptions = false
-                showTransferSheet = true
-            }
-            Button("Elimina famiglia", role: .destructive) {
-                showOwnerLeaveOptions = false
-                Task { @MainActor in await deleteFamily() }
-            }
-            Button("Annulla", role: .cancel) { }
-        } message: {
-            Text("Prima di uscire puoi trasferire la ownership a un altro membro oppure eliminare la famiglia.")
-        }
-        .sheet(isPresented: $showTransferSheet) {
-            NavigationStack {
-                List(otherMembers) { member in
-                    Button {
-                        selectedNewOwner = member
-                        showTransferSheet = false
-                        Task { @MainActor in
-                            await transferOwnershipAndLeave(newOwnerUid: member.userId)
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(displayLabel(for: member))
-                                .foregroundStyle(.primary)
-                            Text(member.email?.trimmedNonEmpty ?? member.userId)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .navigationTitle("Nuovo owner")
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Annulla") { showTransferSheet = false }
-                    }
-                }
-            }
-        }
-        .alert("Errore", isPresented: Binding(
-            get: { leaveError != nil },
-            set: { if !$0 { leaveError = nil } }
-        )) {
-            Button("OK") { leaveError = nil }
-        } message: {
-            Text(leaveError ?? "")
-        }
+        .familyLeaveAlerts(
+            leaveFlow,
+            familyId: family?.id,
+            modelContext: modelContext,
+            coordinator: coordinator
+        )
         .alert("Revocare l'accesso?", isPresented: $showRevokeConfirm) {
             Button("Annulla", role: .cancel) { memberToRevoke = nil }
             Button("Revoca", role: .destructive) {
@@ -360,13 +283,11 @@ struct FamilySettingsView: View {
             action: {
                 guard let fid = family?.id else { return }
                 KBLog.navigation.kbInfo("FamilySettingsView: tap leave familyId=\(fid)")
-                if activeMembers.count <= 1 {
-                    showOwnerAloneDeleteConfirm = true
-                } else if !isOwner {
-                    showLeaveFamilyConfirm = true
-                } else {
-                    showOwnerLeaveOptions = true
-                }
+                leaveFlow.requestLeave(
+                    activeMembers: activeMembers,
+                    isOwner: isOwner,
+                    currentUid: currentUid
+                )
             }
         )
     }
@@ -408,56 +329,6 @@ struct FamilySettingsView: View {
     }
     
     // MARK: - Actions
-    
-    @MainActor
-    private func leaveFamily() async {
-        guard let familyId = family?.id else { return }
-        KBLog.sync.kbInfo("FamilySettingsView: leaving familyId=\(familyId)")
-        do {
-            let service = FamilyLeaveService(modelContext: modelContext)
-            try await service.leaveFamily(familyId: familyId)
-            KBLog.sync.kbInfo("FamilySettingsView: leave OK familyId=\(familyId)")
-            // Come in deleteFamily: senza azzerarlo `activeFamilyId` resta
-            // puntato alla famiglia appena lasciata e RootHostView riattacca i
-            // listener su dati a cui non abbiamo più accesso.
-            coordinator.setActiveFamily(nil)
-            coordinator.resetToRoot()
-        } catch {
-            KBLog.sync.kbError("FamilySettingsView: leave FAILED familyId=\(familyId) err=\(error.localizedDescription)")
-            let message = error.localizedDescription.lowercased()
-            if message.contains("unico membro") {
-                showOwnerAloneDeleteConfirm = true
-            } else {
-                leaveError = error.localizedDescription
-            }
-        }
-    }
-    
-    @MainActor
-    private func transferOwnershipAndLeave(newOwnerUid: String) async {
-        guard let familyId = family?.id else { return }
-        do {
-            let service = FamilyLeaveService(modelContext: modelContext)
-            try await service.transferOwnershipAndLeave(familyId: familyId, newOwnerUid: newOwnerUid)
-            coordinator.setActiveFamily(nil)
-            coordinator.resetToRoot()
-        } catch {
-            leaveError = error.localizedDescription
-        }
-    }
-    
-    @MainActor
-    private func deleteFamily() async {
-        guard let familyId = family?.id else { return }
-        do {
-            let service = FamilyLeaveService(modelContext: modelContext)
-            try await service.deleteFamily(familyId: familyId)
-            coordinator.setActiveFamily(nil)
-            coordinator.resetToRoot()
-        } catch {
-            leaveError = error.localizedDescription
-        }
-    }
     
     @MainActor
     private func revokeAccess(member: KBFamilyMember) async {

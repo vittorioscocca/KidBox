@@ -86,7 +86,7 @@ struct PetEventFormView: View {
                     Text("Note")
                 }
                 Section {
-                    PetEventAttachmentsSection(eventId: attachmentEventId, familyId: familyId)
+                    PetEventAttachmentsSection(subject: .event(attachmentEventId), familyId: familyId)
                 } header: {
                     Text("Allegati")
                 }

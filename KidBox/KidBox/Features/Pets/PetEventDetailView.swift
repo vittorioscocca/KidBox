@@ -71,7 +71,7 @@ struct PetEventDetailView: View {
                                     .foregroundStyle(.primary)
                             }
                         }
-                        PetEventAttachmentsSection(eventId: e.id, familyId: familyId)
+                        PetEventAttachmentsSection(subject: .event(e.id), familyId: familyId)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)

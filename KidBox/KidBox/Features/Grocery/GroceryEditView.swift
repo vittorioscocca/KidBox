@@ -20,6 +20,7 @@ struct GroceryEditView: View {
     @State private var name: String = ""
     @State private var category: String = ""
     @State private var notes: String = ""
+    @State private var quantity: Int = 1
     @State private var isSaving = false
     @State private var errorMessage: String? = nil
     
@@ -43,6 +44,19 @@ struct GroceryEditView: View {
                         .autocorrectionDisabled()
                 }
                 
+                Section("Quantità") {
+                    Stepper(value: $quantity, in: 1...99) {
+                        HStack {
+                            Text("Quantità")
+                            Spacer()
+                            Text("\(quantity)")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                }
+
                 Section("Categoria") {
                     TextField("Es. Frutta e Verdura", text: $category)
                     
@@ -73,7 +87,7 @@ struct GroceryEditView: View {
                 }
                 
                 Section("Note (opzionale)") {
-                    TextField("Es. marca preferita, quantità…", text: $notes, axis: .vertical)
+                    TextField("Es. marca preferita, scadenza…", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
                 }
                 
@@ -117,6 +131,7 @@ struct GroceryEditView: View {
         name     = item.name
         category = item.category ?? ""
         notes    = item.notes ?? ""
+        quantity = max(1, item.quantity ?? 1)
     }
     
     // MARK: - Save
@@ -146,6 +161,9 @@ struct GroceryEditView: View {
             item.name      = trimmedName
             item.category  = trimmedCategory.isEmpty ? nil : trimmedCategory
             item.notes     = trimmedNotes.isEmpty ? nil : trimmedNotes
+            // 1 si salva come `nil`: è il valore implicito di ogni riga, e
+            // tenerlo fuori dal dato evita di doverlo filtrare a ogni lettura.
+            item.quantity  = quantity > 1 ? quantity : nil
             item.updatedBy = uid
             item.updatedAt = now
             item.syncState = .pendingUpsert
@@ -162,6 +180,7 @@ struct GroceryEditView: View {
                 name: trimmedName,
                 category: trimmedCategory.isEmpty ? nil : trimmedCategory,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
+                quantity: quantity > 1 ? quantity : nil,
                 createdAt: now,
                 updatedAt: now,
                 updatedBy: uid,

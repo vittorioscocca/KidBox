@@ -25,6 +25,9 @@ final class KBVehicleEvent {
     var cost: Double?
     var garageName: String?
     var notes: String?
+    /// La spesa creata in Spese famiglia quando l'intervento ha un costo.
+    /// `nil` finché non ne ha uno.
+    var linkedExpenseId: String?
 
     // MARK: - Soft delete
     var isDeleted: Bool

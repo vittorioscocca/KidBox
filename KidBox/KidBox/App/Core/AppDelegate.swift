@@ -91,6 +91,11 @@ final class AppDelegate: NSObject,
         FirebaseApp.configure()
         KBLog.app.kbInfo("Firebase configured")
 
+        // Subito dopo configure() e senza attendere: la schermata di login parte
+        // con la cache locale dei flag, e si aggiorna da sola quando la risposta
+        // di Remote Config arriva.
+        Task { await KBFeatureFlags.refresh() }
+
         // ── Mac Catalyst: rimuove il background ovale automatico dai BarButtonItem ──
         // Su Mac Catalyst i ToolbarItem SwiftUI vengono bridgati a UIBarButtonItem
         // e UIKit aggiunge automaticamente un background pillola. Impostiamo
