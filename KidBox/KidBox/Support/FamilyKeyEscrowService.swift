@@ -156,6 +156,13 @@ enum FamilyKeyEscrowService {
             KBLog.security.kbInfo(
                 "KeyEscrow escrow recovery OK familyId=\(familyId)"
             )
+            // La chiave è arrivata DOPO: chi era già in ascolto ha decifrato a
+            // vuoto e va fatto ripartire. Vedi `Notification.Name.kidBoxFamilyKeyRecovered`.
+            NotificationCenter.default.post(
+                name: .kidBoxFamilyKeyRecovered,
+                object: nil,
+                userInfo: [KBFamilyKeyRecoveredUserInfo.familyId: familyId]
+            )
             return true
         } catch {
             KBLog.security.kbError(
@@ -185,4 +192,27 @@ enum FamilyKeyEscrowService {
             outputByteCount: 32
         )
     }
+}
+
+
+// MARK: - Chiave recuperata a listener già avviati
+
+extension Notification.Name {
+    /// La chiave di famiglia mancava in locale ed è stata **appena** recuperata
+    /// dall'escrow.
+    ///
+    /// Diversa da `kidBoxFamilyKeyDidChange`, che scatta a ogni salvataggio
+    /// (creazione famiglia inclusa): qui interessa il solo caso in cui la chiave
+    /// arriva *dopo*, perché è quello che lascia dati già scritti male.
+    ///
+    /// Chi legge dati cifrati (note, wallet, password) può essersi agganciato
+    /// prima: quei documenti sono stati decifrati a vuoto e salvati come
+    /// illeggibili, e il listener non li riproporrà — dal suo punto di vista non
+    /// è cambiato nulla. Serve una rilettura esplicita.
+    static let kidBoxFamilyKeyRecovered = Notification.Name("kb.familyKeyRecovered")
+}
+
+/// Chiavi dello `userInfo` di `kidBoxFamilyKeyRecovered`.
+enum KBFamilyKeyRecoveredUserInfo {
+    static let familyId = "familyId"
 }

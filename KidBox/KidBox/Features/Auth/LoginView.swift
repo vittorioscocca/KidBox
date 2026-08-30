@@ -273,8 +273,8 @@ struct LoginView: View {
     // MARK: - Footer
     
     private var legalFooter: some View {
-        let privacyURL = URL(string: "https://kidbox-landing.web.app/privacy.html")!
-        let termsURL   = URL(string: "https://kidbox-landing.web.app/terms.html")!
+        let privacyURL = URL(string: "https://kidboxapp.com/privacy.html")!
+        let termsURL   = URL(string: "https://kidboxapp.com/terms.html")!
 
         // La frase è una sola chiave con due segnaposto, non tre pezzi
         // concatenati: l'ordine delle parole cambia da lingua a lingua, e

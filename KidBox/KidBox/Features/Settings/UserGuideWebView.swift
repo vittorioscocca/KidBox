@@ -10,7 +10,7 @@ import SwiftUI
 import WebKit
 
 struct UserGuideWebView: View {
-    private static let url = URL(string: "https://kidbox-landing.web.app/guide.html")!
+    private static let url = URL(string: "https://kidboxapp.com/guide.html")!
 
     @State private var isLoading = true
 

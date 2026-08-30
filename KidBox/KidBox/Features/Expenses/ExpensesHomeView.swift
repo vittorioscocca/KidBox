@@ -90,6 +90,16 @@ struct ExpensesHomeView: View {
                 }
                 .padding()
             }
+            .kbRefreshable {
+                await SyncCenter.shared.forceRefresh(
+                    listenerKeys: ["expenses"],
+                    modelContext: modelContext
+                ) {
+                    SyncCenter.shared.stopExpensesRealtime()
+                    SyncCenter.shared.startExpensesRealtime(familyId: familyId, modelContext: modelContext)
+                }
+                vm.reload()
+            }
         }
         .trackSectionPresence(.expenses, familyId: familyId)
         .navigationTitle("Spese di famiglia")

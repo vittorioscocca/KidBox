@@ -73,6 +73,17 @@ struct VehiclesHomeView: View {
         .sheet(isPresented: $showAdd) {
             VehicleFormView(familyId: familyId, existing: nil)
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(
+                listenerKeys: ["vehicles", "vehicleEvents"],
+                modelContext: modelContext
+            ) {
+                SyncCenter.shared.stopVehiclesRealtime()
+                SyncCenter.shared.stopVehicleEventsRealtime()
+                SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+            }
+        }
         .onAppear {
             SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)

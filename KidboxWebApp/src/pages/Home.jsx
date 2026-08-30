@@ -15,10 +15,10 @@ import { listenSharedLocations } from "../services/location";
 import "./Home.css";
 
 /** Riquadro con intestazione cliccabile e fino a quattro righe di anteprima. */
-function Widget({ icon, title, badge, onOpen, children, empty, wide }) {
+function Widget({ icon, title, badge, onOpen, children, empty }) {
   const { t } = useTranslation();
   return (
-    <section className={"widget" + (wide ? " widget-wide" : "")}>
+    <section className="widget">
       <button className="widget-head" onClick={onOpen}>
         <span className="widget-icon">{icon}</span>
         <span className="widget-title">{title}</span>
@@ -143,7 +143,8 @@ export default function Home() {
     () =>
       [...photos]
         .sort((a, b) => (b.takenAt?.toMillis?.() ?? 0) - (a.takenAt?.toMillis?.() ?? 0))
-        .slice(0, 6),
+        // Tre, quante le righe di anteprima delle altre card.
+        .slice(0, 3),
     [photos]
   );
 
@@ -156,7 +157,7 @@ export default function Home() {
     }
     const latest = [...rawNotes]
       .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0))
-      .slice(0, 4);
+      .slice(0, 3);
 
     loadFamilyKey({ familyId: currentFamilyId, userId: user.uid })
       .then(async (key) => {
@@ -233,7 +234,6 @@ export default function Home() {
         <Widget
           icon="📅"
           title={t.home.dashboard.upcoming}
-          wide
           onOpen={() => navigate("/calendario")}
           empty={upcoming.length === 0}
         >
@@ -290,19 +290,20 @@ export default function Home() {
         <Widget
           icon="📝"
           title={t.home.dashboard.notes}
-          wide
           onOpen={() => navigate("/note")}
           empty={notePreviews.length === 0 && !notesLocked}
         >
           {notesLocked ? (
             <p className="widget-empty">🔒 {t.home.dashboard.locked}</p>
           ) : (
-            <ul className="w-list">
+            <ul className="w-list w-notes">
               {notePreviews.map((n) => (
                 <li key={n.id}>
                   <span className="w-main">
                     <strong>{n.title.trim() || t.notes.untitled}</strong>
-                    <span className="w-sub">{n.body.slice(0, 48)}</span>
+                    {/* Nessun taglio a mano: alla larghezza ci pensa il CSS, che
+                        tronca dove finisce la card e mette i puntini. */}
+                    <span className="w-sub">{n.body}</span>
                   </span>
                 </li>
               ))}
@@ -334,7 +335,6 @@ export default function Home() {
         <Widget
           icon="📷"
           title={t.home.dashboard.photos}
-          wide
           onOpen={() => navigate("/foto")}
           empty={recentPhotos.length === 0}
         >

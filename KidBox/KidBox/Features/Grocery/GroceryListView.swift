@@ -214,6 +214,15 @@ struct GroceryListView: View {
         } message: {
             Text("Vuoi eliminare tutti i prodotti già acquistati?")
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                SyncCenter.shared.stopGroceryRealtime()
+                SyncCenter.shared.stopShoppingTripsRealtime()
+                SyncCenter.shared.startGroceryRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startShoppingTripsRealtime(familyId: familyId, modelContext: modelContext)
+            }
+            await SyncCenter.shared.flushGrocery(modelContext: modelContext)
+        }
         .onAppear {
             BadgeManager.shared.activeSections.insert("shopping")
             guard !didStartRealtime else { return }

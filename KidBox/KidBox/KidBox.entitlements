@@ -13,12 +13,18 @@
 		<string>Default</string>
 	</array>
 	<!--
-	  Universal Links per gli inviti famiglia (https://kidbox-landing.web.app/join).
+	  Universal Links per gli inviti famiglia (https://kidboxapp.com/join).
 	  Il file apple-app-site-association sul dominio rivendica SOLO /join: privacy,
 	  termini e le altre pagine devono continuare ad aprirsi in Safari.
+
+	  Il dominio `web.app` resta accanto a quello nuovo, non al suo posto: è lo
+	  stesso sito Firebase servito su due nomi, e gli inviti già circolanti
+	  portano ancora il vecchio host. Toglierlo li farebbe aprire nel browser
+	  invece che nell'app.
 	-->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>applinks:kidboxapp.com</string>
 		<string>applinks:kidbox-landing.web.app</string>
 	</array>
 	<key>com.apple.developer.aps-environment</key>

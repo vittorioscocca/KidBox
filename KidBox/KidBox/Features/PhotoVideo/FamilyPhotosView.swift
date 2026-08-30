@@ -385,6 +385,7 @@ struct FamilyPhotosView: View {
                             if w > 0 && w != gridWidth { gridWidth = w }
                         }
                     }
+                    .kbRefreshable { await forceRefresh() }
                     .id(fullscreenPhoto == nil ? "grid-active" : "grid-covered")
                     .onChange(of: pendingScrollTarget) { _, target in
                         guard let target else { return }
@@ -841,6 +842,18 @@ struct FamilyPhotosView: View {
             .padding(.horizontal, hPad)
             .padding(.vertical, 16)
         }
+        .kbRefreshable { await forceRefresh() }
+    }
+
+    /// Pull-to-refresh: riaggancia il listener delle foto (che rilegge dal
+    /// server l'intera collection) e ricarica la griglia dalla copia locale.
+    @MainActor
+    private func forceRefresh() async {
+        await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+            SyncCenter.shared.stopPhotosRealtime()
+            SyncCenter.shared.startPhotosRealtime(familyId: familyId, modelContext: modelContext)
+        }
+        vm.reloadLocal()
     }
     
     // MARK: - Empty state

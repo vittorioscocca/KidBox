@@ -245,6 +245,12 @@ struct NotesHomeView: View {
                     }
                 }
             }
+            .kbRefreshable {
+                await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                    SyncCenter.shared.stopNotesRealtime()
+                    SyncCenter.shared.startNotesRealtime(familyId: familyId, modelContext: modelContext)
+                }
+            }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
             .animation(.default, value: isSelecting)

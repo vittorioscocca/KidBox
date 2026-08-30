@@ -94,6 +94,18 @@ struct TodoSmartListView: View {
                 .onDelete(perform: deleteTodos)
             }
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(listenerKeys: ["todo"]) {
+                SyncCenter.shared.stopTodoRealtime()
+                SyncCenter.shared.startTodoRealtime(
+                    familyId: familyId,
+                    childId: childId,
+                    modelContext: modelContext,
+                    remote: remote
+                )
+            }
+            await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+        }
         .navigationTitle(title)
         .toolbar {
             if kind != .completed {

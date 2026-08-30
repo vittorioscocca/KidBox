@@ -26,6 +26,29 @@
         }
       }
     },
+    " (inserito da te)" : {
+      "comment" : "Manually entered health value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " (entered by you)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " (introducido por ti)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " (saisi par vous)"
+          }
+        }
+      }
+    },
     "–" : {
       "localizations" : {
         "en" : {
@@ -6024,6 +6047,28 @@
     "Altezza" : {
 
     },
+    "Altezza (cm)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Height (cm)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altura (cm)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taille (cm)"
+          }
+        }
+      }
+    },
     "Altre" : {
       "localizations" : {
         "en" : {
@@ -8012,24 +8057,24 @@
         }
       }
     },
-    "Massa magra" : {
+    "Aumentare massa magra" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lean mass"
+            "value" : "Build lean mass"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masa magra"
+            "value" : "Aumentar masa magra"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masse maigre"
+            "value" : "Augmenter la masse maigre"
           }
         }
       }
@@ -17726,6 +17771,28 @@
         }
       }
     },
+    "Elimina piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le plan"
+          }
+        }
+      }
+    },
     "Elimina questo media?" : {
       "localizations" : {
         "en" : {
@@ -20181,6 +20248,28 @@
         }
       }
     },
+    "Età (anni)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Age (years)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edad (años)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Âge (ans)"
+          }
+        }
+      }
+    },
     "Età (da Apple Salute)" : {
       "localizations" : {
         "en" : {
@@ -20199,6 +20288,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Âge (depuis Apple Santé)"
+          }
+        }
+      }
+    },
+    "Età, peso e altezza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Age, weight and height"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edad, peso y altura"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Âge, poids et taille"
           }
         }
       }
@@ -24114,6 +24225,28 @@
         }
       }
     },
+    "Il piano viene rimosso da questo dispositivo. Rigenerarlo costa di nuovo messaggi AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The plan is removed from this device. Generating it again costs AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan se elimina de este dispositivo. Volver a generarlo cuesta mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan est supprimé de cet appareil. Le régénérer coûte de nouveau des messages IA."
+          }
+        }
+      }
+    },
     "Il tuo controllo" : {
       "localizations" : {
         "en" : {
@@ -26989,6 +27122,28 @@
         }
       }
     },
+    "L'app Salute non ha tutti i dati: inseriscili qui, servono per stimare le calorie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Health app doesn't have all the data: enter it here, it's needed to estimate calories."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La app Salud no tiene todos los datos: introdúcelos aquí, sirven para estimar las calorías."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'app Santé n'a pas toutes les données : saisissez-les ici, elles servent à estimer les calories."
+          }
+        }
+      }
+    },
     "L'assistente AI è disponibile con Pro o Max" : {
       "localizations" : {
         "en" : {
@@ -27188,6 +27343,9 @@
           }
         }
       }
+    },
+    "La creazione del piano ha superato il tempo massimo. Il piano è lungo: riprova, di solito al secondo tentativo va a buon fine." : {
+      "comment" : "Meal plan timeout error"
     },
     "La cronologia di questa conversazione verrà eliminata." : {
       "localizations" : {
@@ -29071,6 +29229,7 @@
       }
     },
     "Mantenere" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -29088,6 +29247,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Maintenir"
+          }
+        }
+      }
+    },
+    "Mantenere il peso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintain weight"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantener el peso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenir le poids"
           }
         }
       }
@@ -29199,6 +29380,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mardi"
+          }
+        }
+      }
+    },
+    "Massa magra" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lean mass"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masa magra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masse maigre"
           }
         }
       }
@@ -38277,6 +38481,28 @@
         }
       }
     },
+    "Per un piano completo collega i dati dell'app Salute: peso, altezza, età e allenamenti vengono letti da lì. Se non sono disponibili, inserisci tu età, peso e altezza qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For a complete plan, connect your Health app data: weight, height, age and workouts are read from there. If they aren't available, enter your age, weight and height below."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para un plan completo, conecta los datos de la app Salud: peso, altura, edad y entrenamientos se leen de ahí. Si no están disponibles, introduce tú edad, peso y altura aquí abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour un plan complet, connectez les données de l'app Santé : poids, taille, âge et entraînements y sont lus. S'ils ne sont pas disponibles, saisissez vous-même votre âge, votre poids et votre taille ci-dessous."
+          }
+        }
+      }
+    },
     "Per usare KidBox al meglio ti consigliamo di aggiornare all'ultima versione: contiene miglioramenti e correzioni." : {
       "localizations" : {
         "en" : {
@@ -38673,7 +38899,30 @@
         }
       }
     },
+    "Peso (kg)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight (kg)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peso (kg)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poids (kg)"
+          }
+        }
+      }
+    },
     "Peso e altezza sono obbligatori: aggiornali in Apple App Salute o nella Scheda Medica." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -38691,6 +38940,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le poids et la taille sont obligatoires : mettez-les à jour dans l’app Santé d’Apple ou dans la Fiche médicale."
+          }
+        }
+      }
+    },
+    "Peso e altezza sono obbligatori: aggiornali nell'app Salute, nella Scheda Medica, oppure inseriscili a mano qui sotto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight and height are required: update them in the Health app, in the Medical Record, or enter them manually below."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El peso y la altura son obligatorios: actualízalos en la app Salud, en la Ficha Médica, o introdúcelos manualmente aquí abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le poids et la taille sont obligatoires : mettez-les à jour dans l'app Santé, dans la Fiche Médicale, ou saisissez-les manuellement ci-dessous."
           }
         }
       }
@@ -45437,6 +45708,29 @@
         }
       }
     },
+    "Scheda %d" : {
+      "comment" : "Meal plan untitled card",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarjeta %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fiche %d"
+          }
+        }
+      }
+    },
     "Scheda Medica" : {
       "localizations" : {
         "en" : {
@@ -45587,6 +45881,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Raccourcis"
+          }
+        }
+      }
+    },
+    "Scorri di lato per passare da una scheda all'altra." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe sideways to move from one card to the next."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza de lado para pasar de una tarjeta a otra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balayez sur le côté pour passer d'une fiche à l'autre."
           }
         }
       }
@@ -52979,6 +53295,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vol"
+          }
+        }
+      }
+    },
+    "Vuoi eliminare il piano alimentare?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the meal plan?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quieres eliminar el plan de alimentación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le plan alimentaire ?"
           }
         }
       }

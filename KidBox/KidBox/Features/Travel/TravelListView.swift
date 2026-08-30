@@ -124,6 +124,12 @@ struct TravelListView: View {
                     }
                     .padding(.vertical, 12)
                 }
+                .kbRefreshable {
+                    await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                        SyncCenter.shared.stopTripsRealtime()
+                        SyncCenter.shared.startTripsRealtime(familyId: familyId, modelContext: modelContext)
+                    }
+                }
                 .background(KBTheme.background(colorScheme))
             }
         }

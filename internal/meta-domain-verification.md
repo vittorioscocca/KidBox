@@ -1,7 +1,13 @@
 # Verifica del dominio su Meta — perché `web.app` non basta
 
-Stato: **bloccato lato Meta**, non lato codice. Il meta-tag è già in pagina; serve
-un dominio proprio.
+Stato dal 29/08/2026: **sbloccato**. `kidboxapp.com` è registrato su IONOS e
+collegato a Firebase Hosting — landing sull'apex, web app su
+`app.kidboxapp.com`. Il meta-tag era già in pagina, quindi su Meta la verifica va
+creata per `kidboxapp.com`, non più per `kidbox-landing.web.app`.
+
+Il resto del documento spiega **perché** `web.app` non poteva funzionare: resta
+valido come promemoria di non riprovarci su altri suffissi pubblici
+(`github.io`, `firebaseapp.com`, `pages.dev`…).
 
 Documento **interno**: non sta in `docs/`, che GitHub Pages pubblica come sito
 legale.

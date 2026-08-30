@@ -97,6 +97,12 @@ struct TravelAllTripsView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                 }
+                .kbRefreshable {
+                    await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                        SyncCenter.shared.stopTripsRealtime()
+                        SyncCenter.shared.startTripsRealtime(familyId: familyId, modelContext: modelContext)
+                    }
+                }
             }
         }
         .navigationTitle(isSelecting ? "Seleziona viaggi" : "Tutti i viaggi")

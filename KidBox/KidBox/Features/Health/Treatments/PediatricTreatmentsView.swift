@@ -264,6 +264,14 @@ struct PediatricTreatmentsView: View {
                     }
                 }
             }
+            .kbRefreshable {
+                await SyncCenter.shared.forceRefreshHealth(
+                    .treatments,
+                    familyId: familyId,
+                    childId: childId,
+                    modelContext: modelContext
+                )
+            }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(KBTheme.background(colorScheme))

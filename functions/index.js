@@ -1581,9 +1581,12 @@ const CHAT_MAX_TOKENS = 4096;
 // Unità minime scalate dal limite giornaliero per una generazione cartella clinica.
 // Sonnet costa ~3× Haiku per token + niente caching (one-shot) → costo fisso più alto.
 const CLINICAL_RECORD_MIN_UNITS = 3;
-// Piano alimentare: gira su Sonnet come la cartella clinica, ma con output molto
-// più lungo (piano 90 giorni + pasti + macro + lista spesa) → max_tokens doppio e
-// costo fisso più alto in unità. Parity con `AIAskAIPayload.mealPlanMinUnits`.
+// Piano alimentare: gira su HAIKU (non Sonnet). È una generazione lunga ma di
+// scrittura, non di ragionamento clinico: Sonnet costava ~0,135 $ a piano contro
+// i ~4,99-9,99 €/mese dell'abbonamento familiare, ed era anche ~3× più lento
+// (163-187 s misurati) fino a sforare il timeout. Resta one-shot senza caching e
+// con max_tokens doppio rispetto alla chat, quindi un costo fisso in unità più
+// alto. Parity con `AIAskAIPayload.mealPlanMinUnits`.
 const MEAL_PLAN_MIN_UNITS = 5;
 const MEAL_PLAN_MAX_TOKENS = 8192;
 
@@ -1612,6 +1615,11 @@ Usa INTERVALLI (es. 1800-2000 kcal) invece di falsa precisione, e ricorda le nor
 Non usare mai valori clinici assenti nei dati forniti: se un dato manca, dillo esplicitamente e spiega come procedere senza.
 Se emergono condizioni cliniche, terapie in corso o allergie nei dati, adatta il piano e segnala esplicitamente l'adattamento.
 Priorità a progresso sostenibile, mantenimento della massa muscolare e salute generale.
+LUNGHEZZA: l'intero piano deve stare in circa 1200 parole. È un vincolo, non un suggerimento.
+Con max_tokens 8192 un piano prolisso viene troncato a metà e il client scade prima di riceverlo:
+meglio sezioni asciutte che un piano tagliato. Frasi brevi, niente introduzioni, niente
+riepiloghi, niente ripetizioni delle regole. Arriva sempre in fondo all'ultima sezione: se stai
+correndo lungo, accorcia le sezioni successive.
 `.trim();
 
 /**
@@ -2008,7 +2016,12 @@ exports.askAI = onCall(
       maxInstances: 20,
       invoker: "public",
       secrets: [ANTHROPIC_API_KEY],
-      timeoutSeconds: 120,
+      // 300s e non 120: il piano alimentare gira su Sonnet con
+      // MEAL_PLAN_MAX_TOKENS=8192 senza streaming, e una risposta piena
+      // superava il vecchio tetto → DEADLINE_EXCEEDED lato client.
+      // Si paga il tempo effettivo, quindi il tetto più alto non costa nulla
+      // alle chat brevi.
+      timeoutSeconds: 300,
     },
     async (request) => {
       const uid = request.auth?.uid;
@@ -2048,8 +2061,13 @@ exports.askAI = onCall(
 
       const clinicalRecord = isClinicalRecordAskAI({purpose});
       const mealPlan = isMealPlanAskAI({purpose});
-      // Entrambi one-shot su Sonnet: stesso modello, stesso pricing, niente caching.
-      const premiumGeneration = clinicalRecord || mealPlan;
+      // Due assi distinti, da non confondere:
+      // - `sonnetGeneration`: serve ragionamento clinico → solo la cartella clinica.
+      //   Il piano alimentare è scrittura, e su Haiku costa ~3× meno ed è più veloce.
+      // - `oneShotGeneration`: chiamata singola, mai riletta → il prompt caching
+      //   sarebbe solo un write a 1,25× senza nessun read successivo.
+      const sonnetGeneration = clinicalRecord;
+      const oneShotGeneration = clinicalRecord || mealPlan;
 
       // Unità base calcolate sulla dimensione del payload.
       const payloadUnits = askAIMessageUnitsForPayload(totalChars);
@@ -2075,7 +2093,7 @@ exports.askAI = onCall(
       }
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, quota, messageUnits);
 
-      const anthropicModel = premiumGeneration ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
+      const anthropicModel = sonnetGeneration ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
       let maxTokens = CHAT_MAX_TOKENS;
       if (clinicalRecord) maxTokens = CLINICAL_RECORD_MAX_TOKENS;
       if (mealPlan) maxTokens = MEAL_PLAN_MAX_TOKENS;
@@ -2085,10 +2103,10 @@ exports.askAI = onCall(
       } else if (mealPlan) {
         effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${MEAL_PLAN_SYSTEM_RULES}`;
       }
-      const inputUsdPer1M = premiumGeneration ?
+      const inputUsdPer1M = sonnetGeneration ?
         ANTHROPIC_INPUT_USD_PER_1M_SONNET :
         ANTHROPIC_INPUT_USD_PER_1M_HAIKU;
-      const outputUsdPer1M = premiumGeneration ?
+      const outputUsdPer1M = sonnetGeneration ?
         ANTHROPIC_OUTPUT_USD_PER_1M_SONNET :
         ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU;
 
@@ -2120,10 +2138,10 @@ exports.askAI = onCall(
             // (tools+system) e sull'ultimo messaggio (storico) → input ripetuto a
             // ~0.1× su cache hit. La cartella clinica è one-shot su Sonnet: il
             // write premium (1.25×) senza re-read sarebbe uno spreco → niente cache.
-            system: premiumGeneration ?
+            system: oneShotGeneration ?
               effectiveSystemPrompt :
               cacheableSystem(effectiveSystemPrompt),
-            messages: premiumGeneration ?
+            messages: oneShotGeneration ?
               messages.map((m) => ({role: m.role, content: m.content})) :
               messagesWithCacheBreakpoint(messages),
           }),

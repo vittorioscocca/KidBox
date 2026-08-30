@@ -125,6 +125,14 @@ service cloud.firestore {
       match /aiConversations/{conversationId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
       }
+
+      // ── PIANO ALIMENTARE (privato per-utente, sync cross-device) ──
+      // Sta sotto `users` e non sotto `families` di proposito: contiene peso,
+      // obiettivo e abitudini alimentari di chi lo genera, e sotto `families`
+      // il wildcard `{subpath=**}` lo renderebbe leggibile a tutta la famiglia.
+      match /mealPlans/{childId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
     }
 
     // Contatore famiglie possedute: l'utente può leggere il proprio (per mostrare

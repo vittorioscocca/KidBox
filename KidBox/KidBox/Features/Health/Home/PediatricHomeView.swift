@@ -303,6 +303,13 @@ struct PediatricHomeView: View {
             }
             .padding(.vertical)
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefreshHealth(
+                familyId: familyId,
+                childId: childId,
+                modelContext: modelContext
+            )
+        }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())
         .navigationTitle("Salute")
         .navigationBarTitleDisplayMode(.large)
@@ -400,6 +407,7 @@ struct HealthTimelineView: View {
     
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.modelContext) private var modelContext
     
     let subjectName: String
     let familyId:    String
@@ -574,6 +582,13 @@ struct HealthTimelineView: View {
                         }
                         Color.clear.frame(height: 32)
                     }
+                }
+                .kbRefreshable {
+                    await SyncCenter.shared.forceRefreshHealth(
+                        familyId: familyId,
+                        childId: childId,
+                        modelContext: modelContext
+                    )
                 }
                 .id(selectedYear.map(String.init) ?? "all")
             }

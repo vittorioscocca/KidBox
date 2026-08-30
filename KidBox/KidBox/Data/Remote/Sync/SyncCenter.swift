@@ -72,6 +72,17 @@ final class SyncCenter: ObservableObject {
         KBLog.sync.kbInfo("invalidateListenerBindings — rebind forzato dei listener realtime")
         listenerScopes.removeAll()
     }
+
+    /// Dimentica il binding dei soli listener indicati, così il prossimo
+    /// `start…Realtime` li ricrea davvero anche a parità di famiglia.
+    ///
+    /// È la versione "di sezione" di `invalidateListenerBindings()`: la usa il
+    /// pull-to-refresh, che deve forzare la rilettura solo dei dati della
+    /// schermata da cui parte il gesto.
+    func unbindListeners(_ keys: [String]) {
+        guard !keys.isEmpty else { return }
+        for key in keys { listenerScopes.removeValue(forKey: key) }
+    }
     
     // MARK: - Realtime (Inbound)
     

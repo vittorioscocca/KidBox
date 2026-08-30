@@ -144,6 +144,17 @@ struct HomeItemsHomeView: View {
         .sheet(isPresented: $showAddPayment) {
             HousePaymentFormView(familyId: familyId, existing: nil)
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(
+                listenerKeys: ["homeItems", "housePayments"],
+                modelContext: modelContext
+            ) {
+                SyncCenter.shared.stopHomeItemsRealtime()
+                SyncCenter.shared.stopHousePaymentsRealtime()
+                SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)
+            }
+        }
         .onAppear {
             SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)

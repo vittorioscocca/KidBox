@@ -140,6 +140,12 @@ struct WalletDocumentsSectionView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                SyncCenter.shared.stopDocumentsRealtime()
+                SyncCenter.shared.startDocumentsRealtime(familyId: familyId, modelContext: modelContext)
+            }
+        }
         .scrollIndicators(.hidden)
     }
 

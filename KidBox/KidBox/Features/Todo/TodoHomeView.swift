@@ -147,6 +147,7 @@ struct TodoHomeView: View {
                     }
                     .padding()
                 }
+                .kbRefreshable { await forceRefresh() }
             }
         }
         .navigationTitle("To-Do")
@@ -276,6 +277,30 @@ struct TodoHomeView: View {
         }
     }
     
+    /// Pull-to-refresh: riaggancia da zero i listener di liste e todo, così il
+    /// server viene riletto per intero, e svuota l'outbox.
+    @MainActor
+    private func forceRefresh() async {
+        guard !familyId.isEmpty else { return }
+        await SyncCenter.shared.forceRefresh(listenerKeys: ["todo"]) {
+            SyncCenter.shared.stopTodoListRealtime()
+            SyncCenter.shared.stopTodoRealtime()
+            SyncCenter.shared.startTodoListRealtime(
+                familyId: familyId,
+                childId: childId,
+                modelContext: modelContext,
+                remote: remote
+            )
+            SyncCenter.shared.startTodoRealtime(
+                familyId: familyId,
+                childId: childId,
+                modelContext: modelContext,
+                remote: remote
+            )
+        }
+        await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+    }
+
     // MARK: - Counters logging
     
     private func logCounters(_ label: String) {

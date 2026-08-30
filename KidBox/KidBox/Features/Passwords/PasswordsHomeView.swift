@@ -396,6 +396,12 @@ struct PasswordsHomeView: View {
                 }
             }
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                SyncCenter.shared.stopPasswordsRealtime()
+                SyncCenter.shared.startPasswordsRealtime(familyId: familyId, modelContext: modelContext)
+            }
+        }
         .scrollContentBackground(.hidden)
     }
 

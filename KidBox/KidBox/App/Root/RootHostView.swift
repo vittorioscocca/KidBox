@@ -217,6 +217,13 @@ struct RootHostView: View {
             SyncCenter.shared.invalidateListenerBindings()
             startFamilyRealtimeIfPossible()
         }
+        // La chiave di famiglia può arrivare DOPO i listener: il recupero
+        // dall'escrow parte in un `Task` staccato, qui sotto, mentre i listener
+        // partono subito. Chi si è agganciato senza chiave ha decifrato a vuoto —
+        // le note finiscono in SwiftData come «⚠️ Nota non decifrabile» — e non
+        // verrà riproposto nulla, perché per Firestore quei documenti non sono
+        // cambiati. L'unico modo di guarire è rileggerli da zero.
+        .onReceive(familyKeyRecoveredPublisher, perform: handleFamilyKeyRecovered)
         // React to SwiftData families list changes (covers first-run fallback).
         .onChange(of: families.first?.id) { oldValue, newValue in
             // Only relevant when no explicit active family is pinned.
@@ -444,6 +451,34 @@ struct RootHostView: View {
         // Sempre, anche in caso di errore: l'invito è monouso e a scadenza,
         // ritentarlo a ogni avvio produrrebbe solo lo stesso errore.
         PendingFamilyInvite.clear()
+    }
+
+    /// Estratto dal corpo della view: inline, il type-checker di SwiftUI non
+    /// regge la catena di modificatori già lunga di `RootHostView`.
+    private var familyKeyRecoveredPublisher: NotificationCenter.Publisher {
+        NotificationCenter.default.publisher(for: .kidBoxFamilyKeyRecovered)
+    }
+
+    /// Chiave di famiglia recuperata dall'escrow a listener già avviati: li fa
+    /// ripartire per rileggere i dati cifrati.
+    ///
+    /// Chi si era agganciato senza chiave ha decifrato a vuoto — le note
+    /// finiscono in SwiftData come «⚠️ Nota non decifrabile» — e non verrà
+    /// riproposto nulla da solo, perché per Firestore quei documenti non sono
+    /// cambiati.
+    private func handleFamilyKeyRecovered(_ note: Notification) {
+        let recovered = note.userInfo?[KBFamilyKeyRecoveredUserInfo.familyId] as? String
+        guard let recovered, !recovered.isEmpty else { return }
+        // Se i listener devono ancora partire, partiranno con la chiave a posto:
+        // non c'è niente da rileggere.
+        guard startedFamilyId == recovered else {
+            KBLog.sync.kbDebug("chiave recuperata familyId=\(recovered) — nessun listener da rifare")
+            return
+        }
+        KBLog.sync.kbInfo("chiave recuperata a listener già avviati familyId=\(recovered) — rebind per rileggere i dati cifrati")
+        startedFamilyId = nil
+        SyncCenter.shared.invalidateListenerBindings()
+        startFamilyRealtimeIfPossible()
     }
 
     private func startFamilyRealtimeIfPossible() {

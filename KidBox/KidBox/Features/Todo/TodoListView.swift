@@ -117,6 +117,18 @@ struct TodoListView: View {
                     .onDelete(perform: deleteTodos)
                 }
             }
+            .kbRefreshable {
+                await SyncCenter.shared.forceRefresh(listenerKeys: ["todo"]) {
+                    SyncCenter.shared.stopTodoRealtime()
+                    SyncCenter.shared.startTodoRealtime(
+                        familyId: familyId,
+                        childId: childId,
+                        modelContext: modelContext,
+                        remote: remote
+                    )
+                }
+                await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
+            }
             .scrollContentBackground(.hidden)   // ← nasconde il grigio di sistema
             .background(backgroundColor)
             .navigationTitle(listName)

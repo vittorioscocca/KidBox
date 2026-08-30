@@ -336,6 +336,20 @@ struct HomeView: View {
         .accessibilityLabel(mode == .list ? "Vista a lista" : "Vista a griglia")
     }
     
+    /// Pull-to-refresh della Home: qui non c'è una sezione sola da rileggere ma
+    /// la dashboard intera — badge, riepiloghi, membri — che vive dei listener
+    /// di famiglia. Il bump del token li fa riagganciare tutti da
+    /// `RootHostView`, che è già il percorso usato dai deep link.
+    @MainActor
+    private func forceRefresh() async {
+        guard !activeFamilyId.isEmpty else { return }
+        coordinator.requestRootDataRefresh()
+        BadgeManager.shared.startListening(familyId: activeFamilyId)
+        SyncCenter.shared.flushGlobal(modelContext: modelContext)
+        await onboarding.refresh(modelContext: modelContext, familyId: activeFamilyId)
+        try? await Task.sleep(nanoseconds: 900_000_000)
+    }
+
     var body: some View {
         ZStack {
             backgroundColor.ignoresSafeArea()
@@ -464,6 +478,7 @@ struct HomeView: View {
                 }
                 .padding()
             }
+            .kbRefreshable { await forceRefresh() }
         } // ZStack
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)

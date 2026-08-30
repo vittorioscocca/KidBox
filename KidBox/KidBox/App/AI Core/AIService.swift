@@ -125,9 +125,10 @@ final class AIService {
     /// Itinerario viaggio: risposta lenta (fino a ~2 min lato server).
     private static let travelPlanClientTimeout: TimeInterval = 150
     /// Cartella clinica Sonnet: allineato a `timeoutSeconds: 120` su askAI.
-    private static let clinicalRecordClientTimeout: TimeInterval = 120
-    /// Piano alimentare Sonnet: output lungo (max_tokens 8192), stesso timeout server.
-    private static let mealPlanClientTimeout: TimeInterval = 120
+    private static let clinicalRecordClientTimeout: TimeInterval = 240
+    /// Piano alimentare Haiku: output lungo (max_tokens 8192), stesso timeout server.
+    /// Il piano genera fino a 8192 token di output: 120s non bastavano.
+    private static let mealPlanClientTimeout: TimeInterval = 300
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
@@ -203,7 +204,7 @@ final class AIService {
     // MARK: - Send message
     
     /// Sends the conversation to the AI and returns the assistant reply.
-    /// - Parameter purpose: `"clinicalRecord"` e `"mealPlan"` usano Sonnet lato server; `nil` = Haiku (chat Salute, visite, esami, ecc.).
+    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` usa Haiku con max_tokens esteso; `nil` = Haiku (chat Salute, visite, esami, ecc.).
     func sendMessage(
         messages: [KBAIMessage],
         systemPrompt: String,

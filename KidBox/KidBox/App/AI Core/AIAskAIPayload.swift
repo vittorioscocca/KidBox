@@ -20,7 +20,7 @@ enum AIAskAIPayload {
     /// Parity con `CLINICAL_RECORD_MIN_UNITS` in `functions/index.js`.
     static let clinicalRecordMinUnits = 3
 
-    /// Unità minime per il piano alimentare (Sonnet + output lungo: piano 90 giorni).
+    /// Unità minime per il piano alimentare (Haiku + output lungo: piano 90 giorni).
     /// Parity con `MEAL_PLAN_MIN_UNITS` in `functions/index.js`.
     static let mealPlanMinUnits = 5
 

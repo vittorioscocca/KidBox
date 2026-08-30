@@ -80,6 +80,12 @@ struct ShoppingTripsListView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
+            .kbRefreshable {
+                await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                    SyncCenter.shared.stopShoppingTripsRealtime()
+                    SyncCenter.shared.startShoppingTripsRealtime(familyId: familyId, modelContext: modelContext)
+                }
+            }
             .background(backgroundColor)
             .navigationTitle("Spese salvate")
             .navigationBarTitleDisplayMode(.inline)

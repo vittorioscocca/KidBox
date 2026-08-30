@@ -392,6 +392,7 @@ struct DocumentFolderView: View {
             }
             .padding()
         }
+        .kbRefreshable { await forceRefresh() }
         .background(backgroundColor)
     }
     
@@ -588,9 +589,21 @@ struct DocumentFolderView: View {
             }
             .padding(.vertical, 4)
         }
+        .kbRefreshable { await forceRefresh() }
         .background(backgroundColor)
     }
     
+    /// Pull-to-refresh: riaggancia il listener di documenti e cartelle — che
+    /// rilegge dal server l'intera collection — e ricarica la cartella aperta.
+    @MainActor
+    private func forceRefresh() async {
+        await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+            SyncCenter.shared.stopDocumentsRealtime()
+            SyncCenter.shared.startDocumentsRealtime(familyId: familyId, modelContext: modelContext)
+        }
+        viewModel.reload()
+    }
+
     // MARK: - Context menu
     
     @ViewBuilder

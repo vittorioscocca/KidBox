@@ -181,6 +181,14 @@ struct PediatricVaccinesView: View {
                             .padding(.top, 16)
                             .padding(.bottom, 40)
                         }
+                        .kbRefreshable {
+                            await SyncCenter.shared.forceRefreshHealth(
+                                .vaccines,
+                                familyId: familyId,
+                                childId: childId,
+                                modelContext: modelContext
+                            )
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

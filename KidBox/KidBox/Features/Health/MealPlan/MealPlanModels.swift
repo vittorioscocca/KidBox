@@ -17,8 +17,8 @@ enum MealPlanGoal: String, CaseIterable, Codable, Identifiable {
     var label: LocalizedStringKey {
         switch self {
         case .fatLoss:     return "Perdere grasso"
-        case .maintenance: return "Mantenere"
-        case .muscleGain:  return "Massa magra"
+        case .maintenance: return "Mantenere il peso"
+        case .muscleGain:  return "Aumentare massa magra"
         }
     }
 
@@ -61,12 +61,52 @@ enum MealPlanActivityLevel: String, CaseIterable, Codable, Identifiable {
 }
 
 /// Input raccolti nel form prima della generazione.
+///
+/// Età, peso e altezza sono chiesti all'utente solo quando l'app Salute non
+/// li fornisce: i campi manuali restano vuoti se il dato arriva dallo snapshot.
 struct MealPlanInput: Codable, Equatable {
     var goal: MealPlanGoal = .fatLoss
     var activityLevel: MealPlanActivityLevel = .moderate
     var preferredFoods: String = ""
     var avoidedFoods: String = ""
     var notes: String = ""
+    var manualAgeYears: String = ""
+    var manualWeightKg: String = ""
+    var manualHeightCm: String = ""
+
+    /// Vecchi piani salvati non hanno i campi manuali: decodifica tollerante.
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        goal = try c.decodeIfPresent(MealPlanGoal.self, forKey: .goal) ?? .fatLoss
+        activityLevel = try c.decodeIfPresent(MealPlanActivityLevel.self, forKey: .activityLevel) ?? .moderate
+        preferredFoods = try c.decodeIfPresent(String.self, forKey: .preferredFoods) ?? ""
+        avoidedFoods = try c.decodeIfPresent(String.self, forKey: .avoidedFoods) ?? ""
+        notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        manualAgeYears = try c.decodeIfPresent(String.self, forKey: .manualAgeYears) ?? ""
+        manualWeightKg = try c.decodeIfPresent(String.self, forKey: .manualWeightKg) ?? ""
+        manualHeightCm = try c.decodeIfPresent(String.self, forKey: .manualHeightCm) ?? ""
+    }
+
+    /// Numero inserito a mano, accettando sia la virgola sia il punto decimale.
+    private static func number(_ raw: String) -> Double? {
+        let cleaned = raw
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: ",", with: ".")
+        guard let value = Double(cleaned), value > 0 else { return nil }
+        return value
+    }
+
+    var manualAgeValue: Int? {
+        Self.number(manualAgeYears).map { Int($0) }.flatMap { $0 > 0 && $0 < 120 ? $0 : nil }
+    }
+    var manualWeightValue: Double? {
+        Self.number(manualWeightKg).flatMap { $0 >= 2 && $0 <= 400 ? $0 : nil }
+    }
+    var manualHeightValue: Double? {
+        Self.number(manualHeightCm).flatMap { $0 >= 40 && $0 <= 260 ? $0 : nil }
+    }
 }
 
 /// Piano alimentare generato, salvato in locale per non doverlo rigenerare.
@@ -151,6 +191,7 @@ enum MealPlanAIError: LocalizedError {
     case quotaWouldExceed(needed: Int, remaining: Int, dailyLimit: Int)
     case payloadTooLarge(chars: Int, maxChars: Int)
     case missingHealthData
+    case timedOut
 
     var errorDescription: String? {
         switch self {
@@ -174,6 +215,11 @@ enum MealPlanAIError: LocalizedError {
                     comment: "Meal plan payload error"
                 ),
                 chars.formatted(), maxChars.formatted()
+            )
+        case .timedOut:
+            return NSLocalizedString(
+                "La creazione del piano ha superato il tempo massimo. Il piano è lungo: riprova, di solito al secondo tentativo va a buon fine.",
+                comment: "Meal plan timeout error"
             )
         case .missingHealthData:
             return NSLocalizedString(

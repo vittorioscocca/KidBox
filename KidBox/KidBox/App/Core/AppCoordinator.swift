@@ -171,6 +171,19 @@ final class AppCoordinator: ObservableObject {
     /// Incrementato in `resetToRoot()` quando c’è una famiglia attiva, così `RootHostView` può
     /// forzare il riavvio dei listener / il ricalcolo senza restare agganciati a una sessione precedente.
     @Published private(set) var rootDataRefreshToken: UInt64 = 0
+
+    /// Rilegge da zero tutti i dati di famiglia: bumpa il token che
+    /// `RootHostView` osserva per invalidare i binding e riagganciare i
+    /// listener realtime.
+    ///
+    /// È la leva del pull-to-refresh della Home: lì non c'è una sola sezione da
+    /// rileggere ma la dashboard intera, che vive di quei listener.
+    /// A differenza di `resetToRoot()` non tocca lo stack di navigazione.
+    func requestRootDataRefresh() {
+        guard let id = activeFamilyId, !id.isEmpty else { return }
+        rootDataRefreshToken &+= 1
+        KBLog.sync.kbInfo("requestRootDataRefresh familyId=\(id) token=\(rootDataRefreshToken)")
+    }
     
     // MARK: - Private
     

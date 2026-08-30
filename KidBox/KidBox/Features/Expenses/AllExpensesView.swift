@@ -17,6 +17,7 @@ import SwiftData
 struct AllExpensesView: View {
     @ObservedObject var vm: ExpensesViewModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.modelContext) private var modelContext
 
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -61,6 +62,16 @@ struct AllExpensesView: View {
                 }
             }
             .padding(.vertical, 16)
+        }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(
+                listenerKeys: ["expenses"],
+                modelContext: modelContext
+            ) {
+                SyncCenter.shared.stopExpensesRealtime()
+                SyncCenter.shared.startExpensesRealtime(familyId: vm.familyId, modelContext: modelContext)
+            }
+            vm.reload()
         }
         .background(backgroundColor)
         .navigationTitle("Tutte le spese")

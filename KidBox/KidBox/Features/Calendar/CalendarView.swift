@@ -123,6 +123,12 @@ struct CalendarView: View {
                 }
             }
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                SyncCenter.shared.stopCalendarRealtime()
+                SyncCenter.shared.startCalendarRealtime(familyId: familyId, modelContext: modelContext)
+            }
+        }
         .trackSectionPresence(.calendar, familyId: familyId)
         .navigationTitle("Calendario")
         .navigationBarTitleDisplayMode(.inline)

@@ -18,6 +18,7 @@ struct WalletHomeView: View {
 
     @EnvironmentObject private var coordinator: AppCoordinator
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.modelContext) private var modelContext
     @Query private var tickets: [KBWalletTicket]
 
     @State private var showAddSheet = false
@@ -169,6 +170,12 @@ struct WalletHomeView: View {
             .padding(.horizontal, 16)
             .padding(.top, stackTopPadding)
             .padding(.bottom, stackBottomPadding)
+        }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                SyncCenter.shared.stopWalletRealtime()
+                SyncCenter.shared.startWalletRealtime(familyId: familyId, modelContext: modelContext)
+            }
         }
         .scrollIndicators(.hidden)
     }

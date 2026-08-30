@@ -3,9 +3,10 @@
 //  KidBox
 //
 //  Generazione del piano alimentare via Cloud Function `askAI` con
-//  `purpose: "mealPlan"` (Anthropic Sonnet lato server, max_tokens esteso).
+//  `purpose: "mealPlan"` (Anthropic Haiku lato server, max_tokens esteso).
 //
 
+import FirebaseFunctions
 import Foundation
 import SwiftData
 
@@ -70,7 +71,8 @@ enum MealPlanGenerator {
         let profileSummary = MealPlanPromptBuilder.profileSummaryLines(
             birthDate: birthDate,
             snapshot: snapshot,
-            profile: profile
+            profile: profile,
+            input: input
         )
 
         return Payload(
@@ -84,8 +86,8 @@ enum MealPlanGenerator {
                 healthContext: healthContext
             ),
             profileSummary: profileSummary,
-            hasWeight: snapshot?.weightKg != nil,
-            hasHeight: snapshot?.heightCm != nil
+            hasWeight: snapshot?.weightKg != nil || input.manualWeightValue != nil,
+            hasHeight: snapshot?.heightCm != nil || input.manualHeightValue != nil
         )
     }
 
@@ -141,11 +143,21 @@ enum MealPlanGenerator {
             "MealPlanGenerator: request chars=\(estimate.totalChars) units=\(estimate.messageUnits)"
         )
 
-        let response = try await AIService.shared.sendMessage(
-            messages: [KBAIMessage(role: .user, content: payload.userContent)],
-            systemPrompt: payload.systemPrompt,
-            purpose: "mealPlan"
-        )
+        let response: AIResponse
+        do {
+            response = try await AIService.shared.sendMessage(
+                messages: [KBAIMessage(role: .user, content: payload.userContent)],
+                systemPrompt: payload.systemPrompt,
+                purpose: "mealPlan"
+            )
+        } catch {
+            // La callable scade con `deadlineExceeded`: senza questo caso l'utente
+            // vedeva l'errore grezzo di Firebase.
+            if (error as NSError).code == FunctionsErrorCode.deadlineExceeded.rawValue {
+                throw MealPlanAIError.timedOut
+            }
+            throw error
+        }
 
         let cleaned = sanitize(response.reply)
         let document = MealPlanDocument(

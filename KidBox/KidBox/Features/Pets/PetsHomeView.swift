@@ -82,6 +82,17 @@ struct PetsHomeView: View {
         .sheet(isPresented: $showAddSheet) {
             PetFormView(familyId: familyId, existingPet: nil)
         }
+        .kbRefreshable {
+            await SyncCenter.shared.forceRefresh(
+                listenerKeys: ["pets", "petEvents"],
+                modelContext: modelContext
+            ) {
+                SyncCenter.shared.stopPetsRealtime()
+                SyncCenter.shared.stopPetEventsRealtime()
+                SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext)
+            }
+        }
         .onAppear {
             SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext)
             SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext)

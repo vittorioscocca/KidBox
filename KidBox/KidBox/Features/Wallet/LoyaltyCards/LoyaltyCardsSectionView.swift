@@ -123,6 +123,12 @@ struct LoyaltyCardsSectionView: View {
                     }
                     .padding(16)
                 }
+                .kbRefreshable {
+                    await SyncCenter.shared.forceRefresh(modelContext: modelContext) {
+                        SyncCenter.shared.stopLoyaltyCardsRealtime()
+                        SyncCenter.shared.startLoyaltyCardsRealtime(familyId: familyId, modelContext: modelContext)
+                    }
+                }
             }
         }
         .background(KBTheme.background(colorScheme).ignoresSafeArea())

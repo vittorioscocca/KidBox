@@ -37,7 +37,7 @@ struct InviteWrapService {
 
     /// Dominio degli inviti. Deve combaciare con l'entitlement
     /// `associated-domains` e con `apple-app-site-association`.
-    static let inviteLinkBaseURL = "https://kidbox-landing.web.app/join"
+    static let inviteLinkBaseURL = "https://kidboxapp.com/join"
 
     /// Costruisce il link d'invito con il segreto nel **frammento**.
     ///
