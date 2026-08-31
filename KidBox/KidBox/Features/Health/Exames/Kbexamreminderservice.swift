@@ -145,7 +145,6 @@ final class KBExamReminderService {
     ) {
         // ── Contenuto notifica ──
         let content       = UNMutableNotificationContent()
-        content.title     = String(localized: "Promemoria esame 🩺")
         let fmt           = DateFormatter()
         fmt.locale        = kbDeviceLocale()
         fmt.dateFormat    = "HH:mm"
@@ -161,9 +160,6 @@ final class KBExamReminderService {
             displayTime = "08:00"
         }
         
-        content.body = examName.isEmpty
-        ? String(format: String(localized: "Oggi alle %@ %@ ha un esame."), displayTime, childName)
-        : String(format: String(localized: "Oggi alle %@ %@ ha l'esame \"%@\"."), displayTime, childName, examName)
         content.sound     = .default
         content.userInfo  = [
             "type":     "exam_reminder",
@@ -171,6 +167,16 @@ final class KBExamReminderService {
             "childId":  childId,
             "examId":   examId
         ]
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "Promemoria esame 🩺",
+            bodyKey: examName.isEmpty
+                ? "Oggi alle %@ %@ ha un esame."
+                : "Oggi alle %@ %@ ha l'esame \"%@\".",
+            bodyArgs: examName.isEmpty
+                ? [.text(displayTime), .text(childName)]
+                : [.text(displayTime), .text(childName), .text(examName)]
+        )
         
         // ── Costruisce i DateComponents per il trigger ──
         // Usa la DATA dell'esame + l'ORARIO scelto dall'utente (o 08:00)

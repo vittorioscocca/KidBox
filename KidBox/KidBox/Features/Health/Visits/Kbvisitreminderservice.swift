@@ -53,8 +53,9 @@ final class KBVisitReminderService {
             case .authorized, .provisional:
                 self.doSchedule(
                     identifier: self.visitReminderId(for: visitId),
-                    title:      String(localized: "Visita domani 🏥"),
-                    body:       self.body(reason: reason, childName: childName, date: date),
+                    titleKey:   "Visita domani 🏥",
+                    bodyKey:    Self.bodyKey(reason: reason),
+                    bodyArgs:   self.bodyArgs(reason: reason, childName: childName, date: date),
                     date:       date,
                     userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
                     completion: completion
@@ -64,8 +65,9 @@ final class KBVisitReminderService {
                     guard granted else { DispatchQueue.main.async { completion(false) }; return }
                     self.doSchedule(
                         identifier: self.visitReminderId(for: visitId),
-                        title:      String(localized: "Visita domani 🏥"),
-                        body:       self.body(reason: reason, childName: childName, date: date),
+                        titleKey:   "Visita domani 🏥",
+                        bodyKey:    Self.bodyKey(reason: reason),
+                        bodyArgs:   self.bodyArgs(reason: reason, childName: childName, date: date),
                         date:       date,
                         userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
                         completion: completion
@@ -96,8 +98,9 @@ final class KBVisitReminderService {
             case .authorized, .provisional:
                 self.doSchedule(
                     identifier: self.nextVisitReminderId(for: visitId),
-                    title:      String(localized: "Visita domani 🏥"),
-                    body:       self.body(reason: reason, childName: childName, date: date),
+                    titleKey:   "Visita domani 🏥",
+                    bodyKey:    Self.bodyKey(reason: reason),
+                    bodyArgs:   self.bodyArgs(reason: reason, childName: childName, date: date),
                     date:       date,
                     userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
                     completion: completion
@@ -107,8 +110,9 @@ final class KBVisitReminderService {
                     guard granted else { DispatchQueue.main.async { completion(false) }; return }
                     self.doSchedule(
                         identifier: self.nextVisitReminderId(for: visitId),
-                        title:      String(localized: "Visita domani 🏥"),
-                        body:       self.body(reason: reason, childName: childName, date: date),
+                        titleKey:   "Visita domani 🏥",
+                        bodyKey:    Self.bodyKey(reason: reason),
+                        bodyArgs:   self.bodyArgs(reason: reason, childName: childName, date: date),
                         date:       date,
                         userInfo:   self.userInfo(type: "visit_reminder", familyId: familyId, childId: childId, visitId: visitId),
                         completion: completion
@@ -144,17 +148,22 @@ final class KBVisitReminderService {
     
     private func doSchedule(
         identifier: String,
-        title:      String,
-        body:       String,
+        titleKey:   String,
+        bodyKey:    String,
+        bodyArgs:   [KBNotificationLocalization.Arg],
         date:       Date,
         userInfo:   [String: String],
         completion: @escaping (Bool) -> Void
     ) {
         let content       = UNMutableNotificationContent()
-        content.title     = title
-        content.body      = body
         content.sound     = .default
         content.userInfo  = userInfo
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: titleKey,
+            bodyKey: bodyKey,
+            bodyArgs: bodyArgs
+        )
         
         let cal = Calendar.current
         
@@ -181,15 +190,31 @@ final class KBVisitReminderService {
     
     // MARK: - Helpers
     
-    private func body(reason: String, childName: String, date: Date) -> String {
-        let name = childName.isEmpty ? String(localized: "il bambino") : childName
+    /// Chiave del corpo: cambia se la visita ha un motivo indicato.
+    private static func bodyKey(reason: String) -> String {
+        reason.isEmpty
+        ? "Domani alle %@ c'è una visita medica per %@."
+        : "Domani alle %@ c'è \"%@\" per %@."
+    }
+
+    /// Argomenti del corpo, nell'ordine dei `%@` della chiave corrispondente.
+    ///
+    /// Quando il nome manca, il fallback resta una chiave: così si ri-traduce
+    /// con il resto della frase invece di restare nella lingua di quando il
+    /// promemoria è stato programmato.
+    private func bodyArgs(
+        reason: String,
+        childName: String,
+        date: Date
+    ) -> [KBNotificationLocalization.Arg] {
+        let name: KBNotificationLocalization.Arg = childName.isEmpty
+            ? .localized("il bambino")
+            : .text(childName)
         let fmt = DateFormatter()
         fmt.locale = kbDeviceLocale()
         fmt.dateFormat = "HH:mm"
         let timeStr = fmt.string(from: date)
-        return reason.isEmpty
-        ? String(format: String(localized: "Domani alle %@ c'è una visita medica per %@."), timeStr, name)
-        : String(format: String(localized: "Domani alle %@ c'è \"%@\" per %@."), timeStr, reason, name)
+        return reason.isEmpty ? [.text(timeStr), name] : [.text(timeStr), .text(reason), name]
     }
     
     private func userInfo(type: String, familyId: String, childId: String, visitId: String) -> [String: String] {

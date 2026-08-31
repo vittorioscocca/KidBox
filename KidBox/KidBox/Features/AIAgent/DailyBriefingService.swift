@@ -298,7 +298,6 @@ final class DailyBriefingService {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "☀️ Buongiorno, \(familyName)"
         let firstLine = briefingText
             .components(separatedBy: "\n")
             .first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -311,6 +310,13 @@ final class DailyBriefingService {
         ]
         if !familyId.isEmpty { info["familyId"] = familyId }
         content.userInfo = info
+        // Solo il titolo: il corpo è testo generato dal modello, che si
+        // riscrive rigenerandolo, non traducendolo.
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "☀️ Buongiorno, %@",
+            titleArgs: [.text(familyName)]
+        )
 
         var dc = DateComponents()
         dc.hour = 8

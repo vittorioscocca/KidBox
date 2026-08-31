@@ -46,6 +46,25 @@ enum KBWalletDocumentKind: String, CaseIterable, Identifiable {
         }
     }
 
+    /// La chiave del catalogo dietro `displayName`, non il testo tradotto.
+    ///
+    /// Serve alle notifiche locali: passando la chiave invece del risultato, il
+    /// testo si può ri-tradurre quando l'utente cambia lingua (vedi
+    /// `KBNotificationLocalization`). I letterali sono ripetuti di proposito —
+    /// con una chiave calcolata Xcode non li riconoscerebbe più come stringhe da
+    /// estrarre nel catalogo.
+    var displayNameKey: String {
+        switch self {
+        case .tesseraSanitaria: return "Tessera Sanitaria"
+        case .cartaIdentita:    return "Carta d'identità (cartacea)"
+        case .cie:              return "CIE (Carta d'identità elettronica)"
+        case .passaporto:       return "Passaporto"
+        case .codiceFiscale:    return "Codice Fiscale"
+        case .patente:          return "Patente"
+        case .altro:            return "Documento"
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .tesseraSanitaria: return "cross.case.fill"

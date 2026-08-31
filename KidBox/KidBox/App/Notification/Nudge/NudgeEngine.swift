@@ -270,8 +270,13 @@ final class NudgeEngine {
 
     private func schedule(_ item: PlannedNudge) async {
         let content = UNMutableNotificationContent()
-        content.title = item.campaign.resolvedTitle
-        content.body = item.campaign.resolvedBody
+        // Con un override remoto il testo è già deciso e non c'è chiave da
+        // ritradurre; altrimenti passano le chiavi del catalogo, così il nudge
+        // si adegua se la lingua cambia prima che scatti.
+        if item.campaign.hasTextOverride {
+            content.title = item.campaign.resolvedTitle
+            content.body = item.campaign.resolvedBody
+        }
         content.sound = .default
         // Stesso contratto del broadcast: il testo viaggia nel payload, così la
         // view lo mostra per intero anche se il catalogo remoto è cambiato nel
@@ -283,6 +288,13 @@ final class NudgeEngine {
             "body": item.campaign.resolvedBody,
             "destination": item.campaign.destination?.rawValue ?? "",
         ]
+        if !item.campaign.hasTextOverride {
+            KBNotificationLocalization.setText(
+                on: content,
+                titleKey: item.campaign.title,
+                bodyKey: item.campaign.body
+            )
+        }
 
         let interval = max(item.fireDate.timeIntervalSinceNow, 60)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)

@@ -38,8 +38,6 @@ final class WalletDocumentReminderService {
             guard fireDate > now else { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = "\(kind.displayName) in scadenza"
-            content.body = title.isEmpty ? kind.displayName : title
             content.sound = .default
             content.threadIdentifier = "kidbox.wallet.documents"
             content.userInfo = [
@@ -47,6 +45,23 @@ final class WalletDocumentReminderService {
                 "familyId": familyId,
                 "documentId": documentId
             ]
+            // Il tipo di documento entra come chiave e non come testo tradotto,
+            // così si ri-traduce insieme alla cornice al cambio lingua.
+            if title.isEmpty {
+                KBNotificationLocalization.setText(
+                    on: content,
+                    titleKey: "%@ in scadenza",
+                    titleArgs: [.localized(kind.displayNameKey)],
+                    bodyKey: kind.displayNameKey
+                )
+            } else {
+                content.body = title
+                KBNotificationLocalization.setText(
+                    on: content,
+                    titleKey: "%@ in scadenza",
+                    titleArgs: [.localized(kind.displayNameKey)]
+                )
+            }
 
             let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)

@@ -874,6 +874,32 @@ final class NotificationManager: NSObject, ObservableObject {
         ], merge: true)
         
         KBLog.auth.kbDebug("FCM token stored")
+        
+        // Il token arriva a ogni avvio: è il momento buono per riallineare
+        // anche la lingua, così il campo esiste pure per chi non ha mai aperto
+        // il selettore o ha cambiato la lingua di sistema fuori dall'app.
+        await syncNotificationLanguage()
+    }
+    
+    /// Allinea `users/{uid}.notificationLanguage` alla lingua scelta in app.
+    ///
+    /// Le push arrivano già renderizzate — è il sistema a mostrarle quando l'app
+    /// è killed, senza eseguire codice nostro — quindi a tradurle deve essere il
+    /// server, che la lingua del device non può vederla. Questo campo è l'unico
+    /// modo che ha per saperla.
+    func syncNotificationLanguage() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let code = LanguageManager.shared.currentLanguageCode
+        do {
+            try await db.collection("users").document(uid).setData([
+                "notificationLanguage": code
+            ], merge: true)
+            KBLog.auth.kbDebug("Notification language synced: \(code)")
+        } catch {
+            // Non è un errore bloccante: senza il campo il server ricade
+            // sull'italiano, che è il comportamento storico.
+            KBLog.auth.kbError("Sync notification language failed: \(error.localizedDescription)")
+        }
     }
     
     func handleFCMToken(_ token: String) async {
@@ -1095,15 +1121,6 @@ extension NotificationManager {
             guard fireDate > Date().addingTimeInterval(5) else { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = "Password in scadenza"
-            switch days {
-            case 1:
-                content.body = "«\(displayTitle)» scade domani (\(expiryStr))."
-            case 7:
-                content.body = "«\(displayTitle)» scade il \(expiryStr). Mancano 7 giorni."
-            default:
-                content.body = "«\(displayTitle)» scade il \(expiryStr). Mancano 30 giorni."
-            }
             content.sound = .default
             content.threadIdentifier = "kidbox.passwords"
             content.userInfo = [
@@ -1112,6 +1129,18 @@ extension NotificationManager {
                 "entryId": entry.id,
                 "daysBefore": days,
             ]
+            let bodyKey: String
+            switch days {
+            case 1: bodyKey = "«%@» scade domani (%@)."
+            case 7: bodyKey = "«%@» scade il %@. Mancano 7 giorni."
+            default: bodyKey = "«%@» scade il %@. Mancano 30 giorni."
+            }
+            KBNotificationLocalization.setText(
+                on: content,
+                titleKey: "Password in scadenza",
+                bodyKey: bodyKey,
+                bodyArgs: [.text(displayTitle), .text(expiryStr)]
+            )
 
             var comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
             comps.second = 0
@@ -1144,10 +1173,6 @@ extension NotificationManager {
 
         let id = "kb.password.security.summary.\(familyId)"
         let content = UNMutableNotificationContent()
-        content.title = "Sicurezza password"
-        content.body = newlyCompromised == 1
-            ? "Abbiamo trovato 1 nuova password compromessa."
-            : "Abbiamo trovato \(newlyCompromised) nuove password compromesse."
         content.sound = .default
         content.threadIdentifier = "kidbox.passwords.security"
         content.userInfo = [
@@ -1155,6 +1180,14 @@ extension NotificationManager {
             "familyId": familyId,
             "newlyCompromised": newlyCompromised
         ]
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "Sicurezza password",
+            bodyKey: newlyCompromised == 1
+                ? "Abbiamo trovato 1 nuova password compromessa."
+                : "Abbiamo trovato %@ nuove password compromesse.",
+            bodyArgs: newlyCompromised == 1 ? [] : [.text("\(newlyCompromised)")]
+        )
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)

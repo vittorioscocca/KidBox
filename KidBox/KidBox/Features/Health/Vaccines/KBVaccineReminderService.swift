@@ -63,11 +63,12 @@ final class KBVaccineReminderService {
         let nm = (vaccine.commercialName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let titleText = nm.isEmpty ? vaccine.vaccineType.displayName : nm
         let who = childName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let whoLabel = who.isEmpty ? String(localized: "il bambino") : who
+        // Chiave e non testo: il fallback si ri-traduce col resto della frase.
+        let whoLabel: KBNotificationLocalization.Arg = who.isEmpty
+            ? .localized("il bambino")
+            : .text(who)
 
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "Promemoria vaccino")
-        content.body = String(format: String(localized: "Domani alle 9:00: vaccino «%@» per %@."), titleText, whoLabel)
         content.sound = .default
         content.userInfo = [
             "type": "vaccine_reminder",
@@ -75,6 +76,12 @@ final class KBVaccineReminderService {
             "childId": vaccine.childId,
             "vaccineId": vaccine.id,
         ]
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "Promemoria vaccino",
+            bodyKey: "Domani alle 9:00: vaccino «%@» per %@.",
+            bodyArgs: [.text(titleText), whoLabel]
+        )
 
         let cal = Calendar.current
         let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)

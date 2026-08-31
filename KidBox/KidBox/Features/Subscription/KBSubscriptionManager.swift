@@ -706,13 +706,11 @@ final class KBSubscriptionManager: ObservableObject {
         }
         
         let content = UNMutableNotificationContent()
-        content.title = "Il tuo piano \(plan.displayName) sta per scadere"
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         formatter.timeStyle = .none
         formatter.locale    = kbDeviceLocale()
         let dateStr = formatter.string(from: expirationDate)
-        content.body  = "Il tuo abbonamento KidBox \(plan.displayName) scade il \(dateStr). Rinnova per continuare ad usare AI e storage esteso."
         content.sound = .default
         let familyId = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")?
             .string(forKey: "activeFamilyId") ?? ""
@@ -720,6 +718,15 @@ final class KBSubscriptionManager: ObservableObject {
             "type": "subscription_expiring",
             "familyId": familyId,
         ]
+        // La data resta com'era: rifarla nel formato della nuova lingua vorrebbe
+        // dire riportarsi dietro anche la `Date`, e qui basta molto meno.
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "Il tuo piano %@ sta per scadere",
+            titleArgs: [.text(plan.displayName)],
+            bodyKey: "Il tuo abbonamento KidBox %@ scade il %@. Rinnova per continuare ad usare AI e storage esteso.",
+            bodyArgs: [.text(plan.displayName), .text(dateStr)]
+        )
         
         var components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
         components.second = 0

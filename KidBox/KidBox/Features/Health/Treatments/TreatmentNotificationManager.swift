@@ -237,9 +237,8 @@ enum TreatmentNotificationManager {
                 }
 
                 let content = UNMutableNotificationContent()
-                content.title = "💊 \(treatment.drugName)"
-                let fascia = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
-                content.body = "\(fascia) · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit)"
+                let fascia = schedulePeriodLabelArg(timeStr, slotIndexFallback: slotIdx)
+                let dose = "\(treatment.dosageValue.formatted()) \(treatment.dosageUnit)"
                 content.sound = .default
                 content.categoryIdentifier = TreatmentNotificationCategory.identifier
                 content.userInfo = [
@@ -250,6 +249,13 @@ enum TreatmentNotificationManager {
                     "dayOffset": dayOffset,
                     "slotIndex": slotIdx,
                 ]
+                KBNotificationLocalization.setText(
+                    on: content,
+                    titleKey: "💊 %@",
+                    titleArgs: [.text(treatment.drugName)],
+                    bodyKey: "%@ · %@",
+                    bodyArgs: [fascia, .text(dose)]
+                )
 
                 let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
                 let reqId = notificationId(for: treatment.id, dayOffset: dayOffset, slotIndex: slotIdx)
@@ -273,9 +279,8 @@ enum TreatmentNotificationManager {
                 guard let fire = cal.date(from: dc), fire > Date() else { continue }
                 
                 let content                    = UNMutableNotificationContent()
-                content.title                  = "💊 \(treatment.drugName)"
-                let fascia = schedulePeriodLabel(timeStr, slotIndexFallback: slotIdx)
-                content.body                   = "\(fascia) · \(treatment.dosageValue.formatted()) \(treatment.dosageUnit)"
+                let fascia = schedulePeriodLabelArg(timeStr, slotIndexFallback: slotIdx)
+                let dose = "\(treatment.dosageValue.formatted()) \(treatment.dosageUnit)"
                 content.sound                  = .default
                 content.categoryIdentifier     = TreatmentNotificationCategory.identifier
                 content.userInfo               = [
@@ -286,6 +291,13 @@ enum TreatmentNotificationManager {
                     "dayOffset":   dayOffset,
                     "slotIndex":   slotIdx
                 ]
+                KBNotificationLocalization.setText(
+                    on: content,
+                    titleKey: "💊 %@",
+                    titleArgs: [.text(treatment.drugName)],
+                    bodyKey: "%@ · %@",
+                    bodyArgs: [fascia, .text(dose)]
+                )
                 
                 let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
                 let reqId   = notificationId(for: treatment.id, dayOffset: dayOffset, slotIndex: slotIdx)

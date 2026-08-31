@@ -62,8 +62,6 @@ final class HousePaymentReminderService {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Scadenza in arrivo"
-        content.body = "\(payment.name) — tra 3 giorni."
         content.sound = .default
         content.threadIdentifier = "kidbox.housePayments"
         content.userInfo = [
@@ -71,6 +69,12 @@ final class HousePaymentReminderService {
             "familyId": payment.familyId,
             "paymentId": payment.id,
         ]
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "Scadenza in arrivo",
+            bodyKey: "%@ — tra 3 giorni.",
+            bodyArgs: [.text(payment.name)]
+        )
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let identifier = "\(Self.idPrefix(paymentId: payment.id))next"

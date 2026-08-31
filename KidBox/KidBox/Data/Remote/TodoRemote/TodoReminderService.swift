@@ -47,7 +47,6 @@ enum TodoReminderService {
         
         let id = "todo.reminder.\(todoId)"   // stabile: 1 notifica per todo
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "⏰ Promemoria")
         content.body  = title
         content.sound = UNNotificationSound.default
         // ── Payload completo per il deep link ──────────────────────────────
@@ -60,6 +59,7 @@ enum TodoReminderService {
             "familyId": familyId,
             "childId":  childId
         ]
+        KBNotificationLocalization.setText(on: content, titleKey: "⏰ Promemoria")
         // ──────────────────────────────────────────────────────────────────
         
         let comps   = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: dueAt)

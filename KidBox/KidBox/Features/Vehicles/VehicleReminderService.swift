@@ -72,11 +72,14 @@ final class VehicleReminderService {
         let label = vehicle.name
         let offsets = VehicleReminderOffsets.decode(json: vehicle.reminderOffsetsJson)
 
-        let specs: [(key: String, title: String, date: Date?)] = [
-            ("insurance", String(localized: "Assicurazione"), vehicle.insuranceExpiryDate),
-            ("revision", String(localized: "Revisione"), vehicle.revisionExpiryDate),
-            ("tax", String(localized: "Bollo"), vehicle.taxExpiryDate),
-            ("service", String(localized: "Prossimo tagliando"), vehicle.nextServiceDate),
+        // `titleKey` porta dentro anche il tipo di scadenza: tenendolo come
+        // argomento già tradotto resterebbe congelato alla lingua di quando il
+        // promemoria è stato armato.
+        let specs: [(key: String, titleKey: String, date: Date?)] = [
+            ("insurance", "Promemoria: Assicurazione: %@", vehicle.insuranceExpiryDate),
+            ("revision", "Promemoria: Revisione: %@", vehicle.revisionExpiryDate),
+            ("tax", "Promemoria: Bollo: %@", vehicle.taxExpiryDate),
+            ("service", "Promemoria: Prossimo tagliando: %@", vehicle.nextServiceDate),
         ]
 
         for spec in specs {
@@ -94,8 +97,9 @@ final class VehicleReminderService {
 
                 await scheduleOne(
                     identifier: "vehicle.\(vehicle.id).\(spec.key).offset\(days)",
-                    title: "\(String(localized: "Promemoria")): \(spec.title): \(label)",
-                    body: Self.offsetBody(days: days),
+                    titleKey: spec.titleKey,
+                    titleArgs: [.text(label)],
+                    bodyKey: Self.offsetBodyKey(days: days),
                     familyId: vehicle.familyId,
                     vehicleId: vehicle.id,
                     kind: spec.key,
@@ -108,12 +112,11 @@ final class VehicleReminderService {
 
     // MARK: - Private
 
-    private static func offsetBody(days: Int) -> String {
+    private static func offsetBodyKey(days: Int) -> String {
         switch days {
-        case 0: return String(localized: "Scade oggi — tocca in Garage.")
-        case 2: return String(localized: "Scade tra 2 giorni — Garage.")
-        case 7: return String(localized: "Scade tra una settimana — Garage.")
-        default: return String(localized: "Scade tra una settimana — Garage.")
+        case 0: return "Scade oggi — tocca in Garage."
+        case 2: return "Scade tra 2 giorni — Garage."
+        default: return "Scade tra una settimana — Garage."
         }
     }
 
@@ -121,8 +124,9 @@ final class VehicleReminderService {
 
     private func scheduleOne(
         identifier: String,
-        title: String,
-        body: String,
+        titleKey: String,
+        titleArgs: [KBNotificationLocalization.Arg],
+        bodyKey: String,
         familyId: String,
         vehicleId: String,
         kind: String,
@@ -130,8 +134,6 @@ final class VehicleReminderService {
         components: DateComponents
     ) async {
         let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
         content.sound = .default
         content.threadIdentifier = "kidbox.vehicles"
         content.userInfo = [
@@ -141,6 +143,12 @@ final class VehicleReminderService {
             "kind": kind,
             "slot": slot,
         ]
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: titleKey,
+            titleArgs: titleArgs,
+            bodyKey: bodyKey
+        )
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)

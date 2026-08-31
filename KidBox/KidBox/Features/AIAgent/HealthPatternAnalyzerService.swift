@@ -501,7 +501,6 @@ final class HealthPatternAnalyzerService {
             ?? "Nuovi pattern salute da rivedere."
 
         let content = UNMutableNotificationContent()
-        content.title = "🔍 Pattern salute · \(familyName)"
         content.body = firstLine
         content.sound = .default
         var info: [String: Any] = [
@@ -510,6 +509,13 @@ final class HealthPatternAnalyzerService {
         ]
         if !familyId.isEmpty { info["familyId"] = familyId }
         content.userInfo = info
+        // Solo il titolo: il corpo è testo generato dal modello, che si
+        // riscrive rigenerandolo, non traducendolo.
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "🔍 Pattern salute · %@",
+            titleArgs: [.text(familyName)]
+        )
 
         var dc = DateComponents()
         dc.day = 1

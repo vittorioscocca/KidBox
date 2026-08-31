@@ -574,6 +574,10 @@ struct KidBoxApp: App {
                         KBLog.sync.kbDebug("Treatment notifications rescheduled on foreground")
                         await HousePaymentReminderService.shared.rescheduleAllActive(modelContext: context)
                         await VehicleReminderService.shared.rescheduleAllActive(modelContext: context)
+                        // Dopo i refresh: la coda è al completo, e se nel
+                        // frattempo è cambiata la lingua di sistema va riscritta
+                        // — chi la cambia da lì non passa dal selettore in-app.
+                        await KBNotificationLocalization.relocalizePendingIfLanguageChanged()
                     }
                     // Ricalcolo della coda nudge. Sta dentro il throttle dei
                     // 120s come il resto della manutenzione: è una lettura

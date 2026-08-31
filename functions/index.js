@@ -11,6 +11,17 @@ const {logEvent: logAnalyticsEvent} = require("./analytics");
 // Catalogo piani: quote/prezzi/feature vivono SOLO in functions/plans.json.
 // Vedi functions/plansConfig.js e internal/plans-source-of-truth.md.
 const plansConfig = require("./plansConfig");
+// Testi delle notifiche push per lingua: il client scrive la lingua scelta su
+// `users/{uid}.notificationLanguage`, qui si traduce la cornice prima di inviare.
+const {
+  DEFAULT_LANG,
+  normalizeLang,
+  t: tn,
+  walletKindLabel,
+  formatLongDate,
+  formatShortDateTime,
+  formatCurrency,
+} = require("./notificationsI18n");
 const STORAGE_BUCKET = "kidbox-42cd7-eu";
 
 /** Stima foto visita pediatrica (allineata a initStorageUsage / client). */
@@ -250,11 +261,12 @@ async function incrementCountersAndGetBadges({familyId, uids, field}) {
  * le stesse, la latenza no — ed è la latenza che si paga in GB-secondi.
  *
  * Ritorna anche i `DocumentReference` dei token, così `pruneInvalidFcmTokens`
- * non deve rileggerli dopo l'invio.
+ * non deve rileggerli dopo l'invio, e la lingua scelta dal destinatario, con cui
+ * chi invia traduce titolo e corpo prima della push.
  * @param {string[]} uids
  * @param {?string} prefField campo di `notificationPrefs` da rispettare;
  *     `null` per ignorare le preferenze (notifiche non disattivabili).
- * @return {Promise<Map<string, {tokens: string[],
+ * @return {Promise<Map<string, {tokens: string[], lang: string,
  *     refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
  */
 async function getTokensForUsers(uids, prefField = null) {
@@ -265,17 +277,22 @@ async function getTokensForUsers(uids, prefField = null) {
   const db = admin.firestore();
   const userRefs = unique.map((uid) => db.collection("users").doc(uid));
 
-  // Le preferenze di TUTTI i destinatari in una sola chiamata.
-  const userSnaps = prefField ? await db.getAll(...userRefs) : [];
+  // I doc di TUTTI i destinatari in una sola chiamata. Si leggono sempre, anche
+  // senza `prefField`: serve comunque `notificationLanguage`, e una notifica
+  // nella lingua sbagliata vale meno della lettura risparmiata.
+  const userSnaps = await db.getAll(...userRefs);
 
   const wanted = [];
+  const langByUid = new Map();
   unique.forEach((uid, i) => {
+    const snap = userSnaps[i];
+    const exists = snap && snap.exists;
+    langByUid.set(uid, normalizeLang(exists ? snap.get("notificationLanguage") : null));
     if (!prefField) {
       wanted.push(uid);
       return;
     }
-    const snap = userSnaps[i];
-    const prefs = snap && snap.exists ? snap.get("notificationPrefs") : null;
+    const prefs = exists ? snap.get("notificationPrefs") : null;
     // Assenza di preferenze = tutto attivo: è il default storico, cambiarlo
     // silenzierebbe gli utenti che non hanno mai aperto le impostazioni.
     if (!prefs || prefs[prefField] !== false) wanted.push(uid);
@@ -297,7 +314,7 @@ async function getTokensForUsers(uids, prefField = null) {
         tokens.push(tok);
         refsByToken.set(tok, t.ref);
       });
-      out.set(uid, {tokens, refsByToken});
+      out.set(uid, {tokens, refsByToken, lang: langByUid.get(uid)});
     }));
   }
 
@@ -316,13 +333,13 @@ async function getUserTokensIfEnabled(uid, prefField) {
 }
 
 /**
- * Returns all FCM tokens for a user (no preference filter).
+ * Token FCM e lingua scelta di un utente (nessun filtro sulle preferenze).
  * @param {string} uid
- * @return {Promise<string[]>}
+ * @return {Promise<{tokens: string[], lang: string}>}
  */
-async function getTokensForUser(uid) {
-  const byUid = await getTokensForUsers([uid], null);
-  return byUid.get(uid)?.tokens || [];
+async function getTokensAndLangForUser(uid) {
+  const entry = await getTokensForUsers([uid], null).then((m) => m.get(uid));
+  return {tokens: entry?.tokens || [], lang: entry?.lang || DEFAULT_LANG};
 }
 
 /**
@@ -490,8 +507,7 @@ exports.notifyNewDocument = onDocumentCreated(
         return;
       }
 
-      const title = "Nuovo documento caricato";
-      const body = docData.title || docData.fileName || "Documento";
+      const docLabel = docData.title || docData.fileName || null;
       const messagesToSend = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
@@ -503,13 +519,13 @@ exports.notifyNewDocument = onDocumentCreated(
           {familyId, uids: recipients, field: "documents"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "document.title"),
+          body: docLabel || tn(lang, "document.fallback"),
           data: {type: "new_document", familyId, docId},
           badge,
         }));
@@ -656,18 +672,22 @@ exports.notifyNewChatMessage = onDocumentCreated(
       }
 
       const msgType = msgData.type || "text";
-      let body;
-      switch (msgType) {
-        case "text":
-          body = msgData.text || "Nuovo messaggio";
-          if (body.length > 100) body = body.substring(0, 97) + "…";
-          break;
-        case "photo": body = "📷 Ha inviato una foto"; break;
-        case "video": body = "🎥 Ha inviato un video"; break;
-        case "audio": body = "🎤 Ha inviato un messaggio vocale"; break;
-        case "document": body = "📎 Ha inviato un documento"; break;
-        default: body = "Nuovo messaggio";
+      // Il testo di un messaggio è contenuto dell'utente e non si traduce; per
+      // gli allegati il corpo è tutto nostro, quindi va nella lingua di chi legge.
+      let textPreview = null;
+      if (msgType === "text" && msgData.text) {
+        textPreview = msgData.text.length > 100 ?
+          msgData.text.substring(0, 97) + "…" :
+          msgData.text;
       }
+      const bodyKeyByType = {
+        photo: "chat.photo",
+        video: "chat.video",
+        audio: "chat.audio",
+        document: "chat.document",
+      };
+      const bodyKey = bodyKeyByType[msgType] || "chat.newMessage";
+      const bodyFor = (lang) => textPreview || tn(lang, bodyKey);
 
       // ── Menzioni ────────────────────────────────────────────────────────
       // I client salvano `mentionedUids` come array piatto degli UID citati
@@ -690,11 +710,14 @@ exports.notifyNewChatMessage = onDocumentCreated(
           {familyId, uids: recipients, field: "chat"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         const isMention = mentionedSet.has(uid);
         const pushType = isMention ? "chat_mention" : "new_chat_message";
-        const title = isMention ? `${senderName} ti ha menzionato` : senderName;
+        const title = isMention ?
+          tn(lang, "chat.mentionTitle", {name: senderName}) :
+          senderName;
+        const body = bodyFor(lang);
         const data = {
           type: pushType,
           familyId,
@@ -707,7 +730,12 @@ exports.notifyNewChatMessage = onDocumentCreated(
         if (typeof msgData.textEnc === "string" && msgData.textEnc.length > 0) {
           data.textEnc = msgData.textEnc;
         }
-        if (isMention) data.isMention = "1";
+        if (isMention) {
+          data.isMention = "1";
+          // La Notification Service Extension iOS non ha un proprio catalogo di
+          // stringhe: il sottotitolo della menzione deve arrivarle già tradotto.
+          data.mentionSubtitle = tn(lang, "chat.mentionSubtitle");
+        }
 
         messagesToSend.push({
           tokens,
@@ -993,10 +1021,7 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
         return;
       }
 
-      const title = "Posizione";
-      const body = afterIsSharing ?
-        `${subjectName} sta condividendo la posizione` :
-        `${subjectName} ha smesso di condividere la posizione`;
+      const bodyKey = afterIsSharing ? "location.started" : "location.stopped";
 
       const mode = after.mode || null;
       const expiresAt = after.expiresAt || null;
@@ -1011,13 +1036,13 @@ exports.notifyLocationSharingChanged = onDocumentWritten(
           {familyId, uids: recipients, field: "location"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "location.title"),
+          body: tn(lang, bodyKey, {name: subjectName}),
           data: {
             type: afterIsSharing ? "location_sharing_started" : "location_sharing_stopped",
             familyId,
@@ -1210,13 +1235,9 @@ exports.onGeofenceEvent = onDocumentCreated(
         return;
       }
 
-      const title = transitionType === "arrive" ?
-        `${displayName} è arrivato` :
-        `${displayName} è partito`;
-
-      const body = transitionType === "arrive" ?
-        `a ${geofenceName}` :
-        `da ${geofenceName}`;
+      const isArrival = transitionType === "arrive";
+      const titleKey = isArrival ? "geofence.arriveTitle" : "geofence.leaveTitle";
+      const bodyKey = isArrival ? "geofence.arriveBody" : "geofence.leaveBody";
 
       const messagesToSend = [];
 
@@ -1229,7 +1250,7 @@ exports.onGeofenceEvent = onDocumentCreated(
           {familyId, uids: recipients, field: "location"});
 
       for (const uid of recipients) {
-        const {tokens, refsByToken} = tokensByUid.get(uid);
+        const {tokens, refsByToken, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
 
         messagesToSend.push({
@@ -1237,8 +1258,8 @@ exports.onGeofenceEvent = onDocumentCreated(
           refsByToken,
           ...buildDataOnlyMessage({
             tokens,
-            title,
-            body,
+            title: tn(lang, titleKey, {name: displayName}),
+            body: tn(lang, bodyKey, {place: geofenceName}),
             data: {
               type: "geofenceEvent",
               familyId,
@@ -1434,9 +1455,7 @@ exports.notifyNewGroceryItem = onDocumentCreated(
         logger.info("notifyNewGroceryItem: no targets"); return;
       }
 
-      const itemName = itemData.name || "Prodotto";
-      const title = "Lista della spesa 🛒";
-      const body = `${creatorName} ha aggiunto: ${itemName}`;
+      const itemName = itemData.name || null;
       const messagesToSend = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
@@ -1448,12 +1467,15 @@ exports.notifyNewGroceryItem = onDocumentCreated(
           {familyId, uids: recipients, field: "shopping"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "grocery.title"),
+          body: tn(lang, "grocery.body", {
+            name: creatorName,
+            item: itemName || tn(lang, "grocery.fallback"),
+          }),
           data: {type: "new_grocery_item", familyId, itemId},
           badge,
         }));
@@ -1517,8 +1539,6 @@ exports.notifyNewNote = onDocumentCreated(
         logger.info("notifyNewNote: no targets"); return;
       }
 
-      const title = "📝 Nuova nota";
-      const body = `${creatorName} ha aggiunto una nuova nota`;
       const messagesToSend = [];
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
@@ -1530,12 +1550,12 @@ exports.notifyNewNote = onDocumentCreated(
           {familyId, uids: recipients, field: "notes"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "note.title"),
+          body: tn(lang, "note.body", {name: creatorName}),
           data: {type: "new_note", familyId, noteId},
           badge,
         }));
@@ -3901,17 +3921,8 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
         logger.info("notifyNewCalendarEvent: no targets (only creator)"); return;
       }
 
-      const eventTitle = eventData.title || "Nuovo evento";
-      const startDate = eventData.startDate?.toDate?.();
-      let dateStr = "";
-      if (startDate) {
-        dateStr = startDate.toLocaleDateString("it-IT", {timeZone: "Europe/Rome", day: "numeric", month: "long"});
-      }
-
-      const title = "📅 Calendario";
-      const body = dateStr ?
-        `${creatorName} ha aggiunto: ${eventTitle} — ${dateStr}` :
-        `${creatorName} ha aggiunto: ${eventTitle}`;
+      const eventTitle = eventData.title || null;
+      const startDate = eventData.startDate?.toDate?.() || null;
 
       const messagesToSend = [];
 
@@ -3924,12 +3935,17 @@ exports.notifyNewCalendarEvent = onDocumentCreated(
           {familyId, uids: recipients, field: "calendar"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        const event = eventTitle || tn(lang, "calendar.fallback");
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "calendar.title"),
+          body: startDate ?
+            tn(lang, "calendar.body", {
+              name: creatorName, event, date: formatLongDate(startDate, lang),
+            }) :
+            tn(lang, "calendar.bodyNoDate", {name: creatorName, event}),
           data: {type: "new_calendar_event", familyId, eventId},
           badge,
         }));
@@ -3993,11 +4009,8 @@ exports.notifyNewExpense = onDocumentCreated(
         logger.info("notifyNewExpense: no targets (only creator)", {familyId}); return;
       }
 
-      const title = "💸 Nuova spesa registrata";
-      const expenseTitle = expenseData.title || "Spesa";
-      const amount = typeof expenseData.amount === "number" ?
-        `${expenseData.amount.toFixed(2).replace(".", ",")} €` : "";
-      const body = amount ? `${expenseTitle} · ${amount}` : expenseTitle;
+      const expenseTitle = expenseData.title || null;
+      const amount = typeof expenseData.amount === "number" ? expenseData.amount : null;
 
       const messagesToSend = [];
 
@@ -4014,12 +4027,15 @@ exports.notifyNewExpense = onDocumentCreated(
           {familyId, uids: recipients, field: "expenses"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        const label = expenseTitle || tn(lang, "expense.fallback");
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "expense.title"),
+          body: amount === null ?
+            label :
+            tn(lang, "expense.body", {title: label, amount: formatCurrency(amount, lang)}),
           data: {type: "new_expense", familyId, expenseId},
           badge,
         }));
@@ -5349,43 +5365,6 @@ exports.onWalletTicketStorageChanged = onDocumentWritten(
     },
 );
 
-/**
- * Returns a short, human-readable label for a wallet ticket kind.
- * Keep in sync with iOS `KBWalletTicketKind.displayName`.
- * @param {string|null|undefined} kindRaw
- * @return {string}
- */
-function walletKindLabel(kindRaw) {
-  switch ((kindRaw || "").toLowerCase()) {
-    case "train": return "Treno";
-    case "flight": return "Volo";
-    case "ferry": return "Traghetto";
-    case "bus": return "Autobus";
-    case "concert": return "Concerto";
-    case "cinema": return "Cinema";
-    case "parking": return "Parcheggio";
-    case "museum": return "Museo";
-    default: return "Biglietto";
-  }
-}
-
-/**
- * Formats a Date as "dd/MM HH:mm" in Europe/Rome.
- * @param {Date} date
- * @return {string}
- */
-function formatWalletDate(date) {
-  try {
-    return new Intl.DateTimeFormat("it-IT", {
-      day: "2-digit", month: "2-digit",
-      hour: "2-digit", minute: "2-digit",
-      timeZone: "Europe/Rome",
-    }).format(date);
-  } catch (_) {
-    return date.toISOString();
-  }
-}
-
 // Notifica i membri della famiglia all'aggiunta di un nuovo biglietto wallet.
 // I campi testuali (title, location, ecc.) sono cifrati end-to-end lato client,
 // quindi il body usa solo metadati plaintext (kind, eventDate, createdByName).
@@ -5427,15 +5406,15 @@ exports.notifyNewWalletTicket = onDocumentCreated(
       }
 
       const creatorName = (ticketData.createdByName || "").trim();
-      const kindLabel = walletKindLabel(ticketData.kind);
       const emitter = (ticketData.emitter || "").toString().trim();
-      // "Trenitalia · Treno" se emitter presente, altrimenti "Treno"
-      const kindWithEmitter = emitter ? `${emitter} · ${kindLabel}` : kindLabel;
       const eventDate = ticketData.eventDate?.toDate ? ticketData.eventDate.toDate() : null;
 
-      const title = "🎟️ Nuovo biglietto nel Wallet";
-      const bodyPrefix = creatorName ? `${creatorName} · ${kindWithEmitter}` : kindWithEmitter;
-      const body = eventDate ? `${bodyPrefix} — ${formatWalletDate(eventDate)}` : bodyPrefix;
+      // "Trenitalia · Treno" se emitter presente, altrimenti solo "Treno":
+      // l'emittente è un nome proprio, l'etichetta del tipo va tradotta.
+      const kindFor = (lang) => {
+        const label = walletKindLabel(ticketData.kind, lang);
+        return emitter ? `${emitter} · ${label}` : label;
+      };
 
       const messagesToSend = [];
 
@@ -5452,12 +5431,20 @@ exports.notifyNewWalletTicket = onDocumentCreated(
           {familyId, uids: recipients, field: "wallet"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
+        const params = {who: creatorName, kind: kindFor(lang)};
+        let bodyKey;
+        if (creatorName) {
+          bodyKey = eventDate ? "wallet.ticketBodyWithDate" : "wallet.ticketBody";
+        } else {
+          bodyKey = eventDate ? "wallet.ticketBodyNoWhoWithDate" : "wallet.ticketBodyNoWho";
+        }
+        if (eventDate) params.date = formatShortDateTime(eventDate, lang);
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "wallet.ticketTitle"),
+          body: tn(lang, bodyKey, params),
           data: {type: "new_wallet_ticket", familyId, ticketId},
           badge,
         }));
@@ -5521,8 +5508,7 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
         logger.info("notifyNewLoyaltyCard: no targets (only creator)", {familyId}); return;
       }
 
-      const title = "Nuova carta fedeltà";
-      const body = (cardData.brandName || "").toString().trim() || "Carta fedeltà";
+      const brandName = (cardData.brandName || "").toString().trim();
 
       const messagesToSend = [];
 
@@ -5539,12 +5525,12 @@ exports.notifyNewLoyaltyCard = onDocumentCreated(
           {familyId, uids: recipients, field: "wallet"});
 
       for (const uid of recipients) {
-        const {tokens} = tokensByUid.get(uid);
+        const {tokens, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
         messagesToSend.push(buildDataOnlyMessage({
           tokens,
-          title,
-          body,
+          title: tn(lang, "wallet.loyaltyTitle"),
+          body: brandName || tn(lang, "wallet.loyaltyFallback"),
           data: {type: "new_loyalty_card", familyId, cardId},
           badge,
         }));
@@ -5606,15 +5592,15 @@ exports.notifyUpcomingWalletTickets = onSchedule(
       };
 
       /**
-       * Token FCM di un utente, letti una sola volta per esecuzione.
+       * Token FCM e lingua di un utente, letti una sola volta per esecuzione.
        * @param {string} uid
-       * @return {Promise<string[]>}
+       * @return {Promise<{tokens: string[], lang: string}>}
        */
       const tokensOf = async (uid) => {
         if (tokensCache.has(uid)) return tokensCache.get(uid);
-        const tokens = await getTokensForUser(uid);
-        tokensCache.set(uid, tokens);
-        return tokens;
+        const entry = await getTokensAndLangForUser(uid);
+        tokensCache.set(uid, entry);
+        return entry;
       };
 
       // Finestra massima: i prossimi 25 ore (copre 24h +30min).
@@ -5679,26 +5665,30 @@ exports.notifyUpcomingWalletTickets = onSchedule(
           continue;
         }
 
-        const kindLabel = walletKindLabel(data.kind);
         const emitter = (data.emitter || "").toString().trim();
-        const kindWithEmitter = emitter ? `${emitter} · ${kindLabel}` : kindLabel;
-        let title;
-        if (windowType === "24h") {
-          title = "⏰ Biglietto domani";
-        } else if (windowType === "2h") {
-          title = "⏰ Biglietto tra 2 ore";
-        } else {
+        const kindFor = (lang) => {
+          const label = walletKindLabel(data.kind, lang);
+          return emitter ? `${emitter} · ${label}` : label;
+        };
+
+        /**
+         * Titolo del promemoria nella lingua del destinatario.
+         * @param {string} lang
+         * @return {string}
+         */
+        const titleFor = (lang) => {
+          if (windowType === "24h") return tn(lang, "wallet.reminderTomorrow");
+          if (windowType === "2h") return tn(lang, "wallet.reminder2h");
           // Custom: adatta il testo in base all'offset (ore o giorni).
-          if (offsetHours < 1) {
-            title = "⏰ Biglietto a breve";
-          } else if (offsetHours % 24 === 0) {
+          if (offsetHours < 1) return tn(lang, "wallet.reminderSoon");
+          if (offsetHours % 24 === 0) {
             const days = offsetHours / 24;
-            title = days === 1 ? "⏰ Biglietto domani" : `⏰ Biglietto tra ${days} giorni`;
-          } else {
-            title = `⏰ Biglietto tra ${offsetHours} ore`;
+            return days === 1 ?
+              tn(lang, "wallet.reminderTomorrow") :
+              tn(lang, "wallet.reminderInDays", {count: days});
           }
-        }
-        const body = `${kindWithEmitter} — ${formatWalletDate(eventDate)}`;
+          return tn(lang, "wallet.reminderInHours", {count: offsetHours});
+        };
 
         const memberUids = await memberUidsOf(familyId);
         if (memberUids.length === 0) {
@@ -5710,7 +5700,7 @@ exports.notifyUpcomingWalletTickets = onSchedule(
         const tokensPerMember = await Promise.all(memberUids.map(tokensOf));
 
         const messagesToSend = [];
-        for (const tokens of tokensPerMember) {
+        for (const {tokens, lang} of tokensPerMember) {
           if (tokens.length === 0) continue;
 
           // NOTA: niente incrementCounterAndGetBadge qui — un reminder non è
@@ -5718,8 +5708,11 @@ exports.notifyUpcomingWalletTickets = onSchedule(
           // Il badge sistema verrà rinfrescato dal client all'apertura.
           messagesToSend.push(buildDataOnlyMessage({
             tokens,
-            title,
-            body,
+            title: titleFor(lang),
+            body: tn(lang, "wallet.reminderBody", {
+              kind: kindFor(lang),
+              date: formatShortDateTime(eventDate, lang),
+            }),
             data: {type: "wallet_ticket_reminder", familyId, ticketId, window: windowType},
           }));
         }

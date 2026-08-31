@@ -71,6 +71,13 @@ final class LanguageManager: ObservableObject {
 
     @Published private(set) var current: AppLanguage
 
+    /// Codice della lingua effettivamente in uso (`it`/`en`/`fr`/`es`), con
+    /// `.system` già risolto. È quello che finisce su Firestore per far
+    /// tradurre le push dal server, che non può interrogare il device.
+    var currentLanguageCode: String {
+        Self.resolvedLanguageCode(for: current)
+    }
+
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.selectionKey)
         current = raw.flatMap(AppLanguage.init(rawValue:)) ?? .system

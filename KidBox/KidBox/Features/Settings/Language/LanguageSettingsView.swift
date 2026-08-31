@@ -31,6 +31,16 @@ struct LanguageSettingsView: View {
                 ForEach(AppLanguage.allCases) { lang in
                     Button {
                         languageManager.apply(lang)
+                        Task {
+                            // Il server traduce le push leggendo questo campo:
+                            // senza l'allineamento resterebbero nella lingua
+                            // precedente fino al prossimo avvio dell'app.
+                            await NotificationManager.shared.syncNotificationLanguage()
+                            // Le notifiche locali già in coda le mostra il
+                            // sistema, con il testo di quando sono state
+                            // programmate: qui vengono riscritte sul posto.
+                            await KBNotificationLocalization.relocalizePending()
+                        }
                     } label: {
                         HStack(spacing: 14) {
                             Group {

@@ -78,8 +78,6 @@ final class WalletReminderService {
             guard fireDate > now else { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = reminderTitle(for: kind, offset: offset)
-            content.body = ticket.title.isEmpty ? kind.displayName : ticket.title
             content.sound = .default
             content.threadIdentifier = "kidbox.wallet"
             content.userInfo = [
@@ -87,6 +85,22 @@ final class WalletReminderService {
                 "familyId": ticket.familyId,
                 "ticketId": ticketId
             ]
+            let title = Self.reminderTitle(for: kind, offset: offset)
+            if ticket.title.isEmpty {
+                KBNotificationLocalization.setText(
+                    on: content,
+                    titleKey: title.key,
+                    titleArgs: title.args,
+                    bodyKey: kind.displayNameKey
+                )
+            } else {
+                content.body = ticket.title
+                KBNotificationLocalization.setText(
+                    on: content,
+                    titleKey: title.key,
+                    titleArgs: title.args
+                )
+            }
 
             let comps = Calendar.current.dateComponents(
                 [.year, .month, .day, .hour, .minute],
@@ -136,30 +150,45 @@ final class WalletReminderService {
         "wallet.\(ticketId).\(Int(offset))"
     }
 
-    private func reminderTitle(for kind: KBWalletTicketKind, offset: TimeInterval) -> String {
+    /// Titolo del promemoria come chiave + argomenti, non come testo finito.
+    ///
+    /// Il tipo di biglietto e il "quando" sono due pezzi tradotti che si
+    /// combinano: tenerli separati permette di ricostruire il titolo nella nuova
+    /// lingua quando l'utente la cambia, invece di congelarlo alla
+    /// programmazione (vedi `KBNotificationLocalization`).
+    private static func reminderTitle(
+        for kind: KBWalletTicketKind,
+        offset: TimeInterval
+    ) -> (key: String, args: [KBNotificationLocalization.Arg]) {
         let absHours = abs(Int(offset / 3600))
         let absMin = abs(Int(offset / 60))
 
-        let when: String
+        // Il "quando" resta una chiave, non un testo: così si ri-traduce insieme
+        // al resto del titolo invece di restare indietro.
+        let when: KBNotificationLocalization.Arg
         if absHours >= 24 {
             let days = absHours / 24
-            when = days == 1 ? "domani" : "tra \(days) giorni"
+            when = days == 1
+                ? .localized("domani")
+                : .localized("tra %@ giorni", args: ["\(days)"])
         } else if absHours >= 1 {
-            when = absHours == 1 ? "tra 1 ora" : "tra \(absHours) ore"
+            when = absHours == 1
+                ? .localized("tra 1 ora")
+                : .localized("tra %@ ore", args: ["\(absHours)"])
         } else {
-            when = "tra \(absMin) min"
+            when = .localized("tra %@ min", args: ["\(absMin)"])
         }
 
         switch kind {
-        case .flight:   return "Volo \(when)"
-        case .train:    return "Treno \(when)"
-        case .ferry:    return "Traghetto \(when)"
-        case .bus:      return "Autobus \(when)"
-        case .concert:  return "Concerto \(when)"
-        case .cinema:   return "Cinema \(when)"
-        case .museum:   return "Visita \(when)"
-        case .parking:  return "Parcheggio \(when)"
-        case .other:    return "Promemoria biglietto"
+        case .flight:   return ("Volo %@", [when])
+        case .train:    return ("Treno %@", [when])
+        case .ferry:    return ("Traghetto %@", [when])
+        case .bus:      return ("Autobus %@", [when])
+        case .concert:  return ("Concerto %@", [when])
+        case .cinema:   return ("Cinema %@", [when])
+        case .museum:   return ("Visita %@", [when])
+        case .parking:  return ("Parcheggio %@", [when])
+        case .other:    return ("Promemoria biglietto", [])
         }
     }
 }

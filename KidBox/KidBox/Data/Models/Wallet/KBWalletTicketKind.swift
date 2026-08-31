@@ -42,6 +42,22 @@ enum KBWalletTicketKind: String, Codable, CaseIterable, Hashable {
         }
     }
 
+    /// La chiave del catalogo dietro `displayName`, non il testo tradotto.
+    /// Vedi `KBWalletDocumentKind.displayNameKey` per il perché dei letterali ripetuti.
+    var displayNameKey: String {
+        switch self {
+        case .train:    return "Treno"
+        case .flight:   return "Volo"
+        case .ferry:    return "Traghetto"
+        case .bus:      return "Autobus"
+        case .concert:  return "Concerto"
+        case .cinema:   return "Cinema"
+        case .parking:  return "Parcheggio"
+        case .museum:   return "Museo / Mostra"
+        case .other:    return "Biglietto"
+        }
+    }
+
     /// Icona di default per la categoria. Può essere sovrascritta dall'emittente
     /// via `WalletEmitterIcon.icon(for:kind:)` — es. un biglietto `.flight` di
     /// Ryanair può mostrare l'icona `airplane.departure` invece della generica.

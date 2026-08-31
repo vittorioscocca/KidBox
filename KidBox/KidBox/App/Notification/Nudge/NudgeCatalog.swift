@@ -102,6 +102,14 @@ struct NudgeCampaign: Codable, Equatable, Identifiable {
         return NSLocalizedString(body, comment: "Nudge body")
     }
 
+    /// Vero quando il testo arriva dal catalogo remoto invece che dal nostro.
+    ///
+    /// Un override è già una frase scelta, in una lingua sola: non c'è una chiave
+    /// dietro da ri-tradurre se l'utente cambia lingua.
+    var hasTextOverride: Bool {
+        !(titleOverride ?? "").isEmpty || !(bodyOverride ?? "").isEmpty
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)

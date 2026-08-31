@@ -122,6 +122,32 @@ func schedulePeriodLabel(_ scheduledTime: String, slotIndexFallback: Int = 0) ->
         ?? treatmentSlotLabelFor(index: slotIndexFallback)
 }
 
+/// Come `schedulePeriodLabel`, ma come chiave da tradurre invece che come testo.
+///
+/// Serve alle notifiche locali: la fascia oraria finisce dentro il corpo di un
+/// promemoria che può essere consegnato mesi dopo, e come testo già risolto
+/// resterebbe nella lingua di allora (vedi `KBNotificationLocalization`).
+func schedulePeriodLabelArg(
+    _ scheduledTime: String,
+    slotIndexFallback: Int = 0
+) -> KBNotificationLocalization.Arg {
+    if let period = TreatmentSchedulePeriod.from(scheduleTime: scheduledTime) {
+        switch period {
+        case .mattina: return .localized("Mattina")
+        case .pranzo: return .localized("Pranzo")
+        case .sera: return .localized("Sera")
+        case .notte: return .localized("Notte")
+        }
+    }
+    switch slotIndexFallback {
+    case 0: return .localized("Mattina")
+    case 1: return .localized("Pranzo")
+    case 2: return .localized("Sera")
+    case 3: return .localized("Notte")
+    default: return .localized("Dose %@", args: ["\(slotIndexFallback + 1)"])
+    }
+}
+
 // MARK: - Badge (Material-style chip)
 
 private extension TreatmentSchedulePeriod {

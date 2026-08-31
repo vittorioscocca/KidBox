@@ -400,7 +400,6 @@ final class WeeklySummaryService {
         
         // Contenuto
         let content = UNMutableNotificationContent()
-        content.title = "📋 Settimana di \(familyName)"
         // Prima riga del recap come body
         let firstLine = summaryText
             .components(separatedBy: "\n")
@@ -414,6 +413,13 @@ final class WeeklySummaryService {
         ]
         if !familyId.isEmpty { info["familyId"] = familyId }
         content.userInfo = info
+        // Solo il titolo: il corpo è testo generato dal modello, che si
+        // riscrive rigenerandolo, non traducendolo.
+        KBNotificationLocalization.setText(
+            on: content,
+            titleKey: "📋 Settimana di %@",
+            titleArgs: [.text(familyName)]
+        )
         
         // Trigger: prossimo lunedì alle 08:00
         var dc          = DateComponents()

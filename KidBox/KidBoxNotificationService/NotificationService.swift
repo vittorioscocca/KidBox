@@ -149,20 +149,21 @@ final class NotificationService: UNNotificationServiceExtension {
         }
     }
 
-    /// Per le push di tipo `chat_mention` il Cloud Function manda comunque il
-    /// `senderName` nella `alert.title` per non perdere l'identità del mittente
-    /// quando la NSE non riesce a decrittare; qui prefissiamo il titolo con
-    /// l'avviso che si tratta di una menzione esplicita.
+    /// Completa il titolo delle push `chat_mention`.
+    ///
+    /// Il titolo lo scrive già la Cloud Function, nella lingua scelta
+    /// dal destinatario: riscriverlo qui lo riporterebbe in italiano, perché
+    /// questa estensione non ha un proprio catalogo di stringhe. Resta solo il
+    /// sottotitolo, anch'esso tradotto a monte e passato nel payload.
     private func applyMentionTitleIfNeeded(
         _ content: UNMutableNotificationContent,
         userInfo: [AnyHashable: Any]
     ) {
-        let senderName = (userInfo["senderName"] as? String) ?? ""
-        if !senderName.isEmpty {
-            content.title = "\(senderName) ti ha menzionato"
-        } else {
-            content.title = "Sei stato menzionato"
+        if content.title.isEmpty {
+            content.title = (userInfo["senderName"] as? String) ?? ""
         }
-        content.subtitle = "Menzione in chat"
+        if let subtitle = userInfo["mentionSubtitle"] as? String, !subtitle.isEmpty {
+            content.subtitle = subtitle
+        }
     }
 }
