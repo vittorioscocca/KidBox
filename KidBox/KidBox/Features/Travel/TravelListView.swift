@@ -22,7 +22,10 @@ struct TravelListView: View {
     @State private var showUpgrade = false
     @State private var needsOnboarding: Bool?
 
-    private var aiAvailable: Bool { subscriptionManager.isAIAccessible }
+    /// Il pianificatore viaggi è incluso nei soli piani a pagamento: `isAIAccessible`
+    /// da solo non basta, perché è false solo per i Free che hanno già esaurito il
+    /// bonus una tantum — un Free con bonus intatto riuscirebbe a generare itinerari.
+    private var aiAvailable: Bool { subscriptionManager.currentPlan != .free }
     private var travelProfile: TravelProfile? {
         TravelProfileStore.loadProfile(userId: userId)
     }
@@ -54,13 +57,44 @@ struct TravelListView: View {
         Array(trips.prefix(3))
     }
 
+    /// Piano bloccato (Free): stessa forma della `lockedCard` del Piano Alimentare.
+    private var travelLockedCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Incluso in Pro e Max", systemImage: "lock.fill")
+                .font(.subheadline.bold())
+            Text("Passa a Pro o Max per pianificare viaggi con l'AI.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Button {
+                showUpgrade = true
+                AppAnalytics.aiPaywallShown(context: "travel_locked_card")
+            } label: {
+                Text("Scopri i piani")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(KBTheme.cardBackground(colorScheme))
+        )
+    }
+
     var body: some View {
         Group {
             if needsOnboarding == true {
-                TravelOnboardingView { profile in
-                    TravelProfileStore.save(profile: profile, userId: userId)
-                    needsOnboarding = false
-                }
+                // Su Free l'avviso va messo qui, non nella lista: la configurazione
+                // iniziale è la prima schermata dei Viaggi, e senza avviso l'utente
+                // risponde a tre domande per poi scoprire di non poter pianificare.
+                TravelOnboardingView(
+                    onComplete: { profile in
+                        TravelProfileStore.save(profile: profile, userId: userId)
+                        needsOnboarding = false
+                    },
+                    lockedNotice: aiAvailable ? nil : AnyView(travelLockedCard)
+                )
             } else if needsOnboarding == nil {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -115,10 +149,13 @@ struct TravelListView: View {
                                 }
                             }
                             .padding(.horizontal, 16)
-                        } else if !aiAvailable {
-                            Text("Passa a Pro o Max per pianificare viaggi con l'AI.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                        }
+
+                        // Stessa carta del Piano Alimentare: dire che serve un
+                        // piano a pagamento senza dare il modo di arrivarci
+                        // lasciava l'utente in un vicolo cieco.
+                        if !aiAvailable {
+                            travelLockedCard
                                 .padding(.horizontal, 16)
                         }
                     }

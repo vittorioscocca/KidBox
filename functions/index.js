@@ -8,6 +8,9 @@ const {onSchedule} = require("firebase-functions/v2/scheduler");
 // scrittura stanno in analytics.js; qui serve solo per `askAI`, che è l'unica
 // azione di valore senza una scrittura Firestore dietro.
 const {logEvent: logAnalyticsEvent} = require("./analytics");
+// Catalogo piani: quote/prezzi/feature vivono SOLO in functions/plans.json.
+// Vedi functions/plansConfig.js e internal/plans-source-of-truth.md.
+const plansConfig = require("./plansConfig");
 const STORAGE_BUCKET = "kidbox-42cd7-eu";
 
 /** Stima foto visita pediatrica (allineata a initStorageUsage / client). */
@@ -1674,8 +1677,6 @@ function aiTodayKey() {
   return new Date().toLocaleDateString("sv-SE", {timeZone: "Europe/Rome"});
 }
 
-const KB = 1024;
-
 /**
  * Piano effettivo per quote (AI giornaliero, storage): allineato a iOS KBSubscriptionManager.
  * Preferisce families/{familyId}.planOverride se "pro" | "max", altrimenti families.plan,
@@ -1730,14 +1731,15 @@ async function resolveFamilyPlanForQuotas(uid, familyId) {
   }
 }
 
-/** Quota storage in byte (stessi valori dell'app iOS KBPlan.storageQuota). */
+/**
+ * Quota storage in byte, dal catalogo piani (`config/plans`, con il JSON
+ * deployato come rete di sicurezza). Asincrona perché il listino è modificabile
+ * dalla console: vedi functions/plansConfig.js.
+ * @param {string|null|undefined} plan
+ * @return {Promise<number>}
+ */
 function storageQuotaBytesForPlan(plan) {
-  switch (plan) {
-    case "max": return 20 * KB * KB * KB;
-    case "pro": return 5 * KB * KB * KB;
-    case "free":
-    default: return 200 * KB * KB;
-  }
+  return plansConfig.storageQuotaBytesForPlan(plan);
 }
 
 /**
@@ -1767,11 +1769,11 @@ async function assertFamilyMember(uid, familyId) {
  * esauriti, la famiglia Free resta senza AI finché non passa a Pro/Max —
  * esattamente come prima dell'introduzione di questo bonus.
  */
-const AI_FREE_LIFETIME_LIMIT = 5;
+const AI_FREE_LIFETIME_LIMIT = plansConfig.AI_FREE_LIFETIME_LIMIT;
 
 /**
- * Quota messaggi AI per famiglia: Pro = 30/giorno, Max = 100/giorno,
- * Free = 5 a vita, una tantum (nuovo: prima l'AI era del tutto assente sul piano Free).
+ * Quota messaggi AI per famiglia: periodo e limite arrivano dal catalogo
+ * (functions/plans.json), non da costanti scritte qui.
  * Usa [resolveFamilyPlanForQuotas] così rispetta planOverride da console admin.
  * @param {string|null|undefined} uid
  * @param {string|null|undefined} familyId
@@ -1780,12 +1782,7 @@ const AI_FREE_LIFETIME_LIMIT = 5;
 async function resolveAIQuota(uid, familyId = null) {
   try {
     const plan = await resolveFamilyPlanForQuotas(uid, familyId);
-    switch (plan) {
-      case "pro": return {period: "daily", limit: 30};
-      case "max": return {period: "daily", limit: 100};
-      case "free":
-      default: return {period: "lifetime", limit: AI_FREE_LIFETIME_LIMIT};
-    }
+    return await plansConfig.aiQuotaForPlan(plan);
   } catch (e) {
     logger.warn("resolveAIQuota failed, using default", {uid, familyId, error: e.message});
     return {period: "lifetime", limit: AI_FREE_LIFETIME_LIMIT};
@@ -2712,6 +2709,15 @@ exports.generateTravelPlan = onCall(
       await assertFamilyMember(uid, familyId);
 
       const quota = await resolveAIQuota(uid, familyId);
+      // Il pianificatore viaggi è una feature dei soli piani a pagamento: su Free la
+      // quota è `lifetime` (bonus una tantum), quindi la usiamo come discriminante —
+      // stesso criterio del Piano Alimentare in askAI.
+      if (quota.period === "lifetime") {
+        throw new HttpsError(
+            "permission-denied",
+            "Il Pianificatore Viaggi è incluso nei piani Pro e Max. Passa a Pro per generare un itinerario.",
+        );
+      }
       const plannedDayCount = plannedDayCountFromWizard(wizardData);
       const travelMessageCost = travelMessageCostForPlannedDays(plannedDayCount);
       const usageCount = await checkAndIncrementAIUsage(
@@ -4130,7 +4136,7 @@ exports.getStorageUsage = onCall(
       );
 
       const plan = await resolveFamilyPlanForQuotas(uid, familyId);
-      const quotaBytes = storageQuotaBytesForPlan(plan);
+      const quotaBytes = await storageQuotaBytesForPlan(plan);
       logger.info("getStorageUsage", {
         uid,
         familyId,
@@ -4229,7 +4235,7 @@ exports.initStorageUsage = onCall(
       }, {merge: false});
 
       const plan = await resolveFamilyPlanForQuotas(uid, familyId);
-      const quotaBytes = storageQuotaBytesForPlan(plan);
+      const quotaBytes = await storageQuotaBytesForPlan(plan);
 
       logger.info("initStorageUsage: completed", {
         familyId,
@@ -5006,6 +5012,135 @@ exports.setFamilyPlanOverride = onCall(
 
       logger.info("setFamilyPlanOverride", {callerUid, familyId, plan, note});
       return {success: true};
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATALOGO PIANI — config/plans
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// `config/plans` è la fonte di verità di quote, prezzi e feature: si modifica
+// dalla console admin, senza deploy. Il JSON deployato con le functions resta
+// la rete di sicurezza. Validazione e tetti stanno in functions/plansConfig.js,
+// e valgono sia qui in scrittura sia in lettura.
+
+/**
+ * Scrive il listino su `config/plans` e ne conserva copia in `plansHistory`.
+ * @param {object} plans - Listino GIÀ validato da plansConfig.validatePlans.
+ * @param {string} publishedBy - uid admin, o "scheduler".
+ * @param {string} nota - Motivo della modifica, per lo storico.
+ * @return {Promise<{version: number, plans: number}>}
+ */
+async function writePlansConfigDoc(plans, publishedBy, nota = "") {
+  const db = admin.firestore();
+  const version = plansConfig.BUNDLED_VERSION;
+
+  await db.collection("config").doc("plans").set({
+    version,
+    plans,
+    publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+    publishedBy,
+  }, {merge: false});
+
+  // Storico: un listino modificabile da browser senza `git log` deve almeno
+  // lasciare traccia di chi ha cambiato cosa e quando.
+  await db.collection("plansHistory").add({
+    at: admin.firestore.FieldValue.serverTimestamp(),
+    by: publishedBy,
+    note: String(nota || "").slice(0, 500),
+    plans,
+  });
+
+  plansConfig.invalidateCache();
+  return {version, plans: Object.keys(plans).length};
+}
+
+/** Listino corrente + tetti di validazione, per il form della console. */
+exports.getPlansConfig = onCall(
+    {region: "europe-west1", maxInstances: 5, invoker: "public"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+      return await plansConfig.currentCatalog();
+    },
+);
+
+/** Salva il listino modificato dalla console. */
+exports.savePlansConfig = onCall(
+    {region: "europe-west1", maxInstances: 5, invoker: "public"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+
+      const {ok, errors, plans} = plansConfig.validatePlans(request.data?.plans);
+      if (!ok) {
+        logger.warn("savePlansConfig rifiutato", {callerUid, errors});
+        throw new HttpsError("invalid-argument", `Listino non valido:\n${errors.join("\n")}`);
+      }
+
+      const result = await writePlansConfigDoc(plans, callerUid, request.data?.note);
+      logger.info("savePlansConfig", {callerUid, ...result});
+      return {success: true, ...result};
+    },
+);
+
+/**
+ * Ripristina su `config/plans` il listino impacchettato col deploy.
+ * Serve a tornare a uno stato noto dopo una modifica sbagliata da console.
+ */
+exports.publishPlansConfig = onCall(
+    {region: "europe-west1", maxInstances: 5, invoker: "public"},
+    async (request) => {
+      const callerUid = request.auth?.uid;
+      if (!callerUid) throw new HttpsError("unauthenticated", "Login richiesto.");
+      if (!ADMIN_UIDS.includes(callerUid)) {
+        throw new HttpsError("permission-denied", "Non autorizzato.");
+      }
+
+      const {ok, errors, plans} = plansConfig.validatePlans(plansConfig.bundledPlans());
+      if (!ok) throw new HttpsError("internal", `plans.json deployato non valido: ${errors.join("; ")}`);
+
+      const result = await writePlansConfigDoc(plans, callerUid, "ripristino dal deploy");
+      logger.info("publishPlansConfig (ripristino)", {callerUid, ...result});
+      return {success: true, ...result};
+    },
+);
+
+/**
+ * Rete di sicurezza: se `config/plans` manca o non supera la validazione, lo
+ * riporta al listino deployato. Un documento valido NON viene mai toccato,
+ * altrimenti lo scheduler cancellerebbe ogni notte le modifiche da console.
+ */
+exports.syncPlansConfig = onSchedule(
+    {
+      schedule: "30 3 * * *",
+      timeZone: "Europe/Rome",
+      region: "europe-west1",
+      maxInstances: 1,
+    },
+    async () => {
+      const snap = await admin.firestore().collection("config").doc("plans").get();
+      const attuale = plansConfig.validatePlans(snap.data()?.plans);
+      if (attuale.ok) {
+        logger.info("syncPlansConfig: listino valido, nessuna scrittura");
+        return;
+      }
+
+      const {ok, plans} = plansConfig.validatePlans(plansConfig.bundledPlans());
+      if (!ok) {
+        logger.error("syncPlansConfig: nemmeno il bundle è valido, non scrivo nulla");
+        return;
+      }
+      const result = await writePlansConfigDoc(plans, "scheduler", "ripristino automatico");
+      logger.warn("syncPlansConfig: listino assente o non valido, ripristinato dal deploy", {
+        errors: attuale.errors, ...result,
+      });
     },
 );
 

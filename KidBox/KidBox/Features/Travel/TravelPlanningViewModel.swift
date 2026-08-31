@@ -256,7 +256,7 @@ final class TravelPlanningViewModel: ObservableObject {
     ) async {
         guard canGenerate else { return }
         await KBSubscriptionManager.shared.loadPlan()
-        guard KBSubscriptionManager.shared.isAIAccessible else {
+        guard KBSubscriptionManager.shared.currentPlan != .free else {
             generationError = "Piano Pro o Max richiesto. Controlla l'abbonamento Apple o il campo planOverride (pro/max) su Firebase per questa famiglia."
             return
         }

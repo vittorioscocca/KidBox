@@ -58,6 +58,9 @@ struct HomeView: View {
     
     // MARK: - AI button / FAB (Catalyst) / family switcher
     @State private var showAIUpgrade = false
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato
+    /// la famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
     @State private var fabExpanded = false   // usato solo su Mac Catalyst (Home classica)
     @State private var showFamilySwitcher = false
     @State private var showTips = false
@@ -493,10 +496,9 @@ struct HomeView: View {
                 HomeAIFloatingButton(
                     onOpenAI: { navigate(to: .askExpert) },
                     onLockedTap: {
-                        if KBSubscriptionManager.shared.isFamilyOwner {
-                            showAIUpgrade = true
-                            AppAnalytics.aiPaywallShown(context: "assistant_icon")
-                        }
+                        guard KBSubscriptionManager.shared.isFamilyOwner else { showOwnerOnly = true; return }
+                        showAIUpgrade = true
+                        AppAnalytics.aiPaywallShown(context: "assistant_icon")
                     }
                 )
                 .padding(.trailing, 20)
@@ -505,6 +507,7 @@ struct HomeView: View {
                 #endif
             }
         }
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showAIUpgrade) {
             UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(KBSubscriptionManager.shared)
@@ -914,6 +917,9 @@ private struct HomeCardGrid: View {
     @State private var order: [HomeCardID] = []
     @State private var dragged: HomeCardID?
     @State private var showUpgrade = false
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato
+    /// la famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
 
     /// Chat spenta da Impostazioni → Messaggi: la card non compare.
     @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
@@ -989,6 +995,7 @@ private struct HomeCardGrid: View {
                 order = loadOrder() ?? initialOrder ?? defaultOrder()
             }
         }
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showUpgrade) {
             UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(subscriptionManager)
@@ -1232,6 +1239,8 @@ private struct HomeCardGrid: View {
                         } else if subscriptionManager.isFamilyOwner {
                             showUpgrade = true
                             AppAnalytics.aiPaywallShown(context: "home_card_travel")
+                        } else {
+                            showOwnerOnly = true
                         }
                     }
                     if !travelAI {
@@ -1265,6 +1274,8 @@ private struct HomeCardGrid: View {
                     } else if subscriptionManager.isFamilyOwner {
                         showUpgrade = true
                         AppAnalytics.aiPaywallShown(context: "home_card_expert")
+                    } else {
+                        showOwnerOnly = true
                     }
                 }
                 if !aiAvailable {
@@ -1582,6 +1593,9 @@ private struct HomeCategoryList: View {
     @AppStorage(KBChatAvailability.defaultsKey) private var chatEnabled = true
     @Query private var passwordEntries: [PasswordEntry]
     @State private var showUpgrade = false
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato
+    /// la famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
 
     init(hasFamily: Bool, familyId: String, onNavigate: @escaping (HomeDestination) -> Void) {
         self.hasFamily = hasFamily
@@ -1658,6 +1672,7 @@ private struct HomeCategoryList: View {
                 }
             }
         }
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showUpgrade) {
             UpgradeSheetView(triggerFeature: "home_upsell")
                 .environmentObject(subscriptionManager)
@@ -1839,6 +1854,8 @@ private struct HomeCategoryList: View {
             } else if subscriptionManager.isFamilyOwner {
                 showUpgrade = true
                 AppAnalytics.aiPaywallShown(context: "home_list_travel")
+            } else {
+                showOwnerOnly = true
             }
         case .expert:
             break // ora è il bottone AI flottante

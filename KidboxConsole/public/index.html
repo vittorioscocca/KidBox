@@ -89,6 +89,7 @@ function handleAuth(user) {
     initTickets();
     initSupportTickets();
     checkAdminNotifStatus();
+    loadPlansConfig();
   } else {
     document.getElementById('screen-login').style.display = 'flex';
     document.getElementById('screen-dash').style.display  = 'none';
@@ -413,6 +414,215 @@ window.backfillFamilyQuotas = async function backfillFamilyQuotas(btn) {
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── LISTINO PIANI ─────
+// Editor di `config/plans`, il documento che il backend usa per applicare le
+// quote e che iOS/Android leggono per mostrarle. La validazione vera sta lato
+// server (functions/plansConfig.js): qui si controlla solo per dare l'errore
+// prima del giro di rete. Vedi internal/plans-source-of-truth.md.
+
+const PLANS_LANGS = [
+  { code: 'it', nome: 'Italiano' },
+  { code: 'en', nome: 'English' },
+  { code: 'fr', nome: 'Français' },
+  { code: 'es', nome: 'Español' },
+];
+
+let plansState = null;   // { plans, source, limits, bundled }
+
+function plansEsc(v) {
+  return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/** Feature come testo modificabile: una per riga, `icona | testo | *` (* = grassetto). */
+function featuresToText(list) {
+  return (list || []).map(f => [f.icon || '', f.text || '', f.strong ? '*' : ''].join(' | ')).join('\n');
+}
+function textToFeatures(text) {
+  return String(text || '').split('\n').map(r => r.trim()).filter(Boolean).map(riga => {
+    const parti = riga.split('|').map(x => x.trim());
+    return { icon: parti[0] || '', text: parti[1] || '', strong: (parti[2] || '') === '*' };
+  }).filter(f => f.text);
+}
+
+window.loadPlansConfig = async function loadPlansConfig(esplicito) {
+  if (!auth?.currentUser) return;
+  const box = document.getElementById('plans-editor');
+  if (!box) return;
+  if (esplicito) box.innerHTML = '<div style="color:var(--color-dim);font-size:13px">Carico…</div>';
+  try {
+    plansState = (await httpsCallable(functions, 'getPlansConfig')({})).data;
+    renderPlansEditor();
+  } catch(e) {
+    console.error('getPlansConfig error:', e);
+    box.innerHTML = '<div style="color:#f87171;font-size:13px">Listino non caricato: ' + plansEsc(e.message) + '</div>';
+  }
+}
+
+function renderPlansEditor() {
+  const { plans, source, limits } = plansState;
+  const origine = source === 'firestore'
+    ? 'in uso: config/plans (modificato da console)'
+    : 'in uso: plans.json dell\'ultimo deploy — config/plans assente o non valido';
+  document.getElementById('plans-source').textContent =
+    origine + ' · tetti: AI ≤ ' + limits.aiLimitMax + ' (Free ≤ ' + limits.aiLimitFreeMax + '), storage ≤ ' + Math.round(limits.storageBytesMax/1073741824) + ' GB';
+
+  const ordine = ['free','pro','max'];
+  document.getElementById('plans-editor').innerHTML = ordine.map(id => {
+    const p = plans[id]; if (!p) return '';
+    const gb = p.storageBytes >= 1073741824;
+    const valoreStorage = gb ? p.storageBytes/1073741824 : p.storageBytes/1048576;
+    return `
+    <div style="border:1px solid var(--color-brd);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-weight:700;margin-bottom:10px">${plansEsc(p.displayName)} <span style="font-family:var(--mono);font-size:11px;color:var(--color-dim)">${plansEsc(p.productId || 'nessun prodotto store')}</span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="field" style="margin:0;width:150px">
+          <label>Storage</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" step="any" min="0" id="plan-${id}-storage" value="${valoreStorage}" style="width:100%" />
+            <select id="plan-${id}-unit" style="background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;color:var(--color-text);font-size:12px">
+              <option value="MB" ${gb?'':'selected'}>MB</option>
+              <option value="GB" ${gb?'selected':''}>GB</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin:0;width:120px">
+          <label>Messaggi AI</label>
+          <input type="number" min="0" step="1" id="plan-${id}-ai" value="${p.aiLimit}" style="width:100%" />
+        </div>
+        <div class="field" style="margin:0;width:110px">
+          <label>Periodo</label>
+          <input value="${plansEsc(p.aiPeriod)}" disabled style="width:100%;opacity:.6" title="Free è una tantum, i piani a pagamento sono giornalieri: non si cambia da qui" />
+        </div>
+        <div class="field" style="margin:0;width:120px">
+          <label>Prezzo / mese</label>
+          <input type="number" step="0.01" min="0" id="plan-${id}-price" value="${p.priceMonthly}" style="width:100%" />
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-dim);padding-bottom:8px">
+          <input type="checkbox" id="plan-${id}-hot" ${p.highlighted?'checked':''} /> in evidenza
+        </label>
+      </div>
+      ${PLANS_LANGS.map(l => `
+      <details ${l.code==='it'?'open':''} style="margin-top:10px">
+        <summary style="cursor:pointer;font-size:12px;color:var(--color-dim)">${l.nome}</summary>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <div class="field" style="margin:0;width:150px"><label>Prezzo mostrato</label>
+            <input id="plan-${id}-price-${l.code}" value="${plansEsc((p.priceLabel||{})[l.code]||'')}" style="width:100%" /></div>
+          <div class="field" style="margin:0;flex:1;min-width:200px"><label>Sottotitolo</label>
+            <input id="plan-${id}-tag-${l.code}" value="${plansEsc((p.tagline||{})[l.code]||'')}" style="width:100%" /></div>
+          <div class="field" style="margin:0;width:160px"><label>Badge</label>
+            <input id="plan-${id}-badge-${l.code}" value="${plansEsc((p.badge||{})[l.code]||'')}" style="width:100%" /></div>
+        </div>
+        <div class="field" style="margin:8px 0 0">
+          <label>Feature — una per riga: <code>icona | testo | *</code> (* = grassetto). Segnaposto: <code>{storage}</code>, <code>{aiLimit}</code></label>
+          <textarea id="plan-${id}-feat-${l.code}" rows="6" style="width:100%;background:var(--color-muted);border:1px solid var(--color-brd);border-radius:8px;padding:8px;color:var(--color-text);font-family:var(--mono);font-size:12px">${plansEsc(featuresToText((p.features||{})[l.code]))}</textarea>
+        </div>
+      </details>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+/** Ricostruisce il listino dai campi del form. */
+function plansFromForm() {
+  const out = {};
+  for (const id of ['free','pro','max']) {
+    const base = plansState.plans[id];
+    const unita = document.getElementById(`plan-${id}-unit`).value === 'GB' ? 1073741824 : 1048576;
+    const spec = {
+      storageBytes: Math.round(Number(document.getElementById(`plan-${id}-storage`).value) * unita),
+      aiLimit: parseInt(document.getElementById(`plan-${id}-ai`).value, 10),
+      aiPeriod: base.aiPeriod,
+      priceMonthly: Number(document.getElementById(`plan-${id}-price`).value),
+      highlighted: document.getElementById(`plan-${id}-hot`).checked,
+      priceLabel: {}, tagline: {}, badge: {}, features: {},
+    };
+    for (const l of PLANS_LANGS) {
+      spec.priceLabel[l.code] = document.getElementById(`plan-${id}-price-${l.code}`).value;
+      spec.tagline[l.code]    = document.getElementById(`plan-${id}-tag-${l.code}`).value;
+      spec.badge[l.code]      = document.getElementById(`plan-${id}-badge-${l.code}`).value;
+      spec.features[l.code]   = textToFeatures(document.getElementById(`plan-${id}-feat-${l.code}`).value);
+    }
+    out[id] = spec;
+  }
+  return out;
+}
+
+/** Differenze sulle sole quote: sono quelle che costano, e vanno confermate a occhio. */
+function plansDiffQuote(nuovi) {
+  const righe = [];
+  for (const id of ['free','pro','max']) {
+    const a = plansState.plans[id], b = nuovi[id];
+    if (a.storageBytes !== b.storageBytes) righe.push(`${id}: storage ${fmtBytes(a.storageBytes)} → ${fmtBytes(b.storageBytes)}`);
+    if (a.aiLimit !== b.aiLimit) righe.push(`${id}: messaggi AI ${a.aiLimit} → ${b.aiLimit}`);
+    if (Number(a.priceMonthly) !== Number(b.priceMonthly)) righe.push(`${id}: prezzo ${a.priceMonthly} → ${b.priceMonthly} (solo etichetta, non tocca lo store)`);
+  }
+  return righe;
+}
+
+window.savePlansConfig = async function savePlansConfig(btn) {
+  if (!auth?.currentUser || !plansState) { showErr('Listino non caricato'); return; }
+  const nuovi = plansFromForm();
+  const quote = plansDiffQuote(nuovi);
+
+  const riepilogo = (quote.length
+      ? 'Quote che cambiano:\n\n' + quote.join('\n') + '\n\n'
+      : 'Nessuna quota cambia: solo testi.\n\n') +
+    'Il backend applica i nuovi valori entro un minuto. Procedo?';
+  if (!confirm(riepilogo)) return;
+
+  const nota = prompt('Nota per lo storico (chi/perché):', '') || '';
+  const etichetta = btn.innerHTML;
+  btn.disabled = true; btn.textContent = '⏳';
+  const esitoBox = document.getElementById('plans-result');
+  try {
+    const esito = (await httpsCallable(functions, 'savePlansConfig')({ plans: nuovi, note: nota })).data;
+    esitoBox.textContent = `✅ Listino salvato (${esito.plans} piani)`;
+    await loadPlansConfig();
+  } catch(e) {
+    console.error('savePlansConfig error:', e);
+    esitoBox.textContent = '';
+    showErr('Listino rifiutato: ' + (e.message || JSON.stringify(e)));
+  } finally {
+    btn.innerHTML = etichetta; btn.disabled = false;
+  }
+}
+
+window.restorePlansConfig = async function restorePlansConfig(btn) {
+  if (!auth?.currentUser) { showErr('Devi essere loggato'); return; }
+  if (!confirm('Riportare config/plans al listino impacchettato con l\'ultimo deploy delle functions?\n\nLe modifiche fatte da console vanno perse (restano nello storico).')) return;
+  const etichetta = btn.innerHTML;
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    await httpsCallable(functions, 'publishPlansConfig')({});
+    document.getElementById('plans-result').textContent = '✅ Ripristinato dal deploy';
+    await loadPlansConfig();
+  } catch(e) {
+    console.error('publishPlansConfig error:', e);
+    showErr('Ripristino fallito: ' + (e.message || JSON.stringify(e)));
+  } finally {
+    btn.innerHTML = etichetta; btn.disabled = false;
+  }
+}
+
+/** Scarica il listino nel formato di functions/plans.json, per repo e landing. */
+window.downloadPlansJson = function downloadPlansJson() {
+  if (!plansState) { showErr('Listino non caricato'); return; }
+  const plans = {};
+  for (const id of ['free','pro','max']) {
+    const base = plansState.bundled[id] || {};
+    plans[id] = Object.assign({}, plansFromForm()[id], {
+      id, order: base.order, displayName: base.displayName,
+      productId: base.productId ?? null, currency: base.currency,
+    });
+  }
+  const doc = { version: 1, updatedAt: new Date().toISOString().slice(0,10), plans };
+  const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'plans.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 async function checkAdminNotifStatus() {
@@ -2424,6 +2634,29 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
                   <span id="override-result" class="override-msg"></span>
               </div>
           </div>
+      </div>
+
+      <div class="sec-title" style="margin-top:32px">🏷️ Listino piani</div>
+      <div class="card" style="max-width:900px">
+        <div class="card-lbl">Quote, prezzi e testi dei piani</div>
+        <p class="card-sub" style="margin-bottom:16px;line-height:1.6">
+          Questo è il listino che <strong>il backend applica davvero</strong> (quota AI e storage)
+          e che iOS e Android leggono per mostrare i piani: salvando qui cambi le quote
+          <strong>senza deploy e senza aggiornare le app</strong>.
+          <br>Il prezzo che l'utente paga resta quello di <strong>App Store / Google Play</strong>:
+          qui si cambia solo l'etichetta mostrata quando lo store non risponde.
+          <br><strong>La landing non si aggiorna da sola</strong>: dopo il salvataggio scarica
+          <code>plans.json</code>, mettilo in <code>functions/</code> e rideploya landing e functions.
+        </p>
+        <div id="plans-source" style="font-size:11px;font-family:var(--mono);color:var(--color-dim);margin-bottom:12px"></div>
+        <div id="plans-editor"></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
+          <button class="btn-sm btn-accent" onclick="savePlansConfig(this)" style="padding:9px 24px;font-size:13px">Salva e pubblica</button>
+          <button class="btn-sm" onclick="loadPlansConfig(true)">Ricarica</button>
+          <button class="btn-sm" onclick="downloadPlansJson()">⬇️ plans.json</button>
+          <button class="btn-sm" onclick="restorePlansConfig(this)" title="Riporta config/plans al listino impacchettato con l'ultimo deploy delle functions">Ripristina dal deploy</button>
+          <span id="plans-result" class="override-msg"></span>
+        </div>
       </div>
 
       <!-- BROADCAST NOTIFICHE -->

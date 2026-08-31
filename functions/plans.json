@@ -1,0 +1,566 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-31",
+  "plans": {
+    "free": {
+      "id": "free",
+      "order": 0,
+      "displayName": "Free",
+      "storageBytes": 209715200,
+      "aiLimit": 5,
+      "aiPeriod": "lifetime",
+      "productId": null,
+      "priceMonthly": 0,
+      "currency": "EUR",
+      "highlighted": false,
+      "priceLabel": {
+        "it": "Gratis",
+        "en": "Free",
+        "fr": "Gratuit",
+        "es": "Gratis"
+      },
+      "tagline": {
+        "it": "Per sempre gratuito",
+        "en": "Free forever",
+        "fr": "Gratuit pour toujours",
+        "es": "Gratis para siempre"
+      },
+      "badge": {
+        "it": "",
+        "en": "",
+        "fr": "",
+        "es": ""
+      },
+      "features": {
+        "it": [
+          {
+            "icon": "✓",
+            "text": "Profili figli e familiari",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Visite, esami e vaccini",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Chat familiare",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Documenti e referti",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Lista spesa e spese",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Condivisione posizione",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "{storage} di storage famiglia",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} messaggi AI di prova, una tantum",
+            "strong": false
+          }
+        ],
+        "en": [
+          {
+            "icon": "✓",
+            "text": "Kids and family profiles",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Visits, tests and vaccines",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Family chat",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Documents and reports",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Shopping list and expenses",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Location sharing",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "{storage} family storage",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} trial AI messages, one time only",
+            "strong": false
+          }
+        ],
+        "fr": [
+          {
+            "icon": "✓",
+            "text": "Profils enfants et famille",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Visites, examens et vaccins",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Chat familial",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Documents et comptes rendus",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Liste de courses et dépenses",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Partage de position",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "{storage} de stockage famille",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} messages IA d'essai, une seule fois",
+            "strong": false
+          }
+        ],
+        "es": [
+          {
+            "icon": "✓",
+            "text": "Perfiles de hijos y familiares",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Visitas, pruebas y vacunas",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Chat familiar",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Documentos e informes",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Lista de la compra y gastos",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Compartir ubicación",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "{storage} de almacenamiento familiar",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} mensajes de IA de prueba, una sola vez",
+            "strong": false
+          }
+        ]
+      }
+    },
+    "pro": {
+      "id": "pro",
+      "order": 1,
+      "displayName": "Pro",
+      "storageBytes": 5368709120,
+      "aiLimit": 30,
+      "aiPeriod": "daily",
+      "productId": "it.vittorioscocca.kidbox.pro.monthly",
+      "priceMonthly": 4.99,
+      "currency": "EUR",
+      "highlighted": true,
+      "priceLabel": {
+        "it": "€4,99/mese",
+        "en": "€4.99/month",
+        "fr": "4,99 €/mois",
+        "es": "4,99 €/mes"
+      },
+      "tagline": {
+        "it": "Per famiglia · rinnovo automatico",
+        "en": "Per family · auto-renews",
+        "fr": "Par famille · renouvellement automatique",
+        "es": "Por familia · renovación automática"
+      },
+      "badge": {
+        "it": "Più popolare",
+        "en": "Most popular",
+        "fr": "Le plus populaire",
+        "es": "El más popular"
+      },
+      "features": {
+        "it": [
+          {
+            "icon": "✓",
+            "text": "Tutto il piano Free",
+            "strong": false
+          },
+          {
+            "icon": "🧠",
+            "text": "Assistente AI incluso",
+            "strong": true
+          },
+          {
+            "icon": "✈️",
+            "text": "Pianificatore Viaggi con AI",
+            "strong": true
+          },
+          {
+            "icon": "🍽️",
+            "text": "Piano Alimentare personalizzato con AI",
+            "strong": true
+          },
+          {
+            "icon": "🏃",
+            "text": "Piano Fitness personalizzato con AI",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} messaggi AI al giorno",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} di storage famiglia",
+            "strong": true
+          },
+          {
+            "icon": "📊",
+            "text": "Sintesi settimanale AI",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Tutti gli agenti AI attivi",
+            "strong": false
+          }
+        ],
+        "en": [
+          {
+            "icon": "✓",
+            "text": "Everything in Free",
+            "strong": false
+          },
+          {
+            "icon": "🧠",
+            "text": "AI Assistant included",
+            "strong": true
+          },
+          {
+            "icon": "✈️",
+            "text": "AI Travel Planner",
+            "strong": true
+          },
+          {
+            "icon": "🍽️",
+            "text": "AI Personalized Meal Plan",
+            "strong": true
+          },
+          {
+            "icon": "🏃",
+            "text": "AI Personalized Fitness Plan",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} AI messages per day",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} family storage",
+            "strong": true
+          },
+          {
+            "icon": "📊",
+            "text": "Weekly AI summary",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "All AI agents active",
+            "strong": false
+          }
+        ],
+        "fr": [
+          {
+            "icon": "✓",
+            "text": "Tout le plan Free",
+            "strong": false
+          },
+          {
+            "icon": "🧠",
+            "text": "Assistant IA inclus",
+            "strong": true
+          },
+          {
+            "icon": "✈️",
+            "text": "Planificateur de voyages IA",
+            "strong": true
+          },
+          {
+            "icon": "🍽️",
+            "text": "Plan alimentaire personnalisé avec IA",
+            "strong": true
+          },
+          {
+            "icon": "🏃",
+            "text": "Plan fitness personnalisé avec IA",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} messages IA par jour",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} de stockage famille",
+            "strong": true
+          },
+          {
+            "icon": "📊",
+            "text": "Synthèse hebdomadaire IA",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Tous les agents IA actifs",
+            "strong": false
+          }
+        ],
+        "es": [
+          {
+            "icon": "✓",
+            "text": "Todo el plan Free",
+            "strong": false
+          },
+          {
+            "icon": "🧠",
+            "text": "Asistente de IA incluido",
+            "strong": true
+          },
+          {
+            "icon": "✈️",
+            "text": "Planificador de viajes con IA",
+            "strong": true
+          },
+          {
+            "icon": "🍽️",
+            "text": "Plan de comidas personalizado con IA",
+            "strong": true
+          },
+          {
+            "icon": "🏃",
+            "text": "Plan de fitness personalizado con IA",
+            "strong": true
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} mensajes de IA al día",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} de almacenamiento familiar",
+            "strong": true
+          },
+          {
+            "icon": "📊",
+            "text": "Resumen semanal con IA",
+            "strong": false
+          },
+          {
+            "icon": "✓",
+            "text": "Todos los agentes de IA activos",
+            "strong": false
+          }
+        ]
+      }
+    },
+    "max": {
+      "id": "max",
+      "order": 2,
+      "displayName": "Max",
+      "storageBytes": 21474836480,
+      "aiLimit": 100,
+      "aiPeriod": "daily",
+      "productId": "it.vittorioscocca.kidbox.max.monthly",
+      "priceMonthly": 9.99,
+      "currency": "EUR",
+      "highlighted": false,
+      "priceLabel": {
+        "it": "€9,99/mese",
+        "en": "€9.99/month",
+        "fr": "9,99 €/mois",
+        "es": "9,99 €/mes"
+      },
+      "tagline": {
+        "it": "Per famiglia · rinnovo automatico",
+        "en": "Per family · auto-renews",
+        "fr": "Par famille · renouvellement automatique",
+        "es": "Por familia · renovación automática"
+      },
+      "badge": {
+        "it": "Migliore",
+        "en": "Best value",
+        "fr": "Le meilleur",
+        "es": "El mejor"
+      },
+      "features": {
+        "it": [
+          {
+            "icon": "✓",
+            "text": "Tutto il piano Pro",
+            "strong": false
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} messaggi AI al giorno",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} di storage famiglia",
+            "strong": true
+          },
+          {
+            "icon": "🛟",
+            "text": "Supporto prioritario",
+            "strong": true
+          },
+          {
+            "icon": "🚀",
+            "text": "Accesso anticipato alle novità",
+            "strong": false
+          }
+        ],
+        "en": [
+          {
+            "icon": "✓",
+            "text": "Everything in Pro",
+            "strong": false
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} AI messages per day",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} family storage",
+            "strong": true
+          },
+          {
+            "icon": "🛟",
+            "text": "Priority support",
+            "strong": true
+          },
+          {
+            "icon": "🚀",
+            "text": "Early access to new features",
+            "strong": false
+          }
+        ],
+        "fr": [
+          {
+            "icon": "✓",
+            "text": "Tout le plan Pro",
+            "strong": false
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} messages IA par jour",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} de stockage famille",
+            "strong": true
+          },
+          {
+            "icon": "🛟",
+            "text": "Assistance prioritaire",
+            "strong": true
+          },
+          {
+            "icon": "🚀",
+            "text": "Accès anticipé aux nouveautés",
+            "strong": false
+          }
+        ],
+        "es": [
+          {
+            "icon": "✓",
+            "text": "Todo el plan Pro",
+            "strong": false
+          },
+          {
+            "icon": "💬",
+            "text": "{aiLimit} mensajes de IA al día",
+            "strong": true
+          },
+          {
+            "icon": "☁️",
+            "text": "{storage} de almacenamiento familiar",
+            "strong": true
+          },
+          {
+            "icon": "🛟",
+            "text": "Soporte prioritario",
+            "strong": true
+          },
+          {
+            "icon": "🚀",
+            "text": "Acceso anticipado a las novedades",
+            "strong": false
+          }
+        ]
+      }
+    }
+  }
+}

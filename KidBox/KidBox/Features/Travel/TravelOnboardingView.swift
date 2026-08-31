@@ -9,6 +9,11 @@ struct TravelOnboardingView: View {
 
     let onComplete: (TravelProfile) -> Void
 
+    /// Contenuto opzionale in cima alle domande. Serve all'avviso "serve un piano
+    /// a pagamento": la configurazione iniziale è la prima cosa che vede un utente
+    /// Free, e senza questo l'avviso resterebbe sepolto dietro tre domande.
+    var lockedNotice: AnyView? = nil
+
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var step = 0
@@ -47,6 +52,9 @@ struct TravelOnboardingView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    if let lockedNotice {
+                        lockedNotice
+                    }
                     stepHeader
                     stepContent
                 }

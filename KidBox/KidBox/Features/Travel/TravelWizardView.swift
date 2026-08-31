@@ -20,7 +20,10 @@ struct TravelWizardView: View {
     @State private var showProposal = false
     @State private var showUpgrade = false
 
-    private var aiAvailable: Bool { subscriptionManager.isAIAccessible }
+    /// Il pianificatore viaggi è incluso nei soli piani a pagamento: `isAIAccessible`
+    /// da solo non basta, perché è false solo per i Free che hanno già esaurito il
+    /// bonus una tantum — un Free con bonus intatto riuscirebbe a generare itinerari.
+    private var aiAvailable: Bool { subscriptionManager.currentPlan != .free }
 
     @Query private var members: [KBFamilyMember]
     @Query private var children: [KBChild]

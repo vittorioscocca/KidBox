@@ -285,6 +285,10 @@ final class AppCoordinator: ObservableObject {
         
         KBLog.sync.kbInfo("setActiveFamily familyId=\(familyId ?? "nil")")
         activeFamilyId = familyId
+        // Ricordata sull'account (`users/{uid}.activeFamilyId`) e non solo sul
+        // dispositivo: il logout azzera UserDefaults, e senza questa il rientro
+        // ripartirebbe dalla famiglia sbagliata. Vedi KBActiveFamilyRemoteStore.
+        Task { await KBActiveFamilyRemoteStore.save(familyId) }
         let sharedDefaults = UserDefaults(suiteName: "group.it.vittorioscocca.kidbox")
         if let id = familyId {
             sharedDefaults?.set(id, forKey: "activeFamilyId")
@@ -439,11 +443,19 @@ final class AppCoordinator: ObservableObject {
                         sharedDefaults?.set(fid, forKey: "activeFamilyId")
                         KBLog.sync.kbInfo("AppGroup: activeFamilyId synced fid=\(fid)")
                     } else {
-                        _ = user.uid
+                        // Dopo un logout UserDefaults è vuoto: la famiglia in cui
+                        // si stava la sa l'account, non il telefono. Si accetta solo
+                        // se è ancora fra le famiglie sincronizzate.
                         let descriptor = FetchDescriptor<KBFamily>(
                             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
                         )
-                        if let firstFamily = try? modelContext.fetch(descriptor).first {
+                        let famiglie = (try? modelContext.fetch(descriptor)) ?? []
+                        let remota = await KBActiveFamilyRemoteStore.load()
+                        if let remota, famiglie.contains(where: { $0.id == remota }) {
+                            self.setActiveFamily(remota)
+                            sharedDefaults?.set(remota, forKey: "activeFamilyId")
+                            KBLog.sync.kbInfo("AppGroup: activeFamilyId ripreso dall'account fid=\(remota)")
+                        } else if let firstFamily = famiglie.first {
                             sharedDefaults?.set(firstFamily.id, forKey: "activeFamilyId")
                             KBLog.sync.kbInfo("AppGroup: fallback activeFamilyId saved fid=\(firstFamily.id)")
                         } else {

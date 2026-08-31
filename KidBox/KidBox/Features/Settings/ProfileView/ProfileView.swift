@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 import SwiftData
 import PhotosUI
 import CoreLocation
@@ -64,6 +65,7 @@ struct ProfileView: View {
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Query private var families: [KBFamily]
     
     // MARK: - Theme
     private var backgroundColor: Color {
@@ -92,6 +94,9 @@ struct ProfileView: View {
     @State private var isDeletingAccount = false
     @State private var deleteError: String?
     @State private var showUpgradeSheet = false
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato la
+    /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
     @State private var showSaveSuccessAlert = false
     @State private var showSaveErrorAlert = false
     @State private var firstName: String = ""
@@ -114,6 +119,9 @@ struct ProfileView: View {
     @State private var savedFamilyAddress: String = ""
     @State private var savedAvatarHash: Int = 0
     @State private var showLogoutConfirm = false
+    /// Spazio famiglia occupato — allineato ad Android: la card Abbonamento
+    /// mostra piano + consumo reale, non solo la quota del piano.
+    @State private var storageUsedBytes: Int64 = KBStorageGate.shared.cachedUsedBytes
     
     @StateObject private var addressCompleter = AddressSearchCompleter()
     @StateObject private var locationService = OneShotLocationService()
@@ -157,6 +165,7 @@ struct ProfileView: View {
             loadLocalProfile()
             Task { await loadRemoteUserProfile() }
             Task { await subscriptionManager.loadPlan() }
+            Task { await loadStorageUsage() }
             syncSavedSnapshotFromCurrentState()
             didLoadInitial = true
             recomputeDirty()
@@ -238,12 +247,40 @@ struct ProfileView: View {
                 }
             )
         }
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradeSheetView(triggerFeature: "settings_upsell")
                 .environmentObject(subscriptionManager)
         }
     }
     
+    // MARK: - Storage usage
+    //
+    // Stessa fonte usata da StorageUsageView e da Android (callable
+    // `getStorageUsage`): se la chiamata fallisce si resta sull'ultimo
+    // valore noto in cache dal gate upload.
+
+    private func loadStorageUsage() async {
+        let familyId = ActiveFamilyResolver.familyId(from: families,
+                                                     activeFamilyId: coordinator.activeFamilyId)
+        guard !familyId.isEmpty else { return }
+
+        do {
+            let functions = Functions.functions(region: "europe-west1")
+            let result = try await functions.httpsCallable("getStorageUsage")
+                .call(["familyId": familyId])
+            guard let data = result.data as? [String: Any],
+                  let remoteBytes = data["usedBytes"] as? Int else { return }
+            let bytes = max(0, Int64(remoteBytes))
+            await MainActor.run {
+                storageUsedBytes = bytes
+                KBStorageGate.shared.cachedUsedBytes = bytes
+            }
+        } catch {
+            KBLog.app.kbError("ProfileView.loadStorageUsage failed: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Address helper
     // Usa questo per settare l'indirizzo programmaticamente (load/GPS)
     // senza innescare il completer
@@ -543,8 +580,11 @@ struct ProfileView: View {
                     
                     Spacer()
                     
-                    if subscriptionManager.currentPlan != .max, subscriptionManager.isFamilyOwner {
-                        Button { showUpgradeSheet = true } label: {
+                    if subscriptionManager.currentPlan != .max {
+                        Button {
+                            guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
+                            showUpgradeSheet = true
+                        } label: {
                             Text("Upgrade")
                                 .font(.caption.bold())
                                 .foregroundStyle(.white)
@@ -556,9 +596,20 @@ struct ProfileView: View {
                     }
                 }
                 
-                if subscriptionManager.currentPlan != .max, !subscriptionManager.isFamilyOwner {
-                    NonOwnerUpgradeNotice()
+
+                // ── Spazio occupato ──────────────────────────────────────
+                let quota    = subscriptionManager.currentPlan.storageQuota
+                let fraction = min(1.0, max(0.0, Double(storageUsedBytes) / Double(max(1, quota))))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    ProgressView(value: fraction)
+                        .progressViewStyle(.linear)
+                        .tint(Color(red: 0.35, green: 0.6, blue: 0.85))
+                    Text("\(storageUsedBytes.formattedFileSize) di \(quota.formattedFileSize)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+                .padding(.top, 2)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)

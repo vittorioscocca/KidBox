@@ -20,7 +20,10 @@ struct TravelProposalView: View {
     @State private var selectedStop: TravelItineraryStopContext?
     @State private var showRegenerateError = false
 
-    private var aiAvailable: Bool { subscriptionManager.isAIAccessible }
+    /// Il pianificatore viaggi è incluso nei soli piani a pagamento: `isAIAccessible`
+    /// da solo non basta, perché è false solo per i Free che hanno già esaurito il
+    /// bonus una tantum — un Free con bonus intatto riuscirebbe a generare itinerari.
+    private var aiAvailable: Bool { subscriptionManager.currentPlan != .free }
     private var hasProposalContent: Bool {
         vm.proposalPlan != nil
             || !(vm.proposalNarrative ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

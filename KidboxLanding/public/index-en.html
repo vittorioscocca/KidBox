@@ -234,6 +234,9 @@
   .plan ul { list-style:none; display:flex; flex-direction:column; gap:9px; }
   .plan li { display:flex; gap:9px; font-size:0.86rem; color:var(--muted); }
   .plan li b { color:var(--text); font-weight:700; }
+  /* Voce non inclusa nel piano: barrata e smorzata */
+  .plan li.off { opacity:0.55; text-decoration:line-through; text-decoration-thickness:1px; }
+  .plan li.off b { color:var(--muted); font-weight:600; }
   .plan-note { margin-top:36px; text-align:center; font-size:0.85rem; color:var(--muted); max-width:60ch; margin-inline:auto; }
   .plan-note b { color:var(--text); }
 
@@ -533,8 +536,9 @@
   <div class="sec-head rv">
     <div class="kicker">Plans</div>
     <h2>One price per family. Everyone included.</h2>
-    <p>A single subscription covers all members. Start free with a 7-day full trial of the Max plan, no card required.</p>
+    <p>A single subscription covers all members.</p>
   </div>
+<!-- PLANS:START — generato da scripts/render-landing-plans.js, non modificare a mano -->
   <div class="plans rv">
     <div class="plan">
       <div class="pn">Free</div><div class="pp">€&thinsp;0</div><div class="psub">Free forever</div><hr>
@@ -545,7 +549,8 @@
         <li><b>✓</b> Documents and reports</li>
         <li><b>✓</b> Shopping list and expenses</li>
         <li><b>✓</b> Location sharing</li>
-        <li><b>✓</b> <b>200 MB</b> storage</li>
+        <li><b>✓</b> <b>200 MB family storage</b></li>
+        <li><b>💬</b> 5 trial AI messages, one time only</li>
       </ul>
     </div>
     <div class="plan hot">
@@ -555,8 +560,11 @@
         <li><b>✓</b> Everything in Free</li>
         <li><b>🧠</b> <b>AI Assistant included</b></li>
         <li><b>✈️</b> <b>AI Travel Planner</b></li>
-        <li><b>💬</b> <b>30 AI messages</b> / day</li>
-        <li><b>☁️</b> <b>5 GB</b> storage</li>
+        <li><b>🍽️</b> <b>AI Personalized Meal Plan</b></li>
+        <li><b>🏃</b> <b>AI Personalized Fitness Plan</b></li>
+        <li><b>💬</b> <b>30 AI messages per day</b></li>
+        <li><b>☁️</b> <b>5 GB family storage</b></li>
+        <li><b>📊</b> Weekly AI summary</li>
         <li><b>✓</b> All AI agents active</li>
       </ul>
     </div>
@@ -564,13 +572,14 @@
       <div class="pn">Max</div><div class="pp">€&thinsp;9.99 <small>/ month</small></div><div class="psub">Per family · auto-renews</div><hr>
       <ul>
         <li><b>✓</b> Everything in Pro</li>
-        <li><b>💬</b> <b>100 AI messages</b> / day</li>
-        <li><b>☁️</b> <b>20 GB</b> storage</li>
+        <li><b>💬</b> <b>100 AI messages per day</b></li>
+        <li><b>☁️</b> <b>20 GB family storage</b></li>
         <li><b>🛟</b> <b>Priority support</b></li>
         <li><b>🚀</b> Early access to new features</li>
       </ul>
     </div>
   </div>
+<!-- PLANS:END -->
   <p class="plan-note">Subscriptions are managed by <b>App Store</b> or <b>Google Play</b> and renew automatically. You can cancel anytime. The AI message counter is shared across the whole family and resets every day.</p>
 </section>
 
@@ -617,5 +626,8 @@
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
 </script>
+<!-- Listino piani: le card sopra sono generate al deploy; questo script le
+     riallinea a `config/plans`, che si modifica dalla console admin. -->
+<script defer src="/assets/plans.js?v=2"></script>
 </body>
 </html>

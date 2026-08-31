@@ -274,6 +274,9 @@ struct PlanningAIChatView: View {
     // e non ne crea una nuova ad ogni render del body.
     @State private var vm: PlanningAIChatViewModel? = nil
     @State private var showUpgrade = false
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato la
+    /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
     
     var body: some View {
         Group {
@@ -298,6 +301,7 @@ struct PlanningAIChatView: View {
         }
         .navigationTitle("Assistente")
         .navigationBarTitleDisplayMode(.inline)
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .sheet(isPresented: $showUpgrade) {
             UpgradeSheetView(triggerFeature: "ai_chat_lock")
                 .environmentObject(KBSubscriptionManager.shared)
@@ -385,8 +389,8 @@ struct PlanningAIChatView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
-            if KBSubscriptionManager.shared.isFamilyOwner {
-                Button {
+            Button {
+                    guard KBSubscriptionManager.shared.isFamilyOwner else { showOwnerOnly = true; return }
                     showUpgrade = true
                 } label: {
                     Text("Scopri i piani")
@@ -396,10 +400,6 @@ struct PlanningAIChatView: View {
                         .padding(.vertical, 12)
                         .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
                 }
-            } else {
-                NonOwnerUpgradeNotice()
-                    .padding(.horizontal, 16)
-            }
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

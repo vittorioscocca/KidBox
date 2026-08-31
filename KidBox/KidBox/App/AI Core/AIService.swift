@@ -413,10 +413,12 @@ final class AIService {
     func generateTravelPlan(_ request: TravelPlanRequest, familyId: String) async throws -> TravelPlanResponse {
         // Allinea il piano con Firestore (planOverride / families.plan) prima del gate client.
         await KBSubscriptionManager.shared.loadPlan()
-        guard KBSubscriptionManager.shared.isAIAccessible else {
-            KBLog.ai.kbInfo("generateTravelPlan blocked: free plan AI bonus exhausted")
+        // Feature dei soli piani a pagamento (il server rifiuta comunque i Free):
+        // `isAIAccessible` da solo lascerebbe passare un Free col bonus intatto.
+        guard KBSubscriptionManager.shared.currentPlan != .free else {
+            KBLog.ai.kbInfo("generateTravelPlan blocked: travel planner requires a paid plan")
             throw AIServiceError.rateLimitReached(
-                "Hai esaurito i messaggi AI gratuiti del piano Free. Passa a Pro per pianificare il viaggio con l'AI."
+                "Il Pianificatore Viaggi è incluso nei piani Pro e Max. Passa a Pro per pianificare il viaggio con l'AI."
             )
         }
         guard AISettings.shared.isEnabled else {

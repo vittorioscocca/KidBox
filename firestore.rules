@@ -43,6 +43,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Il listino piani lo legge anche la landing, che non ha nessun utente
+    // loggato: lettura aperta. Contiene solo prezzi, quote e testi di
+    // marketing — le stesse cose stampate sul sito — e nessun dato di nessuno.
+    // Non aggiungere altro a questo documento.
+    match /config/plans {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Rollup giornalieri: scritti dallo scheduler, letti solo dalla console.
     match /metrics/{docId} {
       allow read: if isAdmin();

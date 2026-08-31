@@ -203,6 +203,23 @@ struct SettingsView: View {
             }
             .listRowBackground(cardBackground)
 
+            // Apex e non www: `www.kidboxapp.com` risponde con un 301 verso
+            // questo indirizzo, quindi si evita il rimbalzo.
+            Link(destination: URL(string: "https://kidboxapp.com")!) {
+                HStack(spacing: 12) {
+                    Image(systemName: "globe")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    Text("Sito web")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .listRowBackground(cardBackground)
+
             // Versione/build/test: dentro la List così scorrono con il resto della pagina.
             Section {
                 VStack(spacing: 6) {

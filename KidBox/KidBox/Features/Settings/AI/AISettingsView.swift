@@ -12,6 +12,9 @@ struct AISettingsView: View {
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     @State private var showConsent             = false
     @State private var showUpgrade             = false
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato la
+    /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
     @State private var showManageSubscriptions = false
     @State private var showOfferCodeRedemption = false
     @Environment(\.colorScheme) private var colorScheme
@@ -150,19 +153,16 @@ struct AISettingsView: View {
                             .tint(usage.isNearLimit ? .orange : .blue)
 
                             if usage.isNearLimit && plan != .max {
-                                if subscriptionManager.isFamilyOwner {
-                                    Button {
-                                        showUpgrade = true
-                                    } label: {
-                                        Label("Passa a \(plan == .free ? "Pro" : "Max") per più messaggi",
-                                              systemImage: "arrow.up.circle")
-                                        .font(.caption.bold())
-                                        .foregroundStyle(.orange)
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
-                                    NonOwnerUpgradeNotice()
+                                Button {
+                                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
+                                    showUpgrade = true
+                                } label: {
+                                    Label("Passa a \(plan == .free ? "Pro" : "Max") per più messaggi",
+                                          systemImage: "arrow.up.circle")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.orange)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.vertical, 2)
@@ -335,9 +335,9 @@ struct AISettingsView: View {
                 }
             }
             
-            if subscriptionManager.isFamilyOwner {
-                Section {
+            Section {
                     Button {
+                        guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
                         showOfferCodeRedemption = true
                     } label: {
                         Label {
@@ -353,14 +353,14 @@ struct AISettingsView: View {
                         }
                     }
                     .listRowBackground(cardBackground)
-                } footer: {
-                    Text("Si apre il foglio di sistema Apple per inserire il codice. Il piano famiglia si aggiorna dopo il riscatto.")
-                        .font(.caption)
-                }
+            } footer: {
+                Text("Si apre il foglio di sistema Apple per inserire il codice. Il piano famiglia si aggiorna dopo il riscatto.")
+                    .font(.caption)
             }
         }
         .scrollContentBackground(.hidden)
         .background(backgroundColor)
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .navigationTitle("Assistente AI")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -445,8 +445,11 @@ struct AISettingsView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Capsule().fill(Color.orange))
-                } else if plan != .max, subscriptionManager.isFamilyOwner {
-                    Button("Upgrade") { showUpgrade = true }
+                } else if plan != .max {
+                    Button("Upgrade") {
+                        guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
+                        showUpgrade = true
+                    }
                         .font(.caption.bold())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -454,9 +457,6 @@ struct AISettingsView: View {
                 }
             }
             
-            if !subscriptionManager.isCancelledButActive, plan != .max, !subscriptionManager.isFamilyOwner {
-                NonOwnerUpgradeNotice()
-            }
         }
         .padding(14)
         .background(
@@ -519,12 +519,12 @@ struct AISettingsView: View {
                  : "L'assistente AI è disponibile con Pro o Max")
                 .font(.subheadline.bold())
                 .multilineTextAlignment(.center)
-            Text("Passa a Pro per 30 messaggi AI al giorno per famiglia, o a Max per 100.")
+            Text("Passa a Pro per \(KBPlan.pro.aiMessageLimit) messaggi AI al giorno per famiglia, o a Max per \(KBPlan.max.aiMessageLimit).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            if subscriptionManager.isFamilyOwner {
-                Button {
+            Button {
+                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
                     showUpgrade = true
                     AppAnalytics.aiPaywallShown(context: "ai_settings")
                 } label: {
@@ -535,9 +535,6 @@ struct AISettingsView: View {
                         .background(Capsule().fill(Color(red: 0.35, green: 0.6, blue: 0.85)))
                 }
                 .buttonStyle(.plain)
-            } else {
-                NonOwnerUpgradeNotice()
-            }
         }
         .padding(20)
         .frame(maxWidth: .infinity)
@@ -592,6 +589,10 @@ struct UpgradeSheetView: View {
 
     @State private var showOfferCodeRedemption = false
 
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato la
+    /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
+
     private let tint     = Color(red: 0.35, green: 0.6, blue: 0.85)
     private let maxColor = Color(red: 0.55, green: 0.35, blue: 0.9)
 
@@ -635,24 +636,21 @@ struct UpgradeSheetView: View {
                         plan:        .free,
                         color:       .secondary,
                         icon:        "gift.circle.fill",
-                        features:    ["200 MB storage famiglia", "\(KBPlan.free.aiMessageLimit) msg AI una tantum per famiglia"],
                         purchasable: false
                     )
 
                     // Piano Pro
                     planCard(
-                        plan:     .pro,
-                        color:    tint,
-                        icon:     "star.circle.fill",
-                        features: ["5 GB storage famiglia", "\(KBPlan.pro.aiMessageLimit) msg AI/giorno per famiglia", "Sintesi settimanale AI"]
+                        plan:  .pro,
+                        color: tint,
+                        icon:  "star.circle.fill"
                     )
                     
                     // Piano Max
                     planCard(
-                        plan:     .max,
-                        color:    maxColor,
-                        icon:     "crown.fill",
-                        features: ["20 GB storage famiglia", "\(KBPlan.max.aiMessageLimit) msg AI/giorno per famiglia", "Sintesi settimanale AI", "Supporto prioritario"]
+                        plan:  .max,
+                        color: maxColor,
+                        icon:  "crown.fill"
                     )
                     
                     // Ripristina
@@ -662,21 +660,21 @@ struct UpgradeSheetView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     
-                    if subscriptionManager.isFamilyOwner {
-                        Button {
-                            showOfferCodeRedemption = true
-                        } label: {
-                            Label("Riscatta codice offerta o promozionale", systemImage: "giftcard.fill")
-                                .font(.footnote)
-                        }
-                        .foregroundStyle(tint)
+                    Button {
+                        guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
+                        showOfferCodeRedemption = true
+                    } label: {
+                        Label("Riscatta codice offerta o promozionale", systemImage: "giftcard.fill")
+                            .font(.footnote)
                     }
+                    .foregroundStyle(tint)
                     
                     // ✅ Legal footer — FUORI dalla planCard, visibile a tutti
                     legalFooter
                 }
                 .padding()
             }
+            .ownerOnlyAlert(isPresented: $showOwnerOnly)
             .navigationTitle("Piani KidBox")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -717,7 +715,6 @@ struct UpgradeSheetView: View {
         plan: KBPlan,
         color: Color,
         icon: String,
-        features: [LocalizedStringKey],
         purchasable: Bool = true
     ) -> some View {
         let isCurrent   = subscriptionManager.currentPlan == plan
@@ -763,17 +760,24 @@ struct UpgradeSheetView: View {
                 .foregroundStyle(.orange)
             }
             
-            // Feature list
-            ForEach(Array(features.enumerated()), id: \.offset) { _, f in
-                Label(f, systemImage: "checkmark")
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
+            // Feature list — testi e quote arrivano dal catalogo `config/plans`,
+            // già localizzati e con i segnaposto risolti (vedi KBPlanCatalog).
+            ForEach(Array(plan.features.enumerated()), id: \.offset) { _, f in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(f.icon)
+                        .font(.subheadline)
+                        .frame(width: 20, alignment: .leading)
+                    Text(f.text)
+                        .font(.subheadline)
+                        .fontWeight(f.strong ? .semibold : .regular)
+                        .foregroundStyle(.primary)
+                }
             }
             
             // Bottone acquisto — solo testo, niente legalFooter dentro
             if purchasable, !isCurrent || isCancelled {
-                if subscriptionManager.isFamilyOwner {
-                    Button {
+                Button {
+                        guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
                         Task { await subscriptionManager.purchase(plan) }
                     } label: {
                         HStack {
@@ -798,9 +802,6 @@ struct UpgradeSheetView: View {
                     }
                     .disabled(subscriptionManager.isPurchasing)
                     .buttonStyle(.plain)
-                } else {
-                    NonOwnerUpgradeNotice()
-                }
             }
         }
         .padding(18)

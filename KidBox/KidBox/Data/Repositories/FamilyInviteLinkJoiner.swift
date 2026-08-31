@@ -87,6 +87,15 @@ enum FamilyInviteLinkJoiner {
             let vaultKeyAvailable: Bool
             if case .complete = outcome { vaultKeyAvailable = true } else { vaultKeyAvailable = false }
             AppAnalytics.familyJoined(vaultKeyAvailable: vaultKeyAvailable)
+
+            // 4) La famiglia creata solo per superare l'onboarding, se è rimasta
+            // vuota, va tolta di mezzo: occupa uno slot dei due per account e
+            // rende ambigua la scelta della famiglia "corrente".
+            await KBLeftoverFamilyCleaner.deleteEmptyOwnedFamilies(
+                keepFamilyId: fid,
+                modelContext: modelContext
+            )
+
             KBLog.sync.kbInfo("InviteLink: completato familyId=\(fid)")
         } catch {
             AppAnalytics.familyJoinFailed(reason: joinFailureReason(for: error))

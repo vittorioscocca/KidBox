@@ -12,6 +12,10 @@ struct StorageUsageView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme)  private var colorScheme
+
+    /// I pulsanti di abbonamento restano visibili a tutti: chi non ha creato la
+    /// famiglia riceve la spiegazione al tocco, non un pulsante mancante.
+    @State private var showOwnerOnly = false
     @EnvironmentObject private var coordinator: AppCoordinator
     @EnvironmentObject private var subscriptionManager: KBSubscriptionManager
     
@@ -90,10 +94,22 @@ struct StorageUsageView: View {
             
             // ── Piani disponibili ───────────────────────────────────────────
             Section("Piani disponibili") {
-                ForEach(KBPlan.allCases, id: \.rawValue) { plan in
-                    planRow(plan: plan)
-                        .listRowBackground(cardBackground)
+                // Carosello: le card di listino sono alte (fino a nove voci su
+                // Pro) e affiancate si confrontano a colpo d'occhio, invece di
+                // allungare la pagina per tre schermate.
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(KBPlan.ordered, id: \.rawValue) { plan in
+                            planCard(plan: plan)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .scrollTargetLayout()
                 }
+                .scrollTargetBehavior(.viewAligned)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
             
             // ── Gestione abbonamento ─────────────────────────────────────────
@@ -150,10 +166,10 @@ struct StorageUsageView: View {
                 }
                 .listRowBackground(cardBackground)
                 
-                if subscriptionManager.isFamilyOwner {
-                    Button {
-                        showOfferCodeRedemption = true
-                    } label: {
+                Button {
+                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
+                    showOfferCodeRedemption = true
+                } label: {
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Riscatta codice offerta")
@@ -168,8 +184,7 @@ struct StorageUsageView: View {
                                 .foregroundStyle(tint)
                         }
                     }
-                    .listRowBackground(cardBackground)
-                }
+                .listRowBackground(cardBackground)
             } footer: {
                 Text("Gli acquisti vengono verificati tramite il tuo ID Apple. Il piano si applica all'intera famiglia. Per i codici offerta, Apple apre una schermata dedicata in cui inserire il codice.")
                     .font(.caption)
@@ -178,6 +193,7 @@ struct StorageUsageView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(backgroundColor)
+        .ownerOnlyAlert(isPresented: $showOwnerOnly)
         .navigationTitle("Utilizzo spazio")
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
@@ -342,108 +358,112 @@ struct StorageUsageView: View {
         .frame(height: 12)
     }
     
-    // MARK: - Plan row
-    
+    // MARK: - Plan card
+
+    /// Card di listino del carosello: stesso contenuto del paywall, della
+    /// console e del sito — nome, prezzo, sottotitolo e feature dal catalogo.
     @ViewBuilder
-    private func planRow(plan: KBPlan) -> some View {
+    private func planCard(plan: KBPlan) -> some View {
         let isCurrent = subscriptionManager.currentPlan == plan
         let product   = subscriptionManager.storeProduct(for: plan)
-        /// Stesso criterio dell’ "Abbonati" in Piani: Pro/Max quando non è già il piano attuale e l’utente è proprietario.
-        let canPurchaseRow = subscriptionManager.isFamilyOwner && !isCurrent && plan != .free
-        
-        Group {
-            if canPurchaseRow {
+        /// Stesso criterio dell'"Abbonati" in Piani: Pro/Max quando non è già il piano attuale e l'utente è proprietario.
+        let canPurchase = !isCurrent && plan != .free
+        let color = planColor(plan)
+
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(plan.displayName)
+                    .font(.title3.bold())
+                if isCurrent {
+                    Text("Piano attuale")
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 9).padding(.vertical, 3)
+                        .background(Capsule().fill(tint))
+                } else if !plan.badge.isEmpty {
+                    Text(plan.badge)
+                        .font(.caption.bold())
+                        .foregroundStyle(color)
+                        .padding(.horizontal, 9).padding(.vertical, 3)
+                        .background(Capsule().fill(color.opacity(0.12)))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(product.map {
+                    String(format: NSLocalizedString("%@/mese", comment: "Monthly price suffix (%@ = StoreKit localized price)"), $0.displayPrice)
+                } ?? plan.monthlyPrice)
+                    .font(.title3.bold())
+                    .foregroundStyle(plan == .free ? .secondary : color)
+                if !plan.tagline.isEmpty {
+                    Text(plan.tagline)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(plan.features.enumerated()), id: \.offset) { _, f in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(f.icon)
+                            .font(.subheadline)
+                            .frame(width: 22, alignment: .leading)
+                        Text(f.text)
+                            .font(.subheadline)
+                            .fontWeight(f.strong ? .semibold : .regular)
+                            .foregroundStyle(f.strong ? .primary : .secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if canPurchase {
                 Button {
+                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
                     Task { await subscriptionManager.purchase(plan) }
                 } label: {
-                    planRowInner(plan: plan, product: product, isCurrent: isCurrent)
+                    Group {
+                        if subscriptionManager.isPurchasing {
+                            ProgressView().controlSize(.small).tint(.white)
+                        } else {
+                            Text("Abbonati")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(color))
                 }
                 .buttonStyle(.plain)
                 .disabled(subscriptionManager.isPurchasing)
-                .accessibilityLabel(
-                    "Abbonati \(plan.displayName)"
-                )
-                .accessibilityHint(
-                    "Avvia l’acquisto del piano selezionato"
-                )
-                .padding(.vertical, 4)
-            } else {
-                planRowInner(plan: plan, product: product, isCurrent: isCurrent)
-                    .padding(.vertical, 4)
+                .accessibilityLabel("Abbonati \(plan.displayName)")
+                .accessibilityHint("Avvia l'acquisto del piano selezionato")
+            } else if isCurrent {
+                Label("Piano attivo", systemImage: "checkmark.circle.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(color)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
             }
         }
+        .padding(16)
+        .frame(width: 270, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isCurrent ? color : Color.secondary.opacity(0.18), lineWidth: isCurrent ? 2 : 1)
+        )
     }
-    
-    @ViewBuilder
-    private func planRowInner(plan: KBPlan, product: StoreKit.Product?, isCurrent: Bool) -> some View {
-        let nonOwnerPaidRow = !subscriptionManager.isFamilyOwner && !isCurrent && product != nil
-        
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Text(plan.displayName).font(.subheadline.bold())
-                        if isCurrent {
-                            Text("Piano attuale")
-                                .font(.caption2.bold())
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 7).padding(.vertical, 2)
-                                .background(Capsule().fill(tint))
-                        } else if !plan.badge.isEmpty {
-                            Text(plan.badge)
-                                .font(.caption2.bold())
-                                .foregroundStyle(planColor(plan))
-                                .padding(.horizontal, 7).padding(.vertical, 2)
-                                .background(Capsule().fill(planColor(plan).opacity(0.12)))
-                        }
-                    }
-                    HStack(spacing: 8) {
-                        Label(String(format: NSLocalizedString("%@ storage", comment: "Storage quota label (%@ = formatted size)"), plan.storageLabel), systemImage: "internaldrive")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Label(plan.aiQuotaLabel, systemImage: "sparkles")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                
-                Spacer(minLength: 8)
-                
-                planRowTrailing(plan: plan, product: product, isCurrent: isCurrent)
-            }
-            
-            if nonOwnerPaidRow {
-                NonOwnerUpgradeNotice()
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func planRowTrailing(plan: KBPlan, product: StoreKit.Product?, isCurrent: Bool) -> some View {
-        if isCurrent {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(planColor(plan))
-                .font(.title3)
-        } else if subscriptionManager.isFamilyOwner && plan != .free {
-            if subscriptionManager.isPurchasing {
-                ProgressView().controlSize(.small)
-            } else if let product {
-                Text(String(format: NSLocalizedString("%@/mese", comment: "Monthly price suffix (%@ = StoreKit localized price)"), product.displayPrice))
-                    .font(.caption.bold())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Capsule().fill(planColor(plan)))
-                    .allowsHitTesting(false)
-            } else {
-                Text(plan.monthlyPrice)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        } else {
-            Text(plan.monthlyPrice)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-    
+
     // MARK: - Expiring banner (abbonamento cancellato ma attivo)
     
     private func expiringBanner(expirationDate: Date) -> some View {
@@ -498,7 +518,7 @@ struct StorageUsageView: View {
                     Text(vm.isOverLimit ? "Spazio esaurito" : "Spazio quasi esaurito")
                         .font(.subheadline.bold())
                     Text(vm.isOverLimit
-                         ? "Gli upload sono bloccati. Passa a Pro per 5 GB."
+                         ? "Gli upload sono bloccati. Passa a Pro per \(KBPlan.pro.spec.storageLabel)."
                          : "Hai usato l'80% dello spazio. Passa a Pro per continuare.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -506,21 +526,16 @@ struct StorageUsageView: View {
                 
                 Spacer()
                 
-                if subscriptionManager.isFamilyOwner {
-                    Button("Upgrade") {
-                        Task { await subscriptionManager.purchase(.pro) }
-                    }
+                Button("Upgrade") {
+                    guard subscriptionManager.isFamilyOwner else { showOwnerOnly = true; return }
+                    Task { await subscriptionManager.purchase(.pro) }
+                }
                     .font(.caption.bold())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Capsule().fill(vm.isOverLimit ? Color.red : Color.orange))
                     .disabled(subscriptionManager.isPurchasing)
-                }
-            }
-            
-            if !subscriptionManager.isFamilyOwner {
-                NonOwnerUpgradeNotice()
             }
         }
         .padding(14)

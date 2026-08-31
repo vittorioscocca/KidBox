@@ -599,6 +599,16 @@
         }
       }
     },
+    "%@ di %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ di %2$@"
+          }
+        }
+      }
+    },
     "%@ disponibili per la famiglia" : {
       "localizations" : {
         "en" : {
@@ -1392,6 +1402,7 @@
       }
     },
     "%lld msg AI una tantum per famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1437,6 +1448,7 @@
       }
     },
     "%lld msg AI/giorno per famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2787,6 +2799,7 @@
       }
     },
     "5 GB storage famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2920,6 +2933,7 @@
       }
     },
     "20 GB storage famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2986,6 +3000,7 @@
       }
     },
     "200 MB storage famiglia" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3292,6 +3307,9 @@
           }
         }
       }
+    },
+    "Abbonati" : {
+
     },
     "Abbonati · %@/mese" : {
       "localizations" : {
@@ -8235,7 +8253,11 @@
         }
       }
     },
+    "Avvia l'acquisto del piano selezionato" : {
+
+    },
     "Avvia l’acquisto del piano selezionato" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -23069,24 +23091,24 @@
         }
       }
     },
-    "Gli upload sono bloccati. Passa a Pro per 5 GB." : {
+    "Gli upload sono bloccati. Passa a Pro per %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uploads are blocked. Upgrade to Pro for 5 GB."
+            "value" : "Uploads are blocked. Upgrade to Pro for %@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las cargas están bloqueadas. Pasa a Pro para 5 GB."
+            "value" : "Las cargas están bloqueadas. Pasa a Pro para %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les chargements sont bloqués. Passez à Pro pour 5 Go."
+            "value" : "Les chargements sont bloqués. Passez à Pro pour %@."
           }
         }
       }
@@ -27416,25 +27438,25 @@
         }
       }
     },
-    "La famiglia ha usato %@ su %@. Passa a Pro per 5 GB." : {
-      "comment" : "Storage quota exceeded message",
+    "La famiglia ha usato %@ su %@. Passa a Pro per %@." : {
+      "comment" : "Storage quota exceeded message (%@ = used, quota, Pro storage)",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The family has used %@ of %@. Upgrade to Pro for 5 GB."
+            "value" : "The family has used %@ of %@. Upgrade to Pro for %@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La familia ha usado %@ de %@. Pasa a Pro para 5 GB."
+            "value" : "La familia ha usado %@ de %@. Pasa a Pro para %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La famille a utilisé %@ sur %@. Passez à Pro pour 5 Go."
+            "value" : "La famille a utilisé %@ sur %@. Passez à Pro pour %@."
           }
         }
       }
@@ -37530,24 +37552,24 @@
         }
       }
     },
-    "Passa a Pro per 30 messaggi AI al giorno per famiglia, o a Max per 100." : {
+    "Passa a Pro per %lld messaggi AI al giorno per famiglia, o a Max per %lld." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upgrade to Pro for 30 AI messages a day per family, or to Max for 100."
+            "value" : "Upgrade to Pro for %lld AI messages a day per family, or to Max for %lld."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cambia a Pro para 30 mensajes de IA al día por familia, o a Max para 100."
+            "value" : "Cambia a Pro para %lld mensajes de IA al día por familia, o a Max para %lld."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passez à Pro pour 30 messages IA par jour et par famille, ou à Max pour 100."
+            "value" : "Passez à Pro pour %lld messages IA par jour et par famille, ou à Max pour %lld."
           }
         }
       }
@@ -39188,6 +39210,9 @@
           }
         }
       }
+    },
+    "Piano attivo" : {
+
     },
     "Piano attuale" : {
       "localizations" : {
@@ -41869,25 +41894,25 @@
         }
       }
     },
-    "Questo file richiede %@ ma hai solo %@ liberi su %@. Passa a Pro per 5 GB." : {
-      "comment" : "Storage would exceed quota message",
+    "Questo file richiede %@ ma hai solo %@ liberi su %@. Passa a Pro per %@." : {
+      "comment" : "Storage would exceed quota message (%@ = needed, free, quota, Pro storage)",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This file requires %@ but you only have %@ free of %@. Upgrade to Pro for 5 GB."
+            "value" : "This file requires %@ but you only have %@ free of %@. Upgrade to Pro for %@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este archivo requiere %@ pero solo tienes %@ libres de %@. Pasa a Pro para 5 GB."
+            "value" : "Este archivo requiere %@ pero solo tienes %@ libres de %@. Pasa a Pro para %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ce fichier nécessite %@ mais vous n'avez que %@ libres sur %@. Passez à Pro pour 5 Go."
+            "value" : "Ce fichier nécessite %@ mais vous n'avez que %@ libres sur %@. Passez à Pro pour %@."
           }
         }
       }
@@ -47327,6 +47352,7 @@
       }
     },
     "Sintesi settimanale AI" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -48896,6 +48922,7 @@
       }
     },
     "Supporto prioritario" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

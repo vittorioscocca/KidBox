@@ -40,17 +40,19 @@ enum KBPlan: String, CaseIterable {
     case pro    = "pro"
     case max    = "max"
     
-    var displayName: String {
-        switch self {
-        case .free: return "Free"
-        case .pro:  return "Pro"
-        case .max:  return "Max"
-        }
-    }
+    /// Spec pubblicata su `config/plans`, con i valori compilati come fallback.
+    /// Vedi `KBPlanCatalog`: quote, prezzi e feature hanno un'unica fonte di
+    /// verità (`functions/plans.json`), non più una copia per client.
+    var spec: KBPlanSpec { KBPlanCatalog.shared.spec(for: self) }
+
+    var displayName: String { spec.displayName }
     
     /// `String` (non `LocalizedStringKey`): confrontato con `.isEmpty` e usato in `??`
-    /// insieme a `product?.displayPrice` (StoreKit), quindi passa da NSLocalizedString.
+    /// insieme a `product?.displayPrice` (StoreKit), che resta il prezzo che conta —
+    /// questo è solo il ripiego quando lo store non risponde.
     var monthlyPrice: String {
+        let remote = spec.localizedPriceLabel
+        if !remote.isEmpty { return remote }
         switch self {
         case .free: return NSLocalizedString("Gratis", comment: "Free plan price")
         case .pro:  return NSLocalizedString("€4,99/mese", comment: "Pro plan monthly price")
@@ -58,28 +60,22 @@ enum KBPlan: String, CaseIterable {
         }
     }
     
-    var storageQuota: Int64 {
-        switch self {
-        case .free: return 200  * 1024 * 1024        // 200 MB
-        case .pro:  return 5    * 1024 * 1024 * 1024 // 5 GB
-        case .max:  return 20   * 1024 * 1024 * 1024 // 20 GB
-        }
-    }
+    var storageQuota: Int64 { spec.storageBytes }
     
     /// Messaggi AI per famiglia nel periodo di quota (condivisi tra tutti i membri).
-    /// Free = 5 a vita (una tantum, non si rinnova), Pro = 30/giorno, Max = 100/giorno.
-    var aiMessageLimit: Int {
-        switch self {
-        case .free: return 5
-        case .pro:  return 30
-        case .max:  return 100
-        }
-    }
+    /// Sul piano Free è un bonus una tantum, su Pro/Max è la quota giornaliera.
+    var aiMessageLimit: Int { spec.aiLimit }
 
     /// Periodo su cui si resetta la quota AI: a vita (una tantum) su Free, giornaliero su Pro/Max.
     var aiQuotaPeriod: AIQuotaPeriod {
-        self == .free ? .lifetime : .daily
+        AIQuotaPeriod(rawValue: spec.aiPeriod) ?? (self == .free ? .lifetime : .daily)
     }
+
+    /// Elenco feature del piano, nella lingua del device e con quote già risolte.
+    var features: [KBPlanFeature] { spec.renderedFeatures }
+
+    /// Sottotitolo di listino, es. "Per famiglia · rinnovo automatico".
+    var tagline: String { spec.localizedTagline }
 
     /// Etichetta quota AI da mostrare in UI, es. "5 msg AI una tantum" o "30 msg AI/giorno".
     var aiQuotaLabel: String {
@@ -97,19 +93,20 @@ enum KBPlan: String, CaseIterable {
         return String(format: format, aiMessageLimit)
     }
     
-    var storageLabel: String { storageQuota.formattedFileSize }
+    /// Etichetta di listino ("200 MB", "5 GB"), non il formato dettagliato di
+    /// `formattedFileSize` ("5.00 GB"): questa descrive un piano, non un file.
+    var storageLabel: String { spec.storageLabel }
+
+    /// Ordine di presentazione deciso dal catalogo, non dall'ordine dei `case`.
+    static var ordered: [KBPlan] { allCases.sorted { $0.spec.order < $1.spec.order } }
     
     /// Product ID App Store Connect
-    var productId: String? {
-        switch self {
-        case .free: return nil
-        case .pro:  return "it.vittorioscocca.kidbox.pro.monthly"
-        case .max:  return "it.vittorioscocca.kidbox.max.monthly"
-        }
-    }
+    var productId: String? { spec.productId }
     
     /// `String` (non `LocalizedStringKey`): confrontato con `.isEmpty`, quindi passa da NSLocalizedString.
     var badge: String {
+        let remote = spec.localizedBadge
+        if !remote.isEmpty { return remote }
         switch self {
         case .free: return ""
         case .pro:  return NSLocalizedString("Più popolare", comment: "Pro plan badge")
@@ -294,6 +291,10 @@ final class KBSubscriptionManager: ObservableObject {
             KBLog.app.kbDebug("SubscriptionManager: role=\(role) isFamilyOwner=\(isFamilyOwner) uid=\(uid) familyId=\(familyId)")
         }
         
+        // Listino aggiornato (quote, prezzi, feature) prima di mostrare qualunque
+        // schermata di piano: la fonte di verità è `config/plans`, non l'app.
+        await KBPlanCatalog.shared.refresh()
+
         // Leggi Firestore come punto di partenza rapido...
         await syncPlanFromFirestore(uid: uid, familyId: familyId)
         

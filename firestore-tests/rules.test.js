@@ -76,6 +76,29 @@ async function check(nome, promessa) {
   await check("famiglia: può leggere la propria",
       assertSucceeds(db.doc(`families/${FAM}`).get()));
 
+  console.log("\n── FAMIGLIA ATTIVA SULL'ACCOUNT ───────────────────");
+  await check("utente: può salvare activeFamilyId su users/{uid}",
+      assertSucceeds(db.doc(`users/${UID}`).set({activeFamilyId: FAM}, {merge: true})));
+  await check("utente: NON può infilare plan insieme ad activeFamilyId",
+      assertFails(db.doc(`users/${UID}`).set({activeFamilyId: FAM, plan: "max"}, {merge: true})));
+  await check("altri: NON possono leggere la famiglia attiva di un utente",
+      assertFails(env.authenticatedContext("estraneo").firestore().doc(`users/${UID}`).get()));
+
+  console.log("\n── LISTINO PIANI (config/plans) ───────────────────");
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc("config/plans").set({version: 1, plans: {}});
+    await ctx.firestore().doc("config/nudges").set({enabled: true});
+  });
+  const anonimo = env.unauthenticatedContext().firestore();
+  await check("listino: leggibile SENZA login (lo legge la landing)",
+      assertSucceeds(anonimo.doc("config/plans").get()));
+  await check("listino: NON scrivibile da un client loggato",
+      assertFails(db.doc("config/plans").update({version: 2})));
+  await check("listino: NON scrivibile da un anonimo",
+      assertFails(anonimo.doc("config/plans").set({version: 2})));
+  await check("altri config: restano chiusi agli anonimi",
+      assertFails(anonimo.doc("config/nudges").get()));
+
   console.log("\n── LIMITE 2 FAMIGLIE ──────────────────────────────");
   await check("2ª famiglia: consentita (ne possiede 1)",
       assertSucceeds(db.doc("families/seconda").set({name: "Due", ownerUid: UID})));

@@ -61,6 +61,10 @@ enum KBStorageGateLite {
         
         let defaults = UserDefaults(suiteName: appGroupId)
         
+        // Etichetta della quota Pro scritta dall'app (KBPlanCatalog): il numero
+        // non vive qui, arriva dal catalogo `config/plans` come tutto il resto.
+        let proStorage = defaults?.string(forKey: "proStorageLabel") ?? "5 GB"
+
         let used: Int64  = defaults?.object(forKey: "storageUsedBytes_\(familyId)")  as? Int64 ?? 0
         let quota: Int64 = (defaults?.object(forKey: "storageQuotaBytes_\(familyId)") as? Int64)
             .flatMap { $0 > 0 ? $0 : nil } ?? fallbackQuota
@@ -68,14 +72,14 @@ enum KBStorageGateLite {
         if used >= quota {
             return .blocked(
                 title: "Spazio esaurito",
-                message: "La famiglia ha usato \(used.liteFormattedFileSize) su \(quota.liteFormattedFileSize). Passa a Pro per 5 GB."
+                message: "La famiglia ha usato \(used.liteFormattedFileSize) su \(quota.liteFormattedFileSize). Passa a Pro per \(proStorage)."
             )
         }
         if bytes > 0, (used + bytes) > quota {
             let free = quota - used
             return .blocked(
                 title: "Spazio insufficiente",
-                message: "Questo file richiede \(bytes.liteFormattedFileSize) ma hai solo \(free.liteFormattedFileSize) liberi su \(quota.liteFormattedFileSize). Passa a Pro per 5 GB."
+                message: "Questo file richiede \(bytes.liteFormattedFileSize) ma hai solo \(free.liteFormattedFileSize) liberi su \(quota.liteFormattedFileSize). Passa a Pro per \(proStorage)."
             )
         }
         return .allowed

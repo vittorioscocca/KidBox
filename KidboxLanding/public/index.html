@@ -234,6 +234,9 @@
   .plan ul { list-style:none; display:flex; flex-direction:column; gap:9px; }
   .plan li { display:flex; gap:9px; font-size:0.86rem; color:var(--muted); }
   .plan li b { color:var(--text); font-weight:700; }
+  /* Voce non inclusa nel piano: barrata e smorzata */
+  .plan li.off { opacity:0.55; text-decoration:line-through; text-decoration-thickness:1px; }
+  .plan li.off b { color:var(--muted); font-weight:600; }
   .plan-note { margin-top:36px; text-align:center; font-size:0.85rem; color:var(--muted); max-width:60ch; margin-inline:auto; }
   .plan-note b { color:var(--text); }
 
@@ -533,8 +536,9 @@
   <div class="sec-head rv">
     <div class="kicker">Abbonamenti</div>
     <h2>Un prezzo per famiglia. Tutti inclusi.</h2>
-    <p>Un solo abbonamento copre tutti i membri. Inizia gratis con 7 giorni di prova al piano Max, senza carta.</p>
+    <p>Un solo abbonamento copre tutti i membri.</p>
   </div>
+<!-- PLANS:START — generato da scripts/render-landing-plans.js, non modificare a mano -->
   <div class="plans rv">
     <div class="plan">
       <div class="pn">Free</div><div class="pp">€&thinsp;0</div><div class="psub">Per sempre gratuito</div><hr>
@@ -545,18 +549,22 @@
         <li><b>✓</b> Documenti e referti</li>
         <li><b>✓</b> Lista spesa e spese</li>
         <li><b>✓</b> Condivisione posizione</li>
-        <li><b>✓</b> <b>200 MB</b> di storage</li>
+        <li><b>✓</b> <b>200 MB di storage famiglia</b></li>
+        <li><b>💬</b> 5 messaggi AI di prova, una tantum</li>
       </ul>
     </div>
     <div class="plan hot">
-      <div class="badge">⭐ Più scelto</div>
+      <div class="badge">⭐ Più popolare</div>
       <div class="pn">Pro</div><div class="pp">€&thinsp;4,99 <small>/ mese</small></div><div class="psub">Per famiglia · rinnovo automatico</div><hr>
       <ul>
         <li><b>✓</b> Tutto il piano Free</li>
         <li><b>🧠</b> <b>Assistente AI incluso</b></li>
-        <li><b>✈️</b> <b>Pianificatore viaggi AI</b></li>
-        <li><b>💬</b> <b>30 messaggi AI</b> / giorno</li>
-        <li><b>☁️</b> <b>5 GB</b> di storage</li>
+        <li><b>✈️</b> <b>Pianificatore Viaggi con AI</b></li>
+        <li><b>🍽️</b> <b>Piano Alimentare personalizzato con AI</b></li>
+        <li><b>🏃</b> <b>Piano Fitness personalizzato con AI</b></li>
+        <li><b>💬</b> <b>30 messaggi AI al giorno</b></li>
+        <li><b>☁️</b> <b>5 GB di storage famiglia</b></li>
+        <li><b>📊</b> Sintesi settimanale AI</li>
         <li><b>✓</b> Tutti gli agenti AI attivi</li>
       </ul>
     </div>
@@ -564,13 +572,14 @@
       <div class="pn">Max</div><div class="pp">€&thinsp;9,99 <small>/ mese</small></div><div class="psub">Per famiglia · rinnovo automatico</div><hr>
       <ul>
         <li><b>✓</b> Tutto il piano Pro</li>
-        <li><b>💬</b> <b>100 messaggi AI</b> / giorno</li>
-        <li><b>☁️</b> <b>20 GB</b> di storage</li>
+        <li><b>💬</b> <b>100 messaggi AI al giorno</b></li>
+        <li><b>☁️</b> <b>20 GB di storage famiglia</b></li>
         <li><b>🛟</b> <b>Supporto prioritario</b></li>
         <li><b>🚀</b> Accesso anticipato alle novità</li>
       </ul>
     </div>
   </div>
+<!-- PLANS:END -->
   <p class="plan-note">Gli abbonamenti sono gestiti da <b>App Store</b> o <b>Google Play</b> e si rinnovano automaticamente. Puoi annullare in qualsiasi momento. Il contatore messaggi AI è condiviso tra tutta la famiglia e si azzera ogni giorno.</p>
 </section>
 
@@ -617,5 +626,8 @@
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
 </script>
+<!-- Listino piani: le card sopra sono generate al deploy; questo script le
+     riallinea a `config/plans`, che si modifica dalla console admin. -->
+<script defer src="/assets/plans.js?v=2"></script>
 </body>
 </html>

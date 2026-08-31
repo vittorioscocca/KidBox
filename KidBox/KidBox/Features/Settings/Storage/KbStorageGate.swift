@@ -56,12 +56,12 @@ enum KBStorageBlockReason {
     var message: String {
         switch self {
         case .quotaExceeded(let used, let quota):
-            let format = NSLocalizedString("La famiglia ha usato %@ su %@. Passa a Pro per 5 GB.", comment: "Storage quota exceeded message")
-            return String(format: format, used.formattedFileSize, quota.formattedFileSize)
+            let format = NSLocalizedString("La famiglia ha usato %@ su %@. Passa a Pro per %@.", comment: "Storage quota exceeded message (%@ = used, quota, Pro storage)")
+            return String(format: format, used.formattedFileSize, quota.formattedFileSize, KBPlan.pro.spec.storageLabel)
         case .wouldExceed(let used, let quota, let needed):
             let free = quota - used
-            let format = NSLocalizedString("Questo file richiede %@ ma hai solo %@ liberi su %@. Passa a Pro per 5 GB.", comment: "Storage would exceed quota message")
-            return String(format: format, needed.formattedFileSize, free.formattedFileSize, quota.formattedFileSize)
+            let format = NSLocalizedString("Questo file richiede %@ ma hai solo %@ liberi su %@. Passa a Pro per %@.", comment: "Storage would exceed quota message (%@ = needed, free, quota, Pro storage)")
+            return String(format: format, needed.formattedFileSize, free.formattedFileSize, quota.formattedFileSize, KBPlan.pro.spec.storageLabel)
         }
     }
 }
