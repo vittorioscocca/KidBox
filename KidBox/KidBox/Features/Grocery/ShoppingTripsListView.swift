@@ -16,6 +16,7 @@ struct ShoppingTripsListView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @Query private var trips: [KBShoppingTrip]
+    @State private var editingTrip: KBShoppingTrip?
 
     private let familyId: String
 
@@ -74,6 +75,12 @@ struct ShoppingTripsListView: View {
                                 } label: {
                                     Label("Elimina", systemImage: "trash")
                                 }
+                                Button {
+                                    editingTrip = trip
+                                } label: {
+                                    Label("Modifica", systemImage: "pencil")
+                                }
+                                .tint(.blue)
                             }
                         }
                     }
@@ -87,6 +94,9 @@ struct ShoppingTripsListView: View {
                 }
             }
             .background(backgroundColor)
+            .sheet(item: $editingTrip) { trip in
+                EditShoppingTripView(trip: trip)
+            }
             .navigationTitle("Spese salvate")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -123,14 +133,29 @@ struct ShoppingTripsListView: View {
     }
 
     private func delete(_ trip: KBShoppingTrip) {
-        // Lo scontrino sparisce, la spesa collegata no: i soldi sono usciti
-        // comunque, e cancellarli da qui sarebbe una sorpresa nei conti.
+        // Scontrino e spesa sono lo stesso fatto e si modificano insieme:
+        // lasciare nei totali una spesa senza più il suo dettaglio, e non più
+        // raggiungibile da nessuna schermata, sarebbe la sorpresa peggiore.
         let uid = Auth.auth().currentUser?.uid ?? "local"
         trip.isDeleted = true
         trip.updatedBy = uid
         trip.updatedAt = Date()
         trip.syncState = .pendingDelete
         SyncCenter.shared.enqueueShoppingTripDelete(tripId: trip.id, familyId: familyId, modelContext: modelContext)
+
+        if let expenseId = trip.linkedExpenseId, !expenseId.isEmpty {
+            let fid = familyId
+            let descriptor = FetchDescriptor<KBExpense>(
+                predicate: #Predicate<KBExpense> { $0.id == expenseId && $0.familyId == fid }
+            )
+            if let expense = try? modelContext.fetch(descriptor).first {
+                expense.isDeleted = true
+                expense.updatedAt = Date()
+                expense.updatedBy = uid
+                SyncCenter.shared.enqueueExpenseDelete(expenseId: expense.id, familyId: familyId, modelContext: modelContext)
+            }
+        }
+
         try? modelContext.save()
         SyncCenter.shared.flushGlobal(modelContext: modelContext)
     }
@@ -142,6 +167,7 @@ struct ShoppingTripDetailView: View {
 
     let trip: KBShoppingTrip
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isEditing = false
 
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -188,6 +214,14 @@ struct ShoppingTripDetailView: View {
         .background(backgroundColor)
         .navigationTitle(trip.storeName?.trimmedNonEmptyOrNil ?? String(localized: "Spesa"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Modifica") { isEditing = true }
+            }
+        }
+        .sheet(isPresented: $isEditing) {
+            EditShoppingTripView(trip: trip)
+        }
     }
 }
 

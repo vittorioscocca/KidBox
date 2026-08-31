@@ -13,6 +13,11 @@ import Spesa from "./pages/Spesa";
 import Foto from "./pages/Foto";
 import Spese from "./pages/Spese";
 import Posizione from "./pages/Posizione";
+import Password from "./pages/Password";
+import Wallet from "./pages/Wallet";
+import Animali from "./pages/Animali";
+import Casa from "./pages/Casa";
+import Garage from "./pages/Garage";
 import Placeholder from "./pages/Placeholder";
 import { NAV_SECTIONS, ACCOUNT_SECTIONS } from "./nav";
 import "./App.css";
@@ -155,8 +160,13 @@ function AuthedApp() {
             <Route path="/foto" element={<Foto />} />
             <Route path="/spese" element={<Spese />} />
             <Route path="/posizione" element={<Posizione />} />
+            <Route path="/password" element={<Password />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/animali" element={<Animali />} />
+            <Route path="/casa" element={<Casa />} />
+            <Route path="/garage" element={<Garage />} />
             <Route path="/todo" element={<TodoPage />} />
-            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione").map((s) => (
+            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage").map((s) => (
               <Route key={s.key} path={s.path} element={<Placeholder title={s.label} />} />
             ))}
             {ACCOUNT_SECTIONS.map((s) => (

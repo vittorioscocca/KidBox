@@ -64,6 +64,9 @@ export async function uploadDocument({
   name,
   mimeType,
   categoryId,
+  /** Tag libero su `notes`: le altre sezioni lo usano per legare un documento
+   *  a un'entità (`pet:{id}`, `petEvent:{id}`, `treatment:{id}`). */
+  notes,
   onProgress,
 }) {
   const key = await loadFamilyKey({ familyId, userId });
@@ -98,6 +101,7 @@ export async function uploadDocument({
     storagePath: path,
     downloadURL,
     categoryId: categoryId ?? deleteField(),
+    notes: notes ?? deleteField(),
     isDeleted: false,
     createdBy: userId,
     createdAt: serverTimestamp(),
@@ -116,7 +120,12 @@ export async function uploadDocument({
  * o salvare. Richiede CORS abilitato sul bucket per l'origine del web.
  */
 export async function fetchDocumentBlob({ familyId, userId, document: docData }) {
-  const url = docData.downloadURL;
+  // Alcune righe hanno solo `storagePath`: l'URL si ricava da Storage invece di
+  // arrendersi, com'è sempre stato lato nativo.
+  let url = docData.downloadURL;
+  if (!url && docData.storagePath) {
+    url = await getDownloadURL(storageRef(storage, docData.storagePath));
+  }
   if (!url) throw new Error("Documento senza URL di download");
 
   const response = await fetch(url);
@@ -171,8 +180,11 @@ export async function moveDocument({ familyId, userId, documentId, categoryId })
 
 /* ── Cartelle (documentCategories) ─────────────────────────────────────── */
 
-export async function createFolder({ familyId, userId, title, parentId }) {
-  const id = crypto.randomUUID();
+export async function createFolder({ familyId, userId, title, parentId, id: fixedId }) {
+  // Le cartelle di sistema hanno un id deterministico (`pets-root-{familyId}`),
+  // così due client che partono insieme scrivono lo stesso documento invece di
+  // creare due cartelle gemelle.
+  const id = fixedId || crypto.randomUUID();
   await setDoc(doc(categoriesCol(familyId), id), {
     familyId,
     title,

@@ -1,0 +1,277 @@
+/* Wallet: biglietti e tessere. Riusa le classi `pw-*` della sezione Password
+   per toolbar, filtri, form e pannello di dettaglio — sono lo stesso vocabolario
+   e duplicarle avrebbe voluto dire due posti da tenere allineati. */
+@import "./Password.css";
+
+.wl-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wl-two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+/* ── Biglietti ── */
+.wl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-tickets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.wl-tickets.muted {
+  opacity: 0.62;
+}
+
+.wl-ticket {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-height: 76px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.wl-ticket:hover {
+  background: var(--border);
+}
+
+.wl-ticket-stripe {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.wl-ticket-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.wl-ticket-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wl-ticket-emoji {
+  font-size: 1rem;
+}
+
+.wl-ticket-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wl-ticket-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Tessere ── */
+.wl-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.wl-card {
+  aspect-ratio: 1.585;          /* proporzione di una carta reale */
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.wl-card-brand {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.wl-card-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  opacity: 0.92;
+}
+
+/* ── Codice a barre ── */
+.wl-barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  background: #fff;         /* i lettori vogliono nero su bianco, anche in dark */
+  border-radius: 12px;
+}
+
+/* `height: auto` da solo non basta: il canvas ha larghezza e altezza intrinseche
+   e vanno rispettate entrambe, altrimenti il ridimensionamento lo schiaccia. */
+.wl-barcode canvas {
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.wl-barcode-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: #333;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.wl-barcode-failed {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.wl-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wl-photos img {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+/* ── Documenti del Wallet (sola lettura) ── */
+.wl-docs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.wl-doc {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.wl-doc:hover {
+  background: var(--border);
+}
+
+.wl-doc-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  color: #fff;
+}
+
+.wl-doc-kind {
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wl-doc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px 13px;
+  min-width: 0;
+}
+
+.wl-doc-holder {
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wl-doc-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.wl-doc-expiry {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.wl-doc-expiry.soon {
+  color: #c08c0d;
+  font-weight: 700;
+}
+
+.wl-doc-expiry.expired {
+  color: #d93838;
+  font-weight: 700;
+}
+
+.wl-cats {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-cats li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.wl-cats li strong {
+  min-width: 32px;
+}
+
+.wl-cats li span {
+  color: var(--muted);
+}

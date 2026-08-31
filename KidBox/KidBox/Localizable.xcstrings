@@ -9122,6 +9122,9 @@
         }
       }
     },
+    "Cambiando il totale si aggiorna anche la spesa in Spese; togliendolo, la spesa viene eliminata." : {
+
+    },
     "Cancella" : {
       "localizations" : {
         "en" : {

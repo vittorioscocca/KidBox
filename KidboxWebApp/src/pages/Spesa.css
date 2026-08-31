@@ -166,3 +166,141 @@
   color: var(--muted);
   margin-bottom: 6px;
 }
+
+/* ── Schede Da prendere / Presi / Tutti ── */
+.grocery-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.grocery-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.grocery-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.grocery-filter-count {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.grocery-qty {
+  margin-left: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.link-btn.primary {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Spese salvate (scontrini) ── */
+.grocery-group.trips {
+  margin-top: 8px;
+}
+
+.grocery-trip-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.trip-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trip {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+}
+
+.trip-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trip-store {
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-total {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.trip-meta,
+.trip-lines {
+  font-size: 0.77rem;
+  color: var(--muted);
+}
+
+.trip-lines {
+  overflow-wrap: anywhere;
+}
+
+.trip-preview {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.86rem;
+}
+
+.trip-preview span {
+  color: var(--muted);
+}
+
+/* Azioni sugli scontrini: sempre visibili. Non riusano `.grocery-delete`,
+   che compare solo all'hover di una riga della lista della spesa. */
+.trip-action {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.trip-action:hover {
+  background: var(--border);
+}
+
+.trip-action.danger:hover {
+  border-color: rgba(192, 57, 43, 0.45);
+}

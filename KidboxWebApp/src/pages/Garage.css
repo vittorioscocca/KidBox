@@ -1,0 +1,109 @@
+/* Garage. Riusa `pw-*` per intestazione, form e dettaglio e `an-*` per eventi
+   e allegati: sono identici a quelli degli animali. */
+@import "./Password.css";
+@import "./Animali.css";
+
+.gar-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.gar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 15px;
+  min-height: 92px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gar-card:hover {
+  background: var(--border);
+}
+
+.gar-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gar-name {
+  font-weight: 700;
+  font-size: 0.98rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* La targa si legge come una targa: monospazio e lettere spaziate. */
+.gar-plate {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.gar-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gar-due {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.gar-due.soon {
+  color: #c08c0d;
+  font-weight: 700;
+}
+
+.gar-due.expired {
+  color: #d93838;
+  font-weight: 700;
+}
+
+/* Preavvisi dei promemoria, nel form del veicolo. */
+.gar-offsets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.gar-offset-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gar-offset-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}

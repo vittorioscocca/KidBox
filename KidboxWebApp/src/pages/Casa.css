@@ -1,0 +1,92 @@
+/* Casa. Riusa il vocabolario delle altre sezioni: `pw-*` per intestazione,
+   form e dettaglio, `an-*` per gli allegati (identici a quelli degli animali). */
+@import "./Password.css";
+@import "./Animali.css";
+
+.casa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.casa-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.casa-group h3 {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.casa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.casa-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  min-height: 84px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.casa-card:hover {
+  background: var(--border);
+}
+
+.casa-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.casa-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.casa-row-bottom {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.casa-amount {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.casa-due {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.casa-due.soon {
+  color: #c08c0d;
+  font-weight: 700;
+}
+
+.casa-due.expired {
+  color: #d93838;
+  font-weight: 700;
+}

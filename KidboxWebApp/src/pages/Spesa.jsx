@@ -15,6 +15,14 @@ import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
 import Modal from "../components/Modal";
+import {
+  deleteShoppingTrip,
+  listenShoppingTrips,
+  saveShoppingTrip,
+  updateShoppingTrip,
+} from "../services/shoppingTrips";
+import SaveTripModal from "../components/SaveTripModal";
+import { formatAmount } from "../expenseCategories";
 import "./Spesa.css";
 
 /** Stesse categorie suggerite di KBGroceryCategory.suggested (iOS). */
@@ -49,7 +57,7 @@ function useCategoryLabel() {
 export default function Spesa() {
   const { currentFamilyId } = useFamily();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const categoryLabel = useCategoryLabel();
 
   const [items, setItems] = useState([]);
@@ -68,6 +76,20 @@ export default function Spesa() {
     );
   }, [currentFamilyId]);
 
+  const [filter, setFilter] = useState("toBuy");
+  const [trips, setTrips] = useState([]);
+  const [savingTrip, setSavingTrip] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null);
+
+  useEffect(() => {
+    if (!currentFamilyId) return undefined;
+    return listenShoppingTrips({
+      familyId: currentFamilyId,
+      onChange: setTrips,
+      onError: (err) => setError(err.message),
+    });
+  }, [currentFamilyId]);
+
   const toBuy = useMemo(() => items.filter((i) => !i.isPurchased), [items]);
   const purchased = useMemo(
     () =>
@@ -83,7 +105,9 @@ export default function Spesa() {
   // Da comprare raggruppati per categoria, come su iOS.
   const grouped = useMemo(() => {
     const map = new Map();
-    toBuy.forEach((item) => {
+    // Con «Tutti» le sezioni per categoria mostrano anche i presi, come su iOS.
+    const source = filter === "all" ? items : toBuy;
+    source.forEach((item) => {
       const key = item.category?.trim() ? item.category.trim() : UNCATEGORIZED;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(item);
@@ -94,7 +118,7 @@ export default function Spesa() {
         category,
         items: list.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")),
       }));
-  }, [toBuy]);
+  }, [items, toBuy, filter]);
 
   const addItem = async (e) => {
     e.preventDefault();
@@ -188,13 +212,32 @@ export default function Spesa() {
     }
   };
 
+  const removeTrip = async (trip) => {
+    if (!window.confirm(t.grocery.deleteTrip)) return;
+    try {
+      await deleteShoppingTrip({
+        familyId: currentFamilyId,
+        userId: user.uid,
+        id: trip.id,
+        linkedExpenseId: trip.linkedExpenseId,
+      });
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const row = (item) => (
     <li key={item.id} className={item.isPurchased ? "purchased" : ""}>
       <button className="grocery-check" onClick={() => togglePurchased(item)}>
         {item.isPurchased ? "✅" : "⭕️"}
       </button>
       <button className="grocery-main" onClick={() => setEditing(item)}>
-        <span className="grocery-name">{item.name}</span>
+        <span className="grocery-name">
+          {item.name}
+          {(item.quantity ?? 1) > 1 && (
+            <span className="grocery-qty">×{item.quantity}</span>
+          )}
+        </span>
         {item.notes && <span className="grocery-notes">{item.notes}</span>}
       </button>
       <button
@@ -244,6 +287,24 @@ export default function Spesa() {
         </div>
       </div>
 
+      {/* Le tre schede della lista nativa. Si parte da «Da prendere», come su iOS. */}
+      <div className="grocery-filters">
+        {[
+          ["toBuy", t.grocery.filterToBuy, toBuy.length],
+          ["purchased", t.grocery.filterPurchased, purchased.length],
+          ["all", t.grocery.filterAll, items.length],
+        ].map(([key, label, count]) => (
+          <button
+            key={key}
+            className={"grocery-filter" + (filter === key ? " active" : "")}
+            onClick={() => setFilter(key)}
+          >
+            {label}
+            <span className="grocery-filter-count">{count}</span>
+          </button>
+        ))}
+      </div>
+
       {error && <p className="error">{error}</p>}
 
       {items.length === 0 ? (
@@ -254,25 +315,127 @@ export default function Spesa() {
         </div>
       ) : (
         <>
-          {grouped.map((group) => (
-            <section key={group.category} className="grocery-group">
-              <h3>{categoryLabel(group.category)}</h3>
-              <ul className="grocery-list">{group.items.map(row)}</ul>
-            </section>
-          ))}
+          {filter !== "purchased" &&
+            grouped.map((group) => (
+              <section key={group.category} className="grocery-group">
+                <h3>{categoryLabel(group.category)}</h3>
+                <ul className="grocery-list">{group.items.map(row)}</ul>
+              </section>
+            ))}
 
-          {purchased.length > 0 && (
+          {filter !== "toBuy" && purchased.length > 0 && (
             <section className="grocery-group">
               <div className="grocery-group-head">
                 <h3>{t.grocery.purchased(purchased.length)}</h3>
+                <button className="link-btn primary" onClick={() => setSavingTrip(true)}>
+                  🧾 {t.grocery.saveTrip}
+                </button>
                 <button className="link-btn" onClick={deleteAllPurchased}>
                   {t.grocery.deletePurchased}
                 </button>
               </div>
-              <ul className="grocery-list">{purchased.map(row)}</ul>
+              {/* Con «Tutti» i presi sono già dentro le sezioni per categoria. */}
+              {filter === "purchased" && (
+                <ul className="grocery-list">{purchased.map(row)}</ul>
+              )}
             </section>
           )}
         </>
+      )}
+
+      {/* ── Spese salvate: gli scontrini archiviati ── */}
+      <section className="grocery-group trips">
+        <div className="grocery-group-head">
+          <h3>🧾 {t.grocery.savedTrips}</h3>
+        </div>
+        {trips.length === 0 ? (
+          <p className="grocery-trip-empty">{t.grocery.noTrips}</p>
+        ) : (
+          <ul className="trip-list">
+            {trips.map((trip) => (
+              <li key={trip.id} className="trip">
+                <div className="trip-head">
+                  <span className="trip-store">{trip.storeName || t.grocery.noStore}</span>
+                  <span className="trip-total">
+                    {trip.total > 0 ? formatAmount(trip.total, locale) : "—"}
+                  </span>
+                  {/* Classe dedicata: `grocery-delete` è invisibile finché non
+                      passi sopra una riga della LISTA, e qui non siamo lì. */}
+                  <button
+                    className="trip-action"
+                    title={t.grocery.editTrip}
+                    onClick={() => setEditingTrip(trip)}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="trip-action danger"
+                    title={t.grocery.delete}
+                    onClick={() => removeTrip(trip)}
+                  >
+                    🗑
+                  </button>
+                </div>
+                <div className="trip-meta">
+                  {[
+                    trip.date
+                      ? new Date(trip.date).toLocaleDateString(
+                          locale === "en" ? "en-US" : "it-IT",
+                          { day: "2-digit", month: "long", year: "numeric" }
+                        )
+                      : null,
+                    t.grocery.products(trip.lines.length),
+                    trip.linkedExpenseId ? t.grocery.linkedExpense : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+                {trip.lines.length > 0 && (
+                  <div className="trip-lines">
+                    {trip.lines
+                      .map((l) => ((l.quantity ?? 1) > 1 ? `${l.name} ×${l.quantity}` : l.name))
+                      .join(", ")}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {savingTrip && (
+        <SaveTripModal
+          items={purchased}
+          onSave={({ storeName, total, date }) =>
+            saveShoppingTrip({
+              familyId: currentFamilyId,
+              userId: user.uid,
+              storeName,
+              total,
+              date,
+              items: purchased,
+            })
+          }
+          onClose={() => setSavingTrip(false)}
+        />
+      )}
+
+      {editingTrip && (
+        <SaveTripModal
+          trip={editingTrip}
+          items={[]}
+          onSave={({ storeName, total, date }) =>
+            updateShoppingTrip({
+              familyId: currentFamilyId,
+              userId: user.uid,
+              trip: editingTrip,
+              storeName,
+              total,
+              date,
+            })
+          }
+          onClose={() => setEditingTrip(null)}
+        />
       )}
 
       {editing && (

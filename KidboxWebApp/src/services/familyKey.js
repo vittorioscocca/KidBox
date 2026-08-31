@@ -21,6 +21,7 @@ const ESCROW_CONTEXT = "kidbox-key-escrow-v1";
 
 const enc = new TextEncoder();
 const keyCache = new Map();
+const rawKeyCache = new Map();
 
 function b64ToBytes(b64) {
   const bin = atob(b64);
@@ -111,9 +112,26 @@ export async function loadFamilyKey({ familyId, userId }) {
     ["encrypt", "decrypt"]
   );
   keyCache.set(cacheKey, familyKey);
+  rawKeyCache.set(cacheKey, new Uint8Array(rawKey));
   return familyKey;
+}
+
+/**
+ * I byte grezzi della chiave di famiglia.
+ *
+ * Servono alle password con visibilità «solo io»: iOS ne deriva una sotto-chiave
+ * con HKDF, e HKDF vuole il materiale grezzo, mentre `loadFamilyKey` restituisce
+ * di proposito una chiave AES non esportabile. Non è un indebolimento — sono gli
+ * stessi byte che questo modulo maneggia già per fare l'unwrap — ma resta una
+ * funzione separata, così chi cifra file continua a passare dalla chiave chiusa.
+ */
+export async function loadFamilyKeyBytes({ familyId, userId }) {
+  const cacheKey = `${userId}.${familyId}`;
+  if (!rawKeyCache.has(cacheKey)) await loadFamilyKey({ familyId, userId });
+  return rawKeyCache.get(cacheKey);
 }
 
 export function clearFamilyKeyCache() {
   keyCache.clear();
+  rawKeyCache.clear();
 }
