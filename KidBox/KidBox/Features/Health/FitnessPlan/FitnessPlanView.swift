@@ -45,8 +45,14 @@ struct FitnessPlanView: View {
 
     @State private var pendingInput: FitnessPlanInput?
     @State private var showCostConfirm = false
-    @State private var showSetup = false
-    @State private var setupMode: FitnessPlanSetupView.Mode = .onboarding
+    /// Presentazione del wizard/impostazioni.
+    ///
+    /// Una sola sorgente invece di `Bool` + modalità separata: con
+    /// `.sheet(isPresented:)` SwiftUI valuta il contenuto prima che il secondo
+    /// `@State` sia propagato, e la prima apertura dalla rotellina mostrava il
+    /// wizard a passi invece delle impostazioni — poi si "aggiustava" alla
+    /// seconda apertura, con il valore rimasto dal giro precedente.
+    @State private var setupPresentation: SetupPresentation?
     @State private var showUpgrade = false
     @State private var showCopilot = false
     @State private var showCopilotConsent = false
@@ -61,6 +67,18 @@ struct FitnessPlanView: View {
     @State private var infoBanner: String?
 
     private let tint = FitnessPlanTheme.tint
+
+    /// Le due modalità della schermata di configurazione, come valore presentabile.
+    private enum SetupPresentation: String, Identifiable {
+        case onboarding
+        case settings
+
+        var id: String { rawValue }
+
+        var mode: FitnessPlanSetupView.Mode {
+            self == .onboarding ? .onboarding : .settings
+        }
+    }
 
     init(familyId: String, childId: String) {
         self.familyId = familyId
@@ -153,8 +171,7 @@ struct FitnessPlanView: View {
             if plan != nil, isPaidPlan {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        setupMode = .settings
-                        showSetup = true
+                        setupPresentation = .settings
                     } label: {
                         Image(systemName: "gearshape")
                     }
@@ -175,14 +192,14 @@ struct FitnessPlanView: View {
         .onReceive(NotificationCenter.default.publisher(for: .fitnessPlanDidChange)) { _ in
             reloadFromStore()
         }
-        .sheet(isPresented: $showSetup) {
+        .sheet(item: $setupPresentation) { presentation in
             FitnessPlanSetupView(
-                mode: setupMode,
+                mode: presentation.mode,
                 subjectName: subjectName,
                 input: input,
                 estimatedUnits: estimatedUnits,
                 needsManualMetrics: needsManualMetrics,
-                plan: setupMode == .settings ? plan : nil,
+                plan: presentation.mode == .settings ? plan : nil,
                 lastUsage: lastUsage,
                 onDelete: { Task { await deletePlan() } },
                 onConfirm: { confirmed in
@@ -413,8 +430,7 @@ struct FitnessPlanView: View {
                 .foregroundStyle(KBTheme.secondaryText(colorScheme))
 
             Button {
-                setupMode = .onboarding
-                showSetup = true
+                setupPresentation = .onboarding
             } label: {
                 Text("Configura e genera il piano")
                     .frame(maxWidth: .infinity)

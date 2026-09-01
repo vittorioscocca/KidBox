@@ -361,10 +361,23 @@ enum FitnessSessionStatus: String, Codable {
 
 /// Come una sessione è stata segnata completata: serve al report settimanale
 /// per distinguere l'autodichiarazione dal dato letto dall'orologio.
+///
+/// La decodifica è tollerante di proposito: il documento è condiviso con
+/// Android, dove la stessa cosa si chiama Health Connect. Un valore sconosciuto
+/// qui farebbe fallire la decodifica dell'**intero piano**, non della singola
+/// seduta, e il device si ritroverebbe senza calendario.
 enum FitnessCompletionSource: String, Codable {
     case manual
     case notification
     case healthKit
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        switch raw {
+        case "healthConnect", "health": self = .healthKit
+        default: self = FitnessCompletionSource(rawValue: raw) ?? .manual
+        }
+    }
 }
 
 // MARK: - Piano
