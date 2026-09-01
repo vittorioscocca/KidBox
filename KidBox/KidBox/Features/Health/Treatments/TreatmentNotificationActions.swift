@@ -37,9 +37,10 @@ enum TreatmentNotificationCategory {
 
 extension TreatmentNotificationCategory {
     
-    /// Registra la categoria con le tre azioni rapide.
-    /// Chiamare una volta sola in AppDelegate.didFinishLaunching.
-    static func register() {
+    /// La categoria con le tre azioni rapide.
+    /// La registrazione passa da `KBNotificationCategoryRegistry`: chiamare qui
+    /// `setNotificationCategories` cancellerebbe le categorie degli altri moduli.
+    static var category: UNNotificationCategory {
         let taken = UNNotificationAction(
             identifier: actionTaken,
             title: "✅ Assunto",
@@ -55,15 +56,12 @@ extension TreatmentNotificationCategory {
             title: "⏰ Ricordamelo tra 10 min",
             options: []
         )
-        let category = UNNotificationCategory(
+        return UNNotificationCategory(
             identifier: identifier,
             actions: [taken, skipped, snooze],
             intentIdentifiers: [],
             options: [.customDismissAction]
         )
-        UNUserNotificationCenter.current().setNotificationCategories([category])
-        Logger(subsystem: "it.vittorioscocca.kidbox", category: "Notifications")
-            .info("TreatmentNotificationCategory registered")
     }
 }
 

@@ -313,6 +313,72 @@
         }
       }
     },
+    "«%@» scade domani (%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” expires tomorrow (%@)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» caduca mañana (%@)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %@ » expire demain (%@)."
+          }
+        }
+      }
+    },
+    "«%@» scade il %@. Mancano 7 giorni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” expires on %@. 7 days left."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» caduca el %@. Quedan 7 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %@ » expire le %@. Il reste 7 jours."
+          }
+        }
+      }
+    },
+    "«%@» scade il %@. Mancano 30 giorni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” expires on %@. 30 days left."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» caduca el %@. Quedan 30 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %@ » expire le %@. Il reste 30 jours."
+          }
+        }
+      }
+    },
     "(%@)" : {
       "localizations" : {
         "en" : {
@@ -489,6 +555,28 @@
         }
       }
     },
+    "%@ — tra 3 giorni." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — in 3 days."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — en 3 días."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — dans 3 jours."
+          }
+        }
+      }
+    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
@@ -631,6 +719,28 @@
         }
       }
     },
+    "%@ in scadenza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ expiring soon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ a punto de caducar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bientôt expiré"
+          }
+        }
+      }
+    },
     "%@ non potrà più accedere ai dati della famiglia." : {
       "localizations" : {
         "en" : {
@@ -700,7 +810,7 @@
       }
     },
     "%1$d messaggi AI · %2$d/%3$d oggi" : {
-      "comment" : "Meal plan AI usage summary",
+      "comment" : "Fitness plan AI usage summary\nMeal plan AI usage summary",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -718,6 +828,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d messages IA · %2$d/%3$d aujourd’hui"
+          }
+        }
+      }
+    },
+    "%d adattamenti clinici del piano" : {
+      "comment" : "Fitness copilot intro safety notes",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d clinical adjustments in the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d adaptaciones clínicas del plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d adaptations cliniques du plan"
           }
         }
       }
@@ -789,6 +922,29 @@
         }
       }
     },
+    "%d min" : {
+      "comment" : "Session duration in minutes",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d min"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d min"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d min"
+          }
+        }
+      }
+    },
     "%d msg AI una tantum" : {
       "comment" : "AI quota label, one-time free bonus (%d = message count)",
       "localizations" : {
@@ -808,6 +964,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d msg IA à vie"
+          }
+        }
+      }
+    },
+    "%d sedute del piano e il loro stato" : {
+      "comment" : "Fitness copilot intro sessions",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d sessions in the plan and their status"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d sesiones del plan y su estado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d séances du plan et leur état"
           }
         }
       }
@@ -1375,6 +1554,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld membres connectés."
+          }
+        }
+      }
+    },
+    "%lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
           }
         }
       }
@@ -2130,6 +2331,28 @@
         }
       }
     },
+    "☀️ Buongiorno, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "☀️ Good morning, %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "☀️ Buenos días, %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "☀️ Bonjour, %@"
+          }
+        }
+      }
+    },
     "⚠️ Il file conterrà tutte le tue password in chiaro. Conservalo solo in luoghi affidabili." : {
       "localizations" : {
         "en" : {
@@ -2148,6 +2371,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "⚠️ Le fichier contiendra tous vos mots de passe en clair. Conservez-le uniquement dans des endroits fiables."
+          }
+        }
+      }
+    },
+    "✅ Fatto" : {
+      "comment" : "Fitness notification action done",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Hecho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✅ Fait"
           }
         }
       }
@@ -2192,6 +2438,95 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "✨"
+          }
+        }
+      }
+    },
+    "💊 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "💊 %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "💊 %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "💊 %@"
+          }
+        }
+      }
+    },
+    "📅 Sposta" : {
+      "comment" : "Fitness notification action move",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📅 Move"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📅 Mover"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📅 Déplacer"
+          }
+        }
+      }
+    },
+    "📋 Settimana di %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📋 %@’s week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📋 Semana de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "📋 Semaine de %@"
+          }
+        }
+      }
+    },
+    "🔍 Pattern salute · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔍 Health patterns · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔍 Patrones de salud · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🔍 Tendances santé · %@"
           }
         }
       }
@@ -3066,6 +3401,28 @@
         }
       }
     },
+    "A casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At home"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À la maison"
+          }
+        }
+      }
+    },
     "A lungo termine" : {
       "localizations" : {
         "en" : {
@@ -3706,6 +4063,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Achat en cours…"
+          }
+        }
+      }
+    },
+    "Adattamenti per la tua salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjustments for your health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adaptaciones para tu salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adaptations pour votre santé"
           }
         }
       }
@@ -5798,6 +6177,28 @@
         }
       }
     },
+    "All'aperto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outdoors"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al aire libre"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En extérieur"
+          }
+        }
+      }
+    },
     "All'arrivo in zona" : {
       "localizations" : {
         "en" : {
@@ -6014,6 +6415,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entraînements"
+          }
+        }
+      }
+    },
+    "Allenamenti AI su misura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI workouts made for you"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamientos de IA a tu medida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entraînements IA sur mesure"
+          }
+        }
+      }
+    },
+    "Allenamenti creati dall'AI sui tuoi dati di salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workouts built by AI on your health data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamientos creados por la IA con tus datos de salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entraînements créés par l'IA à partir de vos données de santé"
+          }
+        }
+      }
+    },
+    "Allenamenti registrati" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded workouts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamientos registrados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entraînements enregistrés"
+          }
+        }
+      }
+    },
+    "Allenamento di oggi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's workout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamiento de hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entraînement du jour"
           }
         }
       }
@@ -6794,6 +7283,28 @@
         }
       }
     },
+    "Apple Salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Santé"
+          }
+        }
+      }
+    },
     "Applica" : {
       "localizations" : {
         "en" : {
@@ -6834,6 +7345,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Appliquer la zone à"
+          }
+        }
+      }
+    },
+    "Applica le modifiche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply the changes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar los cambios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appliquer les modifications"
           }
         }
       }
@@ -7500,6 +8033,28 @@
         }
       }
     },
+    "Arrampicata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Climbing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escalada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escalade"
+          }
+        }
+      }
+    },
     "Arrivo" : {
       "localizations" : {
         "en" : {
@@ -7518,6 +8073,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Arrivée"
+          }
+        }
+      }
+    },
+    "Arti marziali / boxe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Martial arts / boxing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artes marciales / boxeo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arts martiaux / boxe"
           }
         }
       }
@@ -7760,6 +8337,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Assistant IA KidBox"
+          }
+        }
+      }
+    },
+    "Assistente AI KidBox — Fitness" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KidBox AI Assistant — Fitness"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asistente de IA KidBox — Fitness"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant IA KidBox — Fitness"
           }
         }
       }
@@ -8230,6 +8829,28 @@
         }
       }
     },
+    "Avanzato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avanzado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avancé"
+          }
+        }
+      }
+    },
     "Avventura e outdoor" : {
       "comment" : "Travel style",
       "localizations" : {
@@ -8546,6 +9167,28 @@
         }
       }
     },
+    "Basket" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basketball"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baloncesto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basket"
+          }
+        }
+      }
+    },
     "Battiti" : {
       "localizations" : {
         "en" : {
@@ -8609,6 +9252,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Boissons"
+          }
+        }
+      }
+    },
+    "Bici" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cycling"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bici"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vélo"
           }
         }
       }
@@ -9056,6 +9721,28 @@
         }
       }
     },
+    "Calcio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Football"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fútbol"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Football"
+          }
+        }
+      }
+    },
     "Calendario" : {
       "localizations" : {
         "en" : {
@@ -9147,6 +9834,50 @@
     "Cambiando il totale si aggiorna anche la spesa in Spese; togliendolo, la spesa viene eliminata." : {
 
     },
+    "Cambiare obiettivo, giorni o orari disattiva il piano attuale: serve un ricalcolo totale su un calendario nuovo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changing goal, days or times disables the current plan: a full recalculation on a new calendar is required."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar el objetivo, los días o los horarios desactiva el plan actual: hace falta un recálculo total sobre un calendario nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer d'objectif, de jours ou d'horaires désactive le plan actuel : un recalcul complet sur un nouveau calendrier est nécessaire."
+          }
+        }
+      }
+    },
+    "Camminata / trekking" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walking / hiking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caminata / senderismo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marche / randonnée"
+          }
+        }
+      }
+    },
     "Cancella" : {
       "localizations" : {
         "en" : {
@@ -9209,6 +9940,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chien"
+          }
+        }
+      }
+    },
+    "Canottaggio / vogatore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rowing / rowing machine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remo / máquina de remo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aviron / rameur"
           }
         }
       }
@@ -10943,6 +11696,28 @@
         }
       }
     },
+    "Chiedi al Fitness Copilot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the Fitness Copilot"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta al Fitness Copilot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demandez au Fitness Copilot"
+          }
+        }
+      }
+    },
     "Chiedi all'AI" : {
       "localizations" : {
         "en" : {
@@ -11049,6 +11824,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demandez tout ce que vous voulez sur votre famille : l'assistant connaît la santé, les documents, les dépenses, le calendrier et les mots de passe, et peut créer des événements ou des rappels à votre place."
+          }
+        }
+      }
+    },
+    "Chiedi un adeguamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask for an adjustment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedir un ajuste"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander un ajustement"
           }
         }
       }
@@ -11209,6 +12006,52 @@
         }
       }
     },
+    "Chiusa da Apple Salute: %1$d min, %2$d kcal" : {
+      "comment" : "Session closed by HealthKit with calories",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closed by Apple Health: %1$d min, %2$d kcal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrada por Apple Salud: %1$d min, %2$d kcal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermée par Apple Santé : %1$d min, %2$d kcal"
+          }
+        }
+      }
+    },
+    "Chiusa da Apple Salute: %d min" : {
+      "comment" : "Session closed by HealthKit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closed by Apple Health: %d min"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrada por Apple Salud: %d min"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermée par Apple Santé : %d min"
+          }
+        }
+      }
+    },
     "Ci aiuta a personalizzare i consigli" : {
       "localizations" : {
         "en" : {
@@ -11363,6 +12206,28 @@
         }
       }
     },
+    "Ciao! Sono il tuo personal trainer per il piano di %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi! I'm your personal trainer for %@'s plan."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Hola! Soy tu entrenador personal para el plan de %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonjour ! Je suis votre coach personnel pour le plan de %@."
+          }
+        }
+      }
+    },
     "Ciao! Sono pronto ad aiutarti a capire questa visita medica." : {
       "localizations" : {
         "en" : {
@@ -11404,6 +12269,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nourriture et gastronomie"
+          }
+        }
+      }
+    },
+    "Ciclismo / granfondo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cycling / gran fondo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciclismo / gran fondo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cyclisme / cyclosportive"
           }
         }
       }
@@ -12096,6 +12984,73 @@
         }
       }
     },
+    "Come l'AI ha adattato il piano ai tuoi dati clinici." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How the AI adapted the plan to your clinical data."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo la IA ha adaptado el plan a tus datos clínicos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment l'IA a adapté le plan à vos données cliniques."
+          }
+        }
+      }
+    },
+    "Come si esegue l'esercizio di oggi?" : {
+      "comment" : "Fitness copilot suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How do I do today's exercise?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo se hace el ejercicio de hoy?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment faire l'exercice du jour ?"
+          }
+        }
+      }
+    },
+    "Come ti alleni?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How do you train?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo entrenas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment vous entraînez-vous ?"
+          }
+        }
+      }
+    },
     "Come ti chiami?" : {
       "localizations" : {
         "en" : {
@@ -12162,6 +13117,51 @@
         }
       }
     },
+    "Completa la configurazione: scegli l'obiettivo e almeno un giorno di allenamento." : {
+      "comment" : "Fitness plan incomplete setup error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete the setup: choose the goal and at least one training day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completa la configuración: elige el objetivo y al menos un día de entrenamiento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminez la configuration : choisissez l'objectif et au moins un jour d'entraînement."
+          }
+        }
+      }
+    },
+    "Completate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminées"
+          }
+        }
+      }
+    },
     "Completati" : {
       "localizations" : {
         "en" : {
@@ -12180,6 +13180,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Terminés"
+          }
+        }
+      }
+    },
+    "Completato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminé"
           }
         }
       }
@@ -12291,6 +13313,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Résumé compact"
+          }
+        }
+      }
+    },
+    "Con l'accesso ai dati di attività, KidBox riconosce gli allenamenti registrati da iPhone, Apple Watch e accessori collegati e segna da sé le sedute completate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With access to activity data, KidBox recognizes the workouts recorded by iPhone, Apple Watch and connected accessories and marks completed sessions on its own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con acceso a los datos de actividad, KidBox reconoce los entrenamientos registrados por el iPhone, el Apple Watch y los accesorios conectados y marca por sí solo las sesiones completadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec l'accès aux données d'activité, KidBox reconnaît les entraînements enregistrés par l'iPhone, l'Apple Watch et les accessoires connectés et marque lui-même les séances terminées."
           }
         }
       }
@@ -12694,6 +13738,50 @@
         }
       }
     },
+    "Configura e genera il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up and generate the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura y genera el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurer et générer le plan"
+          }
+        }
+      }
+    },
+    "Configura il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurer le plan"
+          }
+        }
+      }
+    },
     "Configura orari" : {
       "localizations" : {
         "en" : {
@@ -12826,6 +13914,29 @@
         }
       }
     },
+    "Conosce il piano, le sedute già fatte e i tuoi dati di salute. Può spiegarti un esercizio, dirti come adattarlo e modificare il piano quando serve." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It knows the plan, the sessions you've done and your health data. It can explain an exercise, tell you how to adapt it and change the plan when needed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conoce el plan, las sesiones ya hechas y tus datos de salud. Puede explicarte un ejercicio, decirte cómo adaptarlo y modificar el plan cuando haga falta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il connaît le plan, les séances déjà faites et vos données de santé. Il peut expliquer un exercice, dire comment l'adapter et modifier le plan si besoin."
+          }
+        }
+      }
+    },
     "Conosce salute, visite, esami, documenti, wallet e password" : {
       "localizations" : {
         "en" : {
@@ -12910,6 +14021,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Consentement requis"
+          }
+        }
+      }
+    },
+    "Consenti l'accesso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow access"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir el acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser l'accès"
           }
         }
       }
@@ -13269,7 +14402,7 @@
       }
     },
     "Contesto troppo grande (%1$@ caratteri, max %2$@). Riduci i documenti allegati in Salute." : {
-      "comment" : "Meal plan payload error",
+      "comment" : "Fitness plan payload error\nMeal plan payload error",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13776,6 +14909,29 @@
         }
       }
     },
+    "Copilota" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copilot"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiloto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copilote"
+          }
+        }
+      }
+    },
     "Corpo" : {
       "localizations" : {
         "en" : {
@@ -13794,6 +14950,73 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Corps"
+          }
+        }
+      }
+    },
+    "Corpo libero" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bodyweight"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peso corporal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poids du corps"
+          }
+        }
+      }
+    },
+    "Corsa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correr"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course à pied"
+          }
+        }
+      }
+    },
+    "Corsa 5-10 km" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5-10 km run"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carrera 5-10 km"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course 5-10 km"
           }
         }
       }
@@ -13838,6 +15061,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce que disent les visiteurs"
+          }
+        }
+      }
+    },
+    "Cosa mi conviene fare oggi?" : {
+      "comment" : "Fitness copilot suggestion rest day",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What should I do today?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué me conviene hacer hoy?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que devrais-je faire aujourd'hui ?"
           }
         }
       }
@@ -14482,6 +15728,28 @@
         }
       }
     },
+    "Creazione del piano in corso…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating the plan…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creando el plan…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Création du plan en cours…"
+          }
+        }
+      }
+    },
     "Creazione invito…" : {
       "localizations" : {
         "en" : {
@@ -15012,6 +16280,28 @@
         }
       }
     },
+    "Da fare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por hacer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À faire"
+          }
+        }
+      }
+    },
     "Da file / Files" : {
       "localizations" : {
         "en" : {
@@ -15211,6 +16501,28 @@
         }
       }
     },
+    "Danza / ballo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dance"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danza / baile"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danse"
+          }
+        }
+      }
+    },
     "Dashboard" : {
       "localizations" : {
         "en" : {
@@ -15295,6 +16607,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Date du rendez-vous"
+          }
+        }
+      }
+    },
+    "Data della gara" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Race date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha de la prueba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date de la course"
           }
         }
       }
@@ -15918,6 +17252,28 @@
         }
       }
     },
+    "Descrivi la gara (obbligatorio)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe the race (required)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe la prueba (obligatorio)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Décrivez la course (obligatoire)"
+          }
+        }
+      }
+    },
     "Descrivi un problema, una domanda o un suggerimento. Puoi allegare fino a 5 screenshot." : {
       "localizations" : {
         "en" : {
@@ -16134,6 +17490,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Détails du groupe"
+          }
+        }
+      }
+    },
+    "Dettagli: distanza, livello, obiettivo di tempo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details: distance, level, target time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detalles: distancia, nivel, tiempo objetivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Détails : distance, niveau, temps visé"
           }
         }
       }
@@ -17090,6 +18468,28 @@
         }
       }
     },
+    "Dove ti alleni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where you train"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dónde entrenas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Où vous vous entraînez"
+          }
+        }
+      }
+    },
     "Dove vuoi andare?" : {
       "localizations" : {
         "en" : {
@@ -17174,6 +18574,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Durée"
+          }
+        }
+      }
+    },
+    "Durata di una seduta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session length"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duración de una sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durée d'une séance"
           }
         }
       }
@@ -17748,6 +19170,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer la photo"
+          }
+        }
+      }
+    },
+    "Elimina il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le plan"
           }
         }
       }
@@ -20096,6 +21540,28 @@
         }
       }
     },
+    "Esperienza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experience"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experiencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expérience"
+          }
+        }
+      }
+    },
     "Esperto" : {
       "comment" : "Travel age group detail",
       "localizations" : {
@@ -21607,6 +23073,28 @@
         }
       }
     },
+    "Fitness Copilot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness Copilot"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness Copilot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness Copilot"
+          }
+        }
+      }
+    },
     "Fonti: Wikipedia e Google" : {
       "localizations" : {
         "en" : {
@@ -22138,6 +23626,28 @@
         }
       }
     },
+    "Funzionale / HIIT" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Functional / HIIT"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funcional / HIIT"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonctionnel / HIIT"
+          }
+        }
+      }
+    },
     "Funzione AI non disponibile" : {
       "localizations" : {
         "en" : {
@@ -22200,6 +23710,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Galerie du téléphone"
+          }
+        }
+      }
+    },
+    "Gara o evento di riferimento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Target race or event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba o evento de referencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Course ou événement visé"
           }
         }
       }
@@ -22337,6 +23869,28 @@
         }
       }
     },
+    "Genera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer"
+          }
+        }
+      }
+    },
     "Genera codice QR" : {
       "localizations" : {
         "en" : {
@@ -22377,6 +23931,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Générer le QR code"
+          }
+        }
+      }
+    },
+    "Genera il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer le plan"
           }
         }
       }
@@ -22470,6 +24046,51 @@
         }
       }
     },
+    "Generare il piano costa circa %d messaggi AI" : {
+      "comment" : "Fitness plan AI cost",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating the plan costs about %d AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar el plan cuesta unos %d mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer le plan coûte environ %d messages IA"
+          }
+        }
+      }
+    },
+    "Generare il piano?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate the plan?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Generar el plan?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer le plan ?"
+          }
+        }
+      }
+    },
     "Generata %@ — tocca Aggiorna per rigenerare" : {
       "localizations" : {
         "en" : {
@@ -22493,7 +24114,7 @@
       }
     },
     "Generato il %@" : {
-      "comment" : "Meal plan generated at",
+      "comment" : "Fitness plan generated at\nMeal plan generated at",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -22825,6 +24446,28 @@
         }
       }
     },
+    "Giorni disponibili" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Días disponibles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jours disponibles"
+          }
+        }
+      }
+    },
     "Giorno" : {
       "localizations" : {
         "en" : {
@@ -22931,6 +24574,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jour mis à jour"
+          }
+        }
+      }
+    },
+    "Giorno di riposo: nessuna seduta prevista." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest day: no session planned."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Día de descanso: ninguna sesión prevista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jour de repos : aucune séance prévue."
           }
         }
       }
@@ -23335,6 +25000,98 @@
         }
       }
     },
+    "Hai completato il %d%% del piano, ottima progressione." : {
+      "comment" : "Fitness weekly report headline good",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed %d%% of the plan, great progress."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el %d%% del plan, excelente progresión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé %d%% du plan, très bonne progression."
+          }
+        }
+      }
+    },
+    "Hai completato il %d%% del piano: forse è troppo carico rispetto ai tuoi impegni." : {
+      "comment" : "Fitness weekly report headline low",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed %d%% of the plan: it may be too demanding for your schedule."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el %d%% del plan: quizá sea demasiado carga para tus compromisos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé %d%% du plan : il est peut-être trop chargé par rapport à vos contraintes."
+          }
+        }
+      }
+    },
+    "Hai completato il %d%% del piano: si può recuperare la prossima settimana." : {
+      "comment" : "Fitness weekly report headline mid",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed %d%% of the plan: you can catch up next week."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el %d%% del plan: puedes recuperar la próxima semana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé %d%% du plan : vous pouvez rattraper la semaine prochaine."
+          }
+        }
+      }
+    },
+    "Hai completato il 100%% del piano: settimana perfetta." : {
+      "comment" : "Fitness weekly report headline perfect",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed 100%% of the plan: a perfect week."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has completado el 100%% del plan: semana perfecta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez terminé 100%% du plan : semaine parfaite."
+          }
+        }
+      }
+    },
     "Hai già un account?" : {
       "localizations" : {
         "en" : {
@@ -23607,6 +25364,29 @@
         }
       }
     },
+    "Ho dolore al ginocchio, è normale?" : {
+      "comment" : "Fitness copilot suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My knee hurts, is that normal?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me duele la rodilla, ¿es normal?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai mal au genou, est-ce normal ?"
+          }
+        }
+      }
+    },
     "Ho inviato il link" : {
       "localizations" : {
         "en" : {
@@ -23625,6 +25405,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "J'ai envoyé le lien"
+          }
+        }
+      }
+    },
+    "Ho una data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I have a date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tengo una fecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai une date"
           }
         }
       }
@@ -23825,6 +25627,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les messages sont déduits de la limite quotidienne de la famille. Le plan reste enregistré : régénérez-le seulement si le poids, les entraînements ou l’objectif changent."
+          }
+        }
+      }
+    },
+    "I messaggi sono scalati dal limite giornaliero della famiglia. Il piano resta salvato: si rigenera solo quando cambiano obiettivo, giorni o stato di salute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages are deducted from the family's daily limit. The plan stays saved: regenerate it only when your goal, days or health status change."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los mensajes se descuentan del límite diario de la familia. El plan queda guardado: solo se regenera cuando cambian el objetivo, los días o el estado de salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les messages sont déduits de la limite quotidienne de la famille. Le plan reste enregistré : régénérez-le seulement quand l'objectif, les jours ou l'état de santé changent."
           }
         }
       }
@@ -24228,6 +26052,51 @@
         }
       }
     },
+    "Il piano attuale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan actuel"
+          }
+        }
+      }
+    },
+    "Il piano attuale viene sostituito da un calendario nuovo, costruito sui parametri aggiornati e sull'ultimo stato di salute. Costa circa %d messaggi AI e lo stato delle sedute già svolte va perso." : {
+      "comment" : "Fitness plan recalculation confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current plan is replaced by a new calendar, built on the updated parameters and on your latest health status. It costs about %d AI messages and the status of completed sessions is lost."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan actual se sustituye por un calendario nuevo, creado con los parámetros actualizados y el último estado de salud. Cuesta unos %d mensajes de IA y se pierde el estado de las sesiones ya realizadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan actuel est remplacé par un nouveau calendrier, construit sur les paramètres mis à jour et sur le dernier état de santé. Cela coûte environ %d messages IA et l'état des séances déjà faites est perdu."
+          }
+        }
+      }
+    },
     "Il piano è educativo: validalo sempre con il tuo medico o nutrizionista." : {
       "localizations" : {
         "en" : {
@@ -24250,6 +26119,95 @@
         }
       }
     },
+    "Il piano è educativo: validalo sempre con il tuo medico. Interrompi l'allenamento se compare dolore." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The plan is educational: always validate it with your doctor. Stop training if pain appears."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan es educativo: valídalo siempre con tu médico. Interrumpe el entrenamiento si aparece dolor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan est éducatif : validez-le toujours avec votre médecin. Arrêtez l'entraînement en cas de douleur."
+          }
+        }
+      }
+    },
+    "Il piano e i promemoria vengono rimossi. Rigenerarlo costa di nuovo messaggi AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The plan and its reminders are removed. Regenerating it costs AI messages again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El plan y los recordatorios se eliminan. Regenerarlo cuesta de nuevo mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plan et les rappels sont supprimés. Le régénérer coûte à nouveau des messages IA."
+          }
+        }
+      }
+    },
+    "Il Piano Fitness è disponibile solo con un piano a pagamento. Passa a Pro o Max per generarlo con l'AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Fitness Plan is available only with a paid plan. Upgrade to Pro or Max to generate it with AI."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Plan de fitness solo está disponible con un plan de pago. Cambia a Pro o Max para generarlo con la IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Plan Fitness n'est disponible qu'avec une formule payante. Passez à Pro ou Max pour le générer avec l'IA."
+          }
+        }
+      }
+    },
+    "Il Piano Fitness è incluso nei piani Pro e Max. Passa a Pro per generarlo." : {
+      "comment" : "Fitness plan paid-plan error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Fitness Plan is included in the Pro and Max plans. Upgrade to Pro to generate it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El Plan de fitness está incluido en los planes Pro y Max. Cambia a Pro para generarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Plan Fitness est inclus dans les formules Pro et Max. Passez à Pro pour le générer."
+          }
+        }
+      }
+    },
     "Il piano viene rimosso da questo dispositivo. Rigenerarlo costa di nuovo messaggi AI." : {
       "localizations" : {
         "en" : {
@@ -24268,6 +26226,73 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le plan est supprimé de cet appareil. Le régénérer coûte de nouveau des messages IA."
+          }
+        }
+      }
+    },
+    "Il promemoria arriva a quest'ora nei giorni di allenamento, con i pulsanti Fatto e Sposta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The reminder arrives at this time on training days, with the Done and Move buttons."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El recordatorio llega a esta hora los días de entrenamiento, con los botones Hecho y Mover."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le rappel arrive à cette heure les jours d'entraînement, avec les boutons Fait et Déplacer."
+          }
+        }
+      }
+    },
+    "Il ricalcolo consumerà circa %d messaggi AI" : {
+      "comment" : "Fitness plan recalculation cost",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculating will use about %d AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El recálculo consumirá unos %d mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le recalcul consommera environ %d messages IA"
+          }
+        }
+      }
+    },
+    "Il tuo abbonamento KidBox %@ scade il %@. Rinnova per continuare ad usare AI e storage esteso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your KidBox %@ subscription expires on %@. Renew to keep using AI and extended storage."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu suscripción KidBox %@ caduca el %@. Renuévala para seguir usando la IA y el almacenamiento ampliado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre abonnement KidBox %@ expire le %@. Renouvelez-le pour continuer à utiliser l’IA et le stockage étendu."
           }
         }
       }
@@ -24338,6 +26363,29 @@
         }
       }
     },
+    "Il tuo personal trainer digitale" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your digital personal trainer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu entrenador personal digital"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre coach personnel numérique"
+          }
+        }
+      }
+    },
     "Il tuo piano" : {
       "localizations" : {
         "en" : {
@@ -24378,6 +26426,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre forfait %@ expire le %@. Après cette date, vous reviendrez au forfait Free."
+          }
+        }
+      }
+    },
+    "Il tuo piano %@ sta per scadere" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your %@ plan is about to expire"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan %@ está a punto de caducar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre forfait %@ va bientôt expirer"
           }
         }
       }
@@ -24935,6 +27005,28 @@
         }
       }
     },
+    "Impostazioni piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes del plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglages du plan"
+          }
+        }
+      }
+    },
     "in attesa" : {
       "localizations" : {
         "en" : {
@@ -25156,6 +27248,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Famille"
+          }
+        }
+      }
+    },
+    "In palestra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At the gym"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el gimnasio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En salle"
           }
         }
       }
@@ -25646,6 +27760,28 @@
         }
       }
     },
+    "Infortuni, limiti o preferenze da tenere presenti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Injuries, limits or preferences to keep in mind"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesiones, límites o preferencias a tener en cuenta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blessures, limites ou préférences à prendre en compte"
+          }
+        }
+      }
+    },
     "Ingrandisci per farlo scansionare" : {
       "localizations" : {
         "en" : {
@@ -25975,6 +28111,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Intense"
+          }
+        }
+      }
+    },
+    "Intermedio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intermediate"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intermedio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intermédiaire"
           }
         }
       }
@@ -26838,6 +28996,28 @@
         }
       }
     },
+    "kcal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kcal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kcal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kcal"
+          }
+        }
+      }
+    },
     "KidBox" : {
       "localizations" : {
         "en" : {
@@ -26971,6 +29151,73 @@
         }
       }
     },
+    "L'AI adatta intensità ed esercizi alle controindicazioni che trova nei tuoi dati clinici." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI adapts intensity and exercises to the contraindications it finds in your clinical data."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA adapta la intensidad y los ejercicios a las contraindicaciones que encuentra en tus datos clínicos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA adapte l'intensité et les exercices aux contre-indications trouvées dans vos données cliniques."
+          }
+        }
+      }
+    },
+    "L'AI costruisce il piano attorno a questo obiettivo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI builds the plan around this goal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA construye el plan en torno a este objetivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA construit le plan autour de cet objectif."
+          }
+        }
+      }
+    },
+    "L'AI ha risposto in un formato non riconosciuto. Riprova: di solito al secondo tentativo va a buon fine." : {
+      "comment" : "Fitness plan parse error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI replied in an unrecognized format. Try again: it usually works on the second attempt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA ha respondido en un formato no reconocido. Inténtalo de nuevo: normalmente funciona al segundo intento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA a répondu dans un format non reconnu. Réessayez : cela fonctionne généralement au deuxième essai."
+          }
+        }
+      }
+    },
     "L'AI legge il documento e propone l'azione giusta" : {
       "localizations" : {
         "en" : {
@@ -26989,6 +29236,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'IA lit le document et propose la bonne action"
+          }
+        }
+      }
+    },
+    "L'AI legge referti, patologie e terapie già presenti in Salute per evitare esercizi controindicati." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI reads the medical reports, conditions and treatments already in Health to avoid contraindicated exercises."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA lee los informes, patologías y tratamientos ya presentes en Salud para evitar ejercicios contraindicados."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA lit les comptes rendus, pathologies et traitements déjà présents dans Santé pour éviter les exercices contre-indiqués."
           }
         }
       }
@@ -27055,6 +29324,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'IA peut prendre jusqu'à environ %d minutes."
+          }
+        }
+      }
+    },
+    "L'AI riorganizza i giorni rimanenti della settimana per non perdere l'obiettivo. Costa 1 messaggio AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI reorganizes the remaining days of the week so you don't lose the goal. It costs 1 AI message."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA reorganiza los días restantes de la semana para no perder el objetivo. Cuesta 1 mensaje de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'IA réorganise les jours restants de la semaine pour ne pas perdre l'objectif. Cela coûte 1 message IA."
           }
         }
       }
@@ -27147,6 +29438,28 @@
         }
       }
     },
+    "L'app Salute non ha tutti i dati: inseriscili qui, servono per calibrare i carichi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Health app doesn't have all the data: enter it here, it is needed to calibrate the loads."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La app Salud no tiene todos los datos: introdúcelos aquí, sirven para calibrar las cargas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'app Santé n'a pas toutes les données : saisissez-les ici, elles servent à calibrer les charges."
+          }
+        }
+      }
+    },
     "L'app Salute non ha tutti i dati: inseriscili qui, servono per stimare le calorie." : {
       "localizations" : {
         "en" : {
@@ -27210,6 +29523,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "L'assistant connaît ce que vous gardez dans KidBox : posez une question, il peut même créer des rappels et des événements pour vous."
+          }
+        }
+      }
+    },
+    "L'assistente costruisce un piano di allenamento mensile partendo da quello che c'è già in Salute: età, peso, altezza, referti, patologie in corso, terapie e allenamenti registrati." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The assistant builds a monthly training plan from what is already in Health: age, weight, height, medical reports, ongoing conditions, treatments and recorded workouts."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El asistente crea un plan de entrenamiento mensual a partir de lo que ya hay en Salud: edad, peso, altura, informes médicos, patologías en curso, tratamientos y entrenamientos registrados."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'assistant construit un plan d'entraînement mensuel à partir de ce qui est déjà dans Santé : âge, poids, taille, comptes rendus médicaux, pathologies en cours, traitements et entraînements enregistrés."
           }
         }
       }
@@ -27372,6 +29707,29 @@
     "La creazione del piano ha superato il tempo massimo. Il piano è lungo: riprova, di solito al secondo tentativo va a buon fine." : {
       "comment" : "Meal plan timeout error"
     },
+    "La creazione del piano ha superato il tempo massimo. Riprova, di solito al secondo tentativo va a buon fine." : {
+      "comment" : "Fitness plan timeout error",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating the plan took too long. Try again: it usually works on the second attempt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La creación del plan ha superado el tiempo máximo. Inténtalo de nuevo: normalmente funciona al segundo intento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La création du plan a dépassé le temps maximal. Réessayez : cela fonctionne généralement au deuxième essai."
+          }
+        }
+      }
+    },
     "La cronologia di questa conversazione verrà eliminata." : {
       "localizations" : {
         "en" : {
@@ -27523,6 +29881,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La photo sera supprimée immédiatement, y compris pour les autres membres de la famille."
+          }
+        }
+      }
+    },
+    "La generazione del piano consumerà circa %d messaggi AI" : {
+      "comment" : "Fitness plan AI cost notice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating the plan will use about %d AI messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La generación del plan consumirá unos %d mensajes de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La génération du plan consommera environ %d messages IA"
+          }
+        }
+      }
+    },
+    "La generazione di questo piano consumerà circa %d messaggi AI, scalati dal limite della famiglia." : {
+      "comment" : "Fitness plan generation cost confirmation",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating this plan will use about %d AI messages, deducted from the family limit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La generación de este plan consumirá unos %d mensajes de IA, descontados del límite de la familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La génération de ce plan consommera environ %d messages IA, déduits de la limite familiale."
           }
         }
       }
@@ -27700,6 +30104,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La planification par IA nécessite un forfait Pro ou Max."
+          }
+        }
+      }
+    },
+    "La proposta costa 1 messaggio AI." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The proposal costs 1 AI message."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La propuesta cuesta 1 mensaje de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La proposition coûte 1 message IA."
           }
         }
       }
@@ -27945,6 +30371,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Produits laitiers"
+          }
+        }
+      }
+    },
+    "Le attività registrate da iPhone, Apple Watch o dagli accessori collegati chiudono da sole le sedute corrispondenti." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activities recorded by iPhone, Apple Watch or connected accessories close the matching sessions on their own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las actividades registradas por el iPhone, el Apple Watch o los accesorios conectados cierran por sí solas las sesiones correspondientes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les activités enregistrées par l'iPhone, l'Apple Watch ou les accessoires connectés clôturent d'elles-mêmes les séances correspondantes."
           }
         }
       }
@@ -29187,6 +31635,29 @@
         }
       }
     },
+    "Mai sincronizzato" : {
+      "comment" : "Fitness health never synced",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never synced"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nunca sincronizado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jamais synchronisé"
+          }
+        }
+      }
+    },
     "Maiuscole (A–Z)" : {
       "localizations" : {
         "en" : {
@@ -29320,6 +31791,28 @@
         }
       }
     },
+    "Mantieni il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantener el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garder le plan"
+          }
+        }
+      }
+    },
     "Manutenzione" : {
       "localizations" : {
         "en" : {
@@ -29360,6 +31853,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Carte"
+          }
+        }
+      }
+    },
+    "Maratona / mezza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marathon / half"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maratón / media"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marathon / semi"
           }
         }
       }
@@ -30320,6 +32835,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Minuscules (a–z)"
+          }
+        }
+      }
+    },
+    "Minuti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minutes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minutos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minutes"
           }
         }
       }
@@ -32818,6 +35355,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune note ne contient « %@ »"
+          }
+        }
+      }
+    },
+    "Nessuna nuova attività da abbinare alle sedute in programma." : {
+      "comment" : "Fitness sync no match",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No new activity to match with the planned sessions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay actividad nueva que asociar a las sesiones previstas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune nouvelle activité à associer aux séances prévues."
           }
         }
       }
@@ -35540,6 +38100,28 @@
         }
       }
     },
+    "Nuoto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swimming"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Natación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Natation"
+          }
+        }
+      }
+    },
     "Nuova carta" : {
       "comment" : "Fallback nav title for a new loyalty card form when no brand is set",
       "localizations" : {
@@ -35669,6 +38251,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouveau traitement"
+          }
+        }
+      }
+    },
+    "Nuova data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva fecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle date"
           }
         }
       }
@@ -36245,6 +38849,28 @@
         }
       }
     },
+    "Obiettivi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goals"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objectifs"
+          }
+        }
+      }
+    },
     "Obiettivo" : {
       "localizations" : {
         "en" : {
@@ -36263,6 +38889,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Objectif"
+          }
+        }
+      }
+    },
+    "Obiettivo principale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main goal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivo principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objectif principal"
           }
         }
       }
@@ -36418,6 +39066,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aujourd'hui à %@ %@ a un examen."
+          }
+        }
+      }
+    },
+    "Oggi piove, non posso correre" : {
+      "comment" : "Fitness copilot suggestion",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's raining today, I can't run"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy llueve, no puedo correr"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il pleut aujourd'hui, je ne peux pas courir"
           }
         }
       }
@@ -36594,6 +39265,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chaque document, toujours à portée de main"
+          }
+        }
+      }
+    },
+    "Ogni domanda consuma messaggi AI dal limite della famiglia." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every question uses AI messages from the family limit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada pregunta consume mensajes de IA del límite de la familia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque question consomme des messages IA de la limite familiale."
           }
         }
       }
@@ -37041,6 +39735,28 @@
         }
       }
     },
+    "Orario preferito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preferred time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hora preferida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heure préférée"
+          }
+        }
+      }
+    },
     "Orario programmato: %@" : {
       "localizations" : {
         "en" : {
@@ -37370,6 +40086,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pages scannées (%lld)"
+          }
+        }
+      }
+    },
+    "Palestra / pesi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym / weights"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gimnasio / pesas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salle / musculation"
           }
         }
       }
@@ -37857,6 +40595,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mots de passe disponibles pour le remplissage auto"
+          }
+        }
+      }
+    },
+    "Password in scadenza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password expiring"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña a punto de caducar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe bientôt expiré"
           }
         }
       }
@@ -38594,6 +41354,28 @@
         }
       }
     },
+    "Perdere peso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lose weight"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perder peso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perdre du poids"
+          }
+        }
+      }
+    },
     "Perfetto. Pianificheremo per %lld %@." : {
       "localizations" : {
         "en" : {
@@ -38991,6 +41773,28 @@
         }
       }
     },
+    "Peso e altezza sono obbligatori: aggiornali nell'app Salute, nella Scheda Medica, oppure inseriscili durante la configurazione." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight and height are required: update them in the Health app, in the Medical Record, or enter them during setup."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El peso y la altura son obligatorios: actualízalos en la app Salud, en la Ficha médica, o introdúcelos durante la configuración."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le poids et la taille sont obligatoires : mettez-les à jour dans l'app Santé, dans la Fiche médicale, ou saisissez-les lors de la configuration."
+          }
+        }
+      }
+    },
     "Piani disponibili" : {
       "localizations" : {
         "en" : {
@@ -39189,6 +41993,29 @@
         }
       }
     },
+    "Piano aggiornato con le modifiche proposte dall'AI." : {
+      "comment" : "Fitness proposal applied banner",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan updated with the changes proposed by the AI."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan actualizado con los cambios propuestos por la IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan mis à jour avec les modifications proposées par l'IA."
+          }
+        }
+      }
+    },
     "Piano Alimentare" : {
       "localizations" : {
         "en" : {
@@ -39232,6 +42059,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Forfait actuel"
+          }
+        }
+      }
+    },
+    "Piano Fitness" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness Plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan de fitness"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan Fitness"
           }
         }
       }
@@ -39477,6 +42326,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Position partagée"
+          }
+        }
+      }
+    },
+    "Posso spiegarti un esercizio, dirti come adattarlo e modificare il piano quando serve: se oggi non puoi allenarti come previsto, dimmelo e lo riorganizzo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can explain an exercise, tell you how to adapt it and change the plan when needed: if you can't train as planned today, tell me and I'll reorganize it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedo explicarte un ejercicio, decirte cómo adaptarlo y modificar el plan cuando haga falta: si hoy no puedes entrenar como estaba previsto, dímelo y lo reorganizo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je peux expliquer un exercice, dire comment l'adapter et modifier le plan si besoin : si vous ne pouvez pas vous entraîner comme prévu aujourd'hui, dites-le et je réorganise."
           }
         }
       }
@@ -39882,6 +42753,28 @@
         }
       }
     },
+    "Preparazione a una gara" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Race preparation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparación para una prueba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préparation à une course"
+          }
+        }
+      }
+    },
     "Preparazione allegato…" : {
       "localizations" : {
         "en" : {
@@ -40147,6 +43040,29 @@
         }
       }
     },
+    "Prevista per il %@" : {
+      "comment" : "Fitness session originally scheduled on",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scheduled for %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prevista para el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prévue le %@"
+          }
+        }
+      }
+    },
     "Prezzi voli in tempo reale" : {
       "comment" : "Transport mode detail",
       "localizations" : {
@@ -40299,6 +43215,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Premier enfant (facultatif)"
+          }
+        }
+      }
+    },
+    "Principiante" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beginner"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Principiante"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Débutant"
           }
         }
       }
@@ -40678,6 +43616,28 @@
         }
       }
     },
+    "Promemoria di allenamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout reminders"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorios de entrenamiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappels d'entraînement"
+          }
+        }
+      }
+    },
     "Promemoria esame 🩺" : {
       "localizations" : {
         "en" : {
@@ -40834,6 +43794,94 @@
         }
       }
     },
+    "Promemoria: Assicurazione: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder: Insurance: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio: Seguro: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel : Assurance : %@"
+          }
+        }
+      }
+    },
+    "Promemoria: Bollo: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder: Road tax: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio: Impuesto de circulación: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel : Taxe véhicule : %@"
+          }
+        }
+      }
+    },
+    "Promemoria: Prossimo tagliando: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder: Next service: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio: Próxima revisión: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel : Prochaine révision : %@"
+          }
+        }
+      }
+    },
+    "Promemoria: Revisione: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder: Inspection: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordatorio: Inspección técnica: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappel : Contrôle technique : %@"
+          }
+        }
+      }
+    },
     "Proponi miglioramenti o nuove funzioni: li classifichiamo per le prossime versioni." : {
       "localizations" : {
         "en" : {
@@ -40852,6 +43900,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Proposez des améliorations ou de nouvelles fonctions : nous les classons pour les prochaines versions."
+          }
+        }
+      }
+    },
+    "Proposta dell'AI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI proposal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Propuesta de la IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proposition de l'IA"
           }
         }
       }
@@ -41452,6 +44522,28 @@
         }
       }
     },
+    "Qual è il tuo obiettivo?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is your goal?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuál es tu objetivo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quel est votre objectif ?"
+          }
+        }
+      }
+    },
     "Qual è il tuo stile di viaggio?" : {
       "localizations" : {
         "en" : {
@@ -41625,6 +44717,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quand tu coches les produits et touches « Enregistrer les courses », le ticket arrive ici : magasin, total et ce que tu as pris."
+          }
+        }
+      }
+    },
+    "Quando ti alleni?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When do you train?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuándo entrenas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand vous entraînez-vous ?"
           }
         }
       }
@@ -41828,6 +44942,29 @@
         }
       }
     },
+    "Questa funzione AI è inclusa nei piani Pro e Max. Passa a Pro per usarla." : {
+      "comment" : "Paid-only AI purpose blocked",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This AI feature is included in the Pro and Max plans. Upgrade to Pro to use it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta función de IA está incluida en los planes Pro y Max. Cambia a Pro para usarla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette fonction IA est incluse dans les formules Pro et Max. Passez à Pro pour l'utiliser."
+          }
+        }
+      }
+    },
     "Questa lista contiene solo attività personali di altri membri." : {
       "localizations" : {
         "en" : {
@@ -41958,6 +45095,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce QR code n'est pas une invitation KidBox valide."
+          }
+        }
+      }
+    },
+    "Questo giorno è fuori dalle quattro settimane del piano." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This day is outside the plan's four weeks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este día queda fuera de las cuatro semanas del plan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce jour est en dehors des quatre semaines du plan."
           }
         }
       }
@@ -42292,6 +45451,29 @@
         }
       }
     },
+    "referti, cure e parametri di Salute" : {
+      "comment" : "Fitness copilot intro health data",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "medical reports, treatments and Health metrics"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "informes, tratamientos y parámetros de Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "comptes rendus, traitements et paramètres Santé"
+          }
+        }
+      }
+    },
     "Referto" : {
       "localizations" : {
         "en" : {
@@ -42487,6 +45669,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rapports d'erreur et journaux techniques"
+          }
+        }
+      }
+    },
+    "Report settimana %d" : {
+      "comment" : "Fitness weekly report title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %d report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informe de la semana %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapport de la semaine %d"
           }
         }
       }
@@ -42801,6 +46006,72 @@
         }
       }
     },
+    "Ricalcola il piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculate the plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalcular el plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculer le plan"
+          }
+        }
+      }
+    },
+    "Ricalcola piano" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculate plan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalcular plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculer le plan"
+          }
+        }
+      }
+    },
+    "Ricalcolare tutto il piano?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculate the whole plan?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Recalcular todo el plan?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recalculer tout le plan ?"
+          }
+        }
+      }
+    },
     "Riceverai una notifica nei giorni di assunzione" : {
       "localizations" : {
         "en" : {
@@ -42886,6 +46157,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recevez des rappels locaux et push avant le départ/événement (ex. 24h et 2h avant)."
+          }
+        }
+      }
+    },
+    "Ricevi quattro settimane di sedute nei giorni che scegli, con esercizi e obiettivi misurabili, promemoria con i pulsanti Fatto e Sposta, e il confronto automatico con gli allenamenti registrati da Apple Salute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You get four weeks of sessions on the days you choose, with exercises and measurable goals, reminders with Done and Move buttons, and automatic matching with the workouts recorded by Apple Health."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibes cuatro semanas de sesiones en los días que elijas, con ejercicios y objetivos medibles, recordatorios con los botones Hecho y Mover, y la comparación automática con los entrenamientos registrados por Apple Salud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous recevez quatre semaines de séances les jours que vous choisissez, avec des exercices et des objectifs mesurables, des rappels avec les boutons Fait et Déplacer, et la comparaison automatique avec les entraînements enregistrés par Apple Santé."
           }
         }
       }
@@ -43728,6 +47021,28 @@
         }
       }
     },
+    "Riorganizzazione della settimana…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reorganizing the week…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reorganizando la semana…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réorganisation de la semaine…"
+          }
+        }
+      }
+    },
     "Riposo" : {
       "comment" : "Therapy type: rest",
       "localizations" : {
@@ -44105,6 +47420,28 @@
         }
       }
     },
+    "Rivedi i permessi Salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review Health permissions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisar los permisos de Salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revoir les autorisations Santé"
+          }
+        }
+      }
+    },
     "Rivedi i primi passi" : {
       "localizations" : {
         "en" : {
@@ -44260,6 +47597,28 @@
         }
       }
     },
+    "Salta questa seduta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip this session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitir esta sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sauter cette séance"
+          }
+        }
+      }
+    },
     "Saltata" : {
       "localizations" : {
         "en" : {
@@ -44278,6 +47637,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ignorée"
+          }
+        }
+      }
+    },
+    "Saltato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipped"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sauté"
           }
         }
       }
@@ -45031,6 +48412,28 @@
         }
       }
     },
+    "Scadenza in arrivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upcoming deadline"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vencimiento próximo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échéance à venir"
+          }
+        }
+      }
+    },
     "Scadenza o pagamento" : {
       "localizations" : {
         "en" : {
@@ -45449,6 +48852,28 @@
         }
       }
     },
+    "Scegli almeno un giorno." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose at least one day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige al menos un día."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez au moins un jour."
+          }
+        }
+      }
+    },
     "Scegli chi potrà vedere il documento che stai per caricare." : {
       "localizations" : {
         "en" : {
@@ -45577,6 +49002,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisir une date"
+          }
+        }
+      }
+    },
+    "Scegli i giorni disponibili e l'orario dei promemoria." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the days you are available and the reminder time."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige los días disponibles y la hora de los recordatorios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez vos jours disponibles et l'heure des rappels."
           }
         }
       }
@@ -45803,6 +49250,28 @@
         }
       }
     },
+    "Sci / sport invernali" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiing / winter sports"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquí / deportes de invierno"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski / sports d'hiver"
+          }
+        }
+      }
+    },
     "Sciroppo" : {
       "localizations" : {
         "en" : {
@@ -45975,6 +49444,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Capture d'écran"
+          }
+        }
+      }
+    },
+    "Scrivi al copilota…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write to the copilot…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe al copiloto…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écrivez au copilote…"
           }
         }
       }
@@ -46312,6 +49804,98 @@
         }
       }
     },
+    "Seduta del %@ aggiornata" : {
+      "comment" : "Fitness copilot updated session status",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session on %@ updated"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión del %@ actualizada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séance du %@ mise à jour"
+          }
+        }
+      }
+    },
+    "Seduta del %@ sostituita" : {
+      "comment" : "Fitness copilot replaced session",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session on %@ replaced"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión del %@ sustituida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séance du %@ remplacée"
+          }
+        }
+      }
+    },
+    "Seduta spostata al %@" : {
+      "comment" : "Fitness copilot moved session",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session moved to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión movida al %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séance déplacée au %@"
+          }
+        }
+      }
+    },
+    "Sedute completate con i dati di Apple Salute: %d" : {
+      "comment" : "Fitness sync matched count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions completed with Apple Health data: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesiones completadas con los datos de Apple Salud: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séances complétées avec les données Apple Santé : %d"
+          }
+        }
+      }
+    },
     "Segna appuntamenti, impegni e ricorrenze della famiglia. Ogni evento ha una categoria e un colore, così capisci a colpo d'occhio di chi è la giornata piena." : {
       "localizations" : {
         "en" : {
@@ -46352,6 +49936,52 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marquez les mots de passe comme favoris depuis le détail ou en glissant sur la ligne."
+          }
+        }
+      }
+    },
+    "Segnata come fatta" : {
+      "comment" : "Session done manually",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marked as done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcada como hecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquée comme faite"
+          }
+        }
+      }
+    },
+    "Segnata come fatta dalla notifica" : {
+      "comment" : "Session done from notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marked as done from the notification"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcada como hecha desde la notificación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquée comme faite depuis la notification"
           }
         }
       }
@@ -46952,7 +50582,7 @@
       }
     },
     "Servono %1$d messaggi AI per generare il piano ma ne restano %2$d su %3$d oggi. Riprova domani." : {
-      "comment" : "Meal plan quota error",
+      "comment" : "Fitness plan quota error\nMeal plan quota error",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -46975,7 +50605,7 @@
       }
     },
     "Servono almeno peso e altezza per creare il piano. Aggiornali nell'app Salute o nella Scheda Medica." : {
-      "comment" : "Meal plan missing data error",
+      "comment" : "Fitness plan missing data error\nMeal plan missing data error",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -47015,6 +50645,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Session expirée : reconnecte-toi."
+          }
+        }
+      }
+    },
+    "Settimana %d" : {
+      "comment" : "Fitness week number",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semana %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semaine %d"
           }
         }
       }
@@ -47259,6 +50912,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symboles"
+          }
+        }
+      }
+    },
+    "Sincronizza ora" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser"
           }
         }
       }
@@ -48214,6 +51889,28 @@
         }
       }
     },
+    "Sport che vuoi praticare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sports you want to do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deportes que quieres practicar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sports que vous voulez pratiquer"
+          }
+        }
+      }
+    },
     "Sposta" : {
       "localizations" : {
         "en" : {
@@ -48258,6 +51955,28 @@
         }
       }
     },
+    "Sposta la seduta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move the session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover la sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplacer la séance"
+          }
+        }
+      }
+    },
     "Sposta password prima di eliminare" : {
       "localizations" : {
         "en" : {
@@ -48276,6 +51995,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Déplacer les mots de passe avant de supprimer"
+          }
+        }
+      }
+    },
+    "Sposta seduta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplacer la séance"
+          }
+        }
+      }
+    },
+    "Spostato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplacé"
           }
         }
       }
@@ -48585,6 +52348,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Je finalise l'itinéraire de %d jours"
+          }
+        }
+      }
+    },
+    "Sto pensando…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estoy pensando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je réfléchis…"
           }
         }
       }
@@ -49278,6 +53064,28 @@
         }
       }
     },
+    "Tennis / padel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tennis / padel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenis / pádel"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tennis / padel"
+          }
+        }
+      }
+    },
     "terapie" : {
       "localizations" : {
         "en" : {
@@ -49674,6 +53482,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type de fichier"
+          }
+        }
+      }
+    },
+    "Tipo di gara o evento" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Race or event type"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo de prueba o evento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type de course ou d'événement"
           }
         }
       }
@@ -50185,6 +54016,28 @@
         }
       }
     },
+    "Tonificazione e salute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toning and health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonificación y salud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonification et santé"
+          }
+        }
+      }
+    },
     "Tono cardiovascolare" : {
       "localizations" : {
         "en" : {
@@ -50317,6 +54170,72 @@
         }
       }
     },
+    "tra %@ giorni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %@ days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "en %@ días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dans %@ jours"
+          }
+        }
+      }
+    },
+    "tra %@ min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %@ min"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "en %@ min"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dans %@ min"
+          }
+        }
+      }
+    },
+    "tra %@ ore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %@ hours"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "en %@ horas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dans %@ heures"
+          }
+        }
+      }
+    },
     "Tra %lld giorni" : {
       "localizations" : {
         "en" : {
@@ -50335,6 +54254,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dans %lld jours"
+          }
+        }
+      }
+    },
+    "tra 1 ora" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in 1 hour"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "en 1 hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dans 1 heure"
           }
         }
       }
@@ -50380,6 +54321,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ferry"
+          }
+        }
+      }
+    },
+    "Trail / corsa in montagna" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trail / mountain running"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trail / carrera de montaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trail / course en montagne"
           }
         }
       }
@@ -50713,6 +54676,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Train, bus, ferry…"
+          }
+        }
+      }
+    },
+    "Triathlon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triathlon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triatlón"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triathlon"
           }
         }
       }
@@ -51093,6 +55078,29 @@
         }
       }
     },
+    "Ultima sincronizzazione: %@" : {
+      "comment" : "Fitness last sync",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last sync: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última sincronización: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernière synchronisation : %@"
+          }
+        }
+      }
+    },
     "Ultimi 3 mesi" : {
       "localizations" : {
         "en" : {
@@ -51199,6 +55207,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Derniers battements"
+          }
+        }
+      }
+    },
+    "Ultimi dettagli, poi il piano è pronto per essere generato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few last details, then the plan is ready to be generated."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos detalles y el plan estará listo para generarse."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Derniers détails, puis le plan est prêt à être généré."
           }
         }
       }
@@ -52062,6 +56092,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Valable 24 heures, une seule fois."
+          }
+        }
+      }
+    },
+    "Vale per qualsiasi obiettivo: l'AI costruisce le sedute attorno a questi sport. Puoi sceglierne più di uno, oppure nessuno e decide lei." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It applies to any goal: the AI builds the sessions around these sports. You can pick more than one, or none and let it decide."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vale para cualquier objetivo: la IA crea las sesiones en torno a estos deportes. Puedes elegir varios, o ninguno y decide ella."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valable pour tout objectif : l'IA construit les séances autour de ces sports. Vous pouvez en choisir plusieurs, ou aucun et elle décide."
           }
         }
       }
@@ -53306,6 +57358,28 @@
         }
       }
     },
+    "Volley" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volleyball"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voleibol"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volley"
+          }
+        }
+      }
+    },
     "Volo" : {
       "comment" : "Ticket kind: flight\nTransport mode",
       "localizations" : {
@@ -53347,6 +57421,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer le plan alimentaire ?"
+          }
+        }
+      }
+    },
+    "Vuoi eliminare il piano fitness?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete the fitness plan?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar el plan de fitness?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le plan fitness ?"
           }
         }
       }
@@ -53506,6 +57602,28 @@
         }
       }
     },
+    "Yoga / pilates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yoga / pilates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yoga / pilates"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yoga / pilates"
+          }
+        }
+      }
+    },
     "Zona Pericolosa" : {
       "localizations" : {
         "en" : {
@@ -53546,468 +57664,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zones d'arrivée"
-          }
-        }
-      }
-    },
-    "%@ in scadenza" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ expiring soon"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ bientôt expiré"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ a punto de caducar"
-          }
-        }
-      }
-    },
-    "%@ — tra 3 giorni." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — in 3 days."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — dans 3 jours."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — en 3 días."
-          }
-        }
-      }
-    },
-    "Il tuo abbonamento KidBox %@ scade il %@. Rinnova per continuare ad usare AI e storage esteso." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your KidBox %@ subscription expires on %@. Renew to keep using AI and extended storage."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre abonnement KidBox %@ expire le %@. Renouvelez-le pour continuer à utiliser l’IA et le stockage étendu."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu suscripción KidBox %@ caduca el %@. Renuévala para seguir usando la IA y el almacenamiento ampliado."
-          }
-        }
-      }
-    },
-    "Il tuo piano %@ sta per scadere" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your %@ plan is about to expire"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre forfait %@ va bientôt expirer"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu plan %@ está a punto de caducar"
-          }
-        }
-      }
-    },
-    "Password in scadenza" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Password expiring"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mot de passe bientôt expiré"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contraseña a punto de caducar"
-          }
-        }
-      }
-    },
-    "Promemoria: Assicurazione: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder: Insurance: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappel : Assurance : %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recordatorio: Seguro: %@"
-          }
-        }
-      }
-    },
-    "Promemoria: Bollo: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder: Road tax: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappel : Taxe véhicule : %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recordatorio: Impuesto de circulación: %@"
-          }
-        }
-      }
-    },
-    "Promemoria: Prossimo tagliando: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder: Next service: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappel : Prochaine révision : %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recordatorio: Próxima revisión: %@"
-          }
-        }
-      }
-    },
-    "Promemoria: Revisione: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder: Inspection: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappel : Contrôle technique : %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recordatorio: Inspección técnica: %@"
-          }
-        }
-      }
-    },
-    "Scadenza in arrivo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upcoming deadline"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échéance à venir"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vencimiento próximo"
-          }
-        }
-      }
-    },
-    "tra %@ giorni" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "in %@ days"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dans %@ jours"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "en %@ días"
-          }
-        }
-      }
-    },
-    "tra %@ min" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "in %@ min"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dans %@ min"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "en %@ min"
-          }
-        }
-      }
-    },
-    "tra %@ ore" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "in %@ hours"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dans %@ heures"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "en %@ horas"
-          }
-        }
-      }
-    },
-    "tra 1 ora" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "in 1 hour"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dans 1 heure"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "en 1 hora"
-          }
-        }
-      }
-    },
-    "«%@» scade domani (%@)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” expires tomorrow (%@)."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "« %@ » expire demain (%@)."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«%@» caduca mañana (%@)."
-          }
-        }
-      }
-    },
-    "«%@» scade il %@. Mancano 30 giorni." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” expires on %@. 30 days left."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "« %@ » expire le %@. Il reste 30 jours."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«%@» caduca el %@. Quedan 30 días."
-          }
-        }
-      }
-    },
-    "«%@» scade il %@. Mancano 7 giorni." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "“%@” expires on %@. 7 days left."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "« %@ » expire le %@. Il reste 7 jours."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«%@» caduca el %@. Quedan 7 días."
-          }
-        }
-      }
-    },
-    "☀️ Buongiorno, %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "☀️ Good morning, %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "☀️ Bonjour, %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "☀️ Buenos días, %@"
-          }
-        }
-      }
-    },
-    "💊 %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "💊 %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "💊 %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "💊 %@"
-          }
-        }
-      }
-    },
-    "📋 Settimana di %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "📋 %@’s week"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "📋 Semaine de %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "📋 Semana de %@"
-          }
-        }
-      }
-    },
-    "🔍 Pattern salute · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔍 Health patterns · %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔍 Tendances santé · %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🔍 Patrones de salud · %@"
           }
         }
       }

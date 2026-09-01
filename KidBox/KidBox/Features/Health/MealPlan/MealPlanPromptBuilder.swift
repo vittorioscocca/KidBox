@@ -125,13 +125,33 @@ enum MealPlanPromptBuilder {
         profile: KBPediatricProfile?,
         input: MealPlanInput = MealPlanInput()
     ) -> [String] {
+        profileSummaryLines(
+            birthDate: birthDate,
+            snapshot: snapshot,
+            profile: profile,
+            manualAge: input.manualAgeValue,
+            manualWeight: input.manualWeightValue,
+            manualHeight: input.manualHeightValue
+        )
+    }
+
+    /// Variante usata anche dal Piano Fitness, che ha un input suo: i valori
+    /// inseriti a mano arrivano già normalizzati, senza passare da `MealPlanInput`.
+    static func profileSummaryLines(
+        birthDate: Date?,
+        snapshot: KBHealthImportSnapshot?,
+        profile: KBPediatricProfile?,
+        manualAge: Int?,
+        manualWeight: Double?,
+        manualHeight: Double?
+    ) -> [String] {
         var lines: [String] = []
 
         let effectiveBirthDate = birthDate ?? snapshot?.birthDate
         if let effectiveBirthDate {
             let years = Calendar.current.dateComponents([.year], from: effectiveBirthDate, to: Date()).year ?? 0
             lines.append("Età: \(years) anni")
-        } else if let age = input.manualAgeValue {
+        } else if let age = manualAge {
             lines.append("Età: \(age) anni (indicata dall'utente)")
         } else {
             lines.append("Età: non disponibile")
@@ -139,7 +159,7 @@ enum MealPlanPromptBuilder {
 
         if let height = snapshot?.heightCm {
             lines.append("Altezza: \(Int(height.rounded())) cm")
-        } else if let height = input.manualHeightValue {
+        } else if let height = manualHeight {
             lines.append("Altezza: \(Int(height.rounded())) cm (indicata dall'utente)")
         } else {
             lines.append("Altezza: non disponibile")
@@ -149,7 +169,7 @@ enum MealPlanPromptBuilder {
             var line = "Peso: \(String(format: "%.1f", weight)) kg"
             if let at = snapshot?.weightMeasuredAt { line += " (rilevato il \(formatDate(at)))" }
             lines.append(line)
-        } else if let weight = input.manualWeightValue {
+        } else if let weight = manualWeight {
             lines.append("Peso: \(String(format: "%.1f", weight)) kg (indicato dall'utente)")
         } else {
             lines.append("Peso: non disponibile")

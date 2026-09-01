@@ -1106,7 +1106,7 @@ private struct PlanningAIChatInnerView: View {
                     ZStack {
                         Circle()
                             .fill(vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading
-                                  ? tint.opacity(0.3) : tint)
+                                  ? KBTheme.aiFabOrange.opacity(0.3) : KBTheme.aiFabOrange)
                             .frame(width: 38, height: 38)
                         Image(systemName: "arrow.up")
                             .font(.system(size: 16, weight: .bold))

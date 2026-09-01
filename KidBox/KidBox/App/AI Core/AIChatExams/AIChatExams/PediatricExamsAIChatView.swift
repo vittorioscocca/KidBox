@@ -236,7 +236,7 @@ private struct ExamsAIChatBody: View {
                         .font(.system(size: 32))
                         .foregroundStyle(
                             inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? .secondary : Color.teal
+                            ? .secondary : KBTheme.aiFabOrange
                         )
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)

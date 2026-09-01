@@ -327,6 +327,22 @@ struct KidBoxApp: App {
                             }
                             NotificationManager.shared.consumeDeepLink()
 
+                            // ── promemoria seduta piano fitness ────────────
+                        case .fitnessSession(let familyId, let childId):
+                            KBLog.navigation.kbInfo("Deep link -> open fitness plan childId=\(childId)")
+                            // Il promemoria è locale: `familyId` può mancare sui
+                            // piani generati prima che venisse messo nel payload.
+                            let targetFamilyId = familyId ?? coordinator.activeFamilyId
+                            if let targetFamilyId {
+                                coordinator.switchFamilyIfNeededThenNavigate(to: targetFamilyId) {
+                                    coordinator.openFitnessPlanFromPush(
+                                        familyId: targetFamilyId,
+                                        childId: childId
+                                    )
+                                }
+                            }
+                            NotificationManager.shared.consumeDeepLink()
+
                             // ── promemoria esame ───────────────────────────
                         case .examReminder(let familyId, let childId, let examId):
                             KBLog.navigation.kbInfo("Deep link -> open exam examId=\(examId)")

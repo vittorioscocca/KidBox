@@ -342,6 +342,19 @@ final class KBHealthKitService {
         }
     }
 
+    /// Allenamenti registrati da una data in poi, per la riconciliazione del
+    /// Piano Fitness: non serve l'intero snapshot, solo la finestra di giorni
+    /// che il piano deve chiudere.
+    func workouts(since startDate: Date, limit: Int = 60) async -> [KBHealthWorkoutEntry] {
+        guard isAvailable else { return [] }
+        do {
+            return try await fetchWorkouts(since: startDate, limit: limit)
+        } catch {
+            KBLog.sync.kbError("workouts(since:) FAIL err=\(error.localizedDescription)")
+            return []
+        }
+    }
+
     /// Non blocca l'import se Salute nega o non ci sono allenamenti.
     private func recentWorkouts(limit: Int) async -> [KBHealthWorkoutEntry] {
         do {
@@ -355,6 +368,14 @@ final class KBHealthKitService {
     private func fetchRecentWorkouts(limit: Int) async throws -> [KBHealthWorkoutEntry] {
         let end = Date()
         let start = Calendar.current.date(byAdding: .day, value: -365, to: end) ?? end
+        return try await fetchWorkouts(from: start, to: end, limit: limit)
+    }
+
+    private func fetchWorkouts(since startDate: Date, limit: Int) async throws -> [KBHealthWorkoutEntry] {
+        try await fetchWorkouts(from: startDate, to: Date(), limit: limit)
+    }
+
+    private func fetchWorkouts(from start: Date, to end: Date, limit: Int) async throws -> [KBHealthWorkoutEntry] {
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
         let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
 

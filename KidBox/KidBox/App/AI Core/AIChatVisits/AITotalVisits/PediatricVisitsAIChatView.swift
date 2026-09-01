@@ -233,7 +233,7 @@ private struct PediatricVisitsAIChatBody: View {
                         .font(.system(size: 32))
                         .foregroundStyle(
                             inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? .secondary : Color.blue
+                            ? .secondary : KBTheme.aiFabOrange
                         )
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)

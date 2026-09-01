@@ -631,6 +631,8 @@ final class AppCoordinator: ObservableObject {
             return "salute_cartella_clinica"
         case .pediatricMealPlan:
             return "salute_piano_alimentare"
+        case .pediatricFitnessPlan:
+            return "salute_piano_fitness"
         default:
             return nil
         }
@@ -726,6 +728,8 @@ final class AppCoordinator: ObservableObject {
             ClinicalRecordView(familyId: familyId, childId: childId)
         case .pediatricMealPlan(familyId: let familyId, childId: let childId):
             MealPlanView(familyId: familyId, childId: childId)
+        case .pediatricFitnessPlan(familyId: let familyId, childId: let childId):
+            FitnessPlanView(familyId: familyId, childId: childId)
         case .expensesHome(familyId: let familyId, highlightExpenseId: let highlightExpenseId):
             ExpensesHomeView(familyId: familyId, highlightExpenseId: highlightExpenseId)
         case .expenseDetail(familyId: let familyId, expenseId: let expenseId):
@@ -1361,6 +1365,18 @@ final class AppCoordinator: ObservableObject {
         path.removeAll()
         path.append(.pediatricHome(familyId: familyId, childId: childId))
         path.append(.pediatricVaccines(familyId: familyId, childId: childId))
+    }
+
+    // MARK: - Open Fitness Plan from Push
+
+    /// Apre il Piano Fitness dal promemoria di una seduta.
+    /// Path: pediatricHome → pediatricFitnessPlan
+    @MainActor
+    func openFitnessPlanFromPush(familyId: String, childId: String) {
+        KBLog.navigation.kbInfo("openFitnessPlanFromPush familyId=\(familyId) childId=\(childId)")
+        path.removeAll()
+        path.append(.pediatricHome(familyId: familyId, childId: childId))
+        path.append(.pediatricFitnessPlan(familyId: familyId, childId: childId))
     }
 
     // MARK: - Open Vehicle from Push

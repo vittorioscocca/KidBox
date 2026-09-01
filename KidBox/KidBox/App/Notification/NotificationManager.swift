@@ -78,6 +78,8 @@ final class NotificationManager: NSObject, ObservableObject {
         case calendarEvent(familyId: String, eventId: String)
         case pediatricVisit(familyId: String, childId: String, visitId: String)
         case treatmentReminder(familyId: String, childId: String, treatmentId: String)
+        /// Notifica locale promemoria seduta del Piano Fitness.
+        case fitnessSession(familyId: String?, childId: String)
         case examReminder(familyId: String, childId: String, examId: String)
         case expense(familyId: String, expenseId: String)
         case walletTicket(familyId: String, ticketId: String)
@@ -264,6 +266,17 @@ final class NotificationManager: NSObject, ObservableObject {
             pendingDeepLink = .treatmentReminder(familyId: familyId, childId: childId, treatmentId: treatmentId)
             KBLog.auth.kbInfo("DeepLink set for treatmentReminder treatmentId=\(treatmentId)")
             
+        } else if type == "fitness_session_reminder" {
+            guard let childId = userInfo["childId"] as? String else {
+                KBLog.auth.kbError("Invalid fitness_session_reminder payload")
+                return
+            }
+            pendingDeepLink = .fitnessSession(
+                familyId: userInfo["familyId"] as? String,
+                childId: childId
+            )
+            KBLog.auth.kbInfo("DeepLink set for fitnessSession childId=\(childId)")
+
         } else if type == "exam_reminder" {
             guard
                 let familyId = userInfo["familyId"] as? String,

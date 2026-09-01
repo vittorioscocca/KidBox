@@ -327,7 +327,7 @@ private struct HealthAIChatBody: View {
                         .font(.system(size: 32))
                         .foregroundStyle(
                             inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? .secondary : accent
+                            ? .secondary : KBTheme.aiFabOrange
                         )
                 }
                 .disabled(

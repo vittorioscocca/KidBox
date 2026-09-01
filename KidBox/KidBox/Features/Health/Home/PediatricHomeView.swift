@@ -288,6 +288,14 @@ struct PediatricHomeView: View {
                         coordinator.navigate(to: .pediatricMealPlan(familyId: familyId, childId: childId))
                     }
                     moduleCard(
+                        title: "Piano Fitness",
+                        subtitle: "Allenamenti AI su misura",
+                        systemImage: "figure.run",
+                        tint: Color(red: 0.35, green: 0.62, blue: 0.88)
+                    ) {
+                        coordinator.navigate(to: .pediatricFitnessPlan(familyId: familyId, childId: childId))
+                    }
+                    moduleCard(
                         title: "Storico Salute",
                         subtitle: "\(timelineEvents.count) eventi",
                         systemImage: "timeline.selection",

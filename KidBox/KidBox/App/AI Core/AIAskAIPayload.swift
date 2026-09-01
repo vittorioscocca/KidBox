@@ -24,6 +24,10 @@ enum AIAskAIPayload {
     /// Parity con `MEAL_PLAN_MIN_UNITS` in `functions/index.js`.
     static let mealPlanMinUnits = 5
 
+    /// Unità minime per il piano fitness (Haiku + JSON lungo su 4 settimane).
+    /// Parity con `FITNESS_PLAN_MIN_UNITS` in `functions/index.js`.
+    static let fitnessPlanMinUnits = 5
+
     static func totalChars(systemPrompt: String, messages: [KBAIMessage], pendingUserText: String = "") -> Int {
         let history = messages.reduce(0) { $0 + $1.content.count }
         let pending = pendingUserText.trimmingCharacters(in: .whitespacesAndNewlines).count
@@ -49,6 +53,12 @@ enum AIAskAIPayload {
     /// oppure le unità del payload se il contesto è molto grande.
     static func mealPlanMessageUnits(totalChars: Int) -> Int {
         max(mealPlanMinUnits, messageUnits(totalChars: totalChars))
+    }
+
+    /// Unità per il piano fitness: minimo fisso `fitnessPlanMinUnits`,
+    /// oppure le unità del payload se il contesto è molto grande.
+    static func fitnessPlanMessageUnits(totalChars: Int) -> Int {
+        max(fitnessPlanMinUnits, messageUnits(totalChars: totalChars))
     }
 
     /// Testo da mostrare sopra l'input quando il contesto supera lo standard.

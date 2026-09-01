@@ -142,6 +142,13 @@ service cloud.firestore {
       match /mealPlans/{childId} {
         allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
       }
+
+      // ── PIANO FITNESS (privato per-utente, sync cross-device) ──
+      // Stesso ragionamento del piano alimentare: contiene peso, obiettivi,
+      // infortuni e adattamenti clinici di chi lo genera.
+      match /fitnessPlans/{childId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
+      }
     }
 
     // Contatore famiglie possedute: l'utente può leggere il proprio (per mostrare

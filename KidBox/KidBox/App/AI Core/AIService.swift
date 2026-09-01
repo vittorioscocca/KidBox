@@ -129,6 +129,18 @@ final class AIService {
     /// Piano alimentare Haiku: output lungo (max_tokens 8192), stesso timeout server.
     /// Il piano genera fino a 8192 token di output: 120s non bastavano.
     private static let mealPlanClientTimeout: TimeInterval = 300
+    /// Piano fitness: come il piano alimentare, JSON lungo su 4 settimane.
+    private static let fitnessPlanClientTimeout: TimeInterval = 300
+
+    /// Purpose askAI riservati ai piani a pagamento.
+    ///
+    /// È il presidio client sul collo di bottiglia: ogni percorso — prima
+    /// generazione, rigenerazione, spostamento di una seduta, copilota — passa
+    /// da qui. Il gate vero resta lato server (`quota.period === "lifetime"`),
+    /// questo evita di bruciare una chiamata e dà un messaggio sensato.
+    private static let paidOnlyPurposes: Set<String> = [
+        "mealPlan", "fitnessPlan", "fitnessAdjust", "fitnessCopilot",
+    ]
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
@@ -204,7 +216,7 @@ final class AIService {
     // MARK: - Send message
     
     /// Sends the conversation to the AI and returns the assistant reply.
-    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` usa Haiku con max_tokens esteso; `nil` = Haiku (chat Salute, visite, esami, ecc.).
+    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` e `"fitnessPlan"` usano Haiku con max_tokens esteso; `"fitnessAdjust"` e `"fitnessCopilot"` sono chat riservate ai piani a pagamento; `nil` = Haiku (chat Salute, visite, esami, ecc.).
     func sendMessage(
         messages: [KBAIMessage],
         systemPrompt: String,
@@ -232,6 +244,21 @@ final class AIService {
             throw AIServiceError.notEnabled
         }
 
+        if let purpose, Self.paidOnlyPurposes.contains(purpose) {
+            // Allinea il piano con Firestore prima del gate: `isAIAccessible`
+            // non basta, lascerebbe passare un Free col bonus ancora intatto.
+            await KBSubscriptionManager.shared.loadPlan()
+            guard KBSubscriptionManager.shared.currentPlan != .free else {
+                KBLog.ai.kbInfo("sendMessages blocked: purpose=\(purpose) requires a paid plan")
+                throw AIServiceError.rateLimitReached(
+                    NSLocalizedString(
+                        "Questa funzione AI è inclusa nei piani Pro e Max. Passa a Pro per usarla.",
+                        comment: "Paid-only AI purpose blocked"
+                    )
+                )
+            }
+        }
+
         guard let familyId = currentFamilyId else {
             KBLog.ai.kbError("sendMessage blocked: missing familyId")
             throw AIServiceError.missingFamilyId
@@ -256,6 +283,8 @@ final class AIService {
             callable.timeoutInterval = Self.clinicalRecordClientTimeout
         } else if purpose == "mealPlan" {
             callable.timeoutInterval = Self.mealPlanClientTimeout
+        } else if purpose == "fitnessPlan" {
+            callable.timeoutInterval = Self.fitnessPlanClientTimeout
         }
         KBLog.ai.kbDebug(
             "Calling Firebase Function askAI payloadMessagesCount=\(messages.count) timeout=\(callable.timeoutInterval)s"

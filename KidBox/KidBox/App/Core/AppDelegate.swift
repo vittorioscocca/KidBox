@@ -108,8 +108,7 @@ final class AppDelegate: NSObject,
         // ── Registra le categorie di notifica con azioni rapide ────────────
         // Deve essere chiamato il prima possibile, prima di impostare il delegate,
         // così iOS conosce già le categorie quando arriva la prima notifica.
-        TreatmentNotificationCategory.register()
-        KBLog.app.kbDebug("Notification categories registered")
+        KBNotificationCategoryRegistry.registerAll()
         // ──────────────────────────────────────────────────────────────────
         
         // Condividi la sessione Auth con la Share Extension tramite Keychain sharing.
@@ -351,6 +350,15 @@ final class AppDelegate: NSObject,
         }
         // ──────────────────────────────────────────────────────────────────
         
+        // ── Quick action piano fitness: Fatto / Sposta ─────────────────────
+        // Non serve il ModelContainer: il piano fitness vive in UserDefaults
+        // (`FitnessPlanStore`) e su Firestore, non in SwiftData.
+        if await FitnessSessionActionHandler.handle(response: response) {
+            KBLog.auth.kbInfo("Fitness session quick action handled — skipping deep link")
+            return
+        }
+        // ──────────────────────────────────────────────────────────────────
+
         // ── Tap normale sulla notifica → deep link ─────────────────────────
         let notifType = userInfo["type"] as? String ?? "unknown"
         let notifKeys = userInfo.keys.map { "\($0)" }.sorted().joined(separator: ",")

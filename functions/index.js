@@ -1612,6 +1612,11 @@ const CLINICAL_RECORD_MIN_UNITS = 3;
 // alto. Parity con `AIAskAIPayload.mealPlanMinUnits`.
 const MEAL_PLAN_MIN_UNITS = 5;
 const MEAL_PLAN_MAX_TOKENS = 8192;
+// Piano fitness: stessa natura del piano alimentare — generazione lunga di
+// scrittura, non di ragionamento clinico, quindi Haiku. Output JSON su 4
+// settimane, one-shot senza caching. Parity con `AIAskAIPayload.fitnessPlanMinUnits`.
+const FITNESS_PLAN_MIN_UNITS = 5;
+const FITNESS_PLAN_MAX_TOKENS = 8192;
 
 /** Regole server aggiunte al system prompt cartella clinica (affiancano il prompt client). */
 const CLINICAL_RECORD_SYSTEM_RULES = `
@@ -1645,6 +1650,22 @@ riepiloghi, niente ripetizioni delle regole. Arriva sempre in fondo all'ultima s
 correndo lungo, accorcia le sezioni successive.
 `.trim();
 
+/** Regole server aggiunte al system prompt del piano fitness (affiancano il prompt client). */
+const FITNESS_PLAN_SYSTEM_RULES = `
+VINCOLI SERVER (piano fitness):
+Non sei un medico e non formuli diagnosi: il piano e' educativo e va validato dal medico curante.
+SICUREZZA PRIMA DI TUTTO: adatta intensita', esercizi e volumi alle controindicazioni che emergono dai
+dati clinici forniti (referti, patologie, terapie in corso) e dichiara ogni adattamento in "safetyNotes".
+VIETATO proporre carichi massimali, progressioni aggressive o allenamenti ad alta intensita' a chi ha
+patologie cardiovascolari o respiratorie, assume farmaci che alterano il battito, e' in gravidanza o
+allattamento, o ha meno di 18 anni: in questi casi resta su attivita' moderata e rimanda allo specialista.
+Non usare mai valori clinici assenti dai dati: se un dato manca, dillo e spiega come procedere senza.
+Allena solo nei giorni indicati come disponibili, usando esclusivamente gli offset ammessi.
+FORMATO: rispondi con un solo oggetto JSON valido, senza testo attorno, senza Markdown, senza blocchi
+di codice. Un JSON prolisso viene troncato dal limite di token e il client non riesce a leggerlo:
+testi brevi, e arriva sempre alla chiusura del JSON.
+`.trim();
+
 /**
  * Sonnet solo per generazione cartella clinica (non chat Salute: visite, esami, home).
  * Il client deve inviare purpose esplicito; niente euristica su testo/prompt.
@@ -1666,14 +1687,36 @@ function isMealPlanAskAI(data) {
 }
 
 /**
+ * Generazione del piano fitness: Haiku + max_tokens esteso, output JSON.
+ * @param {object} data body della callable
+ * @return {boolean}
+ */
+function isFitnessPlanAskAI(data) {
+  return data?.purpose === "fitnessPlan";
+}
+
+/**
+ * Chiamate brevi del modulo fitness (spostamento seduta, adeguamento
+ * settimanale, copilota): costano come una chat, ma restano riservate ai piani
+ * a pagamento come il piano che modificano.
+ * @param {object} data body della callable
+ * @return {boolean}
+ */
+function isFitnessAssistAskAI(data) {
+  return data?.purpose === "fitnessAdjust" || data?.purpose === "fitnessCopilot";
+}
+
+/**
  * Surface analytics per askAI.
  * @param {boolean} clinicalRecord
  * @param {boolean} mealPlan
+ * @param {string|undefined} purpose
  * @return {string}
  */
-function askAISurface(clinicalRecord, mealPlan) {
+function askAISurface(clinicalRecord, mealPlan, purpose) {
   if (clinicalRecord) return "clinicalRecord";
   if (mealPlan) return "mealPlan";
+  if (isFitnessPlanAskAI({purpose}) || isFitnessAssistAskAI({purpose})) return purpose;
   return "chat";
 }
 
@@ -1681,11 +1724,13 @@ function askAISurface(clinicalRecord, mealPlan) {
  * Purpose restituito al client (undefined per le chat standard).
  * @param {boolean} clinicalRecord
  * @param {boolean} mealPlan
+ * @param {string|undefined} purpose
  * @return {string|undefined}
  */
-function askAIPurposeEcho(clinicalRecord, mealPlan) {
+function askAIPurposeEcho(clinicalRecord, mealPlan, purpose) {
   if (clinicalRecord) return "clinicalRecord";
   if (mealPlan) return "mealPlan";
+  if (isFitnessPlanAskAI({purpose}) || isFitnessAssistAskAI({purpose})) return purpose;
   return undefined;
 }
 
@@ -2078,13 +2123,15 @@ exports.askAI = onCall(
 
       const clinicalRecord = isClinicalRecordAskAI({purpose});
       const mealPlan = isMealPlanAskAI({purpose});
+      const fitnessPlan = isFitnessPlanAskAI({purpose});
+      const fitnessAssist = isFitnessAssistAskAI({purpose});
       // Due assi distinti, da non confondere:
       // - `sonnetGeneration`: serve ragionamento clinico → solo la cartella clinica.
       //   Il piano alimentare è scrittura, e su Haiku costa ~3× meno ed è più veloce.
       // - `oneShotGeneration`: chiamata singola, mai riletta → il prompt caching
       //   sarebbe solo un write a 1,25× senza nessun read successivo.
       const sonnetGeneration = clinicalRecord;
-      const oneShotGeneration = clinicalRecord || mealPlan;
+      const oneShotGeneration = clinicalRecord || mealPlan || fitnessPlan;
 
       // Unità base calcolate sulla dimensione del payload.
       const payloadUnits = askAIMessageUnitsForPayload(totalChars);
@@ -2095,6 +2142,7 @@ exports.askAI = onCall(
       let messageUnits = payloadUnits;
       if (clinicalRecord) messageUnits = Math.max(CLINICAL_RECORD_MIN_UNITS, payloadUnits);
       if (mealPlan) messageUnits = Math.max(MEAL_PLAN_MIN_UNITS, payloadUnits);
+      if (fitnessPlan) messageUnits = Math.max(FITNESS_PLAN_MIN_UNITS, payloadUnits);
       const isLargeContext = messageUnits > 1;
 
       await assertFamilyMember(uid, familyId);
@@ -2108,17 +2156,29 @@ exports.askAI = onCall(
             "Il Piano Alimentare è incluso nei piani Pro e Max. Passa a Pro per generarlo.",
         );
       }
+      // Stesso discriminante per il Piano Fitness e per tutte le sue chiamate
+      // di contorno: spostamento seduta, adeguamento settimanale e copilota
+      // lavorano su un piano che i Free non possono avere.
+      if ((fitnessPlan || fitnessAssist) && quota.period === "lifetime") {
+        throw new HttpsError(
+            "permission-denied",
+            "Il Piano Fitness è incluso nei piani Pro e Max. Passa a Pro per generarlo.",
+        );
+      }
       const usageCount = await checkAndIncrementAIUsage(familyId, uid, quota, messageUnits);
 
       const anthropicModel = sonnetGeneration ? ANTHROPIC_MODEL_CLINICAL_RECORD : ANTHROPIC_MODEL_DEFAULT;
       let maxTokens = CHAT_MAX_TOKENS;
       if (clinicalRecord) maxTokens = CLINICAL_RECORD_MAX_TOKENS;
       if (mealPlan) maxTokens = MEAL_PLAN_MAX_TOKENS;
+      if (fitnessPlan) maxTokens = FITNESS_PLAN_MAX_TOKENS;
       let effectiveSystemPrompt = systemPrompt;
       if (clinicalRecord) {
         effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${CLINICAL_RECORD_SYSTEM_RULES}`;
       } else if (mealPlan) {
         effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${MEAL_PLAN_SYSTEM_RULES}`;
+      } else if (fitnessPlan) {
+        effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${FITNESS_PLAN_SYSTEM_RULES}`;
       }
       const inputUsdPer1M = sonnetGeneration ?
         ANTHROPIC_INPUT_USD_PER_1M_SONNET :
@@ -2129,7 +2189,8 @@ exports.askAI = onCall(
 
       logger.info("askAI request", {
         uid, familyId, usageCount, quota, msgCount: messages.length,
-        totalChars, messageUnits, isLargeContext, clinicalRecord, mealPlan, anthropicModel,
+        totalChars, messageUnits, isLargeContext, clinicalRecord, mealPlan, fitnessPlan,
+        anthropicModel,
       });
 
       const apiKey = ANTHROPIC_API_KEY.value();
@@ -2181,7 +2242,7 @@ exports.askAI = onCall(
         // Lo logghiamo per poter alzare CHAT_MAX_TOKENS se ricapita.
         if (json?.stop_reason === "max_tokens") {
           logger.warn("askAI reply truncated by max_tokens", {
-            uid, familyId, clinicalRecord, mealPlan, maxTokens,
+            uid, familyId, clinicalRecord, mealPlan, fitnessPlan, maxTokens,
             outputTokens: json?.usage?.output_tokens || 0,
           });
         }
@@ -2228,7 +2289,8 @@ exports.askAI = onCall(
           cacheReadTokens, cacheWriteTokens,
           cacheHitRatio: (inputTokens + cacheReadTokens) > 0 ?
             (cacheReadTokens / (inputTokens + cacheReadTokens)).toFixed(2) : "0",
-          costUsd: costUsd.toFixed(6), clinicalRecord, mealPlan, model: anthropicModel,
+          costUsd: costUsd.toFixed(6), clinicalRecord, mealPlan, fitnessPlan,
+          model: anthropicModel,
         });
       } catch (e) {
         if (e instanceof HttpsError) throw e;
@@ -2237,7 +2299,7 @@ exports.askAI = onCall(
       }
 
       logger.info("askAI success", {
-        uid, usageCount, messageUnits, clinicalRecord, mealPlan,
+        uid, usageCount, messageUnits, clinicalRecord, mealPlan, fitnessPlan,
         totalPayloadChars: totalChars,
       });
 
@@ -2251,7 +2313,7 @@ exports.askAI = onCall(
         familyId,
         feature: "chat",
         props: {
-          surface: askAISurface(clinicalRecord, mealPlan),
+          surface: askAISurface(clinicalRecord, mealPlan, purpose),
           actionType: "message",
         },
       });
@@ -2264,7 +2326,7 @@ exports.askAI = onCall(
         messageUnitsConsumed: messageUnits,
         isLargeContext,
         totalPayloadChars: totalChars,
-        purpose: askAIPurposeEcho(clinicalRecord, mealPlan),
+        purpose: askAIPurposeEcho(clinicalRecord, mealPlan, purpose),
       };
     },
 );
