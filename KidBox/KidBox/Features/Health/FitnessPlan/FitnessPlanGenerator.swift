@@ -446,6 +446,13 @@ enum FitnessPlanGenerator {
         lines.append("Sedute previste: \(report.plannedSessions)")
         lines.append("Sedute completate: \(report.completedSessions) (\(report.completionPercent)%)")
         lines.append("Sedute saltate: \(report.skippedSessions)")
+        if report.substitutedSessions > 0 {
+            lines.append(
+                "Sedute svolte con un'attività diversa da quella programmata: "
+                + "\(report.substitutedSessions). Tienine conto: il volume è stato rispettato, "
+                + "il contenuto no."
+            )
+        }
         lines.append("Minuti totali di attività: \(report.totalMinutes)")
         if report.totalKcal > 0 {
             lines.append("Calorie attive stimate: \(report.totalKcal)")

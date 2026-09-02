@@ -58,6 +58,8 @@ struct FitnessPlanView: View {
     @State private var showCopilotConsent = false
     @State private var showHealthPermission = false
     @State private var showMoveSheet: FitnessSession?
+    /// Seduta aperta nell'editor manuale (stato, attività svolta, durata).
+    @State private var editingSession: FitnessSession?
 
     @State private var weeklyReport: FitnessWeeklyReport?
     @State private var adjustmentProposal: FitnessAdjustmentProposal?
@@ -229,6 +231,11 @@ struct FitnessPlanView: View {
                 ) { updatedPlan in
                     Task { await persist(updatedPlan, rescheduleNotifications: true) }
                 }
+            }
+        }
+        .sheet(item: $editingSession) { session in
+            FitnessSessionEditSheet(session: session) { updated in
+                Task { await applyManualEdit(updated) }
             }
         }
         .sheet(item: $showMoveSheet) { session in
@@ -663,8 +670,76 @@ struct FitnessPlanView: View {
                     sessionCard(session)
                 }
             }
+
+            let logged = plan.loggedWorkouts(on: selectedDay)
+            if !logged.isEmpty {
+                Divider()
+                Label("Attività registrate da Apple Salute", systemImage: "applewatch")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(KBTheme.primaryText(colorScheme))
+                Text("Allenamenti che hai svolto e che non corrispondono a nessuna seduta in programma.")
+                    .font(.footnote)
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                ForEach(logged) { workout in
+                    loggedWorkoutRow(workout, openSessions: sessions.filter { $0.status != .done })
+                }
+            }
         }
         .fitnessCard()
+    }
+
+    /// Riga di un allenamento svolto fuori programma, con la possibilità di
+    /// farlo valere come una delle sedute aperte della giornata.
+    private func loggedWorkoutRow(
+        _ workout: FitnessLoggedWorkout,
+        openSessions: [FitnessSession]
+    ) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(tint.opacity(0.12)).frame(width: 36, height: 36)
+                Image(systemName: "figure.run")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(tint)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(workout.title)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(KBTheme.primaryText(colorScheme))
+                Text(loggedWorkoutSubtitle(workout))
+                    .font(.footnote)
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+            }
+            Spacer(minLength: 8)
+            if !openSessions.isEmpty {
+                Menu {
+                    ForEach(openSessions) { session in
+                        Button(session.title) {
+                            Task { await countLoggedWorkout(workout, as: session) }
+                        }
+                    }
+                } label: {
+                    Text("Conta come…")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(tint)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func loggedWorkoutSubtitle(_ workout: FitnessLoggedWorkout) -> String {
+        var parts: [String] = []
+        if let minutes = workout.durationMinutes {
+            parts.append(
+                String(
+                    format: NSLocalizedString("%d min", comment: "Session duration in minutes"),
+                    minutes
+                )
+            )
+        }
+        if let kcal = workout.kcal { parts.append("\(kcal) kcal") }
+        if let bpm = workout.heartRateBpm { parts.append("\(bpm) bpm") }
+        return parts.joined(separator: " · ")
     }
 
     private func sessionCard(_ session: FitnessSession) -> some View {
@@ -677,18 +752,36 @@ struct FitnessPlanView: View {
                         .foregroundStyle(tint)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(session.title)
+                    // A seduta chiusa comanda quello che è stato fatto: il
+                    // titolo grande è l'attività reale, con i suoi numeri.
+                    // Il programma scende a riga di contorno.
+                    Text(headlineTitle(session))
                         .font(.headline)
                         .foregroundStyle(KBTheme.primaryText(colorScheme))
-                    Text(sessionSubtitle(session))
+                    Text(headlineSubtitle(session))
                         .font(.subheadline)
-                        .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                        .foregroundStyle(
+                            session.status == .done
+                                ? session.status.tint
+                                : KBTheme.secondaryText(colorScheme)
+                        )
+                    if session.status == .done {
+                        Text(plannedFootnote(session))
+                            .font(.footnote)
+                            .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                    }
                 }
                 Spacer(minLength: 8)
                 Label(session.status.label, systemImage: session.status.systemImage)
                     .labelStyle(.iconOnly)
                     .font(.title3)
                     .foregroundStyle(session.status.tint)
+            }
+
+            if session.status == .done, !session.exercises.isEmpty || !session.targets.isEmpty {
+                Text("Programma previsto")
+                    .font(.footnote.bold())
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
             }
 
             if !session.exercises.isEmpty {
@@ -738,6 +831,23 @@ struct FitnessPlanView: View {
                     .foregroundStyle(KBTheme.secondaryText(colorScheme))
             }
 
+            if session.wasSubstituted, let actual = session.actualActivityTitle {
+                // Il piano diceva un'altra cosa: dirlo, invece di far finta che
+                // la seduta programmata sia stata svolta.
+                Label(
+                    String(
+                        format: NSLocalizedString(
+                            "Svolto: %@ — diverso da quanto programmato",
+                            comment: "Session completed with a different activity"
+                        ),
+                        actual
+                    ),
+                    systemImage: "arrow.triangle.swap"
+                )
+                .font(.footnote)
+                .foregroundStyle(FitnessSessionStatus.moved.tint)
+            }
+
             if session.status == .done {
                 completedSummary(session)
             } else {
@@ -769,6 +879,15 @@ struct FitnessPlanView: View {
                 }
                 .font(.subheadline)
             }
+
+            Button {
+                editingSession = session
+            } label: {
+                Label("Modifica", systemImage: "square.and.pencil")
+                    .font(.footnote)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(tint)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -803,8 +922,8 @@ struct FitnessPlanView: View {
         HStack(spacing: 8) {
             Image(systemName: session.completionSource == .healthKit ? "applewatch" : "checkmark.seal")
                 .foregroundStyle(session.status.tint)
-            Text(completionText(session))
-                .font(.subheadline)
+            Text(completionSourceText(session))
+                .font(.footnote)
                 .foregroundStyle(KBTheme.secondaryText(colorScheme))
             Spacer(minLength: 8)
             Button("Annulla") {
@@ -816,25 +935,48 @@ struct FitnessPlanView: View {
         }
     }
 
-    private func completionText(_ session: FitnessSession) -> String {
+    /// Titolo in evidenza: l'attività svolta se c'è, altrimenti il programma.
+    private func headlineTitle(_ session: FitnessSession) -> String {
+        if session.status == .done, let actual = session.actualActivityTitle, !actual.isEmpty {
+            return actual
+        }
+        return session.title
+    }
+
+    /// Numeri in evidenza: quelli reali a seduta chiusa, quelli previsti prima.
+    private func headlineSubtitle(_ session: FitnessSession) -> String {
+        guard session.status == .done else { return sessionSubtitle(session) }
+        var parts: [String] = []
+        let minutes = session.actualMinutes ?? session.durationMinutes
+        parts.append(
+            String(
+                format: NSLocalizedString("%d min", comment: "Session duration in minutes"),
+                minutes
+            )
+        )
+        if let kcal = session.actualKcal { parts.append("\(kcal) kcal") }
+        if let bpm = session.actualHeartRateBpm { parts.append("\(bpm) bpm") }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Il programma previsto, ridotto a nota quando la seduta è chiusa.
+    private func plannedFootnote(_ session: FitnessSession) -> String {
+        String(
+            format: NSLocalizedString(
+                "Previsto: %1$@ · %2$@",
+                comment: "Planned session recap under the performed activity"
+            ),
+            session.title,
+            sessionSubtitle(session)
+        )
+    }
+
+    private func completionSourceText(_ session: FitnessSession) -> String {
         switch session.completionSource {
         case .healthKit:
-            let minutes = session.actualMinutes ?? session.durationMinutes
-            if let kcal = session.actualKcal {
-                return String(
-                    format: NSLocalizedString(
-                        "Chiusa da Apple Salute: %1$d min, %2$d kcal",
-                        comment: "Session closed by HealthKit with calories"
-                    ),
-                    minutes, kcal
-                )
-            }
-            return String(
-                format: NSLocalizedString(
-                    "Chiusa da Apple Salute: %d min",
-                    comment: "Session closed by HealthKit"
-                ),
-                minutes
+            return NSLocalizedString(
+                "Registrato da Apple Salute",
+                comment: "Session closed by HealthKit"
             )
         case .notification:
             return NSLocalizedString("Segnata come fatta dalla notifica", comment: "Session done from notification")
@@ -1292,6 +1434,47 @@ struct FitnessPlanView: View {
         await persist(updated, rescheduleNotifications: true)
     }
 
+    /// Fa valere un allenamento svolto come una delle sedute aperte del giorno.
+    /// L'allenamento esce dal registro: da lì in poi è quella seduta.
+    @MainActor
+    private func countLoggedWorkout(_ workout: FitnessLoggedWorkout, as session: FitnessSession) async {
+        guard var updated = plan else { return }
+        updated.updateSession(id: session.id) { target in
+            target.status = .done
+            target.completedAt = workout.date
+            target.completionSource = .healthKit
+            target.matchedWorkoutId = workout.id
+            target.actualActivityTitle = workout.title
+            target.actualMinutes = workout.durationMinutes
+            target.actualKcal = workout.kcal
+            target.actualHeartRateBpm = workout.heartRateBpm
+        }
+        updated.loggedWorkouts = updated.logged.filter { $0.id != workout.id }
+        await persist(updated, rescheduleNotifications: true)
+    }
+
+    @MainActor
+    private func applyManualEdit(_ edited: FitnessSession) async {
+        guard var updated = plan else { return }
+        updated.updateSession(id: edited.id) { target in
+            target.status = edited.status
+            target.actualActivityTitle = edited.actualActivityTitle
+            target.actualMinutes = edited.actualMinutes
+            target.actualKcal = edited.actualKcal
+            if edited.status == .done {
+                target.completedAt = target.completedAt ?? Date()
+                // Una modifica a mano resta una dichiarazione della persona,
+                // anche quando parte da un dato letto dall'orologio.
+                target.completionSource = target.matchedWorkoutId == nil ? .manual : target.completionSource
+            } else {
+                target.completedAt = nil
+                target.completionSource = nil
+                target.matchedWorkoutId = nil
+            }
+        }
+        await persist(updated, rescheduleNotifications: true)
+    }
+
     @MainActor
     private func syncHealthNow() async {
         guard let plan, !isSyncingHealth else { return }
@@ -1308,13 +1491,47 @@ struct FitnessPlanView: View {
             return
         }
         await persist(result.plan, rescheduleNotifications: true)
-        infoBanner = String(
-            format: NSLocalizedString(
-                "Sedute completate con i dati di Apple Salute: %d",
-                comment: "Fitness sync matched count"
-            ),
-            result.matchedSessions.count
-        )
+        infoBanner = syncSummary(result)
+    }
+
+    /// Riassume la sincronizzazione distinguendo le sedute chiuse dalle attività
+    /// registrate ma non attribuite: sono due cose diverse per chi legge.
+    private func syncSummary(_ result: FitnessHealthSync.Result) -> String {
+        var parts: [String] = []
+        if !result.matchedSessions.isEmpty {
+            parts.append(
+                String(
+                    format: NSLocalizedString(
+                        "Sedute completate con i dati di Apple Salute: %d",
+                        comment: "Fitness sync matched count"
+                    ),
+                    result.matchedSessions.count
+                )
+            )
+        }
+        if result.repairedSessions > 0 {
+            parts.append(
+                String(
+                    format: NSLocalizedString(
+                        "Sedute riaperte perché chiuse da un'attività di un altro tipo: %d",
+                        comment: "Fitness sync repaired count"
+                    ),
+                    result.repairedSessions
+                )
+            )
+        }
+        if !result.loggedWorkouts.isEmpty {
+            parts.append(
+                String(
+                    format: NSLocalizedString(
+                        "Attività registrate fuori programma: %d. Aprile nel giorno per attribuirle a una seduta.",
+                        comment: "Fitness sync logged count"
+                    ),
+                    result.loggedWorkouts.count
+                )
+            )
+        }
+        return parts.joined(separator: "\n")
     }
 
     @MainActor
@@ -1357,6 +1574,113 @@ struct FitnessPlanView: View {
     private func present(_ error: Error) {
         alertMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         showAlert = true
+    }
+}
+
+// MARK: - Modifica manuale di una seduta
+
+/// Editor della singola seduta: stato, attività realmente svolta, durata e
+/// calorie effettive.
+///
+/// Serve quando l'orologio non ha registrato nulla, o quando ha registrato una
+/// cosa diversa da quella prevista: l'ultima parola su cosa è stato fatto resta
+/// della persona, non della riconciliazione automatica.
+private struct FitnessSessionEditSheet: View {
+    let session: FitnessSession
+    let onSave: (FitnessSession) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    @State private var status: FitnessSessionStatus
+    @State private var activityTitle: String
+    @State private var minutes: String
+    @State private var kcal: String
+
+    init(session: FitnessSession, onSave: @escaping (FitnessSession) -> Void) {
+        self.session = session
+        self.onSave = onSave
+        _status = State(initialValue: session.status)
+        _activityTitle = State(initialValue: session.actualActivityTitle ?? "")
+        _minutes = State(initialValue: session.actualMinutes.map(String.init) ?? "")
+        _kcal = State(initialValue: session.actualKcal.map(String.init) ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("Stato", selection: $status) {
+                        ForEach(
+                            [FitnessSessionStatus.planned, .done, .skipped],
+                            id: \.rawValue
+                        ) { value in
+                            Text(value.label).tag(value)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Com'è andata")
+                } footer: {
+                    Text(session.title)
+                }
+
+                if status == .done {
+                    Section {
+                        TextField("Attività svolta", text: $activityTitle)
+                        HStack {
+                            Text("Durata")
+                            Spacer()
+                            TextField("min", text: $minutes)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                        }
+                        HStack {
+                            Text("Calorie")
+                            Spacer()
+                            TextField("kcal", text: $kcal)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 80)
+                        }
+                    } header: {
+                        Text("Cosa hai fatto davvero")
+                    } footer: {
+                        Text("Se hai svolto un'attività diversa da quella prevista, scrivila qui: il consuntivo di fine settimana ne terrà conto.")
+                    }
+                }
+            }
+            .navigationTitle("Modifica seduta")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annulla") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Salva") {
+                        onSave(edited())
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func edited() -> FitnessSession {
+        var updated = session
+        updated.status = status
+        if status == .done {
+            let title = activityTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+            updated.actualActivityTitle = title.isEmpty ? nil : title
+            updated.actualMinutes = Int(minutes.trimmingCharacters(in: .whitespaces))
+            updated.actualKcal = Int(kcal.trimmingCharacters(in: .whitespaces))
+        } else {
+            updated.actualActivityTitle = nil
+            updated.actualMinutes = nil
+            updated.actualKcal = nil
+        }
+        return updated
     }
 }
 

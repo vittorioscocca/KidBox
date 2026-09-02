@@ -36,6 +36,7 @@ enum FitnessWeeklyReportBuilder {
             skippedSessions: skipped.count,
             totalMinutes: minutes,
             totalKcal: kcal,
+            substitutedSessions: done.filter(\.wasSubstituted).count,
             chronicallySkippedWeekdays: chronicallySkippedWeekdays(plan: plan, upTo: weekIndex)
         )
     }

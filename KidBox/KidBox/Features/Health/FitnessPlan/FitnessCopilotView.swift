@@ -10,22 +10,13 @@
 //  messaggi, toast delle azioni eseguite): per l'utente è lo stesso assistente,
 //  cambia solo il contesto.
 //
-//  La conversazione vive in memoria per la durata della sessione: a differenza
-//  delle chat Salute non ha una cronologia sincronizzata, perché il suo valore
-//  sta nel contesto del piano corrente, che cambia in continuazione.
+//  La conversazione è persistita come quella delle altre chat (`KBAIConversation`
+//  in SwiftData, sincronizzata fra i dispositivi dello stesso utente): il piano
+//  cambia in continuazione, ma quello che ci si è detti sopra no.
 //
 
 import SwiftUI
 import SwiftData
-
-// MARK: - Messaggio
-
-private struct FitnessCopilotMessage: Identifiable, Equatable {
-    let id = UUID().uuidString
-    let text: String
-    let isUser: Bool
-    let date = Date()
-}
 
 // MARK: - View
 
@@ -44,7 +35,12 @@ struct FitnessCopilotView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var messages: [FitnessCopilotMessage] = []
+    /// La conversazione vive in SwiftData come le altre chat dell'app: uscire e
+    /// rientrare non deve azzerare lo storico, e il sync la porta sugli altri
+    /// dispositivi dello stesso utente.
+    @State private var conversation: KBAIConversation?
+    @State private var messages: [KBAIMessage] = []
+    @State private var showClearAlert = false
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var streamingMessageId: String?
@@ -54,6 +50,8 @@ struct FitnessCopilotView: View {
     @State private var dailyLimit = 0
     @State private var errorMessage: String?
     @State private var actionExecutionSummary: String?
+    /// Sedute che l'AI ha proposto di eliminare, in attesa di conferma.
+    @State private var pendingDeletions: [FitnessSession] = []
     @FocusState private var isInputFocused: Bool
 
     private let accent = FitnessPlanTheme.tint
@@ -104,13 +102,77 @@ struct FitnessCopilotView: View {
                     Button("Chiudi") { dismiss() }
                 }
                 #endif
+                if !messages.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            Button(role: .destructive) {
+                                showClearAlert = true
+                            } label: {
+                                Label("Nuova conversazione", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                }
             }
             .task {
+                loadConversation()
                 buildSystemPrompt()
                 await loadUsage()
             }
+            .alert(
+                "Elimino la seduta?",
+                isPresented: Binding(
+                    get: { !pendingDeletions.isEmpty },
+                    set: { if !$0 { pendingDeletions = [] } }
+                )
+            ) {
+                Button("Elimina", role: .destructive) { confirmPendingDeletions() }
+                Button("Annulla", role: .cancel) { pendingDeletions = [] }
+            } message: {
+                Text(pendingDeletionsMessage)
+            }
+            .alert("Nuova conversazione", isPresented: $showClearAlert) {
+                Button("Cancella", role: .destructive) { clearConversation() }
+                Button("Annulla", role: .cancel) {}
+            } message: {
+                Text("La cronologia di questa conversazione verrà eliminata.")
+            }
             .onAppear { AppAnalytics.screenView(name: "salute_piano_fitness_ai") }
         }
+    }
+
+    // MARK: - Eliminazione con conferma
+
+    private var pendingDeletionsMessage: String {
+        let list = pendingDeletions
+            .map { "\($0.title) — \(FitnessPlanFormat.mediumDate($0.date))" }
+            .joined(separator: "\n")
+        return String(
+            format: NSLocalizedString(
+                "Verranno rimosse dal piano e non si potranno recuperare:\n%@",
+                comment: "Fitness copilot deletion confirmation body"
+            ),
+            list
+        )
+    }
+
+    private func confirmPendingDeletions() {
+        guard !pendingDeletions.isEmpty else { return }
+        var plan = workingPlan
+        for session in pendingDeletions { plan.removeSession(id: session.id) }
+        workingPlan = plan
+        onPlanUpdated(plan)
+        buildSystemPrompt()
+        actionExecutionSummary = String(
+            format: NSLocalizedString(
+                "Sedute eliminate: %d",
+                comment: "Fitness copilot deleted sessions summary"
+            ),
+            pendingDeletions.count
+        )
+        pendingDeletions = []
     }
 
     // MARK: - Badge provider
@@ -144,10 +206,10 @@ struct FitnessCopilotView: View {
                         }
                         ForEach(messages) { message in
                             AIChatBubbleView(
-                                text: message.text,
-                                isUser: message.isUser,
-                                date: message.date,
-                                streamReveal: streamingMessageId == message.id && !message.isUser,
+                                text: message.content,
+                                isUser: message.role == .user,
+                                date: message.createdAt,
+                                streamReveal: streamingMessageId == message.id && message.role == .assistant,
                                 onStreamingTick: { scrollToBottom(proxy, animated: false) },
                                 onStreamingComplete: {
                                     if streamingMessageId == message.id { streamingMessageId = nil }
@@ -407,12 +469,66 @@ struct FitnessCopilotView: View {
         dailyLimit = usage.dailyLimit
     }
 
+    // MARK: - Storico
+
+    /// Chiave stabile della conversazione, una per profilo.
+    private var scopeId: String { "fitness-copilot-\(childId)" }
+
+    private func loadConversation() {
+        guard conversation == nil else { return }
+        do {
+            let all = try modelContext.fetch(FetchDescriptor<KBAIConversation>())
+            if let existing = all.first(where: { $0.visitId == scopeId }) {
+                conversation = existing
+                messages = existing.sortedMessages
+                return
+            }
+            let created = KBAIConversation(
+                familyId: familyId,
+                childId: childId,
+                visitId: scopeId,
+                provider: .claude
+            )
+            modelContext.insert(created)
+            try modelContext.save()
+            conversation = created
+            messages = []
+        } catch {
+            KBLog.ai.kbError("FitnessCopilot: storico non caricato — \(error.localizedDescription)")
+        }
+    }
+
+    private func clearConversation() {
+        guard let conversation else { return }
+        for message in conversation.messages {
+            modelContext.delete(message)
+        }
+        conversation.messages = []
+        conversation.updatedAt = Date()
+        try? modelContext.save()
+        messages = []
+        SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+    }
+
+    @discardableResult
+    private func append(role: AIMessageRole, text: String) -> KBAIMessage? {
+        guard let conversation else { return nil }
+        let message = KBAIMessage(role: role, content: text)
+        message.conversation = conversation
+        modelContext.insert(message)
+        conversation.updatedAt = Date()
+        try? modelContext.save()
+        messages = conversation.sortedMessages
+        return message
+    }
+
     // MARK: - Invio
 
     private func send(text: String) {
         guard !isLoading else { return }
         isInputFocused = false
-        messages.append(FitnessCopilotMessage(text: text, isUser: true))
+        if conversation == nil { loadConversation() }
+        append(role: .user, text: text)
         Task { await performSend() }
     }
 
@@ -426,9 +542,7 @@ struct FitnessCopilotView: View {
 
         // La cronologia viaggia intera: il copilota ragiona su una manciata di
         // scambi, e troncarli renderebbe incoerenti le modifiche al piano.
-        let history = messages.map {
-            KBAIMessage(role: $0.isUser ? .user : .assistant, content: $0.text)
-        }
+        let history = messages
 
         do {
             let response = try await AIService.shared.sendMessage(
@@ -453,9 +567,26 @@ struct FitnessCopilotView: View {
                 buildSystemPrompt()
                 actionExecutionSummary = summary
             }
-            let reply = FitnessCopilotMessage(text: processed.displayText, isUser: false)
-            messages.append(reply)
-            streamingMessageId = reply.id
+            // L'eliminazione aspetta l'utente: qui si apre solo la richiesta.
+            pendingDeletions = processed.pendingDeletions
+
+            // Se il modello ha allegato azioni che non si sono potute eseguire,
+            // la frase discorsiva resta una conferma falsa: va contraddetta
+            // nello stesso messaggio, non in un banner che scompare.
+            var displayText = processed.displayText
+            if processed.failedActions > 0 {
+                let warning = NSLocalizedString(
+                    "⚠️ Attenzione: non tutte le modifiche descritte sono state applicate al piano. Controlla il calendario.",
+                    comment: "Fitness copilot could not apply the actions it described"
+                )
+                displayText = displayText.isEmpty ? warning : "\(displayText)\n\n\(warning)"
+            }
+            if let reply = append(role: .assistant, text: displayText) {
+                streamingMessageId = reply.id
+                if let conversation {
+                    SyncCenter.shared.pushAIConversation(conversation, modelContext: modelContext)
+                }
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
@@ -506,8 +637,16 @@ enum FitnessCopilotPrompt {
         - "replace_session": sostituisce il contenuto di una seduta (es. allenamento indoor al posto
           della corsa) mantenendo il carico e l'obiettivo settimanale;
         - "move_session": sposta una seduta, con "date" in formato AAAA-MM-GG;
-        - "mark_session": aggiorna lo stato, con "status" fra "done", "skipped", "planned".
-        Usa SEMPRE il "sessionId" esatto preso dall'elenco delle sedute qui sotto.
+        - "mark_session": aggiorna lo stato, con "status" fra "done", "skipped", "planned";
+        - "add_session": aggiunge una seduta nuova in un giorno che non ne ha, con "date" in
+          formato AAAA-MM-GG, "title" e "activityType" obbligatori. La data deve cadere dentro
+          le settimane del piano: fuori non viene applicata;
+        - "delete_session": elimina una seduta. È l'unica azione che NON viene applicata subito:
+          l'utente riceve una richiesta di conferma. Nel testo chiedi conferma invece di darla
+          per fatta, e proponila solo se l'utente ha chiesto di togliere quella seduta; per
+          saltarne una senza perderla usa "mark_session" con "skipped".
+        Usa SEMPRE il "sessionId" esatto preso dall'elenco delle sedute qui sotto (tranne per
+        "add_session", che non ne ha uno).
         Nel testo della risposta spiega in una riga cosa hai cambiato e perché; il blocco JSON non
         viene mostrato all'utente. Se non serve modificare nulla, non allegare alcun blocco.
         """)

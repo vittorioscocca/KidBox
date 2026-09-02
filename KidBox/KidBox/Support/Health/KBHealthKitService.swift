@@ -390,15 +390,24 @@ final class KBHealthKitService {
                     continuation.resume(throwing: error)
                     return
                 }
+                let bpmUnit = HKUnit.count().unitDivided(by: .minute())
+                let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate)
                 let workouts = (samples as? [HKWorkout] ?? []).map { workout -> KBHealthWorkoutEntry in
                     let minutes = max(1, Int(round(workout.duration / 60)))
                     let kcal = workout.totalEnergyBurned?.doubleValue(for: .kilocalorie())
+                    // La media dei battiti è già calcolata da HealthKit sui
+                    // campioni associati all'allenamento: non serve una query a
+                    // parte, e per gli allenamenti dell'orologio c'è sempre.
+                    let bpm = heartRateType
+                        .flatMap { workout.statistics(for: $0)?.averageQuantity() }?
+                        .doubleValue(for: bpmUnit)
                     return KBHealthWorkoutEntry(
                         id: workout.uuid.uuidString,
                         title: Self.workoutTitle(workout.workoutActivityType),
                         startedAt: workout.startDate,
                         durationMinutes: minutes,
-                        activeEnergyKcal: kcal
+                        activeEnergyKcal: kcal,
+                        averageHeartRateBpm: bpm
                     )
                 }
                 continuation.resume(returning: workouts)

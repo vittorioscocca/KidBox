@@ -24,6 +24,9 @@ struct KBHealthWorkoutEntry: Sendable, Equatable, Codable, Identifiable {
     var startedAt: Date
     var durationMinutes: Int?
     var activeEnergyKcal: Double?
+    /// Frequenza cardiaca media dell'allenamento. Opzionale: gli snapshot
+    /// salvati prima di questo campo devono continuare a decodificarsi.
+    var averageHeartRateBpm: Double?
 }
 
 struct KBHealthECGEntry: Sendable, Equatable, Codable, Identifiable {

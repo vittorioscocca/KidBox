@@ -420,10 +420,15 @@ struct FitnessSession: Codable, Equatable, Identifiable {
     var status: FitnessSessionStatus = .planned
     var completedAt: Date?
     var completionSource: FitnessCompletionSource?
+    /// Attività realmente svolta, quando è diversa da quella programmata
+    /// ("Corsa all'aperto" su una seduta di bici). Opzionale di proposito: i
+    /// piani salvati prima di questo campo devono continuare a decodificarsi.
+    var actualActivityTitle: String?
     /// UUID dell'allenamento Apple Salute che ha chiuso la sessione (anti doppio conteggio).
     var matchedWorkoutId: String?
     var actualMinutes: Int?
     var actualKcal: Int?
+    var actualHeartRateBpm: Int?
 
     init(
         id: String = UUID().uuidString,
@@ -441,9 +446,11 @@ struct FitnessSession: Codable, Equatable, Identifiable {
         status: FitnessSessionStatus = .planned,
         completedAt: Date? = nil,
         completionSource: FitnessCompletionSource? = nil,
+        actualActivityTitle: String? = nil,
         matchedWorkoutId: String? = nil,
         actualMinutes: Int? = nil,
-        actualKcal: Int? = nil
+        actualKcal: Int? = nil,
+        actualHeartRateBpm: Int? = nil
     ) {
         self.id = id
         self.date = date
@@ -460,9 +467,22 @@ struct FitnessSession: Codable, Equatable, Identifiable {
         self.status = status
         self.completedAt = completedAt
         self.completionSource = completionSource
+        self.actualActivityTitle = actualActivityTitle
         self.matchedWorkoutId = matchedWorkoutId
         self.actualMinutes = actualMinutes
         self.actualKcal = actualKcal
+        self.actualHeartRateBpm = actualHeartRateBpm
+    }
+
+    /// La seduta è stata chiusa da un'attività di disciplina diversa da quella
+    /// programmata. È il dato che il consuntivo settimanale deve dichiarare:
+    /// il piano è stato rispettato come volume, non come contenuto.
+    var wasSubstituted: Bool {
+        guard status == .done, let actual = actualActivityTitle, !actual.isEmpty else { return false }
+        return !FitnessDisciplineMatcher.matches(
+            activityTitle: actual,
+            sessionText: "\(activityType) \(title)"
+        )
     }
 
     var isRest: Bool {
@@ -490,6 +510,19 @@ struct FitnessSession: Codable, Equatable, Identifiable {
     }
 }
 
+/// Allenamento letto da Apple Salute e non abbinato a nessuna seduta: è quello
+/// che la persona ha fatto davvero fuori dal programma. Resta nel piano perché
+/// la giornata deve poter mostrare il consuntivo reale accanto a quello previsto.
+struct FitnessLoggedWorkout: Codable, Equatable, Identifiable {
+    /// UUID dell'allenamento in Apple Salute: evita di registrarlo due volte.
+    var id: String
+    var date: Date
+    var title: String
+    var durationMinutes: Int?
+    var kcal: Int?
+    var heartRateBpm: Int?
+}
+
 /// Una settimana del piano mensile.
 struct FitnessWeek: Codable, Equatable, Identifiable {
     var index: Int
@@ -511,6 +544,19 @@ struct FitnessPlanDocument: Codable, Equatable {
     var weeks: [FitnessWeek]
     var generatedAt: Date
     var messageUnitsConsumed: Int
+    /// Attività svolte che non corrispondono a nessuna seduta programmata.
+    /// Opzionale: i piani generati prima di questo campo devono restare leggibili.
+    var loggedWorkouts: [FitnessLoggedWorkout]?
+
+    var logged: [FitnessLoggedWorkout] { loggedWorkouts ?? [] }
+
+    /// Attività registrate in una giornata, ordinate dalla più recente.
+    func loggedWorkouts(on day: Date) -> [FitnessLoggedWorkout] {
+        let cal = Calendar.current
+        return logged
+            .filter { cal.isDate($0.date, inSameDayAs: day) }
+            .sorted { $0.date > $1.date }
+    }
 
     var allSessions: [FitnessSession] {
         weeks.flatMap(\.sessions).sorted { $0.date < $1.date }
@@ -527,6 +573,13 @@ struct FitnessPlanDocument: Codable, Equatable {
             else { continue }
             transform(&weeks[weekIndex].sessions[sessionIndex])
             return
+        }
+    }
+
+    /// Rimuove una sessione dal piano, ovunque si trovi.
+    mutating func removeSession(id: String) {
+        for weekIndex in weeks.indices {
+            weeks[weekIndex].sessions.removeAll { $0.id == id }
         }
     }
 
@@ -548,6 +601,38 @@ struct FitnessPlanDocument: Codable, Equatable {
     }
 }
 
+// MARK: - Corrispondenza fra discipline
+
+/// Confronto grossolano fra il titolo di un allenamento ("Corsa all'aperto") e
+/// il tipo di seduta prodotto dall'AI ("corsa", "forza", …).
+///
+/// Sta qui e non dentro la sincronizzazione perché serve a tre posti: decidere
+/// se un allenamento chiude una seduta, se una seduta chiusa è una
+/// sostituzione, e cosa scrivere nel consuntivo.
+enum FitnessDisciplineMatcher {
+
+    private static let families: [[String]] = [
+        ["cors", "run", "jog"],
+        ["camm", "walk"],
+        ["forza", "pesi", "strength", "funzional", "tonific"],
+        ["hiit", "intervall", "circuit"],
+        ["bici", "cicl", "cycl", "spinning"],
+        ["nuot", "swim"],
+        ["yoga", "pilates", "stretch", "mobil", "flessib"],
+        ["rem", "canott", "row"],
+        ["danza", "dance", "ball"],
+    ]
+
+    static func matches(activityTitle: String, sessionText: String) -> Bool {
+        let activity = activityTitle.lowercased()
+        let session = sessionText.lowercased()
+        return families.contains { keys in
+            keys.contains(where: { activity.contains($0) })
+                && keys.contains(where: { session.contains($0) })
+        }
+    }
+}
+
 // MARK: - Report settimanale
 
 /// Sintesi di fine settimana mostrata all'utente (sezione 6 delle specifiche).
@@ -559,6 +644,8 @@ struct FitnessWeeklyReport: Codable, Equatable {
     var skippedSessions: Int
     var totalMinutes: Int
     var totalKcal: Int
+    /// Sedute completate con un'attività diversa da quella programmata.
+    var substitutedSessions: Int = 0
     /// Giorni della settimana (convenzione `Calendar`) sistematicamente saltati.
     var chronicallySkippedWeekdays: [Int]
 

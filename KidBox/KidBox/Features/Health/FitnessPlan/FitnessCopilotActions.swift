@@ -20,7 +20,7 @@ enum FitnessCopilotActionMarkers {
 }
 
 struct FitnessCopilotAction: Decodable {
-    /// `replace_session`, `move_session`, `mark_session`.
+    /// `replace_session`, `move_session`, `mark_session`, `add_session`, `delete_session`.
     let type: String
     let sessionId: String?
     let date: String?
@@ -46,6 +46,20 @@ struct FitnessCopilotProcessedReply {
     let plan: FitnessPlanDocument
     /// Riepilogo delle modifiche applicate, `nil` se non è cambiato nulla.
     let executionSummary: String?
+    /// Sedute che l'AI vuole eliminare: **non** ancora rimosse dal piano.
+    ///
+    /// L'eliminazione è l'unica azione che non si applica da sola. Le altre
+    /// sono rimediabili — una seduta spostata si rimette a posto, una segnata
+    /// per errore si riapre — mentre una seduta cancellata non torna indietro:
+    /// l'ultima parola resta all'utente.
+    let pendingDeletions: [FitnessSession]
+    /// Azioni allegate alla risposta che non è stato possibile eseguire.
+    ///
+    /// Serve a non lasciar passare una conferma falsa: il testo discorsivo dice
+    /// "ho spostato la seduta" anche quando l'id era inventato o il JSON era
+    /// malformato, e senza questo l'utente se ne accorgerebbe solo tornando sul
+    /// calendario.
+    let failedActions: Int
 }
 
 enum FitnessCopilotActionExecutor {
@@ -63,7 +77,9 @@ enum FitnessCopilotActionExecutor {
             return FitnessCopilotProcessedReply(
                 displayText: reply.trimmingCharacters(in: .whitespacesAndNewlines),
                 plan: plan,
-                executionSummary: nil
+                executionSummary: nil,
+                pendingDeletions: [],
+                failedActions: 0
             )
         }
 
@@ -79,20 +95,73 @@ enum FitnessCopilotActionExecutor {
             !actions.isEmpty
         else {
             KBLog.ai.kbError("FitnessCopilot: blocco azioni non decodificabile")
+            // Il blocco c'era: la risposta parla di una modifica che non è
+            // avvenuta, e va segnalato.
             return FitnessCopilotProcessedReply(
                 displayText: display,
                 plan: plan,
-                executionSummary: nil
+                executionSummary: nil,
+                pendingDeletions: [],
+                failedActions: 1
             )
         }
 
         var updated = plan
         var applied: [String] = []
+        var pendingDeletions: [FitnessSession] = []
 
         for action in actions {
+            // L'aggiunta è l'unica azione che non parte da una seduta esistente:
+            // va gestita prima del controllo sul sessionId.
+            if action.type == "add_session" {
+                guard
+                    let newDate = parseDate(action.date),
+                    // Fuori dall'orizzonte del piano non c'è settimana in cui
+                    // metterla: meglio non applicarla che inventarne una.
+                    let weekIndex = updated.weekIndex(for: newDate),
+                    let target = updated.weeks.firstIndex(where: { $0.index == weekIndex })
+                else { continue }
+                let title = action.title ?? ""
+                let activityType = action.activityType ?? ""
+                guard !title.isEmpty, !activityType.isEmpty else { continue }
+
+                updated.weeks[target].sessions.append(
+                    FitnessSession(
+                        date: newDate,
+                        weekIndex: weekIndex,
+                        title: title,
+                        activityType: activityType,
+                        durationMinutes: max(10, action.durationMinutes ?? 45),
+                        intensity: action.intensity ?? "",
+                        exercises: (action.exercises ?? []).map {
+                            FitnessExercise(name: $0.name, detail: $0.detail ?? "", notes: $0.notes)
+                        },
+                        targets: action.targets ?? [],
+                        targetKcal: action.targetKcal,
+                        notes: action.notes
+                    )
+                )
+                applied.append(
+                    String(
+                        format: NSLocalizedString(
+                            "Seduta aggiunta il %@",
+                            comment: "Fitness copilot added a session"
+                        ),
+                        FitnessPlanFormat.mediumDate(newDate)
+                    )
+                )
+                continue
+            }
+
             guard let sessionId = action.sessionId,
                   let existing = updated.session(id: sessionId)
             else { continue }
+
+            // L'eliminazione non si applica qui: si mette in attesa di conferma.
+            if action.type == "delete_session" {
+                pendingDeletions.append(existing)
+                continue
+            }
 
             switch action.type {
             case "replace_session":
@@ -171,7 +240,11 @@ enum FitnessCopilotActionExecutor {
         return FitnessCopilotProcessedReply(
             displayText: display,
             plan: updated,
-            executionSummary: applied.isEmpty ? nil : applied.joined(separator: " · ")
+            executionSummary: applied.isEmpty ? nil : applied.joined(separator: " · "),
+            pendingDeletions: pendingDeletions,
+            // Un'eliminazione in attesa non è un fallimento: è stata capita, e
+            // aspetta solo l'ultima parola dell'utente.
+            failedActions: max(0, actions.count - applied.count - pendingDeletions.count)
         )
     }
 
