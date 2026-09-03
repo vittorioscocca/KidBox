@@ -1,0 +1,247 @@
+/* Impostazioni. Stessa colonna di card del Profilo: le due pagine si aprono
+   una dopo l'altra e stonerebbero se non si somigliassero. */
+@import "./Profilo.css";
+
+.set-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 680px;
+}
+
+.set-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.set-card h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.set-card h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── Righe con interruttore ──────────────────────────────────────────────── */
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.set-row.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.set-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.set-row-text strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.set-row-text small {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Interruttore: una checkbox vera, ridisegnata. Resta focalizzabile da
+   tastiera e leggibile dai lettori di schermo, cosa che un div non sarebbe. */
+.set-switch {
+  appearance: none;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--border);
+  position: relative;
+  cursor: inherit;
+  transition: background 0.15s ease;
+}
+
+.set-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.set-switch:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.set-switch:checked::after {
+  transform: translateX(18px);
+}
+
+.set-switch:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+/* ── Impostazioni del dispositivo ────────────────────────────────────────── */
+
+/* Non è un interruttore spento: è una cosa che da qui non si comanda, e va
+   detto invece di lasciare un comando che non farebbe niente. */
+.set-device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.set-device-row em {
+  flex: none;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+  max-width: 130px;
+}
+
+/* ── Scelte a pulsanti (tema, lingua) ────────────────────────────────────── */
+
+.set-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.set-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.set-choice:hover {
+  background: var(--border);
+}
+
+.set-choice.selected {
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+/* ── Scelte descritte (contesto Salute) ──────────────────────────────────── */
+
+.set-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.set-option {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.set-option strong {
+  font-size: 0.88rem;
+}
+
+.set-option small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.set-option.selected {
+  border-color: var(--accent);
+}
+
+.set-option:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Collegamenti e piè di pagina ────────────────────────────────────────── */
+
+.set-link {
+  align-self: flex-start;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.set-link:hover {
+  color: var(--accent2);
+}
+
+.set-version {
+  padding-bottom: 20px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── Card Famiglia ───────────────────────────────────────────────────────── */
+
+.set-family {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.set-family strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.set-family small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.set-family .prof-action {
+  flex: none;
+  text-decoration: none;
+}

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { FamilyProvider } from "./FamilyContext";
 import { LocaleProvider } from "./i18n/LocaleContext";
+import { ThemeProvider } from "./ThemeContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import TodoPage from "./pages/TodoPage";
@@ -18,7 +19,14 @@ import Wallet from "./pages/Wallet";
 import Animali from "./pages/Animali";
 import Casa from "./pages/Casa";
 import Garage from "./pages/Garage";
+import Viaggi from "./pages/Viaggi";
+import Assistente from "./pages/Assistente";
+import Profilo from "./pages/Profilo";
+import Impostazioni from "./pages/Impostazioni";
+import Famiglia from "./pages/Famiglia";
+import Chat from "./pages/Chat";
 import Placeholder from "./pages/Placeholder";
+import { listenForegroundPush } from "./services/push";
 import { NAV_SECTIONS, ACCOUNT_SECTIONS } from "./nav";
 import "./App.css";
 
@@ -147,6 +155,12 @@ function LoginScreen() {
 }
 
 function AuthedApp() {
+  // A scheda aperta il browser non mostra niente da solo: il messaggio arriva
+  // all'app, che decide se trasformarlo in un avviso di sistema.
+  useEffect(() => {
+    listenForegroundPush();
+  }, []);
+
   return (
     <FamilyProvider>
       <BrowserRouter>
@@ -165,11 +179,17 @@ function AuthedApp() {
             <Route path="/animali" element={<Animali />} />
             <Route path="/casa" element={<Casa />} />
             <Route path="/garage" element={<Garage />} />
+            <Route path="/viaggi" element={<Viaggi />} />
+            <Route path="/assistente" element={<Assistente />} />
+            <Route path="/account/profilo" element={<Profilo />} />
+            <Route path="/account/impostazioni" element={<Impostazioni />} />
+            <Route path="/account/family" element={<Famiglia />} />
+            <Route path="/chat" element={<Chat />} />
             <Route path="/todo" element={<TodoPage />} />
-            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage").map((s) => (
+            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage" && s.path !== "/viaggi" && s.path !== "/assistente" && s.path !== "/chat").map((s) => (
               <Route key={s.key} path={s.path} element={<Placeholder title={s.label} />} />
             ))}
-            {ACCOUNT_SECTIONS.map((s) => (
+            {ACCOUNT_SECTIONS.filter((s) => s.path !== "/account/profilo" && s.path !== "/account/impostazioni" && s.path !== "/account/family").map((s) => (
               <Route key={s.key} path={s.path} element={<Placeholder title={s.label} />} />
             ))}
           </Route>
@@ -188,9 +208,11 @@ function AppShell() {
 export default function App() {
   return (
     <LocaleProvider>
-      <AuthProvider>
-        <AppShell />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppShell />
+        </AuthProvider>
+      </ThemeProvider>
     </LocaleProvider>
   );
 }

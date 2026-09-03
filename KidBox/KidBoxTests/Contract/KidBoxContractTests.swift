@@ -273,9 +273,9 @@ final class SyncOfflineOutboxContractTests: XCTestCase {
 // SCENARIO 3: Limite AI — contratto gate lato app
 //
 // Regressione che cattura:
-// - KBPlan.free.includesAI diventa true per errore → utenti free accedono all'AI
-// - KBPlan.pro.aiDailyLimit viene cambiato → impatto sui ricavi
-// - KBPlan.max.aiDailyLimit viene cambiato → impatto sui ricavi
+// - il piano Free ottiene messaggi AI ricorrenti → utenti free accedono all'AI
+// - KBPlan.pro.aiMessageLimit viene cambiato → impatto sui ricavi
+// - KBPlan.max.aiMessageLimit viene cambiato → impatto sui ricavi
 // - storageQuota di un piano viene ridotta inavvertitamente
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -283,35 +283,39 @@ final class AIGateContractTests: XCTestCase {
     
     // MARK: - Contratto: Free non include AI
     
-    func test_freePlan_doesNotIncludeAI() {
-        XCTAssertFalse(KBPlan.free.includesAI,
-                       "CRITICO: il piano Free NON deve includere l'AI — impatto diretto sui ricavi")
+    /// Il Free ha 5 messaggi di prova **una tantum**, che non si rigenerano
+    /// mai: il contratto non è più "zero AI", è "nessuna AI ricorrente".
+    func test_freePlan_hasNoRecurringAI() {
+        XCTAssertEqual(KBPlan.free.spec.aiPeriod, "lifetime",
+                       "CRITICO: il piano Free non deve avere messaggi AI ricorrenti — impatto diretto sui ricavi")
     }
     
     // MARK: - Contratto: Pro e Max includono AI
     
     func test_proPlan_includesAI() {
-        XCTAssertTrue(KBPlan.pro.includesAI)
+        XCTAssertEqual(KBPlan.pro.spec.aiPeriod, "daily")
+        XCTAssertGreaterThan(KBPlan.pro.aiMessageLimit, 0)
     }
     
     func test_maxPlan_includesAI() {
-        XCTAssertTrue(KBPlan.max.includesAI)
+        XCTAssertEqual(KBPlan.max.spec.aiPeriod, "daily")
+        XCTAssertGreaterThan(KBPlan.max.aiMessageLimit, 0)
     }
     
     // MARK: - Contratto: limiti giornalieri AI esatti
     
-    func test_freePlan_aiDailyLimit_isZero() {
-        XCTAssertEqual(KBPlan.free.aiDailyLimit, 0,
-                       "CRITICO: Free deve avere 0 messaggi AI/giorno")
+    func test_freePlan_aiBonus_isFiveLifetime() {
+        XCTAssertEqual(KBPlan.free.aiMessageLimit, 5,
+                       "CRITICO: Free deve avere 5 messaggi AI una tantum, non al giorno")
     }
     
     func test_proPlan_aiDailyLimit_is30() {
-        XCTAssertEqual(KBPlan.pro.aiDailyLimit, 30,
+        XCTAssertEqual(KBPlan.pro.aiMessageLimit, 30,
                        "CRITICO: Pro deve avere 30 messaggi AI/giorno — allineato con la Cloud Function")
     }
     
     func test_maxPlan_aiDailyLimit_is100() {
-        XCTAssertEqual(KBPlan.max.aiDailyLimit, 100,
+        XCTAssertEqual(KBPlan.max.aiMessageLimit, 100,
                        "CRITICO: Max deve avere 100 messaggi AI/giorno — allineato con la Cloud Function")
     }
     
@@ -346,7 +350,7 @@ final class AIGateContractTests: XCTestCase {
     }
     
     func test_planHierarchy_maxAILimitGreaterThanPro() {
-        XCTAssertGreaterThan(KBPlan.max.aiDailyLimit, KBPlan.pro.aiDailyLimit)
+        XCTAssertGreaterThan(KBPlan.max.aiMessageLimit, KBPlan.pro.aiMessageLimit)
     }
     
     // MARK: - Contratto: productId corretti (cambiarli rompe gli acquisti)

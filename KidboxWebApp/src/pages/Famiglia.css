@@ -1,0 +1,134 @@
+/* Famiglia. Riusa le card e i pulsanti di Impostazioni: sono la stessa area
+   dell'app e devono somigliarsi. */
+@import "./Impostazioni.css";
+
+.fam-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 680px;
+}
+
+.fam-summary {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.fam-photo {
+  width: 84px;
+  height: 84px;
+  flex: none;
+  border-radius: 18px;
+  object-fit: cover;
+}
+
+.fam-photo-empty {
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  background: var(--border);
+}
+
+.fam-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fam-summary-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.fam-summary-body input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.fam-summary-body small {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.fam-summary .pw-form-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── Membri ──────────────────────────────────────────────────────────────── */
+
+.fam-member {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.fam-member:first-of-type {
+  border-top: none;
+}
+
+.fam-member-icon {
+  font-size: 1.1rem;
+}
+
+.fam-member .set-row-text {
+  flex: 1;
+}
+
+/* ── Invito ──────────────────────────────────────────────────────────────── */
+
+/* Fondo bianco fisso: il QR lo legge una fotocamera, e su tema scuro un codice
+   trasparente non si legge. */
+.fam-qr {
+  align-self: flex-start;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.fam-qr canvas {
+  display: block;
+  width: 180px;
+  height: 180px;
+}
+
+.fam-link {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+.fam-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ── Trasferimento ownership ─────────────────────────────────────────────── */
+
+.fam-transfer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}

@@ -116,7 +116,9 @@ final class PlanningActionExecutor {
     private let familyId: String
     private let uid: String
     private let children: [KBChild]
-    private let pendingGroceryNames: Set<String>
+    /// Nomi già in lista. È `var` e non `let` perché cresce mentre si aggiunge:
+    /// vedi `addGroceryItems`.
+    private var pendingGroceryNames: Set<String>
 
     init(
         modelContext: ModelContext,
@@ -204,6 +206,11 @@ final class PlanningActionExecutor {
         for name in names {
             let key = name.lowercased()
             guard !pendingGroceryNames.contains(key) else { continue }
+            // Il nome entra subito fra quelli visti: senza, un elenco che
+            // ripete lo stesso articolo («latte, pane, latte») lo scriveva due
+            // volte, perché il confronto guardava solo la lista di partenza.
+            // Vale anche fra più blocchi `grocery_add` nella stessa risposta.
+            pendingGroceryNames.insert(key)
             let item = KBGroceryItem(
                 familyId: familyId,
                 name: name,

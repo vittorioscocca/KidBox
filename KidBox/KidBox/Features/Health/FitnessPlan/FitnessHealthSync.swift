@@ -74,9 +74,20 @@ enum FitnessHealthSync {
         // giorno: una corsa poteva risultare "bici svolta". Quelle sedute vanno
         // riaperte, altrimenti il calendario continua a dichiarare un
         // allenamento mai fatto e l'attività vera resta invisibile.
+        //
+        // Si guardano SOLO le sedute senza `actualActivityTitle`: è la firma
+        // della vecchia versione, che quel campo non lo scriveva. Tutto ciò che
+        // ha un nome di attività è stato deciso dopo — dal matcher per
+        // disciplina, o dalla persona che ha attribuito a mano un allenamento a
+        // una seduta di un'altra disciplina ("conta la corsa di oggi come la
+        // seduta di bici"). Senza questo filtro la riparazione scambiava quella
+        // scelta esplicita per un errore da annullare e la disfaceva al primo
+        // giro di sincronizzazione.
         var repaired = 0
         for session in plan.allSessions
-        where session.status == .done && session.completionSource == .healthKit {
+        where session.status == .done
+            && session.completionSource == .healthKit
+            && session.actualActivityTitle == nil {
             guard
                 let workoutId = session.matchedWorkoutId,
                 let workout = workouts.first(where: { $0.id == workoutId })
@@ -89,9 +100,7 @@ enum FitnessHealthSync {
             if sameDiscipline {
                 // Chiusura corretta: le manca solo il nome dell'attività, che
                 // la vecchia versione non salvava.
-                if session.actualActivityTitle == nil {
-                    updated.updateSession(id: session.id) { $0.actualActivityTitle = workout.title }
-                }
+                updated.updateSession(id: session.id) { $0.actualActivityTitle = workout.title }
             } else {
                 updated.updateSession(id: session.id) { target in
                     target.status = .planned
@@ -101,6 +110,7 @@ enum FitnessHealthSync {
                     target.actualActivityTitle = nil
                     target.actualMinutes = nil
                     target.actualKcal = nil
+                    target.actualHeartRateBpm = nil
                 }
                 repaired += 1
             }

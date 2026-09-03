@@ -264,8 +264,11 @@ async function incrementCountersAndGetBadges({familyId, uids, field}) {
  * non deve rileggerli dopo l'invio, e la lingua scelta dal destinatario, con cui
  * chi invia traduce titolo e corpo prima della push.
  * @param {string[]} uids
- * @param {?string} prefField campo di `notificationPrefs` da rispettare;
- *     `null` per ignorare le preferenze (notifiche non disattivabili).
+ * @param {?(string|string[])} prefField campo di `notificationPrefs` da
+ *     rispettare; `null` per ignorare le preferenze (notifiche non
+ *     disattivabili). Con un array vince il primo campo effettivamente
+ *     impostato: serve a introdurre una preferenza nuova senza tradire chi
+ *     aveva già espresso una scelta su quella vecchia.
  * @return {Promise<Map<string, {tokens: string[], lang: string,
  *     refsByToken: Map<string, FirebaseFirestore.DocumentReference>}>>}
  */
@@ -295,7 +298,11 @@ async function getTokensForUsers(uids, prefField = null) {
     const prefs = exists ? snap.get("notificationPrefs") : null;
     // Assenza di preferenze = tutto attivo: è il default storico, cambiarlo
     // silenzierebbe gli utenti che non hanno mai aperto le impostazioni.
-    if (!prefs || prefs[prefField] !== false) wanted.push(uid);
+    const fields = Array.isArray(prefField) ? prefField : [prefField];
+    const chosen = prefs ?
+      fields.map((f) => prefs[f]).find((v) => typeof v === "boolean") :
+      undefined;
+    if (chosen !== false) wanted.push(uid);
   });
 
   // A blocchi: `sendBroadcast` arriva a 2000 destinatari e 2000 query
@@ -354,6 +361,48 @@ async function getTokensAndLangForUser(uid) {
 const ANDROID_NOTIFICATION_CLICK_ACTION = "it.vittorioscocca.kidbox.NOTIFICATION_CLICK";
 
 /**
+ * Indirizzo della web app. Le push web ci atterrano sopra al clic: senza un
+ * link esplicito il browser aprirebbe la radice del sito, lasciando all'utente
+ * il compito di ritrovare la cosa di cui parlava la notifica.
+ */
+const WEB_APP_BASE_URL = "https://app.kidboxapp.com";
+
+/** `data.type` → rotta della web app. Le stesse voci della barra laterale. */
+const WEB_ROUTES = {
+  text: "/chat",
+  todo_assigned: "/todo",
+  todo_due_changed: "/todo",
+  new_calendar_event: "/calendario",
+  new_document: "/documenti",
+  new_expense: "/spese",
+  new_grocery_item: "/spesa",
+  new_note: "/note",
+  new_wallet_ticket: "/wallet",
+  new_loyalty_card: "/wallet",
+  wallet_ticket_reminder: "/wallet",
+  geofenceEvent: "/posizione",
+};
+
+/**
+ * Blocco `webpush` del messaggio FCM.
+ *
+ * Serve solo ai browser e viene ignorato da iOS e Android, quindi si può
+ * aggiungere a ogni invio senza toccare il comportamento delle app native.
+ * @param {?object} data payload `data` del messaggio, da cui si legge il `type`.
+ * @return {object} opzioni `webpush` con link di destinazione e icona.
+ */
+function webpushOptions(data) {
+  const route = (data && WEB_ROUTES[data.type]) || "/";
+  return {
+    fcmOptions: {link: `${WEB_APP_BASE_URL}${route}`},
+    notification: {
+      icon: `${WEB_APP_BASE_URL}/favicon-192.png`,
+      badge: `${WEB_APP_BASE_URL}/favicon-192.png`,
+    },
+  };
+}
+
+/**
  * Costruisce un messaggio FCM con `notification` + `data` insieme.
  *
  * `notification` (e `android.notification`) restano necessari per
@@ -389,6 +438,7 @@ function buildDataOnlyMessage({tokens, title, body, data, badge}) {
     notification: {title, body},
     data: {...data, title, body},
     apns: {payload: {aps}},
+    webpush: webpushOptions(data),
     android: {
       priority: "high",
       notification: {
@@ -512,7 +562,13 @@ exports.notifyNewDocument = onDocumentCreated(
 
       // Preferenze e token di tutti i destinatari in una volta sola, poi i
       // contatori in parallelo: prima erano ~3 round trip in SERIE per membro.
-      const tokensByUid = await getTokensForUsers(memberUids, "notifyOnWallet");
+      // `notifyOnNewDocument` è la preferenza dei documenti, separata da quella
+      // del Wallet: prima erano lo stesso interruttore, e chi spegneva le
+      // notifiche dei biglietti si ritrovava muti anche i documenti senza
+      // capire perché. `notifyOnWallet` resta come ricaduta per chi l'aveva già
+      // spenta e non ha ancora visto il toggle nuovo.
+      const tokensByUid = await getTokensForUsers(
+          memberUids, ["notifyOnNewDocument", "notifyOnWallet"]);
       const recipients = memberUids.filter(
           (uid) => (tokensByUid.get(uid)?.tokens.length || 0) > 0);
       const badgeByUid = await incrementCountersAndGetBadges(
@@ -747,6 +803,7 @@ exports.notifyNewChatMessage = onDocumentCreated(
           // sistema a costruire quell'intent, non solo quando gira `onMessageReceived`.
           notification: {title, body},
           data,
+          webpush: webpushOptions(data),
           apns: {
             payload: {
               aps: {
@@ -6387,6 +6444,7 @@ exports.sendBroadcast = onCall(
             tokens,
             notification: {title, body},
             data: payloadData,
+            webpush: webpushOptions(payloadData),
             apns: {payload: {aps: {sound: "default"}}},
             // `channelId` esplicito: senza, con app in background la notifica
             // finisce sul canale di fallback creato dall'SDK, che ha

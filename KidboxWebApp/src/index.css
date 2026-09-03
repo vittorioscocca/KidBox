@@ -1,3 +1,6 @@
+/* Palette chiara di base. Il tema scuro arriva da due strade: la preferenza di
+   sistema, e la scelta esplicita in Impostazioni scritta su `data-theme`.
+   La prima è scritta in modo da non vincere sulla seconda. */
 :root {
   --bg: #fdf7f0;
   --text: #1c1008;
@@ -5,15 +8,27 @@
   --accent: #e8833a;
   --accent2: #c96a20;
   --border: rgba(180, 120, 60, 0.14);
+  /* Fa seguire il tema anche ai controlli nativi (checkbox, select, barre di
+     scorrimento): senza, restano chiari su fondo scuro. */
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #140e08;
     --text: #f6efe6;
     --muted: rgba(246, 239, 230, 0.6);
     --border: rgba(255, 180, 100, 0.12);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #140e08;
+  --text: #f6efe6;
+  --muted: rgba(246, 239, 230, 0.6);
+  --border: rgba(255, 180, 100, 0.12);
 }
 
 * {

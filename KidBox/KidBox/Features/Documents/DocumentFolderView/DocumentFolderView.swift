@@ -69,6 +69,7 @@ struct DocumentFolderView: View {
     @State private var showDeleteSelectedConfirm = false
     @State private var showStorageUpgrade = false
     @State private var showMergePDFSheet = false
+    @State private var showImagesToPDFSheet = false
     @State private var showUnlockPDFSheet = false
     @State private var shareURLsPayload: ShareURLsPayload?
     @State private var isSendingToChat = false
@@ -917,6 +918,20 @@ private extension DocumentFolderView {
                         Divider().frame(height: 40)
                     }
                     
+                    // ── Trasforma in PDF (solo se i selezionati sono immagini) ─
+                    if viewModel.canConvertSelectedToPDF {
+                        Button { showImagesToPDFSheet = true } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "doc.badge.arrow.up.fill").font(.title3)
+                                Text("In PDF").font(.caption2)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        }
+                        .foregroundStyle(.orange).buttonStyle(.plain)
+
+                        Divider().frame(height: 40)
+                    }
+
                     // ── Sblocca PDF (solo se 1 PDF selezionato) ───────────
                     if viewModel.canUnlockSelectedAsPDF {
                         Button { showUnlockPDFSheet = true } label: {
@@ -1219,6 +1234,16 @@ private extension DocumentFolderView {
                 .sheet(isPresented: view.$showMergePDFSheet) {
                     MergePDFSheet(docs: view.viewModel.selectedPDFDocs) { orderedDocs, title in
                         await view.viewModel.mergePDFs(orderedDocs: orderedDocs, title: title, modelContext: view.modelContext)
+                    }
+                }
+            // Trasforma immagini in PDF ── solo immagini selezionate
+                .sheet(isPresented: view.$showImagesToPDFSheet) {
+                    ImagesToPDFSheet(docs: view.viewModel.selectedImageDocs) { orderedDocs, title in
+                        await view.viewModel.convertImagesToPDF(
+                            orderedDocs: orderedDocs,
+                            title: title,
+                            modelContext: view.modelContext
+                        )
                     }
                 }
             // Sblocca PDF ── singolo PDF selezionato

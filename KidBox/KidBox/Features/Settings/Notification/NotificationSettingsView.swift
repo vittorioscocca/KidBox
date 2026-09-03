@@ -170,6 +170,20 @@ struct NotificationSettingsView: View {
             .listRowBackground(cardBackground)
 
             Toggle(
+                "Notifiche documenti",
+                isOn: Binding(
+                    get: { !systemDenied && vm.notifyOnNewDocument },
+                    set: { newValue in
+                        KBLog.settings.kbInfo("Toggle notifyOnNewDocument set=\(newValue)")
+                        vm.toggleNotifyOnNewDocument(newValue)
+                    }
+                )
+            )
+            .disabled(vm.isLoading || systemDenied)
+            .accessibilityHint("Ricevi una notifica quando un membro carica un nuovo documento.")
+            .listRowBackground(cardBackground)
+
+            Toggle(
                 "Notifiche Wallet",
                 isOn: Binding(
                     get: { !systemDenied && vm.notifyOnWallet },
@@ -180,7 +194,7 @@ struct NotificationSettingsView: View {
                 )
             )
             .disabled(vm.isLoading || systemDenied)
-            .accessibilityHint("Ricevi una notifica quando viene aggiunto un nuovo contenuto al Wallet.")
+            .accessibilityHint("Ricevi una notifica quando viene aggiunto un biglietto o una carta fedeltà al Wallet.")
             .listRowBackground(cardBackground)
 
             // Separato dagli altri: le preferenze sopra sono lato server e

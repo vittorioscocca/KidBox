@@ -498,21 +498,48 @@ enum TravelItineraryBuilder {
         return ""
     }
 
+    /// Divide sul separatore solo fuori dalle parentesi.
+    ///
+    /// Il « · » separa le tappe, ma compare anche DENTRO il dettaglio di una
+    /// tappa — «Museo (2h · ~15)». Tagliando alla cieca quella riga diventava
+    /// due tappe monche, «Museo (2h» e «~15)», ed era così che l'utente le
+    /// vedeva nell'itinerario.
+    private static func splitOutsideParentheses(_ text: String, separator: String) -> [String] {
+        var parts: [String] = []
+        var current = ""
+        var depth = 0
+        var index = text.startIndex
+
+        while index < text.endIndex {
+            if depth == 0, text[index...].hasPrefix(separator) {
+                parts.append(current)
+                current = ""
+                index = text.index(index, offsetBy: separator.count)
+                continue
+            }
+            let character = text[index]
+            if character == "(" { depth += 1 }
+            if character == ")" { depth = max(depth - 1, 0) }
+            current.append(character)
+            index = text.index(after: index)
+        }
+        parts.append(current)
+        return parts
+    }
+
     private static func parseTextStops(_ text: String) -> [TravelItineraryStop] {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
 
         let lines = trimmed
             .components(separatedBy: CharacterSet.newlines)
-            .flatMap { $0.components(separatedBy: " · ") }
+            .flatMap { splitOutsideParentheses($0, separator: " · ") }
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
-        if lines.count <= 1 {
-            let category = categoryForTitle(trimmed)
-            return [TravelItineraryStop(time: "", title: trimmed, detail: "", emoji: category.emoji, category: category)]
-        }
-
+        // Anche la riga unica passa da `parseTextLine`: prima finiva tale e
+        // quale nel titolo, orario e parentesi compresi, perché «non c'era
+        // niente da separare». Ma l'orario e il dettaglio ci sono lo stesso.
         return lines.compactMap { parseTextLine($0) }
     }
 
@@ -538,12 +565,50 @@ enum TravelItineraryBuilder {
             )
         }
 
-        let category = categoryForTitle(trimmed)
-        return TravelItineraryStop(time: "", title: trimmed, detail: "", emoji: category.emoji, category: category)
+        // Anche senza orario il dettaglio va staccato: «Museo Faggiano (1h · ~8)»
+        // è un titolo più un dettaglio, e lasciandoli attaccati il riepilogo di
+        // fascia non trovava né la durata né il costo.
+        let (title, detail) = splitTitleDetail(trimmed)
+        let category = categoryForTitle(title)
+        return TravelItineraryStop(time: "", title: title, detail: detail, emoji: category.emoji, category: category)
+    }
+
+    /// Ultima coppia di parentesi di PRIMO livello.
+    ///
+    /// Si prendevano l'ultima « ( » e l'ultima « ) » qualunque fossero: con un
+    /// dettaglio annidato — «Tour guidato (centro storico (con guida) · 2h)» —
+    /// il taglio cadeva sulla parentesi interna e il titolo si portava dietro
+    /// mezzo dettaglio.
+    private static func topLevelParentheses(_ text: String) -> (String.Index, String.Index)? {
+        var depth = 0
+        var open: String.Index?
+        var result: (String.Index, String.Index)?
+
+        for index in text.indices {
+            switch text[index] {
+            case "(":
+                if depth == 0 { open = index }
+                depth += 1
+            case ")":
+                depth = max(depth - 1, 0)
+                if depth == 0, let start = open {
+                    result = (start, index)
+                    open = nil
+                }
+            default:
+                break
+            }
+        }
+        // Parentesi aperta e mai chiusa: vale fino a fine riga. Il testo dell'AI
+        // ogni tanto la dimentica, e senza questo ramo «Passeggiata (2h · ~5»
+        // restava tutto nel titolo, durata e costo persi. Un `open` rimasto qui
+        // è per forza successivo all'ultima coppia chiusa, quindi vince lui.
+        if let start = open { result = (start, text.endIndex) }
+        return result
     }
 
     private static func splitTitleDetail(_ rest: String) -> (String, String) {
-        if let open = rest.lastIndex(of: "("), let close = rest.lastIndex(of: ")"), open < close {
+        if let (open, close) = topLevelParentheses(rest) {
             let title = rest[..<open].trimmingCharacters(in: .whitespacesAndNewlines)
             let detail = rest[rest.index(after: open)..<close]
                 .replacingOccurrences(of: "•", with: "·")
@@ -574,14 +639,62 @@ enum TravelItineraryBuilder {
         return parts.joined(separator: " · ")
     }
 
+    /// Durata e costo di una tappa si leggono dallo stesso `detail`, che è
+    /// «1h 30m · ~45»: prima la durata, poi il prezzo. Serve un pattern solo
+    /// per entrambe le letture, perché l'una si trova togliendo l'altra.
+    private static let durationPattern = #"(\d+)\s*h(?:\s*(\d+)\s*m)?|(\d+)\s*m"#
+
+    /// Minuti della tappa: «1h 30m» sono 90, non 30.
+    ///
+    /// Si cercava solo `(\d+)\s*m`, che su «1h 30m» trovava i minuti e buttava
+    /// via le ore: il riepilogo diceva «30m» per una mattinata da un'ora e mezza.
+    private static func stopMinutes(_ detail: String) -> Int? {
+        if let groups = firstMatchGroups(#"(\d+)\s*h(?:\s*(\d+)\s*m)?"#, in: detail) {
+            let hours = groups[1].flatMap { Int($0) } ?? 0
+            let minutes = groups[2].flatMap { Int($0) } ?? 0
+            return hours * 60 + minutes
+        }
+        if let groups = firstMatchGroups(#"(\d+)\s*m"#, in: detail) {
+            return groups[1].flatMap { Int($0) }
+        }
+        return nil
+    }
+
+    /// Costo della tappa, cercato DOPO aver tolto la durata.
+    ///
+    /// Prima si prendeva il primo numero del dettaglio: su «1h 15m · ~45»
+    /// quello è l'ora, non il prezzo, e la somma di fascia ne usciva senza
+    /// senso — tre tappe da ~45, ~12 e ~60 facevano «~3».
+    private static func stopCost(_ detail: String) -> Double? {
+        let withoutDuration = replacingFirstMatch(durationPattern, in: detail, with: " ")
+        guard !withoutDuration.localizedCaseInsensitiveContains("gratis") else { return nil }
+        guard let groups = firstMatchGroups(#"~?\s*(\d+(?:[.,]\d+)?)"#, in: withoutDuration),
+              let value = groups[1]?.replacingOccurrences(of: ",", with: ".") else { return nil }
+        return Double(value)
+    }
+
+    private static func firstMatchGroups(_ pattern: String, in text: String) -> [String?]? {
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))
+        else { return nil }
+        return (0 ..< match.numberOfRanges).map { index in
+            Range(match.range(at: index), in: text).map { String(text[$0]) }
+        }
+    }
+
+    private static func replacingFirstMatch(
+        _ pattern: String,
+        in text: String,
+        with replacement: String
+    ) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let range = Range(match.range, in: text) else { return text }
+        return text.replacingCharacters(in: range, with: replacement)
+    }
+
     private static func summarizeDuration(_ stops: [TravelItineraryStop]) -> String {
-        let minutes = stops.compactMap { stop -> Int? in
-            let pattern = #"(\d+)\s*m"#
-            guard let regex = try? NSRegularExpression(pattern: pattern),
-                  let match = regex.firstMatch(in: stop.detail, range: NSRange(stop.detail.startIndex..., in: stop.detail)),
-                  let range = Range(match.range(at: 1), in: stop.detail) else { return nil }
-            return Int(stop.detail[range])
-        }.reduce(0, +)
+        let minutes = stops.compactMap { stopMinutes($0.detail) }.reduce(0, +)
         guard minutes > 0 else { return "" }
         let h = minutes / 60
         let m = minutes % 60
@@ -589,18 +702,12 @@ enum TravelItineraryBuilder {
         return m == 0 ? "\(h)h" : "\(h)h \(m)m"
     }
 
+    /// Somma senza la tilde: la mette chi la mostra, e prima ne comparivano due.
     private static func summarizeCost(_ stops: [TravelItineraryStop]) -> String {
-        let values = stops.compactMap { stop -> Double? in
-            let pattern = #"~?(\d+(?:[.,]\d+)?)"#
-            guard stop.detail.localizedCaseInsensitiveContains("gratis") == false,
-                  let regex = try? NSRegularExpression(pattern: pattern),
-                  let match = regex.firstMatch(in: stop.detail, range: NSRange(stop.detail.startIndex..., in: stop.detail)),
-                  let range = Range(match.range(at: 1), in: stop.detail) else { return nil }
-            return Double(stop.detail[range].replacingOccurrences(of: ",", with: "."))
-        }
+        let values = stops.compactMap { stopCost($0.detail) }
         guard !values.isEmpty else { return "" }
         let sum = values.reduce(0, +)
-        return sum > 0 ? String(format: "~%.0f", sum) : ""
+        return sum > 0 ? String(format: "%.0f", sum) : ""
     }
 
     private static func categoryForTitle(_ title: String) -> TravelItineraryStopCategory {

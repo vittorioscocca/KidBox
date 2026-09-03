@@ -16,10 +16,18 @@ import {
   softDeleteDocument,
   uploadDocument,
 } from "../services/documents";
-import { mergePdfs, unlockPdf } from "../services/pdfTools";
+import { imagesToPdf, isConvertibleImage, mergePdfs, unlockPdf } from "../services/pdfTools";
 import DocumentViewer from "../components/DocumentViewer";
 import Modal from "../components/Modal";
 import "./Documenti.css";
+
+/** Da una sola immagine si eredita il nome; da più si dice quante sono. */
+function defaultPdfNameFor(images) {
+  const first = images[0];
+  if (!first) return "Documento";
+  const base = (first.title || first.fileName || "Documento").replace(/\.[^.]+$/, "");
+  return images.length === 1 ? base : `${base} (+${images.length - 1})`;
+}
 
 function formatSize(bytes) {
   if (!bytes) return "";
@@ -59,16 +67,25 @@ export default function Documenti() {
   const [renaming, setRenaming] = useState(null); // {kind:'doc'|'folder', item}
   const [movingDoc, setMovingDoc] = useState(null);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  /** Cartella sotto il puntatore durante il trascinamento; null = quella aperta. */
+  const [dropFolder, setDropFolder] = useState(null);
   const [view, setView] = useState(
     () => localStorage.getItem("kidbox:docsView") || "list"
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
   const [merging, setMerging] = useState(false);
+  const [convertingImages, setConvertingImages] = useState(false);
   const [unlocking, setUnlocking] = useState(null);
   const [notice, setNotice] = useState(null);
   const fileInput = useRef(null);
+  /**
+   * Profondità del trascinamento. `dragleave` risale anche quando il puntatore
+   * passa da un figlio all'altro: contando entrate e uscite l'evidenziazione
+   * non sfarfalla mentre si attraversa la lista.
+   */
+  const dragDepth = useRef(0);
 
   const currentFolderId = path.length ? path[path.length - 1].id : null;
 
@@ -131,7 +148,7 @@ export default function Documenti() {
     );
   }, [documents, currentFolderId, search, searching]);
 
-  const handleFiles = async (fileList) => {
+  const handleFiles = async (fileList, targetFolderId = currentFolderId) => {
     const files = [...fileList];
     if (!files.length) return;
     setError(null);
@@ -144,7 +161,7 @@ export default function Documenti() {
           familyId: currentFamilyId,
           userId: user.uid,
           file,
-          categoryId: currentFolderId,
+          categoryId: targetFolderId,
         });
       }
     } catch (err) {
@@ -213,6 +230,10 @@ export default function Documenti() {
 
   const selectedDocs = visibleDocs.filter((d) => selected.has(d.id));
   const selectedPdfs = selectedDocs.filter((d) => d.mimeType === "application/pdf");
+  const selectedImages = selectedDocs.filter(isConvertibleImage);
+  /** Il pulsante compare solo se la selezione è fatta di sole immagini. */
+  const canConvertImages =
+    selectedImages.length > 0 && selectedImages.length === selectedDocs.length;
 
   const shareSelected = async () => {
     setError(null);
@@ -263,6 +284,42 @@ export default function Documenti() {
     }
   };
 
+  const doConvertToPdf = async (title) => {
+    setError(null);
+    setBusy(t.documents.working);
+    try {
+      // Stesso ordine mostrato a schermo, come su iOS e Android.
+      const images = [];
+      for (const d of selectedImages) {
+        const blob = await fetchDocumentBlob({
+          familyId: currentFamilyId,
+          userId: user.uid,
+          document: d,
+        });
+        images.push({
+          bytes: await blob.arrayBuffer(),
+          mimeType: d.mimeType,
+          name: d.title || d.fileName,
+        });
+      }
+      const pdfBytes = await imagesToPdf(images);
+      await uploadDocument({
+        familyId: currentFamilyId,
+        userId: user.uid,
+        bytes: pdfBytes,
+        name: `${title}.pdf`,
+        mimeType: "application/pdf",
+        categoryId: currentFolderId,
+      });
+      setSelected(new Set());
+      setConvertingImages(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const doUnlock = async ({ password, title }) => {
     setError(null);
     setBusy(t.documents.working);
@@ -299,6 +356,50 @@ export default function Documenti() {
     });
   };
 
+  /* ── Trascinamento file ──────────────────────────────────────────────── */
+
+  /** Solo i file: trascinando testo o un link non deve accendersi niente. */
+  const hasFiles = (e) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
+
+  const onDragEnter = (e) => {
+    if (!hasFiles(e)) return;
+    dragDepth.current += 1;
+    setDragging(true);
+  };
+
+  const onDragLeave = () => {
+    dragDepth.current = Math.max(dragDepth.current - 1, 0);
+    if (dragDepth.current === 0) {
+      setDragging(false);
+      setDropFolder(null);
+    }
+  };
+
+  const onDragOver = (e) => {
+    if (!hasFiles(e)) return;
+    // Senza `preventDefault` il browser apre il file invece di lasciarlo cadere.
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDrop = (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    // La cartella sotto il puntatore vince sulla cartella aperta: così si carica
+    // dentro una sottocartella senza doverci prima entrare.
+    const target = dropFolder ? dropFolder.id : currentFolderId;
+    dragDepth.current = 0;
+    setDragging(false);
+    setDropFolder(null);
+    handleFiles(e.dataTransfer.files, target);
+  };
+
+  const dropTargetName = dropFolder
+    ? dropFolder.title
+    : path.length
+      ? path[path.length - 1].title
+      : t.documents.root;
+
   const removeFolder = async (folder) => {
     const inside =
       documents.filter((d) => d.categoryId === folder.id).length +
@@ -325,18 +426,15 @@ export default function Documenti() {
 
   return (
     <div
-      className={"docs-page" + (dragOver ? " drag-over" : "")}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragOver(true);
-      }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragOver(false);
-        handleFiles(e.dataTransfer.files);
-      }}
+      className={"docs-page" + (dragging ? " drag-over" : "")}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
+      {dragging && (
+        <div className="docs-drop-hint">{t.documents.dropInto(dropTargetName)}</div>
+      )}
       <div className="docs-toolbar">
         <button className="toolbar-add" onClick={() => fileInput.current?.click()}>
           ⬆
@@ -415,6 +513,11 @@ export default function Documenti() {
           >
             ⧉ {t.documents.merge}
           </button>
+          {canConvertImages && (
+            <button className="docs-btn" onClick={() => setConvertingImages(true)}>
+              🖼 {t.documents.toPdf}
+            </button>
+          )}
           <button className="link-btn" onClick={exitSelection}>
             {t.documents.clearSelection}
           </button>
@@ -437,8 +540,17 @@ export default function Documenti() {
             {visibleFolders.map((folder) => (
               <li
                 key={folder.id}
-                className="folder-card"
+                className={
+                  "folder-card" + (dropFolder?.id === folder.id ? " drop-target" : "")
+                }
                 onDoubleClick={() => setPath([...path, folder])}
+                onDragEnter={() => setDropFolder(folder)}
+                // Passando da una cartella all'altra l'entrata precede l'uscita:
+                // senza questo controllo la nuova destinazione verrebbe subito
+                // cancellata da chi esce.
+                onDragLeave={() =>
+                  setDropFolder((current) => (current?.id === folder.id ? null : current))
+                }
               >
                 <span className="folder-icon">📁</span>
                 <button
@@ -590,6 +702,16 @@ export default function Documenti() {
           initial="Unione"
           onCancel={() => setMerging(false)}
           onSave={doMerge}
+        />
+      )}
+
+      {convertingImages && (
+        <NameModal
+          title={t.documents.toPdfTitle}
+          placeholder={t.documents.toPdfName}
+          initial={defaultPdfNameFor(selectedImages)}
+          onCancel={() => setConvertingImages(false)}
+          onSave={doConvertToPdf}
         />
       )}
 

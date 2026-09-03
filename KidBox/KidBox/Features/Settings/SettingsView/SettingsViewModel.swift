@@ -30,6 +30,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var notifyOnNewNote: Bool = true
     @Published var notifyOnNewExpense: Bool = true
     @Published var notifyOnNewCalendarEvent: Bool = true
+    @Published var notifyOnNewDocument: Bool = true
     @Published var notifyOnWallet: Bool = true
     @Published var audioTranscriptionEnabled: Bool = true
     @Published var appearanceMode: AppearanceMode = .system
@@ -46,6 +47,7 @@ final class SettingsViewModel: ObservableObject {
         static let notifyOnNewNote          = "kb_notifyOnNewNote"
         static let notifyOnNewExpense       = "kb_notifyOnNewExpense"
         static let notifyOnNewCalendarEvent = "kb_notifyOnNewCalendarEvent"
+        static let notifyOnNewDocument      = "kb_notifyOnNewDocument"
         static let notifyOnWallet           = "kb_notifyOnWallet"
         static let audioTranscriptionEnabled = "kb_audioTranscriptionEnabled"
         static let appearanceMode           = "kb_appearanceMode"
@@ -82,6 +84,10 @@ final class SettingsViewModel: ObservableObject {
         let cachedCalendar = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewCalendarEvent) as? Bool ?? true
         self.notifyOnNewCalendarEvent = cachedCalendar
         KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewCalendarEvent=\(cachedCalendar)")
+
+        let cachedDocument = UserDefaults.standard.object(forKey: LocalKeys.notifyOnNewDocument) as? Bool ?? true
+        self.notifyOnNewDocument = cachedDocument
+        KBLog.settings.kbDebug("SettingsVM init cached notifyOnNewDocument=\(cachedDocument)")
 
         let cachedWallet = UserDefaults.standard.object(forKey: LocalKeys.notifyOnWallet) as? Bool ?? true
         self.notifyOnWallet = cachedWallet
@@ -142,6 +148,11 @@ final class SettingsViewModel: ObservableObject {
             KBLog.settings.kbInfo("SettingsVM fetch remote calendar pref=\(remoteCalendar)")
             if notifyOnNewCalendarEvent != remoteCalendar { notifyOnNewCalendarEvent = remoteCalendar }
             UserDefaults.standard.set(remoteCalendar, forKey: LocalKeys.notifyOnNewCalendarEvent)
+
+            let remoteDocument = await notifications.fetchNotifyOnNewDocumentPreference()
+            KBLog.settings.kbInfo("SettingsVM fetch remote document pref=\(remoteDocument)")
+            if notifyOnNewDocument != remoteDocument { notifyOnNewDocument = remoteDocument }
+            UserDefaults.standard.set(remoteDocument, forKey: LocalKeys.notifyOnNewDocument)
 
             let remoteWallet = await notifications.fetchNotifyOnWalletPreference()
             KBLog.settings.kbInfo("SettingsVM fetch remote wallet pref=\(remoteWallet)")
@@ -279,11 +290,32 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Documenti toggle
+
+    func toggleNotifyOnNewDocument(_ enabled: Bool) {
+        KBLog.settings.kbInfo("SettingsVM toggleNotifyOnNewDocument enabled=\(enabled)")
+        notifyOnNewDocument = enabled
+        UserDefaults.standard.set(enabled, forKey: LocalKeys.notifyOnNewDocument)
+
+        Task { @MainActor in
+            do {
+                try await notifications.setNotifyOnNewDocument(enabled)
+                infoText = enabled
+                    ? NSLocalizedString("Notifiche documenti attive.", comment: "")
+                    : NSLocalizedString("Notifiche documenti disattivate.", comment: "")
+            } catch {
+                notifyOnNewDocument = true
+                UserDefaults.standard.set(true, forKey: LocalKeys.notifyOnNewDocument)
+                infoText = error.localizedDescription
+                KBLog.settings.kbError("SettingsVM setNotifyOnNewDocument failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - Wallet toggle
-    // Unico toggle: copre biglietti, documenti (Wallet e Documenti, stessa
-    // collezione Firestore `documents`) e carte fedeltà — sostituisce i tre
-    // toggle separati che c'erano prima ("Notifica nuovi documenti",
-    // "Notifica nuovo biglietto Wallet", "Promemoria biglietti Wallet").
+    // Copre biglietti e carte fedeltà. I documenti hanno il loro toggle: erano
+    // finiti qui dentro con l'unificazione dei tre interruttori originali, ma
+    // spegnere i biglietti non deve zittire anche i documenti.
 
     func toggleNotifyOnWallet(_ enabled: Bool) {
         KBLog.settings.kbInfo("SettingsVM toggleNotifyOnWallet enabled=\(enabled)")

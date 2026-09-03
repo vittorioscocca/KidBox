@@ -319,6 +319,8 @@ extension RemoteVisitDTO {
             prescribedExamsData: nil,
             photoURLs: [],
             notes: nil,
+            cost: nil,
+            linkedExpenseId: nil,
             nextVisitDate: nil,
             nextVisitReason: nil,
             visitStatusRaw: nil,

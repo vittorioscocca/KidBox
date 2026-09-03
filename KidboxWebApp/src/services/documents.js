@@ -93,15 +93,17 @@ export async function uploadDocument({
   });
   const downloadURL = await getDownloadURL(ref);
 
-  await setDoc(doc(documentsCol(familyId), docId), {
+  // Su un documento NUOVO i campi assenti si omettono e basta: `deleteField()`
+  // dentro un `setDoc` senza `merge` è un errore di Firestore («cannot be used
+  // with set()»), e faceva fallire ogni caricamento fatto da Documenti — nella
+  // radice per `categoryId`, ovunque per `notes`, che questa pagina non passa mai.
+  const data = {
     title: displayName,
     fileName,
     mimeType: type,
     fileSize: plain.length,
     storagePath: path,
     downloadURL,
-    categoryId: categoryId ?? deleteField(),
-    notes: notes ?? deleteField(),
     isDeleted: false,
     createdBy: userId,
     createdAt: serverTimestamp(),
@@ -109,7 +111,11 @@ export async function uploadDocument({
     updatedAt: serverTimestamp(),
     visibilityScope: "family",
     visibilityMemberIds: [],
-  });
+  };
+  if (categoryId) data.categoryId = categoryId;
+  if (notes) data.notes = notes;
+
+  await setDoc(doc(documentsCol(familyId), docId), data);
 
   onProgress?.(1);
   return docId;
@@ -185,16 +191,21 @@ export async function createFolder({ familyId, userId, title, parentId, id: fixe
   // così due client che partono insieme scrivono lo stesso documento invece di
   // creare due cartelle gemelle.
   const id = fixedId || crypto.randomUUID();
-  await setDoc(doc(categoriesCol(familyId), id), {
+  // Stessa regola del caricamento: niente `deleteField()` in creazione. Una
+  // cartella nella radice non ha `parentId`, e il sentinella faceva fallire
+  // «Nuova cartella» esattamente come il drag & drop.
+  const data = {
     familyId,
     title,
     sortOrder: 0,
-    parentId: parentId ?? deleteField(),
     isDeleted: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     updatedBy: userId,
-  });
+  };
+  if (parentId) data.parentId = parentId;
+
+  await setDoc(doc(categoriesCol(familyId), id), data);
   return id;
 }
 

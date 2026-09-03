@@ -639,10 +639,43 @@ final class NotificationManager: NSObject, ObservableObject {
         }
     }
 
-    /// Preferenza unificata "Notifiche Wallet": copre biglietti, documenti
-    /// (Wallet e Documenti generali — stessa collezione Firestore `documents`)
-    /// e carte fedeltà. Sostituisce `notifyOnNewDocs`/`notifyOnNewWalletTicket`/
-    /// `notifyOnWalletReminder` in Settings. Default ON.
+    /// Preferenza "Notifiche documenti", separata da quella del Wallet.
+    ///
+    /// Le due erano lo stesso interruttore, e chi spegneva i biglietti si
+    /// ritrovava muti anche i documenti. Se il campo non c'è, il server ricade
+    /// su `notifyOnWallet`, così una scelta già espressa non viene tradita:
+    /// qui invece il default è ON, perché questa schermata scrive sempre il
+    /// campo nuovo appena la si tocca.
+    func fetchNotifyOnNewDocumentPreference() async -> Bool {
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            guard let prefs = snap.get("notificationPrefs") as? [String: Any] else { return true }
+            if let v = prefs["notifyOnNewDocument"] as? Bool { return v }
+            // Stessa ricaduta del server, altrimenti il toggle mostrerebbe
+            // "acceso" a chi ha i documenti ancora silenziati da `notifyOnWallet`.
+            if let legacy = prefs["notifyOnWallet"] as? Bool { return legacy }
+            return true
+        } catch {
+            return true
+        }
+    }
+
+    func setNotifyOnNewDocument(_ enabled: Bool) async throws {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        try await db.collection("users").document(uid).setData([
+            "notificationPrefs": ["notifyOnNewDocument": enabled]
+        ], merge: true)
+
+        if enabled {
+            try await enablePushNotificationsForCurrentUser()
+        }
+    }
+
+    /// Preferenza "Notifiche Wallet": biglietti e carte fedeltà. I documenti
+    /// hanno il loro toggle (`notifyOnNewDocument`) e non passano più di qui.
+    /// Default ON.
     func fetchNotifyOnWalletPreference() async -> Bool {
         guard let uid = Auth.auth().currentUser?.uid else { return true }
         do {

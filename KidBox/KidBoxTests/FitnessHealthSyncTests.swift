@@ -131,3 +131,41 @@ final class FitnessHealthSyncTests: XCTestCase {
         XCTAssertNil(cleaned?.actualMinutes)
     }
 }
+
+// MARK: - Attribuzione manuale
+
+extension FitnessHealthSyncTests {
+
+    /// La regressione: "conta la corsa di oggi come la seduta di bici" veniva
+    /// disfatta dalla sincronizzazione del giorno dopo, perché la riparazione
+    /// scambiava la scelta della persona per una chiusura sbagliata da annullare.
+    func testAttribuzioneManualeSopravviveAllaRiconciliazione() {
+        var document = plan([session(title: "Ciclismo + tonificazione", type: "cardio")])
+        let corsa = run("Corsa all'aperto", minutes: 108)
+
+        // Attribuzione manuale, come fa "Conta come…" nella dashboard: la
+        // disciplina NON coincide, ed è proprio il caso che si perdeva.
+        let sessionId = document.allSessions[0].id
+        document.updateSession(id: sessionId) { session in
+            session.status = .done
+            session.completedAt = corsa.startedAt
+            session.completionSource = .healthKit
+            session.matchedWorkoutId = corsa.id
+            session.actualActivityTitle = corsa.title
+            session.actualMinutes = corsa.durationMinutes
+            session.actualKcal = 280
+        }
+
+        let result = FitnessHealthSync.reconcile(plan: document, workouts: [corsa], now: day)
+        let after = result.plan.session(id: sessionId)
+
+        XCTAssertEqual(after?.status, .done, "la seduta attribuita a mano deve restare chiusa")
+        XCTAssertEqual(after?.actualActivityTitle, "Corsa all'aperto")
+        XCTAssertEqual(after?.actualMinutes, 108)
+        XCTAssertEqual(result.repairedSessions, 0, "non è un dato da riparare")
+        XCTAssertTrue(
+            result.loggedWorkouts.isEmpty,
+            "l'allenamento è già attribuito: non deve tornare fra le attività fuori programma"
+        )
+    }
+}

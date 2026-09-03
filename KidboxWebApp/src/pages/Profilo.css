@@ -1,0 +1,204 @@
+/* Profilo. Card impilate come su iOS, larghezza contenuta: un modulo largo
+   quanto lo schermo si legge male. */
+@import "./Password.css";
+
+.prof-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 640px;
+}
+
+.prof-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.prof-card h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.prof-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.prof-card input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+/* Il disabilitato deve sembrarlo: un pulsante acceso che non risponde è peggio
+   di uno spento. La regola condivisa copre solo i bottoni della toolbar. */
+.prof-card .pw-form-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── Intestazione con avatar ─────────────────────────────────────────────── */
+
+.prof-header-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.prof-avatar {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.prof-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.prof-avatar-edit {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.prof-header-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.prof-header-body strong {
+  font-size: 1.05rem;
+}
+
+.prof-header-body span {
+  font-size: 0.84rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-btn.danger {
+  color: #d9455f;
+  align-self: flex-start;
+}
+
+/* ── Righe informative ───────────────────────────────────────────────────── */
+
+.prof-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.88rem;
+}
+
+.prof-row span {
+  color: var(--muted);
+}
+
+.prof-plan {
+  letter-spacing: 0.06em;
+  color: var(--accent2);
+}
+
+.prof-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.prof-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* ── Azioni ──────────────────────────────────────────────────────────────── */
+
+.prof-action {
+  align-self: flex-start;
+  padding: 9px 15px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prof-action:hover {
+  background: var(--border);
+}
+
+.prof-action.danger {
+  border-color: #d9455f;
+  color: #d9455f;
+}
+
+.prof-action.danger:hover {
+  background: rgba(217, 69, 95, 0.1);
+}
+
+.prof-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.prof-delete {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #d9455f;
+  border-radius: 12px;
+  background: rgba(217, 69, 95, 0.06);
+}
+
+.prof-delete p {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.prof-delete-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}

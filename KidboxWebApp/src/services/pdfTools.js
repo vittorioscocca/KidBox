@@ -23,6 +23,132 @@ export async function mergePdfs(buffers) {
   return merged.save();
 }
 
+/** Formati che la trasformazione in PDF accetta, allineati ad app iOS e Android. */
+const IMAGE_MIMES = new Set(["image/jpeg", "image/jpg", "image/png", "image/heic", "image/heif"]);
+const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "heic", "heif"];
+
+export function isConvertibleImage(document) {
+  const mime = (document.mimeType || "").toLowerCase();
+  if (IMAGE_MIMES.has(mime)) return true;
+  const name = (document.fileName || document.title || "").toLowerCase();
+  return IMAGE_EXTENSIONS.some((ext) => name.endsWith(`.${ext}`));
+}
+
+/** Lato lungo massimo, come su Android: ~250 dpi su un A4. */
+const MAX_IMAGE_SIDE = 3000;
+
+/**
+ * Trasforma immagini in un unico PDF, una pagina per immagine.
+ *
+ * I PNG entro il tetto vengono incorporati così come sono: sono senza perdita,
+ * non hanno orientamento EXIF e spesso sono schermate piene di testo, che una
+ * ricompressione rovinerebbe. Oltre il tetto vengono ridotti, ma restano PNG:
+ * riscriverli in JPEG sfocherebbe proprio il testo che li rende utili.
+ *
+ * JPEG e HEIC passano invece da un canvas prima di essere incorporati, per due
+ * motivi che non si possono aggirare:
+ * - `pdf-lib` incorpora il JPEG grezzo e **ignora l'orientamento EXIF**, quindi
+ *   una foto verticale finirebbe coricata come succedeva sulle app;
+ * - l'HEIC `pdf-lib` non lo conosce affatto, e l'unico modo di leggerlo è
+ *   chiedere al browser di decodificarlo.
+ *
+ * Il passaggio dal canvas costa una ricompressione. È lo stesso compromesso di
+ * Android, che le foto le ridisegna comunque.
+ *
+ * @param {{bytes: ArrayBuffer, mimeType: string, name: string}[]} images
+ */
+export async function imagesToPdf(images) {
+  const { PDFDocument } = await import("pdf-lib");
+  const pdf = await PDFDocument.create();
+
+  for (const image of images) {
+    const embedded = await embedImage(pdf, image);
+    const page = pdf.addPage([embedded.width, embedded.height]);
+    page.drawImage(embedded, {
+      x: 0,
+      y: 0,
+      width: embedded.width,
+      height: embedded.height,
+    });
+  }
+
+  return pdf.save();
+}
+
+function isPng(image) {
+  return (image.mimeType || "").toLowerCase() === "image/png" ||
+    (image.name || "").toLowerCase().endsWith(".png");
+}
+
+async function embedImage(pdf, image) {
+  if (isPng(image)) {
+    // Solo i PNG davvero grandi passano dal canvas: sotto al tetto si incorpora
+    // il file originale, senza toccarlo.
+    const size = pngSize(image.bytes);
+    if (!size || Math.max(size.width, size.height) <= MAX_IMAGE_SIDE) {
+      return pdf.embedPng(image.bytes);
+    }
+    return pdf.embedPng(await redraw(image, "image/png"));
+  }
+  return pdf.embedJpg(await redraw(image, "image/jpeg", 0.92));
+}
+
+/**
+ * Larghezza e altezza lette dall'intestazione IHDR, senza decodificare
+ * l'immagine: un PNG da 8000px costerebbe decine di MB solo per misurarlo.
+ *
+ * Struttura: 8 byte di firma, poi il chunk IHDR (4 lunghezza + 4 tipo), quindi
+ * larghezza e altezza come interi a 32 bit big-endian.
+ */
+function pngSize(bytes) {
+  const view = new DataView(bytes instanceof ArrayBuffer ? bytes : bytes.buffer);
+  if (view.byteLength < 24) return null;
+  if (view.getUint32(0) !== 0x89504e47) return null; // non è un PNG
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+/**
+ * Decodifica col browser, riduce entro il tetto e riscrive nel formato chiesto.
+ * `createImageBitmap` applica l'orientamento EXIF, quindi la foto esce dritta.
+ *
+ * Se il browser non sa decodificare il formato — è il caso dell'HEIC fuori da
+ * Safari — l'errore dice quale file e perché, invece di produrre una pagina vuota.
+ */
+async function redraw(image, outputType, quality) {
+  const blob = new Blob([image.bytes], { type: image.mimeType || "image/jpeg" });
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(blob);
+  } catch {
+    throw new Error(
+      `Questo browser non sa leggere «${image.name}». I file HEIC si convertono dall'app KidBox.`
+    );
+  }
+
+  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  // Il JPEG non ha trasparenza: senza fondo bianco le zone trasparenti
+  // diventerebbero nere. Sul PNG il fondo non si mette, altrimenti si
+  // butterebbe via la trasparenza che il formato conserva.
+  if (outputType !== "image/png") {
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+  }
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const output = await new Promise((resolve) => canvas.toBlob(resolve, outputType, quality));
+  if (!output) throw new Error(`Conversione non riuscita per «${image.name}».`);
+  return output.arrayBuffer();
+}
+
 /**
  * Rimuove la protezione da un PDF, restituendo i byte di una copia apribile
  * senza password.

@@ -1,0 +1,485 @@
+/* Viaggi. Riusa `pw-*` per intestazione, vuoto e overlay del dettaglio: sono
+   gli stessi di password e garage. Le copertine sono l'unica cosa che qui ha
+   bisogno di un linguaggio suo, perché sul telefono il viaggio si riconosce
+   dalla foto della destinazione prima che dal nome. */
+@import "./Password.css";
+
+.vg-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vg-hint {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.vg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.vg-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+}
+
+.vg-card:hover .vg-cover {
+  transform: scale(1.02);
+}
+
+/* ── Copertina ──────────────────────────────────────────────────────────── */
+
+.vg-cover {
+  position: relative;
+  display: block;
+  height: 168px;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.2s ease;
+}
+
+/* `flex: none` non è cosmetico: nel dettaglio la copertina è un flex item in
+   colonna, e col corpo lungo che la segue verrebbe compressa fino a sparire. */
+.vg-cover.tall {
+  height: 210px;
+  flex: none;
+  border-radius: 0;
+}
+
+/* Il testo sta sulla foto: senza una velatura in basso, una copertina chiara
+   rende il nome del viaggio illeggibile. */
+.vg-cover-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.35),
+    rgba(0, 0, 0, 0.78)
+  );
+}
+
+.vg-cover-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.vg-card-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.vg-card-dates {
+  font-size: 0.83rem;
+  opacity: 0.92;
+}
+
+.vg-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+.vg-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.vg-card-days {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* ── Dettaglio ──────────────────────────────────────────────────────────── */
+
+.vg-detail {
+  position: relative;
+  width: min(620px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.vg-detail-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.vg-detail-sub {
+  font-size: 0.85rem;
+  opacity: 0.92;
+}
+
+.vg-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.vg-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 28px;
+}
+
+.vg-summary {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.vg-section {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* ── Budget ─────────────────────────────────────────────────────────────── */
+
+.vg-budget {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 94%, var(--text) 6%);
+}
+
+.vg-budget-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.vg-budget-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1.9rem;
+  font-weight: 800;
+}
+
+.vg-budget-value em {
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-style: normal;
+  color: var(--muted);
+}
+
+.vg-budget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.vg-budget-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.vg-budget-emoji {
+  font-size: 1.2rem;
+}
+
+.vg-budget-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.vg-budget-amount {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ── Tratte ─────────────────────────────────────────────────────────────── */
+
+.vg-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.vg-legs li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.vg-leg-mode {
+  font-size: 1.2rem;
+}
+
+.vg-leg-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vg-leg-route {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.vg-leg-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ── Giorni ─────────────────────────────────────────────────────────────── */
+
+.vg-day {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.vg-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vg-day-title {
+  display: block;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.vg-day-date {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.vg-day-cost {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.vg-block {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.vg-block-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  background: color-mix(in srgb, var(--bg) 95%, var(--text) 5%);
+}
+
+.vg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.vg-block-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.vg-block-meta {
+  margin-left: auto;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.vg-stops {
+  list-style: none;
+  padding: 10px 14px 12px;
+}
+
+.vg-stops li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.vg-stop-time {
+  width: 44px;
+  flex: none;
+  text-align: right;
+  font-size: 0.76rem;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.vg-stop-emoji {
+  font-size: 1.05rem;
+}
+
+.vg-stop-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vg-stop-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.vg-stop-detail {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.vg-day-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* ── Packing list ───────────────────────────────────────────────────────── */
+
+.vg-packing-count {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.vg-packing-group {
+  margin-bottom: 12px;
+}
+
+.vg-packing-cat {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.vg-packing-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.vg-packing-item input {
+  accent-color: var(--accent);
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+}
+
+.vg-packing-item .checked {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* ── Collegamenti e azioni ──────────────────────────────────────────────── */
+
+.vg-linked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vg-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.vg-link:hover {
+  background: var(--border);
+}
+
+.vg-link em {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vg-delete {
+  align-self: flex-start;
+  padding: 9px 15px;
+  border: 1px solid #d9455f;
+  border-radius: 999px;
+  background: none;
+  color: #d9455f;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vg-delete:hover {
+  background: rgba(217, 69, 95, 0.1);
+}
