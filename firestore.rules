@@ -186,6 +186,28 @@ service cloud.firestore {
         allow delete: if isMemberOrOwner(familyId);
       }
 
+      // ── Backup della chiave di famiglia (escrow) ──────────
+      // Ogni membro può leggere e riscrivere SOLO il proprio documento.
+      //
+      // Prima ricadeva nel wildcard `{subpath=**}` qui sotto, che lo apriva a
+      // ogni membro: e siccome la chiave di unwrap è derivata da (uid, familyId)
+      // con costanti compilate nei client, chi leggeva l'escrow altrui poteva
+      // ricostruire la master key della famiglia. Non era un problema teorico:
+      // `members/{uid}` lascia a chiunque sia autenticato la creazione del
+      // proprio documento di membro, quindi bastava conoscere il `familyId`
+      // (che viaggia in chiaro nel QR d'invito) per iscriversi da soli e
+      // arrivare alla chiave. Chiuso qui, dove costa nulla; l'auto-iscrizione
+      // resta un buco da chiudere a parte.
+      //
+      // Nessun client ha mai letto l'escrow di un altro utente — iOS, Android e
+      // web passano tutti da (userId corrente, familyId) — quindi la stretta è
+      // trasparente. Il ramo è anche escluso dal wildcard: le rules sono in OR,
+      // e senza quell'esclusione questa regola più stretta non restringerebbe
+      // nulla.
+      match /memberKeyBackups/{memberUid} {
+        allow read, write: if isSignedIn() && request.auth.uid == memberUid;
+      }
+
       match /counters/{uid} {
         allow get: if isSignedIn()
           && request.auth.uid == uid
@@ -215,7 +237,12 @@ service cloud.firestore {
       }
 
       match /{subpath=**} {
-        allow read: if isMemberOrOwner(familyId);
+        // `memberKeyBackups` è escluso: ha una regola sua, più stretta, e le
+        // rules in OR la renderebbero inutile. Stessa cautela del path vuoto
+        // spiegata sotto: `subpath[0]` su un path vuoto è un errore di
+        // valutazione, quindi il size() va prima e in short-circuit.
+        allow read: if isMemberOrOwner(familyId)
+          && (string(subpath).size() == 0 || subpath[0] != 'memberKeyBackups');
         // `subpath.size() > 0` è una protezione, non una formalità: questo
         // wildcard combacia ANCHE con il documento famiglia stesso (subpath
         // vuoto). Le rules sono in OR, quindi senza questo guard la sua
@@ -226,7 +253,8 @@ service cloud.firestore {
         allow write: if isMemberOrOwner(familyId)
           && string(subpath).size() > 0
           && subpath[0] != 'geofences'
-          && subpath[0] != 'geofenceEvents';
+          && subpath[0] != 'geofenceEvents'
+          && subpath[0] != 'memberKeyBackups';
       }
     }
 

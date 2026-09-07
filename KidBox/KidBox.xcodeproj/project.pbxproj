@@ -12,6 +12,7 @@
 		7C4C85542F51ABA80054A4C3 /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 7C4C85532F51ABA80054A4C3 /* FacebookLogin */; };
 		7CAA00112F3378CB0086D687 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAA00122F3378CB0086D687 /* FirebaseAnalytics */; };
 		7CAC0001AABBCCDD00000001 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAC0002AABBCCDD00000002 /* FirebaseAppCheck */; };
+		7CAC0003AABBCCDD00000003 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 7CAC0004AABBCCDD00000004 /* FirebaseAppCheck */; };
 		7CAF2A092F90C0DE00AB0009 /* KidBoxAutoFill.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7CAF2A012F90C0DE00AB0001 /* KidBoxAutoFill.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7CB1F9D62F3B452B00B35C1D /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 7CB1F9D52F3B452B00B35C1D /* FirebaseMessaging */; };
 		7CB37F452F72B12F00CD0F7C /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CB37F442F72B12F00CD0F7C /* StoreKit.framework */; };
@@ -173,6 +174,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"App/AI Core/Kbsaveclassifier.swift",
+				App/Core/AppCheckInstaller.swift,
 				Data/Models/ChatMention.swift,
 				Data/Remote/ChatStore/ChatRemoteStore.swift,
 				Data/Remote/ChatStore/ChatStorageService.swift,
@@ -285,6 +287,7 @@
 				7CF6178C2F60B281007587D9 /* FirebaseAuth in Frameworks */,
 				7CF6178E2F60B297007587D9 /* FirebaseFirestore in Frameworks */,
 				7CF617972F60B72B007587D9 /* FirebaseStorage in Frameworks */,
+				7CAC0003AABBCCDD00000003 /* FirebaseAppCheck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -456,6 +459,7 @@
 				7CF6178B2F60B281007587D9 /* FirebaseAuth */,
 				7CF6178D2F60B297007587D9 /* FirebaseFirestore */,
 				7CF617962F60B72B007587D9 /* FirebaseStorage */,
+				7CAC0004AABBCCDD00000004 /* FirebaseAppCheck */,
 			);
 			productName = KidBoxShareExtension;
 			productReference = 7CF617732F609689007587D9 /* KidBoxShareExtension.appex */;
@@ -764,7 +768,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
@@ -793,7 +797,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxAutoFill/KidBoxAutoFill.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KidBoxAutoFill/Info.plist;
@@ -823,7 +827,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -854,7 +858,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxNotificationService/KidBoxNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxNotificationService/Info.plist;
@@ -887,7 +891,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -919,7 +923,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = KidBoxControlsExtension/KidBoxControlsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxControlsExtension/Info.plist;
@@ -951,7 +955,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -982,7 +986,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = KidBoxShareExtension/KidBoxShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KidBoxShareExtension/Info.plist;
@@ -1142,7 +1146,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1211,7 +1215,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = KidBox/KidBox.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 116;
+				CURRENT_PROJECT_VERSION = 117;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 5WA8KG2G2W;
 				ENABLE_APP_SANDBOX = YES;
@@ -1519,6 +1523,11 @@
 			productName = FirebaseAnalytics;
 		};
 		7CAC0002AABBCCDD00000002 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		7CAC0004AABBCCDD00000004 /* FirebaseAppCheck */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7CFC51E82F33DACC0086D687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAppCheck;

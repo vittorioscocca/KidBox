@@ -15,6 +15,17 @@ import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, query, orde
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js';
 import { getFunctions, httpsCallable }
                                    from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-functions.js';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider }
+                                   from 'https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js';
+
+// Chiave del sito reCAPTCHA Enterprise — LA STESSA della web app, va solo
+// aggiunta `kidbox-42cd7.web.app` tra i domini autorizzati della chiave.
+// È pubblica per design: identifica il sito, NON è un lasciapassare, quindi
+// può stare nel sorgente servito. Un *debug token* invece non potrebbe:
+// questa pagina è raggiungibile senza login (curl la scarica), e un debug
+// token registrato varrebbe come bypass di App Check per l'intero progetto.
+// Finché è vuota, App Check resta disattivo e la console funziona come prima.
+const RECAPTCHA_SITE_KEY = '';
 
 const CFG_KEY = 'kidbox_dash_cfg_v2';
 function getCfg()   { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); } catch { return null; } }
@@ -24,6 +35,20 @@ let app, auth, db, functions, provider;
 
 function initFirebase(cfg) {
   app      = initializeApp(cfg, 'kidbox-admin');
+
+  // Subito dopo initializeApp e PRIMA di getAuth/getFirestore/getFunctions:
+  // i token App Check si allegano alle richieste dei servizi creati dopo,
+  // quindi invertire l'ordine lascerebbe scoperte le prime chiamate.
+  if (RECAPTCHA_SITE_KEY) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } else {
+    console.warn('[AppCheck] RECAPTCHA_SITE_KEY non configurata: App Check non attivo. ' +
+                 'Obbligatoria prima di abilitare l\'enforcement lato server.');
+  }
+
   auth     = getAuth(app);
   db       = getFirestore(app);
   functions = getFunctions(app, 'europe-west1');

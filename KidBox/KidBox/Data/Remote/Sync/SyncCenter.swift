@@ -11,6 +11,7 @@ import OSLog
 import Combine
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseAppCheck
 
 /// Central sync orchestrator.
 ///
@@ -244,6 +245,44 @@ final class SyncCenter: ObservableObject {
         return ns.domain == FirestoreErrorDomain &&
         ns.code == FirestoreErrorCode.permissionDenied.rawValue
     }
+
+    /// Distingue un `PERMISSION_DENIED` da revoca reale da uno causato
+    /// dall'infrastruttura (attestazione App Check o credenziali).
+    ///
+    /// Serve perché i due casi arrivano al client **identici**, ma le
+    /// conseguenze sono opposte: la revoca porta a cancellare l'iscrizione
+    /// dell'utente alla famiglia su Firestore (vedi `FamilyLeaveService`),
+    /// mentre un'attestazione fallita è transitoria e non deve toccare nulla.
+    /// Senza questo controllo, con App Check in enforcement un utente con
+    /// attestazione non valida verrebbe espulso davvero dalla sua famiglia.
+    ///
+    /// - Returns: `true` se il rifiuto è infrastrutturale (NON trattare come revoca).
+    static func isInfrastructureDenial() async -> Bool {
+        // 1) Token App Check: se non si ottiene, con enforcement attivo ogni
+        //    richiesta viene rifiutata a prescindere dall'appartenenza.
+        do {
+            _ = try await AppCheck.appCheck().token(forcingRefresh: false)
+        } catch {
+            KBLog.sync.kbError("Token App Check non disponibile → rifiuto infrastrutturale: \(error.localizedDescription)")
+            return true
+        }
+
+        // 2) Controprova su un documento NON family-scoped: il proprio profilo.
+        //    Se è leggibile dal server, le credenziali funzionano e la revoca
+        //    è autentica. `source: .server` è obbligatorio: dalla cache locale
+        //    la lettura riuscirebbe anche offline, facendo concludere a torto
+        //    che la revoca sia reale.
+        guard let uid = Auth.auth().currentUser?.uid else { return true }
+        do {
+            _ = try await Firestore.firestore()
+                .collection("users").document(uid)
+                .getDocument(source: .server)
+            return false
+        } catch {
+            KBLog.sync.kbError("Anche users/\(uid) non leggibile → rifiuto infrastrutturale: \(error.localizedDescription)")
+            return true
+        }
+    }
     
     @MainActor
     func handleFamilyAccessLost(familyId: String, source: String, error: Error) {
@@ -268,10 +307,25 @@ final class SyncCenter: ObservableObject {
         accessLostHandled.insert(familyId)
 
         KBLog.sync.kbError("Family access lost (PERMISSION_DENIED). familyId=\(familyId) source=\(source) err=\(error.localizedDescription)")
-        
+
         stopAllFamilyScopedRealtime()
 
-        Self._currentUserRevoked.send(familyId)
+        // Prima di emettere la revoca — che cancella l'iscrizione dell'utente
+        // alla famiglia su Firestore — verifica che il rifiuto sia davvero
+        // un'espulsione e non un problema di attestazione/credenziali.
+        Task { @MainActor in
+            if await Self.isInfrastructureDenial() {
+                KBLog.sync.kbError(
+                    "NON è un'espulsione: rifiuto infrastrutturale (App Check o credenziali). " +
+                    "Listener fermi, nessun wipe. familyId=\(familyId) source=\(source)"
+                )
+                // Sblocca il flag: una revoca autentica successiva dev'essere
+                // ancora gestibile. I listener ripartono al prossimo foreground.
+                self.accessLostHandled.remove(familyId)
+                return
+            }
+            Self._currentUserRevoked.send(familyId)
+        }
     }
 
     /// Stops every family-scoped realtime listener. Single source of truth:

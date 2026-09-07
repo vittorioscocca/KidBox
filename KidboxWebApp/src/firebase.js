@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
@@ -19,6 +20,45 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// ── App Check ────────────────────────────────────────────────────────────────
+// Va inizializzato SUBITO dopo initializeApp e PRIMA di getAuth/getFirestore/…:
+// i token vengono allegati alle richieste dei servizi creati dopo, quindi
+// invertire l'ordine lascerebbe scoperte proprio le prime chiamate.
+//
+// Nel browser non esistono App Attest o Play Integrity: l'unico provider è
+// reCAPTCHA Enterprise, che dà un punteggio comportamentale invece di una prova
+// hardware. Garanzia più debole di quella mobile per costruzione, ma sufficiente
+// contro l'abuso automatizzato (script/bot che chiamano askAI fuori da un browser),
+// che è il vettore che ci interessa.
+//
+// La chiave del sito è PUBBLICA per definizione (finisce nel bundle): la
+// sicurezza sta nella validazione lato server, non nel tenerla nascosta.
+// Sta in .env.local come la VAPID per la stessa ragione: cambia da progetto a progetto.
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "";
+
+if (recaptchaSiteKey) {
+  // In sviluppo il provider reale fallirebbe su localhost. Questo flag fa
+  // stampare in console un token di debug da registrare una volta in
+  // Firebase Console → App Check → Gestisci token di debug.
+  if (import.meta.env.DEV) {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+} else {
+  // Nessuna chiave configurata: si prosegue senza App Check. Finché
+  // l'enforcement è spento lato server l'app funziona identica; quando verrà
+  // acceso, senza chiave qui le richieste verrebbero rifiutate.
+  console.warn(
+    "[AppCheck] VITE_RECAPTCHA_SITE_KEY non configurata: App Check non attivo. " +
+    "Obbligatoria prima di abilitare l'enforcement lato server.",
+  );
+}
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, "europe-west1");

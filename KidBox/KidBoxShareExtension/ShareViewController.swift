@@ -18,6 +18,13 @@ class ShareViewController: UIViewController {
         super.viewDidLoad()
         
         if FirebaseApp.app() == nil {
+            // La Share Extension è un processo a sé: configura Firebase per conto
+            // suo e scrive su Firestore (Notesremotestore). Senza questa riga le
+            // sue richieste partirebbero senza token App Check e, con l'enforcement
+            // attivo, condividere una nota verrebbe rifiutato.
+            // Va prima di configure(), come nell'AppDelegate dell'app principale.
+            AppCheckInstaller.install()
+
             FirebaseApp.configure()
             let firestoreSettings = FirestoreSettings()
             firestoreSettings.cacheSettings = MemoryCacheSettings()
