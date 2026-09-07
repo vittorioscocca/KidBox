@@ -12,6 +12,13 @@ import { noteHtmlToText } from "../services/noteHtml";
 import { categoryFromId, formatAmount } from "../expenseCategories";
 import { categoryInfo } from "../calendarUtils";
 import { listenSharedLocations } from "../services/location";
+import {
+  allSessions,
+  fetchFitnessPlan,
+  sessionStatusInfo,
+  startOfDayMillis,
+  weeklyReport,
+} from "../services/fitnessPlan";
 import "./Home.css";
 
 /** Riquadro con intestazione cliccabile e fino a quattro righe di anteprima. */
@@ -54,6 +61,7 @@ export default function Home() {
   const [notePreviews, setNotePreviews] = useState([]);
   const [notesLocked, setNotesLocked] = useState(false);
   const [sharingCount, setSharingCount] = useState(0);
+  const [fitness, setFitness] = useState(null);
 
   const dateLabel = new Date().toLocaleDateString(locale === "en" ? "en-US" : "it-IT", {
     weekday: "long",
@@ -181,6 +189,28 @@ export default function Home() {
     };
   }, [rawNotes, currentFamilyId, user]);
 
+  /**
+   * Il piano fitness non sta nella famiglia ma sotto `users/{uid}`, ed è per
+   * soggetto: si guarda quello che stavi guardando in Salute — la stessa
+   * preferenza che salva quella schermata — e in mancanza il tuo.
+   */
+  useEffect(() => {
+    if (!user) return undefined;
+    let cancelled = false;
+    const subjectId = localStorage.getItem("kidbox:healthSubjectId") || user.uid;
+    fetchFitnessPlan({ uid: user.uid, childId: subjectId })
+      .then((doc) => {
+        if (cancelled) return;
+        setFitness(doc && !doc.deleted ? doc : null);
+      })
+      .catch(() => {
+        if (!cancelled) setFitness(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   useEffect(() => {
     if (!currentFamilyId) return undefined;
     return listenSharedLocations({
@@ -189,6 +219,21 @@ export default function Home() {
       onError: () => setSharingCount(0),
     });
   }, [currentFamilyId]);
+
+  /** La prossima seduta e l'andamento della settimana in cui cade. */
+  const fitnessSummary = useMemo(() => {
+    if (!fitness) return null;
+    const sessions = allSessions(fitness);
+    if (sessions.length === 0) return null;
+    const today = startOfDayMillis(Date.now());
+    const next =
+      sessions.find((x) => x.status === "planned" && startOfDayMillis(x.date) >= today) ||
+      sessions.find((x) => x.status === "planned") ||
+      null;
+    const todaySessions = sessions.filter((x) => startOfDayMillis(x.date) === today);
+    const report = next ? weeklyReport(fitness, next.weekIndex) : null;
+    return { next, todaySessions, report, sessions };
+  }, [fitness]);
 
   const fmtDay = (date) =>
     date
@@ -354,6 +399,47 @@ export default function Home() {
               )
             )}
           </div>
+        </Widget>
+
+        <Widget
+          icon="🏃"
+          title={t.home.dashboard.fitness}
+          badge={
+            fitnessSummary?.report
+              ? `${fitnessSummary.report.completedSessions}/${fitnessSummary.report.plannedSessions}`
+              : null
+          }
+          // Dritti nel modulo: il riquadro parla di sedute, non di Salute.
+          onOpen={() => navigate("/salute?modulo=fitnessPlan")}
+          empty={!fitnessSummary}
+        >
+          {fitnessSummary && (
+            <ul className="w-list">
+              {fitnessSummary.todaySessions.map((x) => {
+                const info = sessionStatusInfo(x.status);
+                return (
+                  <li key={x.id}>
+                    <span className="w-dot" style={{ background: info.color }} />
+                    <span className="w-main">{x.title}</span>
+                    <span className="w-meta">{t.home.dashboard.fitnessToday}</span>
+                  </li>
+                );
+              })}
+              {fitnessSummary.next &&
+                !fitnessSummary.todaySessions.some((x) => x.id === fitnessSummary.next.id) && (
+                  <li key={fitnessSummary.next.id}>
+                    <span
+                      className="w-dot"
+                      style={{ background: sessionStatusInfo(fitnessSummary.next.status).color }}
+                    />
+                    <span className="w-main">{fitnessSummary.next.title}</span>
+                    <span className="w-meta">
+                      {fmtDay(new Date(fitnessSummary.next.date))}
+                    </span>
+                  </li>
+                )}
+            </ul>
+          )}
         </Widget>
 
         <Widget

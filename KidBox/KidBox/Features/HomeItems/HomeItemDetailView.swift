@@ -118,7 +118,7 @@ struct HomeItemDetailView: View {
             if let s = it.serialNumber, !s.isEmpty { line("Serie", s) }
             if let p = it.purchaseDate { line("Acquisto", HomeItemDetailView.df.string(from: p)) }
             if let m = it.servicePeriodMonths {
-                line("Periodicità", "\(m) mesi")
+                line("Periodicità", String(format: NSLocalizedString("%d mesi", comment: "Months"), m))
             }
             if let n = it.notes, !n.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(n)
@@ -131,7 +131,8 @@ struct HomeItemDetailView: View {
         .background(cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private func line(_ k: String, _ v: String) -> some View {
+    /// L'etichetta passa dal catalogo, il valore no: quello è un dato.
+    private func line(_ k: LocalizedStringKey, _ v: String) -> some View {
         HStack {
             Text(k).foregroundStyle(.secondary)
             Spacer()
@@ -140,7 +141,7 @@ struct HomeItemDetailView: View {
     }
 
     @ViewBuilder
-    private func deadlineRow(_ title: String, _ date: Date?) -> some View {
+    private func deadlineRow(_ title: LocalizedStringKey, _ date: Date?) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.caption).foregroundStyle(.secondary)

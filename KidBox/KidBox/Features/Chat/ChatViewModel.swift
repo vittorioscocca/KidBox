@@ -1171,10 +1171,10 @@ final class ChatViewModel: NSObject, ObservableObject {
         )
         msg.syncState = .pendingUpsert; modelContext.insert(msg); try? modelContext.save(); reloadLocal()
         do {
-            logAudio("uploadAndSendAudio upload START mimeType=audio/m4a")
+            logAudio("uploadAndSendAudio upload START mimeType=audio/mp4")
             let (storagePath, downloadURL) = try await storageService.upload(
                 data: data, familyId: familyId, messageId: messageId,
-                fileName: "audio.m4a", mimeType: "audio/m4a",
+                fileName: "audio.m4a", mimeType: "audio/mp4",
                 progressHandler: { [weak self] p in Task { @MainActor in self?.uploadProgress = p } })
             logAudio("uploadAndSendAudio upload OK storagePath=\(storagePath)")
             logAudio("uploadAndSendAudio upload OK downloadURL=\(downloadURL)")
@@ -1769,7 +1769,7 @@ private extension URL {
         case "jpg", "jpeg": return "image/jpeg"
         case "gif":         return "image/gif"
         case "mp3":         return "audio/mpeg"
-        case "m4a":         return "audio/m4a"
+        case "m4a":         return "audio/mp4"
         case "mp4":         return "video/mp4"
         case "mov":         return "video/quicktime"
         default:            return "application/octet-stream"

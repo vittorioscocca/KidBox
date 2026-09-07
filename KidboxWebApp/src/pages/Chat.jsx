@@ -21,6 +21,7 @@ import { db } from "../firebase";
 import { loadFamilyKey } from "../services/familyKey";
 import ChatBubble from "../components/ChatBubble";
 import ChatMediaGallery from "../components/ChatMediaGallery";
+import RecordingWave from "../components/RecordingWave";
 import Modal from "../components/Modal";
 import {
   MAX_GROUP_ITEMS,
@@ -43,6 +44,12 @@ import {
   toggleReaction,
 } from "../services/chat";
 import {
+  draftFromDataTransfer,
+  draftFromTransferText,
+  findVCardFile,
+  vCardToDraft,
+} from "../services/vcard";
+import {
   saveAsEvent,
   saveAsGrocery,
   saveAsNote,
@@ -51,6 +58,37 @@ import {
   saveToPhotos,
 } from "../services/chatSave";
 import "./Chat.css";
+
+/**
+ * Scrivania (Mac compreso): mouse e trascinamento ci sono davvero. È la sola
+ * distinzione che serve — l'import vCard vive di drag&drop e di ⌘V, che sul
+ * telefono non esistono.
+ */
+const IS_DESKTOP =
+  typeof window !== "undefined" && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches;
+
+/**
+ * Formati di registrazione, dal più interoperabile al ripiego.
+ *
+ * L'AAC in contenitore MP4 è la sola cosa che iPhone, Android e browser sanno
+ * leggere tutti: è quello che registrano i due client nativi, ed è quello che
+ * si prova per primo. Chrome sa produrlo dalla 130, Safari da sempre; su
+ * Firefox si ripiega su WebM/Opus, che il telefono non riproduce — meglio di
+ * niente, e almeno il file dichiara quello che è.
+ */
+const AUDIO_MIME_PREFERENCE = [
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/mp4",
+  "audio/webm;codecs=opus",
+  "audio/webm",
+];
+
+/** Estensione coerente col contenitore: la usano i client nativi per capire
+ *  che cosa stanno scaricando. */
+const audioExtension = (mime) => (mime.includes("mp4") ? "m4a" : "webm");
+
+/** Sotto questa soglia non c'è un messaggio: c'è un tocco. */
+const MIN_RECORDING_SECONDS = 0.6;
 
 /** Foto ridotta prima dell'invio, come fa `compressPhoto` su iOS. */
 async function compressPhoto(file) {
@@ -151,6 +189,8 @@ export default function Chat() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [saveTarget, setSaveTarget] = useState(null);
   const [contactDraft, setContactDraft] = useState(null);
+  const [contactDropOver, setContactDropOver] = useState(false);
+  const [contactImportError, setContactImportError] = useState(null);
   const [lightbox, setLightbox] = useState(null);
 
   const [selecting, setSelecting] = useState(false);
@@ -166,6 +206,8 @@ export default function Chat() {
 
   const [recorder, setRecorder] = useState(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  /** Lo stream in presa diretta: serve all'onda che scorre mentre si registra. */
+  const [recordingStream, setRecordingStream] = useState(null);
   /** Annullamento: sta in una ref perché `onstop` la legge fuori dal render. */
   const recordingCancelled = useRef(false);
 
@@ -177,6 +219,7 @@ export default function Chat() {
   const headerMenuRef = useRef(null);
   const emojiRef = useRef(null);
   const docInput = useRef(null);
+  const vcardInput = useRef(null);
   const typingTimer = useRef(null);
   const uid = user?.uid;
 
@@ -325,6 +368,70 @@ export default function Chat() {
     if (!(await guard(action))) setFailedText(text);
   };
 
+  const EMPTY_CONTACT = { givenName: "", familyName: "", phone: "", email: "" };
+
+  /**
+   * Apre il form contatto. Dove il browser ha il picker di sistema — oggi solo
+   * Chrome su Android — lo usiamo come su iOS; altrove, Mac compreso, non
+   * esiste nessuna API che apra Contatti.app e restituisca la scheda, quindi
+   * resta il form, che però si riempie da una vCard.
+   */
+  const openContactDraft = async () => {
+    if (navigator.contacts?.select && window.ContactsManager) {
+      try {
+        const [picked] = await navigator.contacts.select(["name", "tel", "email"], { multiple: false });
+        if (!picked) return;
+        const full = (picked.name?.[0] || "").trim();
+        const space = full.indexOf(" ");
+        setContactImportError(null);
+        setContactDraft({
+          givenName: space < 0 ? full : full.slice(0, space),
+          familyName: space < 0 ? "" : full.slice(space + 1),
+          phone: picked.tel?.[0] || "",
+          email: picked.email?.[0] || "",
+        });
+        return;
+      } catch {
+        // Picker negato o non utilizzabile: si prosegue col form.
+      }
+    }
+    setContactImportError(null);
+    setContactDraft(EMPTY_CONTACT);
+  };
+
+  /** Sostituisce il form con la vCard letta, o segnala che non lo era. */
+  const applyVCardDraft = (draft) => {
+    if (!draft) {
+      setContactImportError(c.contactImportFailed);
+      return;
+    }
+    setContactImportError(null);
+    setContactDraft(draft);
+  };
+
+  /**
+   * ⌘V sul form contatto. L'ascolto sta sul documento perché la scheda copiata
+   * da Contatti.app va incollata anche quando il fuoco non è in un campo; un
+   * incolla che non è una vCard resta un incolla normale.
+   */
+  useEffect(() => {
+    if (!contactDraft) return undefined;
+    const onPaste = (e) => {
+      const draft = draftFromTransferText(e.clipboardData);
+      if (draft) {
+        e.preventDefault();
+        applyVCardDraft(draft);
+        return;
+      }
+      const file = findVCardFile(e.clipboardData);
+      if (!file) return;
+      e.preventDefault();
+      file.text().then((text) => applyVCardDraft(vCardToDraft(text)));
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [contactDraft]);
+
   const onInputChange = (value) => {
     setInput(value);
     const match = /@([\wÀ-ÿ'’.-]*)$/.exec(value);
@@ -461,18 +568,29 @@ export default function Chat() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Safari registra m4a, gli altri webm: si prende il formato migliore che
-      // il browser dichiara di saper produrre.
-      const mime = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "audio/webm";
-      const rec = new MediaRecorder(stream, { mimeType: mime });
+      const preferred = AUDIO_MIME_PREFERENCE.find((m) => MediaRecorder.isTypeSupported(m));
+      const rec = preferred
+        ? new MediaRecorder(stream, { mimeType: preferred })
+        : new MediaRecorder(stream);
       const chunks = [];
       const startedAt = Date.now();
 
       rec.ondataavailable = (e) => chunks.push(e.data);
       rec.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
+        setRecordingStream(null);
         if (recordingCancelled.current) return;
+        // `rec.mimeType` e non la preferenza: è il browser a dire che cosa ha
+        // prodotto davvero, e sul file va scritto quello.
+        const mime = rec.mimeType || preferred || "audio/webm";
         const blob = new Blob(chunks, { type: mime });
+        const seconds = (Date.now() - startedAt) / 1000;
+        // Un vocale vuoto o di un decimo di secondo diventava una bolla che
+        // nessun client riesce ad aprire: si ferma qui, dicendolo.
+        if (!blob.size || seconds < MIN_RECORDING_SECONDS) {
+          setError(c.recordingTooShort);
+          return;
+        }
         await guard(() =>
           sendMedia({
             familyId: currentFamilyId,
@@ -481,8 +599,8 @@ export default function Chat() {
             senderName: displayName,
             type: "audio",
             blob,
-            fileName: mime === "audio/mp4" ? "audio.m4a" : "audio.webm",
-            durationSeconds: (Date.now() - startedAt) / 1000,
+            fileName: `audio.${audioExtension(mime)}`,
+            durationSeconds: seconds,
             replyToId: replyTo?.id || null,
             onProgress: setProgress,
           })
@@ -493,6 +611,7 @@ export default function Chat() {
       recordingCancelled.current = false;
       rec.start();
       setRecorder(rec);
+      setRecordingStream(stream);
       setRecordingSeconds(0);
     } catch {
       setError(c.micDenied);
@@ -851,6 +970,11 @@ export default function Chat() {
       )}
 
       <div className="chat-composer">
+        {/* Mentre si registra la barra è tutta del vocale, come su WhatsApp:
+            «+» e campo di scrittura escono di scena, così il tempo e l'onda
+            hanno lo spazio della riga invece di un ritaglio in fondo. */}
+        {!recorder && (
+        <>
         {/* Un solo «+» invece di cinque icone in fila, come nella chat del
             telefono: le voci sono le stesse, ma la barra torna a essere una
             riga per scrivere e non una barra degli strumenti. */}
@@ -874,7 +998,7 @@ export default function Chat() {
                   "contact",
                   "👤",
                   c.sendContact,
-                  () => setContactDraft({ givenName: "", familyName: "", phone: "", email: "" }),
+                  openContactDraft,
                 ],
               ].map(([key, icon, label, action]) => (
                 <button
@@ -892,6 +1016,9 @@ export default function Chat() {
             </div>
           )}
         </div>
+
+        </>
+        )}
 
         <input
           ref={mediaInput}
@@ -928,6 +1055,7 @@ export default function Chat() {
           }}
         />
 
+        {!recorder && (
         <div className="chat-field">
           <textarea
             className="chat-input"
@@ -965,10 +1093,14 @@ export default function Chat() {
             )}
           </div>
         </div>
+        )}
 
         {recorder ? (
           <>
-            <span className="chat-recording">● {recordingSeconds}s</span>
+            <div className="chat-recorder">
+              <span className="chat-recording">● {recordingSeconds}s</span>
+              <RecordingWave stream={recordingStream} />
+            </div>
             <button className="chat-round-btn" title={c.cancel} onClick={() => stopRecording(true)}>✕</button>
             <button className="chat-round-btn send" title={c.sendAudio} onClick={() => stopRecording(false)}>
               ➤
@@ -1026,6 +1158,40 @@ export default function Chat() {
             <strong>{c.sendContact}</strong>
             <button className="modal-icon-btn" onClick={() => setContactDraft(null)}>✕</button>
           </div>
+          {IS_DESKTOP && (
+          <div
+            className={`chat-contact-drop ${contactDropOver ? "over" : ""}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContactDropOver(true);
+            }}
+            onDragLeave={() => setContactDropOver(false)}
+            onDrop={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContactDropOver(false);
+              applyVCardDraft(await draftFromDataTransfer(e.dataTransfer));
+            }}
+          >
+            <p className="chat-contact-drop-hint">{c.contactDropHint}</p>
+            <button className="link-btn" onClick={() => vcardInput.current?.click()}>
+              {c.contactPickFile}
+            </button>
+            <input
+              ref={vcardInput}
+              type="file"
+              accept=".vcf,text/vcard,text/x-vcard"
+              hidden
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) applyVCardDraft(vCardToDraft(await file.text()));
+              }}
+            />
+            {contactImportError && <p className="chat-contact-drop-error">{contactImportError}</p>}
+          </div>
+          )}
           <div className="chat-contact-form">
             {["givenName", "familyName", "phone", "email"].map((field) => (
               <label key={field}>

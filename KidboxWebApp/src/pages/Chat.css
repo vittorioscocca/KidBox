@@ -266,31 +266,111 @@
   color: var(--muted);
 }
 
+/* Vocale: tasto tondo, onda, tempo. Il player nativo del browser è fuori dal
+   tono della chat e su Mac occupa il doppio dello spazio. */
 .chat-audio {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-width: 210px;
 }
 
-.chat-audio audio {
-  height: 34px;
-  max-width: 240px;
-}
-
-.chat-audio-rate {
-  padding: 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: none;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.76rem;
+.chat-audio-play {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #fff;
   cursor: pointer;
 }
 
-.chat-audio-time {
+.chat-audio-play:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: default;
+}
+
+.chat-audio-play svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.chat-audio-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Le barre hanno altezze proprie e si allineano al centro, come l'onda di un
+   vocale: `align-items: center` e non `flex-end`. */
+.chat-wave {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.chat-wave-head {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.chat-wave span {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 26%, transparent);
+}
+
+/* La parte già ascoltata resta colorata: è il progresso, non una selezione. */
+.chat-wave span.on {
+  background: var(--accent);
+}
+
+.chat-audio-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 0.72rem;
   color: var(--muted);
+}
+
+.chat-audio.failed .chat-wave {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Senza riproduzione la testina non indica niente. */
+.chat-audio.failed .chat-wave-head {
+  display: none;
+}
+
+.chat-audio-rate {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
 }
 
 .chat-location {
@@ -483,6 +563,11 @@
 .chat-plus {
   width: 42px;
   height: 42px;
+  /* Il segno è un carattere, e da solo si appoggia alla linea di base: nel
+     cerchio finiva alto. `place-items` lo mette al centro vero. */
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: color-mix(in srgb, var(--text) 6%, var(--bg));
@@ -647,6 +732,10 @@
   width: 42px;
   height: 42px;
   flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: color-mix(in srgb, var(--text) 6%, var(--bg));
@@ -663,6 +752,10 @@
   border-color: var(--accent);
   background: var(--accent);
   color: #fff;
+  /* Il glifo della freccia ha spazio a destra dentro il proprio riquadro:
+     centrato per metrica, sembra spostato. Un pixel indietro lo rimette a
+     posto per l'occhio. */
+  text-indent: -1px;
 }
 
 .chat-round-btn:disabled {
@@ -674,6 +767,52 @@
   color: #d9455f;
   font-size: 0.82rem;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Durante la registrazione questa presa il posto del campo di scrittura:
+   stessa forma e stessa altezza, così la barra non salta quando si passa da
+   scrivere a registrare. */
+.chat-recorder {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 4px 16px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--text) 5%, var(--bg));
+}
+
+/* Onda in presa diretta: le colonne nuove entrano da destra, come su
+   WhatsApp. Occupa quello che resta della riga dopo il tempo. */
+.chat-rec-wave {
+  flex: 1;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  /* Passo e larghezza vanno d'accordo con `COLUMN_PX` in RecordingWave: se
+     divergono, le colonne non riempiono la riga e resta un vuoto in fondo. */
+  gap: 3px;
+  height: 26px;
+  overflow: hidden;
+}
+
+.chat-rec-wave span {
+  flex: 1;
+  min-width: 2px;
+  max-width: 8px;
+  border-radius: 2px;
+  background: #d9455f;
+}
+
+.chat-rec-wave span.idle {
+  background: color-mix(in srgb, #d9455f 22%, transparent);
+  /* Il salto tra una lettura e l'altra è di 66ms: ammorbidirlo evita lo
+     sfarfallio senza far sembrare l'onda in ritardo. */
+  transition: height 60ms linear;
 }
 
 /* ── Galleria e sheet ────────────────────────────────────────────────────── */
@@ -739,6 +878,49 @@
 }
 
 .chat-save-targets,
+.chat-contact-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 14px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.chat-contact-drop.over {
+  border-color: var(--accent);
+  background: rgba(232, 131, 58, 0.08);
+}
+
+/* `link-btn` è grigio come il testo intorno e in hover vira al rosso della
+   pagina To-Do: dentro il riquadro era l'unica cosa cliccabile e non sembrava
+   tale. Qui torna a leggersi come un'azione. */
+.chat-contact-drop .link-btn {
+  color: var(--accent2);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chat-contact-drop .link-btn:hover {
+  color: var(--accent);
+}
+
+.chat-contact-drop-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.chat-contact-drop-error {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #c0392b;
+}
+
 .chat-contact-form {
   display: flex;
   flex-direction: column;
@@ -760,6 +942,25 @@
   background: var(--bg);
   color: var(--text);
   font-family: inherit;
+}
+
+/* Il pulsante d'invio del contatto usa `pw-btn-primary`, che porta solo i
+   colori: la forma la dà la pagina che lo ospita. Senza questa regola restava
+   la cornice nativa del browser, una barra sottile con il testo schiacciato. */
+.chat-contact-form .pw-btn-primary {
+  margin-top: 4px;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-contact-form .pw-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .chat-lightbox {

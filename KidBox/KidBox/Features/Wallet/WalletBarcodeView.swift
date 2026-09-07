@@ -179,9 +179,24 @@ struct WalletBarcodeView: View {
     private static func render(text: String, format: String?) async -> UIImage? {
         guard !text.isEmpty else { return nil }
         let normalized = normalize(format: format, text: text)
-
         let context = CIContext(options: [.useSoftwareRenderer: false])
-        let data = Data(text.utf8)
+
+        // Vision restituisce il payload come stringa decodificata in
+        // ISO-8859-1: un biglietto Trenitalia o una carta d'imbarco portano
+        // byte alti (>0x7F) che, ri-codificati in UTF-8, diventano due byte e
+        // producono un codice **diverso** da quello del biglietto. Per i
+        // formati che nascono binari si ritorna quindi ai byte originali; sul
+        // QR, che per specifica trasporta testo UTF-8, si resta su UTF-8.
+        // (Verificato: 0xC0 0xE8 0xF9 → utf8 dà C3 80 C3 A8 C3 B9, latin1 li
+        // riporta identici.)
+        let data: Data = {
+            switch normalized {
+            case .aztec, .pdf417, .code128:
+                return text.data(using: .isoLatin1) ?? Data(text.utf8)
+            default:
+                return Data(text.utf8)
+            }
+        }()
 
         let ciImage: CIImage? = {
             switch normalized {
@@ -208,22 +223,35 @@ struct WalletBarcodeView: View {
                 let f = CIFilter.code128BarcodeGenerator()
                 f.message = data
                 f.quietSpace = 7
-                f.barcodeHeight = 80
+                // Basso di proposito: l'altezza la decide la view. Con un
+                // valore alto (era 80) l'immagine sorgente resta quasi
+                // quadrata, `scaledToFit` la limita in altezza e il codice
+                // finisce disegnato stretto — barre sottili, largo la metà
+                // dello spazio disponibile. Misurato: 80 → 187pt su 320.
+                f.barcodeHeight = 24
                 return f.outputImage
-            case .code39:
-                // CoreImage non ha un generatore Code 39 built-in (a differenza
-                // di Code128/QR/Aztec/PDF417): lo disegniamo a mano in
-                // `Code39Generator`, usato per la Tessera Sanitaria (il CF è
-                // codificato in Code 39 sul fronte della tessera).
-                return nil // gestito a parte sotto, non passa dal path CIImage
+            case .code39, .ean13, .itf14, .i2of5:
+                // CoreImage genera solo Code128/QR/Aztec/PDF417. Code 39 (il
+                // codice fiscale sulla Tessera Sanitaria), EAN-13 e ITF li
+                // disegniamo a mano qui sotto: senza, la card mostrava il
+                // numero come testo e il codice non c'era proprio.
+                return nil // gestiti a parte, non passano dal path CIImage
             default:
                 // Formati non supportati dai CIFilter built-in.
                 return nil
             }
         }()
 
-        if normalized == .code39, let cg = Code39Generator.generate(text: text)?.cgImage {
-            return UIImage(cgImage: cg)
+        // Formati disegnati con Core Graphics invece che con CoreImage.
+        switch normalized {
+        case .code39:
+            if let image = Code39Generator.generate(text: text) { return image }
+        case .ean13:
+            if let image = EAN13Generator.generate(text: text) { return image }
+        case .itf14, .i2of5:
+            if let image = ITFGenerator.generate(text: text) { return image }
+        default:
+            break
         }
 
         guard let ci = ciImage else { return nil }
@@ -293,6 +321,168 @@ enum Code39Generator {
                 }
                 x += w
             }
+        }
+    }
+}
+
+/// EAN-13 disegnato a mano: CoreImage non ha un `CIEAN13BarcodeGenerator`, e
+/// senza questo la card mostrava solo il numero.
+///
+/// Struttura da specifica: 95 moduli — guardia `101`, sei cifre a sinistra
+/// codificate L o G secondo la prima cifra, guardia centrale `01010`, sei
+/// cifre a destra in R, guardia `101` — più le zone di quiete (9 moduli a
+/// sinistra, 7 a destra) senza le quali molti lettori non agganciano il codice.
+enum EAN13Generator {
+    private static let left = [
+        "0001101", "0011001", "0010011", "0111101", "0100011",
+        "0110001", "0101111", "0111011", "0110111", "0001011",
+    ]
+    private static let leftEven = [
+        "0100111", "0110011", "0011011", "0100001", "0011101",
+        "0111001", "0000101", "0010001", "0001001", "0010111",
+    ]
+    private static let right = [
+        "1110010", "1100110", "1101100", "1000010", "1011100",
+        "1001110", "1010000", "1000100", "1001000", "1110100",
+    ]
+    /// Come la prima cifra sceglie la parità delle sei di sinistra: è lei a
+    /// portare la tredicesima informazione, che non ha barre proprie.
+    private static let parity = [
+        "LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG",
+        "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL",
+    ]
+
+    /// Cifra di controllo mod 10 con pesi 1,3 alternati.
+    static func checkDigit(_ digits: [Int]) -> Int {
+        let sum = digits.enumerated().reduce(0) { acc, item in
+            acc + item.element * (item.offset % 2 == 0 ? 1 : 3)
+        }
+        return (10 - sum % 10) % 10
+    }
+
+    /// `nil` se il testo non è un EAN-13 valido: meglio il fallback testuale di
+    /// un codice che il lettore rifiuterà per checksum.
+    static func generate(text: String, moduleWidth: CGFloat = 3, height: CGFloat = 120) -> UIImage? {
+        var digits = text.compactMap { $0.wholeNumberValue }.filter { (0...9).contains($0) }
+        if digits.count == 12 { digits.append(checkDigit(digits)) }
+        guard digits.count == 13, checkDigit(Array(digits.prefix(12))) == digits[12] else { return nil }
+
+        let pattern = parity[digits[0]]
+        var modules = "101"
+        for (i, p) in pattern.enumerated() {
+            let d = digits[i + 1]
+            modules += (p == "L" ? left[d] : leftEven[d])
+        }
+        modules += "01010"
+        for d in digits[7...] { modules += right[d] }
+        modules += "101"
+
+        let quietLeft = 9, quietRight = 7
+        let total = CGFloat(quietLeft + modules.count + quietRight)
+        let size = CGSize(width: total * moduleWidth, height: height)
+
+        // Le guardie scendono sotto le barre dati, dentro la riga delle cifre:
+        // è così che si riconosce un EAN a colpo d'occhio.
+        let textBand: CGFloat = 16
+        let barHeight = height - textBand
+        let guardHeight = height - textBand * 0.35
+        let guardRanges = [0..<3, 45..<50, 92..<95]
+
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            UIColor.black.setFill()
+            for (i, bit) in modules.enumerated() where bit == "1" {
+                let isGuard = guardRanges.contains { $0.contains(i) }
+                let x = CGFloat(quietLeft + i) * moduleWidth
+                ctx.fill(CGRect(x: x, y: 0, width: moduleWidth, height: isGuard ? guardHeight : barHeight))
+            }
+
+            let font = UIFont.monospacedDigitSystemFont(ofSize: textBand - 3, weight: .regular)
+            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.black]
+            func draw(_ s: String, from: Int, to: Int) {
+                let rect = CGRect(x: CGFloat(from) * moduleWidth, y: height - textBand + 1,
+                                  width: CGFloat(to - from) * moduleWidth, height: textBand)
+                let width = (s as NSString).size(withAttributes: attrs).width
+                (s as NSString).draw(at: CGPoint(x: rect.midX - width / 2, y: rect.minY), withAttributes: attrs)
+            }
+            // Prima cifra nella zona di quiete, poi i due gruppi di sei sotto
+            // le rispettive metà.
+            draw("\(digits[0])", from: 0, to: quietLeft)
+            draw(digits[1...6].map(String.init).joined(), from: quietLeft + 3, to: quietLeft + 45)
+            draw(digits[7...12].map(String.init).joined(), from: quietLeft + 50, to: quietLeft + 92)
+        }
+    }
+}
+
+/// Interleaved 2 of 5 (e la sua variante a 14 cifre, ITF-14). Le cifre vanno a
+/// coppie: la prima detta le barre, la seconda gli spazi, intrecciati elemento
+/// per elemento — da cui il nome.
+enum ITFGenerator {
+    /// Cinque elementi per cifra, "1" = largo.
+    private static let patterns = [
+        "00110", "10001", "01001", "11000", "00101",
+        "10100", "01100", "00011", "10010", "01010",
+    ]
+
+    static func generate(text: String, narrowWidth: CGFloat = 3, height: CGFloat = 120) -> UIImage? {
+        var digits = text.compactMap { $0.wholeNumberValue }.filter { (0...9).contains($0) }
+        guard !digits.isEmpty else { return nil }
+        // Il formato codifica coppie: con un numero dispari di cifre si
+        // antepone uno zero, come fanno tutti i lettori.
+        if digits.count % 2 == 1 { digits.insert(0, at: 0) }
+
+        let wideWidth = narrowWidth * 3
+        var elements: [(isBar: Bool, isWide: Bool)] = []
+        // Start: barra, spazio, barra, spazio, tutti stretti.
+        elements += [(true, false), (false, false), (true, false), (false, false)]
+        for pair in stride(from: 0, to: digits.count, by: 2) {
+            let bars = patterns[digits[pair]]
+            let spaces = patterns[digits[pair + 1]]
+            for i in 0..<5 {
+                elements.append((true, Array(bars)[i] == "1"))
+                elements.append((false, Array(spaces)[i] == "1"))
+            }
+        }
+        // Stop: barra larga, spazio stretto, barra stretta.
+        elements += [(true, true), (false, false), (true, false)]
+
+        let barsWidth = elements.reduce(CGFloat(0)) { $0 + ($1.isWide ? wideWidth : narrowWidth) }
+        let textBand: CGFloat = 16
+        // ITF-14 (le 14 cifre del codice logistico) vuole le barre di
+        // contenimento intorno al simbolo: senza, il lettore lo riconosce come
+        // un generico Interleaved 2 of 5.
+        let bearer: CGFloat = digits.count == 14 ? narrowWidth * 2 : 0
+        // Dieci moduli stretti di quiete, che con la cornice vanno contati al
+        // suo interno.
+        let quiet = narrowWidth * 10 + bearer
+        let size = CGSize(width: barsWidth + quiet * 2, height: height)
+
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            UIColor.black.setFill()
+            if bearer > 0 {
+                let frame = CGRect(x: 0, y: 0, width: size.width, height: height - textBand)
+                ctx.fill(CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: bearer))
+                ctx.fill(CGRect(x: frame.minX, y: frame.maxY - bearer, width: frame.width, height: bearer))
+                ctx.fill(CGRect(x: frame.minX, y: frame.minY, width: bearer, height: frame.height))
+                ctx.fill(CGRect(x: frame.maxX - bearer, y: frame.minY, width: bearer, height: frame.height))
+            }
+            var x = quiet
+            for element in elements {
+                let w = element.isWide ? wideWidth : narrowWidth
+                if element.isBar {
+                    ctx.fill(CGRect(x: x, y: bearer, width: w, height: height - textBand - bearer * 2))
+                }
+                x += w
+            }
+
+            let font = UIFont.monospacedDigitSystemFont(ofSize: textBand - 3, weight: .regular)
+            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.black]
+            let label = digits.map(String.init).joined() as NSString
+            let width = label.size(withAttributes: attrs).width
+            label.draw(at: CGPoint(x: (size.width - width) / 2, y: height - textBand + 1), withAttributes: attrs)
         }
     }
 }

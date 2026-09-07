@@ -22,6 +22,7 @@ import { extractAndStore } from "../services/aiMemory";
 import { loadFamilyKey } from "../services/familyKey";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
+import MarkdownText from "../components/MarkdownText";
 import "./Assistente.css";
 
 const newId = () => crypto.randomUUID();
@@ -404,7 +405,11 @@ export default function Assistente() {
                     // il resto.
                     <span className="ai-summary-label">{a.summaryLabel}</span>
                   )}
-                  <div className="ai-bubble">{m.content}</div>
+                  <div className="ai-bubble">
+                    {/* Come nella chat di Salute: la risposta arriva in
+                        Markdown, la domanda è il testo digitato. */}
+                    {m.role === "assistant" ? <MarkdownText text={m.content} /> : m.content}
+                  </div>
                   <span className="ai-time">{fmtWhen(m.createdAt)}</span>
                 </div>
               ))

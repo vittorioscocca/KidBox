@@ -33,7 +33,7 @@ private struct AIClaudeMarkdownText: View {
                 switch block {
                 case .heading(let level, let headingText):
                     Text(markdownAttributed(headingText))
-                        .font(level == 2 ? .title3.weight(.semibold) : .headline.weight(.semibold))
+                        .font(headingFont(level))
                         .foregroundStyle(KBTheme.primaryText(colorScheme))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Divider()
@@ -104,8 +104,10 @@ private struct AIClaudeMarkdownText: View {
                 continue
             }
 
-            if trimmed.hasPrefix("## ") || trimmed.hasPrefix("### ") {
-                let level = trimmed.hasPrefix("### ") ? 3 : 2
+            // `# ` compreso: senza, il titolo di primo livello finiva a video
+            // col cancelletto, dentro un paragrafo qualsiasi.
+            if trimmed.hasPrefix("# ") || trimmed.hasPrefix("## ") || trimmed.hasPrefix("### ") {
+                let level = trimmed.hasPrefix("### ") ? 3 : (trimmed.hasPrefix("## ") ? 2 : 1)
                 let text = String(trimmed.dropFirst(level + 1))
                 out.append(.heading(level: level, text: text))
                 i += 1
@@ -151,7 +153,7 @@ private struct AIClaudeMarkdownText: View {
             i += 1
             while i < lines.count {
                 let t = lines[i].trimmingCharacters(in: .whitespaces)
-                if t.isEmpty || t.hasPrefix("## ") || t.hasPrefix("### ") || t.hasPrefix("```") ||
+                if t.isEmpty || t.hasPrefix("# ") || t.hasPrefix("## ") || t.hasPrefix("### ") || t.hasPrefix("```") ||
                     t.hasPrefix("- ") || t.hasPrefix("* ") || t.range(of: #"^\d+\.\s+"#, options: .regularExpression) != nil {
                     break
                 }
@@ -161,6 +163,15 @@ private struct AIClaudeMarkdownText: View {
             pushParagraph(paragraphLines.joined(separator: "\n"))
         }
         return out
+    }
+
+    /// Un livello, un corpo: il primo livello è il titolo della risposta.
+    private func headingFont(_ level: Int) -> Font {
+        switch level {
+        case 1:  return .title2.weight(.bold)
+        case 2:  return .title3.weight(.semibold)
+        default: return .headline.weight(.semibold)
+        }
     }
 
     private func markdownAttributed(_ source: String) -> AttributedString {

@@ -10,26 +10,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { REACTION_EMOJIS } from "../services/chat";
+import ChatAudioPlayer from "./ChatAudioPlayer";
+import { formatBytes, formatDuration } from "./chatFormat";
 
-const AUDIO_RATES = [1, 1.5, 2];
+export { formatBytes, formatDuration };
 
-export function formatBytes(bytes) {
-  if (!bytes) return "";
-  const units = ["B", "KB", "MB", "GB"];
-  let value = bytes;
-  let i = 0;
-  while (value >= 1024 && i < units.length - 1) {
-    value /= 1024;
-    i += 1;
-  }
-  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-}
-
-export function formatDuration(seconds) {
-  if (!seconds && seconds !== 0) return "";
-  const total = Math.round(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
 
 const timeOf = (date, locale) =>
   date ? date.toLocaleTimeString(locale === "en" ? "en-US" : "it-IT", { hour: "2-digit", minute: "2-digit" }) : "";
@@ -63,32 +48,6 @@ function TextWithLinks({ text, mentions }) {
         );
       })}
     </>
-  );
-}
-
-function AudioPlayer({ url, duration }) {
-  const audioRef = useRef(null);
-  const [rate, setRate] = useState(1);
-
-  const cycleRate = () => {
-    const next = AUDIO_RATES[(AUDIO_RATES.indexOf(rate) + 1) % AUDIO_RATES.length];
-    setRate(next);
-    if (audioRef.current) audioRef.current.playbackRate = next;
-  };
-
-  return (
-    <div className="chat-audio">
-      <audio
-        ref={audioRef}
-        src={url}
-        preload="metadata"
-        controls
-      />
-      <button className="chat-audio-rate" onClick={cycleRate}>
-        {rate}×
-      </button>
-      {duration ? <span className="chat-audio-time">{formatDuration(duration)}</span> : null}
-    </div>
   );
 }
 
@@ -236,7 +195,7 @@ export default function ChatBubble({
       case "video":
         return <video className="chat-media" src={message.mediaURL} controls preload="metadata" />;
       case "audio":
-        return <AudioPlayer url={message.mediaURL} duration={message.mediaDurationSeconds} />;
+        return <ChatAudioPlayer url={message.mediaURL} duration={message.mediaDurationSeconds} />;
       case "document":
         return (
           <a className="chat-document" href={message.mediaURL} target="_blank" rel="noreferrer">

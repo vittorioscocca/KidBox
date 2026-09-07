@@ -1,0 +1,914 @@
+/* Salute. Riusa le classi `pw-*` per intestazione, form e pannello di
+   dettaglio: sono lo stesso vocabolario delle altre sezioni. */
+@import "./Password.css";
+
+.sa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Selettore soggetto ─────────────────────────────────────────────────── */
+
+.sa-subjects {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.sa-subject {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sa-subject.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.sa-subject-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 82%, var(--text) 18%);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sa-subject-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Intestazione del soggetto ──────────────────────────────────────────── */
+
+.sa-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-hero-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sa-hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sa-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sa-hero-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sa-hero-sub {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* ── Griglia dei moduli ─────────────────────────────────────────────────── */
+
+.sa-modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.sa-module {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.sa-module:hover {
+  background: var(--border);
+}
+
+.sa-module-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.sa-module-badge {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.sa-module-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.sa-module-sub {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+/* ── Sotto-schermata ────────────────────────────────────────────────────── */
+
+.sa-module-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sa-back {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.sa-module-header h2 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.sa-module-header .sa-spacer {
+  margin-left: auto;
+}
+
+/* ── Liste ──────────────────────────────────────────────────────────────── */
+
+.sa-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+}
+
+.sa-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+}
+
+.sa-item-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.sa-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sa-item-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.sa-item-meta,
+.sa-item-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.sa-item-note {
+  white-space: pre-wrap;
+}
+
+.sa-item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sa-item-actions button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 3px 9px;
+  font-family: inherit;
+  font-size: 0.73rem;
+  cursor: pointer;
+}
+
+.sa-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sa-tag.urgent {
+  background: #d93838;
+}
+
+.sa-tag.late {
+  background: #d93838;
+}
+
+/* ── Filtri ─────────────────────────────────────────────────────────────── */
+
+.sa-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sa-chip {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.sa-chip.on {
+  color: #fff;
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.sa-search {
+  flex: 1;
+  min-width: 180px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+
+/* ── Timeline ───────────────────────────────────────────────────────────── */
+
+.sa-year {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.sa-year strong {
+  font-size: 1.15rem;
+}
+
+.sa-year span {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.sa-month {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+}
+
+.sa-month::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Griglia delle dosi ─────────────────────────────────────────────────── */
+
+.sa-doses {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sa-dose-day {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-dose-label {
+  width: 84px;
+  font-size: 0.74rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.sa-dose-slots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sa-dose {
+  min-width: 58px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.sa-dose.taken {
+  background: #27ae60;
+  border-color: #27ae60;
+  color: #fff;
+  font-weight: 700;
+}
+
+.sa-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.sa-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* ── Schede e form ──────────────────────────────────────────────────────── */
+
+.sa-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 96%, var(--text) 4%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sa-card h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.sa-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.sa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.sa-field input,
+.sa-field select,
+.sa-field textarea {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, var(--text) 8%);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.sa-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.sa-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ── Documenti generati (piani, cartella clinica) ───────────────────────── */
+
+.sa-doc-section {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.sa-doc-section h4 {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.sa-doc-body {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.sa-notice {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.sa-notice.warn {
+  background: color-mix(in srgb, #e0913a 18%, transparent);
+}
+
+/* ── Piano fitness ──────────────────────────────────────────────────────── */
+
+.sa-week {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sa-week-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.sa-week-head strong {
+  font-size: 0.95rem;
+}
+
+.sa-week-head span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.sa-session {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sa-session-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sa-session-head strong {
+  font-size: 0.92rem;
+}
+
+.sa-session-date {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.sa-session-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+/* Riga per lo spostamento di una seduta: compare sotto l'intestazione, come
+   la sheet «Sposta» del telefono ma senza coprire il resto del piano. */
+.sa-session-move {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 4px;
+}
+
+.sa-session-move input[type="date"] {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+}
+
+.sa-chip.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+.sa-exercises {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.82rem;
+}
+
+.sa-exercises span {
+  color: var(--muted);
+}
+
+.sa-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sa-target {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.74rem;
+  background: color-mix(in srgb, var(--bg) 86%, var(--text) 14%);
+}
+
+.sa-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media print {
+  .sidebar,
+  .sa-module-header,
+  .sa-subjects {
+    display: none !important;
+  }
+}
+
+/* ── Chat AI ────────────────────────────────────────────────────────────── */
+
+.sa-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sa-chat-log {
+  flex: 1;
+  min-height: 220px;
+  max-height: 52vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px;
+}
+
+.sa-bubble {
+  max-width: 86%;
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sa-bubble.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.sa-bubble.assistant {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+
+.sa-bubble.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.sa-chat-input {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.sa-chat-input textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, var(--text) 8%);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+/* Il pulsante d'invio sta accanto alla casella di testo e ne segue l'altezza:
+   con la sola forma di base restava un quadratino in fondo alla riga. */
+.sa-chat-input .pw-btn-primary {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Pulsante «Chiedi all'AI»: la pillola in testa a ogni modulo. */
+.sa-ask-ai {
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sa-ask-ai:disabled {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+
+/* Riga di storico cliccabile: è un <button>, ma deve leggersi come testo. */
+.sa-item-open {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sa-item-open:hover .sa-item-title {
+  text-decoration: underline;
+}
+
+/* ── Piano alimentare: una sezione per volta con le schede ── */
+.meal-tabs {
+  margin: 4px 0 12px;
+}
+
+.meal-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.meal-pager button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.meal-pager button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── Calendario del piano fitness ── */
+.fit-tabs {
+  margin-bottom: 4px;
+}
+
+.fit-cal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fit-week-badge {
+  margin-left: auto;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.fit-cal-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 8px;
+}
+
+.fit-cal-month button {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 10px;
+}
+
+.fit-cal-month button:disabled {
+  color: var(--muted);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.fit-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.fit-cal-weekdays {
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.fit-cal-empty {
+  height: 46px;
+}
+
+.fit-cal-day {
+  height: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Un giorno con una seduta si distingue anche senza colore, per chi non
+   percepisce la differenza fra i pallini. */
+.fit-cal-day.has-session {
+  background: color-mix(in srgb, var(--bg) 88%, var(--text) 12%);
+}
+
+.fit-cal-day.today {
+  border-color: var(--accent);
+}
+
+.fit-cal-day.selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.fit-cal-day.outside .fit-cal-num {
+  opacity: 0.4;
+}
+
+.fit-cal-num {
+  font-size: 0.86rem;
+}
+
+.fit-cal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.fit-cal-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.fit-cal-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fit-cal-day-detail {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.fit-cal-day-detail h4 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Solo la prima lettera: `capitalize` maiuscolerebbe anche il mese, e in
+   italiano i mesi sono minuscoli. */
+.fit-cal-day-detail h4::first-letter {
+  text-transform: uppercase;
+}

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { FamilyProvider } from "./FamilyContext";
 import { LocaleProvider } from "./i18n/LocaleContext";
 import { ThemeProvider } from "./ThemeContext";
+import { facebookLoginEnabled, refreshFeatureFlags } from "./services/featureFlags";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import TodoPage from "./pages/TodoPage";
@@ -25,6 +26,7 @@ import Profilo from "./pages/Profilo";
 import Impostazioni from "./pages/Impostazioni";
 import Famiglia from "./pages/Famiglia";
 import Chat from "./pages/Chat";
+import Salute from "./pages/Salute";
 import Placeholder from "./pages/Placeholder";
 import { listenForegroundPush } from "./services/push";
 import { NAV_SECTIONS, ACCOUNT_SECTIONS } from "./nav";
@@ -74,6 +76,19 @@ function LoginScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
+  /* Si parte dalla cache — niente pulsante che appare a metà caricamento — e
+     si riallinea quando Remote Config risponde. */
+  const [facebookEnabled, setFacebookEnabled] = useState(facebookLoginEnabled);
+
+  useEffect(() => {
+    let cancelled = false;
+    refreshFeatureFlags().then((enabled) => {
+      if (!cancelled) setFacebookEnabled(enabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const runProvider = async (fn) => {
     setError(null);
@@ -107,9 +122,15 @@ function LoginScreen() {
         <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithApple)}>
           <AppleIcon /> Accedi con Apple
         </button>
-        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithFacebook)}>
-          <FacebookIcon /> Accedi con Facebook
-        </button>
+        {/* Nascosto finché l'app Meta è in modalità sviluppo: chi lo premeva
+            riceveva «questa app non funziona», che si legge come un guasto di
+            KidBox. Torna da solo quando il flag remoto passa a true, senza un
+            nuovo rilascio — stessa logica di iOS e Android. */}
+        {facebookEnabled && (
+          <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithFacebook)}>
+            <FacebookIcon /> Accedi con Facebook
+          </button>
+        )}
 
         {!showEmailForm && (
           <button className="auth-btn secondary" onClick={() => setShowEmailForm(true)}>
@@ -186,7 +207,8 @@ function AuthedApp() {
             <Route path="/account/family" element={<Famiglia />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/todo" element={<TodoPage />} />
-            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage" && s.path !== "/viaggi" && s.path !== "/assistente" && s.path !== "/chat").map((s) => (
+            <Route path="/salute" element={<Salute />} />
+            {NAV_SECTIONS.filter((s) => !s.exact && s.path !== "/calendario" && s.path !== "/todo" && s.path !== "/note" && s.path !== "/documenti" && s.path !== "/spesa" && s.path !== "/foto" && s.path !== "/spese" && s.path !== "/posizione" && s.path !== "/password" && s.path !== "/wallet" && s.path !== "/animali" && s.path !== "/casa" && s.path !== "/garage" && s.path !== "/viaggi" && s.path !== "/assistente" && s.path !== "/chat" && s.path !== "/salute").map((s) => (
               <Route key={s.key} path={s.path} element={<Placeholder title={s.label} />} />
             ))}
             {ACCOUNT_SECTIONS.filter((s) => s.path !== "/account/profilo" && s.path !== "/account/impostazioni" && s.path !== "/account/family").map((s) => (

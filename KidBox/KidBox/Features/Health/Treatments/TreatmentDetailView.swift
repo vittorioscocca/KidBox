@@ -720,7 +720,9 @@ struct TreatmentDetailView: View {
         }
     }
     
-    private func sectionTitle(_ text: String) -> some View {
+    /// `LocalizedStringKey` e non `String`: con `String` il titolo salta il
+    /// catalogo e resta in italiano in ogni lingua.
+    private func sectionTitle(_ text: LocalizedStringKey) -> some View {
         Text(text).font(.subheadline.bold())
             .padding(.horizontal).padding(.top, 16).padding(.bottom, 4)
             .frame(maxWidth: .infinity, alignment: .leading)

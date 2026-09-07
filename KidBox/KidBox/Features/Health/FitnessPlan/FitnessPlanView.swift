@@ -411,6 +411,14 @@ struct FitnessPlanView: View {
                 value: "\(snap?.recentWorkouts.count ?? 0)",
                 available: !(snap?.recentWorkouts.isEmpty ?? true)
             ),
+            // Le calorie attive entrano nel prompt del piano: vanno dichiarate
+            // qui, non solo usate.
+            DataSourceRow(
+                id: "activeEnergy",
+                label: "Calorie attive",
+                value: (snap?.activeEnergyKcal).flatMap { $0 > 0 ? String(format: "%.0f kcal", $0) : nil } ?? notAvailable,
+                available: (snap?.activeEnergyKcal ?? 0) > 0
+            ),
             DataSourceRow(id: "visits", label: "Visite mediche", value: "\(allVisits.count)", available: !allVisits.isEmpty),
             DataSourceRow(id: "exams", label: "Analisi & Esami", value: "\(allExams.count)", available: !allExams.isEmpty),
             DataSourceRow(id: "treatments", label: "Cure attive", value: "\(activeTreatments.count)", available: !activeTreatments.isEmpty),

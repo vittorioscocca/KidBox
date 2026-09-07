@@ -946,6 +946,29 @@
         }
       }
     },
+    "%d mesi" : {
+      "comment" : "Months",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d months"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d meses"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d mois"
+          }
+        }
+      }
+    },
     "%d min" : {
       "comment" : "Session duration in minutes",
       "localizations" : {
@@ -9930,6 +9953,9 @@
         }
       }
     },
+    "Calorie attive" : {
+
+    },
     "Cambia" : {
       "localizations" : {
         "en" : {
@@ -9992,6 +10018,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Changer de famille"
+          }
+        }
+      }
+    },
+    "Cambia password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar contraseña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer le mot de passe"
           }
         }
       }
@@ -15072,6 +15120,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copier la transcription"
+          }
+        }
+      }
+    },
+    "Copia utente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy username"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar usuario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier l'identifiant"
           }
         }
       }
@@ -31233,6 +31303,28 @@
         }
       }
     },
+    "Lettura in corso…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyendo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture en cours…"
+          }
+        }
+      }
+    },
     "Libreria" : {
       "localizations" : {
         "en" : {
@@ -41859,6 +41951,28 @@
         }
       }
     },
+    "Periodicità" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frequency"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Periodicidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Périodicité"
+          }
+        }
+      }
+    },
     "Periodicità (mesi)" : {
       "localizations" : {
         "en" : {
@@ -51240,6 +51354,28 @@
         }
       }
     },
+    "Serie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serial number"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Número de serie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Numéro de série"
+          }
+        }
+      }
+    },
     "Servono %1$d messaggi AI per generare il piano ma ne restano %2$d su %3$d oggi. Riprova domani." : {
       "comment" : "Fitness plan quota error\nMeal plan quota error",
       "localizations" : {
@@ -53074,6 +53210,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Historique"
+          }
+        }
+      }
+    },
+    "Storico eventi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event history"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historial de eventos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historique des événements"
           }
         }
       }

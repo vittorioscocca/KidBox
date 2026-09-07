@@ -230,6 +230,9 @@ function uploadMedia({ familyId, messageId, fileName, blob, contentType, onProgr
 const MEDIA_FILE = {
   photo: { name: "photo.jpg", mime: "image/jpeg" },
   video: { name: "video.mp4", mime: "video/mp4" },
+  // `audio/mp4` è il tipo giusto per l'AAC in contenitore MP4 (RFC 4337). Vale
+  // come ripiego: il nome e il tipo veri li porta chi registra, perché non
+  // tutti i browser sanno produrre AAC.
   audio: { name: "audio.m4a", mime: "audio/mp4" },
 };
 
@@ -248,8 +251,15 @@ export async function sendMedia({
   const id = crypto.randomUUID();
   const isDocument = type === "document";
   const info = MEDIA_FILE[type];
-  const name = isDocument ? fileName : info.name;
-  const mime = isDocument ? blob.type || "application/octet-stream" : info.mime;
+  // I vocali dichiarano il formato che hanno davvero. Prima il nome passato
+  // veniva ignorato e ogni registrazione finiva su Storage come `audio.m4a`
+  // con `audio/mp4`: un file WebM etichettato MP4, che Chrome riproduce lo
+  // stesso perché annusa il contenuto, ma che iPhone e Safari rifiutano.
+  const declaresOwnFormat = isDocument || type === "audio";
+  const name = declaresOwnFormat ? fileName || info?.name : info.name;
+  const mime = declaresOwnFormat
+    ? blob.type?.split(";")[0] || info?.mime || "application/octet-stream"
+    : info.mime;
 
   const { path, url } = await uploadMedia({
     familyId,

@@ -273,7 +273,9 @@ struct PasswordDetailView: View {
         }
     }
     
-    private func actionButtonLabel(_ title: String, systemImage: String) -> some View {
+    /// `LocalizedStringKey` e non `String`: con `String` il testo arriva a
+    /// `Text` già risolto, salta il catalogo e resta in italiano in ogni lingua.
+    private func actionButtonLabel(_ title: LocalizedStringKey, systemImage: String) -> some View {
         VStack(spacing: 6) {
             Image(systemName: systemImage)
                 .font(.footnote.weight(.semibold))

@@ -190,7 +190,12 @@ struct PetDetailView: View {
             }
             if let birth = p.birthDate {
                 let years = Calendar.current.dateComponents([.year], from: birth, to: Date()).year ?? 0
-                labeled("Data di nascita", "\(PetDetailView.shortDate(birth)) (\(years) anni)")
+                // Anche gli anni vanno tradotti: `%d anni` è già a catalogo.
+                let age = String(
+                    format: NSLocalizedString("%d anni", comment: "Age in years"),
+                    years
+                )
+                labeled("Data di nascita", "\(PetDetailView.shortDate(birth)) (\(age))")
             }
             if let chip = p.chipCode?.trimmingCharacters(in: .whitespacesAndNewlines), !chip.isEmpty {
                 labeled("Microchip", chip)
@@ -266,7 +271,9 @@ struct PetDetailView: View {
         .padding()
     }
 
-    private func labeled(_ k: String, _ v: String) -> some View {
+    /// L'etichetta passa dal catalogo, il valore no: quello è un dato — un
+    /// nome, una data, un codice — e va mostrato com'è.
+    private func labeled(_ k: LocalizedStringKey, _ v: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(k)
                 .font(.caption)
@@ -276,7 +283,11 @@ struct PetDetailView: View {
         }
     }
 
-    private func sectionTitle(_ t: String) -> some View {
+    /// `LocalizedStringKey` e non `String`: con `String` il testo arriva a
+    /// `Text` già risolto e salta il catalogo, quindi il titolo resta in
+    /// italiano in ogni lingua — ed è anche il motivo per cui la chiave non
+    /// veniva estratta dalla build.
+    private func sectionTitle(_ t: LocalizedStringKey) -> some View {
         Text(t)
             .font(.custom("Nunito", size: 13).weight(.semibold))
             .foregroundStyle(.secondary)

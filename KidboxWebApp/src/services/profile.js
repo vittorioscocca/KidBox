@@ -157,16 +157,49 @@ export async function removeAvatar({ uid, familyId }) {
  *
  * È l'ordine di `KBSubscriptionManager`, e non è una preferenza: il piano si
  * compra per la famiglia, quindi quello del documento famiglia vince.
+ *
+ * Ricalca `resolveFamilyPlanForQuotas` (functions/index.js), che è ciò che il
+ * server applica davvero. Leggere il solo campo `plan` dà due risposte sbagliate
+ * in direzioni opposte:
+ *
+ * - `planOverride` (Pro/Max concessi dalla console admin, senza scadenza) non
+ *   tocca `plan`, quindi una famiglia Max risultava «free» in UI mentre il
+ *   server la trattava — correttamente — da Max;
+ * - `planExpiresAt` scaduto declassa a free lato server, ma il campo `plan`
+ *   resta quello comprato, quindi un abbonamento finito continuava a mostrarsi
+ *   attivo.
  */
 export async function loadPlan({ familyId, uid }) {
+  let plan = "free";
+  let expiredByDate = false;
+
   if (familyId) {
     const snap = await getDoc(doc(db, "families", familyId));
-    const plan = snap.exists() ? snap.data().plan : null;
-    if (plan) return String(plan).toLowerCase();
+    const d = snap.exists() ? snap.data() : {};
+    const override = d.planOverride;
+    if (override === "pro" || override === "max") {
+      return override;
+    }
+    plan = String(d.plan || "free").toLowerCase();
+    const expiresAt = d.planExpiresAt;
+    if (plan !== "free" && expiresAt?.toMillis && expiresAt.toMillis() <= Date.now()) {
+      plan = "free";
+      expiredByDate = true;
+    }
   }
-  const snap = await getDoc(userRef(uid));
-  return String(snap.data()?.plan || "free").toLowerCase();
+
+  // Il fallback su `users/{uid}.plan` serve solo agli account precedenti alla
+  // fonte-di-verità sulla famiglia, e va saltato dopo un declassamento per
+  // scadenza: altrimenti resusciterebbe l'abbonamento appena scaduto.
+  if (plan === "free" && uid && !expiredByDate) {
+    const snap = await getDoc(userRef(uid));
+    plan = String(snap.data()?.plan || "free").toLowerCase();
+  }
+  return plan;
 }
+
+/** Piani che includono le feature AI a pagamento (piani alimentare e fitness). */
+export const isPaidPlan = (plan) => plan === "pro" || plan === "max";
 
 export async function fetchStorageUsage(familyId) {
   const callable = httpsCallable(functions, "getStorageUsage");

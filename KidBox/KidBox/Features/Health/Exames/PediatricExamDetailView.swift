@@ -755,7 +755,9 @@ struct ExamAttachmentsSection: View {
         }
     }
     
-    private func extractionProgressLabel(_ text: String) -> some View {
+    /// `LocalizedStringKey` e non `String`: con `String` il testo arriva a
+    /// `Text` già risolto, salta il catalogo e resta in italiano in ogni lingua.
+    private func extractionProgressLabel(_ text: LocalizedStringKey) -> some View {
         HStack(spacing: 4) {
             ProgressView().scaleEffect(0.6).frame(width: 12, height: 12)
             Text(text).font(.caption2).foregroundStyle(.secondary)

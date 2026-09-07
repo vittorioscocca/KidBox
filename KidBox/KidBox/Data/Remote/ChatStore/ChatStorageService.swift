@@ -40,7 +40,7 @@ final class ChatStorageService {
     ///   - familyId: ID della famiglia.
     ///   - messageId: ID del messaggio a cui appartiene il media.
     ///   - fileName: Nome file con estensione (es. "photo.jpg", "audio.m4a").
-    ///   - mimeType: MIME type del file (es. "image/jpeg", "audio/m4a").
+    ///   - mimeType: MIME type del file (es. "image/jpeg", "audio/mp4").
     ///   - progressHandler: Callback opzionale con il progresso 0.0...1.0.
     ///
     /// - Returns: `(storagePath, downloadURL)` da salvare nel messaggio.
@@ -153,7 +153,11 @@ final class ChatStorageService {
         switch type {
         case .photo:    return ("photo.jpg",  "image/jpeg")
         case .video:    return ("video.mp4",  "video/mp4")
-        case .audio:    return ("audio.m4a",  "audio/x-m4a")
+        // `audio/mp4` è il tipo registrato per l'AAC in contenitore MP4
+        // (RFC 4337). Prima erano tre stringhe diverse per lo stesso file —
+        // `audio/m4a` da iPhone, `audio/x-m4a` da Android, `audio/mp4` dal
+        // browser — e le prime due non esistono in nessun registro.
+        case .audio:    return ("audio.m4a",  "audio/mp4")
         case .document: return ("document",   "application/octet-stream")
         case .text:     return ("file.bin",   "application/octet-stream")
         case .location: return ("location.json", "application/json")

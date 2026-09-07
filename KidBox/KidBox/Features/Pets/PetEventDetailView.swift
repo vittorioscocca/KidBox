@@ -123,7 +123,8 @@ struct PetEventDetailView: View {
         }
     }
 
-    private func row(_ k: String, _ v: String) -> some View {
+    /// L'etichetta passa dal catalogo, il valore no: quello è un dato.
+    private func row(_ k: LocalizedStringKey, _ v: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(k).font(.caption).foregroundStyle(.secondary)
             Text(v)

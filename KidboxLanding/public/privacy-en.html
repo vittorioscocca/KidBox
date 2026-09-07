@@ -152,7 +152,7 @@
     <div class="page-hero">
       <span class="section-label">Legal</span>
       <h1>Privacy Policy</h1>
-      <span class="updated">Last updated: 15 June 2026 · GDPR compliant</span>
+      <span class="updated">Last updated: 7 September 2026 · GDPR compliant</span>
     </div>
 
     <p>KidBox is an application designed for the shared management of family information — chat, documents, notes, activities and children's health. This policy explains transparently what data we process, why and with whom we share it.</p>
@@ -192,6 +192,19 @@
 
     <h2>Sensitive data</h2>
     <p>KidBox processes <strong>health data</strong> (vital parameters, medications, medical visits, fitness data from Health Connect) classified as sensitive data under GDPR Art. 9. This data is collected exclusively on the user's explicit consent, stored in encrypted form on Google Firebase, and is not shared with third parties unless the user activates the AI feature (see AI Assistant section). Health data is never used for advertising purposes.</p>
+
+    <h2>Health Connect (Android)</h2>
+    <p>On Android, KidBox can read health data from <strong>Health Connect</strong>, exclusively after the user has granted each individual permission from the Health Connect system screen. Consent is per data type and can be revoked at any time from Health Connect settings, without uninstalling KidBox.</p>
+    <p>KidBox only <strong>reads</strong> the data types listed below and <strong>writes</strong> none of them. For each one we state the specific purpose:</p>
+    <ul>
+      <li><strong>Steps</strong> — display daily activity in the Health section and calibrate the volume of the training plan.</li>
+      <li><strong>Heart rate</strong> (including resting heart rate) — display the latest recorded values in the Health section and adapt the intensity of the training plan.</li>
+      <li><strong>Weight</strong> — body metric used for the training plan and the meal plan, and to follow its trend over time.</li>
+      <li><strong>Height</strong> — body metric used together with weight to size the training plan and the meal plan.</li>
+      <li><strong>Active calories burned</strong> — energy spent during workouts, recorded by a watch or fitness app. This is the data KidBox uses to build the <strong>weekly report</strong> of the training plan (total calories for the week, alongside completed sessions and minutes performed), to pre-fill the calories of an individual completed session, and to estimate energy needs in the meal plan. Without this data the weekly report can only show duration, not actual effort.</li>
+      <li><strong>Exercise</strong> — type, date and duration of recorded sessions, to reconcile workouts actually performed with those planned.</li>
+    </ul>
+    <p>Data read from Health Connect is stored encrypted on Google Firebase and shared only within the user's own family group. It is never used for advertising purposes, never sold to third parties, and never feeds profiling. It is sent to Anthropic only when the user explicitly activates an AI feature that requires it (training plan, meal plan, assistant), as described in the AI Assistant section. On account deletion it is erased together with all other data.</p>
 
     <h2>Sharing data with third parties</h2>
     <p><strong>We do not sell your data.</strong> Data is shared exclusively with the following technical providers for service delivery:</p>
