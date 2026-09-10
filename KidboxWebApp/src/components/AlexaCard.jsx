@@ -193,18 +193,27 @@ export default function AlexaCard() {
 
       {/* Il codice non sparisce col collegamento dell'account: se la voce non è
           ancora associata serve ancora, ed è il caso del secondo membro di
-          casa, che l'account ce l'ha già per riflesso. */}
-      {!(linked && voiceLinked) &&
-        (code ? (
-          codeBlock
-        ) : (
-          <button className="prof-action" onClick={generate} disabled={generating}>
-            {linked ? a.voiceCta : a.generate}
-          </button>
-        ))}
-
+          casa, che l'account ce l'ha già per riflesso di quello Amazon
+          condiviso. E serve partendo dalla skill: senza quella attiva sul
+          PROPRIO account Amazon il codice si detta a vuoto, e non c'è modo di
+          capire perché. Stessa struttura a passi di iOS e Android. */}
       {!(linked && voiceLinked) && (
         <>
+          <h3 className="alexa-sub">{a.skillSection}</h3>
+          <p className="alexa-step">{a.skillStep}</p>
+          <p className="pw-hint">{a.skillNote}</p>
+
+          {/* Col proprio account già collegato, «2. Collega l'account»
+              contraddice lo stato in cima alla scheda: resta il passo 2, ma di
+              un'altra cosa. */}
+          <h3 className="alexa-sub">{linked ? a.voiceStepSection : a.pairingSection}</h3>
+          {code ? (
+            codeBlock
+          ) : (
+            <button className="prof-action" onClick={generate} disabled={generating}>
+              {linked ? a.voiceCta : a.generate}
+            </button>
+          )}
           {linked && <p className="pw-hint">{a.voiceNote}</p>}
           <p className="pw-hint">{a.pairingNote}</p>
         </>

@@ -253,6 +253,14 @@
   font-size: 0.95rem;
 }
 
+/* L'azione del passo, non il suo commento: colore pieno e non `--muted`, o si
+   confonderebbe con le note che le stanno intorno. Stessa distinzione che iOS
+   e Android fanno fra `onSurface` e il grigio del sottotitolo. */
+.alexa-step {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
 /* Il codice si legge ad alta voce: grande, cifre monospaziate e spaziate, così
    non si sbaglia una cifra mentre si guarda lo schermo e si parla. */
 .alexa-code {
