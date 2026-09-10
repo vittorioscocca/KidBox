@@ -202,6 +202,76 @@
   .mini-list .ck { flex-shrink:0; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; color:#fff; margin-top:2px; }
   .band-visual { display:flex; justify-content:center; }
 
+  /* VOCE / ALEXA — il pannello è volutamente scuro in entrambi i temi:
+     è la cucina di sera, con l'anello dell'Echo acceso. */
+  .voice { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:20px 0 10px; }
+  .voice-copy .p-eyebrow { color:#1f9dc9; }
+  @media (prefers-color-scheme: dark) { .voice-copy .p-eyebrow { color:#4fd8ff; } }
+  :root[data-theme="dark"] .voice-copy .p-eyebrow { color:#4fd8ff; }
+  :root[data-theme="light"] .voice-copy .p-eyebrow { color:#1f9dc9; }
+  .voice-visual { display:flex; justify-content:center; }
+  .voice-panel { position:relative; width:100%; max-width:410px; border-radius:var(--r-lg); padding:30px 24px 24px; overflow:hidden;
+    background:linear-gradient(165deg,#13202e 0%,#080d14 62%); border:1px solid rgba(79,216,255,0.18); box-shadow:var(--shadow-lg); }
+  .voice-panel::after { content:''; position:absolute; top:-96px; left:50%; transform:translateX(-50%); width:300px; height:200px;
+    background:radial-gradient(ellipse at center,rgba(79,216,255,.30),transparent 70%); filter:blur(16px); pointer-events:none; }
+
+  /* Echo */
+  .echo { position:relative; width:118px; height:120px; margin:4px auto 14px; }
+  .echo-cyl { position:absolute; left:16px; right:16px; top:24px; bottom:6px; background:linear-gradient(150deg,#3d4855,#171d26);
+    border-radius:16px 16px 20px 20px / 12px 12px 26px 26px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 18px 30px rgba(0,0,0,.45); }
+  .echo-cyl::before { content:''; position:absolute; inset:8px 10px 12px; border-radius:12px;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 4px); }
+  .echo-ring { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:3px solid #4fd8ff;
+    background:radial-gradient(ellipse at center,rgba(79,216,255,.28),transparent 70%); animation:ringpulse 3.2s ease-in-out infinite; }
+  @keyframes ringpulse { 0%,100% { opacity:.6; box-shadow:0 0 10px rgba(79,216,255,.45), inset 0 0 8px rgba(79,216,255,.35); }
+                         50%     { opacity:1;  box-shadow:0 0 28px rgba(79,216,255,.85), inset 0 0 16px rgba(79,216,255,.6); } }
+  .echo-halo { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:2px solid rgba(79,216,255,.55); animation:halo 3.2s ease-out infinite; }
+  .echo-halo.h2 { animation-delay:1.6s; }
+  @keyframes halo { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(1.9); opacity:0; } }
+
+  /* Onda vocale */
+  .wave { display:flex; align-items:center; justify-content:center; gap:4px; height:30px; margin-bottom:14px; }
+  .wave i { width:4px; height:7px; border-radius:3px; background:linear-gradient(180deg,#7ee6ff,#1b8fc4); animation:wv 1.15s ease-in-out infinite; }
+  .wave i:nth-child(1){animation-delay:0s} .wave i:nth-child(2){animation-delay:.12s} .wave i:nth-child(3){animation-delay:.24s}
+  .wave i:nth-child(4){animation-delay:.36s} .wave i:nth-child(5){animation-delay:.18s} .wave i:nth-child(6){animation-delay:.30s}
+  .wave i:nth-child(7){animation-delay:.06s} .wave i:nth-child(8){animation-delay:.42s} .wave i:nth-child(9){animation-delay:.20s}
+  @keyframes wv { 0%,100% { height:7px; opacity:.4; } 50% { height:26px; opacity:1; } }
+
+  /* Le frasi si alternano */
+  .say { position:relative; height:66px; margin-bottom:14px; }
+  .say span { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:0 6px;
+    font-size:0.95rem; font-weight:600; line-height:1.35; color:#eaf6ff; opacity:0; animation:sayc 13.5s ease-in-out infinite; }
+  .say span b { color:#4fd8ff; font-weight:700; }
+  .say span:nth-child(2){ animation-delay:4.5s } .say span:nth-child(3){ animation-delay:9s }
+  @keyframes sayc { 0%{opacity:0;transform:translateY(7px)} 5%{opacity:1;transform:none} 28%{opacity:1;transform:none} 33%,100%{opacity:0;transform:translateY(-7px)} }
+
+  /* Cosa compare nell'app */
+  .voice-out { background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:12px; }
+  .vo-h { font-size:0.62rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(234,246,255,.45); margin:2px 0 9px; display:flex; align-items:center; gap:6px; }
+  .vrow { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:11px; background:rgba(255,255,255,.05); margin-bottom:6px; }
+  .vrow .vck { width:16px; height:16px; border-radius:50%; border:1.5px solid rgba(234,246,255,.32); flex-shrink:0; }
+  .vrow .v1 { font-size:0.79rem; font-weight:700; color:#f2f8ff; }
+  .vrow .v2 { font-size:0.63rem; color:rgba(234,246,255,.45); }
+  .vrow .vnew { margin-left:auto; font-size:0.56rem; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#08121a; background:#4fd8ff; padding:3px 8px; border-radius:50px; flex-shrink:0; }
+  .vrow.pop { animation:vpop 13.5s ease-in-out infinite; }
+  .vrow.pop.d2 { animation-delay:4.5s } .vrow.pop.d3 { animation-delay:9s }
+  @keyframes vpop { 0%{opacity:.25; transform:translateX(-8px)} 6%,100%{opacity:1; transform:none} }
+
+  /* Le frasi, per esteso */
+  .phrases { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:26px; }
+  .phrase { display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:8px 15px 8px 11px; box-shadow:var(--shadow); }
+  .phrase .pw { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:0.62rem; color:#08121a; background:#4fd8ff; flex-shrink:0; }
+  .voice-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
+  .voice-note b { color:var(--text); }
+  @media (max-width:860px) { .voice { grid-template-columns:1fr; gap:34px; padding-bottom:0; } }
+  @media (prefers-reduced-motion:reduce) {
+    .echo-ring,.wave i,.vrow.pop { animation:none; }
+    .echo-halo { animation:none; opacity:0; }
+    .say span { animation:none; opacity:0; }
+    .say span:first-child { opacity:1; }
+  }
+
   /* AGENTS */
   .agents { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:44px; }
   .agent { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:30px 26px; box-shadow:var(--shadow); transition:transform .2s,box-shadow .2s; position:relative; overflow:hidden; }
@@ -277,6 +347,7 @@
   <a class="logo" href="#top"><img src="icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
   <div class="nav-r">
     <a class="nav-lnk nav-hide" href="#prodotti">Prodotti</a>
+    <a class="nav-lnk nav-hide" href="#voce">Voce</a>
     <a class="nav-lnk nav-hide" href="#ai">Intelligenza AI</a>
     <a class="nav-lnk nav-hide" href="#prezzi">Prezzi</a>
     <a class="nav-lnk nav-hide" href="guide.html">Guida</a>
@@ -491,15 +562,63 @@
   <div class="grid-sm rv">
     <div class="cell"><div class="c-ic">📅</div><h5>Calendario condiviso</h5><p>Tutti gli impegni della famiglia, sincronizzati in tempo reale.</p></div>
     <div class="cell"><div class="c-ic">💰</div><h5>Spese di famiglia</h5><p>Traccia le spese per categoria e tieni il budget sotto controllo.</p></div>
-    <div class="cell"><div class="c-ic">🛒</div><h5>Lista della spesa</h5><p>Condivisa in tempo reale. L'AI la compila su richiesta.</p></div>
+    <div class="cell"><div class="c-ic">🛒</div><h5>Lista della spesa</h5><p>Condivisa in tempo reale. La detti ad Alexa o la fai compilare all'AI.</p></div>
     <div class="cell"><div class="c-ic">🏠</div><h5>Casa & Veicoli</h5><p>Manutenzioni, bolli e scadenze — nulla dimenticato.</p></div>
     <div class="cell"><div class="c-ic">📝</div><h5>Note condivise</h5><p>Appunti e promemoria sincronizzati con la famiglia.</p></div>
     <div class="cell"><div class="c-ic">🎟️</div><h5>Wallet famiglia</h5><p>Biglietti, carte fedeltà e documenti digitali.</p></div>
-    <div class="cell"><div class="c-ic">✅</div><h5>Todo & Routine</h5><p>Cose da fare e routine quotidiane condivise.</p></div>
+    <div class="cell"><div class="c-ic">✅</div><h5>Todo & Routine</h5><p>Cose da fare e routine condivise — anche dettate a voce.</p></div>
     <div class="cell"><div class="c-ic">📸</div><h5>Foto di famiglia</h5><p>Album condivisi per conservare i ricordi.</p></div>
     <div class="cell"><div class="c-ic">🐾</div><h5>Animali domestici</h5><p>Profili e visite veterinarie integrati.</p></div>
     <div class="cell"><div class="c-ic">👨‍👩‍👧</div><h5>Profili familiari</h5><p>Un profilo per ogni membro, con i suoi dati.</p></div>
   </div>
+</section>
+
+<!-- VOCE / ALEXA -->
+<section id="voce" class="wrap" style="padding-top:0;">
+  <div class="voice rv">
+    <div class="voice-copy">
+      <div class="p-eyebrow">🔊 Novità · Alexa</div>
+      <h3>Detta la spesa. Detta le cose da fare.</h3>
+      <p>Hai le mani nell'impasto e finisce il latte. Lo dici all'Echo di casa e l'articolo compare nella lista della spesa di KidBox — sul telefono di tutta la famiglia, nello stesso istante.</p>
+      <ul class="mini-list">
+        <li><span class="ck" style="background:#1f9dc9">✓</span><span><b>Aggiungi, togli e spunta</b> gli articoli della spesa — o fatti leggere cosa manca</span></li>
+        <li><span class="ck" style="background:#1f9dc9">✓</span><span><b>Crea un to-do</b> a voce, con la persona a cui assegnarlo e quando ricordarglielo</span></li>
+        <li><span class="ck" style="background:#1f9dc9">✓</span><span>Si collega <b>una volta sola</b>, con un codice che leggi dall'app</span></li>
+      </ul>
+    </div>
+    <div class="voice-visual">
+      <div class="voice-panel">
+        <div class="echo">
+          <div class="echo-cyl"></div>
+          <div class="echo-halo"></div>
+          <div class="echo-halo h2"></div>
+          <div class="echo-ring"></div>
+        </div>
+        <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="say">
+          <span>«Alexa, chiedi a <b>mio box</b> di aggiungere il latte»</span>
+          <span>«Alexa, chiedi a <b>mio box</b> cosa manca»</span>
+          <span>«Alexa, chiedi a <b>mio box</b> di ricordarmi di chiamare la scuola»</span>
+        </div>
+        <div class="voice-out">
+          <div class="vo-h">🛒 Lista della spesa</div>
+          <div class="vrow pop"><span class="vck"></span><div><div class="v1">Latte</div><div class="v2">detto a voce · adesso</div></div><span class="vnew">Nuovo</span></div>
+          <div class="vrow pop d2"><span class="vck"></span><div><div class="v1">Pane</div><div class="v2">aggiunto da Giulia · ieri</div></div></div>
+          <div class="vo-h" style="margin-top:12px">✅ To-do</div>
+          <div class="vrow pop d3"><span class="vck"></span><div><div class="v1">Chiamare la scuola</div><div class="v2">per Vittorio · domani alle 9:00</div></div><span class="vnew">Nuovo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phrases rv">
+    <span class="phrase"><span class="pw">◉</span>«Alexa, chiedi a mio box di aggiungere il latte»</span>
+    <span class="phrase"><span class="pw">◉</span>«Alexa, chiedi a mio box cosa manca»</span>
+    <span class="phrase"><span class="pw">◉</span>«Alexa, chiedi a mio box di togliere il pane»</span>
+    <span class="phrase"><span class="pw">◉</span>«Alexa, chiedi a mio box di ricordarmi di chiamare la scuola»</span>
+    <span class="phrase"><span class="pw">◉</span>«Alexa, apri mio box»</span>
+  </div>
+  <p class="voice-note rv">Funziona su tutti gli Echo di casa, <b>in italiano</b>. La skill si attiva dall'app Alexa e si collega a KidBox in un minuto.</p>
 </section>
 
 <!-- AI -->
