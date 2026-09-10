@@ -2400,7 +2400,17 @@ exports.askAI = onCall(
 
         const json = await res.json();
         reply = json?.content?.[0]?.text;
-        if (!reply) throw new HttpsError("internal", "Risposta AI non valida.");
+        if (!reply) {
+          // Senza log qui l'allarme arriva su un 500 nudo e non resta traccia
+          // del perché: è successo il 04/09/2026 e non è stato ricostruibile.
+          logger.error("askAI: risposta Anthropic senza testo", {
+            uid,
+            familyId,
+            stopReason: json?.stop_reason ?? null,
+            contentTypes: (json?.content || []).map((c) => c?.type),
+          });
+          throw new HttpsError("internal", "Risposta AI non valida.");
+        }
 
         // Se Anthropic tronca per limite token, `stop_reason` = "max_tokens".
         // Lo logghiamo per poter alzare CHAT_MAX_TOKENS se ricapita.
@@ -3019,7 +3029,15 @@ exports.generateTravelPlan = onCall(
 
         const json = await res.json();
         const rawText = json?.content?.[0]?.text ?? "";
-        if (!rawText) throw new HttpsError("internal", "Risposta AI non valida.");
+        if (!rawText) {
+          logger.error("generateTravelPlan: risposta Anthropic senza testo", {
+            uid,
+            familyId,
+            stopReason: json?.stop_reason ?? null,
+            contentTypes: (json?.content || []).map((c) => c?.type),
+          });
+          throw new HttpsError("internal", "Risposta AI non valida.");
+        }
 
         const parsed = parseTravelPlanResponse(rawText);
         narrativeText = parsed.narrativeText;
@@ -3192,6 +3210,7 @@ exports.suggestTravelDestinations = onCall(
 
       const apiKey = ANTHROPIC_API_KEY.value();
       if (!apiKey) {
+        logger.error("suggestTravelDestinations: ANTHROPIC_API_KEY secret non configurato");
         throw new HttpsError("internal", "Configurazione AI non disponibile.");
       }
 
@@ -3231,6 +3250,12 @@ exports.suggestTravelDestinations = onCall(
         const rawText = json?.content?.[0]?.text ?? "";
         const parsed = parseTravelSuggestionsResponse(rawText);
         if (!parsed || !parsed.destinations.length) {
+          logger.error("suggestTravelDestinations: risposta non parsabile", {
+            uid,
+            familyId,
+            stopReason: json?.stop_reason ?? null,
+            rawTextSample: rawText.slice(0, 400),
+          });
           throw new HttpsError("internal", "Risposta suggerimenti non valida.");
         }
 
@@ -3985,8 +4010,12 @@ exports.searchTravelPlaces = onCall(
 
         const bodyText = await res.text();
         if (!res.ok) {
+          // failed-precondition (400), non internal (500): un errore di Google
+          // Places non è un guasto nostro, ed è già come lo trattano
+          // searchTravelDestinations e getTravelPlaceDetails. Il codice conta:
+          // un 5xx accende l'allarme "errore applicativo", il warn qui no.
           logger.warn("searchTravelPlaces failed", {status: res.status, body: bodyText.slice(0, 400)});
-          throw new HttpsError("internal", "Ricerca luoghi non riuscita.");
+          throw new HttpsError("failed-precondition", "Ricerca luoghi non riuscita.");
         }
 
         const parsed = JSON.parse(bodyText);
@@ -5360,7 +5389,10 @@ exports.publishPlansConfig = onCall(
       }
 
       const {ok, errors, plans} = plansConfig.validatePlans(plansConfig.bundledPlans());
-      if (!ok) throw new HttpsError("internal", `plans.json deployato non valido: ${errors.join("; ")}`);
+      if (!ok) {
+        logger.error("publishPlansConfig: il plans.json deployato non è valido", {callerUid, errors});
+        throw new HttpsError("internal", `plans.json deployato non valido: ${errors.join("; ")}`);
+      }
 
       const result = await writePlansConfigDoc(plans, callerUid, "ripristino dal deploy");
       logger.info("publishPlansConfig (ripristino)", {callerUid, ...result});
