@@ -6811,3 +6811,16 @@ Object.assign(exports, require("./analytics").triggers);
 const analyticsRollup = require("./analyticsRollup");
 exports.analyticsRollupDaily = analyticsRollup.analyticsRollupDaily;
 exports.runAnalyticsRollup = analyticsRollup.runAnalyticsRollup;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALEXA — lista della spesa a voce (functions/alexa.js)
+//
+// `alexaSkill` è l'unica function HTTP del progetto: la chiama Amazon, non un
+// nostro client, quindi non passa da App Check. Al suo posto valgono la firma
+// RSA della richiesta e il controllo dell'application id, entrambi in alexa.js.
+// ─────────────────────────────────────────────────────────────────────────────
+const alexa = require("./alexa");
+exports.alexaSkill = alexa.alexaSkill;
+exports.createAlexaPairingCode = alexa.createAlexaPairingCode;
+exports.getAlexaLinkStatus = alexa.getAlexaLinkStatus;
+exports.unlinkAlexa = alexa.unlinkAlexa;
