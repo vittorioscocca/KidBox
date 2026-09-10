@@ -293,11 +293,16 @@ struct RootHostView: View {
             startedFamilyId = nil
             Task { @MainActor in
                 do {
+                    // `wipeAfterRevocation`, non `leaveFamily`: l'uscita
+                    // volontaria cancella il proprio documento membro sul
+                    // server, e qui quella cancellazione è esattamente ciò che
+                    // trasformerebbe una diagnosi sbagliata in un'espulsione
+                    // vera e irreversibile.
                     let service = FamilyLeaveService(modelContext: modelContext)
-                    try await service.leaveFamily(familyId: revokedFamilyId)
+                    try await service.wipeAfterRevocation(familyId: revokedFamilyId)
                     KBLog.sync.kbInfo("RootHostView: post-revoke wipe OK")
                 } catch {
-                    KBLog.sync.kbError("RootHostView: post-revoke leaveFamily failed: \(error.localizedDescription)")
+                    KBLog.sync.kbError("RootHostView: post-revoke wipe failed: \(error.localizedDescription)")
                     do {
                         let service = FamilyLeaveService(modelContext: modelContext)
                         try service.wipeFamilyLocalOnly(familyId: revokedFamilyId)

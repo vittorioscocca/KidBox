@@ -15,6 +15,9 @@ import SwiftUI
 import SwiftData
 
 struct AllExpensesView: View {
+    /// Id di questa view come consumatore del listener.
+    private static let consumerId = "expenses-all"
+
     @ObservedObject var vm: ExpensesViewModel
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
@@ -68,13 +71,29 @@ struct AllExpensesView: View {
                 listenerKeys: ["expenses"],
                 modelContext: modelContext
             ) {
+                // Stop duro voluto: azzera i consumatori, quindi lo start deve
+                // riregistrare questa view.
                 SyncCenter.shared.stopExpensesRealtime()
-                SyncCenter.shared.startExpensesRealtime(familyId: vm.familyId, modelContext: modelContext)
+                SyncCenter.shared.startExpensesRealtime(familyId: vm.familyId, modelContext: modelContext, consumer: Self.consumerId)
             }
             vm.reload()
         }
         .background(backgroundColor)
         .navigationTitle("Tutte le spese")
         .navigationBarTitleDisplayMode(.inline)
+        // Questa schermata non agganciava il listener all'apparire: lo faceva
+        // solo il pull-to-refresh. Senza, entrando qui il conteggio dei
+        // consumatori scendeva a zero (la Home esce di scena) e la lista
+        // restava senza realtime — lo stesso difetto dei to-do.
+        .onAppear {
+            SyncCenter.shared.startExpensesRealtime(
+                familyId: vm.familyId,
+                modelContext: modelContext,
+                consumer: Self.consumerId
+            )
+        }
+        .onDisappear {
+            SyncCenter.shared.stopExpensesRealtime(consumer: Self.consumerId)
+        }
     }
 }

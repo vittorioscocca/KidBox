@@ -65,7 +65,11 @@ enum FamilyInviteLinkJoiner {
                 readRemote: FamilyReadRemoteStore(),
                 modelContext: modelContext
             )
-            let outcome = try await service.joinFamily(familyId: fid, coordinator: coordinator)
+            let outcome = try await service.joinFamily(
+                familyId: fid,
+                inviteId: invite.inviteId,
+                coordinator: coordinator
+            )
 
             if case .missingVaultKey = outcome {
                 // Non dovrebbe accadere: il passo 1 ha appena salvato la chiave in

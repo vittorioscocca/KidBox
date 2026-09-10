@@ -4,7 +4,6 @@ import { useFamily } from "../FamilyContext";
 import { useAuth } from "../AuthContext";
 import { useTranslation } from "../i18n/LocaleContext";
 import { useFamilyCollection } from "../hooks/useFamilyCollection";
-import { useChildren } from "../hooks/useChildren";
 import { setHeroPhoto } from "../services/familyHeroPhoto";
 import { loadFamilyKey } from "../services/familyKey";
 import { readField } from "../services/noteCrypto";
@@ -47,9 +46,6 @@ export default function Home() {
   const fileInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-
-  const children = useChildren(currentFamilyId);
-  const childId = children[0]?.id ?? "";
 
   const { items: events } = useFamilyCollection(currentFamilyId, "calendarEvents");
   const { items: todos } = useFamilyCollection(currentFamilyId, "todos");
@@ -117,14 +113,15 @@ export default function Home() {
   const openTodos = useMemo(
     () =>
       todos
-        .filter((x) => x.childId === childId && !x.isDone)
+        // I todo sono di famiglia: nessun filtro per childId (vedi useTodos).
+        .filter((x) => !x.isDone)
         .sort((a, b) => {
           // Prima chi ha una scadenza, poi per data: in home conta cosa scade prima.
           const da = a.dueAt?.toMillis?.() ?? Infinity;
           const db2 = b.dueAt?.toMillis?.() ?? Infinity;
           return da - db2;
         }),
-    [todos, childId]
+    [todos]
   );
 
   const toBuy = useMemo(() => groceries.filter((g) => !g.isPurchased), [groceries]);

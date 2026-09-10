@@ -104,7 +104,24 @@ extension SyncCenter {
         KBLog.sync.kbInfo("✅ [expenses][listener] Listener attached familyId=\(familyId)")
     }
     
+    /// Registra un consumatore e aggancia il listener se serve.
+    ///
+    /// Va usata dalle view al posto della variante senza `consumer:`: vedi
+    /// `listenerConsumers` in SyncCenter per il perché.
+    /// - Parameter consumer: id stabile e unico della view che lo usa.
+    func startExpensesRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("expenses", consumer: consumer)
+        startExpensesRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopExpensesRealtime(consumer: String) {
+        guard releaseListener("expenses", consumer: consumer) else { return }
+        stopExpensesRealtime()
+    }
+
     func stopExpensesRealtime() {
+        clearListenerConsumers("expenses")
         if expenseListener != nil {
             KBLog.sync.kbInfo("⏹️ [expenses][listener] stopExpensesRealtime")
         }

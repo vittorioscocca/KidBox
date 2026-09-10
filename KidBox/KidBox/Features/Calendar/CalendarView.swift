@@ -99,6 +99,14 @@ struct CalendarView: View {
                 Divider()
                 
                 switch viewMode {
+                case .day, .week:
+                    DayWeekView(
+                        selectedDate: $selectedDate,
+                        isWeek:       viewMode == .week,
+                        events:       events,
+                        onEditEvent:  { editingEvent = $0 },
+                        onAddEvent:   { addSheetDate = AddSheetDate(date: $0) }
+                    )
                 case .year:
                     YearOverviewView(
                         year:            Calendar.current.component(.year, from: selectedDate),
@@ -288,10 +296,12 @@ struct CalendarView: View {
 // MARK: - View Mode
 
 private enum CalendarViewMode: String, CaseIterable, Identifiable {
-    case month, year
+    case day, week, month, year
     var id: String { rawValue }
     var label: LocalizedStringKey {
         switch self {
+        case .day:   return "Giorno"
+        case .week:  return "Settimana"
         case .month: return "Mese"
         case .year:  return "Anno"
         }
@@ -615,6 +625,418 @@ private struct MonthDetailView: View {
             }
         }
     }
+}
+
+// MARK: - DayWeekView
+
+/// Viste Giorno e Settimana: la stessa griglia oraria della web app
+/// (`TimeGridView` di Calendario.jsx), con la barra di navigazione sopra.
+private struct DayWeekView: View {
+
+    @Binding var selectedDate: Date
+    let isWeek:      Bool
+    let events:      [KBCalendarEvent]
+    let onEditEvent: (KBCalendarEvent) -> Void
+    let onAddEvent:  (Date) -> Void
+
+    private var days: [Date] {
+        isWeek
+        ? weekDays(containing: selectedDate)
+        : [localizedCalendar().startOfDay(for: selectedDate)]
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            navigationBar
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+
+            Divider()
+
+            TimeGridView(
+                days:          days,
+                events:        events,
+                showsDayHeader: isWeek,
+                onSelectEvent: onEditEvent,
+                onCreateAt:    onAddEvent
+            )
+        }
+    }
+
+    private var navigationBar: some View {
+        HStack(spacing: 10) {
+            Button { shift(-1) } label: {
+                Image(systemName: "chevron.left").foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 1) {
+                Text(title).font(.headline)
+                if !isWeek {
+                    Text(weekdayTitle).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button("Oggi") { selectedDate = Date() }
+                .font(.caption.weight(.semibold))
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+
+            Button { shift(1) } label: {
+                Image(systemName: "chevron.right").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func shift(_ delta: Int) {
+        let cal = localizedCalendar()
+        let step = isWeek ? delta * 7 : delta
+        if let next = cal.date(byAdding: .day, value: step, to: selectedDate) {
+            selectedDate = next
+        }
+    }
+
+    private var title: String {
+        let locale = appLocale()
+        let f = DateFormatter()
+        f.locale = locale
+        guard isWeek, let first = days.first, let last = days.last else {
+            f.dateFormat = "d MMMM yyyy"
+            return f.string(from: selectedDate).capitalized(with: locale)
+        }
+        let cal = localizedCalendar()
+        let sameMonth = cal.isDate(first, equalTo: last, toGranularity: .month)
+        f.dateFormat = sameMonth ? "d" : "d MMM"
+        let start = f.string(from: first)
+        f.dateFormat = "d MMMM yyyy"
+        let end = f.string(from: last)
+        return "\(start) – \(end)".capitalized(with: locale)
+    }
+
+    private var weekdayTitle: String {
+        let locale = appLocale()
+        let f = DateFormatter()
+        f.locale = locale
+        f.setLocalizedDateFormatFromTemplate("EEEE")
+        return f.string(from: selectedDate).capitalized(with: locale)
+    }
+}
+
+// MARK: - TimeGridView
+
+/// Griglia oraria condivisa da Giorno e Settimana. Gli eventi che si
+/// sovrappongono vengono affiancati in colonne, come sulla web app.
+private struct TimeGridView: View {
+
+    let days:           [Date]
+    let events:         [KBCalendarEvent]
+    let showsDayHeader: Bool
+    let onSelectEvent:  (KBCalendarEvent) -> Void
+    let onCreateAt:     (Date) -> Void
+
+    /// Ora di apertura della griglia: a mezzanotte non c'è niente da vedere.
+    private static let initialHour = 7
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if showsDayHeader {
+                dayHeader
+                Divider()
+            }
+
+            allDayRow
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    HStack(alignment: .top, spacing: 0) {
+                        hourGutter
+                        HStack(spacing: 1) {
+                            ForEach(days, id: \.self) { day in
+                                dayColumn(day)
+                            }
+                        }
+                    }
+                    .padding(.trailing, 4)
+                }
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        proxy.scrollTo(hourAnchor(Self.initialHour), anchor: .top)
+                    }
+                }
+            }
+        }
+    }
+
+    private func hourAnchor(_ hour: Int) -> String { "hour-\(hour)" }
+
+    private var dayHeader: some View {
+        HStack(spacing: 0) {
+            // Altezza esplicita: un `Color` senza altezza si prende tutto lo
+            // spazio verticale offerto e stacca l'intestazione dalla griglia.
+            Color.clear.frame(width: kbHourGutterWidth, height: 1)
+            HStack(spacing: 1) {
+                ForEach(days, id: \.self) { day in
+                    let isToday = Calendar.current.isDateInToday(day)
+                    VStack(spacing: 2) {
+                        Text(shortWeekdayLabel(day))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(day, format: .dateTime.day())
+                            .font(.footnote.weight(isToday ? .bold : .regular))
+                            .foregroundStyle(isToday ? Color.accentColor : .primary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding(.vertical, 6)
+        .padding(.trailing, 4)
+    }
+
+    /// La riga "tutto il giorno" esiste solo se c'è qualcosa da metterci:
+    /// vuota rubava un'altra striscia di spazio sopra la griglia.
+    private var hasAllDayEvents: Bool {
+        days.contains { !allDayEvents(on: $0).isEmpty }
+    }
+
+    @ViewBuilder
+    private var allDayRow: some View {
+        if hasAllDayEvents {
+            HStack(alignment: .top, spacing: 0) {
+                Text("tutto il g.")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: kbHourGutterWidth, alignment: .trailing)
+                    .padding(.trailing, 4)
+
+                HStack(alignment: .top, spacing: 1) {
+                    ForEach(days, id: \.self) { day in
+                        VStack(spacing: 2) {
+                            ForEach(allDayEvents(on: day)) { event in
+                                Text(event.title)
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        kbCategoryColor(event.category),
+                                        in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    )
+                                    .onTapGesture { onSelectEvent(event) }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                }
+            }
+            .frame(minHeight: 22)
+            .padding(.vertical, 4)
+            .padding(.trailing, 4)
+
+            Divider()
+        }
+    }
+
+    private var hourGutter: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<24, id: \.self) { hour in
+                Text(String(format: "%02d:00", hour))
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .frame(width: kbHourGutterWidth, height: kbHourHeight, alignment: .topTrailing)
+                    .padding(.trailing, 4)
+                    .id(hourAnchor(hour))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func dayColumn(_ day: Date) -> some View {
+        let laid = layoutTimedEvents(timedEvents(on: day), day: day)
+
+        ZStack(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                ForEach(0..<24, id: \.self) { _ in
+                    Color.clear
+                        .frame(height: kbHourHeight)
+                        .overlay(alignment: .top) {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.18))
+                                .frame(height: 0.5)
+                        }
+                }
+            }
+
+            GeometryReader { geo in
+                ForEach(laid) { item in
+                    let slot = geo.size.width / CGFloat(max(item.columns, 1))
+                    eventBlock(item)
+                        .frame(width: max(slot - 3, 20), height: item.height)
+                        .offset(x: slot * CGFloat(item.column) + 1.5, y: item.top)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: kbHourHeight * 24)
+        .contentShape(Rectangle())
+        // Doppio tocco su uno spazio vuoto: nuovo evento a quell'ora, come il
+        // doppio click della web app.
+        .onTapGesture(count: 2) { location in
+            let hour = min(max(Int(location.y / kbHourHeight), 0), 23)
+            let cal  = localizedCalendar()
+            let base = cal.startOfDay(for: day)
+            onCreateAt(cal.date(byAdding: .hour, value: hour, to: base) ?? base)
+        }
+    }
+
+    @ViewBuilder
+    private func eventBlock(_ item: TimedEventLayout) -> some View {
+        let color = kbCategoryColor(item.event.category)
+        VStack(alignment: .leading, spacing: 1) {
+            Text(item.event.title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(color)
+                .lineLimit(item.height > 32 ? 2 : 1)
+            if item.height > 32 {
+                Text("\(item.event.startDate.formatted(date: .omitted, time: .shortened)) - \(item.event.endDate.formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(color.opacity(0.26))
+        .overlay(alignment: .leading) {
+            Rectangle().fill(color).frame(width: 3)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture { onSelectEvent(item.event) }
+    }
+
+    private func timedEvents(on day: Date) -> [KBCalendarEvent] {
+        events.filter { !$0.isAllDay && eventOccursOnDay($0, day: day) }
+    }
+
+    private func allDayEvents(on day: Date) -> [KBCalendarEvent] {
+        events.filter { $0.isAllDay && eventOccursOnDay($0, day: day) }
+    }
+
+    private func shortWeekdayLabel(_ date: Date) -> String {
+        let locale = appLocale()
+        let f = DateFormatter()
+        f.locale = locale
+        f.setLocalizedDateFormatFromTemplate("EEE")
+        return f.string(from: date).capitalized(with: locale)
+    }
+}
+
+// MARK: - Time grid layout
+
+/// Altezza di un'ora nella griglia: gemella di `HOUR_HEIGHT` in calendarUtils.js.
+fileprivate let kbHourHeight: CGFloat = 52
+fileprivate let kbHourGutterWidth: CGFloat = 42
+
+fileprivate struct TimedEventLayout: Identifiable {
+    let event:   KBCalendarEvent
+    let top:     CGFloat
+    let height:  CGFloat
+    let column:  Int
+    let columns: Int
+    var id: String { event.id }
+}
+
+/// Posizione, altezza e colonna di ogni evento a orario dentro un giorno.
+/// Porting di `layoutOverlaps` (calendarUtils.js): gli eventi che si
+/// sovrappongono si dividono la larghezza invece di coprirsi.
+fileprivate func layoutTimedEvents(_ events: [KBCalendarEvent], day: Date) -> [TimedEventLayout] {
+    struct Box {
+        let event:  KBCalendarEvent
+        let top:    CGFloat
+        let height: CGFloat
+    }
+
+    let dayStart = localizedCalendar().startOfDay(for: day)
+    let boxes: [Box] = events.map { event in
+        let start = min(event.startDate, event.endDate)
+        let end   = max(event.startDate, event.endDate)
+        // Un evento su più giorni viene tagliato agli estremi del giorno, così
+        // si vede su ognuno di essi.
+        let from = min(max(start.timeIntervalSince(dayStart) / 60, 0), 1440)
+        let to   = min(max(end.timeIntervalSince(dayStart) / 60, from + 15), 1440)
+        return Box(
+            event:  event,
+            top:    CGFloat(from / 60) * kbHourHeight,
+            height: max(CGFloat((to - from) / 60) * kbHourHeight, 18)
+        )
+    }
+    .sorted { $0.top < $1.top }
+
+    var result: [TimedEventLayout] = []
+
+    func flush(_ group: [Box]) {
+        guard !group.isEmpty else { return }
+        var columnEnds: [CGFloat] = []
+        var assigned:   [(Box, Int)] = []
+        for item in group {
+            let free = columnEnds.firstIndex { item.top >= $0 }
+            let col: Int
+            if let free {
+                col = free
+            } else {
+                columnEnds.append(0)
+                col = columnEnds.count - 1
+            }
+            columnEnds[col] = item.top + item.height
+            assigned.append((item, col))
+        }
+        let total = max(columnEnds.count, 1)
+        result.append(contentsOf: assigned.map {
+            TimedEventLayout(
+                event: $0.0.event, top: $0.0.top, height: $0.0.height,
+                column: $0.1, columns: total
+            )
+        })
+    }
+
+    var group:    [Box]   = []
+    var groupEnd: CGFloat = -1
+    for item in boxes {
+        if !group.isEmpty, item.top >= groupEnd {
+            flush(group)
+            group = []
+            groupEnd = -1
+        }
+        group.append(item)
+        groupEnd = max(groupEnd, item.top + item.height)
+    }
+    flush(group)
+
+    return result
+}
+
+fileprivate func kbCategoryColor(_ category: KBEventCategory) -> Color {
+    Color(hex: category.color) ?? .accentColor
+}
+
+/// I sette giorni della settimana che contiene `date`, a partire da lunedì.
+fileprivate func weekDays(containing date: Date) -> [Date] {
+    let cal   = localizedCalendar()
+    let start = cal.startOfDay(for: date)
+    let diff  = (cal.component(.weekday, from: start) - cal.firstWeekday + 7) % 7
+    let first = cal.date(byAdding: .day, value: -diff, to: start) ?? start
+    return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: first) }
 }
 
 // MARK: - Shared helpers

@@ -252,7 +252,6 @@ extension TodoRemoteStore {
         return db.collection("families")
             .document(familyId)
             .collection("todoLists")
-            .whereField("childId", isEqualTo: childId)
             .whereField("isDeleted", isEqualTo: false)
             .addSnapshotListener { snap, err in
                 if let err {
@@ -318,7 +317,6 @@ extension TodoRemoteStore {
         let snap = try await db.collection("families")
             .document(familyId)
             .collection("todoLists")
-            .whereField("childId", isEqualTo: childId)
             .whereField("isDeleted", isEqualTo: false)
             .getDocuments()
         
@@ -357,14 +355,13 @@ extension TodoRemoteStore {
     ) -> ListenerRegistration {
         
         let trace = kbTrace("todoListen:")
-        KBLog.sync.kbInfo("[\(trace)] TodoRemoteStore.listenTodos ATTACH familyId=\(familyId) childId=\(childId) query=childId==\(childId)")
+        KBLog.sync.kbInfo("[\(trace)] TodoRemoteStore.listenTodos ATTACH familyId=\(familyId) childId=\(childId) query=isDeleted==false (childId non filtra: i todo sono di famiglia)")
         
         let db = Firestore.firestore()
         
         return db.collection("families")
             .document(familyId)
             .collection("todos")
-            .whereField("childId", isEqualTo: childId)
             .whereField("isDeleted", isEqualTo: false)
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
                 if let err {

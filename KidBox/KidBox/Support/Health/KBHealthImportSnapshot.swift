@@ -27,6 +27,9 @@ struct KBHealthWorkoutEntry: Sendable, Equatable, Codable, Identifiable {
     /// Frequenza cardiaca media dell'allenamento. Opzionale: gli snapshot
     /// salvati prima di questo campo devono continuare a decodificarsi.
     var averageHeartRateBpm: Double?
+    /// Distanza percorsa in metri, quando la disciplina ne ha una (corsa,
+    /// camminata, bici, nuoto). Opzionale come sopra.
+    var distanceMeters: Double?
 }
 
 struct KBHealthECGEntry: Sendable, Equatable, Codable, Identifiable {

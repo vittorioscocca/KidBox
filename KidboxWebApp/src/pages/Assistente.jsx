@@ -175,6 +175,7 @@ export default function Assistente() {
           pendingGroceryNames: await pendingGroceryNames(currentFamilyId),
           loadFamilyKey: () =>
             loadFamilyKey({ familyId: currentFamilyId, userId: user.uid }),
+          defaultListName: t.todo.defaultListName,
         });
         setActionSummary(summary);
       }

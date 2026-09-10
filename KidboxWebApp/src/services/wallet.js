@@ -27,6 +27,7 @@ import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage
 import { db, storage } from "../firebase";
 import { loadFamilyKey } from "./familyKey";
 import { encryptBytes, decryptBytes } from "./familyCrypto";
+import { contentCreated } from "./analytics";
 
 const SCHEMA_VERSION = 1;
 
@@ -234,6 +235,7 @@ const tsOrNull = (v) => (v ? Timestamp.fromMillis(v) : null);
 
 export async function saveTicket({ familyId, userId, userName, ticket }) {
   const id = ticket.id || crypto.randomUUID();
+  const isNew = !ticket.id;
   const key = await loadFamilyKey({ familyId, userId });
 
   const data = {
@@ -274,6 +276,10 @@ export async function saveTicket({ familyId, userId, userName, ticket }) {
   }
 
   await setDoc(doc(ticketsCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("wallet");
+
   return id;
 }
 
@@ -327,6 +333,7 @@ export async function deleteTicketPdf({ familyId, ticketId }) {
 
 export async function saveCard({ familyId, userId, userName, card }) {
   const id = card.id || crypto.randomUUID();
+  const isNew = !card.id;
   const data = {
     schemaVersion: SCHEMA_VERSION,
     familyId,
@@ -358,6 +365,10 @@ export async function saveCard({ familyId, userId, userName, card }) {
     data.createdByName = userName || "";
   }
   await setDoc(doc(cardsCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("loyalty_card");
+
   return id;
 }
 

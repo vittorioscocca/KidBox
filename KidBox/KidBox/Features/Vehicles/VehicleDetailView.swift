@@ -11,6 +11,10 @@ struct VehicleDetailView: View {
     let familyId: String
     let vehicleId: String
 
+    /// Id di questa view come consumatore dei listener. Include `vehicleId`
+    /// perché da un dettaglio si può aprire un altro dettaglio.
+    private var consumerId: String { "vehicles-detail-\(vehicleId)" }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -141,11 +145,16 @@ struct VehicleDetailView: View {
             Text("Verranno eliminati anche gli interventi collegati.")
         }
         .onAppear {
-            SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
-            SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
+            SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
             if let vehicle, vehicle.createdBy != Auth.auth().currentUser?.uid {
                 AppAnalytics.contentSharedRead(type: "home_vehicles")
             }
+        }
+        .onDisappear {
+            // Mancava del tutto: il dettaglio agganciava e non rilasciava mai.
+            SyncCenter.shared.stopVehiclesRealtime(consumer: consumerId)
+            SyncCenter.shared.stopVehicleEventsRealtime(consumer: consumerId)
         }
     }
 

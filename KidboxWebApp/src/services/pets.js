@@ -21,6 +21,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { contentCreated } from "./analytics";
 
 const petsCol = (familyId) => collection(db, "families", familyId, "pets");
 const eventsCol = (familyId) => collection(db, "families", familyId, "petEvents");
@@ -134,6 +135,7 @@ const tsOrNull = (v) => (v ? Timestamp.fromMillis(v) : null);
 
 export async function savePet({ familyId, userId, pet }) {
   const id = pet.id || crypto.randomUUID();
+  const isNew = !pet.id;
   const data = {
     name: pet.name || "",
     species: pet.species || "altro",
@@ -152,6 +154,10 @@ export async function savePet({ familyId, userId, pet }) {
     data.createdBy = userId;
   }
   await setDoc(doc(petsCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("pets");
+
   return id;
 }
 
@@ -165,6 +171,7 @@ export async function deletePet({ familyId, userId, id }) {
 
 export async function saveEvent({ familyId, userId, event }) {
   const id = event.id || crypto.randomUUID();
+  const isNew = !event.id;
   const data = {
     petId: event.petId,
     title: event.title || "",
@@ -184,6 +191,10 @@ export async function saveEvent({ familyId, userId, event }) {
     data.createdBy = userId;
   }
   await setDoc(doc(eventsCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("pets");
+
   return id;
 }
 

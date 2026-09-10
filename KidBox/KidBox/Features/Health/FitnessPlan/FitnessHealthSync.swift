@@ -27,11 +27,14 @@ enum FitnessHealthSync {
         let matchedSessions: [FitnessSession]
         /// Allenamenti svolti che non corrispondono a nessuna seduta prevista.
         let loggedWorkouts: [FitnessLoggedWorkout]
-        /// Sedute riaperte perché chiuse da un'attività di un'altra disciplina.
+        /// Sedute riaperte perché chiuse da un'altra disciplina.
         let repairedSessions: Int
+        /// Attività già registrate a cui è stata aggiunta la distanza letta ora.
+        let enrichedSessions: Int
 
         var didChange: Bool {
             !matchedSessions.isEmpty || !loggedWorkouts.isEmpty || repairedSessions > 0
+                || enrichedSessions > 0
         }
     }
 
@@ -63,7 +66,13 @@ enum FitnessHealthSync {
         let today = cal.startOfDay(for: now)
 
         guard !workouts.isEmpty else {
-            return Result(plan: plan, matchedSessions: [], loggedWorkouts: [], repairedSessions: 0)
+            return Result(
+                plan: plan,
+                matchedSessions: [],
+                loggedWorkouts: [],
+                repairedSessions: 0,
+                enrichedSessions: 0
+            )
         }
 
         var updated = plan
@@ -111,6 +120,7 @@ enum FitnessHealthSync {
                     target.actualMinutes = nil
                     target.actualKcal = nil
                     target.actualHeartRateBpm = nil
+                    target.actualDistanceMeters = nil
                 }
                 repaired += 1
             }
@@ -122,15 +132,49 @@ enum FitnessHealthSync {
         for session in updated.allSessions where session.status != .done {
             guard session.matchedWorkoutId != nil || session.actualMinutes != nil
                 || session.actualKcal != nil || session.actualActivityTitle != nil
+                || session.actualDistanceMeters != nil
             else { continue }
             updated.updateSession(id: session.id) { target in
                 target.matchedWorkoutId = nil
                 target.actualMinutes = nil
                 target.actualKcal = nil
                 target.actualHeartRateBpm = nil
+                target.actualDistanceMeters = nil
                 target.actualActivityTitle = nil
                 target.completedAt = nil
                 target.completionSource = nil
+            }
+        }
+
+        // Chi usava l'app prima che leggessimo le distanze ha sedute chiuse e
+        // attività registrate senza chilometri: l'allenamento è lo stesso, il
+        // dato c'era già in Salute, mancava solo a noi. Si recupera qui invece
+        // di lasciare buchi permanenti nello storico.
+        var enriched = 0
+        for session in updated.allSessions
+        where session.status == .done && session.actualDistanceMeters == nil {
+            guard
+                let workoutId = session.matchedWorkoutId,
+                let workout = workouts.first(where: { $0.id == workoutId }),
+                let meters = workout.distanceMeters
+            else { continue }
+            updated.updateSession(id: session.id) { $0.actualDistanceMeters = meters }
+            enriched += 1
+        }
+
+        if !updated.logged.isEmpty {
+            let backfilled = updated.logged.map { entry -> FitnessLoggedWorkout in
+                guard
+                    entry.distanceMeters == nil,
+                    let meters = workouts.first(where: { $0.id == entry.id })?.distanceMeters
+                else { return entry }
+                enriched += 1
+                var copy = entry
+                copy.distanceMeters = meters
+                return copy
+            }
+            if backfilled != updated.logged {
+                updated.loggedWorkouts = backfilled
             }
         }
 
@@ -160,6 +204,7 @@ enum FitnessHealthSync {
                 target.actualMinutes = workout.durationMinutes
                 target.actualKcal = workout.activeEnergyKcal.map { Int($0.rounded()) }
                 target.actualHeartRateBpm = workout.averageHeartRateBpm.map { Int($0.rounded()) }
+                target.actualDistanceMeters = workout.distanceMeters
             }
             if let closed = updated.session(id: session.id) {
                 matched.append(closed)
@@ -178,7 +223,8 @@ enum FitnessHealthSync {
                     title: workout.title,
                     durationMinutes: workout.durationMinutes,
                     kcal: workout.activeEnergyKcal.map { Int($0.rounded()) },
-                    heartRateBpm: workout.averageHeartRateBpm.map { Int($0.rounded()) }
+                    heartRateBpm: workout.averageHeartRateBpm.map { Int($0.rounded()) },
+                    distanceMeters: workout.distanceMeters
                 )
             }
         if !newlyLogged.isEmpty {
@@ -186,13 +232,14 @@ enum FitnessHealthSync {
         }
 
         KBLog.sync.kbInfo(
-            "FitnessHealthSync: pending=\(pending.count) workouts=\(workouts.count) matched=\(matched.count) logged=\(newlyLogged.count) repaired=\(repaired)"
+            "FitnessHealthSync: pending=\(pending.count) workouts=\(workouts.count) matched=\(matched.count) logged=\(newlyLogged.count) repaired=\(repaired) enriched=\(enriched)"
         )
         return Result(
             plan: updated,
             matchedSessions: matched,
             loggedWorkouts: newlyLogged,
-            repairedSessions: repaired
+            repairedSessions: repaired,
+            enrichedSessions: enriched
         )
     }
 

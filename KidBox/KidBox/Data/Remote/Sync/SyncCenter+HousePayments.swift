@@ -36,7 +36,21 @@ extension SyncCenter {
         )
     }
 
+    /// Registra un consumatore e aggancia il listener se serve.
+    /// Vedi `listenerConsumers` in SyncCenter per il perché.
+    func startHousePaymentsRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("housePayments", consumer: consumer)
+        startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopHousePaymentsRealtime(consumer: String) {
+        guard releaseListener("housePayments", consumer: consumer) else { return }
+        stopHousePaymentsRealtime()
+    }
+
     func stopHousePaymentsRealtime() {
+        clearListenerConsumers("housePayments")
         if housePaymentListener != nil {
             KBLog.sync.kbInfo("stopHousePaymentsRealtime")
         }

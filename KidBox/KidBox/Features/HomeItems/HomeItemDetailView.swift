@@ -11,6 +11,9 @@ struct HomeItemDetailView: View {
     let familyId: String
     let itemId: String
 
+    /// Id di questa view come consumatore del listener.
+    private var consumerId: String { "home-items-detail-\(itemId)" }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -93,10 +96,14 @@ struct HomeItemDetailView: View {
             Text("Verrà rimosso per tutta la famiglia.")
         }
         .onAppear {
-            SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
             if let item, item.createdBy != Auth.auth().currentUser?.uid {
                 AppAnalytics.contentSharedRead(type: "home_vehicles")
             }
+        }
+        .onDisappear {
+            // Mancava del tutto: il dettaglio agganciava e non rilasciava mai.
+            SyncCenter.shared.stopHomeItemsRealtime(consumer: consumerId)
         }
     }
 

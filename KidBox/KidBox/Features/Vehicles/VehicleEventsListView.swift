@@ -10,6 +10,9 @@ struct VehicleEventsListView: View {
     let familyId: String
     let vehicleId: String
 
+    /// Id di questa view come consumatore del listener degli interventi.
+    private var consumerId: String { "vehicle-events-\(vehicleId)" }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -90,7 +93,10 @@ struct VehicleEventsListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Cerca per titolo, tipo, officina…")
         .onAppear {
-            SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
+        }
+        .onDisappear {
+            SyncCenter.shared.stopVehicleEventsRealtime(consumer: consumerId)
         }
     }
 

@@ -25,7 +25,7 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider }
 // questa pagina è raggiungibile senza login (curl la scarica), e un debug
 // token registrato varrebbe come bypass di App Check per l'intero progetto.
 // Finché è vuota, App Check resta disattivo e la console funziona come prima.
-const RECAPTCHA_SITE_KEY = '';
+const RECAPTCHA_SITE_KEY = '6LfZBa8tAAAAACyR2rmcLBU8owNod9b7lfPduPiX';
 
 const CFG_KEY = 'kidbox_dash_cfg_v2';
 function getCfg()   { try { return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); } catch { return null; } }
@@ -40,10 +40,19 @@ function initFirebase(cfg) {
   // i token App Check si allegano alle richieste dei servizi creati dopo,
   // quindi invertire l'ordine lascerebbe scoperte le prime chiamate.
   if (RECAPTCHA_SITE_KEY) {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY),
-      isTokenAutoRefreshEnabled: true,
-    });
+    // try/catch obbligatorio: App Check è infrastruttura OPZIONALE finché
+    // l'enforcement è spento, quindi non deve mai poter spegnere la console.
+    // Senza, un'eccezione qui salterebbe getAuth/getFirestore/getFunctions
+    // qui sotto, lasciandoli non assegnati. Cause plausibili: chiave revocata,
+    // dominio non più autorizzato, o un adblocker che blocca google.com/recaptcha.
+    try {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY),
+        isTokenAutoRefreshEnabled: true,
+      });
+    } catch (e) {
+      console.warn('[AppCheck] inizializzazione fallita, si prosegue senza token:', e);
+    }
   } else {
     console.warn('[AppCheck] RECAPTCHA_SITE_KEY non configurata: App Check non attivo. ' +
                  'Obbligatoria prima di abilitare l\'enforcement lato server.');

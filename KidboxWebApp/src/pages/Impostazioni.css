@@ -245,3 +245,70 @@
   flex: none;
   text-decoration: none;
 }
+
+/* ── Alexa ─────────────────────────────────────────────────────────────── */
+
+.alexa-sub {
+  margin: 18px 0 8px;
+  font-size: 0.95rem;
+}
+
+/* Il codice si legge ad alta voce: grande, cifre monospaziate e spaziate, così
+   non si sbaglia una cifra mentre si guarda lo schermo e si parla. */
+.alexa-code {
+  text-align: center;
+  padding: 14px 0 4px;
+}
+
+.alexa-code strong {
+  display: block;
+  font-size: 2.2rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+}
+
+.alexa-code small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 6px;
+}
+
+.alexa-code p {
+  margin: 4px 0 0;
+}
+
+.alexa-members,
+.alexa-phrases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.alexa-members li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+}
+
+.alexa-members li:last-child {
+  border-bottom: none;
+}
+
+.alexa-members small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.alexa-phrases li {
+  padding: 6px 0;
+}
+
+.alexa-unlink {
+  color: #c0392b;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 10px 0 0;
+}

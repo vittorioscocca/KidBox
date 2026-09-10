@@ -11,6 +11,10 @@ struct PetDetailView: View {
     let familyId: String
     let petId: String
 
+    /// Id di questa view come consumatore dei listener. Include `petId` perché
+    /// da un dettaglio si può aprire un altro dettaglio.
+    private var consumerId: String { "pets-detail-\(petId)" }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -163,11 +167,17 @@ struct PetDetailView: View {
             Text("Verrà rimosso per tutta la famiglia. Gli eventi collegati verranno eliminati.")
         }
         .onAppear {
-            SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext)
-            SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
+            SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
             if let pet, pet.createdBy != Auth.auth().currentUser?.uid {
                 AppAnalytics.contentSharedRead(type: "pets")
             }
+        }
+        .onDisappear {
+            // Mancava del tutto: il dettaglio agganciava il listener e non lo
+            // rilasciava mai.
+            SyncCenter.shared.stopPetsRealtime(consumer: consumerId)
+            SyncCenter.shared.stopPetEventsRealtime(consumer: consumerId)
         }
     }
 

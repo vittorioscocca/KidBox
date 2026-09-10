@@ -18,6 +18,10 @@ private func expensesAppLocale() -> Locale {
 // MARK: - Root entry point
 
 struct ExpensesHomeView: View {
+    /// Id di questa view come consumatore del listener: una sola panoramica
+    /// Spese è a schermo alla volta, quindi basta una costante.
+    private static let consumerId = "expenses-home"
+
     let familyId: String
     /// Se valorizzato, filtra subito per questa categoria (es. Viaggi dal dettaglio viaggio).
     let initialCategoryId: String?
@@ -95,8 +99,10 @@ struct ExpensesHomeView: View {
                     listenerKeys: ["expenses"],
                     modelContext: modelContext
                 ) {
+                    // Stop duro voluto: azzera i consumatori, quindi lo start
+                    // deve riregistrare la Home.
                     SyncCenter.shared.stopExpensesRealtime()
-                    SyncCenter.shared.startExpensesRealtime(familyId: familyId, modelContext: modelContext)
+                    SyncCenter.shared.startExpensesRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
                 }
                 vm.reload()
             }
@@ -124,7 +130,7 @@ struct ExpensesHomeView: View {
             AddEditExpenseView(vm: vm, expense: expense)
         }
         .onAppear {
-            SyncCenter.shared.startExpensesRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startExpensesRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
             syncCancellable = SyncCenter.shared.expensesChanged
                 .filter { fid in fid == familyId }
                 .receive(on: DispatchQueue.main)
@@ -176,7 +182,8 @@ struct ExpensesHomeView: View {
         .onChange(of: vm.customEnd)    { vm.reload() }
         .onChange(of: vm.selectedCategoryFilter) { vm.reload() }
         .onDisappear() {
-            SyncCenter.shared.stopExpensesRealtime()
+            // Sgancia solo SE STESSA: `AllExpensesView` si è già registrata.
+            SyncCenter.shared.stopExpensesRealtime(consumer: Self.consumerId)
             syncCancellable = nil
         }
         .environment(\.locale, expensesAppLocale())

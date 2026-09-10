@@ -7,6 +7,10 @@ import SwiftUI
 import SwiftData
 
 struct HomeItemsHomeView: View {
+    /// Id di questa view come consumatore dei listener: una sola panoramica
+    /// Casa è a schermo alla volta, quindi basta una costante.
+    private static let consumerId = "home-items-home"
+
     let familyId: String
 
     @Environment(\.modelContext) private var modelContext
@@ -149,20 +153,23 @@ struct HomeItemsHomeView: View {
                 listenerKeys: ["homeItems", "housePayments"],
                 modelContext: modelContext
             ) {
+                // Stop duro voluto: azzera i consumatori, quindi gli start
+                // devono riregistrare la Home.
                 SyncCenter.shared.stopHomeItemsRealtime()
                 SyncCenter.shared.stopHousePaymentsRealtime()
-                SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
-                SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
+                SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
             }
         }
         .onAppear {
-            SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
-            SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startHomeItemsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
+            SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
             KBHousePayment.cleanupInheritedSubtypes(familyId: familyId, context: modelContext)
         }
         .onDisappear {
-            SyncCenter.shared.stopHomeItemsRealtime()
-            SyncCenter.shared.stopHousePaymentsRealtime()
+            // Sgancia solo SE STESSA: il dettaglio si è già registrato.
+            SyncCenter.shared.stopHomeItemsRealtime(consumer: Self.consumerId)
+            SyncCenter.shared.stopHousePaymentsRealtime(consumer: Self.consumerId)
         }
     }
 

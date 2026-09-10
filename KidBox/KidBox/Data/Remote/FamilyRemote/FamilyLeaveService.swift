@@ -163,19 +163,49 @@ final class FamilyLeaveService {
         KBLog.sync.kbInfo("deleteFamily completed familyId=\(familyId)")
     }
     
+    /// Reazione a un'espulsione **già verificata** (vedi
+    /// `SyncCenter.verifyRevocation`).
+    ///
+    /// Differenza dal `leaveFamily` volontario: qui il documento
+    /// `families/{familyId}/members/{uid}` **non viene cancellato**. Se
+    /// l'espulsione è reale quel documento non c'è già più, quindi cancellarlo
+    /// non aggiunge nulla; se invece la diagnosi fosse sbagliata — come l'8/09/2026,
+    /// quando un errore nelle rules ha fatto leggere un guasto lato server come
+    /// un'espulsione — sarebbe proprio quella cancellazione a buttare fuori
+    /// l'utente dalla famiglia per davvero. Un guasto recuperabile non deve
+    /// poter distruggere l'iscrizione.
+    ///
+    /// L'indice `users/{uid}/memberships/{familyId}` si rimuove: sta sotto il
+    /// proprio account, non tocca i dati della famiglia, e lasciarlo farebbe
+    /// riprovare a ogni avvio una famiglia a cui non si appartiene più.
+    func wipeAfterRevocation(familyId: String) async throws {
+        KBLog.sync.kbInfo("wipeAfterRevocation started familyId=\(familyId)")
+
+        try wipeFamilyLocalOnly(familyId: familyId)
+
+        if let uid = Auth.auth().currentUser?.uid {
+            KBLog.sync.kbDebug("Removing membership index (best effort)")
+            try? await db
+                .collection("users")
+                .document(uid)
+                .collection("memberships")
+                .document(familyId)
+                .delete()
+        }
+
+        KBLog.sync.kbInfo("wipeAfterRevocation completed familyId=\(familyId)")
+    }
+
     /// Pulisce **solo** SwiftData e ferma i listener. Nessuna chiamata di rete (né Cloud Function).
     /// Per eliminare la famiglia sul server usare `deleteFamily(familyId:)`.
     func wipeFamilyLocalOnly(familyId: String) throws {
         KBLog.sync.kbInfo("wipeFamilyLocalOnly started familyId=\(familyId) (local only, no server)")
 
         SyncCenter.shared.beginLocalWipe()
-        
-        SyncCenter.shared.stopMembersRealtime()
-        SyncCenter.shared.stopTodoRealtime()
-        SyncCenter.shared.stopChildrenRealtime()
-        SyncCenter.shared.stopFamilyBundleRealtime()
-        SyncCenter.shared.stopDocumentsRealtime()
-        SyncCenter.shared.stopNotesRealtime()
+
+        // Elenco unico: un listener lasciato attaccato continua a ricevere
+        // PERMISSION_DENIED dopo il wipe e rientra nel flusso di access-lost.
+        SyncCenter.shared.stopAllFamilyScopedRealtime()
         
         try LocalDataWiper.wipeFamily(familyId: familyId, context: modelContext)
         try modelContext.save()

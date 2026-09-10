@@ -27,6 +27,7 @@ import {
   NotCreatorError,
   VISIBILITY_FAMILY,
 } from "./passwordCrypto";
+import { contentCreated } from "./analytics";
 
 const SCHEMA_VERSION = 1;
 
@@ -227,6 +228,7 @@ const tsOrNull = (millisValue) => (millisValue ? Timestamp.fromMillis(millisValu
  */
 export async function savePassword({ familyId, userId, entry }) {
   const id = entry.id || crypto.randomUUID();
+  const isNew = !entry.id;
   const createdBy = entry.createdBy || userId;
   const visibility = normalizedVisibility(entry.visibility);
   const ctx = { familyId, userId, visibility, createdBy };
@@ -256,6 +258,10 @@ export async function savePassword({ familyId, userId, entry }) {
   };
 
   await setDoc(doc(entriesCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("passwords");
+
   return id;
 }
 

@@ -8,6 +8,10 @@ import SwiftData
 import FirebaseAuth
 
 struct VehiclesHomeView: View {
+    /// Id di questa view come consumatore dei listener: una sola panoramica
+    /// Garage è a schermo alla volta, quindi basta una costante.
+    private static let consumerId = "vehicles-home"
+
     let familyId: String
 
     @Environment(\.modelContext) private var modelContext
@@ -78,19 +82,22 @@ struct VehiclesHomeView: View {
                 listenerKeys: ["vehicles", "vehicleEvents"],
                 modelContext: modelContext
             ) {
+                // Stop duro voluto: azzera i consumatori, quindi gli start
+                // devono riregistrare la Home.
                 SyncCenter.shared.stopVehiclesRealtime()
                 SyncCenter.shared.stopVehicleEventsRealtime()
-                SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
-                SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
+                SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
             }
         }
         .onAppear {
-            SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
-            SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startVehiclesRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
+            SyncCenter.shared.startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
         }
         .onDisappear {
-            SyncCenter.shared.stopVehiclesRealtime()
-            SyncCenter.shared.stopVehicleEventsRealtime()
+            // Sgancia solo SE STESSA: il dettaglio si è già registrato.
+            SyncCenter.shared.stopVehiclesRealtime(consumer: Self.consumerId)
+            SyncCenter.shared.stopVehicleEventsRealtime(consumer: Self.consumerId)
         }
     }
 

@@ -40,6 +40,22 @@ const SUGGESTED = [
 ];
 const UNCATEGORIZED = "Altro";
 
+/**
+ * Giorni oltre i quali si passa alla data esplicita. Entro tre giorni il
+ * riferimento relativo e' piu' utile: "ieri" si colloca da solo, "5 settembre"
+ * va ricalcolato a mente. Piu' indietro si inverte.
+ * Gemello di GroceryAuthorLine su iOS e Android: se cambia qui, cambia li'.
+ */
+const RELATIVE_DAY_LIMIT = 3;
+
+/** Distanza in giorni di calendario, non in multipli di 24 ore: alle 00:30 un
+ * articolo di ieri sera dev'essere "ieri", non "oggi". */
+function daysAgo(date, now = new Date()) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((today - start) / 86400000);
+}
+
 function groceriesCol(familyId) {
   return collection(db, "families", familyId, "groceries");
 }
@@ -65,6 +81,25 @@ export default function Spesa() {
   const [draft, setDraft] = useState("");
   const [draftCategory, setDraftCategory] = useState("");
   const [editing, setEditing] = useState(null);
+
+  // Nomi dei membri: la riga "Aggiunto da ..." mostra la persona, non l'uid.
+  const [memberNames, setMemberNames] = useState({});
+  useEffect(() => {
+    if (!currentFamilyId) return undefined;
+    return onSnapshot(
+      collection(db, "families", currentFamilyId, "members"),
+      (snap) => {
+        const names = {};
+        snap.docs.forEach((d) => {
+          const data = d.data();
+          const name = (data.displayName || data.name || "").trim();
+          if (name) names[d.id] = name;
+        });
+        setMemberNames(names);
+      },
+      () => setMemberNames({})
+    );
+  }, [currentFamilyId]);
 
   useEffect(() => {
     if (!currentFamilyId) return undefined;
@@ -226,6 +261,43 @@ export default function Spesa() {
     }
   };
 
+  /**
+   * Etichetta relativa: ore dentro la giornata, giorni oltre, poi la data.
+   * Dentro la giornata "oggi" dice troppo poco: fra un articolo di cinque
+   * minuti fa e uno di stamattina presto c'e' la differenza fra "l'ho appena
+   * messo io" e "c'era gia'".
+   */
+  const whenLabel = (date) => {
+    const days = daysAgo(date);
+    // Una data futura non dovrebbe esistere, ma l'orologio del client puo'
+    // essere indietro rispetto al server: meglio "adesso" di un valore negativo.
+    if (days <= 0) {
+      const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+      // Sotto i due minuti "1 minuto fa" e' piu' preciso che utile.
+      if (minutes < 2) return t.grocery.addedNow;
+      if (minutes < 60) return t.grocery.addedMinutesAgo(minutes);
+      if (minutes < 120) return t.grocery.addedHourAgo;
+      return t.grocery.addedHoursAgo(Math.floor(minutes / 60));
+    }
+    if (days === 1) return t.grocery.addedYesterday;
+    if (days <= RELATIVE_DAY_LIMIT) return t.grocery.addedDaysAgo(days);
+    return date.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  /**
+   * Chi e quando. In una lista condivisa e' cio' che evita di ricomprare la
+   * stessa cosa, e per gli articoli dettati ad Alexa e' l'unica traccia della
+   * loro provenienza. Senza autore resta la sola data: "Aggiunto da un ignoto"
+   * non aggiunge niente.
+   */
+  const authorLine = (item) => {
+    const created = item.createdAt?.toDate?.();
+    if (!created) return null;
+    const when = whenLabel(created);
+    const name = memberNames[item.createdBy];
+    return name ? t.grocery.addedBy(name, when) : when;
+  };
+
   const row = (item) => (
     <li key={item.id} className={item.isPurchased ? "purchased" : ""}>
       <button className="grocery-check" onClick={() => togglePurchased(item)}>
@@ -239,6 +311,9 @@ export default function Spesa() {
           )}
         </span>
         {item.notes && <span className="grocery-notes">{item.notes}</span>}
+        {authorLine(item) && (
+          <span className="grocery-author">{authorLine(item)}</span>
+        )}
       </button>
       <button
         className="grocery-delete"

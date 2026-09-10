@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { encryptString } from "./noteCrypto";
+import { resolveTodoListId } from "./todoTarget";
 
 const START = "<<<KIDBOX_ACTIONS>>>";
 const END = "<<<END_KIDBOX_ACTIONS>>>";
@@ -113,11 +114,20 @@ async function addGroceryItems({ familyId, uid, items, category, pendingNames })
   }.`;
 }
 
-async function addTodo({ familyId, uid, title, notes, dueAt, childId, listId }) {
+async function addTodo({ familyId, uid, title, notes, dueAt, childId, listId, defaultListName }) {
+  // Mai `listId: ""`: un to-do senza lista non compare in nessuna schermata,
+  // né qui né su iOS/Android. Vedi `resolveTodoListId`.
+  const targetListId = await resolveTodoListId({
+    familyId,
+    childId: childId ?? "",
+    uid,
+    listId,
+    defaultListName,
+  });
   await setDoc(doc(col(familyId, "todos"), crypto.randomUUID()), {
     childId: childId ?? "",
     title,
-    listId: listId || "",
+    listId: targetListId,
     isDone: false,
     isDeleted: false,
     notes: clean(notes) || null,
@@ -197,6 +207,8 @@ export async function executeActions({
   defaultChildId,
   pendingGroceryNames = [],
   loadFamilyKey,
+  /** Nome della lista da creare se la famiglia non ne ha ancora nessuna. */
+  defaultListName,
 }) {
   if (!actions.length) return null;
   const lines = [];
@@ -226,6 +238,7 @@ export async function executeActions({
             dueAt: parseDate(action.dueAt),
             childId: action.childId ?? defaultChildId ?? "",
             listId: action.listId,
+            defaultListName,
           });
           lines.push(`To-do aggiunto: «${title}».`);
           break;

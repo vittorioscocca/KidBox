@@ -32,6 +32,9 @@ struct GroceryListView: View {
     }
     
     @Query private var allItems: [KBGroceryItem]
+    /// Serve solo a risolvere `createdBy` in un nome: la riga di attribuzione
+    /// mostra la persona, non l'uid.
+    @Query private var members: [KBFamilyMember]
     
     private let familyId: String
     private let remote = GroceryRemoteStore()
@@ -360,7 +363,18 @@ struct GroceryListView: View {
     }
 
     // MARK: - Row
-    
+
+    /// Nome del membro che ha creato l'articolo, o nil se non lo conosciamo:
+    /// un uid a schermo non serve a nessuno.
+    private func authorName(for item: KBGroceryItem) -> String? {
+        guard let uid = item.createdBy, !uid.isEmpty else { return nil }
+        let match = members.first { $0.userId == uid && $0.familyId == item.familyId }
+        guard let name = match?.displayName, !name.trimmingCharacters(in: .whitespaces).isEmpty else {
+            return nil
+        }
+        return name
+    }
+
     @ViewBuilder
     private func row(_ item: KBGroceryItem) -> some View {
         HStack(spacing: 12) {
@@ -384,6 +398,22 @@ struct GroceryListView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+
+                // Chi e quando: in una lista condivisa è ciò che evita di
+                // ricomprare la stessa cosa, e per gli articoli dettati ad
+                // Alexa è l'unica traccia della loro provenienza.
+                // Due righe, non una: "Aggiunto da " più un nome e proprio ed
+                // un riferimento temporale non ci stanno in una riga sola su
+                // un telefono stretto, e a una riga il pezzo che si perde è
+                // proprio il quando.
+                Text(GroceryAuthorLine.text(
+                    authorName: authorName(for: item),
+                    date: item.createdAt
+                ))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer(minLength: 8)

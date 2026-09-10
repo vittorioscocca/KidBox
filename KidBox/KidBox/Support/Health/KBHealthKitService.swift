@@ -43,6 +43,11 @@ final class KBHealthKitService {
         if let vo2 = HKQuantityType.quantityType(forIdentifier: .vo2Max) { types.insert(vo2) }
         if let exercise = HKQuantityType.quantityType(forIdentifier: .appleExerciseTime) { types.insert(exercise) }
         if let hrv = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) { types.insert(hrv) }
+        // Distanze: senza queste, `statistics(for:)` sull'allenamento non
+        // restituisce i chilometri nemmeno per una corsa registrata dall'orologio.
+        for identifier in Self.distanceIdentifiers {
+            if let type = HKQuantityType.quantityType(forIdentifier: identifier) { types.insert(type) }
+        }
         types.insert(HKObjectType.workoutType())
         if #available(iOS 14.0, *) {
             types.insert(HKObjectType.electrocardiogramType())
@@ -58,6 +63,32 @@ final class KBHealthKitService {
     /// registrata (VO2 max, HRV…). Non è un vero fallimento: se non gestito qui,
     /// fa fallire l'intera `fetchSnapshot()` (tutte le query sono in `try await`
     /// insieme) anche quando il resto dei dati Salute è disponibile.
+    /// I tipi di distanza che possono essere associati a un allenamento: uno
+    /// solo di questi è valorizzato, a seconda della disciplina.
+    private static let distanceIdentifiers: [HKQuantityTypeIdentifier] = [
+        .distanceWalkingRunning,
+        .distanceCycling,
+        .distanceSwimming,
+        .distanceWheelchair,
+        .distanceDownhillSnowSports,
+    ]
+
+    /// Metri percorsi nell'allenamento, dal primo tipo di distanza che ne ha.
+    /// Vale zero per palestra, yoga e simili: lì la distanza non esiste e la
+    /// riga non deve mostrarla.
+    private static func distanceMeters(of workout: HKWorkout) -> Double? {
+        for identifier in distanceIdentifiers {
+            guard
+                let type = HKQuantityType.quantityType(forIdentifier: identifier),
+                let meters = workout.statistics(for: type)?.sumQuantity()?
+                    .doubleValue(for: .meter()),
+                meters > 0
+            else { continue }
+            return meters
+        }
+        return nil
+    }
+
     private static func isNoDataError(_ error: Error) -> Bool {
         (error as NSError).domain == HKErrorDomain
             && (error as NSError).code == HKError.Code.errorNoData.rawValue
@@ -407,7 +438,8 @@ final class KBHealthKitService {
                         startedAt: workout.startDate,
                         durationMinutes: minutes,
                         activeEnergyKcal: kcal,
-                        averageHeartRateBpm: bpm
+                        averageHeartRateBpm: bpm,
+                        distanceMeters: Self.distanceMeters(of: workout)
                     )
                 }
                 continuation.resume(returning: workouts)

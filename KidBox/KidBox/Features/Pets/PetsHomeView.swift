@@ -8,6 +8,10 @@ import SwiftData
 import FirebaseAuth
 
 struct PetsHomeView: View {
+    /// Id di questa view come consumatore dei listener: una sola panoramica
+    /// Animali è a schermo alla volta, quindi basta una costante.
+    private static let consumerId = "pets-home"
+
     let familyId: String
 
     @Environment(\.modelContext) private var modelContext
@@ -87,19 +91,24 @@ struct PetsHomeView: View {
                 listenerKeys: ["pets", "petEvents"],
                 modelContext: modelContext
             ) {
+                // Stop duro voluto: rilegge il server per intero. Azzera i
+                // consumatori, quindi gli start devono riregistrare la Home.
                 SyncCenter.shared.stopPetsRealtime()
                 SyncCenter.shared.stopPetEventsRealtime()
-                SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext)
-                SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext)
+                SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
+                SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
             }
         }
         .onAppear {
-            SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext)
-            SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startPetsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
+            SyncCenter.shared.startPetEventsRealtime(familyId: familyId, modelContext: modelContext, consumer: Self.consumerId)
         }
         .onDisappear {
-            SyncCenter.shared.stopPetsRealtime()
-            SyncCenter.shared.stopPetEventsRealtime()
+            // Sgancia solo SE STESSA: entrando nel dettaglio, SwiftUI ha già
+            // chiamato l'`onAppear` del figlio, che si è registrato. Uno stop
+            // incondizionato qui lascerebbe il dettaglio senza realtime.
+            SyncCenter.shared.stopPetsRealtime(consumer: Self.consumerId)
+            SyncCenter.shared.stopPetEventsRealtime(consumer: Self.consumerId)
         }
     }
 

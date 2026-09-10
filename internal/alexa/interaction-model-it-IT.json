@@ -1,0 +1,140 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "mio box",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "LinkAccountIntent",
+          "slots": [
+            {
+              "name": "code",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "{code} è il codice",
+            "{code}",
+            "collegati con {code}",
+            "collegati con il codice {code}",
+            "collega l'account con {code}",
+            "collega con il codice {code}",
+            "il codice è {code}",
+            "codice {code}",
+            "collegarsi con {code}",
+            "collegarsi con il codice {code}",
+            "collegare l'account con {code}",
+            "collegarti con {code}"
+          ]
+        },
+        {
+          "name": "AddItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "aggiungi {item}",
+            "aggiungi {item} alla lista",
+            "aggiungi {item} alla spesa",
+            "aggiungi {item} alla lista della spesa",
+            "metti {item} in lista",
+            "metti {item} nella lista della spesa",
+            "segna {item}",
+            "serve {item}",
+            "manca {item}",
+            "compra {item}",
+            "dobbiamo comprare {item}",
+            "aggiungere {item}",
+            "aggiungere {item} alla lista",
+            "aggiungere {item} alla lista della spesa",
+            "mettere {item} in lista",
+            "comprare {item}"
+          ]
+        },
+        {
+          "name": "RemoveItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "togli {item}",
+            "togli {item} dalla lista",
+            "rimuovi {item}",
+            "rimuovi {item} dalla lista",
+            "cancella {item}",
+            "elimina {item} dalla lista",
+            "non serve più {item}",
+            "togliere {item}",
+            "togliere {item} dalla lista",
+            "rimuovere {item}",
+            "rimuovere {item} dalla lista",
+            "cancellare {item}"
+          ]
+        },
+        {
+          "name": "CheckItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "ho comprato {item}",
+            "segna {item} come comprato",
+            "ho preso {item}",
+            "spunta {item}",
+            "segnare {item} come comprato",
+            "spuntare {item}"
+          ]
+        },
+        {
+          "name": "ReadListIntent",
+          "slots": [],
+          "samples": [
+            "cosa manca",
+            "cosa manca in lista",
+            "cosa devo comprare",
+            "che cosa devo comprare",
+            "leggi la lista",
+            "leggi la lista della spesa",
+            "dimmi la lista",
+            "cosa c'è in lista",
+            "cosa c'è nella lista della spesa",
+            "quanti articoli ci sono in lista",
+            "dire cosa manca",
+            "dirmi cosa manca",
+            "leggere la lista",
+            "leggere la lista della spesa"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

@@ -60,6 +60,27 @@
       font-size: 16px;
     }
     .btn.secondary { background: transparent; color: #ff6b00; border: 1.5px solid #ff6b00; }
+
+    /* Consenso alle statistiche. Questa è un'altra origine rispetto all'app,
+       quindi la scelta fatta lì non si può leggere: si chiede di nuovo. */
+    .consent {
+      position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 50;
+      max-width: 560px; margin: 0 auto; display: none;
+      flex-wrap: wrap; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 16px;
+      background: #fff; border: 1px solid rgba(0,0,0,.1);
+      box-shadow: 0 8px 30px rgba(0,0,0,.16);
+      text-align: left;
+    }
+    .consent.show { display: flex; }
+    .consent p { font-size: 13px; color: #555; margin: 0; flex: 1; min-width: 200px; line-height: 1.4; }
+    .consent-actions { display: flex; gap: 8px; margin-left: auto; }
+    /* Stesso peso alle due risposte: un rifiuto sbiadito non è una scelta. */
+    .consent-actions button {
+      border: 1px solid rgba(0,0,0,.15); background: transparent; color: #111;
+      border-radius: 10px; padding: 8px 16px; font: inherit; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -78,5 +99,80 @@
       l'invito si aprirà direttamente in KidBox.
     </p>
   </div>
+
+  <div class="consent" id="consent" role="dialog" aria-label="Statistiche d'uso">
+    <p>Possiamo raccogliere statistiche anonime su questa pagina, per capire quanti riescono ad accettare l'invito? Nessun dato dell'invito viene raccolto.</p>
+    <div class="consent-actions">
+      <button type="button" id="consent-no">No, grazie</button>
+      <button type="button" id="consent-yes">Va bene</button>
+    </div>
+  </div>
+
+  <script>
+    // Analytics della pagina d'invito.
+    //
+    // Serve a chiudere l'unico passaggio cieco del funnel: chi riceve un invito
+    // senza avere l'app arriva qui, e finora non si sapeva né quanti fossero né
+    // quanti proseguissero verso lo store.
+    //
+    // Il segreto dell'invito sta nel fragment dell'URL (dopo il #) e per
+    // costruzione NON viene mai inviato al server: qui non lo si tocca, e a GA
+    // si manda soltanto la forma dell'azione — mai il codice, mai la famiglia.
+    (function () {
+      var KEY = "kidbox:analyticsConsent";
+      var MEASUREMENT_ID = "G-0PG65CW2VF";
+      var banner = document.getElementById("consent");
+
+      function platform() {
+        var ua = navigator.userAgent || "";
+        if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+        if (/Android/i.test(ua)) return "android";
+        return "other";
+      }
+
+      function start() {
+        if (window.__kbGaLoaded) return;
+        window.__kbGaLoaded = true;
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { window.dataLayer.push(arguments); };
+        var sc = document.createElement("script");
+        sc.async = true;
+        sc.src = "https://www.googletagmanager.com/gtag/js?id=" + MEASUREMENT_ID;
+        document.head.appendChild(sc);
+        gtag("js", new Date());
+        // `page_location` senza fragment: il default lo includerebbe, e con
+        // esso il segreto dell'invito.
+        gtag("config", MEASUREMENT_ID, {
+          page_location: location.origin + location.pathname
+        });
+        gtag("event", "invite_landing_shown", { platform: platform() });
+      }
+
+      function decide(value) {
+        try { localStorage.setItem(KEY, value); } catch (e) {}
+        banner.classList.remove("show");
+        if (value === "granted") start();
+      }
+
+      var stored = null;
+      try { stored = localStorage.getItem(KEY); } catch (e) {}
+      if (stored === "granted") start();
+      else if (stored !== "denied") banner.classList.add("show");
+
+      document.getElementById("consent-yes").onclick = function () { decide("granted"); };
+      document.getElementById("consent-no").onclick = function () { decide("denied"); };
+
+      // Il tap sullo store è il passo che dice se la pagina funziona.
+      document.querySelectorAll(".stores a").forEach(function (a) {
+        a.addEventListener("click", function () {
+          if (window.gtag) {
+            gtag("event", "invite_store_click", {
+              store: a.href.indexOf("apple") > -1 ? "ios" : "android"
+            });
+          }
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

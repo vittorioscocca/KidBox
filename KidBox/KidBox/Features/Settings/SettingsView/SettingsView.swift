@@ -110,6 +110,27 @@ struct SettingsView: View {
             }
             .listRowBackground(cardBackground)
             
+            // La skill esiste solo in italiano: vedi `AlexaAvailability`.
+            if AlexaAvailability.isAvailable {
+                NavigationLink {
+                    AlexaSettingsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "hifispeaker.fill")
+                            .foregroundStyle(KBTheme.bubbleTint)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Alexa")
+                                .foregroundStyle(.primary)
+                            Text("Lista della spesa a voce sugli Echo")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .listRowBackground(cardBackground)
+            }
+
             NavigationLink {
                 NotificationSettingsView()
             } label: {

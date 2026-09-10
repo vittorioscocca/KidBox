@@ -66,15 +66,15 @@ struct JoinWrapService {
         return ParsedPayload(familyId: familyId, inviteId: inviteId, secret: secret)
     }
     
-    /// Consumes an encrypted invite, unwraps the family master key, stores it in Keychain,
-    /// then deletes the invite document (best effort).
+    /// Consumes an encrypted invite, unwraps the family master key and stores it
+    /// in Keychain. L'invito resta su Firestore, marcato come usato.
     ///
     /// Flow:
     /// 1) Validate payload + authentication
     /// 2) Firestore transaction: validate invite (expiry/used/secret hash) + mark used
     /// 3) Unwrap family key (KDF + AEAD)
     /// 4) Save to Keychain
-    /// 5) Delete invite document (best effort)
+    /// 5) L'invito resta, marcato `usedBy`: serve alle regole per l'iscrizione
     ///
     /// - Important: Avoid logging secrets, ciphertexts, or raw payloads.
     func join(usingQRPayload raw: String) async throws {
@@ -124,10 +124,21 @@ struct JoinWrapService {
                     throw JoinInviteError.invalidSecret
                 }
                 
-                // mark used
+                // Consuma l'invito: lo marca usato e ne SVUOTA il materiale
+                // crittografico. Il documento non viene più cancellato dopo il
+                // join — serve alle regole come prova per creare `members/{uid}`
+                // — quindi non deve restare in giro con la chiave di famiglia
+                // wrappata dentro: il segreto viaggia nel link, e un link
+                // riemerso mesi dopo aprirebbe di nuovo la famiglia.
+                // Consumato, l'invito resta una ricevuta: chi, quando.
                 txn.updateData([
                     "usedAt": Timestamp(date: Date()),
-                    "usedBy": uid
+                    "usedBy": uid,
+                    "kdfSalt": FieldValue.delete(),
+                    "secretHash": FieldValue.delete(),
+                    "wrappedKeyCipher": FieldValue.delete(),
+                    "wrappedKeyNonce": FieldValue.delete(),
+                    "wrappedKeyTag": FieldValue.delete()
                 ], forDocument: docRef)
                 
                 return d
@@ -177,13 +188,10 @@ struct JoinWrapService {
             throw error
         }
         
-        // delete invite (best effort)
-        do {
-            try await docRef.delete()
-            KBLog.sync.kbDebug("JoinWrapService invite deleted inviteId=\(inviteId)")
-        } catch {
-            KBLog.sync.kbDebug("JoinWrapService invite delete failed (best effort) inviteId=\(inviteId) err=\(error.localizedDescription)")
-        }
+        // L'invito NON si cancella più. È già a uso singolo — la transazione qui
+        // sopra rifiuta un `usedAt` non nullo — e il documento che resta, con
+        // `usedBy = uid`, è la prova che le regole chiedono per lasciar creare
+        // `members/{uid}`: cancellandolo l'iscrizione verrebbe negata.
         
         // Verify key presence (do NOT print)
         if FamilyKeychainStore.loadFamilyKey(familyId: familyId, userId: Auth.auth().currentUser?.uid ?? "local") != nil {

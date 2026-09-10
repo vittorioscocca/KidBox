@@ -40,7 +40,24 @@ extension SyncCenter {
         )
     }
 
+    /// Registra un consumatore e aggancia il listener se serve.
+    ///
+    /// Va usata dalle view al posto della variante senza `consumer:`: vedi
+    /// `listenerConsumers` in SyncCenter per il perché.
+    /// - Parameter consumer: id stabile e unico della view che lo usa.
+    func startHomeItemsRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("homeItems", consumer: consumer)
+        startHomeItemsRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopHomeItemsRealtime(consumer: String) {
+        guard releaseListener("homeItems", consumer: consumer) else { return }
+        stopHomeItemsRealtime()
+    }
+
     func stopHomeItemsRealtime() {
+        clearListenerConsumers("homeItems")
         if homeItemListener != nil {
             KBLog.sync.kbInfo("stopHomeItemsRealtime")
         }

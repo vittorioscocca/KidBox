@@ -70,18 +70,27 @@ struct TodoHomeView: View {
 
     private var currentUid: String? { Auth.auth().currentUser?.uid }
     
-    // Nota: childId può essere "" quando la famiglia non ha ancora un bambino —
-    // non è un caso di errore, è un valore di scoping valido come un altro:
-    // liste/todo creati con childId="" restano visibili qui allo stesso modo.
+    // I todo sono di FAMIGLIA, non di un figlio: qui non si filtra per childId.
+    //
+    // Il campo esiste ancora sui documenti e continua a essere scritto, ma non
+    // è mai stato uno scoping vero: `activeChild` è `children.first` su un array
+    // senza ordinamento (relazione SwiftData su iOS, query senza `orderBy` sul
+    // web), quindi con due figli la stessa famiglia poteva vedere liste diverse
+    // su client diversi — o tra due avvii. Non se n'era accorto nessuno perché
+    // nessuna famiglia con più di un figlio usa i todo (misurato il 10/09/2026:
+    // 32 famiglie con >=2 figli, zero todo in totale).
+    //
+    // Conseguenza voluta: i todo con childId="" — invisibili finora — tornano
+    // in elenco, ed è lì che finiscono quelli creati da Alexa.
     private var todosInFamilyChild: [KBTodoItem] {
         guard !familyId.isEmpty else { return [] }
-        return allTodos.filter { $0.familyId == familyId && $0.childId == childId && !$0.isDeleted }
+        return allTodos.filter { $0.familyId == familyId && !$0.isDeleted }
     }
 
     private var visibleLists: [KBTodoList] {
         guard !familyId.isEmpty else { return [] }
         return allLists.filter { list in
-            guard list.familyId == familyId && list.childId == childId && !list.isDeleted else { return false }
+            guard list.familyId == familyId && !list.isDeleted else { return false }
             return TodoListExposure.memberCanSeeListRow(
                 listId: list.id,
                 todos: todosInFamilyChild,
@@ -95,7 +104,6 @@ struct TodoHomeView: View {
         guard !familyId.isEmpty else { return [] }
         return allTodos.filter {
             $0.familyId == familyId &&
-            $0.childId == childId &&
             !$0.isDeleted &&
             $0.isVisible(to: currentUid)
         }
@@ -189,8 +197,12 @@ struct TodoHomeView: View {
             BadgeManager.shared.activeSections.remove("todos")
             didStartRealtime = false
             SyncCenter.shared.stopTodoListRealtime()
-            SyncCenter.shared.stopTodoRealtime()
-            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + stopTodoRealtime")
+            // Sgancia solo SE STESSA: entrando in una lista, SwiftUI ha già
+            // chiamato l'`onAppear` del figlio, che si è registrato. Uno stop
+            // incondizionato qui staccherebbe il listener appena attaccato e
+            // lascerebbe la lista senza realtime. Vedi `todoConsumers`.
+            SyncCenter.shared.stopTodoRealtime(consumer: "home-\(viewTrace)")
+            KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onDisappear -> stopTodoListRealtime + release todo listener")
         }
         .onChange(of: coordinator.activeFamilyId) { _, _ in
             didStartRealtime = false
@@ -268,7 +280,8 @@ struct TodoHomeView: View {
             familyId: familyId,
             childId: childId,
             modelContext: modelContext,
-            remote: remote
+            remote: remote,
+            consumer: "home-\(viewTrace)"
         )
         
         Task { @MainActor in
@@ -291,11 +304,14 @@ struct TodoHomeView: View {
                 modelContext: modelContext,
                 remote: remote
             )
+            // Lo stop duro qui sopra azzera i consumatori: questo start deve
+            // riregistrare la Home, o il listener resterebbe senza titolari.
             SyncCenter.shared.startTodoRealtime(
                 familyId: familyId,
                 childId: childId,
                 modelContext: modelContext,
-                remote: remote
+                remote: remote,
+                consumer: "home-\(viewTrace)"
             )
         }
         await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
@@ -580,7 +596,6 @@ struct TodoHomeView: View {
         let desc = FetchDescriptor<KBTodoItem>(
             predicate: #Predicate {
                 $0.familyId == fid &&
-                $0.childId == cid &&
                 $0.listId == listId &&
                 $0.isDeleted == false
             }

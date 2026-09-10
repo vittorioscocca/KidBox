@@ -37,6 +37,10 @@ struct FamilyLocationView: View {
     @State private var showShareAlert = false
     @State private var showDurationSheet = false
     @State private var selectedHours = 2
+
+    /// Vista satellitare attiva. Non viene persistita: la mappa riparte sempre
+    /// dalla vista standard, come fa Mappe di sistema.
+    @State private var isSatellite = false
     
     init(familyId: String) {
         self.familyId = familyId
@@ -66,6 +70,7 @@ struct FamilyLocationView: View {
             .mapControls {
                 MapCompass()
             }
+            .mapStyle(isSatellite ? .hybrid : .standard)
             .ignoresSafeArea()
             // Quando l'utente muove manualmente la mappa, interrompi il follow
             .onMapCameraChange(frequency: .onEnd) { _ in
@@ -222,6 +227,8 @@ struct FamilyLocationView: View {
         // Bottoni "Segui [nome]" — visibili solo se il familiare sta condividendo
         // (others contiene già solo chi è in sharedUsers, quindi solo chi condivide)
         VStack(spacing: 10) {
+            mapStyleButton
+
             ForEach(others) { user in
                 Button {
                     if followingUserId == user.id {
@@ -263,6 +270,29 @@ struct FamilyLocationView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: others.count)
         .animation(.easeInOut(duration: 0.25), value: followingUserId)
+    }
+
+    /// Interruttore standard/satellite. Stessa grammatica dei pill "Segui":
+    /// pastiglia chiara quando è spento, arancione quando è attivo.
+    private var mapStyleButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isSatellite.toggle()
+            }
+        } label: {
+            Image(systemName: isSatellite ? "globe.americas.fill" : "map")
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 38, height: 38)
+                .background(
+                    isSatellite
+                    ? Color.orange
+                    : Color(.systemBackground).opacity(0.92)
+                )
+                .foregroundStyle(isSatellite ? .white : .primary)
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+        }
+        .accessibilityLabel(isSatellite ? "Vista standard" : "Vista satellite")
     }
     
     // MARK: - Camera helpers

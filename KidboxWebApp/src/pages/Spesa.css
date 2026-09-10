@@ -304,3 +304,12 @@
 .trip-action.danger:hover {
   border-color: rgba(192, 57, 43, 0.45);
 }
+
+/* Attribuzione sotto ogni articolo: più piccola e più tenue delle note, che
+   sono un dettaglio del prodotto mentre questa è un metadato. */
+.grocery-author {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+}

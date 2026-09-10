@@ -38,6 +38,8 @@ export const HEALTH_CONTEXT_PREFS = ["ask_each_time", "full_accuracy", "compact_
 export const LANGUAGES = [
   { code: "it", label: "Italiano", flag: "🇮🇹" },
   { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
 ];
 
 /**

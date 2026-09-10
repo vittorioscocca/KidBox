@@ -55,12 +55,10 @@ struct TodoListView: View {
         self.listId = listId
         
         let fid = familyId
-        let cid = childId
         
         _todos = Query(
             filter: #Predicate<KBTodoItem> { t in
                 t.familyId == fid &&
-                t.childId == cid &&
                 t.isDeleted == false
             },
             sort: [SortDescriptor(\KBTodoItem.createdAt, order: .reverse)]
@@ -119,12 +117,15 @@ struct TodoListView: View {
             }
             .kbRefreshable {
                 await SyncCenter.shared.forceRefresh(listenerKeys: ["todo"]) {
+                    // Stop duro voluto: rilegge il server per intero. Azzera i
+                    // consumatori, quindi lo start deve riregistrare questa view.
                     SyncCenter.shared.stopTodoRealtime()
                     SyncCenter.shared.startTodoRealtime(
                         familyId: familyId,
                         childId: childId,
                         modelContext: modelContext,
-                        remote: remote
+                        remote: remote,
+                        consumer: "list-\(viewTrace)"
                     )
                 }
                 await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
@@ -178,7 +179,8 @@ struct TodoListView: View {
                     familyId: familyId,
                     childId: childId,
                     modelContext: modelContext,
-                    remote: remote
+                    remote: remote,
+                    consumer: "list-\(viewTrace)"
                 )
                 
                 Task { @MainActor in
@@ -200,7 +202,8 @@ struct TodoListView: View {
                 }
             }
             .onDisappear {
-                KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId)")
+                SyncCenter.shared.stopTodoRealtime(consumer: "list-\(viewTrace)")
+                KBLog.todo.kbInfo("[TodoListView][\(viewTrace)] onDisappear listId=\(listId) -> release todo listener")
             }
         }
             }

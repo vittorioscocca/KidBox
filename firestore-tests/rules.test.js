@@ -1,4 +1,5 @@
 const fs = require("fs");
+const {deleteField} = require("firebase/firestore");
 const {
   initializeTestEnvironment,
   assertFails,
@@ -154,6 +155,8 @@ async function check(nome, promessa) {
   // resta valido lo stesso.
   const ESTRANEO = "estraneo99";
   const dbEstraneo = env.authenticatedContext(ESTRANEO).firestore();
+  // In PRODUZIONE questo passo riesce ancora: la stretta vive in
+  // `firestore.rules.next` ed è verificata in fondo a questo file.
   await check("attacco: l'auto-iscrizione a members/{uid} riesce ancora",
       assertSucceeds(dbEstraneo.doc(`families/${FAM}/members/${ESTRANEO}`)
           .set({uid: ESTRANEO, role: "parent", isDeleted: false})));
@@ -172,6 +175,142 @@ async function check(nome, promessa) {
   // documento vuoto (→ MissingFamilyKeyError) e non un permission-denied.
   await check("escrow: assente, il get passa comunque e torna vuoto",
       assertSucceeds(dbEstraneo.doc(`families/${FAM}/memberKeyBackups/${ESTRANEO}`).get()));
+
+  // ── QUERY DI COLLEZIONE (LIST) ─────────────────────
+  //
+  // Regressione vera, in produzione: escludendo `memberKeyBackups` dentro un
+  // `match /{subpath=**}` si leggeva il capture `**`, che in una LIST NON è
+  // legato ("Variable is not bound in path template"). Ogni query di
+  // collezione sotto `families/` veniva negata — a membri E proprietario —
+  // mentre le scritture, che il path non lo guardano, continuavano a passare:
+  // per questo il guasto si è visto solo su un dispositivo senza cache, cioè
+  // su un membro appena entrato. I `get` di un singolo documento non bastano
+  // a coprirlo: servono le `list`.
+  console.log("\n── QUERY DI COLLEZIONE (LIST) ─────────────────────");
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM}/groceryItems/g1`).set({nome: "latte"});
+    await adm.doc(`families/${FAM}/chat/c1/messages/m1`).set({testo: "ciao"});
+  });
+  await check("membro: LIST di una sottocollezione",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/groceryItems`).get()));
+  await check("owner: LIST di una sottocollezione",
+      assertSucceeds(db.collection(`families/${FAM}/groceryItems`).get()));
+  await check("membro: LIST di members",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/members`).get()));
+  await check("membro: LIST di una sottocollezione annidata",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/chat/c1/messages`).get()));
+  await check("escrow: NON si LISTA la collezione",
+      assertFails(dbMembro.collection(`families/${FAM}/memberKeyBackups`).get()));
+
+  // ── LA VERSIONE FUTURA: firestore.rules.next ───────
+  //
+  // Ambiente separato perché è un ruleset diverso: `firestore.rules.next`
+  // chiude l'auto-iscrizione a `members/{uid}`, ma non è deployabile finché le
+  // app che scrivono `inviteId` non sono diffuse. Qui si verifica che il giorno
+  // del passaggio funzioni — e che nel frattempo non marcisca.
+  const envNext = await initializeTestEnvironment({
+    projectId: PROJECT_ID + "-next",
+    firestore: {
+      rules: fs.readFileSync("/Users/vscocca/KidBox/firestore.rules.next", "utf8"),
+      host: "127.0.0.1", port: 8080,
+    },
+  });
+  await envNext.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM}`).set({name: "Rossi", ownerUid: UID, plan: "free"});
+    await adm.doc(`families/${FAM}/members/${UID}`).set({uid: UID, role: "owner", isDeleted: false});
+  });
+
+  // ── AUTO-ISCRIZIONE A members/{uid} ────────────────
+  //
+  // Il `familyId` viaggia in chiaro nel QR e nel link d'invito, quindi non è un
+  // segreto: da solo non deve bastare a entrare. La prova richiesta è l'invito
+  // consumato — `JoinWrapService` lo marca `usedBy` in transazione dopo aver
+  // verificato l'hash del segreto, e il client ne riporta l'id sul documento
+  // membro.
+  console.log("\n── AUTO-ISCRIZIONE A members/{uid} ────────────────");
+  const NUOVO = "nuovo7";
+  const nxNuovo = envNext.authenticatedContext(NUOVO).firestore();
+  await envNext.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    // Invito consumato dal nuovo membro (usedBy = lui).
+    await adm.doc(`families/${FAM}/invites/inv-ok`)
+        .set({usedAt: new Date(), usedBy: NUOVO, secretHash: "x"});
+    // Invito mai consumato.
+    await adm.doc(`families/${FAM}/invites/inv-vergine`)
+        .set({usedAt: null, usedBy: null, secretHash: "x"});
+    // Invito consumato da qualcun altro.
+    await adm.doc(`families/${FAM}/invites/inv-altrui`)
+        .set({usedAt: new Date(), usedBy: "qualcunaltro", secretHash: "x"});
+  });
+
+  await check("join: con l'invito che ha consumato, entra",
+      assertSucceeds(nxNuovo.doc(`families/${FAM}/members/${NUOVO}`)
+          .set({uid: NUOVO, role: "member", isDeleted: false, inviteId: "inv-ok"})));
+  const INTRUSO = "intruso2";
+  {
+    const db0 = envNext.authenticatedContext(INTRUSO).firestore();
+    await check("attacco: senza inviteId NON entra",
+        assertFails(db0.doc(`families/${FAM}/members/${INTRUSO}`)
+            .set({uid: INTRUSO, role: "member", isDeleted: false})));
+  }
+
+  const nxIntruso = envNext.authenticatedContext(INTRUSO).firestore();
+  await check("attacco: con un inviteId inventato NON entra",
+      assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+          .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inventato"})));
+  await check("attacco: con un invito mai consumato NON entra",
+      assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+          .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-vergine"})));
+  await check("attacco: con l'invito consumato da un ALTRO NON entra",
+      assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+          .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-altrui"})));
+
+  // Consumare l'invito significa anche svuotarlo del materiale crittografico:
+  // l'invito ora sopravvive all'uso, e un documento che resta non deve
+  // continuare a contenere la chiave di famiglia wrappata.
+  await envNext.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM}/invites/inv-da-consumare`).set({
+      usedAt: null, usedBy: null, secretHash: "h", kdfSalt: "s",
+      wrappedKeyCipher: "c", wrappedKeyNonce: "n", wrappedKeyTag: "t",
+    });
+  });
+  const CONSUMA = "consuma1";
+  const nxConsuma = envNext.authenticatedContext(CONSUMA).firestore();
+  await check("invito: consumarlo azzera anche il materiale cifrato",
+      assertSucceeds(nxConsuma.doc(`families/${FAM}/invites/inv-da-consumare`).update({
+        usedAt: new Date(), usedBy: CONSUMA,
+        secretHash: deleteField(), kdfSalt: deleteField(),
+        wrappedKeyCipher: deleteField(), wrappedKeyNonce: deleteField(),
+        wrappedKeyTag: deleteField(),
+      })));
+  await check("invito: consumato, NON si può riscrivere usedBy a proprio nome",
+      assertFails(nxIntruso.doc(`families/${FAM}/invites/inv-da-consumare`)
+          .update({usedBy: INTRUSO})));
+  await check("invito: NON si possono cambiare altri campi passando di qui",
+      assertFails(nxConsuma.doc(`families/${FAM}/invites/inv-vergine`)
+          .update({usedAt: new Date(), usedBy: CONSUMA, familyName: "Altro"})));
+
+  // Creazione famiglia: documento famiglia e membro proprietario nascono nello
+  // stesso batch, quando la famiglia ancora non esiste per le rules.
+  const CREATORE = "creatore1";
+  const nxCreatore = envNext.authenticatedContext(CREATORE).firestore();
+  await check("creazione famiglia: il batch famiglia + membro owner passa",
+      assertSucceeds((() => {
+        const b = nxCreatore.batch();
+        b.set(nxCreatore.doc("families/famiglia-nuova"), {name: "Nuova", ownerUid: CREATORE});
+        b.set(nxCreatore.doc(`families/famiglia-nuova/members/${CREATORE}`),
+            {uid: CREATORE, role: "owner", isDeleted: false});
+        return b.commit();
+      })()));
+
+  // Il membro già iscritto resta padrone del proprio documento.
+  await check("membro: può ancora aggiornare il proprio documento",
+      assertSucceeds(nxNuovo.doc(`families/${FAM}/members/${NUOVO}`)
+          .update({displayName: "Nuovo"})));
+
+  await envNext.cleanup();
 
   console.log(`\n══ Risultato: ${pass} superati, ${fail} falliti ══\n`);
   await env.cleanup();

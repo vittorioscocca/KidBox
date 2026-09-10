@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
+import * as analytics from "./services/analytics";
+import ConsentBanner from "./components/ConsentBanner";
 import { FamilyProvider } from "./FamilyContext";
 import { LocaleProvider } from "./i18n/LocaleContext";
 import { ThemeProvider } from "./ThemeContext";
@@ -90,11 +92,23 @@ function LoginScreen() {
     };
   }, []);
 
-  const runProvider = async (fn) => {
+  /**
+   * `login_attempted` è l'unico evento che misura davvero il tap: gli altri tre
+   * del funnel social, sui nativi, sono emessi dopo il successo del login e non
+   * hanno un intervallo reale. Qui si mantiene la stessa sequenza per non
+   * introdurre una differenza fra le piattaforme.
+   */
+  const runProvider = async (fn, method) => {
     setError(null);
     setPending(true);
+    if (method) analytics.loginAttempted(method);
     try {
       await fn();
+      if (method) {
+        analytics.signupStarted(method);
+        analytics.signupMethodSelected(method);
+        analytics.signupCompleted(method);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -104,7 +118,10 @@ function LoginScreen() {
 
   const handleEmailSubmit = (e) => {
     e.preventDefault();
-    runProvider(() => (isSignUp ? signUpWithEmail(email, password) : signInWithEmail(email, password)));
+    runProvider(
+      () => (isSignUp ? signUpWithEmail(email, password) : signInWithEmail(email, password)),
+      "email"
+    );
   };
 
   return (
@@ -116,10 +133,10 @@ function LoginScreen() {
       {error && <p className="error">{error}</p>}
 
       <div className="providers">
-        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithGoogle)}>
+        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithGoogle, "google")}>
           <GoogleIcon /> Accedi con Google
         </button>
-        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithApple)}>
+        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithApple, "apple")}>
           <AppleIcon /> Accedi con Apple
         </button>
         {/* Nascosto finché l'app Meta è in modalità sviluppo: chi lo premeva
@@ -127,7 +144,7 @@ function LoginScreen() {
             KidBox. Torna da solo quando il flag remoto passa a true, senza un
             nuovo rilascio — stessa logica di iOS e Android. */}
         {facebookEnabled && (
-          <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithFacebook)}>
+          <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithFacebook, "facebook")}>
             <FacebookIcon /> Accedi con Facebook
           </button>
         )}
@@ -233,6 +250,9 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppShell />
+          {/* Fuori dal gate di autenticazione: i primi eventi partono dalla
+              schermata di accesso, e chiedere dopo sarebbe chiedere tardi. */}
+          <ConsentBanner />
         </AuthProvider>
       </ThemeProvider>
     </LocaleProvider>

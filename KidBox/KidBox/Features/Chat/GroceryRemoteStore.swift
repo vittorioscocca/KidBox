@@ -26,6 +26,11 @@ struct GroceryRemoteDTO {
     let updatedAt: Date?
     let updatedBy: String?
     let createdBy: String?
+    /// Quando l'articolo è nato, secondo il server. Serve per la riga
+    /// "Aggiunto da … · oggi": senza, il client userebbe l'ora in cui ha
+    /// sincronizzato, e un articolo dettato ad Alexa a telefono spento
+    /// risulterebbe aggiunto oggi anche se è di tre giorni fa.
+    let createdAt: Date?
 }
 
 enum GroceryRemoteChange {
@@ -147,7 +152,8 @@ final class GroceryRemoteStore {
                         purchasedBy: d["purchasedBy"] as? String,
                         updatedAt: (d["updatedAt"] as? Timestamp)?.dateValue(),
                         updatedBy: d["updatedBy"] as? String,
-                        createdBy: d["createdBy"] as? String
+                        createdBy: d["createdBy"] as? String,
+                        createdAt: (d["createdAt"] as? Timestamp)?.dateValue()
                     )
                     
                     switch diff.type {

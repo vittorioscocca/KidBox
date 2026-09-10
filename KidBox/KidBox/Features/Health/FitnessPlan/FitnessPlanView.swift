@@ -419,6 +419,16 @@ struct FitnessPlanView: View {
                 value: (snap?.activeEnergyKcal).flatMap { $0 > 0 ? String(format: "%.0f kcal", $0) : nil } ?? notAvailable,
                 available: (snap?.activeEnergyKcal ?? 0) > 0
             ),
+            // La distanza degli allenamenti è un tipo di dato letto a sé: va
+            // dichiarata qui e mostrata anche quando manca, come le calorie.
+            DataSourceRow(
+                id: "distance",
+                label: "Distanza",
+                value: FitnessDistanceFormatter.kilometers(
+                    snap?.recentWorkouts.compactMap(\.distanceMeters).reduce(0, +)
+                ) ?? notAvailable,
+                available: (snap?.recentWorkouts.compactMap(\.distanceMeters).reduce(0, +) ?? 0) > 0
+            ),
             DataSourceRow(id: "visits", label: "Visite mediche", value: "\(allVisits.count)", available: !allVisits.isEmpty),
             DataSourceRow(id: "exams", label: "Analisi & Esami", value: "\(allExams.count)", available: !allExams.isEmpty),
             DataSourceRow(id: "treatments", label: "Cure attive", value: "\(activeTreatments.count)", available: !activeTreatments.isEmpty),
@@ -497,6 +507,10 @@ struct FitnessPlanView: View {
                     }
                 }
             }
+
+            Divider()
+
+            sessionsButton(plan)
         }
         .fitnessCard()
         .onAppear { alignDisplayedMonth() }
@@ -648,6 +662,51 @@ struct FitnessPlanView: View {
         .accessibilityLabel(FitnessPlanFormat.mediumDate(day))
     }
 
+    // MARK: - Storico sessioni
+
+    /// Accesso all'elenco delle sedute già svolte. Sta sotto il calendario
+    /// perché è la domanda che viene dopo "cosa devo fare oggi": cosa ho fatto
+    /// finora.
+    private func sessionsButton(_ plan: FitnessPlanDocument) -> some View {
+        let done = plan.allSessions.filter { $0.status == .done }.count
+
+        return NavigationLink {
+            FitnessSessionsView(plan: plan)
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(tint.opacity(0.15)).frame(width: 40, height: 40)
+                    Image(systemName: "list.bullet.rectangle")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(tint)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sessioni")
+                        .font(.headline)
+                        .foregroundStyle(KBTheme.primaryText(colorScheme))
+                    Text(
+                        String(
+                            format: NSLocalizedString(
+                                "%d sedute registrate",
+                                comment: "Number of completed sessions, fitness dashboard"
+                            ),
+                            done
+                        )
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(KBTheme.secondaryText(colorScheme))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Dettaglio giornata
 
     private func dayDetailCard(_ plan: FitnessPlanDocument) -> some View {
@@ -744,6 +803,9 @@ struct FitnessPlanView: View {
                     minutes
                 )
             )
+        }
+        if let km = FitnessDistanceFormatter.kilometers(workout.distanceMeters) {
+            parts.append(km)
         }
         if let kcal = workout.kcal { parts.append("\(kcal) kcal") }
         if let bpm = workout.heartRateBpm { parts.append("\(bpm) bpm") }
@@ -962,6 +1024,9 @@ struct FitnessPlanView: View {
                 minutes
             )
         )
+        if let km = FitnessDistanceFormatter.kilometers(session.actualDistanceMeters) {
+            parts.append(km)
+        }
         if let kcal = session.actualKcal { parts.append("\(kcal) kcal") }
         if let bpm = session.actualHeartRateBpm { parts.append("\(bpm) bpm") }
         return parts.joined(separator: " · ")
@@ -1080,6 +1145,12 @@ struct FitnessPlanView: View {
             HStack(spacing: 16) {
                 reportMetric("Completate", value: "\(report.completedSessions)/\(report.plannedSessions)")
                 reportMetric("Minuti", value: "\(report.totalMinutes)")
+                // I chilometri restano a schermo anche a zero: una metrica di
+                // salute che sparisce quando manca il dato non si vede mai.
+                reportMetric(
+                    "Distanza",
+                    value: FitnessDistanceFormatter.kilometers(report.totalDistanceMeters) ?? "—"
+                )
                 if report.totalKcal > 0 {
                     reportMetric("kcal", value: "\(report.totalKcal)")
                 }
@@ -1489,6 +1560,12 @@ struct FitnessPlanView: View {
         isSyncingHealth = true
         defer { isSyncingHealth = false }
 
+        // Chi aveva già collegato Salute non è mai stato interrogato sulle
+        // distanze: senza questa richiesta i chilometri resterebbero vuoti per
+        // sempre. HealthKit mostra la schermata solo per i tipi ancora non
+        // decisi, quindi per tutti gli altri è una chiamata silenziosa.
+        try? await KBHealthKitService.shared.requestAuthorization()
+
         let result = await FitnessHealthSync.reconcile(plan: plan)
         FitnessPlanStore.setLastHealthSync(Date(), childId: childId)
         guard result.didChange else {
@@ -1536,6 +1613,17 @@ struct FitnessPlanView: View {
                         comment: "Fitness sync logged count"
                     ),
                     result.loggedWorkouts.count
+                )
+            )
+        }
+        if result.enrichedSessions > 0 {
+            parts.append(
+                String(
+                    format: NSLocalizedString(
+                        "Chilometri recuperati su attività già registrate: %d",
+                        comment: "Fitness sync distance backfill count"
+                    ),
+                    result.enrichedSessions
                 )
             )
         }

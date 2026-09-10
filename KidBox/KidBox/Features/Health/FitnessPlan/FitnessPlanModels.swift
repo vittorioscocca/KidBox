@@ -429,6 +429,9 @@ struct FitnessSession: Codable, Equatable, Identifiable {
     var actualMinutes: Int?
     var actualKcal: Int?
     var actualHeartRateBpm: Int?
+    /// Distanza percorsa, in metri, quando l'attività ne ha una. Opzionale: i
+    /// piani salvati prima di questo campo devono continuare a decodificarsi.
+    var actualDistanceMeters: Double?
 
     init(
         id: String = UUID().uuidString,
@@ -450,7 +453,8 @@ struct FitnessSession: Codable, Equatable, Identifiable {
         matchedWorkoutId: String? = nil,
         actualMinutes: Int? = nil,
         actualKcal: Int? = nil,
-        actualHeartRateBpm: Int? = nil
+        actualHeartRateBpm: Int? = nil,
+        actualDistanceMeters: Double? = nil
     ) {
         self.id = id
         self.date = date
@@ -472,6 +476,7 @@ struct FitnessSession: Codable, Equatable, Identifiable {
         self.actualMinutes = actualMinutes
         self.actualKcal = actualKcal
         self.actualHeartRateBpm = actualHeartRateBpm
+        self.actualDistanceMeters = actualDistanceMeters
     }
 
     /// La seduta è stata chiusa da un'attività di disciplina diversa da quella
@@ -521,6 +526,29 @@ struct FitnessLoggedWorkout: Codable, Equatable, Identifiable {
     var durationMinutes: Int?
     var kcal: Int?
     var heartRateBpm: Int?
+    /// Distanza percorsa, in metri, quando l'attività ne ha una.
+    var distanceMeters: Double?
+}
+
+/// Chilometri come li scrive l'app: una cifra decimale, separatore locale.
+/// Sta qui perché serve alla dashboard, all'elenco sessioni e al consuntivo.
+enum FitnessDistanceFormatter {
+
+    /// `nil` quando la distanza non c'è o è trascurabile: le discipline senza
+    /// distanza non devono mostrare "0,0 km".
+    static func kilometers(_ meters: Double?) -> String? {
+        guard let meters, meters >= 10 else { return nil }
+        let formatter = NumberFormatter()
+        formatter.locale = .current
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 1
+        formatter.maximumFractionDigits = 1
+        let value = formatter.string(from: NSNumber(value: meters / 1000)) ?? "-"
+        return String(
+            format: NSLocalizedString("%@ km", comment: "Distance in kilometers"),
+            value
+        )
+    }
 }
 
 /// Una settimana del piano mensile.
@@ -644,6 +672,9 @@ struct FitnessWeeklyReport: Codable, Equatable {
     var skippedSessions: Int
     var totalMinutes: Int
     var totalKcal: Int
+    /// Metri percorsi nelle sedute chiuse della settimana. Opzionale nel
+    /// significato, non nel tipo: vale zero quando nessuna attività ha distanza.
+    var totalDistanceMeters: Double = 0
     /// Sedute completate con un'attività diversa da quella programmata.
     var substitutedSessions: Int = 0
     /// Giorni della settimana (convenzione `Calendar`) sistematicamente saltati.

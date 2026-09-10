@@ -20,6 +20,7 @@ enum FitnessWeeklyReportBuilder {
 
         let minutes = done.reduce(0) { $0 + ($1.actualMinutes ?? $1.durationMinutes) }
         let kcal = done.reduce(0) { $0 + ($1.actualKcal ?? $1.targetKcal ?? 0) }
+        let meters = done.reduce(0.0) { $0 + ($1.actualDistanceMeters ?? 0) }
 
         let cal = Calendar.current
         let weekStart = cal.date(
@@ -36,6 +37,7 @@ enum FitnessWeeklyReportBuilder {
             skippedSessions: skipped.count,
             totalMinutes: minutes,
             totalKcal: kcal,
+            totalDistanceMeters: meters,
             substitutedSessions: done.filter(\.wasSubstituted).count,
             chronicallySkippedWeekdays: chronicallySkippedWeekdays(plan: plan, upTo: weekIndex)
         )

@@ -51,12 +51,20 @@ final class InviteRemoteStore {
 
     /// Adds current user as member of the family and writes the membership index.
     ///
-    /// Behavior (unchanged):
+    /// Behavior:
     /// - Requires authenticated user.
     /// - Batch writes:
     ///   - `families/{familyId}/members/{uid}`
     ///   - `users/{uid}/memberships/{familyId}`
-    func addMember(familyId: String, role: String = "member") async throws {
+    ///
+    /// - Parameter inviteId: l'invito da cui nasce questa iscrizione. Finisce
+    ///   sul documento membro perché è **la prova** che le regole Firestore
+    ///   chiedono per l'auto-iscrizione: senza, chiunque conosca il `familyId`
+    ///   può aggiungersi da sé a una famiglia altrui. Il documento invito è già
+    ///   stato marcato `usedBy = uid` da `JoinWrapService`, e la regola verifica
+    ///   proprio quella corrispondenza. È opzionale solo per l'owner, che al
+    ///   momento della creazione della famiglia non ha nessun invito.
+    func addMember(familyId: String, role: String = "member", inviteId: String? = nil) async throws {
         guard let uid = Auth.auth().currentUser?.uid else {
             KBLog.auth.kbError("addMember failed: not authenticated")
             throw NSError(
@@ -66,7 +74,7 @@ final class InviteRemoteStore {
             )
         }
         
-        KBLog.sync.kbInfo("addMember started familyId=\(familyId) role=\(role)")
+        KBLog.sync.kbInfo("addMember started familyId=\(familyId) role=\(role) hasInvite=\(inviteId?.isEmpty == false)")
         
         let familyRef = db.collection("families").document(familyId)
         
@@ -78,14 +86,18 @@ final class InviteRemoteStore {
         
         let batch = db.batch()
         
-        batch.setData([
+        var memberFields: [String: Any] = [
             "uid": uid,
             "role": role,
             "isDeleted": false,
             "updatedBy": uid,
             "updatedAt": FieldValue.serverTimestamp(),
             "createdAt": FieldValue.serverTimestamp()
-        ], forDocument: memberRef, merge: true)
+        ]
+        if let inviteId, !inviteId.isEmpty {
+            memberFields["inviteId"] = inviteId
+        }
+        batch.setData(memberFields, forDocument: memberRef, merge: true)
         
         batch.setData([
             "familyId": familyId,

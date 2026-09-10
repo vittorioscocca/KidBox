@@ -11,6 +11,9 @@ struct HousePaymentDetailView: View {
     let familyId: String
     let paymentId: String
 
+    /// Id di questa view come consumatore del listener.
+    private var consumerId: String { "house-payments-detail-\(paymentId)" }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var coordinator: AppCoordinator
@@ -99,8 +102,12 @@ struct HousePaymentDetailView: View {
         } message: {
             Text("Verrà rimossa per tutta la famiglia.")
         }
+        .onDisappear {
+            // Mancava del tutto: il dettaglio agganciava e non rilasciava mai.
+            SyncCenter.shared.stopHousePaymentsRealtime(consumer: consumerId)
+        }
         .onAppear {
-            SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext)
+            SyncCenter.shared.startHousePaymentsRealtime(familyId: familyId, modelContext: modelContext, consumer: consumerId)
         }
     }
 

@@ -15,6 +15,7 @@ import { encryptString } from "./noteCrypto";
 import { loadFamilyKey } from "./familyKey";
 import { uploadDocument } from "./documents";
 import { uploadPhoto } from "./photos";
+import { resolveTodoListId } from "./todoTarget";
 
 /**
  * I byte di un media della chat.
@@ -104,12 +105,15 @@ export async function saveAsNote({ familyId, uid, displayName, text }) {
   return id;
 }
 
-export async function saveAsTodo({ familyId, uid, title }) {
+export async function saveAsTodo({ familyId, uid, title, defaultListName }) {
   const id = crypto.randomUUID();
+  // Senza lista il to-do non sarebbe visibile da nessuna parte: si sceglie la
+  // prima lista della famiglia (o se ne crea una). Vedi `resolveTodoListId`.
+  const listId = await resolveTodoListId({ familyId, uid, defaultListName });
   await setDoc(doc(db, "families", familyId, "todos", id), {
     childId: "",
     title,
-    listId: "",
+    listId,
     isDone: false,
     isDeleted: false,
     notes: null,

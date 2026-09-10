@@ -24,6 +24,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { deleteLinkedExpense, syncLinkedExpense } from "./linkedExpense";
+import { contentCreated } from "./analytics";
 
 const itemsCol = (familyId) => collection(db, "families", familyId, "homeItems");
 const paymentsCol = (familyId) => collection(db, "families", familyId, "housePayments");
@@ -161,6 +162,7 @@ const tsOrNull = (v) => (v ? Timestamp.fromMillis(v) : null);
 
 export async function saveHomeItem({ familyId, userId, item }) {
   const id = item.id || crypto.randomUUID();
+  const isNew = !item.id;
   const data = {
     name: item.name || "",
     categoryRaw: item.categoryRaw || "other",
@@ -182,6 +184,10 @@ export async function saveHomeItem({ familyId, userId, item }) {
     data.createdBy = userId;
   }
   await setDoc(doc(itemsCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("home_vehicles");
+
   return id;
 }
 
@@ -211,6 +217,7 @@ function expenseNotesFor(payment) {
  */
 export async function saveHousePayment({ familyId, userId, payment }) {
   const id = payment.id || crypto.randomUUID();
+  const isNew = !payment.id;
   const batch = writeBatch(db);
 
   const linkedExpenseId = syncLinkedExpense({
@@ -249,6 +256,10 @@ export async function saveHousePayment({ familyId, userId, payment }) {
 
   batch.set(doc(paymentsCol(familyId), id), data, { merge: true });
   await batch.commit();
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("home_vehicles");
+
   return id;
 }
 

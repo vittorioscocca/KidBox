@@ -42,7 +42,24 @@ extension SyncCenter {
         )
     }
 
+    /// Registra un consumatore e aggancia il listener se serve.
+    ///
+    /// Va usata dalle view al posto della variante senza `consumer:`: vedi
+    /// `listenerConsumers` in SyncCenter per il perché.
+    /// - Parameter consumer: id stabile e unico della view che lo usa.
+    func startPetsRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("pets", consumer: consumer)
+        startPetsRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopPetsRealtime(consumer: String) {
+        guard releaseListener("pets", consumer: consumer) else { return }
+        stopPetsRealtime()
+    }
+
     func stopPetsRealtime() {
+        clearListenerConsumers("pets")
         if petListener != nil {
             KBLog.sync.kbInfo("stopPetsRealtime")
         }
@@ -77,7 +94,24 @@ extension SyncCenter {
         )
     }
 
+    /// Registra un consumatore e aggancia il listener se serve.
+    ///
+    /// Va usata dalle view al posto della variante senza `consumer:`: vedi
+    /// `listenerConsumers` in SyncCenter per il perché.
+    /// - Parameter consumer: id stabile e unico della view che lo usa.
+    func startPetEventsRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("petEvents", consumer: consumer)
+        startPetEventsRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopPetEventsRealtime(consumer: String) {
+        guard releaseListener("petEvents", consumer: consumer) else { return }
+        stopPetEventsRealtime()
+    }
+
     func stopPetEventsRealtime() {
+        clearListenerConsumers("petEvents")
         if petEventListener != nil {
             KBLog.sync.kbInfo("stopPetEventsRealtime")
         }

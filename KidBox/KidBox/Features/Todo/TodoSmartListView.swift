@@ -25,6 +25,10 @@ struct TodoSmartListView: View {
     @State private var editingTodoId: String? = nil
     @State private var showDeleteAllCompletedAlert = false
     
+    /// Id del consumatore del listener: una sola smart list per `kind` è a
+    /// schermo alla volta, quindi basta il tipo a distinguerla.
+    private var consumerId: String { "smart-\(String(describing: kind))" }
+
     init(familyId: String, childId: String, kind: TodoSmartKind) {
         self.familyId = familyId
         self.childId = childId
@@ -34,7 +38,6 @@ struct TodoSmartListView: View {
         _todos = Query(
             filter: #Predicate<KBTodoItem> { t in
                 t.familyId == familyId &&
-                t.childId == childId &&
                 t.isDeleted == false
             },
             sort: [SortDescriptor(\KBTodoItem.updatedAt, order: .reverse)]
@@ -96,12 +99,15 @@ struct TodoSmartListView: View {
         }
         .kbRefreshable {
             await SyncCenter.shared.forceRefresh(listenerKeys: ["todo"]) {
+                // Stop duro voluto: azzera i consumatori, quindi lo start
+                // subito sotto deve riregistrare questa view.
                 SyncCenter.shared.stopTodoRealtime()
                 SyncCenter.shared.startTodoRealtime(
                     familyId: familyId,
                     childId: childId,
                     modelContext: modelContext,
-                    remote: remote
+                    remote: remote,
+                    consumer: consumerId
                 )
             }
             await SyncCenter.shared.flush(modelContext: modelContext, remote: remote)
@@ -152,13 +158,14 @@ struct TodoSmartListView: View {
                 familyId: familyId,
                 childId: childId,
                 modelContext: modelContext,
-                remote: remote
+                remote: remote,
+                consumer: consumerId
             )
             
             Task { await SyncCenter.shared.flush(modelContext: modelContext, remote: remote) }
         }
         .onDisappear {
-            SyncCenter.shared.stopTodoRealtime()
+            SyncCenter.shared.stopTodoRealtime(consumer: consumerId)
         }
     }
     

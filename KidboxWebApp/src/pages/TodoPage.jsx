@@ -30,8 +30,8 @@ export default function TodoPage() {
 
   const children = useChildren(currentFamilyId);
   const childId = children[0]?.id ?? "";
-  const { todos, error } = useTodos(currentFamilyId, childId);
-  const lists = useTodoLists(currentFamilyId, childId);
+  const { todos, error } = useTodos(currentFamilyId);
+  const lists = useTodoLists(currentFamilyId);
   const members = useFamilyMembers(currentFamilyId);
 
   // Una sola selezione: o un filtro, o un elenco.

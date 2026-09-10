@@ -168,6 +168,10 @@ extension SyncCenter {
                     } else {
                         // Crea nuovo
                         let now = dto.updatedAt ?? Date()
+                        // La nascita la decide il server: `now` è l'ora di
+                        // questo sync, e per un articolo arrivato mentre l'app
+                        // era chiusa sarebbe sbagliata.
+                        let born = dto.createdAt ?? now
                         let item = KBGroceryItem(
                             id: dto.id,
                             familyId: dto.familyId,
@@ -179,7 +183,7 @@ extension SyncCenter {
                             purchasedAt: dto.purchasedAt,
                             purchasedBy: dto.purchasedBy,
                             isDeleted: false,
-                            createdAt: now,
+                            createdAt: born,
                             updatedAt: now,
                             updatedBy: dto.updatedBy,
                             createdBy: dto.createdBy

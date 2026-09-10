@@ -62,8 +62,14 @@ final class FamilyJoinService {
     /// nel payload. Il codice testuale non esiste più: creava membri senza la
     /// chiave di cifratura, quindi incapaci di leggere password, documenti,
     /// wallet e allegati della chat.
+    /// - Parameter inviteId: l'invito consumato da `JoinWrapService`. Va passato
+    ///   fino a `addMember`: è la prova che le regole chiedono per l'iscrizione.
     @discardableResult
-    func joinFamily(familyId: String, coordinator: AppCoordinator) async throws -> FamilyJoinOutcome {
+    func joinFamily(
+        familyId: String,
+        inviteId: String? = nil,
+        coordinator: AppCoordinator
+    ) async throws -> FamilyJoinOutcome {
         // ─────────────────────────────────────────────────────────────────────
         // JOIN GUARD — sopprime handleFamilyAccessLost per tutta la durata del
         // join. I listener della vecchia famiglia possono emettere
@@ -180,7 +186,7 @@ final class FamilyJoinService {
         
         // 2) Become member on server
         KBLog.sync.kbDebug("Adding member on server familyId=\(familyId)")
-        try await inviteRemote.addMember(familyId: familyId, role: "member")
+        try await inviteRemote.addMember(familyId: familyId, role: "member", inviteId: inviteId)
         KBLog.sync.kbInfo("Member added on server familyId=\(familyId)")
         
         // 3) Read minimal family state

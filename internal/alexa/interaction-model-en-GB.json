@@ -1,0 +1,109 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "mio box",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "LinkAccountIntent",
+          "slots": [
+            {
+              "name": "code",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "{code} is the code",
+            "{code}",
+            "link with {code}",
+            "link with code {code}",
+            "link my account with {code}",
+            "the code is {code}",
+            "code {code}",
+            "to link with {code}",
+            "linking with {code}"
+          ]
+        },
+        {
+          "name": "AddItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "add {item}",
+            "add {item} to the list",
+            "add {item} to the shopping list",
+            "put {item} on the list",
+            "we need {item}",
+            "buy {item}"
+          ]
+        },
+        {
+          "name": "RemoveItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "remove {item}",
+            "remove {item} from the list",
+            "delete {item}",
+            "take {item} off the list"
+          ]
+        },
+        {
+          "name": "CheckItemIntent",
+          "slots": [
+            {
+              "name": "item",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "I bought {item}",
+            "mark {item} as bought",
+            "I got {item}",
+            "tick off {item}"
+          ]
+        },
+        {
+          "name": "ReadListIntent",
+          "slots": [],
+          "samples": [
+            "what's on the list",
+            "what's on the shopping list",
+            "what do I need to buy",
+            "read the list",
+            "read the shopping list",
+            "what's missing"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

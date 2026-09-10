@@ -40,7 +40,24 @@ extension SyncCenter {
         )
     }
 
+    /// Registra un consumatore e aggancia il listener se serve.
+    ///
+    /// Va usata dalle view al posto della variante senza `consumer:`: vedi
+    /// `listenerConsumers` in SyncCenter per il perché.
+    /// - Parameter consumer: id stabile e unico della view che lo usa.
+    func startVehiclesRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("vehicles", consumer: consumer)
+        startVehiclesRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopVehiclesRealtime(consumer: String) {
+        guard releaseListener("vehicles", consumer: consumer) else { return }
+        stopVehiclesRealtime()
+    }
+
     func stopVehiclesRealtime() {
+        clearListenerConsumers("vehicles")
         if vehicleListener != nil {
             KBLog.sync.kbInfo("stopVehiclesRealtime")
         }
@@ -75,7 +92,24 @@ extension SyncCenter {
         )
     }
 
+    /// Registra un consumatore e aggancia il listener se serve.
+    ///
+    /// Va usata dalle view al posto della variante senza `consumer:`: vedi
+    /// `listenerConsumers` in SyncCenter per il perché.
+    /// - Parameter consumer: id stabile e unico della view che lo usa.
+    func startVehicleEventsRealtime(familyId: String, modelContext: ModelContext, consumer: String) {
+        retainListener("vehicleEvents", consumer: consumer)
+        startVehicleEventsRealtime(familyId: familyId, modelContext: modelContext)
+    }
+
+    /// Sgancia un consumatore: il listener si ferma solo se non ne resta nessuno.
+    func stopVehicleEventsRealtime(consumer: String) {
+        guard releaseListener("vehicleEvents", consumer: consumer) else { return }
+        stopVehicleEventsRealtime()
+    }
+
     func stopVehicleEventsRealtime() {
+        clearListenerConsumers("vehicleEvents")
         if vehicleEventListener != nil {
             KBLog.sync.kbInfo("stopVehicleEventsRealtime")
         }

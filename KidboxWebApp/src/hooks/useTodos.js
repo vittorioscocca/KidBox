@@ -6,22 +6,23 @@ export function todosCol(familyId) {
   return collection(db, "families", familyId, "todos");
 }
 
-// Il client nativo scopa i todo sul primo (unico) figlio della famiglia
-// (childId = "" se la famiglia non ha ancora un bambino, mai bloccato).
-// Replichiamo la stessa logica per restare coerenti con l'app iOS/Android.
-export function useTodos(familyId, childId) {
+// I todo sono di FAMIGLIA: non si filtra per childId, come su iOS e Android.
+// Il campo resta sui documenti e continua a essere scritto, ma non è mai stato
+// uno scoping vero — `children[0]` su una query senza `orderBy` non ha ordine
+// garantito, quindi con due figli il web poteva mostrare un elenco diverso da
+// quello dell'app. Vedi il commento esteso in TodoHomeView.swift.
+export function useTodos(familyId) {
   const [todos, setTodos] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!familyId || childId === undefined) {
+    if (!familyId) {
       setTodos([]);
       return;
     }
     const q = query(
       todosCol(familyId),
-      where("isDeleted", "==", false),
-      where("childId", "==", childId)
+      where("isDeleted", "==", false)
     );
     const unsub = onSnapshot(
       q,
@@ -29,7 +30,7 @@ export function useTodos(familyId, childId) {
       (err) => setError(err.message)
     );
     return unsub;
-  }, [familyId, childId]);
+  }, [familyId]);
 
   return { todos, error };
 }

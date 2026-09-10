@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { deleteLinkedExpense, syncLinkedExpense } from "./linkedExpense";
+import { contentCreated } from "./analytics";
 
 const vehiclesCol = (familyId) => collection(db, "families", familyId, "vehicles");
 const eventsCol = (familyId) => collection(db, "families", familyId, "vehicleEvents");
@@ -157,6 +158,7 @@ const tsOrNull = (v) => (v ? Timestamp.fromMillis(v) : null);
 
 export async function saveVehicle({ familyId, userId, vehicle }) {
   const id = vehicle.id || crypto.randomUUID();
+  const isNew = !vehicle.id;
   const data = {
     name: vehicle.name || "",
     licensePlate: vehicle.licensePlate || null,
@@ -185,6 +187,10 @@ export async function saveVehicle({ familyId, userId, vehicle }) {
     data.createdBy = userId;
   }
   await setDoc(doc(vehiclesCol(familyId), id), data, { merge: true });
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("home_vehicles");
+
   return id;
 }
 
@@ -208,6 +214,7 @@ function expenseNotesFor(event) {
 
 export async function saveVehicleEvent({ familyId, userId, event }) {
   const id = event.id || crypto.randomUUID();
+  const isNew = !event.id;
   const batch = writeBatch(db);
 
   const linkedExpenseId = syncLinkedExpense({
@@ -244,6 +251,10 @@ export async function saveVehicleEvent({ familyId, userId, event }) {
 
   batch.set(doc(eventsCol(familyId), id), data, { merge: true });
   await batch.commit();
+  // Solo alla creazione: `content_created` misura cosa nasce, non quante
+  // volte lo si ritocca. Stesso tipo che usano iOS e Android.
+  if (isNew) contentCreated("home_vehicles");
+
   return id;
 }
 

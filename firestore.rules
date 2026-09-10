@@ -71,6 +71,10 @@ service cloud.firestore {
       );
     }
 
+    // `joinedWithValidInvite` — la prova dell'invito consumato che chiude
+    // l'auto-iscrizione — vive in `firestore.rules.next` insieme alla regola che
+    // la usa. Tenerla qui inutilizzata faceva solo rumore in fase di deploy.
+
     function isMemberOrOwner(familyId) {
       return isOwner(familyId) || isMember(familyId);
     }
@@ -172,17 +176,51 @@ service cloud.firestore {
       allow update: if isMemberOrOwner(familyId) && keepsPlanFields();
 
       match /members/{uid} {
-        allow create, update, delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
+        // L'auto-iscrizione non è più libera. Prima bastava `uid ==
+        // request.auth.uid`: chiunque fosse autenticato e conoscesse il
+        // `familyId` — che viaggia in chiaro nel QR e nel link d'invito —
+        // poteva aggiungersi da sé a una famiglia altrui e leggerne i dati.
+        // Ora chi si iscrive deve esibire l'invito che ha consumato.
+        // ⏳ La stretta contro l'auto-iscrizione vive in `firestore.rules.next`,
+        // NON qui: pretende che il client scriva `inviteId` sul documento membro,
+        // e le app già installate non lo fanno. Questo file resta quello
+        // deployabile; il passaggio avviene quando le app aggiornate sono diffuse.
+        allow create: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
+        // Update e delete restano com'erano: qui il documento esiste già, quindi
+        // l'iscrizione è stata autorizzata a suo tempo. Servono per rinominarsi,
+        // per il soft-delete e per l'uscita volontaria.
+        allow update, delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
         allow get:  if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
         allow list: if isMemberOrOwner(familyId);
       }
+      // NOTA: `members` NON è escluso dal wildcard `{coll}/{docId}` in fondo,
+      // quindi un utente **già membro** di questa famiglia può ancora scrivere
+      // documenti membro altrui passando di lì. Non è la falla chiusa qui — che
+      // riguardava chi è fuori dalla famiglia e conosce solo il `familyId` — ma
+      // resta da stringere, insieme all'esclusione di `invites`. Va fatto a
+      // parte: tocca chi può rimuovere un membro, e va verificato sulle UI di
+      // iOS, Android e web prima di cambiarlo.
 
       match /invites/{inviteId} {
+        // La lettura è aperta a chiunque sia autenticato: chi riceve il QR o il
+        // link non è ancora membro, e senza il `secret` — che sta nel link e non
+        // qui — il materiale cifrato è inservibile.
         allow read, create: if isSignedIn();
+        // Consumare l'invito. Oltre a `usedAt`/`usedBy` si lascia CANCELLARE il
+        // materiale crittografico, e i client lo fanno nella stessa transazione:
+        // l'invito ora sopravvive all'uso (serve alle regole di `members` come
+        // prova dell'iscrizione), e un documento che resta in giro non deve
+        // continuare a contenere la chiave di famiglia wrappata. Consumato,
+        // l'invito è una ricevuta inerte.
+        //
+        // `usedAt == null` resta la condizione: l'invito è a uso singolo, e
+        // nessuno può riscrivere `usedBy` su un invito già consumato per
+        // spacciarlo come proprio.
         allow update: if isSignedIn()
           && resource.data.usedAt == null
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['usedAt', 'usedBy']);
+            .hasOnly(['usedAt', 'usedBy', 'kdfSalt', 'secretHash',
+                      'wrappedKeyCipher', 'wrappedKeyNonce', 'wrappedKeyTag']);
         allow delete: if isMemberOrOwner(familyId);
       }
 
@@ -236,25 +274,30 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      match /{subpath=**} {
+      // Il wildcard delle sottocollezioni: `{coll}` è il nome della prima
+      // sottocollezione, `{subpath=**}` (che combacia anche con zero segmenti)
+      // tutto ciò che sta più in fondo.
+      //
+      // Perché non un solo `{subpath=**}` letto con `subpath[0]`: in una LIST
+      // il capture `**` NON è legato, e qualunque rule che lo legga va in
+      // "Variable is not bound in path template" — cioè nega la query a tutti,
+      // membri e proprietario. È esattamente quello che è successo dopo aver
+      // aggiunto l'esclusione di `memberKeyBackups`: le scritture, che non
+      // guardano il path, passavano; ogni query di collezione veniva negata.
+      // Un capture di UN segmento come `{coll}` è invece legato anche in list.
+      //
+      // Il documento famiglia stesso non combacia (servono almeno 2 segmenti):
+      // la sua `allow update` resta l'unica strada, e `keepsPlanFields()` non
+      // è scavalcabile da qui.
+      match /{coll}/{docId}/{subpath=**} {
         // `memberKeyBackups` è escluso: ha una regola sua, più stretta, e le
-        // rules in OR la renderebbero inutile. Stessa cautela del path vuoto
-        // spiegata sotto: `subpath[0]` su un path vuoto è un errore di
-        // valutazione, quindi il size() va prima e in short-circuit.
+        // rules in OR la renderebbero inutile.
         allow read: if isMemberOrOwner(familyId)
-          && (string(subpath).size() == 0 || subpath[0] != 'memberKeyBackups');
-        // `subpath.size() > 0` è una protezione, non una formalità: questo
-        // wildcard combacia ANCHE con il documento famiglia stesso (subpath
-        // vuoto). Le rules sono in OR, quindi senza questo guard la sua
-        // `allow write` scavalcherebbe `keepsPlanFields()` e si tornerebbe a
-        // poter scrivere `plan` a mano. Finora a salvarci era solo l'errore di
-        // valutazione di `subpath[0]` su un path vuoto: meglio essere espliciti.
-        // `subpath` è un Path, che non espone size(): si passa dalla stringa.
+          && coll != 'memberKeyBackups';
         allow write: if isMemberOrOwner(familyId)
-          && string(subpath).size() > 0
-          && subpath[0] != 'geofences'
-          && subpath[0] != 'geofenceEvents'
-          && subpath[0] != 'memberKeyBackups';
+          && coll != 'geofences'
+          && coll != 'geofenceEvents'
+          && coll != 'memberKeyBackups';
       }
     }
 

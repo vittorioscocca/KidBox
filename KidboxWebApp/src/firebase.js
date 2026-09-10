@@ -45,10 +45,19 @@ if (recaptchaSiteKey) {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
-    isTokenAutoRefreshEnabled: true,
-  });
+  // try/catch obbligatorio: App Check è infrastruttura OPZIONALE finché
+  // l'enforcement è spento, quindi non deve mai poter spegnere l'app.
+  // Senza, un'eccezione qui salterebbe gli export getAuth/getFirestore/… qui
+  // sotto. Cause plausibili: chiave revocata, dominio non più autorizzato,
+  // o un adblocker che blocca google.com/recaptcha.
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (e) {
+    console.warn("[AppCheck] inizializzazione fallita, si prosegue senza token:", e);
+  }
 } else {
   // Nessuna chiave configurata: si prosegue senza App Check. Finché
   // l'enforcement è spento lato server l'app funziona identica; quando verrà

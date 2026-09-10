@@ -379,6 +379,28 @@
         }
       }
     },
+    "«Alexa, chiedi a mio box di collegarsi con %@»" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Alexa, ask mio box to link with %@”"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Alexa, pídele a mio box que se vincule con %@»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« Alexa, demande à mio box de se relier avec %@ »"
+          }
+        }
+      }
+    },
     "(%@)" : {
       "localizations" : {
         "en" : {
@@ -529,6 +551,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%.0f %@ · %@ · %@"
+          }
+        }
+      }
+    },
+    "%@ - %@" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ - %2$@"
           }
         }
       }
@@ -741,6 +773,29 @@
         }
       }
     },
+    "%@ km" : {
+      "comment" : "Distance in kilometers",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ km"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ km"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ km"
+          }
+        }
+      }
+    },
     "%@ non potrà più accedere ai dati della famiglia." : {
       "localizations" : {
         "en" : {
@@ -856,6 +911,29 @@
         }
       }
     },
+    "%1$dh %2$02dmin" : {
+      "comment" : "Hours and minutes, sessions list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$dh %2$02dmin"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$dh %2$02dmin"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$dh %2$02dmin"
+          }
+        }
+      }
+    },
     "%d adattamenti clinici del piano" : {
       "comment" : "Fitness copilot intro safety notes",
       "localizations" : {
@@ -946,6 +1024,52 @@
         }
       }
     },
+    "%d kcal" : {
+      "comment" : "Calories, sessions list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d kcal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d kcal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d kcal"
+          }
+        }
+      }
+    },
+    "%d KCAL" : {
+      "comment" : "Session calories, sessions list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d KCAL"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d KCAL"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d KCAL"
+          }
+        }
+      }
+    },
     "%d mesi" : {
       "comment" : "Months",
       "localizations" : {
@@ -992,6 +1116,29 @@
         }
       }
     },
+    "%d MIN" : {
+      "comment" : "Session minutes, sessions list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d MIN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d MIN"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d MIN"
+          }
+        }
+      }
+    },
     "%d msg AI una tantum" : {
       "comment" : "AI quota label, one-time free bonus (%d = message count)",
       "localizations" : {
@@ -1034,6 +1181,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d séances du plan et leur état"
+          }
+        }
+      }
+    },
+    "%d sedute registrate" : {
+      "comment" : "Number of completed sessions, fitness dashboard",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d recorded sessions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d sesiones registradas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d séances enregistrées"
           }
         }
       }
@@ -1441,6 +1611,28 @@
         }
       }
     },
+    "%lld giorni fa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld days ago"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hace %lld días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il y a %lld jours"
+          }
+        }
+      }
+    },
     "%lld in attesa" : {
       "localizations" : {
         "en" : {
@@ -1627,6 +1819,28 @@
         }
       }
     },
+    "%lld minuti fa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld minutes ago"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hace %lld minutos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il y a %lld minutes"
+          }
+        }
+      }
+    },
     "%lld msg" : {
       "localizations" : {
         "en" : {
@@ -1714,6 +1928,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld msg IA/jour pour toute la famille"
+          }
+        }
+      }
+    },
+    "%lld ore fa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld hours ago"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hace %lld horas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il y a %lld heures"
           }
         }
       }
@@ -3032,6 +3268,28 @@
         }
       }
     },
+    "1. Attiva la skill" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Enable the skill"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Activa la skill"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Activez la skill"
+          }
+        }
+      }
+    },
     "2 giorni prima" : {
       "comment" : "Wallet ticket reminder: 2 days before",
       "localizations" : {
@@ -3095,6 +3353,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2 fois par jour"
+          }
+        }
+      }
+    },
+    "2. Collega l'account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Link your account"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Vincula la cuenta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Liez votre compte"
           }
         }
       }
@@ -4032,6 +4312,28 @@
         }
       }
     },
+    "Account collegato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account linked"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuenta vinculada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compte relié"
+          }
+        }
+      }
+    },
     "Acqua" : {
       "localizations" : {
         "en" : {
@@ -4162,6 +4464,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adaptations pour votre santé"
+          }
+        }
+      }
+    },
+    "adesso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "just now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "à l'instant"
           }
         }
       }
@@ -5849,6 +6173,28 @@
         }
       }
     },
+    "Aggiunto da %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added by %@ · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadido por %@ · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouté par %@ · %@"
+          }
+        }
+      }
+    },
     "AI non inclusa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6206,6 +6552,97 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Album vide"
+          }
+        }
+      }
+    },
+    "Alexa" : {
+
+    },
+    "Alexa collegata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa linked"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa vinculada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa reliée"
+          }
+        }
+      }
+    },
+    "Alexa collegata in famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa linked in the family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa vinculada en la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa reliée dans la famille"
+          }
+        }
+      }
+    },
+    "Alexa distingue le voci di casa. Detta una volta il tuo codice e da lì in poi quello che dici risulterà aggiunto da te, anche dall'Echo di un altro. Se non hai un profilo vocale su Alexa, tutto funziona lo stesso: gli articoli restano attribuiti a chi ha collegato l'account." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa tells the voices in your home apart. Read out your code once and from then on what you say shows up as added by you, even from someone else's Echo. If you have no Alexa voice profile everything still works: items stay attributed to whoever linked the account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa distingue las voces de casa. Dicta tu código una vez y a partir de ahí lo que digas aparecerá añadido por ti, incluso desde el Echo de otra persona. Si no tienes un perfil de voz en Alexa todo funciona igual: los artículos siguen atribuidos a quien vinculó la cuenta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa distingue les voix de la maison. Dictez votre code une fois et, à partir de là, ce que vous dites apparaîtra comme ajouté par vous, même depuis l'Echo de quelqu'un d'autre. Sans profil vocal Alexa tout fonctionne pareil : les articles restent attribués à qui a relié le compte."
+          }
+        }
+      }
+    },
+    "Alexa non collegata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa not linked"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa no vinculada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alexa non reliée"
           }
         }
       }
@@ -7841,6 +8278,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir dans Google Maps"
+          }
+        }
+      }
+    },
+    "Apri l'app Alexa, cerca «KidBox» fra le skill e attivala" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Alexa app, search for “KidBox” among the skills and enable it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la app de Alexa, busca «KidBox» entre las skills y actívala"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez l’application Alexa, cherchez « KidBox » parmi les skills et activez-la"
           }
         }
       }
@@ -12152,6 +12611,29 @@
         }
       }
     },
+    "Chilometri recuperati su attività già registrate: %d" : {
+      "comment" : "Fitness sync distance backfill count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distances recovered on activities already recorded: %d"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kilómetros recuperados en actividades ya registradas: %d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kilomètres récupérés sur des activités déjà enregistrées : %d"
+          }
+        }
+      }
+    },
     "Chilometri: %lld km" : {
       "localizations" : {
         "en" : {
@@ -13067,6 +13549,29 @@
         }
       }
     },
+    "Collegamento" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinculación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liaison"
+          }
+        }
+      }
+    },
     "Collegamento Salute" : {
       "localizations" : {
         "en" : {
@@ -13085,6 +13590,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connexion Santé"
+          }
+        }
+      }
+    },
+    "Collegata il %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Linked on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinculada el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reliée le %@"
           }
         }
       }
@@ -14925,6 +15453,28 @@
         }
       }
     },
+    "Controllo in corso…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérification…"
+          }
+        }
+      }
+    },
     "Converti automaticamente i messaggi audio in testo" : {
       "localizations" : {
         "en" : {
@@ -15387,6 +15937,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Que devrais-je faire aujourd'hui ?"
+          }
+        }
+      }
+    },
+    "Cosa puoi dire" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you can say"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué puedes decir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous pouvez dire"
           }
         }
       }
@@ -17731,6 +18303,28 @@
         }
       }
     },
+    "Detta la lista della spesa agli Echo di casa: gli articoli finiscono nella stessa lista che vedi in KidBox, e gli altri membri li ricevono subito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dictate the shopping list to the Echos at home: items land in the same list you see in KidBox, and the other members get them right away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dicta la lista de la compra a los Echo de casa: los artículos van a la misma lista que ves en KidBox y los demás miembros los reciben al instante."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dictez la liste de courses aux Echo de la maison : les articles arrivent dans la liste que vous voyez dans KidBox, et les autres membres les reçoivent aussitôt."
+          }
+        }
+      }
+    },
     "Dettagli" : {
       "localizations" : {
         "en" : {
@@ -17925,6 +18519,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "De combien de jours voulez-vous prolonger le traitement ?"
+          }
+        }
+      }
+    },
+    "Di' ad Alexa:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Say to Alexa:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dile a Alexa:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites à Alexa :"
           }
         }
       }
@@ -18213,6 +18829,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disponible avec Pro ou Max"
+          }
+        }
+      }
+    },
+    "Distanza" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distancia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance"
           }
         }
       }
@@ -22742,6 +23380,28 @@
         }
       }
     },
+    "Fai riconoscere la tua voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have your voice recognised"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz que reconozca tu voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites reconnaître votre voix"
+          }
+        }
+      }
+    },
     "Fai una domanda…" : {
       "localizations" : {
         "en" : {
@@ -24246,6 +24906,28 @@
         }
       }
     },
+    "Genera codice di collegamento" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generate linking code"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar código de vinculación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Générer un code de liaison"
+          }
+        }
+      }
+    },
     "Genera codice QR" : {
       "localizations" : {
         "en" : {
@@ -24734,6 +25416,28 @@
         }
       }
     },
+    "Già collegata in famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already linked in the family"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya vinculada en la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déjà reliée dans la famille"
+          }
+        }
+      }
+    },
     "Giornaliera" : {
       "comment" : "Event recurrence: daily",
       "localizations" : {
@@ -25085,6 +25789,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les achats sont vérifiés via votre identifiant Apple. Le forfait s'applique à toute la famille. Pour les codes d'offre, Apple ouvre un écran dédié pour saisir le code."
+          }
+        }
+      }
+    },
+    "Gli Echo di casa non potranno più aggiungere articoli alla lista finché non ricolleghi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Echos at home won't be able to add items to the list until you link again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los Echo de casa no podrán añadir artículos a la lista hasta que vuelvas a vincularlos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Echo de la maison ne pourront plus ajouter d'articles à la liste tant que vous ne les aurez pas reliés à nouveau."
           }
         }
       }
@@ -26140,6 +26866,29 @@
         }
       }
     },
+    "ieri" : {
+      "comment" : "Yesterday, sessions list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ayer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hier"
+          }
+        }
+      }
+    },
     "Ieri" : {
       "comment" : "Yesterday",
       "localizations" : {
@@ -26225,6 +26974,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le code temporel ne sera plus généré pour ce mot de passe."
+          }
+        }
+      }
+    },
+    "Il codice vale 10 minuti e si usa una volta sola. Non serve fare login nella skill: sei già autenticato qui, e il codice porta la tua identità su Alexa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The code lasts 10 minutes and works once. No need to sign in inside the skill: you're already authenticated here, and the code carries your identity over to Alexa."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El código dura 10 minutos y se usa una sola vez. No hace falta iniciar sesión en la skill: ya estás autenticado aquí y el código lleva tu identidad a Alexa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code est valable 10 minutes et ne sert qu'une fois. Pas besoin de vous connecter dans la skill : vous êtes déjà authentifié ici, et le code transporte votre identité vers Alexa."
+          }
+        }
+      }
+    },
+    "Il collegamento è attivo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The link is active"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La vinculación está activa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La liaison est active"
           }
         }
       }
@@ -30729,6 +31523,28 @@
         }
       }
     },
+    "La tua voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your voice"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre voix"
+          }
+        }
+      }
+    },
     "Latticini" : {
       "comment" : "Grocery category",
       "localizations" : {
@@ -31013,6 +31829,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les mots de passe ne correspondent pas."
+          }
+        }
+      }
+    },
+    "Le sedute segnate come fatte, a mano o da Apple Salute, compaiono qui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions marked as done, by hand or by Apple Health, show up here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las sesiones marcadas como hechas, a mano o por Apple Salud, aparecen aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les séances marquées comme faites, à la main ou par Apple Santé, apparaissent ici."
           }
         }
       }
@@ -31546,6 +32384,28 @@
         }
       }
     },
+    "Lista della spesa a voce sugli Echo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping list by voice on your Echos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista de la compra por voz en los Echo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste de courses à la voix sur les Echo"
+          }
+        }
+      }
+    },
     "Lista della spesa condivisa" : {
       "localizations" : {
         "en" : {
@@ -32030,6 +32890,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lieu de départ (facultatif)"
+          }
+        }
+      }
+    },
+    "Ma non da questo account" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "But not from this account"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pero no desde esta cuenta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais pas depuis ce compte"
           }
         }
       }
@@ -35648,6 +36530,28 @@
         }
       }
     },
+    "Nessuna famiglia attiva." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active family."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna familia activa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune famille active."
+          }
+        }
+      }
+    },
     "Nessuna famiglia configurata" : {
       "localizations" : {
         "en" : {
@@ -35975,6 +36879,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune fiche disponible pour ce lieu."
+          }
+        }
+      }
+    },
+    "Nessuna seduta registrata" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recorded session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna sesión registrada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune séance enregistrée"
           }
         }
       }
@@ -37255,6 +38181,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous ne pouvez pas partir maintenant"
+          }
+        }
+      }
+    },
+    "Non riesco a generare il codice. Riprova." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't generate the code. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo generar el código. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de générer le code. Réessayez."
+          }
+        }
+      }
+    },
+    "Non riesco a leggere lo stato del collegamento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't read the link status."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo leer el estado de la vinculación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire l'état de la liaison."
+          }
+        }
+      }
+    },
+    "Non riesco a scollegare Alexa. Riprova." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I can't unlink Alexa. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo desvincular Alexa. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de dissocier Alexa. Réessayez."
           }
         }
       }
@@ -39492,6 +40484,7 @@
       }
     },
     "oggi" : {
+      "comment" : "Today, sessions list",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -43638,6 +44631,29 @@
         }
       }
     },
+    "Previsto: %@" : {
+      "comment" : "Planned session title in the sessions list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planned: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previsto: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prévu : %@"
+          }
+        }
+      }
+    },
     "Previsto: %1$@ · %2$@" : {
       "comment" : "Planned session recap under the performed activity",
       "localizations" : {
@@ -45407,6 +46423,28 @@
         }
       }
     },
+    "Quello che detti risulta di chi ha collegato" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you dictate is attributed to whoever linked"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que dictas se atribuye a quien vinculó"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous dictez est attribué à qui a relié"
+          }
+        }
+      }
+    },
     "Questa azione è definitiva. Il tuo account e i tuoi dati verranno cancellati dai nostri sistemi." : {
       "localizations" : {
         "en" : {
@@ -47048,6 +48086,28 @@
         }
       }
     },
+    "Riconosce la tua voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It recognises your voice"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconoce tu voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elle reconnaît votre voix"
+          }
+        }
+      }
+    },
     "Ricordi condivisi\ncon il tuo partner." : {
       "localizations" : {
         "en" : {
@@ -47996,6 +49056,28 @@
         }
       }
     },
+    "Risposta inattesa dal server." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unexpected response from the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuesta inesperada del servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponse inattendue du serveur."
+          }
+        }
+      }
+    },
     "Ristoranti, mercati, cucina locale" : {
       "comment" : "Travel style detail",
       "localizations" : {
@@ -48920,6 +50002,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "EXPIRE"
+          }
+        }
+      }
+    },
+    "Scade fra %lld:%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expires in %lld:%@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caduca en %lld:%@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expire dans %lld:%@"
           }
         }
       }
@@ -49982,6 +51086,72 @@
         }
       }
     },
+    "Scollega" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlink"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desvincular"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dissocier"
+          }
+        }
+      }
+    },
+    "Scollega Alexa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlink Alexa"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desvincular Alexa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dissocier Alexa"
+          }
+        }
+      }
+    },
+    "Scollegare Alexa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlink Alexa?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Desvincular Alexa?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dissocier Alexa ?"
+          }
+        }
+      }
+    },
     "SCOPRI" : {
       "localizations" : {
         "en" : {
@@ -50334,6 +51504,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Si vous faites partie d'une famille avec d'autres membres, seule votre participation sera supprimée."
+          }
+        }
+      }
+    },
+    "Se gli Echo di casa sono sullo stesso account Amazon, funzionano già e non devi fare altro. Collega anche il tuo solo se hai un account Amazon separato: così quello che detti risulta aggiunto da te." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If the Echos at home are on the same Amazon account, they already work and you need do nothing. Link yours as well only if you have a separate Amazon account: that way what you dictate shows up as added by you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si los Echo de casa están en la misma cuenta de Amazon, ya funcionan y no tienes que hacer nada. Vincula el tuyo solo si tienes una cuenta de Amazon aparte: así lo que dictes aparece añadido por ti."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si les Echo de la maison sont sur le même compte Amazon, ils fonctionnent déjà et vous n'avez rien à faire. Reliez le vôtre uniquement si vous avez un compte Amazon distinct : ce que vous dictez apparaîtra alors comme ajouté par vous."
           }
         }
       }
@@ -51288,6 +52480,28 @@
         }
       }
     },
+    "Senza la skill attiva sul tuo account Amazon, gli Echo non sanno cosa sia «mio box» e il codice qui sotto non ha nessuno a cui arrivare. Si fa una volta sola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without the skill enabled on your Amazon account, your Echos don’t know what “mio box” is and the code below has nobody to reach. You only do this once."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin la skill activada en tu cuenta de Amazon, los Echo no saben qué es «mio box» y el código de abajo no tiene a quién llegar. Se hace una sola vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans la skill activée sur votre compte Amazon, les Echo ne savent pas ce qu’est « mio box » et le code ci-dessous n’a personne à joindre. Cela se fait une seule fois."
+          }
+        }
+      }
+    },
     "Senza nome" : {
       "localizations" : {
         "en" : {
@@ -51376,6 +52590,28 @@
         }
       }
     },
+    "Serve un codice da dettare una volta sola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You need a code to read out once"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesitas un código que dictar una sola vez"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il faut un code à dicter une seule fois"
+          }
+        }
+      }
+    },
     "Servono %1$d messaggi AI per generare il piano ma ne restano %2$d su %3$d oggi. Riprova domani." : {
       "comment" : "Fitness plan quota error\nMeal plan quota error",
       "localizations" : {
@@ -51440,6 +52676,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Session expirée : reconnecte-toi."
+          }
+        }
+      }
+    },
+    "Sessioni" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesiones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séances"
+          }
+        }
+      }
+    },
+    "Settimana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semaine"
           }
         }
       }
@@ -53837,6 +55117,28 @@
         }
       }
     },
+    "Tempo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temps"
+          }
+        }
+      }
+    },
     "Tempo libero" : {
       "comment" : "Event category",
       "localizations" : {
@@ -55786,6 +57088,28 @@
         }
       }
     },
+    "tutto il g." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "all-day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "todo el día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "journée"
+          }
+        }
+      }
+    },
     "Tutto il giorno" : {
       "localizations" : {
         "en" : {
@@ -56228,6 +57552,28 @@
         }
       }
     },
+    "Un membro della famiglia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A family member"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un miembro de la familia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un membre de la famille"
+          }
+        }
+      }
+    },
     "Un orario per i giorni di dose (ogni %lld giorni)." : {
       "localizations" : {
         "en" : {
@@ -56335,6 +57681,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un seul horaire : une dose tous les %lld jours."
+          }
+        }
+      }
+    },
+    "un'ora fa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "an hour ago"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hace una hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il y a une heure"
           }
         }
       }
@@ -58117,6 +59485,12 @@
         }
       }
     },
+    "Vista satellite" : {
+
+    },
+    "Vista standard" : {
+
+    },
     "Visualizza" : {
       "localizations" : {
         "en" : {
@@ -58246,6 +59620,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entrée introuvable"
+          }
+        }
+      }
+    },
+    "Voce riconosciuta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice recognised"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voz reconocida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voix reconnue"
           }
         }
       }

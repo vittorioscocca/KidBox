@@ -657,7 +657,12 @@ export default function Chat() {
     guard(async () => {
       switch (target) {
         case "todo":
-          await saveAsTodo({ familyId: currentFamilyId, uid, title: message.text.split("\n")[0] });
+          await saveAsTodo({
+            familyId: currentFamilyId,
+            uid,
+            title: message.text.split("\n")[0],
+            defaultListName: t.todo.defaultListName,
+          });
           break;
         case "event":
           await saveAsEvent({ familyId: currentFamilyId, uid, title: message.text.split("\n")[0] });

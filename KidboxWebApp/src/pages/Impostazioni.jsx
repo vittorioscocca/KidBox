@@ -11,9 +11,17 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  analyticsConsent,
+  CONSENT_DENIED,
+  CONSENT_GRANTED,
+  setAnalyticsConsent,
+} from "../services/analytics";
 import { useAuth } from "../AuthContext";
 import { useFamily } from "../FamilyContext";
 import { useTranslation } from "../i18n/LocaleContext";
+import AlexaCard from "../components/AlexaCard";
+import { isAlexaAvailable } from "../i18n/alexaAvailability";
 import { THEMES, useTheme } from "../ThemeContext";
 import {
   HEALTH_CONTEXT_PREFS,
@@ -73,6 +81,10 @@ export default function Impostazioni() {
   const { t, locale, setLocale } = useTranslation();
   const { theme, setTheme } = useTheme();
   const s = t.settings;
+
+  // Il consenso alle statistiche si revoca con la stessa facilità con cui si
+  // concede: è il senso della promessa fatta nel banner.
+  const [analyticsOn, setAnalyticsOn] = useState(() => analyticsConsent() === CONSENT_GRANTED);
 
   const [prefs, setPrefs] = useState(null);
   const [plan, setPlan] = useState(null);
@@ -201,6 +213,19 @@ export default function Impostazioni() {
       </section>
 
       {/* ── Tema ─────────────────────────────────────────────────────────── */}
+      <section className="set-card">
+        <h2>{t.consent.settingsTitle}</h2>
+        <Switch
+          checked={analyticsOn}
+          label={analyticsOn ? t.consent.settingsOn : t.consent.settingsOff}
+          hint={t.consent.body}
+          onChange={(on) => {
+            setAnalyticsConsent(on ? CONSENT_GRANTED : CONSENT_DENIED);
+            setAnalyticsOn(on);
+          }}
+        />
+      </section>
+
       <section className="set-card">
         <h2>{s.appearance}</h2>
         <div className="set-choices">
@@ -433,6 +458,10 @@ export default function Impostazioni() {
           <p className="pw-hint">{s.storageHint}</p>
         </section>
       )}
+
+      {/* ── Alexa ────────────────────────────────────────────────────────── */}
+      {/* La skill esiste solo in italiano: vedi `isAlexaAvailable`. */}
+      {isAlexaAvailable(locale) && <AlexaCard />}
 
       {/* ── Supporto e collegamenti ──────────────────────────────────────── */}
       <section className="set-card">
