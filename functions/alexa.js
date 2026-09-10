@@ -51,6 +51,23 @@ const READ_LIST_MAX_ITEMS = 25;
 /** Tolleranza sul timestamp della richiesta Alexa (requisito Amazon: 150s). */
 const REQUEST_MAX_AGE_MS = 150 * 1000;
 
+/** Lista to-do in cui finiscono i promemoria dettati: creata al primo uso. */
+const ALEXA_TODO_LIST_NAME = "Alexa";
+/** Ora usata quando si dice il giorno ma non l'orario ("ricordamelo domani"). */
+const DEFAULT_REMIND_HOUR = 9;
+/**
+ * Fuso in cui si interpreta quello che l'utente dice.
+ *
+ * Alexa consegna la data e l'ora già risolte ma SENZA fuso ("2026-09-11",
+ * "18:30"): sono ore locali di chi parla, e vanno ancorate a un fuso per
+ * diventare un istante. Si usa Europe/Rome come tutto il resto del backend —
+ * `notifyDueTodoReminders`, i rollup, i testi delle notifiche. L'alternativa
+ * sarebbe chiedere il fuso del dispositivo alle Settings API di Alexa, cioè
+ * una chiamata HTTP in più dentro gli 8 secondi concessi, per un'app che oggi
+ * dà per scontata l'Italia ovunque.
+ */
+const TODO_TZ = "Europe/Rome";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITY
 // ─────────────────────────────────────────────────────────────────────────────
@@ -287,7 +304,7 @@ const SPEECH = {
   it: {
     welcome: "Ciao! Dimmi cosa aggiungere alla lista della spesa.",
     welcomeUnlinked: "Per usare KidBox devi prima collegare l'account. Apri KidBox, vai in Impostazioni, Alexa, e detta il codice che vedi.",
-    help: "Puoi dire: aggiungi il latte. Oppure: togli il pane. Oppure: cosa manca.",
+    help: "Puoi dire: aggiungi il latte. Oppure: togli il pane. Oppure: cosa manca. Oppure: ricordami di chiamare la scuola.",
     notLinked: "Questo dispositivo non è ancora collegato a KidBox. Apri l'app, vai in Impostazioni, Alexa, e detta il codice che vedi.",
     codePrompt: "Qual è il codice? Dimmi le sei cifre.",
     linkOk: "Perfetto, ho collegato KidBox. Ora puoi dirmi cosa aggiungere alla lista.",
@@ -308,13 +325,29 @@ const SPEECH = {
     listMany: (count, names) => `In lista ci sono ${count} articoli: ${names}.`,
     listTruncated: (count, shown, names) => `In lista ci sono ${count} articoli. I primi ${shown}: ${names}.`,
     error: "Qualcosa non ha funzionato. Riprova fra poco.",
+    remindAskTitle: "Che cosa devo ricordarti? Dillo per intero, per esempio: ricordami di comprare il pane.",
+    remindAskAssignee: (title) => `${title}. A chi lo assegno? Dimmi il nome, oppure di': a nessuno.`,
+    remindAskWhen: "Per quando? Dimmi il giorno e l'ora, oppure di': senza promemoria.",
+    remindMemberUnknown: (spoken, names) => `Non trovo ${spoken} fra i membri della famiglia. Ci sono ${names}. A chi lo assegno?`,
+    remindMemberAmbiguous: (names) => `Ci sono più membri che si chiamano così: ${names}. Assegnalo dall'app, oppure di': a nessuno.`,
+    remindNoMembers: "Non riesco a leggere i membri della famiglia, quindi lo lascio a tutti. Per quando?",
+    remindWhenUnclear: "Non ho capito quando. Prova con: domani alle otto. Oppure di': senza promemoria.",
+    remindWhenPast: "Quel momento è già passato. Dimmi un giorno e un'ora futuri, oppure di': senza promemoria.",
+    remindDone: (title) => `Fatto: ${title}, nella lista Alexa.`,
+    remindDoneFor: (title, who) => `Fatto: ${title}, nella lista Alexa, per ${who}.`,
+    remindDoneAt: (title, when) => `Fatto: te lo ricordo ${when}. ${title}.`,
+    remindDoneForAt: (title, who, when) => `Fatto: lo ricordo a ${who} ${when}. ${title}.`,
+    remindNoFlow: "Per un promemoria di': ricordami di comprare il pane.",
+    remindToday: "oggi",
+    remindTomorrow: "domani",
+    remindAt: (day, time) => `${day} alle ${time}`,
     bye: "A posto.",
     and: "e",
   },
   en: {
     welcome: "Hi! Tell me what to add to the shopping list.",
     welcomeUnlinked: "To use KidBox you need to link your account first. Open KidBox, go to Settings, Alexa, and read out the code you see.",
-    help: "You can say: add milk. Or: remove bread. Or: what's on the list.",
+    help: "You can say: add milk. Or: remove bread. Or: what's on the list. Or: remind me to call the school.",
     notLinked: "This device isn't linked to KidBox yet. Open the app, go to Settings, Alexa, and read out the code you see.",
     codePrompt: "What's the code? Tell me the six digits.",
     linkOk: "Great, KidBox is linked. Now tell me what to add to the list.",
@@ -335,6 +368,22 @@ const SPEECH = {
     listMany: (count, names) => `There are ${count} items on the list: ${names}.`,
     listTruncated: (count, shown, names) => `There are ${count} items on the list. The first ${shown}: ${names}.`,
     error: "Something went wrong. Try again shortly.",
+    remindAskTitle: "What should I remind you about? Say the whole thing, for example: remind me to buy bread.",
+    remindAskAssignee: (title) => `${title}. Who is it for? Tell me the name, or say: nobody.`,
+    remindAskWhen: "When? Tell me the day and the time, or say: no reminder.",
+    remindMemberUnknown: (spoken, names) => `I can't find ${spoken} among the family members. There are ${names}. Who is it for?`,
+    remindMemberAmbiguous: (names) => `More than one member goes by that name: ${names}. Assign it from the app, or say: nobody.`,
+    remindNoMembers: "I can't read the family members, so I'll leave it for everyone. When?",
+    remindWhenUnclear: "I didn't catch when. Try: tomorrow at eight. Or say: no reminder.",
+    remindWhenPast: "That moment has already passed. Tell me a day and time in the future, or say: no reminder.",
+    remindDone: (title) => `Done: ${title}, on the Alexa list.`,
+    remindDoneFor: (title, who) => `Done: ${title}, on the Alexa list, for ${who}.`,
+    remindDoneAt: (title, when) => `Done: I'll remind you ${when}. ${title}.`,
+    remindDoneForAt: (title, who, when) => `Done: I'll remind ${who} ${when}. ${title}.`,
+    remindNoFlow: "For a reminder say: remind me to buy bread.",
+    remindToday: "today",
+    remindTomorrow: "tomorrow",
+    remindAt: (day, time) => `${day} at ${time}`,
     bye: "Done.",
     and: "and",
   },
@@ -342,12 +391,19 @@ const SPEECH = {
 
 /**
  * Risposta vocale nel formato che Alexa si aspetta.
+ *
+ * Il quarto parametro è la memoria del dialogo. Alexa NON conserva niente per
+ * conto suo: quello che non rimandiamo indietro in `sessionAttributes` è perso
+ * al turno successivo. Che è anche il motivo per cui gli altri intent non lo
+ * passano — chiudere il flusso del promemoria non richiede una riga di codice,
+ * basta rispondere senza attributi e la macchina a stati si azzera da sola.
  * @param {string} text
  * @param {boolean} [endSession=true]
  * @param {string|null} [reprompt=null]
+ * @param {object|null} [attributes=null] Stato da ritrovare al turno dopo.
  * @return {object}
  */
-function speak(text, endSession = true, reprompt = null) {
+function speak(text, endSession = true, reprompt = null, attributes = null) {
   const response = {
     outputSpeech: {type: "PlainText", text},
     shouldEndSession: endSession,
@@ -355,7 +411,9 @@ function speak(text, endSession = true, reprompt = null) {
   if (reprompt) {
     response.reprompt = {outputSpeech: {type: "PlainText", text: reprompt}};
   }
-  return {version: "1.0", response};
+  const payload = {version: "1.0", response};
+  if (attributes) payload.sessionAttributes = attributes;
+  return payload;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -776,6 +834,585 @@ async function checkItem(link, rawName) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PROMEMORIA A VOCE
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Scrive un to-do in `families/{familyId}/todos`, dentro una lista chiamata
+// "Alexa", e — se è stata detta una data — anche `remindAt`, che è l'ordine di
+// suonare letto da `notifyDueTodoReminders` ogni 5 minuti.
+//
+// PERCHÉ IL DIALOGO È IN PIÙ TURNI, E NON UNA FRASE SOLA.
+// `AMAZON.SearchQuery` è l'unico slot che accetta testo libero — serve per il
+// titolo, che è una frase qualsiasi — ma Amazon lo ammette solo come ULTIMO
+// elemento del sample e da SOLO: nessun altro slot può stare nella stessa
+// frase. Quindi «ricordami di {task} e assegnalo a {member}» non è
+// esprimibile, e non è un limite del nostro modello ma della piattaforma. Le
+// due strade possibili sono due sample separati (uno col titolo, uno con
+// l'assegnatario) oppure il multiturno. Qui si fa il multiturno: chiedere «a
+// chi?» e «per quando?» costa due turni ma raccoglie i tre pezzi senza
+// costringere l'utente a imparare due frasi diverse.
+//
+// PERCHÉ LA MACCHINA A STATI È NOSTRA E NON IL DIALOG MODEL DI AMAZON.
+// Il Dialog model (elicitation + `Dialog.Delegate`) saprebbe chiedere gli slot
+// mancanti da solo, ma non può elicitare uno `AMAZON.SearchQuery` — proprio lo
+// slot che qui serve — e sposterebbe in console una logica che dipende dai
+// membri della famiglia, che la console non conosce. Con `sessionAttributes`
+// tutto lo stato sta in questo file, si legge in ordine e si prova a mano.
+//
+// I DUE CAMPI DEL MOTORE VANNO SEMPRE IN COPPIA, E SOLO SE C'È UN PROMEMORIA.
+// Vedi `createReminderTodo`: è la parte che si sbaglia in silenzio.
+
+/**
+ * Campi calendariali di un istante, letti nel fuso di riferimento.
+ *
+ * Passa da `Intl` e non da `getHours()` perché il processo delle Functions gira
+ * in UTC: `new Date().getHours()` a Roma in estate sbaglia di due ore, e non se
+ * ne accorge nessuno finché un promemoria non suona a colazione invece che a
+ * pranzo.
+ * @param {number} ms Epoch in millisecondi.
+ * @return {{y: number, mo: number, d: number, h: number, mi: number, s: number}}
+ */
+function tzFields(ms) {
+  const text = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TODO_TZ,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(ms));
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(text);
+  if (!m) throw new Error(`formato data inatteso: ${text}`);
+  return {y: +m[1], mo: +m[2], d: +m[3], h: +m[4], mi: +m[5], s: +m[6]};
+}
+
+/**
+ * Scarto fra il fuso di riferimento e UTC in un dato istante.
+ * @param {number} ms
+ * @return {number} Millisecondi da sommare a UTC per ottenere l'ora locale.
+ */
+function tzOffsetMs(ms) {
+  const f = tzFields(ms);
+  return Date.UTC(f.y, f.mo - 1, f.d, f.h, f.mi, f.s) - Math.floor(ms / 1000) * 1000;
+}
+
+/**
+ * Istante corrispondente a una data e un'ora LOCALI del fuso di riferimento.
+ *
+ * Le due passate non sono prudenza: la prima usa l'offset dell'istante
+ * sbagliato (quello letto come se fosse UTC), e nelle due notti del cambio
+ * d'ora quello è l'offset dell'altro regime. Con una passata sola, un
+ * promemoria per le 3 dell'ultima domenica di ottobre finisce un'ora fuori.
+ * @param {number} y
+ * @param {number} mo Mese 1-12.
+ * @param {number} d
+ * @param {number} h
+ * @param {number} mi
+ * @return {Date}
+ */
+function tzInstant(y, mo, d, h, mi) {
+  const naive = Date.UTC(y, mo - 1, d, h, mi);
+  const first = naive - tzOffsetMs(naive);
+  return new Date(naive - tzOffsetMs(first));
+}
+
+/**
+ * Orari convenzionali per i momenti della giornata che `AMAZON.TIME` non
+ * risolve in un'ora precisa: «domani mattina» arriva come `MO`, non come
+ * `09:00`. Senza questa tabella metà delle frasi naturali cadrebbe nel ramo
+ * "non ho capito quando".
+ */
+const TIME_OF_DAY = {MO: [9, 0], AF: [15, 0], EV: [20, 0], NI: [22, 0]};
+
+/**
+ * Data detta a voce, se è un giorno preciso.
+ *
+ * `AMAZON.DATE` risolve anche cose che un giorno preciso non sono — «questa
+ * settimana» dà `2026-W38`, «a settembre» dà `2026-09`, «adesso» dà
+ * `PRESENT_REF`. Si accetta solo `YYYY-MM-DD`: da un intervallo non si ricava
+ * un istante senza inventarselo, ed è meglio richiedere che indovinare.
+ * @param {string} raw
+ * @return {{y: number, mo: number, d: number}|null}
+ */
+function parseSpokenDate(raw) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(raw || "").trim());
+  if (!m) return null;
+  return {y: +m[1], mo: +m[2], d: +m[3]};
+}
+
+/**
+ * Ora detta a voce, in ore e minuti.
+ * @param {string} raw
+ * @return {{h: number, mi: number}|null}
+ */
+function parseSpokenTime(raw) {
+  const value = String(raw || "").trim().toUpperCase();
+  if (TIME_OF_DAY[value]) {
+    return {h: TIME_OF_DAY[value][0], mi: TIME_OF_DAY[value][1]};
+  }
+  const m = /^(\d{1,2}):(\d{2})/.exec(value);
+  if (!m) return null;
+  const h = +m[1];
+  const mi = +m[2];
+  if (h > 23 || mi > 59) return null;
+  return {h, mi};
+}
+
+/**
+ * Trasforma gli slot `date` e `time` nell'istante in cui suonare.
+ *
+ * Le regole sui pezzi mancanti, tutte pensate perché la risposta resti sempre
+ * confermabile ad alta voce — l'utente sente cosa è stato capito:
+ *   - giorno senza ora   → `DEFAULT_REMIND_HOUR` di quel giorno;
+ *   - ora senza giorno   → oggi se non è ancora passata, altrimenti domani.
+ *     È l'interpretazione ovvia di «alle otto» detto alle nove di sera, e
+ *     l'unica che non produce un promemoria già scaduto in partenza;
+ *   - niente             → nessun promemoria, il to-do resta e basta.
+ * @param {string} dateRaw
+ * @param {string} timeRaw
+ * @param {number} nowMs
+ * @return {{status: "none"|"unclear"|"past"|"ok", at?: Date}}
+ */
+function resolveRemindAt(dateRaw, timeRaw, nowMs) {
+  const hasDate = String(dateRaw || "").trim() !== "";
+  const hasTime = String(timeRaw || "").trim() !== "";
+  if (!hasDate && !hasTime) return {status: "none"};
+
+  const date = hasDate ? parseSpokenDate(dateRaw) : null;
+  const time = hasTime ? parseSpokenTime(timeRaw) : null;
+  // Detto ma non capito è diverso da non detto: «questa settimana» deve far
+  // richiedere, non far cadere silenziosamente il promemoria.
+  if ((hasDate && !date) || (hasTime && !time)) return {status: "unclear"};
+
+  const today = tzFields(nowMs);
+  const day = date || {y: today.y, mo: today.mo, d: today.d};
+  const clock = time || {h: DEFAULT_REMIND_HOUR, mi: 0};
+
+  let at = tzInstant(day.y, day.mo, day.d, clock.h, clock.mi);
+  if (!date && at.getTime() <= nowMs) {
+    // Solo l'ora, e per oggi è già passata: si intende domani.
+    at = tzInstant(day.y, day.mo, day.d + 1, clock.h, clock.mi);
+  }
+  if (at.getTime() <= nowMs) return {status: "past"};
+  return {status: "ok", at};
+}
+
+/**
+ * Come si dice ad alta voce il momento del promemoria: «domani alle 18:30».
+ *
+ * L'ora resta in cifre a due posizioni perché la TTS la legge già bene («alle
+ * 09:00» → «alle nove») e perché scriverla a parole in italiano vuol dire
+ * gestire «all'una», che è l'unico caso in cui l'articolo cambia.
+ * @param {Date} at
+ * @param {number} nowMs
+ * @param {"it"|"en"} lang
+ * @return {string}
+ */
+function spokenWhen(at, nowMs, lang) {
+  const t = SPEECH[lang];
+  const locale = lang === "en" ? "en-GB" : "it-IT";
+  const target = tzFields(at.getTime());
+  const today = tzFields(nowMs);
+  const dayKey = (f) => `${f.y}-${f.mo}-${f.d}`;
+  const tomorrow = tzFields(tzInstant(today.y, today.mo, today.d + 1, 12, 0).getTime());
+
+  let day;
+  if (dayKey(target) === dayKey(today)) {
+    day = t.remindToday;
+  } else if (dayKey(target) === dayKey(tomorrow)) {
+    day = t.remindTomorrow;
+  } else {
+    day = new Intl.DateTimeFormat(locale, {
+      timeZone: TODO_TZ, weekday: "long", day: "numeric", month: "long",
+    }).format(at);
+  }
+  const clock = `${String(target.h).padStart(2, "0")}:${String(target.mi).padStart(2, "0")}`;
+  return t.remindAt(day, clock);
+}
+
+/**
+ * Titolo del to-do come va scritto.
+ *
+ * Diverso da `displayItemName` di proposito: lì l'articolo iniziale si toglie
+ * perché in una lista della spesa si scrive «Latte», non «Il latte». Qui il
+ * titolo è una frase, e togliere l'articolo la storpia — «ricordami la
+ * riunione con la maestra» diventerebbe «Riunione con la maestra», che passa,
+ * ma «ricordami l'esame di Anna» diventerebbe «Esame di Anna» perdendo il
+ * senso di quale esame. Si tolgono solo gli spazi doppi e si alza l'iniziale,
+ * perché l'ASR consegna tutto minuscolo.
+ * @param {string} raw
+ * @return {string}
+ */
+function displayTodoTitle(raw) {
+  const clean = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+/**
+ * Forma confrontabile di un nome di persona: senza accenti, senza
+ * punteggiatura, minuscola.
+ *
+ * NON riusa `normalizeItemName`: quella toglie anche l'articolo iniziale, e
+ * fra gli articoli c'è `a`. Un membro che si chiama «Aurora» resterebbe
+ * «Aurora» (l'articolo vuole lo spazio dopo), ma la regola è troppo vicina al
+ * disastro per condividerla — e sui nomi non c'è nessun articolo da togliere.
+ * @param {string} raw
+ * @return {string}
+ */
+function normalizePersonName(raw) {
+  return String(raw || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+}
+
+/**
+ * Preposizione iniziale che l'ASR lascia dentro lo slot quando la frase la
+ * contiene ma il sample no («assegnalo a Marco» → a volte «a marco»).
+ */
+const LEADING_PREPOSITION = /^(?:a|ad|al|allo|alla|ai|agli|alle|per|to|for)\s+/;
+
+/**
+ * Membri della famiglia con un nome pronunciabile.
+ *
+ * La lettura di ripiego su `users/{uid}` non è difensiva: i documenti in
+ * `members` possono non avere `displayName` — è la stessa ragione per cui
+ * `memberName` e `resolveMemberName` in `index.js` hanno lo stesso ripiego. Una
+ * famiglia ha pochi membri, quindi il costo è qualche lettura per richiesta e
+ * solo per chi non ha il nome in `members`.
+ * @param {string} familyId
+ * @return {Promise<Array<{uid: string, name: string}>>}
+ */
+async function familyMembers(familyId) {
+  const snap = await admin.firestore()
+      .collection("families").doc(familyId).collection("members").get();
+  const out = [];
+  for (const doc of snap.docs) {
+    if (doc.get("isDeleted") === true) continue;
+    let name = doc.get("displayName") || doc.get("name") || "";
+    if (!name) {
+      const user = await admin.firestore().collection("users").doc(doc.id).get();
+      name = user.exists ? (user.get("displayName") || user.get("name") || "") : "";
+    }
+    name = String(name || "").trim();
+    if (name) out.push({uid: doc.id, name});
+  }
+  return out;
+}
+
+/**
+ * Trova il membro corrispondente a un nome detto a voce.
+ *
+ * Tre passate, dalla più stretta alla più larga, e a ogni passata si accetta
+ * SOLO se il candidato è uno. È la parte che decide cosa succede coi nomi
+ * simili, e la regola è: al primo dubbio si chiede, non si sceglie.
+ *   1. nome completo uguale — distingue «Marco» da «Marco Rossi» quando
+ *      esistono entrambi, perché il primo fa match esatto e il secondo no;
+ *   2. primo nome uguale — in famiglia il cognome quasi non si dice;
+ *   3. primo nome che comincia per quello detto — recupera i troncamenti
+ *      dell'ASR («Ale» per «Alessandra»), ma solo se resta uno solo.
+ *
+ * `ambiguous` non è un errore da nascondere: due «Marco» in famiglia sono
+ * indistinguibili a voce e nessuna euristica può risolverli. Meglio dirlo e
+ * lasciare che l'assegnazione si faccia dall'app.
+ * @param {string} spoken
+ * @param {Array<{uid: string, name: string}>} members
+ * @return {{status: "ok"|"ambiguous"|"none", member?: object, candidates?: Array<object>}}
+ */
+function matchMember(spoken, members) {
+  const query = normalizePersonName(String(spoken || "").replace(LEADING_PREPOSITION, ""));
+  if (!query) return {status: "none"};
+
+  const firstNameOf = (m) => normalizePersonName(m.name).split(" ")[0];
+  const passes = [
+    members.filter((m) => normalizePersonName(m.name) === query),
+    members.filter((m) => firstNameOf(m) === query),
+    members.filter((m) => firstNameOf(m).startsWith(query)),
+  ];
+  for (const hits of passes) {
+    if (hits.length === 1) return {status: "ok", member: hits[0]};
+    if (hits.length > 1) return {status: "ambiguous", candidates: hits};
+  }
+  return {status: "none"};
+}
+
+/**
+ * Id della lista "Alexa" della famiglia, creandola se non c'è.
+ *
+ * Il confronto è sul nome normalizzato e non sull'id perché la lista può
+ * essere stata creata a mano dall'app: cercarla per nome è l'unico modo di non
+ * crearne una seconda identica. Il to-do senza `listId` valido sarebbe orfano —
+ * esiste su Firestore, i riepiloghi lo contano, il motore lo notifica, ma
+ * nessuna schermata lo mostra perché iOS e Android elencano i to-do DENTRO le
+ * liste. Stessa ragione per cui esiste `resolveTodoListId` nella webapp.
+ *
+ * I campi scritti sono esattamente quelli di `NewListModal.jsx`: una lista con
+ * campi in meno viene filtrata via da `where("isDeleted", "==", false)`.
+ * @param {string} familyId
+ * @param {string} authorUid
+ * @return {Promise<string>}
+ */
+async function ensureAlexaTodoList(familyId, authorUid) {
+  const col = admin.firestore()
+      .collection("families").doc(familyId).collection("todoLists");
+  const snap = await col.where("isDeleted", "==", false).get();
+  const wanted = normalizePersonName(ALEXA_TODO_LIST_NAME);
+  const found = snap.docs.find(
+      (d) => normalizePersonName(d.get("name") || "") === wanted);
+  if (found) return found.id;
+
+  const id = crypto.randomUUID();
+  await col.doc(id).set({
+    childId: "",
+    name: ALEXA_TODO_LIST_NAME,
+    isDeleted: false,
+    updatedBy: authorUid,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  logger.info("alexaSkill: lista Alexa creata", {familyId, listId: id});
+  return id;
+}
+
+/**
+ * Scrive il to-do dettato, con o senza promemoria.
+ *
+ * ⚠️ I DUE CAMPI DEL MOTORE, che sono la parte facile da sbagliare in silenzio.
+ *
+ * `notifyDueTodoReminders` interroga `remindSentAt == null` E
+ * `remindAt <= now`. Da questo discendono due regole opposte, e servono
+ * entrambe:
+ *
+ *   1. CON promemoria: `remindSentAt: null` va scritto ESPLICITO. In Firestore
+ *      un campo assente non è `null`: il documento non entrerebbe nell'indice
+ *      composto e resterebbe invisibile alla query per sempre, senza errori e
+ *      senza una riga di log. Il promemoria semplicemente non suona mai.
+ *
+ *   2. SENZA promemoria: i due campi NON vanno scritti affatto, nemmeno a
+ *      `null`. Le query di intervallo di Firestore attraversano i tipi, e nel
+ *      loro ordinamento `null` viene PRIMA di qualunque Timestamp: un
+ *      documento con `remindAt: null` soddisfa `remindAt <= now` ed entra
+ *      nella query. Risultato: un to-do per cui nessuno ha chiesto niente fa
+ *      partire una notifica al primo giro dello scheduler. È l'immagine
+ *      speculare del punto 1 — lì il campo assente nasconde, qui il campo
+ *      presente a `null` espone — ed è il motivo per cui questi campi si
+ *      aggiungono all'oggetto invece di stare nel letterale.
+ *
+ * Gli altri campi sono quelli di `TodoEditModal.jsx`: la skill è un client come
+ * gli altri sopra la stessa collezione.
+ * @param {{familyId: string, authorUid: string}} link
+ * @param {{title: string, assignedTo: string, remindAt: Date|null}} data
+ * @return {Promise<{id: string, listId: string}>}
+ */
+async function createReminderTodo(link, {title, assignedTo, remindAt}) {
+  const listId = await ensureAlexaTodoList(link.familyId, link.authorUid);
+  const id = crypto.randomUUID();
+
+  const payload = {
+    childId: "",
+    title,
+    listId,
+    isDone: false,
+    isDeleted: false,
+    notes: null,
+    // `dueAt` è la scadenza mostrata in app, `remindAt` l'ordine di suonare.
+    // Detto a voce sono la stessa cosa, ma restano due campi: chi poi sposta la
+    // scadenza dall'app non deve per forza spostare anche la sveglia.
+    dueAt: remindAt || null,
+    assignedTo: assignedTo || "",
+    priority: 0,
+    visibilityScope: "family",
+    visibilityMemberIds: [],
+    doneAt: null,
+    doneBy: null,
+    createdBy: link.authorUid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: link.authorUid,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  if (remindAt) {
+    payload.remindAt = admin.firestore.Timestamp.fromDate(remindAt);
+    payload.remindSentAt = null;
+  }
+
+  await admin.firestore()
+      .collection("families").doc(link.familyId)
+      .collection("todos").doc(id).set(payload);
+  logger.info("alexaSkill: promemoria creato", {
+    familyId: link.familyId,
+    todoId: id,
+    listId,
+    assegnato: assignedTo ? "sì" : "no",
+    remindAt: remindAt ? remindAt.toISOString() : null,
+  });
+  return {id, listId};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIALOGO DEL PROMEMORIA
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Chiave del flusso negli attributi di sessione. */
+const REMINDER_FLOW = "reminder";
+
+/**
+ * Stato del promemoria in costruzione, o null se non ce n'è uno.
+ * @param {object} body
+ * @return {{stage: string, title: string, assignedTo: string, assigneeName: string}|null}
+ */
+function reminderState(body) {
+  const attrs = body?.session?.attributes;
+  if (!attrs || attrs.flow !== REMINDER_FLOW) return null;
+  return {
+    stage: String(attrs.stage || ""),
+    title: String(attrs.title || ""),
+    assignedTo: String(attrs.assignedTo || ""),
+    assigneeName: String(attrs.assigneeName || ""),
+  };
+}
+
+/**
+ * Gli attributi da rimandare indietro per ritrovare lo stato al turno dopo.
+ * @param {object} state
+ * @param {string} stage
+ * @return {object}
+ */
+function reminderAttrs(state, stage) {
+  return {
+    flow: REMINDER_FLOW,
+    stage,
+    title: state.title,
+    assignedTo: state.assignedTo,
+    assigneeName: state.assigneeName,
+  };
+}
+
+/**
+ * Chiude il flusso: scrive il to-do e dice cosa è stato salvato.
+ *
+ * La conferma nomina sempre tutti i pezzi capiti — titolo, destinatario,
+ * momento — perché è l'unico controllo che l'utente ha: a voce non c'è una
+ * schermata da rileggere, e un promemoria capito male si scopre quando non
+ * suona.
+ * @param {object} link
+ * @param {object} state
+ * @param {Date|null} remindAt
+ * @param {object} t
+ * @param {"it"|"en"} lang
+ * @param {number} nowMs
+ * @return {Promise<object>}
+ */
+async function finishReminder(link, state, remindAt, t, lang, nowMs) {
+  await createReminderTodo(link, {
+    title: state.title,
+    assignedTo: state.assignedTo,
+    remindAt,
+  });
+
+  const who = state.assigneeName;
+  if (!remindAt) {
+    return speak(who ? t.remindDoneFor(state.title, who) : t.remindDone(state.title));
+  }
+  const when = spokenWhen(remindAt, nowMs, lang);
+  return speak(who ?
+    t.remindDoneForAt(state.title, who, when) :
+    t.remindDoneAt(state.title, when));
+}
+
+/**
+ * Primo turno: «ricordami di comprare il pane».
+ * @param {object} body
+ * @param {object} t
+ * @return {object}
+ */
+function startReminder(body, t) {
+  const title = displayTodoTitle(slotValue(body.request.intent, "task"));
+  if (!title) {
+    // La sessione resta aperta e il reprompt chiede la frase INTERA, non solo
+    // il titolo: il titolo da solo non ha un intent che lo raccolga, perché un
+    // sample fatto del solo `{task}` intercetterebbe qualunque cosa si dica
+    // nella skill, «aggiungi il latte» compreso.
+    return speak(t.remindAskTitle, false, t.remindAskTitle,
+        {flow: REMINDER_FLOW, stage: "title", title: "", assignedTo: "", assigneeName: ""});
+  }
+  const state = {title, assignedTo: "", assigneeName: ""};
+  return speak(t.remindAskAssignee(title), false, t.remindAskAssignee(title),
+      reminderAttrs(state, "assignee"));
+}
+
+/**
+ * Turno dell'assegnatario.
+ * @param {object} body
+ * @param {object} link
+ * @param {object} state
+ * @param {object} t
+ * @param {"it"|"en"} lang
+ * @return {Promise<object>}
+ */
+async function handleReminderAssignee(body, link, state, t, lang) {
+  if (!state.title) {
+    return speak(t.remindAskTitle, false, t.remindAskTitle, reminderAttrs(state, "title"));
+  }
+  const spoken = slotValue(body.request.intent, "member");
+  const members = await familyMembers(link.familyId);
+
+  if (members.length === 0) {
+    // Nessun nome leggibile: non è il caso di insistere con una domanda a cui
+    // l'utente non può rispondere. Si tira dritto senza assegnatario, che è
+    // comunque un promemoria che raggiunge tutta la famiglia.
+    return speak(t.remindNoMembers, false, t.remindAskWhen,
+        reminderAttrs(state, "when"));
+  }
+
+  const match = matchMember(spoken, members);
+  const names = spokenList(members.map((m) => m.name), lang);
+
+  if (match.status === "none") {
+    return speak(t.remindMemberUnknown(spoken || "", names), false, t.remindAskAssignee(state.title),
+        reminderAttrs(state, "assignee"));
+  }
+  if (match.status === "ambiguous") {
+    return speak(
+        t.remindMemberAmbiguous(spokenList(match.candidates.map((m) => m.name), lang)),
+        false, t.remindAskAssignee(state.title),
+        reminderAttrs(state, "assignee"));
+  }
+
+  const next = {...state, assignedTo: match.member.uid, assigneeName: match.member.name};
+  return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(next, "when"));
+}
+
+/**
+ * Turno della data e dell'ora.
+ * @param {object} body
+ * @param {object} link
+ * @param {object} state
+ * @param {object} t
+ * @param {"it"|"en"} lang
+ * @return {Promise<object>}
+ */
+async function handleReminderWhen(body, link, state, t, lang) {
+  if (!state.title) {
+    return speak(t.remindAskTitle, false, t.remindAskTitle, reminderAttrs(state, "title"));
+  }
+  const nowMs = Date.now();
+  const intent = body.request.intent;
+  const resolved = resolveRemindAt(
+      slotValue(intent, "date"), slotValue(intent, "time"), nowMs);
+
+  if (resolved.status === "unclear") {
+    return speak(t.remindWhenUnclear, false, t.remindAskWhen, reminderAttrs(state, "when"));
+  }
+  if (resolved.status === "past") {
+    return speak(t.remindWhenPast, false, t.remindAskWhen, reminderAttrs(state, "when"));
+  }
+  // "none" qui significa che l'utente ha risposto senza dire nulla di
+  // temporale: il to-do si salva comunque, senza sveglia.
+  return finishReminder(link, state, resolved.at || null, t, lang, nowMs);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DISPATCH DEGLI INTENT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -918,6 +1555,67 @@ async function dispatch(body, lang) {
         return speak(t.listTruncated(items.length, shown.length, spokenList(shown, lang)));
       }
       return speak(t.listMany(items.length, spokenList(shown, lang)));
+    }
+
+    // ── Promemoria ───────────────────────────────────────────────────────────
+    // Il primo turno riparte sempre da zero, anche a flusso aperto: chi ridice
+    // «ricordami di…» a metà dialogo sta ricominciando, non rispondendo.
+    case "AddReminderIntent":
+      return startReminder(body, t);
+
+    case "ReminderAssigneeIntent": {
+      const state = reminderState(body);
+      if (!state) return speak(t.remindNoFlow, false, t.help);
+      return handleReminderAssignee(body, link, state, t, lang);
+    }
+
+    case "ReminderAssignSelfIntent": {
+      const state = reminderState(body);
+      if (!state) return speak(t.remindNoFlow, false, t.help);
+      // «a me» è chi sta parlando: `authorUid` è già l'uid della voce
+      // riconosciuta quando c'è un profilo vocale, e quello dell'account
+      // collegato quando non c'è. La stessa regola dell'attribuzione della
+      // spesa, quindi «a me» significa la stessa persona che risulta autrice.
+      const name = await memberName(link.familyId, link.authorUid);
+      const next = {...state, assignedTo: link.authorUid, assigneeName: name || ""};
+      return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(next, "when"));
+    }
+
+    case "ReminderWhenIntent": {
+      const state = reminderState(body);
+      if (!state) return speak(t.remindNoFlow, false, t.help);
+      return handleReminderWhen(body, link, state, t, lang);
+    }
+
+    // «a nessuno» e «senza promemoria» sono la stessa frase in due punti
+    // diversi del dialogo: cosa vogliano dire lo decide lo stadio, non le
+    // parole. Tenerli in un intent solo evita di dover distinguere a voce due
+    // rifiuti che l'utente pronuncia allo stesso modo.
+    case "ReminderSkipIntent":
+    case "AMAZON.NoIntent": {
+      const state = reminderState(body);
+      if (!state) return speak(t.bye);
+      // Senza titolo non c'è niente da salvare: saltare l'assegnatario a
+      // questo stadio significherebbe scrivere un to-do vuoto.
+      if (!state.title) {
+        return speak(t.remindAskTitle, false, t.remindAskTitle, reminderAttrs(state, "title"));
+      }
+      if (state.stage === "when") {
+        return finishReminder(link, state, null, t, lang, Date.now());
+      }
+      return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(state, "when"));
+    }
+
+    // Una parola non capita non deve costare il promemoria già a metà: si
+    // ripete la domanda e si tengono gli attributi. Fuori dal flusso resta il
+    // comportamento di prima, l'aiuto.
+    case "AMAZON.FallbackIntent": {
+      const state = reminderState(body);
+      if (!state) return speak(t.help, false, t.help);
+      const question = state.stage === "when" ?
+        t.remindAskWhen :
+        (state.stage === "title" ? t.remindAskTitle : t.remindAskAssignee(state.title));
+      return speak(question, false, question, reminderAttrs(state, state.stage));
     }
 
     default:
@@ -1174,4 +1872,14 @@ exports.unlinkAlexa = onCall(
 
 // Esposte per i test: sono le uniche funzioni pure del file, cioè l'unica parte
 // verificabile senza Firestore e senza Amazon davanti. Il resto è I/O.
-exports.__testables = {normalizeItemName, displayItemName, spokenList, isValidCertChainUrl, guessCategory};
+exports.__testables = {
+  normalizeItemName, displayItemName, spokenList, isValidCertChainUrl, guessCategory,
+  displayTodoTitle, normalizePersonName, matchMember,
+  parseSpokenDate, parseSpokenTime, tzInstant, resolveRemindAt, spokenWhen,
+  // `dispatch` sta qui perché il promemoria è un dialogo in più turni: le
+  // funzioni pure coprono i pezzi, ma è la sequenza dei turni — con gli
+  // attributi di sessione che passano avanti e indietro — la parte che si
+  // rompe, e da fuori non sarebbe raggiungibile senza firmare una richiesta
+  // con la chiave di Amazon.
+  dispatch,
+};

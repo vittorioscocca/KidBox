@@ -132,9 +132,433 @@
             "leggere la lista",
             "leggere la lista della spesa"
           ]
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "samples": []
+        },
+        {
+          "name": "AddReminderIntent",
+          "slots": [
+            {
+              "name": "task",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "ricordami di {task}",
+            "ricordami che devo {task}",
+            "ricordami {task}",
+            "ricordati di {task}",
+            "promemoria {task}",
+            "crea un promemoria per {task}",
+            "nuovo promemoria per {task}",
+            "metti un promemoria per {task}",
+            "devo {task}",
+            "ricordarmi di {task}",
+            "ricordarmi che devo {task}",
+            "ricordarmi {task}",
+            "creare un promemoria per {task}",
+            "mettere un promemoria per {task}",
+            "crea un promemoria",
+            "nuovo promemoria",
+            "creare un promemoria",
+            "metti un promemoria",
+            "mettere un promemoria"
+          ]
+        },
+        {
+          "name": "ReminderAssigneeIntent",
+          "slots": [
+            {
+              "name": "member",
+              "type": "MemberName"
+            }
+          ],
+          "samples": [
+            "{member}",
+            "a {member}",
+            "per {member}",
+            "assegna a {member}",
+            "assegnalo a {member}",
+            "assegnala a {member}",
+            "lo assegno a {member}",
+            "è per {member}",
+            "è di {member}",
+            "deve farlo {member}",
+            "assegnare a {member}",
+            "assegnarlo a {member}"
+          ]
+        },
+        {
+          "name": "ReminderAssignSelfIntent",
+          "samples": [
+            "a me",
+            "per me",
+            "assegnalo a me",
+            "assegna a me",
+            "è per me",
+            "è mio",
+            "lo faccio io",
+            "devo farlo io",
+            "assegnarlo a me"
+          ]
+        },
+        {
+          "name": "ReminderWhenIntent",
+          "slots": [
+            {
+              "name": "date",
+              "type": "AMAZON.DATE"
+            },
+            {
+              "name": "time",
+              "type": "AMAZON.TIME"
+            }
+          ],
+          "samples": [
+            "{date}",
+            "{time}",
+            "{date} alle {time}",
+            "{date} {time}",
+            "il {date} alle {time}",
+            "alle {time} di {date}",
+            "alle {time}",
+            "il {date}",
+            "per {date}",
+            "per il {date} alle {time}",
+            "ricordamelo {date}",
+            "ricordamelo alle {time}",
+            "ricordamelo {date} alle {time}",
+            "ricordarmelo {date}",
+            "ricordarmelo {date} alle {time}"
+          ]
+        },
+        {
+          "name": "ReminderSkipIntent",
+          "samples": [
+            "a nessuno",
+            "nessuno",
+            "nessun promemoria",
+            "senza promemoria",
+            "niente promemoria",
+            "senza data",
+            "nessuna data",
+            "senza ora",
+            "non assegnarlo",
+            "lascia stare",
+            "va bene così",
+            "così va bene"
+          ]
         }
       ],
-      "types": []
+      "types": [
+        {
+          "name": "MemberName",
+          "values": [
+            {
+              "name": {
+                "value": "mamma"
+              }
+            },
+            {
+              "name": {
+                "value": "papà"
+              }
+            },
+            {
+              "name": {
+                "value": "babbo"
+              }
+            },
+            {
+              "name": {
+                "value": "nonna"
+              }
+            },
+            {
+              "name": {
+                "value": "nonno"
+              }
+            },
+            {
+              "name": {
+                "value": "zia"
+              }
+            },
+            {
+              "name": {
+                "value": "zio"
+              }
+            },
+            {
+              "name": {
+                "value": "sorella"
+              }
+            },
+            {
+              "name": {
+                "value": "fratello"
+              }
+            },
+            {
+              "name": {
+                "value": "tata"
+              }
+            },
+            {
+              "name": {
+                "value": "Alessandro"
+              }
+            },
+            {
+              "name": {
+                "value": "Alessandra"
+              }
+            },
+            {
+              "name": {
+                "value": "Alice"
+              }
+            },
+            {
+              "name": {
+                "value": "Andrea"
+              }
+            },
+            {
+              "name": {
+                "value": "Anna"
+              }
+            },
+            {
+              "name": {
+                "value": "Antonio"
+              }
+            },
+            {
+              "name": {
+                "value": "Beatrice"
+              }
+            },
+            {
+              "name": {
+                "value": "Carlo"
+              }
+            },
+            {
+              "name": {
+                "value": "Chiara"
+              }
+            },
+            {
+              "name": {
+                "value": "Cristina"
+              }
+            },
+            {
+              "name": {
+                "value": "Davide"
+              }
+            },
+            {
+              "name": {
+                "value": "Elena"
+              }
+            },
+            {
+              "name": {
+                "value": "Elisa"
+              }
+            },
+            {
+              "name": {
+                "value": "Emma"
+              }
+            },
+            {
+              "name": {
+                "value": "Federico"
+              }
+            },
+            {
+              "name": {
+                "value": "Francesca"
+              }
+            },
+            {
+              "name": {
+                "value": "Francesco"
+              }
+            },
+            {
+              "name": {
+                "value": "Gabriele"
+              }
+            },
+            {
+              "name": {
+                "value": "Giorgia"
+              }
+            },
+            {
+              "name": {
+                "value": "Giorgio"
+              }
+            },
+            {
+              "name": {
+                "value": "Giovanni"
+              }
+            },
+            {
+              "name": {
+                "value": "Giulia"
+              }
+            },
+            {
+              "name": {
+                "value": "Giulio"
+              }
+            },
+            {
+              "name": {
+                "value": "Giuseppe"
+              }
+            },
+            {
+              "name": {
+                "value": "Ilaria"
+              }
+            },
+            {
+              "name": {
+                "value": "Laura"
+              }
+            },
+            {
+              "name": {
+                "value": "Leonardo"
+              }
+            },
+            {
+              "name": {
+                "value": "Lorenzo"
+              }
+            },
+            {
+              "name": {
+                "value": "Luca"
+              }
+            },
+            {
+              "name": {
+                "value": "Lucia"
+              }
+            },
+            {
+              "name": {
+                "value": "Marco"
+              }
+            },
+            {
+              "name": {
+                "value": "Margherita"
+              }
+            },
+            {
+              "name": {
+                "value": "Maria"
+              }
+            },
+            {
+              "name": {
+                "value": "Marta"
+              }
+            },
+            {
+              "name": {
+                "value": "Martina"
+              }
+            },
+            {
+              "name": {
+                "value": "Matteo"
+              }
+            },
+            {
+              "name": {
+                "value": "Michele"
+              }
+            },
+            {
+              "name": {
+                "value": "Nicola"
+              }
+            },
+            {
+              "name": {
+                "value": "Paola"
+              }
+            },
+            {
+              "name": {
+                "value": "Paolo"
+              }
+            },
+            {
+              "name": {
+                "value": "Riccardo"
+              }
+            },
+            {
+              "name": {
+                "value": "Roberto"
+              }
+            },
+            {
+              "name": {
+                "value": "Sara"
+              }
+            },
+            {
+              "name": {
+                "value": "Silvia"
+              }
+            },
+            {
+              "name": {
+                "value": "Simone"
+              }
+            },
+            {
+              "name": {
+                "value": "Sofia"
+              }
+            },
+            {
+              "name": {
+                "value": "Stefano"
+              }
+            },
+            {
+              "name": {
+                "value": "Tommaso"
+              }
+            },
+            {
+              "name": {
+                "value": "Valentina"
+              }
+            },
+            {
+              "name": {
+                "value": "Vittorio"
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }

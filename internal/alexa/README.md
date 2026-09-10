@@ -1,4 +1,4 @@
-# Skill Alexa — lista della spesa
+# Skill Alexa — lista della spesa e promemoria
 
 Detta la spesa agli Echo di casa e gli articoli finiscono in
 `families/{familyId}/groceries`, la stessa collezione di iOS, Android e webapp.
@@ -263,6 +263,143 @@ resta niente da legare.
 
 `unlinkAlexa` cancella anche i legami di voce: lasciarli sarebbe peggio che
 inutile, continuerebbero ad attribuire articoli a un account scollegato.
+
+## Promemoria a voce (to-do)
+
+Oltre alla spesa, la skill crea **to-do** in `families/{familyId}/todos`, nella
+lista chiamata **`Alexa`** (creata al primo uso, cercata per nome così che non
+se ne formi una seconda se qualcuno l'ha già fatta a mano dall'app).
+
+> «Alexa, chiedi a mio box di ricordarmi di chiamare la scuola»
+> — «A chi lo assegno?» — «a Giulia»
+> — «Per quando?» — «domani alle otto»
+> — «Fatto: lo ricordo a Giulia domani alle 08:00. Chiamare la scuola.»
+
+Data e ora sono **facoltative**: senza, resta un to-do e basta. Con, si scrive
+`remindAt` e a suonare ci pensa `notifyDueTodoReminders` (index.js, ogni 5
+minuti), che notifica l'assegnatario o tutta la famiglia se non c'è.
+
+### Perché il dialogo è in più turni
+
+`AMAZON.SearchQuery` è l'unico slot che accetta testo libero — il titolo è una
+frase qualsiasi — ma Amazon lo ammette **solo come ultimo elemento del sample e
+da solo**: nessun altro slot può stare nella stessa frase. Quindi «ricordami di
+{task} e assegnalo a {member}» **non è esprimibile**, e non per una scelta
+nostra. Restano due strade: due sample separati, o il multiturno. Qui si fa il
+multiturno — due domande costano due turni ma non obbligano l'utente a imparare
+due frasi diverse.
+
+Non si usa il **Dialog model** di Amazon (elicitation + `Dialog.Delegate`)
+perché non può elicitare uno `AMAZON.SearchQuery` — proprio lo slot che serve —
+e perché sposterebbe in console una logica che dipende dai membri della
+famiglia, che la console non conosce. Lo stato del dialogo vive in
+`sessionAttributes`, quindi tutto in `alexa.js`.
+
+`AMAZON.DATE` e `AMAZON.TIME` invece **possono** convivere nello stesso sample:
+il divieto riguarda solo `SearchQuery`.
+
+### I due campi del motore, e i due modi opposti di sbagliarli
+
+`notifyDueTodoReminders` interroga `remindSentAt == null` **e**
+`remindAt <= now`. Da lì discendono due regole speculari, e servono entrambe:
+
+- **Con promemoria**: `remindSentAt: null` va scritto **esplicito**. In
+  Firestore un campo assente non è `null`, il documento non entra nell'indice
+  composto e resta invisibile alla query per sempre — senza errori e senza log.
+  Il promemoria semplicemente non suona mai.
+- **Senza promemoria**: i due campi **non vanno scritti affatto**, nemmeno a
+  `null`. Le query di intervallo di Firestore attraversano i tipi, e `null`
+  precede qualunque Timestamp: un documento con `remindAt: null` soddisfa
+  `remindAt <= now` ed entra nella query. Un to-do per cui nessuno ha chiesto
+  niente farebbe partire una notifica al primo giro dello scheduler.
+
+Oggi vale solo per questa skill — nessun client scrive `remindAt` — ma è la
+prima cosa da rileggere il giorno in cui iOS o Android cominceranno a farlo.
+
+### Fuso orario
+
+Alexa consegna data e ora già risolte ma **senza fuso** (`2026-09-11`,
+`18:30`): sono ore locali di chi parla e vanno ancorate a un fuso per diventare
+un istante. Si usa `Europe/Rome`, come tutto il resto del backend. Chiedere il
+fuso vero del dispositivo alle Settings API di Alexa vorrebbe dire una chiamata
+HTTP in più dentro gli 8 secondi concessi.
+
+Il conto passa da `Intl` e non da `getHours()`: le Functions girano in **UTC**,
+e `new Date().getHours()` a Roma d'estate sbaglia di due ore senza che nessuno
+se ne accorga finché un promemoria non suona a colazione invece che a pranzo.
+Le due notti del cambio d'ora sono coperte da una seconda passata sull'offset.
+
+Regole sui pezzi mancanti: giorno senza ora → **09:00**; ora senza giorno →
+oggi se non è ancora passata, altrimenti domani; un momento già passato viene
+rifiutato e richiesto. `AMAZON.DATE` risolve anche cose che un giorno preciso
+non sono («questa settimana» → `2026-W38`): si accetta solo `YYYY-MM-DD`, e per
+il resto si richiede invece di indovinare.
+
+### Come si risolve l'assegnatario
+
+Il nome detto si confronta con `families/{familyId}/members`, campo
+`displayName` (ripiego su `name`, poi su `users/{uid}.displayName` — i documenti
+in `members` possono non averlo, che è la stessa ragione per cui `memberName`
+in `alexa.js` e `resolveMemberName` in `index.js` hanno lo stesso ripiego).
+I membri con `isDeleted: true` sono esclusi.
+
+Tre passate, dalla più stretta alla più larga, e a ogni passata si accetta
+**solo se il candidato è uno**:
+
+1. nome completo uguale — distingue «Marco» da «Marco Rossi» quando esistono
+   entrambi;
+2. primo nome uguale — in famiglia il cognome quasi non si dice;
+3. primo nome che comincia per quello detto — recupera i troncamenti dell'ASR
+   («Ale» per «Alessandra»).
+
+Cosa succede nei casi storti:
+
+| Caso | Risposta |
+| --- | --- |
+| Nome non trovato | Elenca i membri e richiede. Il to-do **non** si perde: il flusso resta aperto |
+| Due membri omonimi | Lo dice e propone di assegnare dall'app, oppure «a nessuno» |
+| «a me» | L'uid di chi ha parlato (voce riconosciuta) o dell'account collegato: la stessa regola dell'attribuzione della spesa |
+| «a nessuno» | Nessun assegnatario: il promemoria va a tutta la famiglia |
+| Nessun membro leggibile | Tira dritto senza assegnatario invece di insistere con una domanda senza risposta |
+
+Al primo dubbio si chiede, non si sceglie: un promemoria assegnato alla persona
+sbagliata non suona a chi deve, e nessuno se ne accorge finché non è tardi.
+
+### Intent nuovi da buildare in console
+
+Sono tutti in `interaction-model-it-IT.json` — basta reincollare il file nel
+JSON Editor della locale **Italiano (IT)** e fare *Build Model*.
+
+| Intent | Slot | A cosa serve |
+| --- | --- | --- |
+| `AddReminderIntent` | `task` (`AMAZON.SearchQuery`) | Apre il flusso; il titolo può mancare |
+| `ReminderAssigneeIntent` | `member` (`MemberName`) | «assegna a Giulia» |
+| `ReminderAssignSelfIntent` | — | «a me» |
+| `ReminderWhenIntent` | `date` (`AMAZON.DATE`), `time` (`AMAZON.TIME`) | «domani alle otto» |
+| `ReminderSkipIntent` | — | «a nessuno», «senza promemoria» |
+| `AMAZON.NoIntent` | — | Stesso trattamento di `ReminderSkipIntent` |
+
+Il tipo custom **`MemberName`** porta i ruoli di famiglia («mamma», «nonna») che
+`AMAZON.FirstName` non conosce, più una sessantina di nomi italiani frequenti.
+Sono **suggerimenti, non un elenco chiuso**: un custom slot type restituisce
+anche parole che non ci sono, e chi si chiama in un modo fuori elenco viene
+riconosciuto lo stesso — il nome vero lo decide `matchMember` confrontando coi
+membri reali.
+
+Nessun sample del promemoria comincia per «aggiungi» o «aggiungere»: quelli
+sono di `AddItemIntent`, che porta a sua volta uno `AMAZON.SearchQuery`. Due
+`SearchQuery` dietro lo stesso verbo sono indistinguibili, e «aggiungi un
+promemoria per comprare il pane» finirebbe **in lista della spesa** come un
+articolo con quel nome.
+
+Vale anche qui la regola delle **due forme, imperativa e infinitiva**:
+`ricordami di {task}` e `ricordarmi di {task}`.
+
+⚠️ **Solo italiano.** I testi vocali esistono in `SPEECH` anche in inglese, per
+non lasciare mezza tabella vuota, ma `interaction-model-en-GB.json` **non** ha
+questi intent: sulla locale inglese la skill continua a fare solo la spesa. Se
+un giorno serve, i sample inglesi sono l'unica cosa da scrivere — il backend è
+già in parità.
 
 ## Categoria degli articoli
 
