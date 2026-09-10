@@ -4931,7 +4931,9 @@ exports.deleteFamily = onCall(
 
       const memberCount = await countActiveMembers(familyId);
       if (memberCount > 1) {
-        logger.error("TENTATIVO DI CANCELLAZIONE ILLEGALE", {familyId, memberCount, callerUid: uid});
+        // warn, non error: è una richiesta respinta al client, non un guasto nostro.
+        // L'allarme "errore applicativo" conta solo severity>=ERROR (vedi internal/monitoring.md).
+        logger.warn("TENTATIVO DI CANCELLAZIONE ILLEGALE", {familyId, memberCount, callerUid: uid});
         throw new HttpsError(
             "failed-precondition",
             "La famiglia ha ancora altri membri attivi. Rimuovili prima di eliminare la famiglia.",
