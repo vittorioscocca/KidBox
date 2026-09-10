@@ -31,7 +31,16 @@ struct AddWalletTicketSheet: View {
     @State private var location: String = ""
     @State private var arrivalLocation: String = ""
     @State private var holderName: String = ""
+    @State private var seat: String = ""
+    @State private var price: String = ""
     @State private var bookingCode: String = ""
+    /// Ultimo titolo messo AUTOMATICAMENTE (nome del file, formula del parser,
+    /// lettura AI). Serve a distinguerlo da uno scritto a mano, che non va
+    /// sovrascritto.
+    @State private var autoTitle: String = ""
+    /// Stessa cosa per le note: quelle del parser sono un ripiego grezzo e
+    /// vanno cedute alla lettura AI, quelle scritte a mano no.
+    @State private var autoNotes: String = ""
     @State private var notes: String = ""
     @State private var addToWalletURL: String = ""
 
@@ -155,6 +164,8 @@ struct AddWalletTicketSheet: View {
                     }
                     TextField("Nome titolare (opzionale)", text: $holderName)
                         .textInputAutocapitalization(.words)
+                    TextField("Settore, fila, posto (opzionale)", text: $seat)
+                    TextField("Prezzo (opzionale)", text: $price)
 
                     Toggle("Ora di partenza", isOn: $hasEventDate)
                     if hasEventDate {
@@ -222,6 +233,7 @@ struct AddWalletTicketSheet: View {
             .onAppear {
                 if title.isEmpty {
                     title = prefilledTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    autoTitle = title
                 }
                 if let prefilledLocalPDFPath, !prefilledLocalPDFPath.isEmpty {
                     loadPrefilledPDF(path: prefilledLocalPDFPath)
@@ -270,6 +282,25 @@ struct AddWalletTicketSheet: View {
         do {
             let fallbackImage = usedImageFallbackForAI ? selectedPDFData.flatMap(firstPageImage(from:)) : nil
             let result = try await WalletTicketAIExtractor.extract(text: parsedRawText, fallbackImage: fallbackImage)
+            // Il titolo è l'unico campo che l'utente può aver scritto a mano
+            // prima di premere «leggi con l'AI»: si sovrascrive solo se è
+            // ancora quello messo automaticamente — nome del file o formula
+            // «emittente • data» — che è esattamente il caso da correggere.
+            if let v = result.eventTitle, title.isEmpty || title == autoTitle {
+                title = v
+                autoTitle = v
+            }
+            if let v = result.seat { seat = v }
+            if let v = result.price { price = v }
+            // Le note del parser sono le prime righe del PDF: quelle dell'AI
+            // sono quello che resta dopo aver riempito gli altri campi, quindi
+            // vincono. Ma se la lettura non trova nulla da annotare, le note
+            // automatiche vanno via lo stesso: tenerle vorrebbe dire lasciare
+            // in scheda dei frammenti che ora hanno il loro campo.
+            if notes.isEmpty || notes == autoNotes {
+                notes = result.notes ?? ""
+                autoNotes = notes
+            }
             if let v = result.holderName { holderName = v }
             if let v = result.bookingCode { bookingCode = v }
             if let v = result.kind { kind = v }
@@ -326,6 +357,7 @@ struct AddWalletTicketSheet: View {
     private func applyParsedData(_ parsed: WalletParsedTicketData) {
         if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             title = parsed.suggestedTitle
+            autoTitle = parsed.suggestedTitle
         }
         kind = parsed.kind
         if let parsedDate = parsed.eventDate {
@@ -343,6 +375,7 @@ struct AddWalletTicketSheet: View {
         }
         if notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let parsedNotes = parsed.notes {
             notes = parsedNotes
+            autoNotes = parsedNotes
         }
         parsedBarcodeText = parsed.barcodeText
         parsedBarcodeFormat = parsed.barcodeFormat
@@ -383,7 +416,8 @@ struct AddWalletTicketSheet: View {
                 eventDate: hasEventDate ? eventDate : nil,
                 eventEndDate: hasArrivalDate ? arrivalDate : nil,
                 location: sanitized(location),
-                seat: nil,
+                seat: sanitized(seat),
+                price: sanitized(price),
                 bookingCode: sanitized(bookingCode),
                 arrivalLocation: sanitized(arrivalLocation),
                 holderName: sanitized(holderName),

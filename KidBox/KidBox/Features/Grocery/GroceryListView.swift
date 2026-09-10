@@ -119,6 +119,14 @@ struct GroceryListView: View {
     var body: some View {
         List {
             header
+            // L'invito a collegare Alexa si mostra da solo quando ha senso:
+            // lingua giusta, famiglia non ancora collegata, invito non già
+            // rifiutato. Vedi `AlexaPromoStore`.
+            AlexaPromoBanner(context: .grocery) {
+                coordinator.navigate(to: .alexaSettings)
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
             filterChips
 
             if filter == .purchased && !purchased.isEmpty {
@@ -227,6 +235,7 @@ struct GroceryListView: View {
             await SyncCenter.shared.flushGrocery(modelContext: modelContext)
         }
         .onAppear {
+            AlexaPromoStore.shared.refresh(familyId: familyId)
             BadgeManager.shared.activeSections.insert("shopping")
             guard !didStartRealtime else { return }
             didStartRealtime = true

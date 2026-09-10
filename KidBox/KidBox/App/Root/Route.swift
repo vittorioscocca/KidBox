@@ -33,6 +33,9 @@ enum Route: Hashable {
     case calendar(familyId: String, highlightEventId: String? = nil)
     case todo
     case settings
+    /// Impostazioni → Alexa, raggiungibile anche dall'invito nella lista
+    /// della spesa e nei to-do.
+    case alexaSettings
     case supportChat
 
     case profile

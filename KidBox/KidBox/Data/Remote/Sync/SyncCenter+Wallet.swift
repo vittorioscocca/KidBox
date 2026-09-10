@@ -148,6 +148,7 @@ extension SyncCenter {
                     var title: String
                     var location: String?
                     var seat: String?
+                    var price: String?
                     var bookingCode: String?
                     var arrivalLocation: String?
                     var holderName: String?
@@ -160,6 +161,7 @@ extension SyncCenter {
                             title       = try WalletCryptoService.decryptString(dto.titleEnc ?? "", familyId: familyId, userId: uid)
                             location    = try WalletCryptoService.decryptOptional(dto.locationEnc, familyId: familyId, userId: uid)
                             seat        = try WalletCryptoService.decryptOptional(dto.seatEnc, familyId: familyId, userId: uid)
+                            price       = try WalletCryptoService.decryptOptional(dto.priceEnc, familyId: familyId, userId: uid)
                             bookingCode = try WalletCryptoService.decryptOptional(dto.bookingCodeEnc, familyId: familyId, userId: uid)
                             arrivalLocation = try WalletCryptoService.decryptOptional(dto.arrivalLocationEnc, familyId: familyId, userId: uid)
                             holderName  = try WalletCryptoService.decryptOptional(dto.holderNameEnc, familyId: familyId, userId: uid)
@@ -169,13 +171,13 @@ extension SyncCenter {
                         } catch {
                             KBLog.sync.kbError("[wallet][inbound] decrypt FAIL id=\(dto.id) err=\(error.localizedDescription)")
                             title = "⚠️ Biglietto non decifrabile"
-                            location = nil; seat = nil; bookingCode = nil; notes = nil
+                            location = nil; seat = nil; price = nil; bookingCode = nil; notes = nil
                             arrivalLocation = nil; holderName = nil
                             barcodeText = nil; fileName = nil
                         }
                     } else {
                         title = "⚠️ Biglietto non decifrabile"
-                        location = nil; seat = nil; bookingCode = nil; notes = nil
+                        location = nil; seat = nil; price = nil; bookingCode = nil; notes = nil
                         arrivalLocation = nil; holderName = nil
                         barcodeText = nil; fileName = nil
                     }
@@ -201,6 +203,7 @@ extension SyncCenter {
                         existing.title = title
                         existing.location = location
                         existing.seat = seat
+                        existing.price = price
                         existing.bookingCode = bookingCode
                         existing.arrivalLocation = arrivalLocation
                         existing.holderName = holderName
@@ -251,6 +254,7 @@ extension SyncCenter {
                             eventEndDate: dto.eventEndDate,
                             location: location,
                             seat: seat,
+                            price: price,
                             bookingCode: bookingCode,
                             arrivalLocation: arrivalLocation,
                             holderName: holderName,

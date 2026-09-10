@@ -20,6 +20,12 @@ struct WalletParsedTicketData {
     let addToAppleWalletURL: String?
     let barcodeText: String?
     let barcodeFormat: String?
+    /// Note del biglietto. **Non** più ricavate dal PDF: le riempie solo la
+    /// lettura AI, che sa cosa è già finito negli altri campi. Un parser cieco
+    /// non può distinguere una nota da una riga qualunque, e riempire il campo
+    /// con le prime righe del documento lo trasformava nel posto dove finiva
+    /// tutto ciò che non era stato riconosciuto — il contrario di quello che
+    /// uno si aspetta leggendolo. Meglio vuoto.
     let notes: String?
     /// Luogo di arrivo (`location` resta il luogo di partenza). Non estratto da regex, popolato dalla lettura AI.
     var arrivalLocation: String? = nil
@@ -74,7 +80,7 @@ enum WalletPDFParser {
             addToAppleWalletURL: addToWalletURL,
             barcodeText: barcodeText,
             barcodeFormat: barcodeFormat,
-            notes: extractShortNotes(from: text),
+            notes: nil,
             rawText: text
         )
     }
@@ -539,15 +545,6 @@ enum WalletPDFParser {
         return nil
     }
 
-    private static func extractShortNotes(from text: String) -> String? {
-        let compact = text
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .prefix(4)
-            .joined(separator: "\n")
-        return compact.isEmpty ? nil : compact
-    }
 
     private static func buildTitle(
         fileName: String?,

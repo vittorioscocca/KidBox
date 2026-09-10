@@ -35,6 +35,12 @@ final class KBWalletTicket {
 
     var location: String?
     var seat: String?
+    /// Prezzo come stampato sul biglietto, valuta compresa («19,50 €»).
+    /// Stringa e non `Double`: su un biglietto convivono spesso più importi
+    /// (prezzo, prevendita, totale) e un numero solo non dice quale sia. Qui
+    /// serve a mostrare quanto è costato, non a fare conti.
+    /// Opzionale per migrazione SwiftData.
+    var price: String?
     var bookingCode: String?
     /// Luogo di arrivo (`location` resta il luogo di partenza). Opzionale per
     /// migrazione SwiftData: i biglietti pre-esistenti non hanno questo campo.
@@ -131,6 +137,7 @@ final class KBWalletTicket {
         eventEndDate: Date? = nil,
         location: String? = nil,
         seat: String? = nil,
+        price: String? = nil,
         bookingCode: String? = nil,
         arrivalLocation: String? = nil,
         holderName: String? = nil,
@@ -162,6 +169,7 @@ final class KBWalletTicket {
         self.eventEndDate = eventEndDate
         self.location = location
         self.seat = seat
+        self.price = price
         self.bookingCode = bookingCode
         self.arrivalLocation = arrivalLocation
         self.holderName = holderName

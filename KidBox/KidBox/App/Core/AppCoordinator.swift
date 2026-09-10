@@ -651,6 +651,8 @@ final class AppCoordinator: ObservableObject {
             TodoHomeView()
         case .settings:
             SettingsView()
+        case .alexaSettings:
+            AlexaSettingsView()
         case .supportChat:
             SupportChatView()
         case .familySettings:

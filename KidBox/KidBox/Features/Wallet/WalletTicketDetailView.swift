@@ -26,6 +26,12 @@ struct WalletTicketDetailView: View {
     @State private var pdfData: Data?
     @State private var pdfError: String?
     @State private var showPDF = false
+    /// Copia in chiaro del PDF su disco, creata solo per la condivisione.
+    /// Il PDF vive cifrato su Storage e decifrato in memoria: per passarlo a
+    /// un'altra app serve un file vero, e serve che si chiami come l'originale
+    /// — condividere `UUID.pdf` rende irriconoscibile l'allegato a chi lo
+    /// riceve. Si cancella alla chiusura del visore.
+    @State private var sharePDFURL: URL?
     @State private var isVisibilitySheetPresented = false
     @State private var showVisibilityLockedAlert = false
     @State private var visibilitySheetScope = KBVisibilityScope.onlyCreator
@@ -112,9 +118,18 @@ struct WalletTicketDetailView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Chiudi") { showPDF = false }
                     }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        if let sharePDFURL {
+                            ShareLink(item: sharePDFURL) {
+                                Label("Condividi", systemImage: "square.and.arrow.up")
+                            }
+                        }
+                    }
                 }
+                .task(id: pdfData) { prepareShareFile() }
             }
             .allowsAllOrientationsWhileVisible()
+            .onDisappear { discardShareFile() }
         }
         .overlay {
             if isLoadingPDF {
@@ -257,9 +272,11 @@ struct WalletTicketDetailView: View {
         let hasArrivalLocation = (ticket.arrivalLocation?.isEmpty == false)
         let hasHolderName = (ticket.holderName?.isEmpty == false)
         let hasBooking = (ticket.bookingCode?.isEmpty == false)
+        let hasSeat = (ticket.seat?.isEmpty == false)
+        let hasPrice = (ticket.price?.isEmpty == false)
         let hasNotes = (ticket.notes?.isEmpty == false)
 
-        if hasLocation || hasArrivalLocation || hasHolderName || hasBooking || hasNotes ||
+        if hasLocation || hasArrivalLocation || hasHolderName || hasBooking || hasSeat || hasPrice || hasNotes ||
             ticket.eventDate != nil || ticket.eventEndDate != nil {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Dettagli")
@@ -288,6 +305,16 @@ struct WalletTicketDetailView: View {
                 }
                 if let arrivalLocation = ticket.arrivalLocation, !arrivalLocation.isEmpty {
                     detailRow(icon: "mappin.and.ellipse", title: "Luogo di arrivo", value: arrivalLocation)
+                }
+                // Sta fra il luogo e il codice perché è così che si legge un
+                // biglietto: dove si va, dove ci si siede, e poi il numero da
+                // esibire. Il campo esisteva già sul modello ma non lo
+                // riempiva nessuno, quindi questa riga non compariva mai.
+                if let seat = ticket.seat, !seat.isEmpty {
+                    detailRow(icon: "chair.fill", title: "Posto", value: seat)
+                }
+                if let price = ticket.price, !price.isEmpty {
+                    detailRow(icon: "eurosign.circle", title: "Prezzo", value: price)
                 }
                 if let bookingCode = ticket.bookingCode, !bookingCode.isEmpty {
                     detailRow(icon: "number", title: "Codice biglietto", value: bookingCode, monospaced: true)
@@ -426,6 +453,38 @@ struct WalletTicketDetailView: View {
     }
 
     // MARK: - PDF / Delete
+
+    /// Scrive la copia condivisibile. Il nome è quello del file originale,
+    /// dentro una cartella con un id casuale: due biglietti diversi possono
+    /// chiamarsi entrambi `biglietto.pdf`, e senza la cartella il secondo
+    /// sovrascriverebbe il primo mentre il primo è ancora aperto.
+    private func prepareShareFile() {
+        discardShareFile()
+        guard let pdfData else { return }
+        let name = ticket?.pdfFileName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fileName = (name?.isEmpty == false ? name! : "Biglietto.pdf")
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("wallet-share-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let url = folder.appendingPathComponent(fileName)
+            try pdfData.write(to: url, options: .atomic)
+            sharePDFURL = url
+        } catch {
+            // Senza copia niente pulsante: il visore continua a funzionare, e
+            // un errore modale qui interromperebbe la lettura del biglietto
+            // per una funzione accessoria.
+            sharePDFURL = nil
+        }
+    }
+
+    /// Il PDF è un documento personale: la copia in chiaro non deve
+    /// sopravvivere alla schermata che l'ha creata.
+    private func discardShareFile() {
+        guard let sharePDFURL else { return }
+        try? FileManager.default.removeItem(at: sharePDFURL.deletingLastPathComponent())
+        self.sharePDFURL = nil
+    }
 
     private func openPDF() async {
         guard let ticket else { return }

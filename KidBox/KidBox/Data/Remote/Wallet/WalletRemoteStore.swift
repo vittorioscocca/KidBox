@@ -22,6 +22,7 @@ struct WalletTicketDTO {
     let titleEnc: String?
     let locationEnc: String?
     let seatEnc: String?
+    let priceEnc: String?
     let bookingCodeEnc: String?
     let arrivalLocationEnc: String?
     let holderNameEnc: String?
@@ -130,6 +131,9 @@ final class WalletRemoteStore {
         let titleEnc        = try WalletCryptoService.encryptString(ticket.title, familyId: ticket.familyId, userId: uid)
         let locationEnc     = try WalletCryptoService.encryptOptional(ticket.location, familyId: ticket.familyId, userId: uid)
         let seatEnc         = try WalletCryptoService.encryptOptional(ticket.seat, familyId: ticket.familyId, userId: uid)
+        // Cifrato come il posto: quanto è costato un biglietto è un dato di
+        // famiglia, non un'etichetta pubblica come l'emittente.
+        let priceEnc        = try WalletCryptoService.encryptOptional(ticket.price, familyId: ticket.familyId, userId: uid)
         let bookingCodeEnc  = try WalletCryptoService.encryptOptional(ticket.bookingCode, familyId: ticket.familyId, userId: uid)
         let arrivalLocationEnc = try WalletCryptoService.encryptOptional(ticket.arrivalLocation, familyId: ticket.familyId, userId: uid)
         let holderNameEnc   = try WalletCryptoService.encryptOptional(ticket.holderName, familyId: ticket.familyId, userId: uid)
@@ -144,6 +148,7 @@ final class WalletRemoteStore {
             "titleEnc":        titleEnc,
             "locationEnc":     locationEnc as Any,
             "seatEnc":         seatEnc as Any,
+            "priceEnc":        priceEnc as Any,
             "bookingCodeEnc":  bookingCodeEnc as Any,
             "arrivalLocationEnc": arrivalLocationEnc as Any,
             "holderNameEnc":   holderNameEnc as Any,
@@ -228,6 +233,7 @@ final class WalletRemoteStore {
                         titleEnc:           d["titleEnc"]        as? String,
                         locationEnc:        d["locationEnc"]     as? String,
                         seatEnc:            d["seatEnc"]         as? String,
+                        priceEnc:           d["priceEnc"]         as? String,
                         bookingCodeEnc:     d["bookingCodeEnc"]  as? String,
                         arrivalLocationEnc: d["arrivalLocationEnc"] as? String,
                         holderNameEnc:      d["holderNameEnc"]   as? String,
@@ -284,6 +290,7 @@ final class WalletRemoteStore {
                 titleEnc:           d["titleEnc"]        as? String,
                 locationEnc:        d["locationEnc"]     as? String,
                 seatEnc:            d["seatEnc"]         as? String,
+                priceEnc:           d["priceEnc"]         as? String,
                 bookingCodeEnc:     d["bookingCodeEnc"]  as? String,
                 arrivalLocationEnc: d["arrivalLocationEnc"] as? String,
                 holderNameEnc:      d["holderNameEnc"]   as? String,

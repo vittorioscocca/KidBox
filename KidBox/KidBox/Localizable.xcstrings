@@ -3357,6 +3357,28 @@
         }
       }
     },
+    "2. Fai riconoscere la tua voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Have your voice recognised"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Haz que reconozca tu voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Faites reconnaître votre voix"
+          }
+        }
+      }
+    },
     "2. Collega l'account" : {
       "localizations" : {
         "en" : {
@@ -6191,6 +6213,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouté par %@ · %@"
+          }
+        }
+      }
+    },
+    "Agli Echo di casa puoi dettare la spesa e i promemoria: gli articoli finiscono nella stessa lista che vedi in KidBox, i promemoria diventano to-do che suonano all'ora che hai detto. Gli altri membri li ricevono subito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can dictate the shopping list and reminders to your Echos: items land on the same list you see in KidBox, and reminders become to-dos that go off at the time you said. The other family members get them straight away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes dictar la compra y los recordatorios a los Echo de casa: los artículos llegan a la misma lista que ves en KidBox, y los recordatorios se convierten en tareas que suenan a la hora que has dicho. Los demás miembros los reciben al momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez dicter les courses et les rappels aux Echo de la maison : les articles arrivent dans la liste que vous voyez dans KidBox, et les rappels deviennent des tâches qui sonnent à l'heure indiquée. Les autres membres les reçoivent aussitôt."
           }
         }
       }
@@ -18303,28 +18347,6 @@
         }
       }
     },
-    "Detta la lista della spesa agli Echo di casa: gli articoli finiscono nella stessa lista che vedi in KidBox, e gli altri membri li ricevono subito." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dictate the shopping list to the Echos at home: items land in the same list you see in KidBox, and the other members get them right away."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dicta la lista de la compra a los Echo de casa: los artículos van a la misma lista que ves en KidBox y los demás miembros los reciben al instante."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dictez la liste de courses aux Echo de la maison : les articles arrivent dans la liste que vous voyez dans KidBox, et les autres membres les reçoivent aussitôt."
-          }
-        }
-      }
-    },
     "Dettagli" : {
       "localizations" : {
         "en" : {
@@ -25793,24 +25815,24 @@
         }
       }
     },
-    "Gli Echo di casa non potranno più aggiungere articoli alla lista finché non ricolleghi." : {
+    "Gli Echo di casa non potranno più aggiungere articoli alla lista né creare promemoria finché non ricolleghi." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Echos at home won't be able to add items to the list until you link again."
+            "value" : "Your Echos won't be able to add items to the list or create reminders until you link again."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los Echo de casa no podrán añadir artículos a la lista hasta que vuelvas a vincularlos."
+            "value" : "Los Echo de casa no podrán añadir artículos a la lista ni crear recordatorios hasta que vuelvas a vincular."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les Echo de la maison ne pourront plus ajouter d'articles à la liste tant que vous ne les aurez pas reliés à nouveau."
+            "value" : "Les Echo de la maison ne pourront plus ajouter d'articles à la liste ni créer de rappels tant que vous ne les reconnectez pas."
           }
         }
       }
@@ -27397,6 +27419,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le rappel arrive à cette heure les jours d'entraînement, avec les boutons Fait et Déplacer."
+          }
+        }
+      }
+    },
+    "Il promemoria è una conversazione: dopo la frase, Alexa chiede a chi assegnarlo — un nome, «a me» oppure «a nessuno» — e per quando — «domani alle otto», «giovedì», oppure «senza promemoria». Diventa un to-do nella lista Alexa, e la notifica arriva all'ora che hai detto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A reminder is a conversation: after the phrase, Alexa asks who it is for — a name, “me” or “nobody” — and when — “tomorrow at eight”, “Thursday”, or “no reminder”. It becomes a to-do on the Alexa list, and the notification arrives at the time you said."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El recordatorio es una conversación: después de la frase, Alexa pregunta a quién asignarlo — un nombre, «a mí» o «a nadie» — y para cuándo — «mañana a las ocho», «el jueves», o «sin recordatorio». Se convierte en una tarea de la lista Alexa, y la notificación llega a la hora que has dicho."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le rappel est une conversation : après la phrase, Alexa demande à qui l'attribuer — un prénom, « à moi » ou « à personne » — et pour quand — « demain à huit heures », « jeudi », ou « sans rappel ». Il devient une tâche dans la liste Alexa, et la notification arrive à l'heure indiquée."
           }
         }
       }
@@ -31524,6 +31568,7 @@
       }
     },
     "La tua voce" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -32380,28 +32425,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Liste de courses"
-          }
-        }
-      }
-    },
-    "Lista della spesa a voce sugli Echo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shopping list by voice on your Echos"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lista de la compra por voz en los Echo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Liste de courses à la voix sur les Echo"
           }
         }
       }
@@ -38335,6 +38358,182 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Note"
+          }
+        }
+      }
+    },
+    "Posto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place"
+          }
+        }
+      }
+    },
+    "Settore, fila, posto (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Section, row, seat (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sector, fila, asiento (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secteur, rangée, place (facultatif)"
+          }
+        }
+      }
+    },
+    "Prezzo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prix"
+          }
+        }
+      }
+    },
+    "Prezzo (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precio (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prix (facultatif)"
+          }
+        }
+      }
+    },
+    "Collega" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincular"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lier"
+          }
+        }
+      }
+    },
+    "Non mostrare più" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't show again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher"
+          }
+        }
+      }
+    },
+    "Puoi collegare Alexa a KidBox e dettare la lista della spesa agli Echo di casa: quello che dici compare qui e gli altri lo ricevono subito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can link Alexa to KidBox and dictate the shopping list to your Echos: what you say shows up here and the others get it straight away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes vincular Alexa a KidBox y dictar la lista de la compra a los Echo de casa: lo que dices aparece aquí y los demás lo reciben al momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez lier Alexa à KidBox et dicter la liste de courses aux Echo de la maison : ce que vous dites apparaît ici et les autres le reçoivent aussitôt."
+          }
+        }
+      }
+    },
+    "Puoi collegare Alexa a KidBox e dettare i promemoria agli Echo di casa: diventano to-do e la notifica arriva all'ora che hai detto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can link Alexa to KidBox and dictate reminders to your Echos: they become to-dos and the notification arrives at the time you said."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes vincular Alexa a KidBox y dictar recordatorios a los Echo de casa: se convierten en tareas y la notificación llega a la hora que has dicho."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez lier Alexa à KidBox et dicter des rappels aux Echo de la maison : ils deviennent des tâches et la notification arrive à l'heure indiquée."
           }
         }
       }
@@ -53762,6 +53961,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dépense"
+          }
+        }
+      }
+    },
+    "Spesa e promemoria a voce sugli Echo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping list and reminders by voice on your Echos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compra y recordatorios por voz en los Echo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Courses et rappels à la voix sur les Echo"
           }
         }
       }

@@ -141,15 +141,35 @@ struct TodoHomeView: View {
             backgroundColor.ignoresSafeArea()
 
             if !familyId.isEmpty && visibleLists.isEmpty {
-                TodoEmptyStateView {
-                    editingListId = nil
-                    listNameDraft = ""
-                    showListEditor = true
+                // L'invito va anche qui, sopra lo stato vuoto: senza liste
+                // questo ramo prende tutta la schermata e il banner non
+                // veniva mai disegnato — cioè spariva proprio alla famiglia
+                // che non ha ancora un to-do, quella a cui conviene di più
+                // dettarli a voce.
+                VStack(spacing: 16) {
+                    AlexaPromoBanner(context: .todo) {
+                        coordinator.navigate(to: .alexaSettings)
+                    }
+                    .padding(.horizontal)
+
+                    TodoEmptyStateView {
+                        editingListId = nil
+                        listNameDraft = ""
+                        showListEditor = true
+                    }
                 }
+                .padding(.top)
                 .background(backgroundColor)
             } else {
                 ScrollView {
                     VStack(spacing: 16) {
+                        // L'invito a collegare Alexa si mostra da solo quando
+                        // ha senso: lingua giusta, famiglia non ancora
+                        // collegata, invito non già rifiutato. Vedi
+                        // `AlexaPromoStore`.
+                        AlexaPromoBanner(context: .todo) {
+                            coordinator.navigate(to: .alexaSettings)
+                        }
                         cardsSection
                         listsSection
                     }
@@ -173,6 +193,7 @@ struct TodoHomeView: View {
             }
         }
         .onAppear {
+            AlexaPromoStore.shared.refresh(familyId: familyId)
             BadgeManager.shared.activeSections.insert("todos")
             KBLog.todo.kbInfo("[TodoHomeView][\(viewTrace)] onAppear familyId=\(familyId) childId=\(childId) didStartRealtime=\(didStartRealtime) lists=\(visibleLists.count) todosVisible=\(visibleTodos.count)")
             logCounters("onAppear")

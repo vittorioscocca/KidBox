@@ -39,20 +39,22 @@ struct AlexaSettingsView: View {
                 familyLinksSection
             }
 
+            // Chi ha l'account collegato può già dettare: le frasi vengono
+            // prima, perché sono quello che funziona adesso.
+            if isLinked { phrasesSection }
+
             // Il codice non sparisce col collegamento dell'account: se la voce
-            // non è ancora associata, serve ancora — ed è proprio il caso del
-            // secondo membro di casa, che l'account ce l'ha già per riflesso.
-            if case .linked = viewModel.linkState {
-                if !viewModel.voiceLinked { voiceSection }
-                phrasesSection
-                unlinkSection
-            } else {
-                // Prima del codice viene la skill: senza, il codice si detta a
-                // vuoto e non c'è modo di capire perché. È il primo passo, e
-                // fino a ieri non era scritto da nessuna parte.
+            // non è ancora associata serve ancora — ed è proprio il caso del
+            // secondo membro di casa, che l'account ce l'ha già per riflesso di
+            // quello Amazon condiviso. E serve partendo dalla skill: senza
+            // quella attiva sul PROPRIO account Amazon il codice si detta a
+            // vuoto, e prima quel passo qui non compariva affatto.
+            if !isLinked || !viewModel.voiceLinked {
                 skillSetupSection
                 pairingSection
             }
+
+            if isLinked { unlinkSection }
 
             if let errorText = viewModel.errorText {
                 Section {
@@ -80,7 +82,7 @@ struct AlexaSettingsView: View {
             Button("Scollega", role: .destructive) { viewModel.unlink() }
             Button("Annulla", role: .cancel) {}
         } message: {
-            Text("Gli Echo di casa non potranno più aggiungere articoli alla lista finché non ricolleghi.")
+            Text("Gli Echo di casa non potranno più aggiungere articoli alla lista né creare promemoria finché non ricolleghi.")
         }
     }
 
@@ -107,7 +109,7 @@ struct AlexaSettingsView: View {
             }
             .listRowBackground(cardBackground)
         } footer: {
-            Text("Detta la lista della spesa agli Echo di casa: gli articoli finiscono nella stessa lista che vedi in KidBox, e gli altri membri li ricevono subito.")
+            Text("Agli Echo di casa puoi dettare la spesa e i promemoria: gli articoli finiscono nella stessa lista che vedi in KidBox, i promemoria diventano to-do che suonano all'ora che hai detto. Gli altri membri li ricevono subito.")
                 .alexaHint()
         }
     }
@@ -209,10 +211,13 @@ struct AlexaSettingsView: View {
                     viewModel.generateCode(familyId: coordinator.activeFamilyId)
                 } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: "number.circle.fill")
+                        // Con l'account già collegato quel codice non serve
+                        // più a collegarlo: serve a legare la voce. Il pulsante
+                        // lo dice, o sembrerebbe di rifare un passo già fatto.
+                        Image(systemName: isLinked ? "waveform" : "number.circle.fill")
                             .foregroundStyle(KBTheme.bubbleTint)
                             .frame(width: 22)
-                        Text("Genera codice di collegamento")
+                        Text(isLinked ? "Fai riconoscere la tua voce" : "Genera codice di collegamento")
                             .foregroundStyle(.primary)
                         if viewModel.isGenerating {
                             Spacer()
@@ -224,13 +229,32 @@ struct AlexaSettingsView: View {
                 .listRowBackground(cardBackground)
             }
         } header: {
-            // Numerato: questa sezione compare solo a collegamento assente,
-            // subito dopo il passo 1, e l'ordine fra i due conta.
-            Text("2. Collega l'account")
+            // Numerato: viene subito dopo il passo 1, e l'ordine fra i due
+            // conta — la skill prima del codice. Col proprio account già
+            // collegato, «2. Collega l'account» contraddirebbe il «Account
+            // collegato» in cima alla schermata: resta il passo 2, ma di
+            // un'altra cosa. Il titolo ricalca il pulsante parola per parola,
+            // o sembrerebbero due cose diverse.
+            Text(isLinked ? "2. Fai riconoscere la tua voce" : "2. Collega l'account")
         } footer: {
-            Text("Il codice vale 10 minuti e si usa una volta sola. Non serve fare login nella skill: sei già autenticato qui, e il codice porta la tua identità su Alexa.")
-                .alexaHint()
+            VStack(alignment: .leading, spacing: 8) {
+                if isLinked {
+                    // Nessun allarme: chi non ha un profilo vocale non ha
+                    // niente di rotto, semplicemente i suoi articoli restano
+                    // attribuiti a chi ha collegato l'account.
+                    Text("Alexa distingue le voci di casa. Detta una volta il tuo codice e da lì in poi quello che dici risulterà aggiunto da te, anche dall'Echo di un altro. Se non hai un profilo vocale su Alexa, tutto funziona lo stesso: gli articoli restano attribuiti a chi ha collegato l'account.")
+                }
+                Text("Il codice vale 10 minuti e si usa una volta sola. Non serve fare login nella skill: sei già autenticato qui, e il codice porta la tua identità su Alexa.")
+            }
+            .alexaHint()
         }
+    }
+
+    /// Se l'account di CHI GUARDA è collegato. Diverso da `otherLinks`, che
+    /// sono i collegamenti degli altri membri.
+    private var isLinked: Bool {
+        if case .linked = viewModel.linkState { return true }
+        return false
     }
 
     /// Il codice a schermo con la frase da dire. Uguale per l'account e per la
@@ -264,42 +288,6 @@ struct AlexaSettingsView: View {
         .listRowBackground(cardBackground)
     }
 
-    // MARK: - Voce
-
-    private var voiceSection: some View {
-        Section {
-            if let code = viewModel.pairingCode {
-                codeBlock(code)
-            } else {
-                Button {
-                    viewModel.generateCode(familyId: coordinator.activeFamilyId)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "waveform")
-                            .foregroundStyle(KBTheme.bubbleTint)
-                            .frame(width: 22)
-                        Text("Fai riconoscere la tua voce")
-                            .foregroundStyle(.primary)
-                        if viewModel.isGenerating {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(viewModel.isGenerating)
-                .listRowBackground(cardBackground)
-            }
-        } header: {
-            Text("La tua voce")
-        } footer: {
-            // Nessun allarme: chi non ha un profilo vocale non ha niente di
-            // rotto, semplicemente i suoi articoli restano attribuiti a chi ha
-            // collegato l'account.
-            Text("Alexa distingue le voci di casa. Detta una volta il tuo codice e da lì in poi quello che dici risulterà aggiunto da te, anche dall'Echo di un altro. Se non hai un profilo vocale su Alexa, tutto funziona lo stesso: gli articoli restano attribuiti a chi ha collegato l'account.")
-                .alexaHint()
-        }
-    }
-
     // MARK: - Frasi
 
     private var phrasesSection: some View {
@@ -317,6 +305,15 @@ struct AlexaSettingsView: View {
             }
         } header: {
             Text("Cosa puoi dire")
+        } footer: {
+            // Il promemoria è l'unico comando che non si esaurisce in una
+            // frase, e senza dirlo qui l'utente non si aspetta le due domande
+            // e riattacca. Non è una scelta di stile: «AMAZON.SearchQuery», lo
+            // slot che regge il testo libero del titolo, non può convivere con
+            // nessun altro slot nella stessa frase, quindi assegnatario e
+            // orario devono per forza arrivare nei turni dopo.
+            Text("Il promemoria è una conversazione: dopo la frase, Alexa chiede a chi assegnarlo — un nome, «a me» oppure «a nessuno» — e per quando — «domani alle otto», «giovedì», oppure «senza promemoria». Diventa un to-do nella lista Alexa, e la notifica arriva all'ora che hai detto.")
+                .alexaHint()
         }
     }
 
@@ -324,6 +321,7 @@ struct AlexaSettingsView: View {
         "«Alexa, chiedi a mio box di aggiungere il latte»",
         "«Alexa, chiedi a mio box cosa manca»",
         "«Alexa, chiedi a mio box di togliere il pane»",
+        "«Alexa, chiedi a mio box di ricordarmi di chiamare la scuola»",
         "«Alexa, apri mio box»"
     ]
 

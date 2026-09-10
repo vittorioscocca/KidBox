@@ -122,7 +122,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Alexa")
                                 .foregroundStyle(.primary)
-                            Text("Lista della spesa a voce sugli Echo")
+                            Text("Spesa e promemoria a voce sugli Echo")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
