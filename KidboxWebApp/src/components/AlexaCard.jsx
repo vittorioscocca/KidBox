@@ -174,23 +174,7 @@ export default function AlexaCard() {
         </>
       )}
 
-      {/* Il codice non sparisce col collegamento dell'account: se la voce non è
-          ancora associata serve ancora, ed è il caso del secondo membro di
-          casa, che l'account ce l'ha già per riflesso. */}
-      {!(linked && voiceLinked) &&
-        (code ? (
-          codeBlock
-        ) : (
-          <button className="prof-action" onClick={generate} disabled={generating}>
-            {linked ? a.voiceCta : a.generate}
-          </button>
-        ))}
-
-      {!(linked && voiceLinked) && (
-        <p className="pw-hint">{linked ? a.voiceNote : a.pairingNote}</p>
-      )}
-
-      {linked && voiceLinked && (
+      {linked && (
         <>
           <h3 className="alexa-sub">{a.phrasesSection}</h3>
           <ul className="alexa-phrases">
@@ -206,6 +190,26 @@ export default function AlexaCard() {
           <p className="pw-hint">{a.remindNote}</p>
         </>
       )}
+
+      {/* Il codice non sparisce col collegamento dell'account: se la voce non è
+          ancora associata serve ancora, ed è il caso del secondo membro di
+          casa, che l'account ce l'ha già per riflesso. */}
+      {!(linked && voiceLinked) &&
+        (code ? (
+          codeBlock
+        ) : (
+          <button className="prof-action" onClick={generate} disabled={generating}>
+            {linked ? a.voiceCta : a.generate}
+          </button>
+        ))}
+
+      {!(linked && voiceLinked) && (
+        <>
+          {linked && <p className="pw-hint">{a.voiceNote}</p>}
+          <p className="pw-hint">{a.pairingNote}</p>
+        </>
+      )}
+
 
       {linked && (
         <button className="set-link alexa-unlink" onClick={unlink} disabled={loading}>
