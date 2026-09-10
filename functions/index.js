@@ -5553,7 +5553,13 @@ const GC_SPECS = [
 
 exports.garbageCollectDeleted = onSchedule(
     {
-      schedule: "0 3 */5 * *",
+      // Giornaliero e non più ogni 5 giorni (`0 3 */5 * *`). Due ragioni:
+      // a vuoto un giro sono 4 query che non tornano nulla, quindi il costo di
+      // farlo 5 volte più spesso è ~4 letture al giorno; e una cadenza sopra le
+      // 25h non è sorvegliabile, perché Cloud Monitoring non accetta finestre
+      // più lunghe (vedi internal/monitoring.md). In più un documento cancellato
+      // aspettava fino a 5 giorni la rimozione definitiva, ora al massimo uno.
+      schedule: "0 3 * * *",
       timeZone: "Europe/Rome",
       region: "europe-west1",
       maxInstances: 1,

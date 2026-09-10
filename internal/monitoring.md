@@ -93,10 +93,21 @@ Da qui una regola generale: **uno scheduler che deve essere sorvegliabile va
 scritto con un cron, non con `every N hours`.** L'intervallo è ancorato
 all'ultimo run, quindi il deploy lo sposta; il cron no.
 
-**Uno scheduler non è coperto, e non per dimenticanza:** `garbageCollectDeleted`
-gira ogni 5 giorni, e Cloud Monitoring **non accetta finestre di assenza oltre
-23h30m né allineamenti oltre 25h** (lo dice l'API, verificato): la condizione
-non è proprio esprimibile. Servirebbe portarlo a cadenza giornaliera.
+**`garbageCollectDeleted` è passato a giornaliero il 10/09** (`0 3 * * *`
+Europe/Rome, prima `0 3 */5 * *`), per la stessa ragione: a 5 giorni di distanza
+fra un giro e l'altro non era sorvegliabile, perché Cloud Monitoring **non
+accetta finestre di assenza oltre 23h30m né allineamenti oltre 25h** (lo dice
+l'API, verificato) e nessuna condizione può quindi esprimere «non gira da 5
+giorni». Costo del cambio, misurato: a vuoto un giro sono 4 query che non
+tornano nulla, quindi farlo 5 volte più spesso vale ~4 letture al giorno. In
+cambio un documento cancellato aspetta al massimo un giorno la rimozione
+definitiva invece di cinque.
+
+> **In sospeso al 10/09:** non è ancora dentro la condizione dei cron notturni.
+> L'ultimo giro a cadenza vecchia è del 06/09, quindi la finestra di 25h è
+> vuota e aggiungerlo adesso aprirebbe un incidente immediato. Va aggiunto
+> all'elenco `one_of(...)` della condizione «cron notturno fermo da 26h» dopo
+> il primo giro giornaliero, previsto l'11/09 alle 01:00 UTC.
 
 Sui cron notturni l'assenza non è utilizzabile per lo stesso cap: la serie di
 uno scheduler giornaliero ha buchi di 24h per costruzione, quindi una condizione
