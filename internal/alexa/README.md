@@ -619,8 +619,14 @@ HOW TO TEST
    - Say "Alexa, chiedi a mio box di ricordarmi di chiamare la scuola".
    - Alexa asks who it is for: answer "a me".
    - Alexa asks when: answer "domani alle otto".
-   - Alexa confirms, and the reminder appears in the KidBox app under
-     Impegni, in the list named "Alexa".
+   - Alexa confirms. The reminder appears immediately in the KidBox app under
+     To-Do, in the list named "Alexa".
+   - The date can also be said in one go: "Alexa, chiedi a mio box di
+     ricordarmi di pagare la mensa domani alle otto".
+   - The push notification is sent at the time you said, not straight away.
+     If you want to see it during the review, pick a time a few minutes ahead
+     instead of "domani alle otto": due reminders are checked every 5 minutes,
+     so the notification arrives within 5 minutes of that time.
 6. Items dictated appear in the shopping list inside the KidBox app in real
    time. The link can be removed from Impostazioni > Alexa > "Scollega Alexa".
 
@@ -638,10 +644,11 @@ NOTES
   writes only to the shopping list and the to-do list inside the KidBox app.
 - The skill does not read or modify Alexa's own reminders, alarms or timers,
   nor Alexa's built-in shopping list. They all stay separate.
-- The skill uses Alexa Personalization only to attribute a dictated item to the
-  recognised speaker. It is optional: when the voice is not recognised, or the
-  speaker has no voice profile, the item is attributed to the account that
-  linked the skill and everything else works the same.
+- The skill uses Alexa Personalization only to attribute a dictated item or
+  reminder to the recognised speaker, and to let the user say "a me" ("for me")
+  when assigning a reminder. It is optional: when the voice is not recognised,
+  or the speaker has no voice profile, everything is attributed to the account
+  that linked the skill and the rest works the same.
 ```
 
 Username e Password nella pagina vanno lasciati **vuoti**: servono alle skill
