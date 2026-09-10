@@ -1368,6 +1368,68 @@ exports.onGeofenceEvent = onDocumentCreated(
 // TODO
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Cancella i to-do di una lista quando la lista viene cancellata.
+ *
+ * Il cascade lo fanno già tutti e tre i client (iOS, Android, web app), ma
+ * ognuno può cancellare solo i to-do che ha **in mano in quel momento**: se la
+ * lista viene eliminata mentre la sincronizzazione dei to-do non è ancora
+ * arrivata — o da una versione vecchia dell'app — restano to-do vivi che
+ * puntano a una lista che non c'è più. Sono invisibili in ogni schermata
+ * (i client mostrano i to-do dentro le liste), ma continuano a essere contati e
+ * il motore promemoria continua a notificarli. Trovati 2 casi reali il
+ * 10/09/2026, di cui uno da una lista cancellata cinque mesi prima.
+ *
+ * Qui il cascade è di sicurezza e vale per tutti i client insieme, presenti e
+ * passati. Quello lato client resta: serve a far sparire i to-do subito, anche
+ * offline.
+ */
+exports.cascadeDeleteTodosOfList = onDocumentWritten(
+    {
+      document: "families/{familyId}/todoLists/{listId}",
+      region: "europe-west1",
+      maxInstances: 20,
+    },
+    async (event) => {
+      const familyId = event.params.familyId;
+      const listId = event.params.listId;
+
+      const before = event.data?.before?.exists ? event.data.before.data() : null;
+      const after = event.data?.after?.exists ? event.data.after.data() : null;
+
+      if (!before) return;
+      // Soft delete (isDeleted da false a true) oppure documento rimosso davvero:
+      // in entrambi i casi la lista non esiste più e i suoi to-do vanno chiusi.
+      const softDeleted = after && before.isDeleted !== true && after.isDeleted === true;
+      const hardDeleted = !after;
+      if (!softDeleted && !hardDeleted) return;
+
+      // Un solo filtro di uguaglianza e `isDeleted` scartato in codice: i to-do
+      // di una lista sono pochi, e così non serve alcun indice composito.
+      const db = admin.firestore();
+      const snap = await db.collection("families").doc(familyId)
+          .collection("todos").where("listId", "==", listId).get();
+      const stale = snap.docs.filter((d) => d.get("isDeleted") !== true);
+      if (stale.length === 0) return;
+
+      const updatedBy = (after?.updatedBy || before.updatedBy || "system").toString();
+      const now = admin.firestore.FieldValue.serverTimestamp();
+
+      // A blocchi: il limite di un batch Firestore è 500 scritture.
+      for (let i = 0; i < stale.length; i += 400) {
+        const batch = db.batch();
+        for (const doc of stale.slice(i, i + 400)) {
+          batch.set(doc.ref, {isDeleted: true, updatedAt: now, updatedBy}, {merge: true});
+        }
+        await batch.commit();
+      }
+
+      logger.info("cascadeDeleteTodosOfList: to-do chiusi con la lista", {
+        familyId, listId, count: stale.length, hardDeleted,
+      });
+    },
+);
+
 exports.notifyTodoAssigned = onDocumentWritten(
     {
       document: "families/{familyId}/todos/{todoId}",
