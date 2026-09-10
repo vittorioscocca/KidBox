@@ -78,18 +78,25 @@ Finestre calibrate sui gap veri misurati dal 20/08 al 10/09, non a occhio:
 |---|---|---|---|
 | `expireTemporaryLocations`, `notifyDueTodoReminders` | 5 min | 5 min | 30 min |
 | `notifyUpcomingWalletTickets` | 60 min | 2h25m | 4h |
-| `analyticsRollupDaily`, `syncPlansConfig` | cron 03:15 / 03:30 | 23h45m | 26h |
+| `analyticsRollupDaily`, `cleanupResolvedCases`, `syncPlansConfig` | cron 02:00 / 03:15 / 03:30 | 23h45m | 26h |
 
-**Due scheduler non sono coperti, e non per dimenticanza:**
+**`cleanupResolvedCases` è passato a cron il 10/09**, ed è il motivo per cui è
+in tabella. Usava `every 24 hours`, che è un **intervallo** e riparte a ogni
+deploy: fra il 20/08 e il 10/09 l'orario è derivato (13:00 → 09:00 → 14:00 →
+11:00 → 18:00 → 00:00) con gap fino a 45h, sempre in corrispondenza di un
+rilascio. Nessuna finestra sotto le 45h poteva sorvegliarlo senza suonare a ogni
+deploy. Ora è `0 2 * * *` Europe/Rome — le 02:00 e non le 03:45 col resto del
+gruppo notturno perché è l'ora in cui già girava, e spostarlo in avanti avrebbe
+creato un buco di transizione sopra la soglia dell'allarme.
 
-- `cleanupResolvedCases` usa `every 24 hours`, che è un **intervallo** e riparte
-  a ogni deploy: i gap misurati arrivano a 45h (08-22, 08-28) e cadono sui
-  rilasci. Qualsiasi finestra sotto le 45h suonerebbe a ogni deploy. Diventerebbe
-  copribile cambiandolo in un cron a orario fisso.
-- `garbageCollectDeleted` gira ogni 5 giorni, e Cloud Monitoring **non accetta
-  finestre di assenza oltre 23h30m né allineamenti oltre 25h** (lo dice l'API,
-  verificato): la condizione non è proprio esprimibile. Servirebbe portarlo a
-  cadenza giornaliera.
+Da qui una regola generale: **uno scheduler che deve essere sorvegliabile va
+scritto con un cron, non con `every N hours`.** L'intervallo è ancorato
+all'ultimo run, quindi il deploy lo sposta; il cron no.
+
+**Uno scheduler non è coperto, e non per dimenticanza:** `garbageCollectDeleted`
+gira ogni 5 giorni, e Cloud Monitoring **non accetta finestre di assenza oltre
+23h30m né allineamenti oltre 25h** (lo dice l'API, verificato): la condizione
+non è proprio esprimibile. Servirebbe portarlo a cadenza giornaliera.
 
 Sui cron notturni l'assenza non è utilizzabile per lo stesso cap: la serie di
 uno scheduler giornaliero ha buchi di 24h per costruzione, quindi una condizione

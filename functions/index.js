@@ -6426,7 +6426,20 @@ exports.deleteCase = onCall(
  * Cron giornaliero: elimina i casi risolti da più di 7 giorni
  */
 exports.cleanupResolvedCases = onSchedule(
-    {schedule: "every 24 hours", region: "europe-west1", maxInstances: 1},
+    // Cron a orario fisso, non `every 24 hours`: quello è un intervallo e
+    // riparte a ogni deploy, quindi l'orario derivava (13:00 → 09:00 → 14:00 →
+    // 11:00 → 18:00 → 00:00 fra il 20/08 e il 10/09) con gap fino a 45h. Così
+    // non era sorvegliabile: nessuna finestra dell'allarme "scheduler muto"
+    // può stare sotto le 45h senza suonare a ogni rilascio.
+    // 02:00 e non 03:45 col resto del gruppo notturno perché è l'ora in cui
+    // già girava: spostarlo più avanti avrebbe creato un buco di transizione
+    // sopra la soglia dell'allarme, facendolo scattare una volta per nulla.
+    {
+      schedule: "0 2 * * *",
+      timeZone: "Europe/Rome",
+      region: "europe-west1",
+      maxInstances: 1,
+    },
     async () => {
       const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       // Un batch Firestore accetta al massimo 500 operazioni: con una singola
