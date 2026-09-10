@@ -1587,33 +1587,60 @@ exports.notifyNewGroceryItem = onDocumentCreated(
           {familyId, uids: recipients, field: "shopping"});
 
       for (const uid of recipients) {
-        const {tokens, lang} = tokensByUid.get(uid);
+        const {tokens, refsByToken, lang} = tokensByUid.get(uid);
         const badge = badgeByUid.get(uid) || 0;
-        messagesToSend.push(buildDataOnlyMessage({
+        // Si porta dietro uid, token e riferimenti: servono dopo l'invio per
+        // dire QUALE destinatario ha fallito e per cancellarne i token morti.
+        // Prima si sapeva solo che il conteggio dei fallimenti era diverso da
+        // zero, che a debug non serve a niente.
+        messagesToSend.push({
+          uid,
           tokens,
-          title: tn(lang, "grocery.title"),
-          body: tn(lang, "grocery.body", {
-            name: creatorName,
-            item: itemName || tn(lang, "grocery.fallback"),
+          refsByToken,
+          msg: buildDataOnlyMessage({
+            tokens,
+            title: tn(lang, "grocery.title"),
+            body: tn(lang, "grocery.body", {
+              name: creatorName,
+              item: itemName || tn(lang, "grocery.fallback"),
+            }),
+            data: {type: "new_grocery_item", familyId, itemId},
+            badge,
           }),
-          data: {type: "new_grocery_item", familyId, itemId},
-          badge,
-        }));
+        });
       }
 
       if (messagesToSend.length === 0) {
         logger.info("notifyNewGroceryItem: no per-user notifications to send"); return;
       }
 
-      const results = await Promise.allSettled(messagesToSend.map((msg) => admin.messaging().sendEachForMulticast(msg)));
+      const results = await Promise.allSettled(
+          messagesToSend.map((m) => admin.messaging().sendEachForMulticast(m.msg)),
+      );
       let totalSuccess = 0; let totalFailure = 0;
-      results.forEach((r) => {
+      for (const [i, r] of results.entries()) {
+        const target = messagesToSend[i];
         if (r.status === "fulfilled") {
           totalSuccess += r.value.successCount; totalFailure += r.value.failureCount;
+
+          if (r.value.failureCount > 0) {
+            const codes = r.value.responses
+                .filter((resp) => !resp.success)
+                .map((resp) => resp.error?.code || "sconosciuto");
+            logger.warn("notifyNewGroceryItem: invio fallito", {uid: target.uid, codes});
+            // Un token morto resta morto: senza la pulizia il destinatario
+            // continua a non ricevere nulla a ogni articolo, per sempre.
+            await pruneInvalidFcmTokens(
+                target.uid, target.tokens, r.value.responses, target.refsByToken,
+            ).catch(() => {});
+          }
         } else {
           totalFailure += 1;
+          logger.warn("notifyNewGroceryItem: invio rifiutato", {
+            uid: target.uid, err: String(r.reason),
+          });
         }
-      });
+      }
       logger.info("notifyNewGroceryItem: send result", {successCount: totalSuccess, failureCount: totalFailure, userTargets: messagesToSend.length});
     },
 );
