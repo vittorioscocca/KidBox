@@ -5,9 +5,8 @@
 > funzione, niente numeri di riga, niente struttura dei package — per quelli ci
 > sono gli `ARCHITECTURE.md` di ogni progetto, che restano l'autorità tecnica.
 >
-> ⚠️ Il [README.md](README.md) descrive l'MVP v0.1 del 2025 ed è **superato**:
-> esclude chat, foto, meal planner e posizione, che oggi esistono tutte. Vale
-> come documento di visione, non come mappa di cosa c'è.
+> Il [README.md](README.md) racconta perché KidBox esiste e com'è fatto; qui
+> c'è cosa fa.
 
 ---
 
