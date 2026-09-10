@@ -1955,6 +1955,15 @@ function storageQuotaBytesForPlan(plan) {
 }
 
 /**
+ * Motivo macchina-leggibile spedito nei `details` di un permission-denied per
+ * mancata appartenenza. Il client lo usa per distinguere «non sei (più) di
+ * questa famiglia» — che va gestito smettendo di chiamare e ricalcolando la
+ * famiglia attiva — da un rifiuto qualsiasi, che invece si può ritentare.
+ * Cambiarlo qui senza cambiarlo sui client rompe quel presidio.
+ */
+const NOT_FAMILY_MEMBER = "not-family-member";
+
+/**
  * Verifica che l'utente sia davvero membro della famiglia richiesta.
  *
  * CRITICO per le callable AI: il contatore quota è indicizzato su `familyId`,
@@ -1971,7 +1980,15 @@ async function assertFamilyMember(uid, familyId) {
       .collection("members").doc(uid).get();
   if (!memberSnap.exists) {
     logger.warn("AI callable: familyId non appartenente all'utente", {uid, familyId});
-    throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+    // `details` è la parte che il client sa leggere: senza un motivo
+    // macchina-leggibile un permission-denied è indistinguibile da un rifiuto
+    // di piano, e il client continua a chiamare all'infinito una famiglia che
+    // non è più sua. Vedi KBFamilyAccessGuard su iOS.
+    throw new HttpsError(
+        "permission-denied",
+        "Non sei membro di questa famiglia.",
+        {reason: NOT_FAMILY_MEMBER, familyId},
+    );
   }
 }
 
@@ -4285,7 +4302,13 @@ exports.getStorageUsage = onCall(
       const memberSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("members").doc(uid).get();
-      if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+      if (!memberSnap.exists) {
+        throw new HttpsError(
+            "permission-denied",
+            "Non sei membro di questa famiglia.",
+            {reason: NOT_FAMILY_MEMBER, familyId},
+        );
+      }
 
       const snap = await storageStatsRef(familyId).get();
       const legacy = snap.exists ? snap.data() : {};
@@ -4428,7 +4451,13 @@ exports.initStorageUsage = onCall(
       const memberSnap = await admin.firestore()
           .collection("families").doc(familyId)
           .collection("members").doc(uid).get();
-      if (!memberSnap.exists) throw new HttpsError("permission-denied", "Non sei membro di questa famiglia.");
+      if (!memberSnap.exists) {
+        throw new HttpsError(
+            "permission-denied",
+            "Non sei membro di questa famiglia.",
+            {reason: NOT_FAMILY_MEMBER, familyId},
+        );
+      }
 
       logger.info("initStorageUsage: starting", {uid, familyId});
 
