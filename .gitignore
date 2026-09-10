@@ -68,3 +68,11 @@ Facebook.local.xcconfig
 # Asset catalog: Contents.json is ignored globally but required for CI/App Store builds.
 !KidBox/KidBox/Assets.xcassets/Contents.json
 !KidBox/KidBox/Assets.xcassets/**/Contents.json
+
+# Claude Code
+#
+# Configurazione locale delle sessioni e worktree creati dagli agenti. I
+# worktree stanno in `.claude/worktrees/` e sono copie complete del repo: i tre
+# abbandonati trovati il 10/09/2026 pesavano 200 MB. Niente qui dentro
+# appartiene al progetto.
+.claude/
