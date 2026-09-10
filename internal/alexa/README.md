@@ -505,31 +505,40 @@ Locale **Italiano (IT)**:
 | Campo | Valore |
 | --- | --- |
 | Public Name | KidBox |
-| One Sentence Description | La lista della spesa di famiglia, a voce: quello che detti ad Alexa compare subito nell'app KidBox su tutti i dispositivi. |
+| One Sentence Description | La spesa e i promemoria di famiglia a voce: quello che detti ad Alexa compare subito nell'app KidBox su tutti i dispositivi. |
 | Example Phrase 1 | Alexa, apri mio box |
 | Example Phrase 2 | Alexa, chiedi a mio box di aggiungere il latte |
-| Example Phrase 3 | Alexa, chiedi a mio box cosa manca |
+| Example Phrase 3 | Alexa, chiedi a mio box di ricordarmi di chiamare la scuola |
 | Small Skill Icon | `internal/alexa/icons/kidbox-108.png` |
 | Large Skill Icon | `internal/alexa/icons/kidbox-512.png` |
 | Category | Shopping |
-| Keywords | spesa, lista della spesa, famiglia, supermercato, casa, organizzazione, kidbox |
+| Keywords | spesa, lista della spesa, promemoria, cose da fare, famiglia, supermercato, casa, organizzazione, kidbox |
 | Privacy Policy URL | https://kidboxapp.com/privacy.html |
 | Terms of Use URL | https://kidboxapp.com/terms.html |
 
-Detailed Description (2068/4000; rispetta i requisiti della console —
+Detailed Description (2886/4000; rispetta i requisiti della console —
 prerequisiti, dispositivi, passi numerati, nomi dei pulsanti come li vede
 l'utente, e la parola «skill» **non** tradotta):
 
 ```
-KidBox è l'app per organizzare la famiglia: spesa, calendario, documenti, salute e altro ancora. Questa skill porta la lista della spesa di KidBox su Alexa.
+KidBox è l'app per organizzare la famiglia: spesa, calendario, documenti, salute e altro ancora. Questa skill porta su Alexa la lista della spesa e i promemoria di KidBox.
 
 Quello che detti compare subito nell'app KidBox su iPhone, Android e web, e gli altri membri della famiglia ricevono la notifica come se l'avessi scritto a mano. Non è una lista separata da tenere allineata: è la stessa lista.
 
-COSA PUOI FARE
+COSA PUOI FARE CON LA LISTA DELLA SPESA
 - Aggiungere un articolo: "Alexa, chiedi a mio box di aggiungere il latte"
 - Sapere cosa manca: "Alexa, chiedi a mio box cosa manca"
 - Togliere un articolo: "Alexa, chiedi a mio box di togliere il pane"
 - Segnare un articolo come comprato: "Alexa, chiedi a mio box di segnare le uova come comprate"
+
+COSA PUOI FARE CON I PROMEMORIA
+- Creare un promemoria: "Alexa, chiedi a mio box di ricordarmi di chiamare la scuola"
+- Alexa poi chiede a chi assegnarlo, e tu rispondi con il nome di un membro della famiglia, oppure "a me", oppure "a nessuno".
+- Poi chiede per quando, e tu rispondi "domani alle otto", "giovedì", "fra due ore", oppure "senza promemoria" se non vuoi che suoni.
+- Puoi anche dire tutto in una frase sola: "Alexa, chiedi a mio box di ricordarmi di pagare la mensa domani alle otto"
+- Il promemoria diventa una voce nell'elenco delle cose da fare dell'app KidBox, e la notifica arriva sul telefono all'ora che hai indicato.
+
+E IN QUALSIASI MOMENTO
 - Aprire la skill e poi parlare: "Alexa, apri mio box"
 
 REQUISITI
@@ -542,14 +551,14 @@ COME INIZIARE
 2. Nell'app apri Impostazioni e poi Alexa.
 3. Tocca "Genera codice di collegamento": compare un codice di sei cifre, valido dieci minuti.
 4. Di' "Alexa, chiedi a mio box di collegarsi con" seguito dalle sei cifre.
-5. Da quel momento puoi dettare la lista. Non devi inserire password da nessuna parte.
+5. Da quel momento puoi dettare la lista della spesa e i promemoria. Non devi inserire password da nessuna parte.
 
 Il collegamento si fa una volta sola e resta valido. Se in casa i dispositivi Alexa sono registrati sullo stesso account Amazon, basta che lo faccia una persona sola: gli altri membri della famiglia possono parlare senza ripetere il collegamento. Puoi annullarlo quando vuoi da Impostazioni, Alexa, Scollega Alexa.
 
 NOTE
-- Questa skill non compra nulla e non aggiunge articoli al carrello Amazon. Scrive soltanto nella lista della spesa dell'app KidBox.
-- Questa skill non legge e non modifica la lista della spesa integrata di Alexa, che resta separata.
-- La skill è disponibile in italiano.
+- Questa skill non compra nulla e non aggiunge articoli al carrello Amazon. Scrive soltanto nella lista della spesa e nell'elenco delle cose da fare dell'app KidBox.
+- Questa skill non legge e non modifica la lista della spesa integrata di Alexa, né i promemoria, le sveglie e i timer di Alexa: restano tutti separati e continuano a funzionare come prima.
+- La funzionalità è disponibile in italiano.
 ```
 
 Le due righe finali sulle NOTE non sono richieste dalle regole: servono a
@@ -606,7 +615,13 @@ HOW TO TEST
    - "Alexa, chiedi a mio box cosa manca"
    - "Alexa, chiedi a mio box di togliere il latte"
    - "Alexa, apri mio box"
-5. Items dictated appear in the shopping list inside the KidBox app in real
+5. Then test the reminder, which is a multi-turn dialogue:
+   - Say "Alexa, chiedi a mio box di ricordarmi di chiamare la scuola".
+   - Alexa asks who it is for: answer "a me".
+   - Alexa asks when: answer "domani alle otto".
+   - Alexa confirms, and the reminder appears in the KidBox app under
+     Impegni, in the list named "Alexa".
+6. Items dictated appear in the shopping list inside the KidBox app in real
    time. The link can be removed from Impostazioni > Alexa > "Scollega Alexa".
 
 TRADEMARK / BRAND
@@ -620,7 +635,9 @@ NOTES
 - The skill is available in Italian (it-IT) only.
 - No hardware other than an Alexa-enabled device is required.
 - The skill does not purchase anything and does not use Alexa Shopping. It
-  writes only to the shopping list inside the KidBox app.
+  writes only to the shopping list and the to-do list inside the KidBox app.
+- The skill does not read or modify Alexa's own reminders, alarms or timers,
+  nor Alexa's built-in shopping list. They all stay separate.
 - The skill uses Alexa Personalization only to attribute a dictated item to the
   recognised speaker. It is optional: when the voice is not recognised, or the
   speaker has no voice profile, the item is attributed to the account that
