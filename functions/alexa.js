@@ -1047,6 +1047,314 @@ function displayTodoTitle(raw) {
   return clean.charAt(0).toUpperCase() + clean.slice(1);
 }
 
+// ── Momento detto dentro il titolo ──────────────────────────────────────────
+//
+// «ricordami di pagare la mensa domani alle otto» consegna a `task` TUTTA la
+// frase, data compresa: `AMAZON.SearchQuery` prende quello che trova e non
+// esiste modo di dirgli dove fermarsi. Il titolo nasceva quindi «Pagare la
+// mensa domani alle otto», e il momento andava ridetto al turno dopo.
+//
+// La regola che rende sicuro tagliare: **si toglie dal titolo SOLO ciò che si è
+// riusciti a trasformare in una data.** Non è una raffinatezza, è ciò che
+// elimina i due modi di sbagliare in un colpo solo:
+//   - non si taglia mai un pezzo di titolo legittimo, perché quello che non si
+//     capisce non si tocca;
+//   - non si perde mai un momento detto, perché ciò che si taglia diventa
+//     `remindAt` — e se poi risulta impossibile (già passato) si torna a
+//     chiedere invece di ingoiarlo.
+//
+// L'uscita ha la forma degli slot `AMAZON.DATE` e `AMAZON.TIME` di proposito:
+// così il momento estratto dal titolo e quello detto rispondendo a «per
+// quando?» passano dalla STESSA `resolveRemindAt`. Una regola sola sui pezzi
+// mancanti, una sola sul passato, un solo insieme di test.
+//
+// Solo italiano: il modello di interazione con questi intent esiste solo in
+// it-IT, e una grammatica inglese scritta a occhi chiusi taglierebbe titoli
+// veri per riconoscere frasi che nessuno può pronunciare.
+
+/** Numeri a lettere che possono comparire in un orario, 1-24. */
+const HOUR_WORDS = {
+  "una": 1, "uno": 1, "due": 2, "tre": 3, "quattro": 4, "cinque": 5,
+  "sei": 6, "sette": 7, "otto": 8, "nove": 9, "dieci": 10, "undici": 11,
+  "dodici": 12, "tredici": 13, "quattordici": 14, "quindici": 15,
+  "sedici": 16, "diciassette": 17, "diciotto": 18, "diciannove": 19,
+  "venti": 20, "ventuno": 21, "ventidue": 22, "ventitre": 23,
+  "ventitré": 23, "ventiquattro": 24,
+};
+const HOUR_WORD_ALT = Object.keys(HOUR_WORDS).join("|");
+
+/** Mesi, per «il 15 settembre». */
+const MONTHS = [
+  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+];
+
+/** Giorni della settimana, indice 0 = domenica come `Date.getUTCDay()`. */
+const WEEKDAYS = [
+  "domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato",
+];
+
+/**
+ * Momenti della giornata, nei codici che `AMAZON.TIME` userebbe: così
+ * `parseSpokenTime` li risolve già e non serve una seconda tabella di orari.
+ */
+const DAYPART_CODE = {
+  mattina: "MO", mattino: "MO", stamattina: "MO", stamane: "MO",
+  pomeriggio: "AF",
+  sera: "EV", stasera: "EV",
+  notte: "NI", stanotte: "NI",
+};
+
+/** Minuti delle frazioni d'ora dette a parole. */
+const FRACTIONS = {"mezza": 30, "mezzo": 30, "un quarto": 15, "tre quarti": 45};
+
+/**
+ * Data nella forma dello slot `AMAZON.DATE`.
+ * Il giro da `Date.UTC` normalizza gli sconfinamenti — «+1 giorno» il 31
+ * dicembre deve dare il 1° gennaio dell'anno dopo, non il 32 dicembre.
+ * @param {number} y
+ * @param {number} mo Mese 1-12.
+ * @param {number} d
+ * @return {string} `YYYY-MM-DD`.
+ */
+function dateSlot(y, mo, d) {
+  const at = new Date(Date.UTC(y, mo - 1, d));
+  return at.toISOString().slice(0, 10);
+}
+
+/**
+ * Ora nella forma dello slot `AMAZON.TIME`.
+ * @param {number} h
+ * @param {number} mi
+ * @return {string} `HH:MM`.
+ */
+function timeSlot(h, mi) {
+  return `${String(h).padStart(2, "0")}:${String(mi).padStart(2, "0")}`;
+}
+
+/**
+ * Ore da un gruppo di regex che può essere cifre o parola.
+ * @param {string} raw
+ * @return {number|null}
+ */
+function hourFrom(raw) {
+  const word = String(raw || "").toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(HOUR_WORDS, word)) return HOUR_WORDS[word];
+  const n = Number(word);
+  return Number.isInteger(n) && n >= 0 && n <= 24 ? n : null;
+}
+
+/**
+ * Coda oraria: «alle otto», «alle 8:30», «alle sette e mezza», «a mezzogiorno»,
+ * «di sera», «stasera».
+ */
+const TAIL_TIME = new RegExp(
+    "(?:^|\\s)(?:" +
+    // «a mezzogiorno» / «a mezzanotte»
+    "(?<midday>a\\s+mezzogiorno|a\\s+mezzanotte)" +
+    "|" +
+    // «alle 8», «alle otto e mezza», «per le 20:30», «all'una»
+    "(?:alle|all['’]|a\\s+le|per\\s+le|verso\\s+le)\\s*" +
+    `(?<hour>\\d{1,2}|${HOUR_WORD_ALT})` +
+    "(?:\\s*[:.]\\s*(?<min>\\d{2})|\\s+e\\s+(?<frac>mezza|mezzo|un\\s+quarto|tre\\s+quarti))?" +
+    "(?:\\s+in\\s+punto)?" +
+    "|" +
+    // «di sera», «del pomeriggio», «stasera»
+    "(?:(?:di|del|della|la|in)\\s+)?(?<part>mattina|mattino|pomeriggio|sera|notte|stamattina|stamane|stasera|stanotte)" +
+    ")\\s*$", "i");
+
+/**
+ * Coda del giorno: «domani», «giovedì», «il 15 settembre», «fra due ore».
+ */
+const TAIL_DAY = new RegExp(
+    "(?:^|\\s)(?:" +
+    "(?<rel>dopodomani|domani|oggi|stamattina|stamane|stasera|stanotte)" +
+    "|" +
+    `(?:(?:questo|questa|il|lo|la)\\s+)?(?<wd>${WEEKDAYS.join("|")})(?:\\s+(?:prossimo|prossima))?` +
+    "|" +
+    `(?:il\\s+|lo\\s+)?(?<dom>\\d{1,2}|primo)\\s+(?<month>${MONTHS.join("|")})` +
+    "|" +
+    // Lo spazio fra quantità e unità è `\\s*` e non `\\s+`: in «un'ora» e
+    // «mezz'ora» l'apostrofo fa già da confine e spazio non ce n'è.
+    "(?:fra|tra)\\s+(?<qty>\\d{1,3}|un['’]|mezz['’]|" + HOUR_WORD_ALT + ")\\s*(?<unit>minuti|minuto|ore|ora|giorni|giorno|settimane|settimana)" +
+    ")\\s*$", "i");
+
+/**
+ * Preposizione che trasforma un giorno da momento in aggettivo del titolo.
+ * Si guarda il testo che PRECEDE il pezzo temporale, apostrofi inclusi.
+ */
+const ADJECTIVAL_DAY = /(?:^|\s)(?:di|del|dello|della|dell['’])\s*$/i;
+
+/** Connettivi che restano appesi in coda dopo aver tolto un pezzo temporale. */
+const TAIL_CONNECTOR = /(?:^|\s)(?:di|del|dello|della|per|entro|verso)\s*$/i;
+
+/**
+ * Estrae dal titolo il momento detto, se c'è, e restituisce il titolo ripulito.
+ *
+ * Si consuma da destra e a giri: «domani alle otto» toglie prima l'ora e poi il
+ * giorno, «alle otto di domani» prima il giorno e poi l'ora più il connettivo.
+ * Un solo ordine non basterebbe, e due grammatiche separate per i due ordini
+ * sarebbero due cose da tenere allineate.
+ *
+ * Se dopo il taglio non resta niente, si annulla tutto e il titolo torna quello
+ * di partenza: «ricordami domani» vuol dire che il titolo È «domani», per
+ * quanto strano, e un to-do senza titolo non lo vuole nessuno.
+ * @param {string} raw Titolo grezzo dallo slot `task`.
+ * @param {number} nowMs
+ * @return {{title: string, date: string, time: string}}
+ */
+function extractWhenFromTitle(raw, nowMs) {
+  let rest = String(raw || "").replace(/\s+/g, " ").trim();
+  const original = rest;
+  const now = tzFields(nowMs);
+
+  let date = "";
+  let time = "";
+  // Alcune parole («stasera») dicono giorno e ora insieme: il codice del
+  // momento della giornata va ricordato anche quando a matchare è stato il
+  // ramo del giorno.
+  let pendingPart = "";
+
+  for (let pass = 0; pass < 4; pass++) {
+    let consumed = false;
+
+    if (!time) {
+      const m = TAIL_TIME.exec(rest);
+      if (m) {
+        const g = m.groups;
+        if (g.midday) {
+          time = /mezzanotte/i.test(g.midday) ? "00:00" : "12:00";
+        } else if (g.part) {
+          time = DAYPART_CODE[g.part.toLowerCase()];
+          if (/^sta/i.test(g.part)) pendingPart = "oggi";
+        } else {
+          const h = hourFrom(g.hour);
+          if (h === null) break;
+          const mi = g.min ? Number(g.min) :
+            (g.frac ? FRACTIONS[g.frac.toLowerCase().replace(/\s+/g, " ")] : 0);
+          if (mi > 59) break;
+          time = timeSlot(h % 24, mi);
+        }
+        rest = rest.slice(0, m.index).trim();
+        consumed = true;
+      }
+    }
+
+    if (!date) {
+      const m = TAIL_DAY.exec(rest);
+      // «il giornale di oggi», «la lezione di giovedì»: dopo un `di` il giorno
+      // qualifica il titolo invece di datarlo, e tagliarlo storpierebbe il
+      // to-do. Ma in «alle otto di domani» quello stesso `di` è il legame fra
+      // ora e giorno: a distinguerli è cosa sta PRIMA della preposizione — un
+      // orario, o una parola qualunque del titolo. Non basta chiedersi se
+      // un'ora è già stata consumata, perché qui l'ora sta a monte del `di` e
+      // il giro che consuma da destra non l'ha ancora vista.
+      const beforeDay = m ? rest.slice(0, m.index + 1) : "";
+      const conn = m ? ADJECTIVAL_DAY.exec(beforeDay) : null;
+      const adjectival = !!conn && !TAIL_TIME.test(beforeDay.slice(0, conn.index));
+      if (m && !adjectival) {
+        const g = m.groups;
+        const resolved = resolveDayGroups(g, now, nowMs, time);
+        if (resolved) {
+          date = resolved.date;
+          if (resolved.time && !time) time = resolved.time;
+          if (resolved.part && !time) time = resolved.part;
+          rest = rest.slice(0, m.index).trim();
+          consumed = true;
+        }
+      }
+    }
+
+    if (consumed) {
+      const c = TAIL_CONNECTOR.exec(rest);
+      if (c) rest = rest.slice(0, c.index).trim();
+    } else {
+      break;
+    }
+  }
+
+  if (pendingPart === "oggi" && !date) {
+    date = dateSlot(now.y, now.mo, now.d);
+  }
+  // Niente riconosciuto, o riconosciuto tutto: il titolo resta com'era e il
+  // momento si chiede al turno dopo, come prima.
+  if ((!date && !time) || !rest) {
+    return {title: original, date: "", time: ""};
+  }
+  return {title: rest, date, time};
+}
+
+/**
+ * Traduce i gruppi catturati dal ramo "giorno" in una data.
+ *
+ * Il giorno della settimana e il giorno del mese si risolvono SEMPRE in avanti:
+ * «giovedì» detto di giovedì sera vuol dire il giovedì prossimo, non quello
+ * appena passato. L'ora già estratta serve proprio a decidere questo, ed è il
+ * motivo per cui l'ora si consuma prima del giorno.
+ * @param {object} g Gruppi della regex.
+ * @param {object} now Campi calendariali di adesso nel fuso di riferimento.
+ * @param {number} nowMs
+ * @param {string} knownTime Ora già estratta, in forma di slot, o "".
+ * @return {{date: string, time?: string, part?: string}|null}
+ */
+function resolveDayGroups(g, now, nowMs, knownTime) {
+  if (g.rel) {
+    const word = g.rel.toLowerCase();
+    const shift = word === "domani" ? 1 : (word === "dopodomani" ? 2 : 0);
+    const out = {date: dateSlot(now.y, now.mo, now.d + shift)};
+    if (DAYPART_CODE[word]) out.part = DAYPART_CODE[word];
+    return out;
+  }
+
+  if (g.wd) {
+    const want = WEEKDAYS.indexOf(g.wd.toLowerCase());
+    if (want < 0) return null;
+    const clock = parseSpokenTime(knownTime) || {h: DEFAULT_REMIND_HOUR, mi: 0};
+    for (let k = 0; k < 8; k++) {
+      const probe = new Date(Date.UTC(now.y, now.mo - 1, now.d + k));
+      if (probe.getUTCDay() !== want) continue;
+      const at = tzInstant(probe.getUTCFullYear(), probe.getUTCMonth() + 1,
+          probe.getUTCDate(), clock.h, clock.mi);
+      if (at.getTime() > nowMs) return {date: dateSlot(now.y, now.mo, now.d + k)};
+    }
+    return null;
+  }
+
+  if (g.dom && g.month) {
+    const day = /primo/i.test(g.dom) ? 1 : Number(g.dom);
+    const month = MONTHS.indexOf(g.month.toLowerCase()) + 1;
+    if (!day || day > 31 || month < 1) return null;
+    const clock = parseSpokenTime(knownTime) || {h: DEFAULT_REMIND_HOUR, mi: 0};
+    // Senza anno si intende il prossimo passaggio: «il 3 gennaio» detto a
+    // dicembre è l'anno dopo, non dieci mesi fa.
+    for (const y of [now.y, now.y + 1]) {
+      if (tzInstant(y, month, day, clock.h, clock.mi).getTime() > nowMs) {
+        return {date: dateSlot(y, month, day)};
+      }
+    }
+    return null;
+  }
+
+  if (g.qty && g.unit) {
+    const unit = g.unit.toLowerCase();
+    const raw = g.qty.replace(/['’]$/, "");
+    const qty = /^mezz/i.test(raw) ? 0.5 : (/^un$/i.test(raw) ? 1 : hourFrom(raw));
+    if (qty === null || qty <= 0) return null;
+    const perUnit = unit.startsWith("minut") ? 60000 :
+      (unit.startsWith("or") ? 3600000 :
+        (unit.startsWith("giorn") ? 86400000 : 604800000));
+    const at = tzFields(nowMs + qty * perUnit);
+    return {
+      date: dateSlot(at.y, at.mo, at.d),
+      // Un «fra» è un istante, non un giorno: l'ora fa parte della risposta e
+      // non va sostituita dalle 9 di default.
+      time: timeSlot(at.h, at.mi),
+    };
+  }
+
+  return null;
+}
+
 /**
  * Forma confrontabile di un nome di persona: senza accenti, senza
  * punteggiatura, minuscola.
@@ -1269,6 +1577,11 @@ function reminderState(body) {
     title: String(attrs.title || ""),
     assignedTo: String(attrs.assignedTo || ""),
     assigneeName: String(attrs.assigneeName || ""),
+    // Momento già detto dentro la frase iniziale, in forma di slot. Se c'è, la
+    // domanda «per quando?» non si fa: sarebbe richiedere una cosa appena
+    // sentita, che è il modo più veloce di far sembrare stupido un assistente.
+    date: String(attrs.date || ""),
+    time: String(attrs.time || ""),
   };
 }
 
@@ -1285,6 +1598,8 @@ function reminderAttrs(state, stage) {
     title: state.title,
     assignedTo: state.assignedTo,
     assigneeName: state.assigneeName,
+    date: state.date || "",
+    time: state.time || "",
   };
 }
 
@@ -1326,19 +1641,55 @@ async function finishReminder(link, state, remindAt, t, lang, nowMs) {
  * @param {object} t
  * @return {object}
  */
-function startReminder(body, t) {
-  const title = displayTodoTitle(slotValue(body.request.intent, "task"));
+function startReminder(body, t, lang) {
+  // L'estrazione precede la ripulitura: la maiuscola iniziale va messa sul
+  // titolo DEFINITIVO, non su uno che poi perde la coda.
+  const raw = slotValue(body.request.intent, "task");
+  const parsed = lang === "it" ?
+    extractWhenFromTitle(raw, Date.now()) :
+    {title: raw, date: "", time: ""};
+  const title = displayTodoTitle(parsed.title);
   if (!title) {
     // La sessione resta aperta e il reprompt chiede la frase INTERA, non solo
     // il titolo: il titolo da solo non ha un intent che lo raccolga, perché un
     // sample fatto del solo `{task}` intercetterebbe qualunque cosa si dica
     // nella skill, «aggiungi il latte» compreso.
     return speak(t.remindAskTitle, false, t.remindAskTitle,
-        {flow: REMINDER_FLOW, stage: "title", title: "", assignedTo: "", assigneeName: ""});
+        {flow: REMINDER_FLOW, stage: "title", title: "", assignedTo: "",
+          assigneeName: "", date: "", time: ""});
   }
-  const state = {title, assignedTo: "", assigneeName: ""};
+  const state = {title, assignedTo: "", assigneeName: "",
+    date: parsed.date, time: parsed.time};
   return speak(t.remindAskAssignee(title), false, t.remindAskAssignee(title),
       reminderAttrs(state, "assignee"));
+}
+
+/**
+ * Passo dopo l'assegnatario: chiedere il momento, o chiudere se era già dentro
+ * la frase iniziale.
+ *
+ * Quando il momento estratto non regge — non risolvibile, oppure già passato —
+ * si torna a chiedere, ma il titolo resta ripulito e gli slot estratti si
+ * buttano: tenerli farebbe ripetere lo stesso errore a ogni giro.
+ * @param {object} link
+ * @param {object} state
+ * @param {object} t
+ * @param {"it"|"en"} lang
+ * @return {Promise<object>}
+ */
+async function askWhenOrFinish(link, state, t, lang) {
+  const nowMs = Date.now();
+  if (state.date || state.time) {
+    const resolved = resolveRemindAt(state.date, state.time, nowMs);
+    if (resolved.status === "ok") {
+      return finishReminder(link, state, resolved.at, t, lang, nowMs);
+    }
+    const clean = {...state, date: "", time: ""};
+    return speak(
+        resolved.status === "past" ? t.remindWhenPast : t.remindAskWhen,
+        false, t.remindAskWhen, reminderAttrs(clean, "when"));
+  }
+  return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(state, "when"));
 }
 
 /**
@@ -1361,8 +1712,7 @@ async function handleReminderAssignee(body, link, state, t, lang) {
     // Nessun nome leggibile: non è il caso di insistere con una domanda a cui
     // l'utente non può rispondere. Si tira dritto senza assegnatario, che è
     // comunque un promemoria che raggiunge tutta la famiglia.
-    return speak(t.remindNoMembers, false, t.remindAskWhen,
-        reminderAttrs(state, "when"));
+    return askWhenOrFinish(link, state, t, lang);
   }
 
   const match = matchMember(spoken, members);
@@ -1380,7 +1730,7 @@ async function handleReminderAssignee(body, link, state, t, lang) {
   }
 
   const next = {...state, assignedTo: match.member.uid, assigneeName: match.member.name};
-  return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(next, "when"));
+  return askWhenOrFinish(link, next, t, lang);
 }
 
 /**
@@ -1561,7 +1911,7 @@ async function dispatch(body, lang) {
     // Il primo turno riparte sempre da zero, anche a flusso aperto: chi ridice
     // «ricordami di…» a metà dialogo sta ricominciando, non rispondendo.
     case "AddReminderIntent":
-      return startReminder(body, t);
+      return startReminder(body, t, lang);
 
     case "ReminderAssigneeIntent": {
       const state = reminderState(body);
@@ -1578,7 +1928,7 @@ async function dispatch(body, lang) {
       // spesa, quindi «a me» significa la stessa persona che risulta autrice.
       const name = await memberName(link.familyId, link.authorUid);
       const next = {...state, assignedTo: link.authorUid, assigneeName: name || ""};
-      return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(next, "when"));
+      return askWhenOrFinish(link, next, t, lang);
     }
 
     case "ReminderWhenIntent": {
@@ -1603,7 +1953,7 @@ async function dispatch(body, lang) {
       if (state.stage === "when") {
         return finishReminder(link, state, null, t, lang, Date.now());
       }
-      return speak(t.remindAskWhen, false, t.remindAskWhen, reminderAttrs(state, "when"));
+      return askWhenOrFinish(link, state, t, lang);
     }
 
     // Una parola non capita non deve costare il promemoria già a metà: si
@@ -1876,6 +2226,7 @@ exports.__testables = {
   normalizeItemName, displayItemName, spokenList, isValidCertChainUrl, guessCategory,
   displayTodoTitle, normalizePersonName, matchMember,
   parseSpokenDate, parseSpokenTime, tzInstant, resolveRemindAt, spokenWhen,
+  extractWhenFromTitle,
   // `dispatch` sta qui perché il promemoria è un dialogo in più turni: le
   // funzioni pure coprono i pezzi, ma è la sequenza dei turni — con gli
   // attributi di sessione che passano avanti e indietro — la parte che si

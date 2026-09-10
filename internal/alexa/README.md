@@ -335,6 +335,54 @@ rifiutato e richiesto. `AMAZON.DATE` risolve anche cose che un giorno preciso
 non sono («questa settimana» → `2026-W38`): si accetta solo `YYYY-MM-DD`, e per
 il resto si richiede invece di indovinare.
 
+### Il momento detto dentro il titolo
+
+«ricordami di pagare la mensa **domani alle otto**» consegna a `task` tutta la
+frase, data compresa: `AMAZON.SearchQuery` prende quello che trova e non esiste
+modo di dirgli dove fermarsi. Il titolo nasceva quindi «Pagare la mensa domani
+alle otto».
+
+`extractWhenFromTitle` riconosce la coda temporale, la toglie dal titolo e la
+usa come `remindAt`. Il turno «per quando?» sparisce: due domande diventano una.
+
+**La regola che rende sicuro tagliare: si toglie solo ciò che si è riusciti a
+trasformare in una data.** Elimina i due modi di sbagliare insieme — non si
+taglia mai un pezzo di titolo legittimo, perché quello che non si capisce non si
+tocca; e non si perde mai un momento detto, perché ciò che si taglia diventa il
+promemoria. Se il momento risulta già passato si torna a chiedere, col titolo
+comunque ripulito.
+
+L'uscita ha la forma degli slot `AMAZON.DATE` e `AMAZON.TIME` di proposito: il
+momento estratto dal titolo e quello detto rispondendo a «per quando?» passano
+dalla **stessa** `resolveRemindAt`. Una regola sola sui pezzi mancanti, una sola
+sul passato, un solo insieme di test.
+
+Riconosce: `oggi` `domani` `dopodomani` `stasera` `stamattina` `stanotte`, i
+giorni della settimana (sempre risolti **in avanti**: «giovedì» detto giovedì
+sera è quello prossimo), `il 15 settembre` (e l'anno dopo se è già passato),
+`alle otto` / `alle 8` / `alle 8:30` / `alle sette e mezza` / `a mezzogiorno`,
+`di mattina` `di sera`, e `fra venti minuti` / `fra un'ora` / `fra tre giorni`.
+Consuma da destra e a giri, così «domani alle otto» e «alle otto di domani»
+funzionano entrambi senza due grammatiche da tenere allineate.
+
+Due falsi positivi trovati provandolo, e come sono chiusi:
+
+- **«prenotare il tavolo per otto»** — `per otto` sono persone. L'orario vuole
+  `alle`/`per le`, non `per` da solo.
+- **«comprare il giornale di oggi»** — dopo un `di` il giorno qualifica il
+  titolo invece di datarlo. Ma in «alle otto **di** domani» quello stesso `di` è
+  il legame fra ora e giorno: a distinguerli è cosa sta **prima** della
+  preposizione, un orario o una parola qualunque. Non basta chiedersi se un'ora
+  è già stata consumata — lì l'ora sta a monte del `di`, e il giro che consuma
+  da destra non l'ha ancora vista.
+
+Se non resta niente dopo il taglio, si annulla tutto: «ricordami domani» vuol
+dire che il titolo **è** «domani», e un to-do senza titolo non lo vuole nessuno.
+
+Solo italiano. Una grammatica inglese scritta a occhi chiusi taglierebbe titoli
+veri per riconoscere frasi che, senza gli intent in `en-GB`, nessuno può
+pronunciare.
+
 ### Come si risolve l'assegnatario
 
 Il nome detto si confronta con `families/{familyId}/members`, campo
