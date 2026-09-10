@@ -372,6 +372,7 @@ const WEB_ROUTES = {
   text: "/chat",
   todo_assigned: "/todo",
   todo_due_changed: "/todo",
+  todo_reminder: "/todo",
   new_calendar_event: "/calendario",
   new_document: "/documenti",
   new_expense: "/spese",
@@ -5943,6 +5944,212 @@ exports.notifyUpcomingWalletTickets = onSchedule(
       logger.info("notifyUpcomingWalletTickets: complete", {total24h, total2h, totalCustom});
     },
 );
+
+/**
+ * Promemoria dei to-do: notifica alla scadenza impostata.
+ *
+ * **Perché due campi nuovi invece di riusare `dueAt`.** `dueAt` è la scadenza
+ * mostrata in app, la mette l'utente e la cambia quando vuole; `remindAt` è
+ * l'ordine di suonare. Tenerli separati permette una scadenza senza promemoria
+ * (il caso normale: 19 to-do su 80 in produzione hanno `dueAt`, nessuno voleva
+ * una notifica) e un promemoria a un'ora diversa dalla scadenza.
+ *
+ * **Perché non può suonare due volte.** I promemoria locali di iOS e Android
+ * vivono su `reminderEnabled`/`reminderId`, campi che **non vengono mai
+ * sincronizzati** su Firestore: il server non li vede e non li scrive. Un
+ * to-do creato dal telefono continua a essere sveglia del telefono; solo chi
+ * scrive `remindAt` (oggi: Alexa) passa da qui. Le due strade non si
+ * incrociano per costruzione, non per accordo. Vedi la nota di memoria
+ * "Promemoria locali = del device".
+ *
+ * **Perché la query filtra su `remindSentAt == null`.** È l'unico modo di
+ * leggere *solo* i promemoria ancora da sparare: senza, ogni giro rileggerebbe
+ * tutti quelli già inviati. Costo: chi scrive `remindAt` **deve** scrivere
+ * anche `remindSentAt: null` esplicitamente — un campo assente non è uguale a
+ * `null` e il documento resterebbe invisibile per sempre, in silenzio.
+ *
+ * Ogni 5 minuti: è la risoluzione del promemoria. Alexa accetta un orario al
+ * minuto, quindi il ritardo massimo percepito è di 5 minuti.
+ */
+exports.notifyDueTodoReminders = onSchedule(
+    {
+      schedule: "every 5 minutes",
+      region: "europe-west1",
+      maxInstances: 1,
+      timeZone: "Europe/Rome",
+    },
+    async () => {
+      const db = admin.firestore();
+      const now = new Date();
+      const nowTs = admin.firestore.Timestamp.fromDate(now);
+
+      // Nessun limite inferiore: se lo scheduler è stato fermo per ore, i
+      // promemoria arretrati sono ancora `remindSentAt == null` e partono al
+      // primo giro utile. Meglio in ritardo che mai — e comunque non si
+      // accumulano, perché appena inviati escono dalla query.
+      const snap = await db.collectionGroup("todos")
+          .where("remindSentAt", "==", null)
+          .where("remindAt", "<=", nowTs)
+          .get();
+
+      if (snap.empty) return;
+
+      logger.info("notifyDueTodoReminders: start", {due: snap.size});
+
+      // Cache per esecuzione: più promemoria della stessa famiglia nello stesso
+      // giro rileggerebbero membri e token una volta ciascuno.
+      const membersCache = new Map(); // familyId → uid[]
+      const listNameCache = new Map(); // `${familyId}/${listId}` → nome
+
+      /**
+       * Uid dei membri di una famiglia, letti una sola volta per esecuzione.
+       * @param {string} familyId
+       * @return {Promise<string[]>}
+       */
+      const memberUidsOf = async (familyId) => {
+        if (membersCache.has(familyId)) return membersCache.get(familyId);
+        const s = await db.collection("families").doc(familyId)
+            .collection("members").get();
+        const uids = s.docs.map((d) => d.id).filter(Boolean);
+        membersCache.set(familyId, uids);
+        return uids;
+      };
+
+      /**
+       * Nome della lista che contiene il to-do, per dare contesto al testo.
+       * @param {string} familyId
+       * @param {?string} listId
+       * @return {Promise<string>} nome, o stringa vuota se non risolvibile.
+       */
+      const listNameOf = async (familyId, listId) => {
+        if (!listId) return "";
+        const key = `${familyId}/${listId}`;
+        if (listNameCache.has(key)) return listNameCache.get(key);
+        let name = "";
+        try {
+          const d = await db.collection("families").doc(familyId)
+              .collection("todoLists").doc(listId).get();
+          name = (d.exists && (d.get("name") || "").toString().trim()) || "";
+        } catch (e) {
+          logger.warn("notifyDueTodoReminders: list read failed", {familyId, listId, err: e.message});
+        }
+        listNameCache.set(key, name);
+        return name;
+      };
+
+      let sent = 0; let skipped = 0;
+
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        const ref = doc.ref;
+
+        // Path: families/{familyId}/todos/{todoId}
+        const familyId = ref.path.split("/")[1];
+        const todoId = doc.id;
+
+        // Un to-do chiuso o cancellato non deve suonare. Il filtro sta qui e
+        // non nella query perché aggiungerlo costringerebbe a un indice
+        // composto in più senza ridurre le letture: i to-do con un promemoria
+        // pendente sono comunque pochi.
+        if (data.isDeleted === true || data.isDone === true) {
+          await markSent(ref, {reason: data.isDone ? "done" : "deleted"});
+          skipped++;
+          continue;
+        }
+
+        // Destinatario: chi ha il to-do assegnato. Senza assegnatario il
+        // promemoria è di famiglia e va a tutti — un promemoria che non
+        // raggiunge nessuno è peggio di uno che raggiunge una persona in più.
+        const assignedTo = (data.assignedTo || "").toString().trim();
+        const targetUids = assignedTo ? [assignedTo] : await memberUidsOf(familyId);
+
+        if (targetUids.length === 0) {
+          logger.warn("notifyDueTodoReminders: no recipients", {familyId, todoId});
+          await markSent(ref, {reason: "no_recipients"});
+          skipped++;
+          continue;
+        }
+
+        const title = (data.title || "").toString().trim();
+        const listName = await listNameOf(familyId, data.listId);
+
+        const byUid = await getTokensForUsers(targetUids, "notifyOnTodoAssigned");
+
+        let ok = 0; let ko = 0;
+        for (const [uid, entry] of byUid) {
+          const {tokens, refsByToken, lang} = entry;
+          if (!tokens || tokens.length === 0) continue;
+
+          const body = listName ?
+            tn(lang, "todo.reminderBodyWithList", {
+              title: title || tn(lang, "todo.fallback"),
+              list: listName,
+            }) :
+            tn(lang, "todo.reminderBody", {title: title || tn(lang, "todo.fallback")});
+
+          // Nessun incremento dei contatori: come per i biglietti, un
+          // promemoria non è un elemento nuovo in app, quindi il badge della
+          // sezione to-do non deve crescere.
+          const msg = buildDataOnlyMessage({
+            tokens,
+            title: tn(lang, "todo.reminderTitle"),
+            body,
+            data: {
+              type: "todo_reminder",
+              familyId,
+              todoId,
+              listId: (data.listId || "").toString(),
+              // `childId` non serve più a filtrare niente, ma iOS lo pretende:
+              // il ramo to-do di NotificationManager è un `guard let` su tutti
+              // e quattro gli id, e senza questo campo scarta il deep link con
+              // «Invalid todo payload». Stringa vuota è un valore valido.
+              childId: (data.childId || "").toString(),
+            },
+          });
+
+          try {
+            const res = await admin.messaging().sendEachForMulticast(msg);
+            ok += res.successCount;
+            ko += res.failureCount;
+            await pruneInvalidFcmTokens(uid, tokens, res.responses, refsByToken);
+          } catch (e) {
+            ko += tokens.length;
+            logger.warn("notifyDueTodoReminders: send failed", {familyId, todoId, uid, err: e.message});
+          }
+        }
+
+        // Si marca come inviato in ogni caso, anche con zero token: altrimenti
+        // un utente senza dispositivi registrati farebbe rileggere lo stesso
+        // documento a ogni giro, per sempre.
+        await markSent(ref, {ok, ko});
+        sent++;
+        logger.info("notifyDueTodoReminders: sent", {familyId, todoId, recipients: targetUids.length, ok, ko});
+      }
+
+      logger.info("notifyDueTodoReminders: complete", {sent, skipped});
+    },
+);
+
+/**
+ * Chiude un promemoria scrivendo `remindSentAt`, che lo fa uscire dalla query.
+ *
+ * È l'unico presidio contro il doppio invio, quindi un errore qui va loggato e
+ * non ingoiato: un `remindSentAt` non scritto significa la stessa notifica a
+ * ogni giro da qui all'eternità.
+ * @param {FirebaseFirestore.DocumentReference} ref documento del to-do.
+ * @param {object} meta informazioni diagnostiche da conservare sul documento.
+ * @return {Promise<void>}
+ */
+async function markSent(ref, meta) {
+  try {
+    await ref.set({
+      remindSentAt: admin.firestore.FieldValue.serverTimestamp(),
+      remindResult: meta,
+    }, {merge: true});
+  } catch (e) {
+    logger.error("notifyDueTodoReminders: markSent FAILED", {path: ref.path, err: e.message});
+  }
+}
 
 // Disattivata: l'analisi AI-assisted via Gemini richiedeva una API key a pagamento.
 // Risponde "nessun problema rilevato" senza mai chiamare l'API esterna, così eventuali

@@ -77,6 +77,11 @@ const STRINGS = {
     "expense.body": "{title} · {amount}",
     "expense.fallback": "Spesa",
 
+    "todo.reminderTitle": "⏰ Promemoria",
+    "todo.reminderBody": "{title}",
+    "todo.reminderBodyWithList": "{title} — {list}",
+    "todo.fallback": "Promemoria",
+
     "wallet.ticketTitle": "🎟️ Nuovo biglietto nel Wallet",
     "wallet.ticketBody": "{who} · {kind}",
     "wallet.ticketBodyWithDate": "{who} · {kind} — {date}",
@@ -138,6 +143,11 @@ const STRINGS = {
     "expense.title": "💸 New expense recorded",
     "expense.body": "{title} · {amount}",
     "expense.fallback": "Expense",
+
+    "todo.reminderTitle": "⏰ Reminder",
+    "todo.reminderBody": "{title}",
+    "todo.reminderBodyWithList": "{title} — {list}",
+    "todo.fallback": "Reminder",
 
     "wallet.ticketTitle": "🎟️ New ticket in Wallet",
     "wallet.ticketBody": "{who} · {kind}",
@@ -201,6 +211,11 @@ const STRINGS = {
     "expense.body": "{title} · {amount}",
     "expense.fallback": "Dépense",
 
+    "todo.reminderTitle": "⏰ Rappel",
+    "todo.reminderBody": "{title}",
+    "todo.reminderBodyWithList": "{title} — {list}",
+    "todo.fallback": "Rappel",
+
     "wallet.ticketTitle": "🎟️ Nouveau billet dans le Wallet",
     "wallet.ticketBody": "{who} · {kind}",
     "wallet.ticketBodyWithDate": "{who} · {kind} — {date}",
@@ -262,6 +277,11 @@ const STRINGS = {
     "expense.title": "💸 Nuevo gasto registrado",
     "expense.body": "{title} · {amount}",
     "expense.fallback": "Gasto",
+
+    "todo.reminderTitle": "⏰ Recordatorio",
+    "todo.reminderBody": "{title}",
+    "todo.reminderBodyWithList": "{title} — {list}",
+    "todo.fallback": "Recordatorio",
 
     "wallet.ticketTitle": "🎟️ Nuevo billete en el Wallet",
     "wallet.ticketBody": "{who} · {kind}",
