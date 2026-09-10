@@ -76,3 +76,12 @@ Facebook.local.xcconfig
 # abbandonati trovati il 10/09/2026 pesavano 200 MB. Niente qui dentro
 # appartiene al progetto.
 .claude/
+
+# Eccezione: il launch.json della landing resta tracciato — descrive il server
+# di anteprima del sito, che è configurazione del progetto e non della
+# macchina. Le tre righe servono tutte: git non entra in una cartella ignorata,
+# quindi prima si riammette la cartella, poi si rignora il suo contenuto, e
+# infine si riammette il singolo file.
+!KidboxLanding/.claude/
+KidboxLanding/.claude/*
+!KidboxLanding/.claude/launch.json
