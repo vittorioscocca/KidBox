@@ -198,7 +198,6 @@ export default function AlexaCard() {
               <li key={p}>{p}</li>
             ))}
           </ul>
-          <p className="pw-hint">{a.phrasesNote}</p>
           {/* Il promemoria e' l'unico comando che non si esaurisce in una
               frase: senza dirlo, l'utente sente la prima domanda e chiude.
               E' un vincolo di Amazon, non una scelta: AMAZON.SearchQuery,
