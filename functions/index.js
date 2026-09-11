@@ -63,7 +63,16 @@ async function updateStorageBytes(familyId, delta, section = null) {
   };
 
   if (section) {
-    update[`sections.${section}`] = admin.firestore.FieldValue.increment(delta);
+    // Oggetto annidato, NON la chiave `sections.${section}`: in `set()` un
+    // punto nel nome del campo è letterale e non un percorso — solo `update()`
+    // lo interpreta. Scritta così, per mesi questa funzione ha incrementato
+    // campi di primo livello chiamati "sections.documents", "sections.chat"…
+    // che nessuno leggeva, mentre la mappa `sections` che legge
+    // getStorageUsage restava ferma all'ultimo ricalcolo completo.
+    // Verificato l'11/09/2026 sul documento reale, che conteneva entrambi.
+    update.sections = {
+      [section]: admin.firestore.FieldValue.increment(delta),
+    };
   }
 
   await storageStatsRef(familyId).set(update, {merge: true});
@@ -4317,6 +4326,89 @@ exports.notifyNewExpense = onDocumentCreated(
 // STORAGE — getStorageUsage
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+/** Sezioni media mantenute dai trigger in `families/{id}/stats/storage`. */
+const MEDIA_SECTIONS = {
+  documents: "docBytes",
+  wallet: "walletBytes",
+  chat: "chatBytes",
+  photos: "photoBytes",
+  salute: "saluteBytes",
+};
+
+/**
+ * Ogni quanto si rifà la scansione completa per riallineare il contatore.
+ * Non è la freschezza del dato — quella la garantiscono i trigger, che
+ * incrementano a ogni scrittura — ma solo il passo della riconciliazione.
+ */
+const MEDIA_RECONCILE_EVERY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Byte dei media: dal contatore mantenuto quando c'è ed è stato riconciliato
+ * di recente, altrimenti ricalcolati e riscritti.
+ *
+ * Le cinque sezioni media sono già tenute aggiornate da undici trigger
+ * (`notifyNewDocument`, `onDocumentHardDeleted`, `onDocumentSoftDeleted`,
+ * `notifyNewChatMessage`, `onChatMessageSoftDeleted`, `onPhotoCreated`,
+ * `onPhotoHardDeleted`, `onPhotoSoftDeleted`, `onMedicalVisitWritten` ×2,
+ * `onWalletTicketStorageChanged`) via `updateStorageBytes`, che usa
+ * `FieldValue.increment`. Sono trigger Firestore: scattano server-side su
+ * qualsiasi scrittura, da qualsiasi client, hard delete inclusi.
+ *
+ * `getStorageUsage` però li ignorava e rifaceva cinque scansioni di collezione
+ * intera a ogni invocazione — su una famiglia reale ~290 documenti per
+ * chiamata, a ogni avvio dell'app di ogni utente, perché il client la invoca
+ * in `prefetchForGate` per il gate degli upload.
+ *
+ * La riconciliazione periodica serve solo contro la deriva: se un trigger
+ * fallisce o un documento viene scritto aggirandoli, il valore si riallinea
+ * al più tardi dopo `MEDIA_RECONCILE_EVERY_MS`.
+ *
+ * @param {string} familyId
+ * @param {object} legacy - Documento `stats/storage` già letto.
+ * @param {object} rawSections - `legacy.sections` (o oggetto vuoto).
+ * @return {Promise<{docBytes: number, walletBytes: number, chatBytes: number,
+ *                   photoBytes: number, saluteBytes: number}>}
+ */
+async function resolveMediaBytes(familyId, legacy, rawSections) {
+  const hasEverySection = Object.keys(MEDIA_SECTIONS)
+      .every((k) => typeof rawSections[k] === "number");
+
+  const reconciledAtMs = legacy.mediaReconciledAt?.toMillis?.() ?? 0;
+  const fresh = Date.now() - reconciledAtMs < MEDIA_RECONCILE_EVERY_MS;
+
+  if (hasEverySection && fresh) {
+    const fromCounter = {};
+    for (const [section, field] of Object.entries(MEDIA_SECTIONS)) {
+      fromCounter[field] = Math.max(0, Math.round(rawSections[section]));
+    }
+    return fromCounter;
+  }
+
+  const media = await computeMediaStorageBytesForFamily(familyId);
+
+  // Riallinea il contatore con i valori appena misurati. `merge: true` e
+  // scrittura per campo: non si tocca ciò che non riguarda i media.
+  const sections = {};
+  for (const [section, field] of Object.entries(MEDIA_SECTIONS)) {
+    sections[section] = Math.max(0, Math.round(media[field]));
+  }
+  // Annidato, per la stessa ragione spiegata in `updateStorageBytes`.
+  const update = {
+    sections,
+    mediaReconciledAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  await storageStatsRef(familyId).set(update, {merge: true})
+      .catch((e) => logger.warn("riconciliazione storage non scritta", {familyId, err: String(e)}));
+
+  logger.info("getStorageUsage: riconciliazione media", {
+    familyId,
+    motivo: hasEverySection ? "scaduta" : "contatore incompleto",
+    media,
+  });
+  return media;
+}
+
 exports.getStorageUsage = onCall(
     {region: "europe-west1", maxInstances: 20, invoker: "public"},
     async (request) => {
@@ -4347,8 +4439,6 @@ exports.getStorageUsage = onCall(
       const db = admin.firestore();
       const fam = db.collection("families").doc(familyId);
 
-      // Documenti/media/salute: sempre da Firestore con isDeleted == false (allineato a iOS dopo merge + somma sezioni).
-      //
       // Di queste quattro collezioni serve SOLO il conteggio, quindi si usa
       // l'aggregazione `count()` e non `.get()`: un count costa una lettura
       // ogni 1.000 voci di indice, un get ne costa una per documento. Misurato
@@ -4364,7 +4454,7 @@ exports.getStorageUsage = onCall(
         todoAgg,
         expensesAgg,
       ] = await Promise.all([
-        computeMediaStorageBytesForFamily(familyId),
+        resolveMediaBytes(familyId, legacy, rawSections),
         fam.collection("notes").where("isDeleted", "==", false).count().get(),
         fam.collection("calendarEvents").where("isDeleted", "==", false).count().get(),
         fam.collection("todos").where("isDeleted", "==", false).count().get(),
