@@ -4348,18 +4348,27 @@ exports.getStorageUsage = onCall(
       const fam = db.collection("families").doc(familyId);
 
       // Documenti/media/salute: sempre da Firestore con isDeleted == false (allineato a iOS dopo merge + somma sezioni).
+      //
+      // Di queste quattro collezioni serve SOLO il conteggio, quindi si usa
+      // l'aggregazione `count()` e non `.get()`: un count costa una lettura
+      // ogni 1.000 voci di indice, un get ne costa una per documento. Misurato
+      // l'11/09/2026: questa callable era responsabile di circa l'87% delle
+      // letture Firestore del progetto — 2.057 letture/ora nelle ore in cui
+      // veniva invocata contro 151 nelle ore di pari attività senza, cioè
+      // ~624 letture per chiamata. Solo queste quattro erano ~241 documenti
+      // trasferiti per produrre quattro interi.
       const [
         media,
-        notesSnap,
-        calendarSnap,
-        todoSnap,
-        expensesSnap,
+        notesAgg,
+        calendarAgg,
+        todoAgg,
+        expensesAgg,
       ] = await Promise.all([
         computeMediaStorageBytesForFamily(familyId),
-        fam.collection("notes").where("isDeleted", "==", false).get(),
-        fam.collection("calendarEvents").where("isDeleted", "==", false).get(),
-        fam.collection("todos").where("isDeleted", "==", false).get(),
-        fam.collection("expenses").where("isDeleted", "==", false).get(),
+        fam.collection("notes").where("isDeleted", "==", false).count().get(),
+        fam.collection("calendarEvents").where("isDeleted", "==", false).count().get(),
+        fam.collection("todos").where("isDeleted", "==", false).count().get(),
+        fam.collection("expenses").where("isDeleted", "==", false).count().get(),
       ]);
 
       const documentsSection = Math.max(0, Math.round(media.docBytes));
@@ -4368,10 +4377,10 @@ exports.getStorageUsage = onCall(
       const photosSection = Math.max(0, Math.round(media.photoBytes));
       const saluteSection = Math.max(0, Math.round(media.saluteBytes));
 
-      const notesCount = notesSnap.size;
-      const calendarCount = calendarSnap.size;
-      const todoCount = todoSnap.size;
-      const expensesCount = expensesSnap.size;
+      const notesCount = notesAgg.data().count;
+      const calendarCount = calendarAgg.data().count;
+      const todoCount = todoAgg.data().count;
+      const expensesCount = expensesAgg.data().count;
 
       const estimatedNotesBytes = notesCount * 3 * 1024;
       const estimatedCalendarBytes = calendarCount * 1024;
