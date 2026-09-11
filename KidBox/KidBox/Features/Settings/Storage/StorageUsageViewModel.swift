@@ -74,9 +74,11 @@ final class StorageUsageViewModel: ObservableObject {
         
         // Bytes usati da Firebase
         do {
-            let functions = Functions.functions(region: "europe-west1")
-            let result = try await functions.httpsCallable("getStorageUsage")
-                .call(["familyId": familyId])
+            let result = try await KBFamilyAccessGuard.call(
+                "getStorageUsage",
+                familyId: familyId,
+                source: "StorageUsageViewModel.prefetchForGate"
+            )
             
             if let data = result.data as? [String: Any],
                let remoteBytes = data["usedBytes"] as? Int {
@@ -115,9 +117,11 @@ final class StorageUsageViewModel: ObservableObject {
             defer { isLoading = false }
             
             do {
-                let functions = Functions.functions(region: "europe-west1")
-                let result = try await functions.httpsCallable("getStorageUsage")
-                    .call(["familyId": familyId])
+                let result = try await KBFamilyAccessGuard.call(
+                    "getStorageUsage",
+                    familyId: familyId,
+                    source: "StorageUsageViewModel.load"
+                )
                 
                 if let data = result.data as? [String: Any] {
                     if let remoteBytes = data["usedBytes"] as? Int {

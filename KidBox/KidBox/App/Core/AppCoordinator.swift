@@ -284,6 +284,10 @@ final class AppCoordinator: ObservableObject {
         }
         
         KBLog.sync.kbInfo("setActiveFamily familyId=\(familyId ?? "nil")")
+        // Cambio famiglia: se le chiamate verso questa erano sospese perché il
+        // server ci aveva risposto «non sei membro», qui la situazione è
+        // cambiata e il presidio va riaperto.
+        KBFamilyAccessGuard.shared.clear(familyId: familyId)
         activeFamilyId = familyId
         // Ricordata sull'account (`users/{uid}.activeFamilyId`) e non solo sul
         // dispositivo: il logout azzera UserDefaults, e senza questa il rientro

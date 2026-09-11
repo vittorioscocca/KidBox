@@ -111,6 +111,7 @@ final class HousePaymentRemoteStore {
         return col(familyId: familyId)
             .whereField("isDeleted", isEqualTo: false)
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
+                snap?.kbLogSnapshot("HousePayments")
                 if let err {
                     KBLog.sync.kbError("[HousePaymentRemote] listener ERROR err=\(err.localizedDescription)")
                     onError(err)

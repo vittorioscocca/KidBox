@@ -154,6 +154,7 @@ final class VaccineRemoteStore {
             .whereField("childId", isEqualTo: childId)
             .whereField("isDeleted", isEqualTo: false)
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Vaccines")
                 
                 if let err {
                     KBLog.sync.kbError("Vaccine listener error: \(err.localizedDescription)")

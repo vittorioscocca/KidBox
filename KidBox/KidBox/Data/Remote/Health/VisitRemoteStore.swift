@@ -66,6 +66,7 @@ final class VisitRemoteStore {
             .document(familyId)
             .collection("medicalVisits")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Visits")
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [VisitRemoteChange] = snap.documentChanges.compactMap { diff in

@@ -84,6 +84,7 @@ final class TreatmentRemoteStore {
             .document(familyId)
             .collection("treatments")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Treatments")
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [TreatmentRemoteChange] = snap.documentChanges.compactMap { diff in
@@ -170,6 +171,7 @@ final class TreatmentRemoteStore {
             .whereField("childId",     isEqualTo: childId)
             .whereField("treatmentId", isEqualTo: treatmentId)
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
+                snap?.kbLogSnapshot("Treatments")
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [DoseLogRemoteChange] = snap.documentChanges.compactMap { diff in
@@ -191,6 +193,7 @@ final class TreatmentRemoteStore {
             .document(familyId)
             .collection("doseLogs")
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
+                snap?.kbLogSnapshot("Treatments")
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [DoseLogRemoteChange] = snap.documentChanges.compactMap { diff in

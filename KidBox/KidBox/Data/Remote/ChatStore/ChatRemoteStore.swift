@@ -345,6 +345,7 @@ final class ChatRemoteStore {
             .order(by: "createdAt", descending: false)
             .limit(toLast: limit)
             .addSnapshotListener { snap, err in
+                if let snap { KBLog.sync.kbDebug("[Chat] snapshot docs=\(snap.documents.count) changes=\(snap.documentChanges.count) fromCache=\(snap.metadata.isFromCache)") }
                 if let err {
                     onError(err); return
                 }
@@ -448,6 +449,7 @@ final class ChatRemoteStore {
             .document(familyId)
             .collection("typing")
             .addSnapshotListener { snap, _ in
+                if let snap { KBLog.sync.kbDebug("[Chat] snapshot docs=\(snap.documents.count) changes=\(snap.documentChanges.count) fromCache=\(snap.metadata.isFromCache)") }
                 guard let snap else { return }
                 let names = snap.documents
                     .filter { $0.documentID != excludeUID }

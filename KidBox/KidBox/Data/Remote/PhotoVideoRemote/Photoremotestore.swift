@@ -359,6 +359,7 @@ final class PhotoRemoteStore {
         return db.collection("families").document(familyId)
             .collection("photos")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Photos")
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [PhotoRemoteChange] = snap.documentChanges.compactMap { diff in
@@ -437,6 +438,7 @@ final class PhotoRemoteStore {
         return db.collection("families").document(familyId)
             .collection("photoAlbums")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Photos")
                 if let err { onError(err); return }
                 guard let snap else { return }
                 let changes: [AlbumRemoteChange] = snap.documentChanges.compactMap { diff in

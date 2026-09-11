@@ -204,6 +204,7 @@ final class LocationRemoteStore {
 
         let statusReg = locationsRef
             .addSnapshotListener { snap, _ in
+                snap?.kbLogSnapshot("Locations")
 
                 guard let snap else { return }
 

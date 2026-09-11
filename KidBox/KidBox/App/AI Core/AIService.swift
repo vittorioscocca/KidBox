@@ -23,6 +23,8 @@ enum AIServiceError: LocalizedError {
     case serverError(String)
     case invalidResponse
     case missingFamilyId
+    /// L'utente non è (più) membro della famiglia su cui sta chiamando.
+    case familyAccessLost(String)
     
     var errorDescription: String? {
         switch self {
@@ -38,6 +40,8 @@ enum AIServiceError: LocalizedError {
             return "Risposta non valida dal servizio AI."
         case .missingFamilyId:
             return "Famiglia non trovata. Riprova dopo aver effettuato il login."
+        case .familyAccessLost(let msg):
+            return msg
         }
     }
 }
@@ -120,7 +124,6 @@ final class AIService {
     
     static let shared = AIService()
     
-    private lazy var functions = Functions.functions(region: "europe-west1")
 
     /// Itinerario viaggio: risposta lenta (fino a ~2 min lato server).
     private static let travelPlanClientTimeout: TimeInterval = 150
@@ -144,6 +147,19 @@ final class AIService {
     
     private init() {
         KBLog.ai.kbDebug("AIService initialized region=europe-west1")
+    }
+
+    /// Rifiuto perché la famiglia non è (più) nostra, o chiamata non partita
+    /// perché il presidio l'ha sospesa. Non è né rete né quota: va detto com'è,
+    /// altrimenti l'utente legge "errore di rete" e riprova all'infinito.
+    private func familyAccessError(_ error: Error) -> AIServiceError? {
+        if let suspended = error as? KBFamilyCallableError {
+            return .familyAccessLost(suspended.localizedDescription)
+        }
+        if KBFamilyAccessGuard.isNotAMember(error) {
+            return .familyAccessLost(error.localizedDescription)
+        }
+        return nil
     }
 
     private func mapCallableError(_ error: NSError) -> AIServiceError {
@@ -278,21 +294,28 @@ final class AIService {
             payload["purpose"] = purpose
         }
 
-        let callable = functions.httpsCallable("askAI")
+        var timeout: TimeInterval?
         if purpose == "clinicalRecord" {
-            callable.timeoutInterval = Self.clinicalRecordClientTimeout
+            timeout = Self.clinicalRecordClientTimeout
         } else if purpose == "mealPlan" {
-            callable.timeoutInterval = Self.mealPlanClientTimeout
+            timeout = Self.mealPlanClientTimeout
         } else if purpose == "fitnessPlan" {
-            callable.timeoutInterval = Self.fitnessPlanClientTimeout
+            timeout = Self.fitnessPlanClientTimeout
         }
+        let timeoutLabel = timeout.map { "\($0)s" } ?? "default"
         KBLog.ai.kbDebug(
-            "Calling Firebase Function askAI payloadMessagesCount=\(messages.count) timeout=\(callable.timeoutInterval)s"
+            "Calling Firebase Function askAI payloadMessagesCount=\(messages.count) timeout=\(timeoutLabel)"
         )
 
         do {
             let safePayload = try jsonSafeCallablePayload(payload)
-            let result = try await callable.call(safePayload)
+            let result = try await KBFamilyAccessGuard.call(
+                "askAI",
+                familyId: familyId,
+                payload: safePayload,
+                timeout: timeout,
+                source: "AIService.sendMessages"
+            )
 
             guard
                 let data = result.data as? [String: Any],
@@ -323,9 +346,14 @@ final class AIService {
                 totalPayloadChars: totalPayloadChars,
             )
 
-        } catch let error as NSError {
-            KBLog.ai.kbError("sendMessage failed firebaseCode=\(error.code) description=\(error.localizedDescription)")
-            throw mapCallableError(error)
+        } catch {
+            if let accessError = familyAccessError(error) {
+                KBLog.ai.kbError("sendMessage failed: accesso alla famiglia perso familyId=\(familyId)")
+                throw accessError
+            }
+            let ns = error as NSError
+            KBLog.ai.kbError("sendMessage failed firebaseCode=\(ns.code) description=\(ns.localizedDescription)")
+            throw mapCallableError(ns)
         }
     }
     
@@ -341,8 +369,11 @@ final class AIService {
         }
         
         do {
-            let result = try await functions.httpsCallable("getAIUsage")
-                .call(["familyId": familyId])
+            let result = try await KBFamilyAccessGuard.call(
+                "getAIUsage",
+                familyId: familyId,
+                source: "AIService.fetchUsage"
+            )
             
             guard
                 let data = result.data as? [String: Any],
@@ -364,11 +395,16 @@ final class AIService {
                 period: period
             )
             
-        } catch let error as NSError {
-            let message = error.localizedDescription
-            let code = FunctionsErrorCode(rawValue: error.code)
+        } catch {
+            if let accessError = familyAccessError(error) {
+                KBLog.ai.kbError("fetchUsage failed: accesso alla famiglia perso familyId=\(familyId)")
+                throw accessError
+            }
+            let ns = error as NSError
+            let message = ns.localizedDescription
+            let code = FunctionsErrorCode(rawValue: ns.code)
             
-            KBLog.ai.kbError("fetchUsage failed firebaseCode=\(error.code) description=\(message)")
+            KBLog.ai.kbError("fetchUsage failed firebaseCode=\(ns.code) description=\(message)")
             
             switch code {
             case .resourceExhausted:
@@ -410,11 +446,14 @@ final class AIService {
             "travelProfile": request.travelProfile,
         ])
 
-        let callable = functions.httpsCallable("suggestTravelDestinations")
-        callable.timeoutInterval = 90
-
         do {
-            let result = try await callable.call(payload)
+            let result = try await KBFamilyAccessGuard.call(
+                "suggestTravelDestinations",
+                familyId: familyId,
+                payload: payload,
+                timeout: 90,
+                source: "AIService.suggestTravelDestinations"
+            )
             guard let data = result.data as? [String: Any],
                   let rawList = data["destinations"] as? [[String: Any]] else {
                 throw AIServiceError.invalidResponse
@@ -432,8 +471,9 @@ final class AIService {
                 usageToday: usageToday,
                 dailyLimit: dailyLimit
             )
-        } catch let error as NSError {
-            throw mapCallableError(error)
+        } catch {
+            if let accessError = familyAccessError(error) { throw accessError }
+            throw mapCallableError(error as NSError)
         }
     }
 
@@ -470,14 +510,17 @@ final class AIService {
         }
         let payload = try jsonSafeCallablePayload(callableFields)
 
-        let callable = functions.httpsCallable("generateTravelPlan")
-        callable.timeoutInterval = Self.travelPlanClientTimeout
-
         do {
             KBLog.ai.kbInfo("generateTravelPlan calling function timeout=\(Self.travelPlanClientTimeout)s regenerateSingleDay=\(request.regenerateSingleDay)")
             NSLog("[KidBox][AI] generateTravelPlan → calling Firebase callable (timeout=\(Self.travelPlanClientTimeout)s, regenerateSingleDay=\(request.regenerateSingleDay))")
             let startedAt = Date()
-            let result = try await callable.call(payload)
+            let result = try await KBFamilyAccessGuard.call(
+                "generateTravelPlan",
+                familyId: familyId,
+                payload: payload,
+                timeout: Self.travelPlanClientTimeout,
+                source: "AIService.generateTravelPlan"
+            )
             let elapsed = Date().timeIntervalSince(startedAt)
             NSLog("[KidBox][AI] generateTravelPlan ← callable returned after \(String(format: "%.1f", elapsed))s")
 
@@ -504,10 +547,12 @@ final class AIService {
                 usageToday: usageToday,
                 dailyLimit: dailyLimit
             )
-        } catch let error as NSError {
-            KBLog.ai.kbError("generateTravelPlan failed domain=\(error.domain) code=\(error.code) desc=\(error.localizedDescription)")
-            NSLog("[KidBox][AI] generateTravelPlan FAILED domain=\(error.domain) code=\(error.code) desc=\(error.localizedDescription) userInfo=\(error.userInfo)")
-            throw mapCallableError(error)
+        } catch {
+            if let accessError = familyAccessError(error) { throw accessError }
+            let ns = error as NSError
+            KBLog.ai.kbError("generateTravelPlan failed domain=\(ns.domain) code=\(ns.code) desc=\(ns.localizedDescription)")
+            NSLog("[KidBox][AI] generateTravelPlan FAILED domain=\(ns.domain) code=\(ns.code) desc=\(ns.localizedDescription) userInfo=\(ns.userInfo)")
+            throw mapCallableError(ns)
         }
     }
 }

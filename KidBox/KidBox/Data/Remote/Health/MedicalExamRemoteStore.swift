@@ -72,6 +72,7 @@ final class MedicalExamRemoteStore {
         col(familyId: familyId)
             .whereField("childId", isEqualTo: childId)
             .addSnapshotListener { snapshot, error in
+                snapshot?.kbLogSnapshot("MedicalExams")
                 if let error { onError(error); return }
                 let dtos = snapshot?.documents.compactMap {
                     MedicalExamRemoteStore.parseDTO(doc: $0)

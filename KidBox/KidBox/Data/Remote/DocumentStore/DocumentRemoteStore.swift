@@ -206,6 +206,7 @@ final class DocumentRemoteStore {
             .document(familyId)
             .collection("documents")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Documents")
                 
                 if let err {
                     KBLog.sync.kbError("Documents listener error: \(err.localizedDescription)")

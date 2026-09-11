@@ -41,6 +41,7 @@ extension SyncCenter {
             .document(familyId)
             .collection("documentCategories")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("DocCategoriesEvents")
                 if let err {
                     KBLog.sync.kbError("DocCategories listener error: \(err.localizedDescription)")
                     return

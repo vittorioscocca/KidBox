@@ -105,6 +105,7 @@ final class ShoppingTripRemoteStore {
         return col(familyId: familyId)
             .whereField("isDeleted", isEqualTo: false)
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
+                snap?.kbLogSnapshot("ShoppingTrips")
                 if let err {
                     KBLog.sync.kbError("[shoppingTrip] listener ERROR err=\(err.localizedDescription)")
                     onError(err)

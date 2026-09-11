@@ -216,9 +216,11 @@ struct StorageUsageView: View {
             guard !familyId.isEmpty else { return }
             let fid = familyId
             do {
-                let functions = Functions.functions(region: "europe-west1")
-                let result = try await functions.httpsCallable("initStorageUsage")
-                    .call(["familyId": fid])
+                let result = try await KBFamilyAccessGuard.call(
+                    "initStorageUsage",
+                    familyId: fid,
+                    source: "StorageUsageView.refresh"
+                )
                 print("✅ initStorageUsage:", result.data)
             } catch {
                 print("❌ initStorageUsage error:", error)

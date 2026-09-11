@@ -73,6 +73,7 @@ final class CalendarRemoteStore {
     ) -> ListenerRegistration {
         col(familyId: familyId)
             .addSnapshotListener { snapshot, error in
+                snapshot?.kbLogSnapshot("Calendar")
                 if let error { onError(error); return }
                 let dtos = snapshot?.documents.compactMap {
                     CalendarRemoteStore.parseDTO(doc: $0)

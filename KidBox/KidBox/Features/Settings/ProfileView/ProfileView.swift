@@ -266,9 +266,11 @@ struct ProfileView: View {
         guard !familyId.isEmpty else { return }
 
         do {
-            let functions = Functions.functions(region: "europe-west1")
-            let result = try await functions.httpsCallable("getStorageUsage")
-                .call(["familyId": familyId])
+            let result = try await KBFamilyAccessGuard.call(
+                "getStorageUsage",
+                familyId: familyId,
+                source: "ProfileView.loadStorageUsage"
+            )
             guard let data = result.data as? [String: Any],
                   let remoteBytes = data["usedBytes"] as? Int else { return }
             let bytes = max(0, Int64(remoteBytes))

@@ -149,6 +149,7 @@ final class AIChatRemoteStore {
 
         return col(uid: uid)
             .addSnapshotListener(includeMetadataChanges: false) { [weak self] snap, err in
+                snap?.kbLogSnapshot("AIChat")
                 guard let self else { return }
                 if let err {
                     KBLog.sync.kbError("[AIChatRemote] listener ERROR err=\(err.localizedDescription)")

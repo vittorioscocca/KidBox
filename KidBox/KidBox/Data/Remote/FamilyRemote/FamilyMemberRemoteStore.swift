@@ -65,6 +65,7 @@ final class FamilyMemberRemoteStore {
             .document(familyId)
             .collection("members")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Members")
                 if let err {
                     KBLog.sync.kbError("Members listener error: \(err.localizedDescription)")
                     onError(err)

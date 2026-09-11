@@ -92,6 +92,7 @@ final class ExpenseRemoteStore {
     ) -> ListenerRegistration {
         col(familyId: familyId)
             .addSnapshotListener { snapshot, error in
+                snapshot?.kbLogSnapshot("Expenses")
                 if let error { onError(error); return }
                 guard let snapshot else { return }
                 

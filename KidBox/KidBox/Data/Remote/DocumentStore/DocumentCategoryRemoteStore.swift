@@ -170,6 +170,7 @@ final class DocumentCategoryRemoteStore {
             .document(familyId)
             .collection("documentCategories")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("DocCategories")
                 if let err {
                     KBLog.sync.kbError("DocCategories listener error: \(err.localizedDescription)")
                     onError(err)

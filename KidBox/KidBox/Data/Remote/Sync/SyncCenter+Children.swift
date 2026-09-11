@@ -44,6 +44,7 @@ extension SyncCenter {
             .document(familyId)
             .collection("children")
             .addSnapshotListener { snap, err in
+                snap?.kbLogSnapshot("Children")
                 if let err {
                     KBLog.sync.kbError("Children listener error: \(err.localizedDescription)")
                     if SyncCenter.isPermissionDenied(err) {

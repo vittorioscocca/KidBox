@@ -273,6 +273,9 @@ final class SyncCenter: ObservableObject {
     func beginFamilyJoin() {
         isJoiningFamily = true
         accessLostHandled.removeAll()
+        // Stesso motivo per cui si azzera accessLostHandled: dopo un join le
+        // sospensioni decise prima non valgono più.
+        KBFamilyAccessGuard.shared.clear()
         KBLog.sync.kbDebug("beginFamilyJoin: join guard ON, accessLostHandled reset")
     }
     

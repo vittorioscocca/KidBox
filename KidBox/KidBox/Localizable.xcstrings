@@ -3357,28 +3357,6 @@
         }
       }
     },
-    "2. Fai riconoscere la tua voce" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2. Have your voice recognised"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2. Haz que reconozca tu voz"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2. Faites reconnaître votre voix"
-          }
-        }
-      }
-    },
     "2. Collega l'account" : {
       "localizations" : {
         "en" : {
@@ -3397,6 +3375,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2. Liez votre compte"
+          }
+        }
+      }
+    },
+    "2. Fai riconoscere la tua voce" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Have your voice recognised"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Haz que reconozca tu voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Faites reconnaître votre voix"
           }
         }
       }
@@ -13479,6 +13479,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nom"
+          }
+        }
+      }
+    },
+    "Collega" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincular"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lier"
           }
         }
       }
@@ -23580,6 +23602,9 @@
         }
       }
     },
+    "Famiglia non trovata. Riprova dopo aver effettuato il login." : {
+      "comment" : "Callable non inviata: nessuna famiglia attiva"
+    },
     "Family" : {
       "localizations" : {
         "en" : {
@@ -32430,6 +32455,7 @@
       }
     },
     "Lista della spesa condivisa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -38098,6 +38124,9 @@
         }
       }
     },
+    "Non hai più accesso a questa famiglia." : {
+      "comment" : "Callable rifiutata: l'utente non è più membro della famiglia"
+    },
     "Non hai un account?" : {
       "localizations" : {
         "en" : {
@@ -38138,6 +38167,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non indiqué"
+          }
+        }
+      }
+    },
+    "Non mostrare più" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't show again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher"
           }
         }
       }
@@ -38358,182 +38409,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Note"
-          }
-        }
-      }
-    },
-    "Posto" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seat"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Asiento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Place"
-          }
-        }
-      }
-    },
-    "Settore, fila, posto (opzionale)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Section, row, seat (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sector, fila, asiento (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Secteur, rangée, place (facultatif)"
-          }
-        }
-      }
-    },
-    "Prezzo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Price"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Precio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prix"
-          }
-        }
-      }
-    },
-    "Prezzo (opzionale)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Price (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Precio (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prix (facultatif)"
-          }
-        }
-      }
-    },
-    "Collega" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vincular"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lier"
-          }
-        }
-      }
-    },
-    "Non mostrare più" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Don't show again"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No volver a mostrar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ne plus afficher"
-          }
-        }
-      }
-    },
-    "Puoi collegare Alexa a KidBox e dettare la lista della spesa agli Echo di casa: quello che dici compare qui e gli altri lo ricevono subito." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can link Alexa to KidBox and dictate the shopping list to your Echos: what you say shows up here and the others get it straight away."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedes vincular Alexa a KidBox y dictar la lista de la compra a los Echo de casa: lo que dices aparece aquí y los demás lo reciben al momento."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous pouvez lier Alexa à KidBox et dicter la liste de courses aux Echo de la maison : ce que vous dites apparaît ici et les autres le reçoivent aussitôt."
-          }
-        }
-      }
-    },
-    "Puoi collegare Alexa a KidBox e dettare i promemoria agli Echo di casa: diventano to-do e la notifica arriva all'ora che hai detto." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You can link Alexa to KidBox and dictate reminders to your Echos: they become to-dos and the notification arrives at the time you said."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedes vincular Alexa a KidBox y dictar recordatorios a los Echo de casa: se convierten en tareas y la notificación llega a la hora que has dicho."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous pouvez lier Alexa à KidBox et dicter des rappels aux Echo de la maison : ils deviennent des tâches et la notification arrive à l'heure indiquée."
           }
         }
       }
@@ -44119,6 +43994,28 @@
         }
       }
     },
+    "Posto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place"
+          }
+        }
+      }
+    },
     "Potrai creare la famiglia anche dopo da Impostazioni" : {
       "localizations" : {
         "en" : {
@@ -44895,6 +44792,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prix des vols en temps réel"
+          }
+        }
+      }
+    },
+    "Prezzo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prix"
+          }
+        }
+      }
+    },
+    "Prezzo (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precio (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prix (facultatif)"
           }
         }
       }
@@ -46198,6 +46139,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vous pouvez me demander un récapitulatif, lesquels arrivent à échéance, urgents, avec un résultat disponible ou des comptes rendus joints."
+          }
+        }
+      }
+    },
+    "Puoi collegare Alexa a KidBox e dettare i promemoria agli Echo di casa: diventano to-do e la notifica arriva all'ora che hai detto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can link Alexa to KidBox and dictate reminders to your Echos: they become to-dos and the notification arrives at the time you said."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes vincular Alexa a KidBox y dictar recordatorios a los Echo de casa: se convierten en tareas y la notificación llega a la hora que has dicho."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez lier Alexa à KidBox et dicter des rappels aux Echo de la maison : ils deviennent des tâches et la notification arrive à l'heure indiquée."
+          }
+        }
+      }
+    },
+    "Puoi collegare Alexa a KidBox e dettare la lista della spesa agli Echo di casa: quello che dici compare qui e gli altri lo ricevono subito." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can link Alexa to KidBox and dictate the shopping list to your Echos: what you say shows up here and the others get it straight away."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes vincular Alexa a KidBox y dictar la lista de la compra a los Echo de casa: lo que dices aparece aquí y los demás lo reciben al momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez lier Alexa à KidBox et dicter la liste de courses aux Echo de la maison : ce que vous dites apparaît ici et les autres le reçoivent aussitôt."
           }
         }
       }
@@ -52965,6 +52950,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hebdomadaire"
+          }
+        }
+      }
+    },
+    "Settore, fila, posto (opzionale)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Section, row, seat (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sector, fila, asiento (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Secteur, rangée, place (facultatif)"
           }
         }
       }

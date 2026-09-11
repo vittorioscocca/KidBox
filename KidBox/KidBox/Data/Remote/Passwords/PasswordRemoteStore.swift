@@ -238,6 +238,7 @@ final class PasswordRemoteStore {
     ) -> ListenerRegistration {
         passwordsCol(familyId: familyId)
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
+                snap?.kbLogSnapshot("Passwords")
                 if let err {
                     onError(err)
                     return
@@ -264,6 +265,7 @@ final class PasswordRemoteStore {
     ) -> ListenerRegistration {
         groupsCol(familyId: familyId)
             .addSnapshotListener(includeMetadataChanges: true) { snap, err in
+                snap?.kbLogSnapshot("Passwords")
                 if let err {
                     onError(err)
                     return
