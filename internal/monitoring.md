@@ -78,7 +78,7 @@ Finestre calibrate sui gap veri misurati dal 20/08 al 10/09, non a occhio:
 |---|---|---|---|
 | `expireTemporaryLocations`, `notifyDueTodoReminders` | 5 min | 5 min | 30 min |
 | `notifyUpcomingWalletTickets` | 60 min | 2h25m | 4h |
-| `analyticsRollupDaily`, `cleanupResolvedCases`, `syncPlansConfig` | cron 02:00 / 03:15 / 03:30 | 23h45m | 26h |
+| `analyticsRollupDaily`, `cleanupResolvedCases`, `garbageCollectDeleted`, `syncPlansConfig` | cron 02:00 / 03:00 / 03:15 / 03:30 | 23h45m | 26h |
 
 **`cleanupResolvedCases` è passato a cron il 10/09**, ed è il motivo per cui è
 in tabella. Usava `every 24 hours`, che è un **intervallo** e riparte a ogni
@@ -103,11 +103,14 @@ tornano nulla, quindi farlo 5 volte più spesso vale ~4 letture al giorno. In
 cambio un documento cancellato aspetta al massimo un giorno la rimozione
 definitiva invece di cinque.
 
-> **In sospeso al 10/09:** non è ancora dentro la condizione dei cron notturni.
-> L'ultimo giro a cadenza vecchia è del 06/09, quindi la finestra di 25h è
-> vuota e aggiungerlo adesso aprirebbe un incidente immediato. Va aggiunto
-> all'elenco `one_of(...)` della condizione «cron notturno fermo da 26h» dopo
-> il primo giro giornaliero, previsto l'11/09 alle 01:00 UTC.
+Non era stato aggiunto subito alla condizione dei cron notturni: l'ultimo giro
+a cadenza vecchia era del 06/09, quindi la finestra di 25h era vuota e
+aggiungerlo il 10/09 avrebbe aperto un incidente immediato per un guasto
+inesistente. Il primo giro giornaliero, previsto l'11/09 alle 01:00 UTC, è
+avvenuto regolarmente (completo in 1,4s, ripuliti 4 wallet ticket e 1 foto);
+lo stesso giorno `garbageCollectDeleted` è entrato nell'elenco `one_of(...)`
+della condizione «cron notturno fermo da 26h». **Tutti e 7 gli scheduler sono
+ora sorvegliati**, sia dalla policy "in errore" sia da "muto".
 
 Sui cron notturni l'assenza non è utilizzabile per lo stesso cap: la serie di
 uno scheduler giornaliero ha buchi di 24h per costruzione, quindi una condizione
