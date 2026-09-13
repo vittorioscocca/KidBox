@@ -79,6 +79,36 @@ async function updateStorageBytes(familyId, delta, section = null) {
 }
 
 /**
+ * Cartelle Storage degli allegati sanitari. Esami, visite e terapie salvano i
+ * loro allegati come normali record in `families/{id}/documents`, quindi senza
+ * questa distinzione i loro byte finivano nella sezione «Documenti» e «Salute»
+ * restava a zero. Il totale era giusto, la ripartizione no.
+ * I percorsi li costruiscono `ExamAttachmentService`/`VisitAttachmentService`/
+ * `TreatmentAttachmentService` (iOS) e `HealthAttachmentService` (Android):
+ * gli allegati di veicoli, animali e casa restano documenti.
+ */
+const SALUTE_ATTACHMENT_FOLDERS = new Set([
+  "exam-attachments",
+  "visit-attachments",
+  "treatment-attachments",
+]);
+
+/**
+ * Sezione di spazio a cui appartiene un record di `documents`, dal suo
+ * `storagePath` (`families/{familyId}/{cartella}/…`).
+ * @param {object|null} data - Dati del documento Firestore.
+ * @return {string} `"salute"` oppure `"documents"`.
+ */
+function documentStorageSection(data) {
+  const path = typeof data?.storagePath === "string" ? data.storagePath : "";
+  const parts = path.split("/");
+  if (parts[0] === "families" && SALUTE_ATTACHMENT_FOLDERS.has(parts[2])) {
+    return "salute";
+  }
+  return "documents";
+}
+
+/**
  * Returns wallet ticket PDF size in bytes (>= 0).
  * @param {object|null} data
  * @return {number}
@@ -133,9 +163,12 @@ async function computeMediaStorageBytesForFamily(familyId) {
   ]);
 
   let docBytes = 0;
+  let saluteAttachmentBytes = 0;
   docsSnap.forEach((d) => {
     const size = d.get("fileSize");
-    if (typeof size === "number" && size > 0) docBytes += size;
+    if (typeof size !== "number" || size <= 0) return;
+    if (documentStorageSection(d.data()) === "salute") saluteAttachmentBytes += size;
+    else docBytes += size;
   });
 
   let walletBytes = 0;
@@ -159,7 +192,7 @@ async function computeMediaStorageBytesForFamily(familyId) {
     if (typeof size === "number" && size > 0) photoBytes += size;
   });
 
-  let saluteBytes = 0;
+  let saluteBytes = saluteAttachmentBytes;
   visitsSnap.forEach((d) => {
     const photoURLs = d.get("photoURLs");
     if (Array.isArray(photoURLs) && photoURLs.length > 0) {
@@ -547,7 +580,7 @@ exports.notifyNewDocument = onDocumentCreated(
 
       // ── Storage tracking: fileSize reale ──
       if (!docData.isDeleted && typeof docData.fileSize === "number" && docData.fileSize > 0) {
-        await updateStorageBytes(familyId, docData.fileSize, "documents");
+        await updateStorageBytes(familyId, docData.fileSize, documentStorageSection(docData));
       }
 
       const membersSnap = await admin.firestore()
@@ -641,7 +674,7 @@ exports.onDocumentHardDeleted = onDocumentWritten(
       if (sizeBefore <= 0) return;
 
       logger.info("onDocumentHardDeleted: removing bytes", {familyId, sizeBefore});
-      await updateStorageBytes(familyId, -sizeBefore, "documents");
+      await updateStorageBytes(familyId, -sizeBefore, documentStorageSection(before));
     },
 );
 
@@ -665,7 +698,7 @@ exports.onDocumentSoftDeleted = onDocumentWritten(
       if (size <= 0) return;
 
       logger.info("onDocumentSoftDeleted: removing bytes", {familyId, size});
-      await updateStorageBytes(familyId, -size, "documents");
+      await updateStorageBytes(familyId, -size, documentStorageSection(before));
     },
 );
 
