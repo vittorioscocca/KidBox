@@ -75,13 +75,40 @@ function EmailIcon() {
 function LoginScreen() {
   const { t } = useTranslation();
   const L = t.login;
-  const { signInWithGoogle, signInWithApple, signInWithFacebook, signInWithEmail, signUpWithEmail } = useAuth();
+  const {
+    signInWithGoogle,
+    signInWithApple,
+    signInWithFacebook,
+    signInWithEmail,
+    signUpWithEmail,
+    resetPassword,
+  } = useAuth();
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
+  /* Gli stessi due banner di `EmailAuthView` su iOS: dopo la registrazione
+     l'account esiste ma si è fuori finché l'email non è verificata; dopo
+     «Password dimenticata» si conferma che il link è partito. */
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  // Validazione come su iOS: il CTA resta spento finché il form non è buono.
+  const isEmailValid = email.includes("@") && email.includes(".");
+  const passwordMismatch = isSignUp && confirmPassword !== "" && password !== confirmPassword;
+  const isFormValid =
+    isEmailValid && password.length >= 6 && (!isSignUp || password === confirmPassword);
+
+  /* I codici Firebase tradotti come `friendlyError` su iOS; una stringa vuota
+     è un annullamento dell'utente e non si mostra. */
+  const friendlyError = (err) => {
+    const known = L.errors?.[err?.code];
+    if (known !== undefined) return known || null;
+    return err?.message || String(err);
+  };
   /* Si parte dalla cache — niente pulsante che appare a metà caricamento — e
      si riallinea quando Remote Config risponde. */
   const [facebookEnabled, setFacebookEnabled] = useState(facebookLoginEnabled);
@@ -114,18 +141,43 @@ function LoginScreen() {
         analytics.signupCompleted(method);
       }
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(err));
     } finally {
       setPending(false);
     }
   };
 
-  const handleEmailSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    runProvider(
-      () => (isSignUp ? signUpWithEmail(email, password) : signInWithEmail(email, password)),
-      "email"
-    );
+    if (!isFormValid) return;
+    setResetSent(false);
+    if (isSignUp) {
+      await runProvider(async () => {
+        await signUpWithEmail(email, password);
+        setPendingVerification(true);
+      }, "email");
+    } else {
+      await runProvider(() => signInWithEmail(email, password), "email");
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) return;
+    setError(null);
+    setResetSent(false);
+    try {
+      await resetPassword(email);
+      setResetSent(true);
+    } catch (err) {
+      setError(friendlyError(err));
+    }
+  };
+
+  const switchMode = () => {
+    setIsSignUp((v) => !v);
+    setError(null);
+    setResetSent(false);
+    setConfirmPassword("");
   };
 
   return (
@@ -170,11 +222,16 @@ function LoginScreen() {
           </button>
         ) : (
           <form className="email-form" onSubmit={handleEmailSubmit}>
+            <div className="email-form-head">
+              <h3>{isSignUp ? L.createAccount : L.signIn}</h3>
+              <p>{isSignUp ? L.createAccountLead : L.signInLead}</p>
+            </div>
             <input
               type="email"
               placeholder={L.emailPlaceholder}
               required
               autoFocus
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -183,19 +240,60 @@ function LoginScreen() {
               placeholder={L.passwordPlaceholder}
               required
               minLength={6}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <button className="auth-btn" type="submit" disabled={pending}>
+            {isSignUp && (
+              <>
+                <input
+                  type="password"
+                  placeholder={L.confirmPasswordPlaceholder}
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                {passwordMismatch && <p className="error field-hint">{L.passwordMismatch}</p>}
+              </>
+            )}
+            {!isSignUp && (
+              <button
+                type="button"
+                className="toggle-mode forgot"
+                disabled={!email || pending}
+                onClick={handleResetPassword}
+              >
+                {L.forgotPassword}
+              </button>
+            )}
+            {pendingVerification && (
+              <div className="auth-banner verify">
+                <strong>{L.verifyTitle}</strong>
+                <p>{L.verifyBody.replace("{email}", email)}</p>
+                <button
+                  type="button"
+                  className="toggle-mode"
+                  onClick={() => {
+                    setPendingVerification(false);
+                    setIsSignUp(false);
+                    setConfirmPassword("");
+                  }}
+                >
+                  {L.backToSignIn}
+                </button>
+              </div>
+            )}
+            {resetSent && <p className="auth-banner success">{L.resetSent}</p>}
+            <button className="auth-btn" type="submit" disabled={pending || !isFormValid}>
               {isSignUp ? L.createAccount : L.signIn}
             </button>
-            <button
-              type="button"
-              className="toggle-mode"
-              onClick={() => setIsSignUp((v) => !v)}
-            >
-              {isSignUp ? L.haveAccount : L.noAccount}
-            </button>
+            <p className="switch-mode">
+              {isSignUp ? L.haveAccount : L.noAccount}{" "}
+              <button type="button" className="toggle-mode strong" onClick={switchMode}>
+                {isSignUp ? L.switchToSignIn : L.switchToSignUp}
+              </button>
+            </p>
           </form>
         )}
       </section>

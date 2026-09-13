@@ -8,6 +8,8 @@ import {
   FacebookAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -31,7 +33,17 @@ export function AuthProvider({ children }) {
 
   const signInWithEmail = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
-  const signUpWithEmail = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+  /**
+   * Come `LoginViewModel.registerEmail` su iOS: si crea l'account, si manda il
+   * link di verifica e si esce subito. L'utente entra al login successivo.
+   */
+  const signUpWithEmail = async (email, password) => {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await sendEmailVerification(result.user);
+    await signOut(auth);
+  };
+
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
   const logout = () => signOut(auth);
 
@@ -44,6 +56,7 @@ export function AuthProvider({ children }) {
         signInWithFacebook,
         signInWithEmail,
         signUpWithEmail,
+        resetPassword,
         logout,
       }}
     >

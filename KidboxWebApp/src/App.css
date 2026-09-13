@@ -148,6 +148,75 @@
   font-size: 0.85rem;
   cursor: pointer;
   text-decoration: underline;
+  padding: 0;
+}
+
+.email-form .toggle-mode:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.email-form .toggle-mode.strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.email-form .toggle-mode.forgot {
+  align-self: flex-end;
+  margin-top: -2px;
+}
+
+.email-form-head {
+  text-align: left;
+}
+
+.email-form-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.email-form-head p {
+  margin: 4px 0 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.email-form .field-hint {
+  margin: -4px 0 0 4px;
+  text-align: left;
+}
+
+.email-form .switch-mode {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.auth-banner {
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.auth-banner.verify {
+  background: rgba(255, 149, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-banner.verify p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.auth-banner.success {
+  margin: 0;
+  background: rgba(52, 199, 89, 0.12);
+  color: var(--muted);
 }
 
 .divider {
