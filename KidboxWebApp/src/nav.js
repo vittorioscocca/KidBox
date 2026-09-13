@@ -21,6 +21,5 @@ export const NAV_SECTIONS = [
 
 export const ACCOUNT_SECTIONS = [
   { key: "family", label: "Family", icon: "👪", path: "/account/family" },
-  { key: "profilo", label: "Profilo", icon: "👤", path: "/account/profilo" },
   { key: "impostazioni", label: "Impostazioni", icon: "⚙️", path: "/account/impostazioni" },
 ];

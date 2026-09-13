@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import * as analytics from "./services/analytics";
 import ConsentBanner from "./components/ConsentBanner";
@@ -26,7 +26,6 @@ import Casa from "./pages/Casa";
 import Garage from "./pages/Garage";
 import Viaggi from "./pages/Viaggi";
 import Assistente from "./pages/Assistente";
-import Profilo from "./pages/Profilo";
 import Impostazioni from "./pages/Impostazioni";
 import Famiglia from "./pages/Famiglia";
 import Chat from "./pages/Chat";
@@ -239,7 +238,8 @@ function AuthedApp() {
             <Route path="/garage" element={<Garage />} />
             <Route path="/viaggi" element={<Viaggi />} />
             <Route path="/assistente" element={<Assistente />} />
-            <Route path="/account/profilo" element={<Profilo />} />
+            {/* Il Profilo è confluito in Impostazioni: i vecchi link continuano a funzionare. */}
+            <Route path="/account/profilo" element={<Navigate to="/account/impostazioni" replace />} />
             <Route path="/account/impostazioni" element={<Impostazioni />} />
             <Route path="/account/family" element={<Famiglia />} />
             <Route path="/chat" element={<Chat />} />

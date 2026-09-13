@@ -1,12 +1,32 @@
-/* Impostazioni. Stessa colonna di card del Profilo: le due pagine si aprono
-   una dopo l'altra e stonerebbero se non si somigliassero. */
+/* Impostazioni. Un'intestazione con l'avatar, poi gruppi di righe con
+   un'etichetta sopra: la card è l'elemento in rilievo (`--card`), le righe
+   dentro sono separate da un filo. Stessa card della schermata di accesso. */
 @import "./Profilo.css";
 
 .set-page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  max-width: 680px;
+  gap: 22px;
+  max-width: 760px;
+}
+
+.set-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.set-group-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-left: 6px;
+}
+
+.set-group-label.gold {
+  color: var(--accent2);
 }
 
 .set-card {
@@ -14,8 +34,17 @@
   flex-direction: column;
   gap: 12px;
   padding: 18px;
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+/* La card che raccoglie righe: niente padding, le righe si separano da sole. */
+.set-card.set-list {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
 }
 
 .set-card h2 {
@@ -30,19 +59,49 @@
   margin-top: 4px;
 }
 
-/* ── Righe con interruttore ──────────────────────────────────────────────── */
+/* ── Righe ──────────────────────────────────────────────────────────────── */
 
 .set-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
+  padding: 14px 18px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.set-row:first-child {
+  border-top: none;
+}
+
+a.set-row,
+button.set-row,
+label.set-row {
   cursor: pointer;
 }
 
-.set-row.disabled {
+a.set-row:hover,
+button.set-row:hover:not(:disabled),
+label.set-row:not(.disabled):hover {
+  background: var(--border);
+}
+
+.set-row.disabled,
+button.set-row:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.set-row.danger,
+.set-danger-text {
+  color: #d9455f;
 }
 
 .set-row-text {
@@ -50,21 +109,80 @@
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  flex: 1;
 }
 
 .set-row-text strong {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
 .set-row-text small {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted);
 }
 
-/* Interruttore: una checkbox vera, ridisegnata. Resta focalizzabile da
-   tastiera e leggibile dai lettori di schermo, cosa che un div non sarebbe. */
+.set-row-right {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 55%;
+}
+
+.set-value {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-chevron {
+  flex: none;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+/* Riga che si apre in verticale (scelte, conferma eliminazione). */
+.set-stack {
+  align-items: flex-start;
+}
+
+.set-stack .set-icon {
+  margin-top: 2px;
+}
+
+/* ── Icone tinte ───────────────────────────────────────────────────────── */
+
+.set-icon {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  background: rgba(232, 131, 58, 0.14);
+}
+
+.set-icon.orange { background: rgba(232, 131, 58, 0.14); }
+.set-icon.gold   { background: rgba(214, 160, 40, 0.16); }
+.set-icon.green  { background: rgba(80, 160, 90, 0.14); }
+.set-icon.blue   { background: rgba(70, 130, 200, 0.14); }
+.set-icon.purple { background: rgba(140, 100, 210, 0.14); }
+.set-icon.red    { background: rgba(217, 69, 95, 0.12); }
+.set-icon.grey   { background: rgba(128, 128, 128, 0.14); }
+.set-icon.plain  { background: transparent; width: 32px; height: 32px; font-size: 1.05rem; }
+
+/* ── Interruttore ──────────────────────────────────────────────────────── */
+
+/* Una checkbox vera, ridisegnata. Resta focalizzabile da tastiera e
+   leggibile dai lettori di schermo, cosa che un div non sarebbe. */
 .set-switch {
   appearance: none;
   flex: none;
@@ -76,6 +194,7 @@
   position: relative;
   cursor: inherit;
   transition: background 0.15s ease;
+  margin: 0;
 }
 
 .set-switch::after {
@@ -86,7 +205,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--bg);
+  background: var(--card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   transition: transform 0.15s ease;
 }
@@ -105,22 +224,11 @@
   outline-offset: 2px;
 }
 
-/* ── Impostazioni del dispositivo ────────────────────────────────────────── */
+/* ── «Si imposta dal telefono» ─────────────────────────────────────────── */
 
 /* Non è un interruttore spento: è una cosa che da qui non si comanda, e va
    detto invece di lasciare un comando che non farebbe niente. */
-.set-device-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-}
-
-.set-device-row em {
-  flex: none;
+.set-device {
   font-size: 0.72rem;
   font-style: normal;
   font-weight: 600;
@@ -129,8 +237,40 @@
   max-width: 130px;
 }
 
-/* ── Scelte a pulsanti (tema, lingua) ────────────────────────────────────── */
+/* ── Selettore a segmenti (tema, lingua) ───────────────────────────────── */
 
+.set-seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--border);
+  gap: 2px;
+}
+
+.set-seg button {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.set-seg button:hover {
+  color: var(--text);
+}
+
+.set-seg button.on {
+  background: var(--card);
+  color: var(--accent2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Le scelte a pillole restano per la card Famiglia e simili. */
 .set-choices {
   display: flex;
   flex-wrap: wrap;
@@ -167,6 +307,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 8px;
 }
 
 .set-option {
@@ -201,19 +342,146 @@
   cursor: default;
 }
 
-/* ── Collegamenti e piè di pagina ────────────────────────────────────────── */
+/* ── Intestazione profilo ──────────────────────────────────────────────── */
 
-.set-link {
-  align-self: flex-start;
+.set-profile {
+  padding: 22px;
+  gap: 18px;
+}
+
+.set-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.set-profile .prof-avatar {
+  width: 88px;
+  height: 88px;
+  font-size: 1.9rem;
+  /* Il badge con la macchina fotografica sporge dal cerchio: la foto si
+     ritaglia da sola. */
+  overflow: visible;
+}
+
+.set-profile .prof-avatar img {
+  border-radius: 50%;
+}
+
+.set-profile .prof-avatar-edit {
+  width: 30px;
+  height: 30px;
+  right: -2px;
+  bottom: -2px;
+  font-size: 0.85rem;
+  background: var(--accent);
+  border: 3px solid var(--card);
+}
+
+.set-profile-actions .prof-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.set-profile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.set-profile-body strong {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.set-profile-body span,
+.set-profile-body small {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.set-profile-body span {
+  font-size: 0.95rem;
+}
+
+.set-profile-body small {
+  font-size: 0.82rem;
+}
+
+.set-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.set-profile-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.set-profile-form label,
+.set-delete-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.set-profile-form label.wide,
+.set-profile-form .set-profile-actions {
+  grid-column: 1 / -1;
+}
+
+.set-profile-form input,
+.set-delete-label input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
   color: var(--text);
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.92rem;
 }
 
-.set-link:hover {
-  color: var(--accent2);
+.prof-action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
+
+.prof-action.primary:hover:not(:disabled) {
+  background: var(--accent2);
+}
+
+.set-delete-label {
+  margin-top: 6px;
+}
+
+/* ── Spazio ────────────────────────────────────────────────────────────── */
+
+.set-storage .prof-bar {
+  margin-top: 6px;
+}
+
+.set-storage-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 4px;
+}
+
+.set-storage-sections b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Piè di pagina ─────────────────────────────────────────────────────── */
 
 .set-version {
   padding-bottom: 20px;
@@ -222,28 +490,19 @@
   text-align: center;
 }
 
-/* ── Card Famiglia ───────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .set-row {
+    flex-wrap: wrap;
+  }
 
-.set-family {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
+  .set-row-right {
+    max-width: 100%;
+    margin-left: 56px;
+  }
 
-.set-family strong {
-  font-size: 1.15rem;
-  font-weight: 800;
-}
-
-.set-family small {
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.set-family .prof-action {
-  flex: none;
-  text-decoration: none;
+  .set-profile-form {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Alexa ─────────────────────────────────────────────────────────────── */
