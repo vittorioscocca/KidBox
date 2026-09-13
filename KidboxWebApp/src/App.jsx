@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import * as analytics from "./services/analytics";
 import ConsentBanner from "./components/ConsentBanner";
 import { FamilyProvider } from "./FamilyContext";
-import { LocaleProvider } from "./i18n/LocaleContext";
+import { LocaleProvider, useTranslation } from "./i18n/LocaleContext";
 import { ThemeProvider } from "./ThemeContext";
 import { facebookLoginEnabled, refreshFeatureFlags } from "./services/featureFlags";
 import Layout from "./components/Layout";
@@ -71,6 +71,8 @@ function EmailIcon() {
 }
 
 function LoginScreen() {
+  const { t } = useTranslation();
+  const L = t.login;
   const { signInWithGoogle, signInWithApple, signInWithFacebook, signInWithEmail, signUpWithEmail } = useAuth();
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -130,22 +132,22 @@ function LoginScreen() {
         <img className="logo" src="/icon.png" alt="KidBox" />
         <div>
           <h1>KidBox</h1>
-          <p className="subtitle">La tua famiglia, in un'unica app.</p>
+          <p className="subtitle">{L.tagline}</p>
         </div>
       </header>
 
       <section className="login-card">
-        <h2>Accedi a KidBox</h2>
-        <p className="lead">Scegli come accedere.</p>
+        <h2>{L.title}</h2>
+        <p className="lead">{L.lead}</p>
 
         {error && <p className="error">{error}</p>}
 
         <div className="providers">
           <button className="auth-btn ghost" disabled={pending} onClick={() => runProvider(signInWithGoogle, "google")}>
-            <GoogleIcon /> Continua con Google
+            <GoogleIcon /> {L.google}
           </button>
           <button className="auth-btn ghost" disabled={pending} onClick={() => runProvider(signInWithApple, "apple")}>
-            <AppleIcon /> Continua con Apple
+            <AppleIcon /> {L.apple}
           </button>
           {/* Nascosto finché l'app Meta è in modalità sviluppo: chi lo premeva
               riceveva «questa app non funziona», che si legge come un guasto di
@@ -153,22 +155,22 @@ function LoginScreen() {
               nuovo rilascio — stessa logica di iOS e Android. */}
           {facebookEnabled && (
             <button className="auth-btn ghost" disabled={pending} onClick={() => runProvider(signInWithFacebook, "facebook")}>
-              <FacebookIcon /> Continua con Facebook
+              <FacebookIcon /> {L.facebook}
             </button>
           )}
         </div>
 
-        <div className="divider">o</div>
+        <div className="divider">{L.or}</div>
 
         {!showEmailForm ? (
           <button className="auth-btn secondary" onClick={() => setShowEmailForm(true)}>
-            <EmailIcon /> Continua con email
+            <EmailIcon /> {L.email}
           </button>
         ) : (
           <form className="email-form" onSubmit={handleEmailSubmit}>
             <input
               type="email"
-              placeholder="Email"
+              placeholder={L.emailPlaceholder}
               required
               autoFocus
               value={email}
@@ -176,32 +178,32 @@ function LoginScreen() {
             />
             <input
               type="password"
-              placeholder="Password"
+              placeholder={L.passwordPlaceholder}
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
             <button className="auth-btn" type="submit" disabled={pending}>
-              {isSignUp ? "Crea account" : "Accedi"}
+              {isSignUp ? L.createAccount : L.signIn}
             </button>
             <button
               type="button"
               className="toggle-mode"
               onClick={() => setIsSignUp((v) => !v)}
             >
-              {isSignUp ? "Hai già un account? Accedi" : "Non hai un account? Registrati"}
+              {isSignUp ? L.haveAccount : L.noAccount}
             </button>
           </form>
         )}
       </section>
 
       <footer className="login-footer">
-        <a href="https://kidboxapp.com/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+        <a href="https://kidboxapp.com/privacy.html" target="_blank" rel="noopener noreferrer">{L.privacy}</a>
         <span aria-hidden="true">·</span>
-        <a href="https://kidboxapp.com/terms.html" target="_blank" rel="noopener noreferrer">Termini</a>
+        <a href="https://kidboxapp.com/terms.html" target="_blank" rel="noopener noreferrer">{L.terms}</a>
         <span aria-hidden="true">·</span>
-        <a href="mailto:passboxcontact@gmail.com">Contatti</a>
+        <a href="mailto:passboxcontact@gmail.com">{L.contact}</a>
       </footer>
     </div>
   );
@@ -255,7 +257,8 @@ function AuthedApp() {
 
 function AppShell() {
   const { user } = useAuth();
-  if (user === undefined) return <p className="loading">Caricamento...</p>;
+  const { t } = useTranslation();
+  if (user === undefined) return <p className="loading">{t.login.loading}</p>;
   return user ? <AuthedApp /> : <LoginScreen />;
 }
 
