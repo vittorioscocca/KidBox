@@ -26,20 +26,31 @@ export function FamilyProvider({ children }) {
         const membershipsSnap = await getDocs(
           collection(db, "users", user.uid, "memberships")
         );
+        // Come `FamilyBootstrapService` su iOS: l'indice membership può
+        // puntare a una famiglia che non c'è più (quella vuota dell'onboarding)
+        // o da cui si è stati revocati. Lì la lettura è negata dalle regole, e
+        // non deve bloccare tutte le altre: la famiglia si salta e basta.
         const results = await Promise.all(
           membershipsSnap.docs.map(async (m) => {
-            const familySnap = await getDoc(doc(db, "families", m.id));
-            const membersSnap = await getDocs(
-              collection(db, "families", m.id, "members")
-            );
-            return {
-              id: m.id,
-              ...familySnap.data(),
-              memberCount: membersSnap.size,
-            };
+            try {
+              const familySnap = await getDoc(doc(db, "families", m.id));
+              if (!familySnap.exists()) return null;
+              const membersSnap = await getDocs(
+                collection(db, "families", m.id, "members")
+              );
+              return {
+                id: m.id,
+                ...familySnap.data(),
+                memberCount: membersSnap.size,
+              };
+            } catch (err) {
+              if (err?.code !== "permission-denied") throw err;
+              console.warn(`[Family] membership orfana saltata: ${m.id}`);
+              return null;
+            }
           })
         );
-        if (!cancelled) setFamilies(results);
+        if (!cancelled) setFamilies(results.filter(Boolean));
       } catch (err) {
         if (!cancelled) setError(err.message);
       }
