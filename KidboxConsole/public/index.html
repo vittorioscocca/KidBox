@@ -1193,7 +1193,11 @@ async function loadFamilies() {
           if (p === 'ios') iosCount++;
           else if (p === 'android') androidCount++;
           const userRow = _allUsersRows.find(u => u.uid === m.id);
-          if (userRow?.updatedAt && userRow.updatedAt > ago14) activeCount14d++;
+          // lastActiveAt da Auth (login o rinnovo token, tutti i client).
+          // `users/{uid}.updatedAt` resta solo come ripiego se la callable
+          // fallisce: si muove col profilo e col token FCM, non con l'uso.
+          const lastActive = userRow?.lastActiveAt || userRow?.updatedAt;
+          if (lastActive && lastActive > ago14) activeCount14d++;
         });
         if (!ownerUid && !membSnap.empty) ownerUid = membSnap.docs[0].id;
         if (ownerUid) {
