@@ -380,4 +380,227 @@ An app that answers all five clearly is probably worth the time to try — free 
 """,
         },
     },
+    # ── Confronti · secondo lotto ──────────────────────────────────────
+    {
+        "slug": "app-per-coppie-cosa-serve",
+        "category": "confronti", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "spese", "password"], "related": ["lista-condivisa-per-coppie", "organizer-di-famiglia-vs-calendario-e-chat", "app-di-famiglia-gratis-cosa-guardare"],
+        "it": {
+            "title": "App per organizzarsi in coppia: cosa deve fare davvero",
+            "desc": "Calendario, liste, spese, password: una coppia che vive insieme gestisce una piccola azienda. I sette criteri per scegliere un'app che usate tutti e due.",
+            "body": """
+Una coppia che vive insieme gestisce, senza chiamarla così, una piccola azienda: un calendario di impegni, un magazzino da rifornire, un bilancio, dei contratti, degli archivi. Quasi sempre lo fa con strumenti nati per altro: il calendario del lavoro, la chat, le note del telefono, un foglio di calcolo abbandonato a febbraio.
+
+Prima di scegliere un'app per organizzarsi in coppia vale la pena chiedersi cosa deve fare. Ecco i criteri che contano, in ordine di importanza.
+
+## 1. La userete tutti e due?
+
+Il criterio che batte tutti gli altri. Un'app perfetta usata da uno solo è un quaderno privato con una notifica in più. Guardate:
+
+- **Funziona sui vostri telefoni**, anche se uno ha un iPhone e l'altro un Android?
+- **C'è una versione dal computer**, per chi organizza dal lavoro?
+- **Entrare è semplice**? Se l'invito richiede dieci passaggi, il secondo partner non entrerà mai.
+
+## 2. Condivisa di default, non «condivisibile»
+
+Molti strumenti permettono di condividere: un calendario, una nota, una lista, uno per uno. Il problema è che ogni condivisione è un'azione da ricordare, e le cose non condivise restano invisibili all'altro.
+
+In un'app pensata per la coppia (o la famiglia) vale il contrario: **tutto è comune per impostazione**, e l'altro trova le cose senza che gliele mandiate.
+
+## 3. Un calendario solo
+
+Il calendario è il cuore. Deve contenere gli impegni di entrambi e quelli comuni, con una vista che mostri la settimana a colpo d'occhio: capire dove incastrare la cena con gli amici è il suo lavoro principale. E un evento aggiunto da uno deve comparire all'altro subito, con un promemoria.
+
+## 4. Liste con un responsabile
+
+Una lista condivisa senza responsabili è una lista di cose che «qualcuno» farà. Cercate un'app in cui ogni voce si può **assegnare**, con il promemoria che arriva a chi deve farla. È il dettaglio che separa una lista usata da una ignorata — ne parliamo in [la lista condivisa per coppie](/blog/lista-condivisa-per-coppie).
+
+## 5. I soldi, senza diventare contabili
+
+Non serve un software di contabilità. Serve sapere quanto costa la casa ogni mese e **chi ha anticipato cosa**, per non dover ricostruire le spese a fine mese. Un vantaggio concreto: quando le spese nascono da sole dalle bollette o dalle visite registrate altrove, non vanno scritte due volte.
+
+## 6. Le cose delicate, al sicuro
+
+Una coppia condivide più di quanto pensi: il PIN del Wi-Fi, le credenziali dell'assicurazione, i documenti d'identità, i referti. Tenerli in chat è comodo e pessimo. Chiedetevi:
+
+- le **password** hanno un posto apposito, cifrato?
+- i **documenti** sono cifrati, o semplicemente caricati su un server?
+- chi gestisce l'app **può leggere** quello che ci mettete?
+
+## 7. Cosa succede se arrivano figli
+
+Non è una domanda da fare subito, ma conviene porsela: se tra due anni arriva un bambino, l'app regge? Visite, vaccini, documenti del figlio, spese per lui. Cambiare strumento con un neonato in casa è l'ultima cosa che vorrete fare.
+
+## Dove si colloca KidBox
+
+KidBox nasce come organizer di famiglia, e una coppia è una famiglia: [calendario](/strumenti/calendario) con viste mese, settimana e giorno, [cose da fare](/strumenti/to-do) assegnabili con promemoria, [spese](/strumenti/spese) con chi ha pagato, [password](/strumenti/password) e documenti cifrati con una chiave che esiste solo sui vostri dispositivi. Funziona su iPhone, Android e browser, e il piano gratuito copre una famiglia di due persone. Per i dettagli sui piani c'è la [pagina dei prezzi](/index.html#prezzi).
+
+## In sintesi
+
+Prima di tutto: la userete in due. Poi condivisione di default, un calendario solo, liste con un responsabile, soldi senza contabilità e le cose delicate cifrate. E un occhio al futuro, se il futuro potrebbe avere dei figli.
+""",
+        },
+        "en": {
+            "title": "Apps for couples: what they actually need to do",
+            "desc": "Calendar, lists, expenses, passwords: a couple living together runs a small business. Seven criteria for choosing an app you'll both actually use.",
+            "body": """
+A couple living together runs, without calling it that, a small business: a calendar of commitments, a stockroom to restock, a budget, contracts, archives. Almost always with tools built for something else: the work calendar, the chat, phone notes, a spreadsheet abandoned in February.
+
+Before choosing an app to organise as a couple, it's worth asking what it needs to do. Here are the criteria that matter, in order of importance.
+
+## 1. Will you both use it?
+
+The criterion that beats all the others. A perfect app used by one person is a private notebook with an extra notification. Check:
+
+- **Does it work on both your phones**, even if one has an iPhone and the other an Android?
+- **Is there a computer version**, for whoever organises from work?
+- **Is joining simple**? If the invite takes ten steps, the second partner will never get in.
+
+## 2. Shared by default, not "shareable"
+
+Many tools let you share: a calendar, a note, a list, one at a time. The problem is that every share is an action to remember, and whatever isn't shared stays invisible to the other person.
+
+In an app built for couples (or families) it's the other way round: **everything is common by default**, and your partner finds things without you sending them.
+
+## 3. One calendar
+
+The calendar is the heart. It needs both people's commitments and the shared ones, with a view that shows the week at a glance: working out where to fit dinner with friends is its main job. And an event added by one of you should appear for the other immediately, with a reminder.
+
+## 4. Lists with an owner
+
+A shared list without owners is a list of things "someone" will do. Look for an app where every item can be **assigned**, with the reminder going to whoever has to do it. It's the detail that separates a used list from an ignored one — more in [the shared to-do list for couples](/en/blog/lista-condivisa-per-coppie).
+
+## 5. Money, without becoming accountants
+
+You don't need accounting software. You need to know what the home costs each month and **who paid for what**, so you don't have to reconstruct expenses at the end of the month. A real advantage: when expenses are created automatically from bills or appointments recorded elsewhere, they don't get written twice.
+
+## 6. Sensitive things, kept safe
+
+A couple shares more than you'd think: the Wi-Fi password, the insurance login, ID documents, medical reports. Keeping them in chat is convenient and terrible. Ask yourselves:
+
+- do **passwords** have a dedicated, encrypted place?
+- are **documents** encrypted, or just uploaded to a server?
+- can whoever runs the app **read** what you put in it?
+
+## 7. What happens if children arrive
+
+Not a question for day one, but worth asking: if a baby arrives in two years, will the app cope? Appointments, vaccinations, the child's documents, their expenses. Switching tools with a newborn at home is the last thing you'll want to do.
+
+## Where KidBox fits
+
+KidBox was built as a family organiser, and a couple is a family: a [calendar](/en/tools/calendario) with month, week and day views, assignable [to-dos](/en/tools/to-do) with reminders, [expenses](/en/tools/spese) with who paid, [passwords](/en/tools/password) and documents encrypted with a key that exists only on your devices. It works on iPhone, Android and the browser, and the free plan covers a family of two. Plan details are on the [pricing page](/index-en.html#prezzi).
+
+## In short
+
+First: you'll both use it. Then sharing by default, one calendar, lists with an owner, money without accounting and sensitive things encrypted. And an eye on the future, if the future might include children.
+""",
+        },
+    },
+    {
+        "slug": "app-tabella-faccende-cosa-guardare",
+        "category": "confronti", "date": "2026-09-13",
+        "tools": ["to-do", "casa", "calendario"], "related": ["faccende-per-eta-bambini", "dividere-le-faccende-in-coppia", "app-di-famiglia-gratis-cosa-guardare"],
+        "it": {
+            "title": "App per la tabella delle faccende: cosa guardare prima di sceglierne una",
+            "desc": "Punti, premi, turni automatici, lavagne colorate: le app per le faccende promettono molto. I criteri che distinguono quelle che reggono dopo il primo mese.",
+            "body": """
+Le app per la tabella delle faccende hanno un problema comune: il primo giorno funzionano tutte. I bambini sono entusiasti dei punti, i genitori della grafica, la cucina non è mai stata così in ordine. Poi arriva la terza settimana, e l'app resta aperta solo sul telefono di chi l'ha installata.
+
+Quello che conta non è come parte, ma come regge. Ecco cosa guardare.
+
+## 1. Chi la deve aggiornare?
+
+Ogni tabella delle faccende ha un costo nascosto: qualcuno deve mantenerla. Aggiungere compiti, cambiare i turni, controllare cosa è stato fatto. Se quel qualcuno è sempre lo stesso genitore, l'app ha solo spostato il carico mentale dalla testa allo schermo.
+
+Chiedetevi: **spuntare un compito lo può fare chi l'ha fatto**, dal suo telefono, senza passare dal genitore? Aggiungere una voce richiede cinque secondi o cinque schermate?
+
+## 2. Funziona per gli adulti, non solo per i bambini
+
+Molte app sono pensate per i figli: avatar, punti, negozio dei premi. Ottime per un bambino di sette anni, imbarazzanti per un adolescente e inutili per la coppia. Ma le faccende della casa sono per la maggior parte **degli adulti**: bollette, manutenzione, spesa, lavatrici.
+
+Uno strumento che separa «le faccende dei bambini» da «la casa degli adulti» finisce per coprirne solo metà.
+
+## 3. Promemoria a chi deve agire
+
+Una tabella che nessuno guarda non serve. Il promemoria deve arrivare **alla persona assegnata**, all'ora giusta — non a tutta la famiglia, che imparerà in fretta a ignorare le notifiche. Controllate se ogni compito può avere un responsabile e un orario.
+
+## 4. Punti e premi: con giudizio
+
+La gamification funziona a breve termine e per i più piccoli. A lungo andare rischia di insegnare che si aiuta in casa **in cambio di qualcosa**. Se l'app ruota tutta intorno ai punti, chiedetevi cosa succede il giorno in cui i punti non interessano più.
+
+Un'alternativa che regge meglio: compiti proporzionati all'età, sempre gli stessi, e il riconoscimento di vedere la propria voce spuntata. Ne parliamo in [faccende adatte all'età dei bambini](/blog/faccende-per-eta-bambini).
+
+## 5. Le faccende non vivono da sole
+
+La lavatrice da stendere è una faccenda. Ma anche la revisione dell'auto, la garanzia della lavastoviglie, la bolletta della luce. Un'app che gestisce solo i compiti di pulizia vi costringerà ad averne un'altra per le scadenze, una per la spesa, una per il calendario. Più app, meno probabilità che tutti le usino tutte.
+
+## 6. Senza connessione e su ogni telefono
+
+Banale ma decisivo: la lista va consultata e spuntata anche in cantina o al supermercato senza campo, e funzionare sul telefono di ciascuno, qualunque sia. Se un membro della famiglia resta fuori perché ha il sistema operativo sbagliato, la tabella non è più di famiglia.
+
+## 7. Cosa costa, e cosa limita il piano gratuito
+
+Molte app per le faccende sono gratuite fino a un certo numero di membri, liste o compiti. Leggete i limiti **prima** di caricarci la vita della casa. Abbiamo raccolto le domande da fare in [app di famiglia gratis: cosa guardare](/blog/app-di-famiglia-gratis-cosa-guardare).
+
+## Dove si colloca KidBox
+
+KidBox non è un'app di sole faccende e non ha punti né premi: le faccende sono [cose da fare di famiglia](/strumenti/to-do), assegnabili, con promemoria a chi deve farle, spuntabili da chiunque le abbia fatte e consultabili anche offline. Accanto ci sono le scadenze di [casa](/strumenti/casa), il calendario e la lista della spesa, e in italiano si aggiungono voci dettandole ad [Alexa](/strumenti/alexa).
+
+## In sintesi
+
+Non guardate il primo giorno: guardate la terza settimana. Chi mantiene la tabella, se copre anche le faccende degli adulti, se i promemoria arrivano a chi deve agire, e se le faccende stanno nello stesso posto del resto della casa.
+""",
+        },
+        "en": {
+            "title": "Chore chart apps: what to look at before choosing one",
+            "desc": "Points, rewards, automatic rotas, colourful boards: chore apps promise a lot. The criteria that separate the ones still in use after the first month.",
+            "body": """
+Chore chart apps share a problem: on day one they all work. The kids love the points, the parents love the design, the kitchen has never been tidier. Then week three arrives, and the app is only open on the phone of whoever installed it.
+
+What matters isn't how it starts, but how it holds. Here's what to look at.
+
+## 1. Who has to keep it up to date?
+
+Every chore chart has a hidden cost: someone has to maintain it. Adding tasks, changing rotas, checking what's been done. If that someone is always the same parent, the app has only moved the mental load from their head to a screen.
+
+Ask: **can whoever did the task tick it**, from their own phone, without going through a parent? Does adding an item take five seconds or five screens?
+
+## 2. It works for adults, not just children
+
+Many apps are designed for kids: avatars, points, a rewards shop. Great for a seven-year-old, embarrassing for a teenager and useless for the couple. But most household chores **belong to the adults**: bills, maintenance, groceries, laundry.
+
+A tool that separates "the kids' chores" from "the adults' home" ends up covering only half.
+
+## 3. Reminders to whoever has to act
+
+A chart nobody looks at is useless. The reminder has to reach **the assigned person**, at the right time — not the whole family, who'll quickly learn to ignore notifications. Check whether every task can have an owner and a time.
+
+## 4. Points and rewards: with judgement
+
+Gamification works in the short term and for the youngest. In the long run it risks teaching that you help at home **in exchange for something**. If the app revolves entirely around points, ask what happens the day points stop being interesting.
+
+An alternative that holds better: age-appropriate tasks, always the same ones, and the recognition of seeing your own item ticked. More in [age-appropriate chores for kids](/en/blog/faccende-per-eta-bambini).
+
+## 5. Chores don't live alone
+
+The washing to hang out is a chore. So is the car inspection, the dishwasher warranty, the electricity bill. An app that only handles cleaning tasks will force you to have another for deadlines, one for groceries, one for the calendar. More apps, less chance everyone uses all of them.
+
+## 6. Offline and on every phone
+
+Obvious but decisive: the list has to be readable and tickable in the basement or at the supermarket with no signal, and work on everyone's phone, whatever it is. If one family member is left out because of the wrong operating system, the chart is no longer the family's.
+
+## 7. What it costs, and what the free plan limits
+
+Many chore apps are free up to a certain number of members, lists or tasks. Read the limits **before** you load your household into it. We collected the questions to ask in [free family apps: what to look at](/en/blog/app-di-famiglia-gratis-cosa-guardare).
+
+## Where KidBox fits
+
+KidBox isn't a chores-only app and has no points or rewards: chores are [family to-dos](/en/tools/to-do), assignable, with reminders to whoever has to do them, tickable by whoever did them and available offline. Alongside them sit [home](/en/tools/casa) deadlines, the calendar and the grocery list.
+
+## In short
+
+Don't judge day one: judge week three. Who maintains the chart, whether it covers adult chores too, whether reminders reach whoever has to act, and whether chores live in the same place as the rest of the home.
+""",
+        },
+    },
 ]

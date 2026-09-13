@@ -375,4 +375,336 @@ After a month, count the "where are you?" calls. If they've gone and nobody in t
 """,
         },
     },
+    # ── Organizzazione familiare · secondo lotto ───────────────────────
+    {
+        "slug": "orari-dopo-scuola-genitori-che-lavorano",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "posizione"], "related": ["routine-della-sera-in-famiglia", "promemoria-che-funzionano", "posizione-famiglia-senza-controllo"],
+        "it": {
+            "title": "Il dopo scuola quando lavorate entrambi: orari, uscite e chi va a prendere chi",
+            "desc": "Uscita alle 16:10, nuoto alle 17, il grande in piscina e il piccolo dalla nonna. Come organizzare il pomeriggio dei figli quando nessuno dei due è libero alle quattro.",
+            "body": """
+Per due genitori che lavorano, il problema della giornata non è la mattina: sono le quattro del pomeriggio. La scuola esce, l'ufficio no. In mezzo ci sono sport, catechismo, logopedista, compleanni, i nonni che coprono il martedì ma non il giovedì, la babysitter che il venerdì ha l'esame.
+
+È un incastro che cambia ogni settimana, e si regge quasi sempre sulla memoria di un genitore. Ecco come tirarlo fuori dalla testa.
+
+## 1. La settimana tipo, scritta una volta
+
+Prima di tutto, disegnate la **settimana tipo** del periodo scolastico: per ogni giorno, ogni figlio, dall'uscita da scuola a cena.
+
+- a che ora esce
+- dove deve andare dopo (casa, sport, nonni, doposcuola)
+- **chi lo porta e chi lo va a prendere**
+- a che ora torna a casa
+
+Il risultato di solito sorprende: ci sono due o tre «buchi» che si coprono ogni settimana improvvisando. Sono lì che nascono le telefonate in riunione.
+
+## 2. Tutto nel calendario, con il figlio indicato
+
+La settimana tipo va nel [calendario di famiglia](/strumenti/calendario), non su un foglio: uscite, attività, visite, ciascuna con il figlio a cui si riferisce e un promemoria. La vista **settimana** con la griglia oraria è quella giusta, perché mostra i sovrapposti — il nuoto del grande che finisce quando inizia il calcio del piccolo.
+
+L'evento aggiunto da un genitore compare subito sul telefono dell'altro, e sul computer di chi organizza dall'ufficio.
+
+## 3. Chi va a prendere è una cosa da fare
+
+L'orario dell'uscita è un evento. **Andare a prendere** è un compito, e ha un responsabile. Scriverlo come [cosa da fare](/strumenti/to-do) assegnata — «prendere Giulia a nuoto, 18:15» — con il promemoria che arriva a quella persona e a nessun altro, elimina la domanda più frequente del pomeriggio: «ci vai tu o ci vado io?».
+
+Se un giorno cambia, si riassegna la voce: l'altro lo vede senza bisogno di messaggi.
+
+## 4. Il piano B, prima che serva
+
+Il pomeriggio salta sempre per le stesse ragioni: una riunione che si allunga, un figlio con la febbre, lo sciopero dei mezzi. Decidete prima il piano B per ogni giorno:
+
+- chi è il **primo sostituto** (nonni, un altro genitore della squadra, la babysitter)
+- come lo si avvisa, e con quanto anticipo
+- dove sono i **contatti** e le deleghe firmate per la scuola
+
+Mettete tutto in una nota condivisa. Nel momento dell'emergenza non c'è tempo per cercare il numero dell'allenatore.
+
+## 5. Sapere che sono arrivati, senza chiamare
+
+Con i figli che iniziano a muoversi da soli — la fermata dell'autobus, il tragitto fino in palestra — la domanda diventa: sono arrivati? La [condivisione della posizione](/strumenti/posizione) di KidBox permette di creare un luogo, come la scuola o la piscina, e ricevere un avviso all'arrivo e alla partenza. È una condivisione che ognuno può accendere e spegnere: ne parliamo in [posizione della famiglia senza controllo](/blog/posizione-famiglia-senza-controllo).
+
+## 6. La riunione della domenica
+
+Dieci minuti la domenica sera: si guarda la settimana, si confermano chi porta e chi prende, si segnano le eccezioni — la gita, la festa, la riunione di classe. È la differenza tra organizzare la settimana e subirla.
+
+## 7. Settembre e giugno
+
+Gli orari cambiano due volte l'anno, a inizio e fine scuola, più ogni volta che parte un'attività nuova. Il momento giusto per rifare la settimana tipo è **prima** del primo giorno, non dopo la prima settimana di caos.
+
+## In sintesi
+
+Una settimana tipo scritta, gli orari nel calendario, il ritiro come cosa da fare con un responsabile, un piano B deciso prima e dieci minuti la domenica. Le quattro del pomeriggio restano un incastro — ma un incastro che conoscete entrambi.
+""",
+        },
+        "en": {
+            "title": "After school when you both work: times, pick-ups and who collects whom",
+            "desc": "School out at 4:10, swimming at 5, the eldest at the pool and the youngest at grandma's. How to organise the children's afternoons when neither of you is free at four.",
+            "body": """
+For two working parents, the hard part of the day isn't the morning: it's four in the afternoon. School lets out, the office doesn't. In between there's sport, music lessons, speech therapy, birthday parties, grandparents who cover Tuesday but not Thursday, the babysitter who has an exam on Friday.
+
+It's a puzzle that changes every week, and it almost always rests on one parent's memory. Here's how to get it out of their head.
+
+## 1. The typical week, written once
+
+First, sketch the **typical week** for the school term: for every day and every child, from school pick-up to dinner.
+
+- what time school finishes
+- where they go next (home, sport, grandparents, after-school club)
+- **who drops them off and who collects them**
+- what time they get home
+
+The result is usually surprising: there are two or three "gaps" that get covered every week by improvising. That's where the phone calls in meetings come from.
+
+## 2. Everything in the calendar, with the child named
+
+The typical week goes in the [family calendar](/en/tools/calendario), not on a sheet of paper: pick-ups, activities, appointments, each with the child it concerns and a reminder. The **week** view with the hourly grid is the right one, because it shows overlaps — the eldest's swimming ending just as the youngest's football starts.
+
+An event added by one parent appears immediately on the other's phone, and on the computer of whoever organises from the office.
+
+## 3. Collecting is a to-do
+
+The pick-up time is an event. **Going to collect** is a task, and it has an owner. Writing it as an assigned [to-do](/en/tools/to-do) — "collect Julia from swimming, 6:15" — with the reminder going to that person and nobody else removes the afternoon's most common question: "are you going or am I?".
+
+If a day changes, reassign the item: the other parent sees it without any messages.
+
+## 4. Plan B, before you need it
+
+Afternoons fall apart for the same reasons: a meeting that runs over, a child with a fever, a transport strike. Decide plan B for each day in advance:
+
+- who's the **first substitute** (grandparents, another parent from the team, the babysitter)
+- how you tell them, and how far ahead
+- where the **contacts** and signed pick-up authorisations for school are
+
+Put it all in a shared note. In the middle of an emergency there's no time to hunt for the coach's number.
+
+## 5. Knowing they've arrived, without calling
+
+Once children start moving on their own — the bus stop, the walk to the gym — the question becomes: have they arrived? KidBox's [location sharing](/en/tools/posizione) lets you create a place, such as school or the pool, and get an alert on arrival and departure. It's sharing each person can switch on and off: more in [family location without surveillance](/en/blog/posizione-famiglia-senza-controllo).
+
+## 6. The Sunday meeting
+
+Ten minutes on Sunday evening: look at the week, confirm who drops off and who collects, note the exceptions — the school trip, the party, the parents' meeting. It's the difference between organising the week and enduring it.
+
+## 7. September and June
+
+Times change twice a year, at the start and end of the school year, plus every time a new activity begins. The right moment to redo the typical week is **before** the first day, not after the first week of chaos.
+
+## In short
+
+A written typical week, times in the calendar, collection as a to-do with an owner, plan B decided in advance and ten minutes on Sunday. Four in the afternoon is still a puzzle — but one you both know.
+""",
+        },
+    },
+    {
+        "slug": "primo-anno-da-neogenitori",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["salute", "documenti", "calendario", "foto-e-video"], "related": ["storia-sanitaria-dei-figli", "documenti-di-famiglia-in-ordine", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "Il primo anno da neogenitori: cosa organizzare, e cosa lasciar perdere",
+            "desc": "Visite, vaccini, documenti, bonus, turni di notte e mille foto. Cosa conviene sistemare nelle prime settimane per non doverci pensare mentre si dorme tre ore.",
+            "body": """
+Nel primo anno di vita di un figlio si dorme poco, si decide tanto e si ricorda pochissimo. Non è il momento di diventare organizzati: è il momento di organizzare **il minimo indispensabile**, così che il resto possa andare come va.
+
+Questa guida separa le cose che conviene sistemare subito da quelle che possono aspettare.
+
+## Cosa sistemare nelle prime settimane
+
+### I documenti del neonato
+
+Nelle prime settimane arrivano, uno dopo l'altro, documenti che serviranno per anni: l'atto di nascita, il codice fiscale, la tessera sanitaria, la scelta del pediatra, le pratiche per i bonus e le detrazioni. Arrivano quando nessuno dei due ha la testa per archiviarli.
+
+La soluzione è una sola cartella, condivisa, in cui **chiunque dei due** li mette appena arrivano: una foto o una scansione basta. In KidBox la scheda [documenti](/strumenti/documenti) è cifrata con la chiave di famiglia, e la tessera sanitaria può stare anche nel wallet, a portata di mano in farmacia.
+
+### Le visite e i vaccini
+
+Il primo anno è fitto: controlli dal pediatra, vaccinazioni, eventuali visite specialistiche. Due regole:
+
+- **ogni appuntamento nel [calendario](/strumenti/calendario) di famiglia**, con promemoria, così lo vede anche chi non ha preso la telefonata
+- **ogni visita registrata dopo**, con data, peso, note del pediatra e referto allegato
+
+La seconda sembra una fatica in più. È quella che vi farà rispondere in trenta secondi quando, tra due anni, un medico chiederà «quando ha fatto il richiamo?». Nella scheda [salute](/strumenti/salute) di ogni figlio visite, esami e vaccini restano in ordine, e la cartella clinica riepilogativa si apre in studio.
+
+### Chi fa cosa, di notte e di giorno
+
+Il carico del primo anno tende a finire tutto su un genitore, soprattutto se l'altro rientra al lavoro. Parlatene prima che succeda: turni di notte, chi si occupa delle visite, chi della spesa e delle pratiche. Scritto in una lista condivisa, l'accordo resiste meglio alla stanchezza.
+
+## Cosa può aspettare
+
+- **Il diario perfetto** di poppate, pannolini e sonnellini. Se il pediatra vi chiede di monitorare qualcosa, fatelo; altrimenti non è un obbligo, e una nota con l'essenziale basta. KidBox non ha un diario delle poppate, e per molte famiglie non serve.
+- **L'album fotografico ordinato.** Le foto si fanno comunque; ordinarle può aspettare. Basta che finiscano in un posto solo, condiviso tra i due genitori, invece che sparse su due telefoni.
+- **L'organizzazione della casa** come prima. Per qualche mese la casa sarà meno in ordine. Va bene.
+
+## Le foto, in un posto solo
+
+Nel primo anno si scattano migliaia di foto, metà sul telefono di un genitore e metà su quello dell'altro, più quelle mandate in chat e compresse. Un [album condiviso](/strumenti/foto-e-video) di famiglia, in qualità piena e cifrato, risolve il problema a monte: tutti e due caricate lì, e il primo anno esiste intero in un posto.
+
+## La rete intorno
+
+Nonni, zii, amici che si offrono di aiutare: l'aiuto funziona quando è **concreto e programmato**. Una spesa da fare il giovedì, un pomeriggio di sonno il sabato. Scriverlo nel calendario lo trasforma da offerta generica in aiuto vero.
+
+## In sintesi
+
+Nelle prime settimane: una cartella per i documenti, ogni visita nel calendario e registrata dopo, un accordo scritto su chi fa cosa, le foto in un album comune. Il resto può aspettare. Il primo anno non va ottimizzato: va attraversato, possibilmente senza dover ricordare dove avete messo il codice fiscale.
+""",
+        },
+        "en": {
+            "title": "The first year as new parents: what to organise, and what to let go",
+            "desc": "Check-ups, vaccinations, documents, benefits, night shifts and a thousand photos. What to sort out in the first weeks so you don't have to think about it on three hours' sleep.",
+            "body": """
+In a child's first year you sleep little, decide a lot and remember almost nothing. It isn't the moment to become organised: it's the moment to organise **the bare minimum**, so everything else can go however it goes.
+
+This guide separates what's worth sorting out straight away from what can wait.
+
+## What to sort out in the first weeks
+
+### The baby's documents
+
+In the first weeks, one after another, documents arrive that you'll need for years: the birth certificate, tax and health registration, the choice of paediatrician, the paperwork for benefits. They arrive when neither of you has the headspace to file them.
+
+There's one solution: a single shared folder where **either of you** puts them as they arrive — a photo or scan is enough. In KidBox the [documents](/en/tools/documenti) section is encrypted with the family key, and the health card can also live in the wallet, handy at the pharmacy.
+
+### Check-ups and vaccinations
+
+The first year is busy: paediatric check-ups, vaccinations, perhaps specialist visits. Two rules:
+
+- **every appointment in the family [calendar](/en/tools/calendario)**, with a reminder, so whoever didn't take the call sees it too
+- **every visit recorded afterwards**, with date, weight, the paediatrician's notes and the report attached
+
+The second one looks like extra effort. It's what lets you answer in thirty seconds when, two years from now, a doctor asks "when was the booster?". In each child's [health](/en/tools/salute) section visits, tests and vaccinations stay in order, and the summary record opens right there in the surgery.
+
+### Who does what, night and day
+
+The first-year load tends to fall entirely on one parent, especially once the other goes back to work. Talk about it before it happens: night shifts, who handles appointments, who handles groceries and paperwork. Written in a shared list, the agreement survives tiredness better.
+
+## What can wait
+
+- **The perfect log** of feeds, nappies and naps. If the paediatrician asks you to monitor something, do it; otherwise it isn't compulsory, and a note with the essentials is enough. KidBox doesn't have a feeding log, and many families don't need one.
+- **The tidy photo album.** Photos get taken anyway; sorting them can wait. As long as they end up in one shared place, instead of scattered across two phones.
+- **Running the house** like before. For a few months the house will be less tidy. That's fine.
+
+## Photos, in one place
+
+In the first year you take thousands of photos, half on one parent's phone and half on the other's, plus the compressed ones sent in chat. A shared family [album](/en/tools/foto-e-video), in full quality and encrypted, solves the problem at the source: you both upload there, and the first year exists in full in one place.
+
+## The support network
+
+Grandparents, aunts and uncles, friends offering to help: help works when it's **concrete and scheduled**. A grocery run on Thursday, an afternoon nap on Saturday. Putting it in the calendar turns a generic offer into real help.
+
+## In short
+
+In the first weeks: one folder for documents, every appointment in the calendar and recorded afterwards, a written agreement on who does what, photos in a shared album. The rest can wait. The first year isn't something to optimise: it's something to get through, ideally without having to remember where you put the birth certificate.
+""",
+        },
+    },
+    {
+        "slug": "assistenza-a-un-familiare-turni",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "documenti", "spese"], "related": ["documenti-di-famiglia-in-ordine", "promemoria-che-funzionano", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "Assistere un genitore anziano tra fratelli: turni, visite, documenti e spese",
+            "desc": "Quando un genitore ha bisogno di aiuto, i figli si ritrovano a coordinarsi come non facevano da anni. Come dividere turni e informazioni senza che tutto ricada su uno.",
+            "body": """
+Succede quasi sempre all'improvviso: una caduta, una diagnosi, un ricovero. Un genitore che fino a ieri faceva da sé ha bisogno di qualcuno che lo accompagni alle visite, gli faccia la spesa, controlli le medicine, parli con il medico. E i figli adulti — ognuno con il suo lavoro, i suoi figli, la sua città — si ritrovano a doversi coordinare.
+
+Il rischio è noto: l'assistenza ricade sul figlio che abita più vicino, o su quello che «ha più tempo», e gli altri aiutano quando possono. Qualche mese dopo, quel figlio è esausto e gli altri non capiscono perché.
+
+Questa guida riguarda la parte organizzativa. Per le scelte di cura, i servizi sociali e le pratiche di invalidità o assistenza, i riferimenti sono il medico di base e gli uffici competenti.
+
+## 1. Fare l'inventario dell'assistenza
+
+Prima di dividere, bisogna vedere. Mettete per iscritto tutto quello che serve in una settimana:
+
+- **visite ed esami**: chi accompagna, chi parla con il medico
+- **farmaci**: chi li compra, chi controlla che vengano presi, chi rinnova le ricette
+- **spesa e pasti**
+- **casa**: pulizie, bollette, piccole riparazioni
+- **pratiche**: pensione, esenzioni, domande di assistenza
+- **compagnia**: le visite che non hanno uno scopo pratico, e che contano quanto le altre
+
+Come per le faccende di casa, il lavoro più pesante è quello invisibile: accorgersi, ricordare, telefonare.
+
+## 2. Un calendario per l'assistenza
+
+Visite, turni di presenza, consegne della spesa: tutto in un [calendario](/strumenti/calendario) condiviso tra i fratelli, con promemoria. In KidBox si può creare una famiglia apposita per l'assistenza e farne parte insieme alla propria, passando dall'una all'altra dalle Impostazioni: così i turni per il genitore non si mescolano con gli impegni dei vostri figli. Il piano gratuito copre due persone: se i fratelli sono di più, i dettagli sono nella [sezione piani](/index.html#prezzi).
+
+Chi abita lontano vede tutto e capisce quando serve la sua presenza, invece di scoprirlo da una telefonata stanca.
+
+## 3. Ogni compito ha un nome
+
+«Qualcuno deve rinnovare la ricetta» significa che nessuno lo farà. Ogni voce diventa una [cosa da fare](/strumenti/to-do) assegnata a un fratello preciso, con un promemoria. Anche chi abita lontano può prendersi compiti veri: le pratiche online, le telefonate con l'ufficio, la prenotazione degli esami.
+
+## 4. I documenti in un posto solo
+
+Referti, lettere di dimissione, piani terapeutici, tessera sanitaria, deleghe: nel momento del bisogno servono subito, e di solito sono nel cassetto di chi c'era l'ultima volta. Una cartella condivisa di [documenti](/strumenti/documenti), cifrata, in cui ogni fratello carica quello che riceve, evita di rifare la stessa domanda al medico tre volte.
+
+Tenete anche una nota condivisa con l'essenziale: farmaci e dosaggi, allergie, numeri del medico e della farmacia.
+
+## 5. Le spese, senza conti in sospeso
+
+L'assistenza costa: farmaci, visite private, una badante per qualche ora, i taxi per l'ospedale. Se ognuno paga quello che capita e nessuno lo scrive, dopo sei mesi nascono i sospetti. Registrare ogni spesa nelle [spese](/strumenti/spese) condivise, con chi ha pagato, rende i conti trasparenti — e una conversazione sui soldi possibile.
+
+## 6. Proteggere chi fa di più
+
+Ci sarà sempre un fratello che fa di più, per vicinanza o per carattere. Il calendario condiviso rende visibile quanto: usatelo per ridistribuire, non per misurare. E prevedete **pause vere** per chi è presente ogni giorno, programmate come si programmano le visite.
+
+## In sintesi
+
+Un inventario di tutto quello che serve, un calendario comune per turni e visite, ogni compito con un nome, i documenti in un posto solo e le spese scritte. L'assistenza a un genitore resta pesante — ma pesa molto meno quando non la porta una persona sola.
+""",
+        },
+        "en": {
+            "title": "Caring for an elderly parent among siblings: turns, appointments, documents and costs",
+            "desc": "When a parent needs help, adult children find themselves coordinating as they haven't in years. How to share turns and information without everything landing on one person.",
+            "body": """
+It almost always happens suddenly: a fall, a diagnosis, a hospital stay. A parent who managed alone until yesterday now needs someone to take them to appointments, do their shopping, check their medicines, talk to the doctor. And the adult children — each with their own job, children and city — find themselves having to coordinate.
+
+The risk is well known: care falls on the child who lives closest, or the one who "has more time", and the others help when they can. A few months later, that child is exhausted and the others don't understand why.
+
+This guide covers the organisational side. For care decisions, social services and disability or care applications, the right reference is the family doctor and the relevant offices.
+
+## 1. Take an inventory of the care
+
+Before dividing, you have to see. Write down everything needed in a week:
+
+- **appointments and tests**: who accompanies, who talks to the doctor
+- **medicines**: who buys them, who checks they're taken, who renews prescriptions
+- **shopping and meals**
+- **the home**: cleaning, bills, small repairs
+- **paperwork**: pension, exemptions, care applications
+- **company**: visits with no practical purpose, which matter as much as the others
+
+As with household chores, the heaviest work is the invisible kind: noticing, remembering, phoning.
+
+## 2. A calendar for care
+
+Appointments, turns being present, grocery deliveries: all in a [calendar](/en/tools/calendario) shared between siblings, with reminders. In KidBox you can create a family specifically for the care and belong to it alongside your own, switching between them from Settings: so the turns for your parent don't mix with your children's commitments. The free plan covers two people: if there are more siblings, details are in the [plans section](/index-en.html#prezzi).
+
+Whoever lives far away sees everything and understands when they're needed, instead of finding out from a tired phone call.
+
+## 3. Every task has a name
+
+"Someone needs to renew the prescription" means nobody will. Every item becomes a [to-do](/en/tools/to-do) assigned to a specific sibling, with a reminder. Even those who live far away can take on real tasks: online paperwork, calls with the office, booking tests.
+
+## 4. Documents in one place
+
+Medical reports, discharge letters, treatment plans, health card, authorisations: when they're needed they're needed now, and they're usually in the drawer of whoever was there last. A shared, encrypted [documents](/en/tools/documenti) folder where each sibling uploads what they receive avoids asking the doctor the same question three times.
+
+Keep a shared note with the essentials too: medicines and doses, allergies, the doctor's and pharmacy's numbers.
+
+## 5. Costs, without unsettled accounts
+
+Care costs money: medicines, private appointments, a carer for a few hours, taxis to the hospital. If everyone pays whatever comes up and nobody writes it down, suspicion sets in after six months. Recording every cost in shared [expenses](/en/tools/spese), with who paid, keeps the accounts transparent — and makes a conversation about money possible.
+
+## 6. Protect whoever does the most
+
+There will always be a sibling who does more, through proximity or temperament. The shared calendar shows how much: use it to redistribute, not to keep score. And plan **real breaks** for whoever is there every day, scheduled the way appointments are.
+
+## In short
+
+An inventory of everything needed, a common calendar for turns and appointments, every task with a name, documents in one place and costs written down. Caring for a parent stays heavy — but it weighs far less when one person isn't carrying it alone.
+""",
+        },
+    },
 ]

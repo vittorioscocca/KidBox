@@ -381,4 +381,380 @@ It isn't tidiness. It's that neither of you depends on the other any more for so
 """,
         },
     },
+    # ── Genitori separati · secondo lotto ──────────────────────────────
+    {
+        "slug": "famiglia-allargata-organizzazione",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["famiglia", "calendario", "chat"], "related": ["calendario-famiglia-ricomposta", "confini-nella-co-genitorialita", "calendario-genitori-separati"],
+        "it": {
+            "title": "Famiglia allargata: come tenerla organizzata senza mescolare tutto",
+            "desc": "Nuovi partner, figli di relazioni diverse, due case e un ex con cui coordinarsi. Come separare le informazioni giuste senza perdere nessuno per strada.",
+            "body": """
+Una famiglia allargata non è una famiglia più grande: è più famiglie che si sovrappongono. C'è la casa in cui vivete con il nuovo partner e magari i suoi figli, c'è il coordinamento con l'altro genitore dei vostri, e a volte c'è anche quello del partner con il suo ex. Le persone sono tante, ma soprattutto sono tanti i **confini**: chi deve sapere cosa.
+
+L'errore più comune è mettere tutto nello stesso posto. Il secondo più comune è non metterlo da nessuna parte.
+
+## Il problema: un gruppo solo per tutti
+
+La soluzione istintiva è un gruppo in chat con tutti gli adulti coinvolti. Dura poco:
+
+- l'ex non vuole leggere le discussioni sulla vostra casa nuova
+- il nuovo partner si trova dentro conversazioni che non lo riguardano
+- le informazioni importanti — un orario, un farmaco — spariscono sotto le altre
+
+Il principio giusto è opposto: **un contesto per ogni rapporto**, e le informazioni dei figli che circolano solo dove servono.
+
+## 1. Disegnare la mappa
+
+Prima di scegliere uno strumento, disegnate su un foglio i nuclei:
+
+- **La casa di oggi**: voi, il partner, i figli che ci vivono (anche a settimane alterne)
+- **La co-genitorialità con il vostro ex**: voi due, per i figli che avete in comune
+- **La co-genitorialità del partner**, se c'è: che non è affar vostro gestire
+
+Ogni nucleo ha il suo calendario, le sue spese, i suoi documenti. I figli possono comparire in più di uno.
+
+## 2. Più famiglie, una app
+
+In KidBox un utente può far parte di [più famiglie](/strumenti/famiglia) e passare dall'una all'altra dalle Impostazioni. È esattamente la mappa di sopra: una famiglia per la casa in cui vivete, una per l'organizzazione dei figli con l'altro genitore. Calendario, spese, documenti e chat di una famiglia restano in quella famiglia.
+
+Così l'ex vede le visite pediatriche e i turni, non la lista della spesa della vostra casa. E il nuovo partner vede la vita di casa, non le trattative sulle spese straordinarie.
+
+## 3. Cosa va condiviso, e dove
+
+Una regola semplice per decidere:
+
+- **Riguarda i figli in comune** (scuola, salute, turni, spese per loro) → nella famiglia con l'altro genitore
+- **Riguarda la vita della casa** (spesa, faccende, vacanze insieme) → nella famiglia della casa
+- **Riguarda tutti e due i contesti** (un figlio malato che salta il cambio casa) → si scrive in entrambe, ognuna con ciò che le serve
+
+Meglio duplicare un evento che costringere qualcuno a leggere quello che non gli spetta.
+
+## 4. I figli non devono fare da ponte
+
+Nelle famiglie allargate i ragazzi finiscono spesso a fare i messaggeri: «dì a tua madre che sabato ti prendo alle cinque». È un peso che non spetta a loro. Ogni informazione logistica passa tra adulti, per iscritto, nel contesto giusto. La [chat di famiglia](/strumenti/chat) serve a questo: messaggi tra le persone che devono organizzarsi, e nessun altro.
+
+## 5. Il calendario è l'oggetto più delicato
+
+Due case significano due agende che devono combaciare. Il [calendario](/strumenti/calendario) della famiglia con l'altro genitore tiene i turni e gli impegni dei figli; quello della casa tiene la vita di tutti i giorni. Quando un figlio c'è o non c'è cambia tutto il resto — la spesa, i pasti, chi accompagna — quindi il turno va scritto per primo, e il resto si incastra.
+
+Ne parliamo nel dettaglio nella guida al [calendario per una famiglia ricomposta](/blog/calendario-famiglia-ricomposta).
+
+## 6. Tempo, non solo strumenti
+
+Una famiglia allargata impiega anni a trovare un equilibrio. Gli strumenti non accelerano i rapporti: evitano che la logistica li peggiori. Meno domande, meno malintesi sugli orari, meno messaggi letti dalla persona sbagliata.
+
+## In sintesi
+
+Più nuclei, più confini. Disegnate la mappa, date a ogni rapporto il suo contesto, tenete i figli fuori dalla logistica e scrivete il turno prima di tutto il resto. La famiglia resta allargata; la confusione no.
+""",
+        },
+        "en": {
+            "title": "Blended families: staying organised without mixing everything up",
+            "desc": "New partners, children from different relationships, two homes and an ex to coordinate with. How to keep the right information apart without losing anyone.",
+            "body": """
+A blended family isn't a bigger family: it's several families overlapping. There's the home you share with a new partner and perhaps their children, there's the coordination with your children's other parent, and sometimes your partner's coordination with their ex too. There are many people, but above all there are many **boundaries**: who needs to know what.
+
+The most common mistake is putting everything in one place. The second most common is putting it nowhere.
+
+## The problem: one group for everyone
+
+The instinctive fix is a group chat with every adult involved. It doesn't last:
+
+- the ex doesn't want to read discussions about your new home
+- the new partner ends up in conversations that don't concern them
+- the important information — a time, a medicine — disappears under everything else
+
+The right principle is the opposite: **one context per relationship**, with the children's information flowing only where it's needed.
+
+## 1. Draw the map
+
+Before picking a tool, draw the units on a sheet of paper:
+
+- **Today's home**: you, your partner, the children who live there (even week on, week off)
+- **Co-parenting with your ex**: the two of you, for the children you share
+- **Your partner's co-parenting**, if any: not yours to manage
+
+Each unit has its own calendar, expenses and documents. Children can appear in more than one.
+
+## 2. Several families, one app
+
+In KidBox a user can belong to [more than one family](/en/tools/famiglia) and switch between them from Settings. That's exactly the map above: one family for the home you live in, one for organising the children with their other parent. A family's calendar, expenses, documents and chat stay in that family.
+
+So the ex sees paediatric appointments and custody turns, not your household grocery list. And your new partner sees home life, not negotiations over extra expenses.
+
+## 3. What to share, and where
+
+A simple rule for deciding:
+
+- **It concerns the shared children** (school, health, turns, their expenses) → in the family with the other parent
+- **It concerns home life** (groceries, chores, holidays together) → in the household family
+- **It concerns both contexts** (a sick child missing the handover) → write it in both, each with what it needs
+
+Better to duplicate an event than force someone to read what isn't theirs.
+
+## 4. Children shouldn't be the bridge
+
+In blended families kids often end up as messengers: "tell your mum I'll pick you up at five on Saturday". It's a weight that isn't theirs to carry. Every logistical detail goes between adults, in writing, in the right context. The [family chat](/en/tools/chat) is for exactly this: messages between the people who need to organise, and nobody else.
+
+## 5. The calendar is the most delicate piece
+
+Two homes mean two schedules that have to fit. The [calendar](/en/tools/calendario) of the family with the other parent holds the turns and the children's commitments; the household one holds everyday life. Whether a child is there or not changes everything else — groceries, meals, who drives — so the turn is written first, and the rest fits around it.
+
+We go into detail in the guide to a [calendar for a blended family](/en/blog/calendario-famiglia-ricomposta).
+
+## 6. Time, not just tools
+
+A blended family takes years to find its balance. Tools don't speed up relationships: they stop logistics from making them worse. Fewer questions, fewer misunderstandings about times, fewer messages read by the wrong person.
+
+## In short
+
+More units, more boundaries. Draw the map, give each relationship its own context, keep the children out of the logistics and write the turn before anything else. The family stays blended; the confusion doesn't.
+""",
+        },
+    },
+    {
+        "slug": "calendario-famiglia-ricomposta",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["calendario", "famiglia", "to-do"], "related": ["famiglia-allargata-organizzazione", "calendario-genitori-separati", "confini-nella-co-genitorialita"],
+        "it": {
+            "title": "Il calendario di una famiglia ricomposta che funziona davvero",
+            "desc": "Figli con turni diversi, due ex con cui coordinarsi, una casa che cambia composizione ogni settimana. Come costruire un calendario che tutti leggono uguale.",
+            "body": """
+In una famiglia ricomposta la domanda «chi c'è a cena stasera?» non ha una risposta fissa. I tuoi figli sono con te a settimane alterne, quelli del partner un weekend su due, il più grande ha deciso di passare più tempo dal padre. La casa cambia composizione di continuo, e con lei la spesa, i letti da preparare, chi accompagna chi.
+
+Un calendario normale non basta, perché è pensato per famiglie in cui tutti ci sono sempre. Ecco come costruirne uno che regge.
+
+## Il principio: prima i turni, poi tutto il resto
+
+In una famiglia ricomposta il dato che condiziona tutti gli altri è **dove sono i figli**. Un allenamento, una cena, una vacanza: tutto dipende da quello. Quindi il calendario si costruisce a strati:
+
+1. **I turni**: chi è in casa, giorno per giorno
+2. **Gli impegni fissi dei figli**: scuola, sport, terapie
+3. **Gli impegni degli adulti**: lavoro, viaggi
+4. **Gli eventi**: compleanni, feste, visite
+
+Se il primo strato è sbagliato, tutti gli altri lo sono.
+
+## 1. Scrivere i turni come eventi
+
+I turni non vanno tenuti a mente né in una foto del calendario del tribunale. Vanno scritti come eventi nel [calendario di famiglia](/strumenti/calendario), uno per periodo: «Luca e Sara da noi», «Weekend Marco da papà». Ogni evento può indicare a quale figlio si riferisce, così in un colpo d'occhio si vede la composizione della casa.
+
+La vista **settimana** è quella giusta per questo lavoro: si vede subito quali sere la casa è piena e quali no.
+
+## 2. Un calendario per ogni rapporto
+
+In una famiglia ricomposta non c'è un solo calendario da condividere con tutti. Con l'altro genitore dei tuoi figli condividi i loro turni e impegni; con il partner condividi la vita di casa. In KidBox si può far parte di [più famiglie](/strumenti/famiglia): ognuna ha il suo calendario, e l'ex non vede gli impegni della vostra casa nuova.
+
+Il prezzo è che un turno va scritto in due posti: nella famiglia con l'ex, dove si concorda, e in quella di casa, dove serve a organizzarsi. Dieci secondi in più, in cambio di confini chiari.
+
+## 3. Colori e nomi coerenti
+
+Con tanti figli e tanti turni, la leggibilità è tutto. Scegliete una convenzione e rispettatela:
+
+- il **nome del figlio sempre all'inizio** del titolo: «Sara · nuoto»
+- i **turni con una parola fissa**: «da noi», «da mamma», «da papà»
+- gli **impegni degli adulti** con il nome dell'adulto
+
+Sembra pedanteria. È ciò che permette al partner di capire la settimana senza chiedere.
+
+## 4. I passaggi di consegne
+
+Il momento critico è il cambio casa: chi porta, a che ora, con cosa. Ogni passaggio merita un evento con orario e luogo, e le cose da portare — il farmaco, la divisa, il libro della scuola — come [cose da fare](/strumenti/to-do) assegnate a chi prepara la borsa, con un promemoria la sera prima.
+
+## 5. Le eccezioni per iscritto
+
+Cambi di turno, ponti, vacanze: le eccezioni sono la norma. La regola è che **nessuna eccezione esiste finché non è nel calendario**. Un accordo a voce con l'ex sullo scambio di un weekend va scritto subito, altrimenti tra due settimane saranno due versioni diverse.
+
+## 6. La domenica sera
+
+Cinque minuti la domenica sera, con il partner, sulla vista settimana: chi c'è ogni sera, chi accompagna, cosa serve. È il momento che trasforma il calendario da archivio a strumento. Senza, il calendario è pieno ma nessuno lo guarda.
+
+## In sintesi
+
+Prima i turni, poi il resto. Un calendario per ogni rapporto, nomi coerenti, i passaggi di consegne come eventi con le cose da portare, e nessuna eccezione a voce. In una casa che cambia ogni settimana, il calendario è l'unica cosa che deve restare uguale per tutti.
+""",
+        },
+        "en": {
+            "title": "A blended family calendar that actually works",
+            "desc": "Children on different schedules, two exes to coordinate with, a home whose make-up changes every week. How to build a calendar everyone reads the same way.",
+            "body": """
+In a blended family the question "who's at dinner tonight?" has no fixed answer. Your kids are with you week on, week off, your partner's every other weekend, the eldest has decided to spend more time at their dad's. The household changes make-up constantly, and with it the shopping, the beds to make up, who drives whom.
+
+A normal calendar isn't enough, because it's designed for families where everyone is always there. Here's how to build one that holds.
+
+## The principle: turns first, everything else second
+
+In a blended family the fact that shapes everything else is **where the children are**. Practice, dinner, a holiday: everything depends on it. So the calendar is built in layers:
+
+1. **Turns**: who's at home, day by day
+2. **The children's fixed commitments**: school, sport, therapy
+3. **The adults' commitments**: work, travel
+4. **Events**: birthdays, parties, visits
+
+If the first layer is wrong, all the others are too.
+
+## 1. Write turns as events
+
+Turns shouldn't be kept in your head or in a photo of the court schedule. They go in the [family calendar](/en/tools/calendario) as events, one per period: "Luke and Sara with us", "Mark's weekend at dad's". Each event can say which child it's about, so the household's make-up is visible at a glance.
+
+The **week** view is the right one for this: you can see straight away which evenings the house is full and which aren't.
+
+## 2. One calendar per relationship
+
+In a blended family there isn't a single calendar to share with everyone. With your children's other parent you share their turns and commitments; with your partner you share home life. In KidBox you can belong to [more than one family](/en/tools/famiglia): each has its own calendar, and the ex doesn't see your new household's plans.
+
+The price is that a turn gets written in two places: in the family with the ex, where it's agreed, and in the household one, where it's used to organise. Ten extra seconds, in exchange for clear boundaries.
+
+## 3. Consistent names
+
+With many children and many turns, readability is everything. Pick a convention and stick to it:
+
+- the **child's name always first** in the title: "Sara · swimming"
+- **turns with a fixed word**: "with us", "at mum's", "at dad's"
+- **adults' commitments** with the adult's name
+
+It looks pedantic. It's what lets your partner understand the week without asking.
+
+## 4. Handovers
+
+The critical moment is the change of home: who drops off, when, with what. Every handover deserves an event with time and place, and the things to bring — the medicine, the kit, the school book — as [to-dos](/en/tools/to-do) assigned to whoever packs the bag, with a reminder the evening before.
+
+## 5. Exceptions in writing
+
+Swapped turns, long weekends, holidays: exceptions are the norm. The rule is that **no exception exists until it's in the calendar**. A verbal agreement with the ex to swap a weekend gets written down immediately, otherwise in two weeks there'll be two different versions.
+
+## 6. Sunday evening
+
+Five minutes on Sunday evening, with your partner, on the week view: who's in each evening, who drives, what's needed. It's the moment that turns the calendar from an archive into a tool. Without it, the calendar is full but nobody looks at it.
+
+## In short
+
+Turns first, then the rest. One calendar per relationship, consistent names, handovers as events with the things to bring, and no verbal exceptions. In a home that changes every week, the calendar is the one thing that has to stay the same for everyone.
+""",
+        },
+    },
+    {
+        "slug": "confini-nella-co-genitorialita",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["chat", "calendario", "spese"], "related": ["calendario-genitori-separati", "spese-dei-figli-genitori-separati", "famiglia-allargata-organizzazione"],
+        "it": {
+            "title": "I confini nella co-genitorialità che proteggono la vostra serenità",
+            "desc": "Messaggi a mezzanotte, decisioni prese da uno solo, discussioni che tornano sempre sul passato. Sei confini pratici per una co-genitorialità che non consuma.",
+            "body": """
+Separarsi da un partner non significa separarsi dall'altro genitore dei propri figli. Per anni continuerete a scrivervi, accordarvi, decidere insieme. Il modo in cui lo fate determina buona parte della vostra serenità — e di quella dei figli.
+
+I confini non sono muri. Sono regole chiare su **come, quando e di cosa** si parla, che rendono il rapporto prevedibile. E la prevedibilità, dopo una separazione, è ciò che abbassa la tensione.
+
+Questo articolo parla di logistica e comunicazione. Se ci sono violenza, minacce o una situazione legale aperta, il riferimento sono l'avvocato e i servizi competenti, non un'app.
+
+## 1. Si parla dei figli, non della coppia
+
+Il confine più importante. Ogni messaggio riguarda i figli: orari, scuola, salute, spese per loro. Le questioni della coppia che non c'è più — torti, recriminazioni, nuove relazioni — restano fuori.
+
+Una prova semplice prima di inviare: **questo messaggio servirebbe anche se lo leggesse un mediatore?** Se no, non va inviato.
+
+## 2. Un canale solo, scritto
+
+Telefonate, messaggi vocali, WhatsApp, email, frasi dette al cambio casa: con cinque canali nessuno sa più cosa è stato deciso. Scegliete **un solo canale scritto** per la logistica dei figli.
+
+Una [chat dedicata](/strumenti/chat) dentro l'app dove ci sono già calendario e spese ha un vantaggio: le decisioni stanno accanto agli oggetti a cui si riferiscono, e non si mescolano con il resto della vita di ognuno.
+
+## 3. Orari di risposta ragionevoli
+
+Nessuno deve rispondere a mezzanotte, e nessuno deve aspettare tre giorni. Un accordo tipico:
+
+- **Urgenze** (salute, sicurezza): telefonata, subito
+- **Logistica della settimana**: risposta entro la giornata
+- **Tutto il resto**: entro due o tre giorni
+
+Scritto e condiviso, questo accordo toglie la sensazione di essere sempre reperibili.
+
+## 4. Le informazioni non si chiedono, si trovano
+
+Molti conflitti nascono da una domanda: «quando ha la visita?», «hai il libretto vaccinale?», «quanto hai speso per le scarpe?». Ogni domanda è un'occasione di attrito. Il confine qui è pratico: **le informazioni dei figli stanno in un posto che entrambi vedono**.
+
+- turni e impegni nel [calendario](/strumenti/calendario) condiviso
+- le spese per i figli nelle [spese di famiglia](/strumenti/spese), con chi ha pagato
+- documenti e referti nella scheda documenti, accessibili a entrambi
+
+Quando entrambi trovate le informazioni da soli, le domande — e i toni — calano.
+
+## 5. Nessuna decisione importante da soli
+
+Scuola, sport a lungo termine, cure mediche non urgenti, viaggi all'estero: le decisioni che contano si prendono in due. Il confine vale in entrambe le direzioni: non si decide da soli, e non si usa il veto come arma. Quando non c'è accordo, si fissa un momento per parlarne, per iscritto, e non si discute al cambio casa davanti ai figli.
+
+## 6. Ognuno governa la propria casa
+
+Regole su schermi, orari, cibo: nelle due case saranno diverse, e va bene. Il confine è che **l'altro genitore non gestisce la vostra casa** e voi non gestite la sua, salvo che sulle cose che riguardano davvero la salute e la sicurezza dei figli. Coerenza sui grandi temi, libertà sul resto.
+
+## Quando un confine salta
+
+Salterà. Un messaggio fuori orario, un tono sbagliato, una decisione presa da solo. La reazione migliore è la più noiosa: rispondere solo alla parte logistica, ignorare il resto, e se succede spesso riproporre l'accordo per iscritto. I confini si mantengono con la ripetizione, non con lo scontro.
+
+## In sintesi
+
+Si parla dei figli e non della coppia, su un solo canale scritto, con orari di risposta chiari. Le informazioni stanno dove entrambi le trovano, le decisioni importanti si prendono in due e ognuno governa la propria casa. Non renderà il rapporto facile. Lo renderà sopportabile, e per i figli è moltissimo.
+""",
+        },
+        "en": {
+            "title": "Co-parenting boundaries that protect your peace of mind",
+            "desc": "Midnight messages, decisions made alone, arguments that always drift back to the past. Six practical boundaries for co-parenting that doesn't wear you down.",
+            "body": """
+Separating from a partner doesn't mean separating from your children's other parent. For years you'll keep writing to each other, agreeing, deciding together. How you do it shapes a large part of your peace of mind — and your children's.
+
+Boundaries aren't walls. They're clear rules about **how, when and what** you talk about, which make the relationship predictable. And after a separation, predictability is what lowers the tension.
+
+This article is about logistics and communication. If there's violence, threats or an open legal situation, the right reference is a lawyer and the relevant services, not an app.
+
+## 1. Talk about the children, not the couple
+
+The most important boundary. Every message is about the children: times, school, health, their expenses. The issues of the couple that no longer exists — grievances, recriminations, new relationships — stay out.
+
+A simple test before sending: **would this message still make sense if a mediator read it?** If not, don't send it.
+
+## 2. One channel, in writing
+
+Calls, voice notes, WhatsApp, email, things said at handover: with five channels nobody knows what was decided any more. Choose **one written channel** for the children's logistics.
+
+A [dedicated chat](/en/tools/chat) inside the app that already holds the calendar and expenses has one advantage: decisions sit next to the things they refer to, and don't get mixed up with the rest of each person's life.
+
+## 3. Reasonable response times
+
+Nobody should have to reply at midnight, and nobody should wait three days. A typical agreement:
+
+- **Emergencies** (health, safety): phone call, immediately
+- **This week's logistics**: reply the same day
+- **Everything else**: within two or three days
+
+Written down and shared, this agreement removes the feeling of always being on call.
+
+## 4. Information isn't requested, it's found
+
+Many conflicts start with a question: "when's the appointment?", "do you have the vaccination record?", "how much did you spend on shoes?". Every question is a chance for friction. The boundary here is practical: **the children's information lives somewhere both of you can see**.
+
+- turns and commitments in the shared [calendar](/en/tools/calendario)
+- the children's expenses in [family expenses](/en/tools/spese), with who paid
+- documents and medical reports in the documents section, reachable by both
+
+When you both find information on your own, the questions — and the tone — drop.
+
+## 5. No major decisions alone
+
+School, long-term sport, non-urgent medical care, trips abroad: decisions that matter are made together. The boundary works both ways: you don't decide alone, and you don't use a veto as a weapon. When you can't agree, set a time to discuss it, in writing, and don't argue at handover in front of the children.
+
+## 6. Each person runs their own home
+
+Rules on screens, bedtimes, food: they'll differ between the two homes, and that's fine. The boundary is that **the other parent doesn't run your home** and you don't run theirs, except on things that genuinely concern the children's health and safety. Consistency on the big issues, freedom on the rest.
+
+## When a boundary slips
+
+It will. A message at the wrong hour, the wrong tone, a decision made alone. The best response is the most boring one: reply only to the logistical part, ignore the rest, and if it happens often, restate the agreement in writing. Boundaries are kept through repetition, not confrontation.
+
+## In short
+
+Talk about the children, not the couple, on one written channel, with clear response times. Information lives where both of you can find it, major decisions are made together and each person runs their own home. It won't make the relationship easy. It will make it bearable, and for the children that's a great deal.
+""",
+        },
+    },
 ]

@@ -514,4 +514,130 @@ The next day, the head is lighter. Not because the things have gone, but because
 """,
         },
     },
+    # ── Produttività in casa · secondo lotto ───────────────────────────
+    {
+        "slug": "lavorare-a-blocchi-con-i-figli",
+        "category": "produttivita-in-casa", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "note"], "related": ["carico-mentale-dei-genitori", "promemoria-che-funzionano", "orari-dopo-scuola-genitori-che-lavorano"],
+        "it": {
+            "title": "Lavorare a blocchi con i figli in casa: fare di più in meno tempo",
+            "desc": "Con i figli intorno il tempo arriva a pezzi da venti minuti. Il time blocking adattato a un genitore: blocchi realistici, compiti pronti e un calendario condiviso con l'altro.",
+            "body": """
+Chi lavora da casa con i figli, o gestisce casa e famiglia a tempo pieno, sa che il tempo non arriva mai in pezzi da due ore. Arriva in pezzi da venti minuti, interrotti da una merenda, una lite, una domanda sui compiti. Le tecniche di produttività classiche — «dedica la mattina al lavoro profondo» — sembrano scritte per qualcun altro.
+
+Il **time blocking**, cioè dividere la giornata in blocchi dedicati a un solo tipo di attività, funziona anche con i figli. Ma va adattato.
+
+## Il principio: blocchi piccoli, compiti già pronti
+
+Nella versione classica si prenota un blocco lungo e si decide lì cosa fare. Con i figli non funziona: i primi dieci minuti di un blocco da venti se ne vanno a decidere da dove cominciare.
+
+La versione per genitori ribalta la logica: **i compiti si preparano prima, i blocchi si usano solo per eseguirli**. Quando si apre una finestra di venti minuti, si sa già cosa fare.
+
+## 1. Mappare le finestre reali
+
+Per una settimana, osservate quando arrivano davvero i momenti liberi: il sonnellino del piccolo, l'ora di cartoni, il pomeriggio a calcio del grande, la mezz'ora dopo che sono a letto. Scriveteli.
+
+Scoprirete che le finestre sono più prevedibili di quanto sembri, e hanno durate tipiche: 20, 45, 90 minuti.
+
+## 2. Tre tipi di blocco
+
+Non tutte le finestre valgono uguale. Classificatele:
+
+- **Blocchi profondi** (45-90 minuti, figli a scuola o a letto): lavoro concentrato, pratiche complicate, pianificazione
+- **Blocchi brevi** (15-30 minuti, figli occupati ma presenti): email, telefonate, pagamenti, prenotazioni
+- **Blocchi di casa** (con i figli intorno, anche coinvolti): bucato, cucina, riordino
+
+L'errore più comune è usare un blocco profondo per le email e provare a scrivere un documento con i bambini che giocano accanto.
+
+## 3. Il calendario, condiviso
+
+I blocchi profondi vanno nel [calendario](/strumenti/calendario), come appuntamenti veri. Se il calendario è di famiglia, l'altro genitore li vede e sa che dalle 9 alle 10:30 non siete disponibili — e magari che quella è la finestra in cui tocca a lui gestire l'imprevisto.
+
+È il punto che trasforma il time blocking da tecnica individuale ad **accordo di coppia**: i blocchi dell'uno si incastrano con quelli dell'altro, e si alternano.
+
+## 4. La lista dei compiti da venti minuti
+
+Tenete una [lista di cose da fare](/strumenti/to-do) pronta per i blocchi brevi, con voci che si chiudono in una sola finestra:
+
+- pagare la bolletta della luce
+- prenotare la visita dal pediatra
+- rispondere alla mail della scuola
+- ordinare le scarpe da ginnastica
+
+Quando si apre una finestra breve non si pensa: si prende la prima voce e si chiude. Le voci assegnate all'altro genitore restano visibili ma non sono vostre, e non vi distraggono.
+
+## 5. Parcheggiare le interruzioni
+
+A metà di un blocco arriva il pensiero: «devo comprare il regalo per la festa di sabato». Non va eseguito, e non va trattenuto: va **parcheggiato**. Una nota o una voce nella lista, in cinque secondi, e si torna a quello che si stava facendo. Il pensiero verrà ripreso nel blocco giusto.
+
+## 6. La giornata che salta
+
+Salterà. Febbre, sciopero, un bambino che non dorme. Il vantaggio dei blocchi è che, quando la giornata si rompe, non si perde tutto: si sposta un blocco profondo al giorno dopo, si usano le finestre brevi per le cose urgenti, e la lista è ancora lì, pronta.
+
+## In sintesi
+
+Mappare le finestre reali, dividerle in blocchi profondi, brevi e di casa, mettere i blocchi profondi nel calendario condiviso con l'altro genitore, tenere pronta una lista di compiti da venti minuti e parcheggiare le interruzioni. Il tempo continuerà ad arrivare a pezzi. Ma saranno pezzi usati.
+""",
+        },
+        "en": {
+            "title": "Time blocking with kids at home: getting more done in less time",
+            "desc": "With children around, time arrives in twenty-minute pieces. Time blocking adapted for parents: realistic blocks, tasks ready to go and a calendar shared with your partner.",
+            "body": """
+Anyone working from home with children, or running a home and family full time, knows time never arrives in two-hour chunks. It arrives in twenty-minute pieces, interrupted by a snack, a squabble, a homework question. Classic productivity techniques — "devote your morning to deep work" — seem written for someone else.
+
+**Time blocking**, splitting the day into blocks dedicated to a single kind of activity, works with children too. But it needs adapting.
+
+## The principle: small blocks, tasks ready in advance
+
+In the classic version you book a long block and decide what to do in it. With children it doesn't work: the first ten minutes of a twenty-minute block go on deciding where to start.
+
+The parent version flips the logic: **tasks are prepared beforehand, blocks are used only to do them**. When a twenty-minute window opens, you already know what to do.
+
+## 1. Map the real windows
+
+For a week, watch when free moments actually come: the little one's nap, cartoon time, the eldest's football afternoon, the half hour after bedtime. Write them down.
+
+You'll find the windows are more predictable than they seem, and have typical lengths: 20, 45, 90 minutes.
+
+## 2. Three kinds of block
+
+Not all windows are equal. Classify them:
+
+- **Deep blocks** (45-90 minutes, children at school or in bed): focused work, complicated paperwork, planning
+- **Short blocks** (15-30 minutes, children busy but present): email, calls, payments, bookings
+- **Home blocks** (children around, even involved): laundry, cooking, tidying
+
+The most common mistake is using a deep block for email and trying to write a document with the kids playing next to you.
+
+## 3. The calendar, shared
+
+Deep blocks go in the [calendar](/en/tools/calendario), like real appointments. If it's the family calendar, your partner sees them and knows you're unavailable from 9 to 10:30 — and perhaps that it's their window for handling the unexpected.
+
+That's what turns time blocking from a personal technique into a **couple's agreement**: one person's blocks fit around the other's, and they alternate.
+
+## 4. The twenty-minute task list
+
+Keep a [to-do list](/en/tools/to-do) ready for short blocks, with items that can be finished in a single window:
+
+- pay the electricity bill
+- book the paediatrician
+- reply to the school's email
+- order the trainers
+
+When a short window opens you don't think: take the first item and close it. Items assigned to your partner stay visible but aren't yours, and don't distract you.
+
+## 5. Park the interruptions
+
+Halfway through a block the thought arrives: "I need to buy the present for Saturday's party". It shouldn't be acted on, and it shouldn't be held onto: it gets **parked**. A note or a list item, in five seconds, and you're back to what you were doing. The thought gets picked up in the right block.
+
+## 6. The day that falls apart
+
+It will. A fever, a strike, a child who won't sleep. The advantage of blocks is that when the day breaks you don't lose everything: move a deep block to tomorrow, use the short windows for what's urgent, and the list is still there, ready.
+
+## In short
+
+Map the real windows, sort them into deep, short and home blocks, put deep blocks in the calendar shared with your partner, keep a list of twenty-minute tasks ready and park the interruptions. Time will keep arriving in pieces. But they'll be pieces you use.
+""",
+        },
+    },
 ]

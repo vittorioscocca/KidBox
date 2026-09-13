@@ -105,7 +105,7 @@ Which is why rule three matters.
 
 If adding an item means unlocking the phone, opening the app, finding the list, typing — with hands covered in sauce — you won't do it. You need shortcuts:
 
-- **By voice, to Alexa**: "add milk to the list" while cooking. It's the most natural way, and in KidBox it works with the Echo devices at home. We cover it in the [dedicated article](/en/blog/spesa-con-alexa).
+- **By voice, to Alexa**: "add milk to the list" while cooking. It's the most natural way, and in KidBox it works with the Echo devices at home, in Italian only for now. We cover it in the [dedicated article](/en/blog/spesa-con-alexa).
 - **From the widget or the lock screen** on iPhone, without opening the app.
 - **Through the AI assistant**: "put what I need for carbonara on the list" does the work of thinking about ingredients.
 
@@ -378,6 +378,247 @@ The same mechanism works for [to-dos](/en/tools/to-do): "Alexa, ask KidBox to re
 ## The real change
 
 It looks like a marginal convenience. After a month you realise the grocery list is **complete** for the first time: things land there the moment they run out, because adding them costs nothing. And what's on the list gets bought.
+""",
+        },
+    },
+    # ── Pasti e spesa · secondo lotto ──────────────────────────────────
+    {
+        "slug": "pasti-in-famiglia-con-budget",
+        "category": "pasti-e-spesa", "date": "2026-09-13",
+        "tools": ["spese", "lista-della-spesa", "note"], "related": ["menu-della-settimana-in-famiglia", "lista-della-spesa-condivisa", "scadenze-di-casa-bollette-garanzie"],
+        "it": {
+            "title": "Pianificare i pasti in famiglia con un budget, senza mangiare peggio",
+            "desc": "La spesa alimentare è la voce che si controlla meglio, e quella che si controlla meno. Un metodo in cinque passi per spendere meno senza tagliare la qualità.",
+            "body": """
+Tra le spese di una famiglia, quella per il cibo ha una particolarità: è l'unica che si può ridurre in modo significativo **da una settimana all'altra**, senza cambiare contratti né rinunciare a niente di importante. Eppure è anche quella che si guarda meno, perché è fatta di tanti piccoli scontrini.
+
+Questo metodo non chiede di mangiare peggio. Chiede di sprecare meno e decidere prima.
+
+## 1. Sapere quanto spendete adesso
+
+Non si può ridurre quello che non si misura. Per un mese, registrate **ogni spesa alimentare**: supermercato, mercato, panettiere, la pizza del venerdì. Non serve precisione al centesimo, serve completezza.
+
+Nelle [spese di famiglia](/strumenti/spese) di KidBox ogni voce ha una categoria e chi ha pagato, e il riepilogo mensile mostra il totale per categoria e il confronto con i mesi precedenti. A fine lista della spesa, registrarla richiede un tocco. Dopo un mese avrete il numero di partenza — di solito più alto di quanto pensavate.
+
+## 2. Decidere il budget, per settimana
+
+Un budget mensile è troppo lontano: a metà mese non si sa più se si è in linea. Dividetelo per settimana, e fissate una cifra **realistica**: il 10-15% in meno di quanto spendete oggi è un obiettivo che regge. Tagli più drastici durano un mese e poi saltano.
+
+## 3. Il menù prima della spesa
+
+La regola che fa risparmiare di più: **si decide cosa mangiare prima di andare al supermercato**, non davanti agli scaffali. Un menù della settimana — anche solo le cene — trasforma la spesa da giro di esplorazione in lista precisa.
+
+Qualche principio per un menù economico:
+
+- **ingredienti che tornano**: il pollo del lunedì diventa l'insalata del martedì
+- **legumi e cereali** due o tre volte a settimana
+- **frutta e verdura di stagione**, che costano meno e durano di più
+- **una sera «svuota-frigo»**, per usare quello che è rimasto
+
+Abbiamo spiegato il metodo completo in [il menù della settimana in famiglia](/blog/menu-della-settimana-in-famiglia).
+
+## 4. La lista della spesa condivisa
+
+Lo spreco più grande non è il prodotto caro: è il **doppione**. Due genitori che comprano il latte lo stesso giorno, il pacco di pasta che c'era già in dispensa. Una [lista della spesa condivisa](/strumenti/lista-della-spesa) in tempo reale — dove si vede chi ha aggiunto cosa e quando, e gli articoli presi spariscono dalla lista di tutti — elimina i doppioni e gli acquisti d'impulso «perché forse mancava».
+
+Al supermercato si compra la lista. Il resto, se proprio, si aggiunge alla settimana dopo.
+
+## 5. Guardare i numeri una volta al mese
+
+Una volta al mese, cinque minuti sul riepilogo delle spese: la categoria alimentari è salita o scesa? Quale settimana è andata fuori budget, e perché? Quasi sempre la risposta è una settimana senza menù, o un weekend di cene fuori non previste. Non serve colpevolizzarsi: serve capire quale passaggio è saltato.
+
+## Gli errori che fanno spendere di più
+
+- **Fare la spesa affamati**, o con i bambini stanchi
+- **Le offerte su prodotti che non erano in lista**: un risparmio solo se li avreste comprati comunque
+- **Il formato famiglia per cose che scadono** prima di finirle
+- **Nessun inventario**: aprite frigo e dispensa prima di scrivere la lista
+
+## In sintesi
+
+Misurare per un mese, fissare un budget settimanale realistico, decidere il menù prima della spesa, usare una lista condivisa che elimina i doppioni e guardare i numeri una volta al mese. Si mangia uguale, si butta meno — e la differenza, dopo un anno, è una vacanza.
+""",
+        },
+        "en": {
+            "title": "Planning family meals on a budget, without eating worse",
+            "desc": "Food is the family expense you can control best, and the one you control least. A five-step method to spend less without cutting quality.",
+            "body": """
+Among a family's expenses, food has a peculiarity: it's the only one you can reduce significantly **from one week to the next**, without changing contracts or giving up anything important. Yet it's also the one people look at least, because it's made of lots of small receipts.
+
+This method doesn't ask you to eat worse. It asks you to waste less and decide earlier.
+
+## 1. Know what you spend now
+
+You can't reduce what you don't measure. For a month, record **every food purchase**: supermarket, market, baker, Friday pizza. You don't need accuracy to the penny, you need completeness.
+
+In KidBox's [family expenses](/en/tools/spese) every entry has a category and who paid, and the monthly summary shows totals by category compared with previous months. At the end of a grocery run, recording it takes one tap. After a month you'll have your starting figure — usually higher than you thought.
+
+## 2. Set the budget, per week
+
+A monthly budget is too far away: by mid-month you no longer know whether you're on track. Divide it by week, and set a **realistic** figure: 10-15% less than you spend today is a target that holds. More drastic cuts last a month and then collapse.
+
+## 3. The menu before the shopping
+
+The rule that saves the most: **decide what to eat before going to the supermarket**, not in front of the shelves. A weekly menu — even just dinners — turns shopping from an exploration trip into a precise list.
+
+A few principles for an economical menu:
+
+- **ingredients that come back**: Monday's chicken becomes Tuesday's salad
+- **pulses and grains** two or three times a week
+- **seasonal fruit and veg**, which cost less and last longer
+- **one "empty the fridge" evening**, to use up what's left
+
+We explained the full method in [the family weekly menu](/en/blog/menu-della-settimana-in-famiglia).
+
+## 4. The shared grocery list
+
+The biggest waste isn't the expensive product: it's the **duplicate**. Two parents buying milk on the same day, the pack of pasta that was already in the cupboard. A real-time [shared grocery list](/en/tools/lista-della-spesa) — showing who added what and when, with items taken disappearing from everyone's list — eliminates duplicates and "maybe we'd run out" impulse buys.
+
+At the supermarket you buy the list. Anything else, if it must, goes on next week's.
+
+## 5. Look at the numbers once a month
+
+Once a month, five minutes on the expense summary: did the food category go up or down? Which week went over budget, and why? The answer is almost always a week without a menu, or a weekend of unplanned meals out. No need for guilt: just work out which step got skipped.
+
+## Mistakes that make you spend more
+
+- **Shopping hungry**, or with tired children
+- **Offers on things that weren't on the list**: only a saving if you'd have bought them anyway
+- **Family packs of things that expire** before you finish them
+- **No inventory**: open the fridge and cupboard before writing the list
+
+## In short
+
+Measure for a month, set a realistic weekly budget, decide the menu before shopping, use a shared list that removes duplicates and check the numbers once a month. You eat the same, you throw away less — and after a year the difference is a holiday.
+""",
+        },
+    },
+    {
+        "slug": "cena-di-natale-organizzazione",
+        "category": "pasti-e-spesa", "date": "2026-09-13",
+        "tools": ["note", "lista-della-spesa", "to-do", "calendario"], "related": ["lista-della-spesa-condivisa", "menu-della-settimana-in-famiglia", "promemoria-che-funzionano"],
+        "it": {
+            "title": "Organizzare la cena di Natale: menù, spesa, forno e chi porta cosa",
+            "desc": "Dodici persone, un forno solo, tre allergie e una zia che porta sempre il tiramisù. Un piano a ritroso, da tre settimane prima al brindisi, per arrivare a tavola senza correre.",
+            "body": """
+La cena di Natale (o il pranzo, a seconda della famiglia) è il progetto più complesso che una casa affronta durante l'anno: tante persone, tanti piatti, un solo forno, una data che non si sposta. E di solito è organizzato nella testa di una persona sola, che il 24 alle cinque del pomeriggio si accorge che manca il burro.
+
+Il segreto è lavorare **a ritroso**, partendo dall'ora in cui ci si siede a tavola.
+
+## Tre settimane prima: le decisioni
+
+- **Quanti siete**, con nomi e età: bambini, anziani, chi arriva tardi
+- **Allergie, intolleranze, scelte alimentari**: chiedetele adesso, per iscritto, non la sera stessa
+- **Il menù**: antipasti, primo, secondo, contorni, dolce
+- **Chi porta cosa**: se gli ospiti contribuiscono, ogni piatto ha un nome
+
+Mettete tutto in una [nota condivisa](/strumenti/note) con chi organizza con voi: invitati, allergie, menù, piatti assegnati. È il documento di riferimento fino al brindisi.
+
+## Due settimane prima: la spesa lunga
+
+Dal menù si ricava la lista della spesa, divisa in due:
+
+- **cose che si conservano** (vino, farina, conserve, surgelati): si comprano adesso, lontano dalla folla
+- **freschi** (pesce, carne, verdure, latticini): si prenotano adesso e si ritirano il 23 o il 24
+
+Una [lista della spesa condivisa](/strumenti/lista-della-spesa) separata per il Natale — distinta da quella di tutti i giorni — permette a chiunque passi da un negozio di prendere qualcosa e spuntarlo, senza doppioni.
+
+## Una settimana prima: il piano del forno
+
+Il collo di bottiglia di ogni pranzo delle feste è il forno. Scrivete, piatto per piatto:
+
+- temperatura e tempo di cottura
+- se si può preparare **il giorno prima** (lasagne, dolci, salse, molti antipasti)
+- se va servito caldo, tiepido o freddo
+
+Poi costruite la **scaletta del forno** partendo dall'ora di cena. Quasi sempre scoprirete che due piatti vogliono il forno alla stessa ora a temperature diverse: meglio scoprirlo il 17 che il 24.
+
+## I compiti, con un nome e un orario
+
+Apparecchiare, ritirare il pesce, scongelare, andare a prendere la nonna, preparare il tavolo dei bambini, mettere in fresco le bottiglie. Ognuno diventa una [cosa da fare](/strumenti/to-do) assegnata a una persona di casa, con un promemoria all'ora giusta. «Tirare fuori l'arrosto dal frigo alle 16» è il tipo di cosa che si dimentica sempre, e che una notifica risolve.
+
+Gli orari fissi — ritiro dal negozio, arrivo degli ospiti, messa in forno — vanno nel [calendario](/strumenti/calendario), così sono visibili a tutta la famiglia.
+
+## Il giorno prima
+
+- tutto ciò che può essere cucinato, si cucina
+- la tavola si apparecchia la sera
+- la scaletta del forno si stampa o si tiene aperta sul telefono
+- il frigo si svuota del superfluo, per fare spazio
+
+## Il giorno stesso
+
+Se il lavoro a ritroso è stato fatto, il giorno di Natale resta poco da decidere: si segue la scaletta. Chi cucina cucina, gli altri hanno compiti precisi e non chiedono «posso aiutare?» nel momento peggiore.
+
+## Dopo
+
+Due minuti prima di dimenticare, nella stessa nota: cosa è avanzato, quali piatti sono stati troppi, cosa è mancato, cosa ha funzionato. L'anno prossimo la cena di Natale partirà da lì, e non da zero.
+
+## In sintesi
+
+Lavorare a ritroso dall'ora di cena. Tre settimane prima menù, invitati e allergie; due settimane prima la spesa lunga; una settimana prima la scaletta del forno; e ogni compito con un nome e un orario. Il Natale resta faticoso — ma senza la corsa al burro delle cinque.
+""",
+        },
+        "en": {
+            "title": "Organising Christmas dinner: menu, shopping, oven and who brings what",
+            "desc": "Twelve people, one oven, three allergies and an aunt who always brings the same dessert. A backwards plan, from three weeks out to the toast, to reach the table without rushing.",
+            "body": """
+Christmas dinner (or lunch, depending on the family) is the most complex project a household takes on all year: lots of people, lots of dishes, one oven, a date that doesn't move. And it's usually organised in one person's head, who at five o'clock on the 24th realises there's no butter.
+
+The secret is to work **backwards**, starting from the time everyone sits down.
+
+## Three weeks before: the decisions
+
+- **How many of you**, with names and ages: children, elderly relatives, who's arriving late
+- **Allergies, intolerances, dietary choices**: ask now, in writing, not on the evening itself
+- **The menu**: starters, mains, sides, dessert
+- **Who brings what**: if guests contribute, every dish has a name
+
+Put it all in a [shared note](/en/tools/note) with whoever's organising with you: guests, allergies, menu, assigned dishes. It's the reference document until the toast.
+
+## Two weeks before: the big shop
+
+The menu gives you the shopping list, split in two:
+
+- **things that keep** (wine, flour, preserves, frozen food): buy them now, away from the crowds
+- **fresh food** (fish, meat, vegetables, dairy): order now and collect on the 23rd or 24th
+
+A separate [shared grocery list](/en/tools/lista-della-spesa) for Christmas — distinct from the everyday one — lets anyone passing a shop pick something up and tick it, with no duplicates.
+
+## One week before: the oven plan
+
+The bottleneck of every festive meal is the oven. Write down, dish by dish:
+
+- temperature and cooking time
+- whether it can be made **the day before** (lasagne, desserts, sauces, many starters)
+- whether it's served hot, warm or cold
+
+Then build the **oven schedule** working back from dinner time. You'll almost always find two dishes wanting the oven at the same time at different temperatures: better to find out on the 17th than the 24th.
+
+## Tasks, with a name and a time
+
+Laying the table, collecting the fish, defrosting, picking up grandma, setting up the kids' table, chilling the bottles. Each one becomes a [to-do](/en/tools/to-do) assigned to someone in the household, with a reminder at the right time. "Take the roast out of the fridge at 4pm" is exactly the kind of thing that always gets forgotten, and a notification solves.
+
+Fixed times — shop collection, guests arriving, dish going in the oven — go in the [calendar](/en/tools/calendario), so the whole family can see them.
+
+## The day before
+
+- everything that can be cooked, gets cooked
+- the table is laid in the evening
+- the oven schedule is printed or kept open on a phone
+- the fridge is cleared of anything unnecessary, to make room
+
+## On the day
+
+If the backwards planning was done, there's little left to decide on Christmas Day: you follow the schedule. Whoever cooks, cooks; everyone else has specific tasks and doesn't ask "can I help?" at the worst possible moment.
+
+## Afterwards
+
+Two minutes before you forget, in the same note: what was left over, which dishes were too much, what was missing, what worked. Next year Christmas dinner will start from there, not from scratch.
+
+## In short
+
+Work backwards from dinner time. Three weeks before: menu, guests and allergies; two weeks before: the big shop; one week before: the oven schedule; and every task with a name and a time. Christmas stays tiring — but without the five o'clock butter dash.
 """,
         },
     },

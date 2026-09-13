@@ -515,6 +515,259 @@ The system takes an hour to set up: census, entry, one reminder per item. Then i
 """,
         },
     },
+    # ── Casa e faccende · secondo lotto ────────────────────────────────
+    {
+        "slug": "faccende-e-adhd",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "calendario", "lista-della-spesa"], "related": ["promemoria-che-funzionano", "carico-mentale-dei-genitori", "dividere-le-faccende-in-coppia"],
+        "it": {
+            "title": "Faccende di casa e ADHD: cosa aiuta davvero, e perché i sistemi classici no",
+            "desc": "Tabelle, turni e buoni propositi funzionano male con un cervello ADHD. Cosa cambia quando le faccende stanno fuori dalla testa, piccole e visibili.",
+            "body": """
+Chi vive con l'ADHD — da adulto, o accanto a un partner o a un figlio che ce l'ha — conosce la scena: la lavatrice finita da ore e mai stesa, la bolletta vista, capita, e dimenticata trenta secondi dopo. Non è pigrizia e non è mancanza di volontà. È che quasi tutti i sistemi per organizzare la casa sono progettati per un cervello che si ricorda le cose da solo.
+
+Questo articolo non è un consiglio medico: per diagnosi e terapie c'è lo specialista. È una raccolta di accorgimenti pratici che, nella gestione della casa, fanno la differenza.
+
+## Perché la tabella sul frigo non funziona
+
+La tabella delle faccende ha tre difetti, per un cervello ADHD:
+
+- **È statica.** Dopo una settimana diventa parte dell'arredamento e smette di essere vista.
+- **È grande.** «Pulire il bagno» è un compito enorme e vago, e i compiti vaghi si rimandano.
+- **Non avvisa.** Ricorda solo a chi ci passa davanti nel momento giusto, cioè quasi mai.
+
+Il problema non è la motivazione: è che l'informazione deve arrivare **nel momento in cui si può agire**, non quando qualcuno se ne ricorda.
+
+## 1. Fuori dalla testa, subito
+
+La regola più importante: ogni cosa da fare esce dalla testa nell'istante in cui compare. Non «dopo la scrivo»: dopo non esiste. Serve un posto sempre a portata di mano, dove aggiungere una voce richiede cinque secondi.
+
+Una [lista di cose da fare di famiglia](/strumenti/to-do) sul telefono funziona meglio di un quaderno proprio per questo: il telefono è sempre in tasca. E se c'è un Echo in cucina, dirlo ad [Alexa](/strumenti/alexa) è ancora più rapido — «Alexa, chiedi a mio box di aggiungere comprare le lampadine».
+
+## 2. Compiti piccoli, con un verbo
+
+«Sistemare la cameretta» non si inizia mai. «Mettere i giochi nella cesta» sì. Ogni voce della lista dovrebbe:
+
+- cominciare con un **verbo concreto** (stendere, buttare, chiamare)
+- durare **meno di quindici minuti**
+- avere una **fine chiara**: si capisce quando è fatta
+
+Spezzare un compito grande in tre piccoli sembra tempo perso. È il contrario: tre compiti da dieci minuti vengono fatti, uno da mezz'ora resta lì per giorni.
+
+## 3. Il promemoria nel momento giusto
+
+Un promemoria alle 9 per «stendere la lavatrice» è inutile se la lavatrice finisce alle 11. Il promemoria va legato al momento in cui l'azione è possibile, e va assegnato a chi la fa. In KidBox ogni cosa da fare può avere un responsabile e un orario: la notifica arriva a quella persona, a quell'ora — non a tutta la famiglia, che la ignorerebbe.
+
+Anche le scadenze vanno trattate così: la bolletta non si ricorda, si mette nel [calendario](/strumenti/calendario) con un avviso qualche giorno prima.
+
+## 4. Visibile, senza diventare controllo
+
+Nelle coppie in cui uno dei due ha l'ADHD, il rischio è che l'altro diventi il «promemoria umano»: chiede, ricorda, controlla. Logora entrambi. Una lista condivisa sposta quel lavoro sullo strumento: chi ha fatto la cosa la spunta, l'altro la vede spuntata senza chiedere. Niente «l'hai fatto?», niente sensazione di essere sorvegliati.
+
+## 5. Ridurre le decisioni
+
+Ogni decisione costa energia. Qualche scorciatoia:
+
+- **Liste fisse** per le cose ricorrenti: la spesa base, la valigia del weekend, la routine del lunedì
+- **Un posto per ogni cosa** che si perde sempre: chiavi, documenti, caricabatterie
+- **La [lista della spesa](/strumenti/lista-della-spesa) sempre aperta**: quando finisce qualcosa si aggiunge subito, e al supermercato non si deve ricordare niente
+
+## 6. Contare quello che è stato fatto
+
+I sistemi classici mostrano solo quello che manca. Per chi ha l'ADHD, vedere le voci spuntate a fine giornata non è un dettaglio: è la prova che la giornata non è andata persa. Tenete le liste corte, e lasciate che si svuotino.
+
+## In sintesi
+
+Non serve più forza di volontà: serve un sistema che non dipenda dalla memoria. Tutto scritto subito, compiti piccoli, avvisi nel momento giusto a chi deve agire, e una lista condivisa al posto delle domande. È un sistema che aiuta chiunque — ma che per una casa con l'ADHD è la differenza tra rincorrere e respirare.
+""",
+        },
+        "en": {
+            "title": "Chores and ADHD: what actually helps, and why standard systems don't",
+            "desc": "Charts, rotas and good intentions work badly with an ADHD brain. What changes when chores live outside your head, small and visible.",
+            "body": """
+Anyone living with ADHD — as an adult, or alongside a partner or child who has it — knows the scene: the washing finished hours ago and never hung out, the bill seen, understood and forgotten thirty seconds later. It isn't laziness and it isn't lack of willpower. Almost every system for running a home is designed for a brain that remembers things on its own.
+
+This article isn't medical advice: for diagnosis and treatment there are specialists. It's a set of practical adjustments that make a real difference to running a home.
+
+## Why the chart on the fridge doesn't work
+
+The chore chart has three flaws for an ADHD brain:
+
+- **It's static.** After a week it becomes part of the furniture and stops being seen.
+- **It's big.** "Clean the bathroom" is a huge, vague task, and vague tasks get postponed.
+- **It doesn't alert you.** It only reminds whoever walks past it at the right moment, which is almost never.
+
+The problem isn't motivation: the information has to arrive **at the moment you can act**, not when someone happens to remember.
+
+## 1. Out of your head, immediately
+
+The most important rule: every to-do leaves your head the instant it appears. Not "I'll write it down later": later doesn't exist. You need a place that's always within reach, where adding an item takes five seconds.
+
+A [family to-do list](/en/tools/to-do) on your phone works better than a notebook for exactly this reason: the phone is always in your pocket.
+
+## 2. Small tasks, with a verb
+
+"Tidy the kids' room" never gets started. "Put the toys in the basket" does. Every item on the list should:
+
+- start with a **concrete verb** (hang, throw out, call)
+- take **less than fifteen minutes**
+- have a **clear end**: you can tell when it's done
+
+Splitting a big task into three small ones looks like wasted time. It's the opposite: three ten-minute tasks get done, one half-hour task sits there for days.
+
+## 3. The reminder at the right moment
+
+A 9am reminder to "hang out the washing" is useless if the machine finishes at 11. The reminder has to be tied to the moment the action is possible, and assigned to whoever does it. In KidBox every to-do can have an owner and a time: the notification goes to that person, at that time — not to the whole family, who would ignore it.
+
+Deadlines work the same way: you don't remember the bill, you put it in the [calendar](/en/tools/calendario) with an alert a few days before.
+
+## 4. Visible, without becoming surveillance
+
+In couples where one partner has ADHD, the risk is that the other becomes the "human reminder": asking, reminding, checking. It wears both of you down. A shared list moves that work onto the tool: whoever did the task ticks it, the other sees it ticked without asking. No "did you do it?", no feeling of being watched.
+
+## 5. Fewer decisions
+
+Every decision costs energy. A few shortcuts:
+
+- **Fixed lists** for recurring things: the basic shop, the weekend bag, the Monday routine
+- **One place for everything** that always gets lost: keys, documents, chargers
+- **The [grocery list](/en/tools/lista-della-spesa) always open**: when something runs out it goes on straight away, and at the supermarket there's nothing to remember
+
+## 6. Count what got done
+
+Standard systems only show what's missing. For someone with ADHD, seeing the ticked items at the end of the day isn't a detail: it's proof the day wasn't lost. Keep lists short, and let them empty.
+
+## In short
+
+You don't need more willpower: you need a system that doesn't depend on memory. Everything written down at once, small tasks, alerts at the right moment to whoever has to act, and a shared list instead of questions. It helps anyone — but for a home with ADHD it's the difference between chasing and breathing.
+""",
+        },
+    },
+    {
+        "slug": "faccende-tra-adulti",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "casa", "spese"], "related": ["dividere-le-faccende-in-coppia", "scadenze-di-casa-bollette-garanzie", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "Faccende tra adulti: come organizzare la casa senza che uno faccia il capo",
+            "desc": "Tra adulti nessuno vuole assegnare compiti né riceverli. Un sistema per aree di responsabilità che regge senza promemoria a voce e senza rancori.",
+            "body": """
+Con i figli è semplice: i genitori decidono, i bambini fanno. Tra adulti no. Nessuno vuole essere quello che assegna i compiti, e nessuno vuole sentirsi assegnare qualcosa. Il risultato, in molte case, è che uno dei due diventa il capo senza volerlo — quello che nota, ricorda e chiede — e l'altro l'esecutore che «aiuta».
+
+È un equilibrio che regge qualche mese, poi si rompe. Ecco un modo diverso di impostarlo.
+
+## Il problema non è chi pulisce
+
+Contare le ore passate a fare le faccende serve a poco. Il lavoro invisibile è un altro: **accorgersi** che una cosa va fatta, **decidere** quando, **ricordarsi** di controllare. Chi si occupa di questa parte fa un secondo lavoro, anche se materialmente pulisce la metà.
+
+Quindi l'obiettivo non è dividere le azioni. È dividere la **responsabilità**: ognuno si occupa di un'area dall'inizio alla fine, compreso il pensarci.
+
+## 1. Mappare la casa per aree
+
+Sedetevi mezz'ora e scrivete tutto quello che una casa richiede, raggruppato per area:
+
+- **Cucina e pasti**: spesa, cucinare, lavastoviglie, frigo
+- **Bucato**: lavare, stendere, piegare, cambiare le lenzuola
+- **Pulizie**: bagni, pavimenti, polvere, spazzatura
+- **Amministrazione**: bollette, contratti, tasse, garanzie
+- **Manutenzione**: caldaia, piccole riparazioni, elettrodomestici
+- **Auto**: bollo, assicurazione, revisione, tagliando
+
+La lista sarà più lunga di quanto pensate. È normale: è la prima volta che la vedete per intero.
+
+## 2. Un titolare per area
+
+Ogni area ha un titolare. Titolare significa che **non deve chiedere a nessuno** e che **nessuno deve ricordarglielo**: se la spazzatura è sua, quando il bidone è pieno è un problema suo, non dell'altro.
+
+Distribuite le aree in base a gusti e orari, non a chi «è più bravo». E prevedete una revisione dopo un mese: la prima divisione non è mai quella giusta.
+
+## 3. Scrivere, così nessuno deve ricordare
+
+Un accordo a voce dura finché dura la memoria di entrambi. Scritto in una [lista di cose da fare condivisa](/strumenti/to-do), ogni voce ha un responsabile e — se serve — un promemoria che arriva solo a lui. L'altro vede la lista, ma non riceve notifiche per cose che non sono sue.
+
+È questo che toglie il ruolo di capo: nessuno ricorda niente all'altro, lo fa lo strumento.
+
+## 4. Le scadenze di casa in un posto solo
+
+L'area «amministrazione» è quella che genera più attriti, perché è invisibile finché qualcosa non va storto. Bollette, contratti, garanzie e revisioni vanno raccolti in una sezione unica: in KidBox la scheda [Casa](/strumenti/casa) tiene scadenze e pagamenti, e un importo registrato lì compare da solo nelle [spese di famiglia](/strumenti/spese). Chi è titolare paga; l'altro vede che è stato pagato, senza chiedere.
+
+## 5. Le regole per quando salta
+
+Qualcuno si ammala, qualcuno parte per lavoro. Decidete prima come si fa:
+
+- **Chi è assente avvisa**, e dice cosa resta scoperto
+- **Chi copre non «recupera»**: fa il minimo, il resto aspetta
+- **Niente conti a fine mese**: si guarda la divisione delle aree, non le singole volte
+
+## 6. Il check-in di dieci minuti
+
+Una volta al mese, dieci minuti: cosa funziona, cosa pesa, quale area va scambiata. Non è un processo, è manutenzione. Le case in cui la divisione regge non sono quelle in cui si litiga meno: sono quelle in cui se ne parla prima che diventi un litigio.
+
+## In sintesi
+
+Tra adulti la casa funziona quando ognuno è titolare di qualcosa, per intero. Aree chiare, un titolare per area, tutto scritto in un posto condiviso e i promemoria che arrivano a chi deve agire. Nessun capo, nessun aiutante: due adulti che si occupano ciascuno della propria parte.
+""",
+        },
+        "en": {
+            "title": "Chores between adults: running a home without one person being the boss",
+            "desc": "Between adults nobody wants to hand out tasks or receive them. A system based on areas of ownership that holds without verbal reminders or resentment.",
+            "body": """
+With children it's simple: parents decide, kids do. Between adults it isn't. Nobody wants to be the one handing out tasks, and nobody wants to be handed one. The result, in many homes, is that one partner becomes the boss without meaning to — the one who notices, remembers and asks — and the other becomes the doer who "helps".
+
+It's a balance that lasts a few months, then breaks. Here's a different way to set it up.
+
+## The problem isn't who cleans
+
+Counting hours spent on chores doesn't help much. The invisible work is something else: **noticing** that something needs doing, **deciding** when, **remembering** to check. Whoever handles that part is doing a second job, even if they physically clean half as much.
+
+So the goal isn't to split the actions. It's to split **ownership**: each person handles an area from start to finish, including thinking about it.
+
+## 1. Map the home by area
+
+Sit down for half an hour and write out everything a home needs, grouped by area:
+
+- **Kitchen and meals**: shopping, cooking, dishwasher, fridge
+- **Laundry**: washing, hanging, folding, changing the sheets
+- **Cleaning**: bathrooms, floors, dusting, rubbish
+- **Admin**: bills, contracts, taxes, warranties
+- **Maintenance**: boiler, small repairs, appliances
+- **Car**: road tax, insurance, inspection, servicing
+
+The list will be longer than you think. That's normal: it's the first time you've seen it in full.
+
+## 2. One owner per area
+
+Each area has an owner. Owner means they **don't have to ask anyone** and **nobody has to remind them**: if the bins are theirs, a full bin is their problem, not the other person's.
+
+Divide areas by taste and schedule, not by who's "better at it". And plan a review after a month: the first split is never the right one.
+
+## 3. Write it down, so nobody has to remember
+
+A verbal agreement lasts as long as both people's memory. Written in a [shared to-do list](/en/tools/to-do), every item has an owner and — if needed — a reminder that goes only to them. The other person sees the list, but gets no notifications for things that aren't theirs.
+
+That's what removes the boss role: nobody reminds anybody, the tool does.
+
+## 4. Household deadlines in one place
+
+The "admin" area causes the most friction, because it's invisible until something goes wrong. Bills, contracts, warranties and inspections belong in a single section: in KidBox the [Home](/en/tools/casa) section holds deadlines and payments, and an amount recorded there shows up on its own in [family expenses](/en/tools/spese). The owner pays; the other sees it's been paid, without asking.
+
+## 5. Rules for when things slip
+
+Someone gets ill, someone travels for work. Decide in advance:
+
+- **Whoever is away says so**, and says what's left uncovered
+- **Whoever covers doesn't "catch up"**: they do the minimum, the rest waits
+- **No end-of-month tallies**: you look at how areas are split, not individual times
+
+## 6. The ten-minute check-in
+
+Once a month, ten minutes: what's working, what's heavy, which area should be swapped. It isn't a trial, it's maintenance. The homes where the split holds aren't the ones with fewer arguments: they're the ones where things get talked about before they become an argument.
+
+## In short
+
+Between adults a home works when each person fully owns something. Clear areas, one owner per area, everything written in a shared place and reminders going to whoever has to act. No boss, no helper: two adults each taking care of their part.
+""",
+        },
+    },
 ]
 
 # Le altre categorie vivono in un modulo ciascuna, per tenere i file leggibili.
