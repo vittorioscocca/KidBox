@@ -768,6 +768,459 @@ Between adults a home works when each person fully owns something. Clear areas, 
 """,
         },
     },
+    # ── Casa e faccende · terzo lotto ──────────────────────────────────
+    {
+        "slug": "far-fare-le-faccende-ai-bambini",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "calendario"], "related": ["faccende-per-eta-bambini", "faccende-per-adolescenti", "routine-della-sera-in-famiglia"],
+        "it": {
+            "title": "Come far fare le faccende ai bambini senza doverlo chiedere dieci volte",
+            "desc": "Il problema non è convincerli una volta: è che lo facciano anche la settimana dopo. Sei regole pratiche per faccende che diventano abitudine, non trattativa.",
+            "body": """
+Quasi tutti i genitori riescono a far apparecchiare un bambino una volta. Il difficile è la seconda, la decima, la cinquantesima. Le faccende dei figli non falliscono per mancanza di buona volontà, ma perché ogni volta diventano una trattativa: «adesso?», «perché io?», «dopo».
+
+L'obiettivo di questa guida è togliere la trattativa. Quando una faccenda è chiara, fissa e prevedibile, non c'è niente da negoziare.
+
+## 1. Poche faccende, sempre le stesse
+
+L'errore più comune è cambiare continuamente: oggi la tavola, domani il cane, dopodomani la camera. Ogni cambio riapre la discussione. Scegliete **due o tre faccende per figlio**, proporzionate all'età, e tenetele per almeno un mese. Per sapere cosa è adatto a ogni età c'è la nostra guida alle [faccende per età](/blog/faccende-per-eta-bambini).
+
+## 2. Un momento fisso, non «quando hai tempo»
+
+«Quando hai tempo» non arriva mai. Ogni faccenda si lega a un momento che esiste già:
+
+- **prima di cena**: apparecchiare
+- **dopo cena**: sparecchiare, riempire la lavastoviglie
+- **prima di andare a letto**: preparare lo zaino
+- **sabato mattina**: riordinare la camera
+
+Il momento fisso fa il lavoro del promemoria. Dopo qualche settimana il bambino apparecchia perché è ora di cena, non perché qualcuno glielo chiede.
+
+## 3. Mostrare una volta, bene
+
+Per un adulto «riordina la camera» è ovvio. Per un bambino di sei anni no. La prima volta si fa **insieme**, spiegando cosa vuol dire «fatto»: i vestiti nel cesto, i giochi nella cassa, il letto tirato su. Poi lo fa lui con voi accanto. Poi da solo.
+
+Saltare questo passaggio è la ragione per cui tante faccende vengono «fatte male» — in realtà sono fatte secondo una definizione che nessuno ha mai detto.
+
+## 4. Visibile, senza tabellone
+
+I bambini, soprattutto dagli otto anni in su, rispondono bene a una lista in cui vedono la propria voce e la spuntano. In KidBox le [cose da fare di famiglia](/strumenti/to-do) possono indicare a quale figlio si riferiscono: il genitore vede a colpo d'occhio cosa è stato fatto senza chiedere, e il figlio grande con un suo account nella famiglia può spuntarla da solo.
+
+Per i più piccoli funziona meglio qualcosa di fisico — una calamita sul frigo — ma il principio è lo stesso: nessuno deve chiedere «l'hai fatto?».
+
+## 5. Niente premi per ogni faccenda
+
+Pagare o premiare ogni faccenda funziona per qualche settimana, poi insegna che in casa si aiuta **in cambio di qualcosa**. Il giorno in cui il premio non interessa più, la faccenda sparisce.
+
+Meglio distinguere: le faccende di base si fanno perché si vive insieme; eventuali lavori extra — lavare la macchina, sistemare la cantina — possono avere una ricompensa. E il riconoscimento più efficace resta il più semplice: notare, a voce, che la cosa è stata fatta.
+
+## 6. Conseguenze naturali, non punizioni
+
+Quando una faccenda salta, la conseguenza migliore è quella che viene da sola: lo zaino non preparato la sera significa una mattina più di corsa; i vestiti non messi nel cesto non vengono lavati. Richiede un po' di pazienza da parte del genitore, ma insegna più di qualsiasi sgridata.
+
+## Il ruolo dei genitori
+
+I figli copiano. In una casa in cui un genitore fa tutto e l'altro «aiuta», anche i figli impareranno ad aiutare. Se volete che le faccende siano di tutti, devono esserlo prima tra gli adulti — ne parliamo in [dividere le faccende in coppia](/blog/dividere-le-faccende-in-coppia).
+
+## In sintesi
+
+Poche faccende e sempre le stesse, legate a un momento fisso, mostrate bene una volta, visibili senza domande, senza premi per ogni cosa e con conseguenze naturali. Non renderà i bambini entusiasti. Li renderà abituati, che è molto più utile.
+""",
+        },
+        "en": {
+            "title": "How to get kids to do chores without asking ten times",
+            "desc": "The problem isn't convincing them once: it's getting it done again next week. Six practical rules for chores that become habit, not negotiation.",
+            "body": """
+Almost every parent can get a child to set the table once. The hard part is the second time, the tenth, the fiftieth. Kids' chores don't fail for lack of goodwill, but because every time they turn into a negotiation: "now?", "why me?", "later".
+
+The aim of this guide is to remove the negotiation. When a chore is clear, fixed and predictable, there's nothing to bargain over.
+
+## 1. Few chores, always the same
+
+The most common mistake is constant change: the table today, the dog tomorrow, the bedroom the day after. Every change reopens the discussion. Pick **two or three chores per child**, suited to their age, and keep them for at least a month. For what fits each age, see our guide to [age-appropriate chores](/en/blog/faccende-per-eta-bambini).
+
+## 2. A fixed moment, not "when you have time"
+
+"When you have time" never comes. Tie each chore to a moment that already exists:
+
+- **before dinner**: set the table
+- **after dinner**: clear the table, load the dishwasher
+- **before bed**: pack the school bag
+- **Saturday morning**: tidy the bedroom
+
+The fixed moment does the reminder's job. After a few weeks the child sets the table because it's dinner time, not because someone asks.
+
+## 3. Show once, properly
+
+To an adult "tidy your room" is obvious. To a six-year-old it isn't. The first time you do it **together**, explaining what "done" means: clothes in the basket, toys in the box, bed made. Then they do it with you beside them. Then alone.
+
+Skipping this step is why so many chores get "done badly" — really they're done to a definition nobody ever stated.
+
+## 4. Visible, without a big chart
+
+Children, especially from eight up, respond well to a list where they see their own item and tick it. In KidBox [family to-dos](/en/tools/to-do) can say which child they're about: the parent sees at a glance what's done without asking, and an older child with their own account in the family can tick it themselves.
+
+For the youngest, something physical works better — a magnet on the fridge — but the principle is the same: nobody should have to ask "did you do it?".
+
+## 5. No reward for every chore
+
+Paying or rewarding every chore works for a few weeks, then teaches that you help at home **in exchange for something**. The day the reward stops being interesting, the chore disappears.
+
+Better to distinguish: basic chores get done because you live together; extra jobs — washing the car, sorting the garage — can have a reward. And the most effective recognition is still the simplest: noticing, out loud, that it got done.
+
+## 6. Natural consequences, not punishments
+
+When a chore is skipped, the best consequence is the one that comes by itself: a bag not packed the night before means a more rushed morning; clothes not put in the basket don't get washed. It takes some patience from the parent, but it teaches more than any telling-off.
+
+## The parents' part
+
+Children copy. In a home where one parent does everything and the other "helps", the kids will learn to help too. If you want chores to belong to everyone, they have to belong to both adults first — more in [splitting chores as a couple](/en/blog/dividere-le-faccende-in-coppia).
+
+## In short
+
+Few chores and always the same, tied to a fixed moment, shown properly once, visible without questions, no reward for everything and natural consequences. It won't make children enthusiastic. It will make them used to it, which is far more useful.
+""",
+        },
+    },
+    {
+        "slug": "faccende-per-adolescenti",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "famiglia", "spese"], "related": ["far-fare-le-faccende-ai-bambini", "faccende-per-eta-bambini", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "Faccende per adolescenti: cosa funziona, cosa no e perché resistono",
+            "desc": "A tredici anni le faccende diventano una questione di autonomia, non di obbedienza. Come passare dai compiti assegnati alle responsabilità vere.",
+            "body": """
+Con i bambini le faccende sono un gioco o un'abitudine. Con gli adolescenti diventano una questione di principio. Non resistono perché sono pigri — o non solo: resistono perché a quell'età ogni richiesta dei genitori è anche una domanda su chi decide.
+
+La buona notizia è che proprio questa voglia di autonomia, se usata bene, rende gli adolescenti capaci di responsabilità vere. Serve cambiare approccio.
+
+## Cosa non funziona più
+
+- **La tabella sul frigo con i turni.** Sa di scuola elementare, e viene ignorata per dignità.
+- **Il promemoria continuo.** Ogni «hai portato giù la spazzatura?» è un'interruzione, e diventa una lite.
+- **Le faccende come punizione.** Associarle al castigo le rende odiose per sempre.
+- **Rifare quello che hanno fatto male.** Insegna che, tanto, qualcuno rimedia.
+
+## 1. Dalle faccende alle aree
+
+Un bambino apparecchia. Un adolescente può essere **responsabile di un'area**: il proprio bucato dall'inizio alla fine, la spesa del sabato con una lista e un budget, la cena del mercoledì. La differenza è enorme: non esegue un ordine, gestisce qualcosa.
+
+Scegliete l'area **insieme**. Un ragazzo che sceglie la cena del mercoledì la farà con più impegno di uno a cui viene assegnato il bagno.
+
+## 2. Il risultato, non il metodo
+
+Con un'area di responsabilità si concorda **cosa** deve essere fatto e **entro quando**, non come. Il bucato va lavato e riposto entro domenica; se lo fa il sabato notte con la musica alta, è affar suo. Controllare il metodo riapre la battaglia per l'autonomia che si voleva evitare.
+
+## 3. Scritto, e non ripetuto a voce
+
+Gli accordi presi a voce con un adolescente si trasformano presto in «non me l'avevi detto». Scriveteli: le aree, cosa significa «fatto», le scadenze.
+
+Se il ragazzo ha il suo telefono, una [lista di cose da fare](/strumenti/to-do) condivisa gli toglie il genitore come promemoria: la voce assegnata a lui ha una notifica che arriva a lui, all'ora concordata, e il genitore la vede spuntata senza chiedere. Per usarla deve essere un membro della [famiglia](/strumenti/famiglia) su KidBox, con il suo account; i profili dei figli senza account non contano come membri, un account in più sì, e i piani sono spiegati nella [sezione prezzi](/index.html#prezzi).
+
+## 4. Soldi veri, responsabilità vere
+
+Le faccende che insegnano di più a quell'età sono quelle con un budget: fare la spesa per una cena, comprare il materiale per la scuola, gestire la propria paghetta. Registrare quanto si è speso nelle [spese di famiglia](/strumenti/spese) rende il conto trasparente per tutti, e insegna quanto costa davvero mandare avanti una casa.
+
+## 5. Conseguenze, non prediche
+
+Quando l'area non viene gestita, la conseguenza deve essere prevista e proporzionata: la maglia preferita non è pulita per la festa, la cena del mercoledì diventa pasta in bianco. Niente prediche: la conseguenza parla da sola, e il genitore resta dalla parte di chi aiuta a rimediare, non di chi punisce.
+
+## 6. Rispetto per i loro tempi
+
+Un adolescente ha verifiche, allenamenti, una vita sociale che per lui conta quanto la vostra agenda di lavoro. In settimana di esami, un'area si può sospendere o scambiare — **se lo chiede prima**. Insegna a negoziare in modo adulto invece di sparire.
+
+## In sintesi
+
+Aree di responsabilità scelte insieme al posto di compiti assegnati, accordi scritti sul risultato e non sul metodo, promemoria che non passano dal genitore, un po' di soldi veri da gestire e conseguenze previste. Gli adolescenti non smetteranno di sbuffare. Ma a diciotto anni sapranno mandare avanti una casa.
+""",
+        },
+        "en": {
+            "title": "Chores for teenagers: what works, what doesn't and why they resist",
+            "desc": "At thirteen chores become a question of independence, not obedience. How to move from assigned tasks to real responsibilities.",
+            "body": """
+With children chores are a game or a habit. With teenagers they become a matter of principle. They don't resist because they're lazy — or not only: they resist because at that age every request from a parent is also a question about who's in charge.
+
+The good news is that this very desire for independence, used well, makes teenagers capable of real responsibility. You just need a different approach.
+
+## What stops working
+
+- **The rota chart on the fridge.** It feels like primary school, and gets ignored out of dignity.
+- **Constant reminders.** Every "did you take the bins out?" is an interruption, and becomes a row.
+- **Chores as punishment.** Linking them to being grounded makes them hateful for good.
+- **Redoing what they did badly.** It teaches that someone will fix it anyway.
+
+## 1. From chores to areas
+
+A child sets the table. A teenager can be **responsible for an area**: their own laundry from start to finish, Saturday's grocery shop with a list and a budget, Wednesday's dinner. The difference is huge: they're not following an order, they're running something.
+
+Choose the area **together**. A teenager who picks Wednesday's dinner will put more into it than one who's assigned the bathroom.
+
+## 2. The result, not the method
+
+With an area of responsibility you agree **what** needs doing and **by when**, not how. The laundry has to be washed and put away by Sunday; if they do it at midnight on Saturday with loud music, that's their business. Policing the method reopens the independence battle you wanted to avoid.
+
+## 3. Written, not repeated aloud
+
+Verbal agreements with a teenager soon turn into "you never told me". Write them down: the areas, what "done" means, the deadlines.
+
+If your teenager has their own phone, a shared [to-do list](/en/tools/to-do) removes the parent as the reminder: the item assigned to them has a notification that goes to them, at the agreed time, and the parent sees it ticked without asking. To use it they need to be a member of the [family](/en/tools/famiglia) in KidBox, with their own account; children's profiles without an account don't count as members, an extra account does, and plans are explained in the [pricing section](/index-en.html#prezzi).
+
+## 4. Real money, real responsibility
+
+The chores that teach most at that age are the ones with a budget: shopping for a dinner, buying school supplies, managing their own pocket money. Recording what was spent in [family expenses](/en/tools/spese) keeps the numbers transparent for everyone, and shows what running a home really costs.
+
+## 5. Consequences, not lectures
+
+When the area isn't handled, the consequence should be agreed in advance and proportionate: the favourite top isn't clean for the party, Wednesday's dinner becomes plain pasta. No lectures: the consequence speaks for itself, and the parent stays on the side of helping fix it, not punishing.
+
+## 6. Respect their schedule
+
+A teenager has tests, training, a social life that matters to them as much as your work calendar matters to you. In exam week an area can be paused or swapped — **if they ask beforehand**. It teaches them to negotiate like an adult instead of vanishing.
+
+## In short
+
+Areas of responsibility chosen together instead of assigned tasks, written agreements on the result rather than the method, reminders that don't come from a parent, some real money to manage and agreed consequences. Teenagers won't stop sighing. But at eighteen they'll know how to run a home.
+""",
+        },
+    },
+    {
+        "slug": "piano-settimanale-delle-pulizie",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "calendario"], "related": ["faccende-tra-adulti", "dividere-le-faccende-in-coppia", "far-fare-le-faccende-ai-bambini"],
+        "it": {
+            "title": "Il piano settimanale delle pulizie per chi lavora: 20 minuti al giorno, niente sabato perso",
+            "desc": "Il sabato mattina dedicato a pulire tutta la casa è il modo più sicuro di arrivare stanchi al lunedì. Uno schema a zone, un po' ogni giorno, diviso tra tutta la famiglia.",
+            "body": """
+In molte famiglie in cui lavorano entrambi i genitori le pulizie seguono lo stesso copione: durante la settimana non si fa niente, il sabato mattina si pulisce tutto, e il weekend comincia già stanchi e di cattivo umore. Oppure non si pulisce nemmeno il sabato, e la casa peggiora finché qualcuno esplode.
+
+Esiste un'alternativa che richiede meno tempo in totale: **poco ogni giorno, una zona per giorno**.
+
+## Il principio: zone, non «tutta la casa»
+
+«Pulire casa» è un compito enorme, e i compiti enormi si rimandano. Dividete la casa in zone e date a ogni giorno la sua:
+
+- **Lunedì — cucina a fondo**: forno, frigo, piano cottura, pensili fuori
+- **Martedì — bagni**: sanitari, doccia, specchi, pavimento
+- **Mercoledì — polvere**: mobili, mensole, superfici del soggiorno
+- **Giovedì — pavimenti**: aspirapolvere e lavaggio di tutta la casa
+- **Venerdì — camere**: cambio lenzuola, riordino, polvere
+- **Sabato — esterno e arretrati**: balcone, vetri a rotazione, quello che è saltato
+- **Domenica — libera**
+
+Ogni zona richiede **20-30 minuti**. Sono circa due ore e mezza a settimana: meno di un sabato mattina, e distribuite.
+
+## Il minimo quotidiano
+
+Oltre alla zona del giorno, ci sono tre cose che si fanno ogni giorno e che da sole tengono la casa vivibile:
+
+1. **Lavastoviglie**: svuotata la mattina, riempita la sera
+2. **Superfici della cucina**: pulite dopo cena
+3. **Dieci minuti di riordino** prima di andare a letto, tutti insieme
+
+Quando il minimo quotidiano regge, la zona del giorno è pulizia vera, non recupero.
+
+## Chi fa cosa
+
+Un piano delle pulizie funziona solo se non ricade su una persona. Assegnate le zone:
+
+- a **ciascun adulto** in base agli orari: chi rientra prima prende i giorni feriali più pesanti
+- ai **figli** in base all'età: dai sei anni la polvere, dai dieci i pavimenti, da adolescenti un bagno
+
+Scritte come [cose da fare di famiglia](/strumenti/to-do), ogni zona ha un responsabile e un promemoria che arriva solo a lui, il giorno giusto. L'altro vede cosa è stato fatto senza chiedere, e se una sera salta si riassegna la voce invece di discuterne.
+
+## Le pulizie a rotazione lunga
+
+Alcune cose non vanno fatte ogni settimana, ma se ne perde il conto: vetri, tende, materassi, filtro della lavatrice, frigo svuotato del tutto, forno a fondo. Mettetele nel [calendario](/strumenti/calendario) con una cadenza — una al mese, a rotazione — e un promemoria. Così non si accumulano nelle grandi pulizie di primavera che nessuno vuole fare.
+
+## Quando la settimana salta
+
+Salterà: malattie, trasferte, settimane impossibili. La regola è non recuperare tutto il sabato. Si fa il minimo quotidiano, si salta la zona, e si riparte dal lunedì successivo. Un piano che non tollera le settimane storte viene abbandonato alla prima.
+
+## Adattarlo alla vostra casa
+
+Lo schema sopra è un punto di partenza. Una casa con animali avrà i pavimenti due volte a settimana; un appartamento piccolo può unire bagni e cucina. Dopo un mese chiedetevi quale zona pesa di più e quale viene sempre saltata, e ridistribuite.
+
+## In sintesi
+
+Una zona al giorno per venti minuti, tre gesti quotidiani che tengono la casa vivibile, ogni zona con un responsabile e un promemoria, le pulizie lunghe in calendario a rotazione. Il sabato torna a essere un giorno libero — e la casa è più pulita di prima.
+""",
+        },
+        "en": {
+            "title": "A weekly cleaning schedule for working parents: 20 minutes a day, no lost Saturday",
+            "desc": "Saturday morning spent cleaning the whole house is the surest way to reach Monday exhausted. A zone-based schedule, a little every day, shared by the whole family.",
+            "body": """
+In many families where both parents work, cleaning follows the same script: nothing happens during the week, Saturday morning everything gets cleaned, and the weekend starts tired and grumpy. Or it doesn't even happen on Saturday, and the house gets worse until someone snaps.
+
+There's an alternative that takes less time overall: **a little every day, one zone per day**.
+
+## The principle: zones, not "the whole house"
+
+"Clean the house" is a huge task, and huge tasks get postponed. Divide the home into zones and give each day its own:
+
+- **Monday — deep kitchen**: oven, fridge, hob, cupboard fronts
+- **Tuesday — bathrooms**: toilet, shower, mirrors, floor
+- **Wednesday — dusting**: furniture, shelves, living room surfaces
+- **Thursday — floors**: vacuum and mop the whole home
+- **Friday — bedrooms**: change the sheets, tidy, dust
+- **Saturday — outside and catch-up**: balcony, windows in rotation, whatever slipped
+- **Sunday — off**
+
+Each zone takes **20-30 minutes**. That's about two and a half hours a week: less than a Saturday morning, and spread out.
+
+## The daily minimum
+
+On top of the day's zone, three things happen every day and on their own keep the home liveable:
+
+1. **Dishwasher**: emptied in the morning, loaded in the evening
+2. **Kitchen surfaces**: wiped after dinner
+3. **Ten minutes of tidying** before bed, everyone together
+
+When the daily minimum holds, the day's zone is real cleaning, not catching up.
+
+## Who does what
+
+A cleaning schedule only works if it doesn't fall on one person. Assign zones:
+
+- to **each adult** by schedule: whoever gets home earlier takes the heavier weekdays
+- to **children** by age: dusting from six, floors from ten, a bathroom as teenagers
+
+Written as [family to-dos](/en/tools/to-do), each zone has an owner and a reminder that goes only to them, on the right day. The other person sees what's done without asking, and if an evening slips the item gets reassigned instead of argued about.
+
+## Long-cycle cleaning
+
+Some jobs don't need doing every week, but it's easy to lose track: windows, curtains, mattresses, the washing machine filter, emptying the fridge completely, the deep oven clean. Put them in the [calendar](/en/tools/calendario) with a cadence — one a month, in rotation — and a reminder. That way they don't pile up into the spring clean nobody wants to do.
+
+## When the week falls apart
+
+It will: illness, work trips, impossible weeks. The rule is not to catch up everything on Saturday. Do the daily minimum, skip the zone, and restart the following Monday. A plan that can't tolerate bad weeks gets abandoned at the first one.
+
+## Adapt it to your home
+
+The schedule above is a starting point. A home with pets will do floors twice a week; a small flat can combine bathrooms and kitchen. After a month, ask which zone weighs most and which always gets skipped, and redistribute.
+
+## In short
+
+One zone a day for twenty minutes, three daily habits that keep the home liveable, every zone with an owner and a reminder, long-cycle cleaning in the calendar on rotation. Saturday goes back to being a free day — and the house is cleaner than before.
+""",
+        },
+    },
+    {
+        "slug": "quando-un-partner-fa-di-piu",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "note"], "related": ["dividere-le-faccende-in-coppia", "carico-mentale-dei-genitori", "faccende-tra-adulti"],
+        "it": {
+            "title": "Quando un partner fa di più in casa: come riequilibrare senza far saltare la coppia",
+            "desc": "Uno dei due fa più lavoro domestico e l'altro non se ne accorge, o pensa di fare la sua parte. Come arrivare a una divisione più giusta partendo dai fatti, non dalle accuse.",
+            "body": """
+In moltissime coppie la divisione del lavoro di casa è sbilanciata, e i due lo vivono in modo opposto. Chi fa di più si sente invisibile e accumula rancore. Chi fa di meno è sinceramente convinto di fare la sua parte — perché vede solo le cose che fa lui, e non tutte quelle che l'altro fa senza dirlo.
+
+Discutere a partire da «tu non fai mai niente» non porta da nessuna parte. Serve partire dai fatti.
+
+## Perché non ci si accorge dello sbilanciamento
+
+Tre ragioni, quasi sempre insieme:
+
+- **Il lavoro invisibile non si vede.** Accorgersi che manca il detersivo, ricordare la visita, pensare al regalo: non lascia tracce.
+- **Il lavoro fatto bene non si nota.** Una casa che funziona sembra funzionare da sola.
+- **Si confronta la quantità, non la continuità.** Cucinare una volta il sabato non pesa quanto la spesa di ogni settimana.
+
+Per questo lo sbilanciamento va reso visibile prima di discuterne.
+
+## 1. Fare l'inventario, per una settimana
+
+Per una settimana, scrivete **tutto** quello che serve a mandare avanti la casa e la famiglia, e chi lo fa. Non solo le faccende fisiche:
+
+- pulizie, bucato, cucina, spesa
+- bollette, scadenze, pratiche
+- visite dei figli, comunicazioni della scuola, regali, compleanni
+- **accorgersi** che serve fare qualcosa, e **ricordare** di farlo
+
+Una [nota condivisa](/strumenti/note) in cui entrambi aggiungete le voci basta. L'importante è che la scriviate insieme, non che uno la presenti all'altro come prova d'accusa.
+
+## 2. Guardare l'elenco, non la persona
+
+Alla fine della settimana, l'elenco parla da solo. Quasi sempre chi fa di meno è sorpreso — non per cattiveria, ma perché non aveva mai visto il quadro intero. La conversazione cambia tono: non «tu non fai niente», ma «guarda quante cose ci sono».
+
+## 3. Ridividere per aree, non per favori
+
+La tentazione è che chi faceva di meno «dia una mano» su qualcosa. Non funziona: una mano resta un favore, e il carico di pensarci resta all'altro. Serve **passare aree intere**: le bollette da oggi sono tue, dalla scadenza al pagamento. Tutto il ciclo, compreso il ricordarsene.
+
+Scritte come [cose da fare](/strumenti/to-do) assegnate, con i promemoria che arrivano a chi ne è responsabile, le aree nuove non dipendono dalla memoria dell'altro — che è esattamente il peso che si voleva togliere.
+
+## 4. Accettare standard diversi
+
+Chi prende un'area nuova la farà a modo suo. Il bucato piegato diversamente, la spesa in un altro supermercato. Se chi la cede continua a controllare e correggere, l'area torna indietro in un mese. Si concorda il risultato — le lenzuola cambiate ogni settimana — non il metodo.
+
+## 5. Un check-in fisso
+
+Dopo un mese, e poi ogni mese, dieci minuti per rivedere: cosa regge, cosa è tornato indietro, cosa pesa ancora. È più facile correggere piccoli scivolamenti che riaprire tutto dopo un anno.
+
+## Quando non basta
+
+A volte lo sbilanciamento della casa è il sintomo di qualcosa di più grande nella coppia. Se le conversazioni diventano sempre litigi, un percorso con un terapeuta di coppia può aiutare più di qualsiasi lista.
+
+## In sintesi
+
+Rendere visibile tutto il lavoro con un inventario scritto insieme, guardare l'elenco invece di accusare la persona, passare aree intere e non favori, accettare standard diversi e rivedere ogni mese. Il riequilibrio non si fa in una sera — ma parte il giorno in cui entrambi vedono lo stesso elenco.
+""",
+        },
+        "en": {
+            "title": "When one partner does more at home: rebalancing without breaking the couple",
+            "desc": "One partner does more housework and the other doesn't notice, or thinks they're doing their share. How to reach a fairer split starting from facts, not accusations.",
+            "body": """
+In a great many couples the division of housework is unbalanced, and the two experience it in opposite ways. Whoever does more feels invisible and builds up resentment. Whoever does less is sincerely convinced they're doing their part — because they see only what they do, not everything the other does without saying so.
+
+Starting from "you never do anything" leads nowhere. You need to start from facts.
+
+## Why the imbalance goes unnoticed
+
+Three reasons, almost always together:
+
+- **Invisible work can't be seen.** Noticing the detergent's run out, remembering the appointment, thinking about the present: it leaves no trace.
+- **Work done well isn't noticed.** A home that runs smoothly seems to run by itself.
+- **People compare quantity, not continuity.** Cooking once on Saturday doesn't weigh as much as doing the shopping every week.
+
+That's why the imbalance has to be made visible before discussing it.
+
+## 1. Take an inventory, for a week
+
+For a week, write down **everything** it takes to run the home and family, and who does it. Not just physical chores:
+
+- cleaning, laundry, cooking, groceries
+- bills, deadlines, paperwork
+- the children's appointments, school messages, presents, birthdays
+- **noticing** something needs doing, and **remembering** to do it
+
+A [shared note](/en/tools/note) where you both add items is enough. What matters is writing it together, not one person presenting it to the other as evidence.
+
+## 2. Look at the list, not the person
+
+At the end of the week, the list speaks for itself. Whoever does less is almost always surprised — not out of malice, but because they'd never seen the whole picture. The conversation changes tone: not "you do nothing", but "look how many things there are".
+
+## 3. Re-divide by area, not by favours
+
+The temptation is for whoever did less to "help out" with something. It doesn't work: help remains a favour, and the load of thinking about it stays with the other person. You need to **hand over whole areas**: bills are yours from today, from due date to payment. The whole cycle, including remembering.
+
+Written as assigned [to-dos](/en/tools/to-do), with reminders going to whoever owns them, the new areas don't depend on the other person's memory — which is exactly the weight you wanted to lift.
+
+## 4. Accept different standards
+
+Whoever takes on a new area will do it their way. Laundry folded differently, groceries from another supermarket. If whoever handed it over keeps checking and correcting, the area comes back within a month. Agree on the result — sheets changed every week — not the method.
+
+## 5. A fixed check-in
+
+After a month, and then monthly, ten minutes to review: what's holding, what's slid back, what still weighs. It's easier to correct small slips than to reopen everything after a year.
+
+## When it isn't enough
+
+Sometimes the household imbalance is a symptom of something bigger in the relationship. If conversations always turn into arguments, working with a couples therapist can help more than any list.
+
+## In short
+
+Make all the work visible with an inventory written together, look at the list instead of accusing the person, hand over whole areas rather than favours, accept different standards and review every month. Rebalancing doesn't happen in one evening — but it starts the day you both see the same list.
+""",
+        },
+    },
 ]
 
 # Le altre categorie vivono in un modulo ciascuna, per tenere i file leggibili.

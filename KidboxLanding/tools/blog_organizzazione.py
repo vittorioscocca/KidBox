@@ -707,4 +707,342 @@ An inventory of everything needed, a common calendar for turns and appointments,
 """,
         },
     },
+    # ── Organizzazione familiare · terzo lotto ─────────────────────────
+    {
+        "slug": "rientro-a-scuola-organizzazione",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "spese", "documenti"], "related": ["orari-dopo-scuola-genitori-che-lavorano", "routine-della-sera-in-famiglia", "documenti-di-famiglia-in-ordine"],
+        "it": {
+            "title": "Il rientro a scuola senza caos: la checklist organizzativa per le prime tre settimane",
+            "desc": "Libri, orari nuovi, iscrizioni, certificati, riunioni e il primo sciopero. Come preparare famiglia e calendario al rientro, settimana per settimana.",
+            "body": """
+Il rientro a scuola è il secondo capodanno delle famiglie: tutto ricomincia insieme. Orari nuovi, attività da scegliere, libri da comprare, moduli da firmare, riunioni, certificati medici. E di solito tutto arriva nelle stesse due settimane, con i genitori ancora in modalità vacanza.
+
+Questa checklist divide il lavoro in tre fasi, così che nulla arrivi all'ultimo momento.
+
+## Prima del primo giorno
+
+### Il calendario dell'anno
+
+Appena la scuola li pubblica, nel [calendario di famiglia](/strumenti/calendario) vanno le date che condizionano tutto l'anno:
+
+- **inizio e fine delle lezioni**
+- **vacanze e ponti**: Natale, Pasqua, i giorni di chiusura decisi dalla scuola
+- **colloqui e riunioni** già noti
+
+Metterli subito permette di organizzare ferie, nonni e centri estivi prima che i posti finiscano.
+
+### Materiale e libri
+
+Una [lista di cose da fare](/strumenti/to-do) «Rientro a scuola» condivisa tra i genitori, con ogni voce assegnata:
+
+- libri di testo da ordinare o ritirare
+- corredo: zaino, astuccio, quaderni secondo la lista della maestra
+- abbigliamento: scarpe da ginnastica, grembiule, divisa
+- etichette con il nome
+
+Chi prende una voce la spunta. Niente doppi acquisti, niente «pensavo lo prendessi tu».
+
+### Le spese
+
+Settembre è uno dei mesi più cari dell'anno per una famiglia. Registrare libri, corredo e iscrizioni nelle [spese](/strumenti/spese) — con chi ha pagato e per quale figlio — aiuta a capire quanto costa davvero, e nelle famiglie separate a ripartire le spese straordinarie senza ricostruirle a memoria.
+
+## La prima settimana
+
+### Gli orari veri
+
+Gli orari definitivi arrivano spesso dopo qualche giorno. Appena ci sono, costruite la **settimana tipo**: uscite, mensa, attività pomeridiane, chi porta e chi va a prendere. Ne parliamo in dettaglio in [il dopo scuola quando lavorate entrambi](/blog/orari-dopo-scuola-genitori-che-lavorano).
+
+### Moduli e deleghe
+
+Liberatorie, autorizzazioni alle uscite, deleghe per il ritiro, informative privacy, dati per il registro elettronico. Ogni modulo firmato va fotografato e salvato nei [documenti](/strumenti/documenti) di famiglia, in una cartella per figlio e per anno scolastico. A marzo, quando la scuola chiede di nuovo la stessa delega, sarà lì.
+
+## Entro la terza settimana
+
+### Le attività
+
+Sport, musica, lingue: le iscrizioni si chiudono in fretta. Prima di iscrivere, verificate sulla settimana tipo che l'attività **si incastri** davvero con gli orari di entrambi i genitori. Per ogni attività nel calendario: giorni, orari, luogo, e le date delle prime partite o saggi.
+
+### I certificati medici
+
+Molte attività sportive richiedono un certificato medico. Prenotate la visita subito, perché a settembre i tempi si allungano, e mettete nel calendario la **data di scadenza** del certificato con un promemoria un mese prima.
+
+### La routine della sera
+
+Le prime settimane sono il momento giusto per impostare la routine serale — zaino pronto, vestiti scelti, diario firmato — prima che il caos diventi abitudine. Trovate il metodo in [la routine della sera in famiglia](/blog/routine-della-sera-in-famiglia).
+
+## In sintesi
+
+Prima del primo giorno: calendario dell'anno, lista del materiale con le voci assegnate, spese registrate. Nella prima settimana: orari veri e moduli archiviati. Entro la terza: attività che si incastrano, certificati prenotati e la routine della sera. Il rientro resta intenso, ma smette di essere una corsa.
+""",
+        },
+        "en": {
+            "title": "Back to school without chaos: an organising checklist for the first three weeks",
+            "desc": "Books, new timetables, sign-ups, medical certificates, meetings and the first strike. How to get the family and the calendar ready for the new school year, week by week.",
+            "body": """
+Back to school is a family's second New Year: everything starts again at once. New timetables, activities to choose, books to buy, forms to sign, meetings, medical certificates. And it usually all lands in the same two weeks, with parents still in holiday mode.
+
+This checklist splits the work into three phases, so nothing arrives at the last minute.
+
+## Before the first day
+
+### The year's calendar
+
+As soon as the school publishes them, the dates that shape the whole year go in the [family calendar](/en/tools/calendario):
+
+- **start and end of term**
+- **holidays and closures**: Christmas, Easter, days off decided by the school
+- **parents' evenings and meetings** already known
+
+Adding them straight away lets you organise leave, grandparents and holiday clubs before places run out.
+
+### Supplies and books
+
+A shared "Back to school" [to-do list](/en/tools/to-do) between parents, with every item assigned:
+
+- textbooks to order or collect
+- supplies: bag, pencil case, exercise books from the teacher's list
+- clothing: trainers, uniform, PE kit
+- name labels
+
+Whoever takes an item ticks it. No double purchases, no "I thought you were getting it".
+
+### The costs
+
+September is one of the most expensive months of the year for a family. Recording books, supplies and sign-up fees in [expenses](/en/tools/spese) — with who paid and for which child — shows what it really costs, and in separated families helps split extra expenses without reconstructing them from memory.
+
+## The first week
+
+### The real timetable
+
+Final timetables often arrive after a few days. As soon as you have them, build the **typical week**: pick-up times, lunches, afternoon activities, who drops off and who collects. We cover it in detail in [after school when you both work](/en/blog/orari-dopo-scuola-genitori-che-lavorano).
+
+### Forms and authorisations
+
+Consent forms, trip permissions, pick-up authorisations, privacy notices, details for the online register. Every signed form gets photographed and saved in the family [documents](/en/tools/documenti), in a folder per child and per school year. In March, when the school asks for the same authorisation again, it'll be there.
+
+## By the third week
+
+### Activities
+
+Sport, music, languages: sign-ups close fast. Before enrolling, check on the typical week that the activity **really fits** both parents' schedules. For every activity in the calendar: days, times, place, and the dates of the first matches or performances.
+
+### Medical certificates
+
+Many sports require a medical certificate. Book the check-up straight away, because waiting times grow in September, and put the certificate's **expiry date** in the calendar with a reminder a month before.
+
+### The evening routine
+
+The first weeks are the right time to set up the evening routine — bag packed, clothes chosen, forms signed — before chaos becomes habit. The method is in [the family evening routine](/en/blog/routine-della-sera-in-famiglia).
+
+## In short
+
+Before the first day: the year's calendar, the supplies list with assigned items, costs recorded. In the first week: the real timetable and forms filed. By the third: activities that fit, certificates booked and the evening routine. Back to school stays intense, but stops being a race.
+""",
+        },
+    },
+    {
+        "slug": "partner-non-usa-app-di-famiglia",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["famiglia", "to-do", "calendario", "lista-della-spesa"], "related": ["app-per-coppie-cosa-serve", "carico-mentale-dei-genitori", "app-di-famiglia-iphone-android-web"],
+        "it": {
+            "title": "Il partner non usa l'app di famiglia? Perché succede e come rimediare",
+            "desc": "L'hai installata, hai caricato tutto, e l'altro genitore continua a chiedere «a che ora è la visita?». Le cinque ragioni per cui un'app di famiglia non attecchisce, e cosa fare.",
+            "body": """
+È una storia comune. Un genitore scopre un'app per organizzare la famiglia, la installa, carica il calendario, crea le liste, invita il partner. Dopo tre settimane è l'unico a usarla: l'altro continua a chiedere orari per messaggio, compra il latte che era già nella lista e dimentica la riunione di classe che era nel calendario.
+
+Non è quasi mai cattiva volontà. Ci sono ragioni precise per cui un'app di famiglia non attecchisce, e quasi tutte si possono correggere.
+
+## 1. Entrare è stato complicato
+
+Se l'invito richiedeva di creare un account, confermare un'email, scaricare un'altra app e trovare un codice, una parte dei partner si ferma a metà e non ci riprova. Verificate che l'altro **sia davvero dentro** la famiglia, sul suo telefono, con le notifiche attive.
+
+In KidBox l'invito è un [link o un QR](/strumenti/famiglia) valido 24 ore: il modo più semplice è farlo insieme, un minuto, telefono accanto a telefono.
+
+## 2. L'app è «tua»
+
+Quando un genitore costruisce tutto il sistema da solo, l'app diventa il suo archivio personale in cui l'altro è ospite. Nessuno ha voglia di usare il quaderno di un altro.
+
+Rimedio: **costruitela insieme**. Decidete insieme le liste, chi è responsabile di cosa, cosa va nel calendario. Dieci minuti di accordo valgono più di tre ore di configurazione solitaria.
+
+## 3. Non gli arriva niente
+
+Se tutte le cose da fare sono assegnate a chi ha installato l'app, e tutti i promemoria arrivano a lui, per l'altro l'app è silenziosa. E un'app silenziosa si dimentica.
+
+Assegnate davvero le [cose da fare](/strumenti/to-do): le voci che toccano all'altro genitore devono avere il suo nome e il suo promemoria. È il momento in cui l'app smette di essere un archivio e diventa utile anche per lui.
+
+## 4. Le vecchie abitudini sono ancora aperte
+
+Se la lista della spesa esiste sia nell'app sia nella chat, e il calendario sia nell'app sia sul frigo, vince sempre l'abitudine vecchia. Serve una decisione esplicita: **da domani la spesa sta solo qui**. E una coerenza di qualche settimana: quando arriva un orario per messaggio, si risponde «l'ho messo nel calendario».
+
+## 5. Si è partiti da tutto
+
+Un'app che fa venti cose, presentata tutta insieme, scoraggia. Meglio partire da **una o due funzioni** che risolvono un fastidio concreto di entrambi — di solito la [lista della spesa](/strumenti/lista-della-spesa) condivisa e il [calendario](/strumenti/calendario) — e aggiungere il resto quando quelle sono diventate abitudine.
+
+## Cosa non fare
+
+- **Non usare l'app per controllare.** «Vedo che non l'hai spuntato» uccide l'adozione in una settimana.
+- **Non fare da promemoria umano** per l'app stessa: se devi ricordare all'altro di guardarla, il problema resta.
+- **Non cambiare app ogni mese.** Ogni cambio riparte da zero, e il partner scettico avrà sempre più ragione.
+
+## Se ha il telefono «sbagliato»
+
+Capita che il partner non usi l'app perché sul suo sistema funziona peggio o manca qualcosa. Vale la pena controllare: ne parliamo in [un genitore con iPhone, l'altro con Android](/blog/app-di-famiglia-iphone-android-web).
+
+## In sintesi
+
+Entrare deve essere facile, l'app va costruita insieme, all'altro devono arrivare cose sue, le abitudini vecchie vanno chiuse e si parte da una o due funzioni. Un'app di famiglia funziona solo se è davvero di famiglia — cioè di tutti e due.
+""",
+        },
+        "en": {
+            "title": "Your partner won't use the family app? Why it happens and how to fix it",
+            "desc": "You installed it, loaded everything, and the other parent still asks \"what time's the appointment?\". The five reasons a family app doesn't take hold, and what to do.",
+            "body": """
+It's a common story. One parent discovers a family organising app, installs it, fills in the calendar, creates the lists, invites their partner. Three weeks later they're the only one using it: the other still asks for times by text, buys milk that was already on the list and forgets the parents' evening that was in the calendar.
+
+It's almost never bad will. There are specific reasons a family app doesn't take hold, and nearly all of them can be fixed.
+
+## 1. Joining was complicated
+
+If the invite meant creating an account, confirming an email, downloading another app and finding a code, some partners stop halfway and never try again. Check that the other person **is actually in** the family, on their phone, with notifications on.
+
+In KidBox the invite is a [link or QR code](/en/tools/famiglia) valid for 24 hours: the easiest way is to do it together, one minute, phone next to phone.
+
+## 2. The app is "yours"
+
+When one parent builds the whole system alone, the app becomes their personal archive where the other is a guest. Nobody wants to use someone else's notebook.
+
+Fix: **build it together**. Decide the lists together, who owns what, what goes in the calendar. Ten minutes of agreement are worth more than three hours of solo setup.
+
+## 3. Nothing reaches them
+
+If every to-do is assigned to whoever installed the app, and every reminder goes to them, the app is silent for the other person. And a silent app gets forgotten.
+
+Really assign the [to-dos](/en/tools/to-do): items that belong to the other parent should carry their name and their reminder. That's when the app stops being an archive and becomes useful for them too.
+
+## 4. The old habits are still open
+
+If the grocery list exists both in the app and in the chat, and the calendar both in the app and on the fridge, the old habit always wins. You need an explicit decision: **from tomorrow groceries live only here**. And a few weeks of consistency: when a time arrives by text, reply "I've put it in the calendar".
+
+## 5. You started with everything
+
+An app that does twenty things, presented all at once, is off-putting. Better to start with **one or two features** that fix a real annoyance for both of you — usually the shared [grocery list](/en/tools/lista-della-spesa) and the [calendar](/en/tools/calendario) — and add the rest once those have become habit.
+
+## What not to do
+
+- **Don't use the app to check up.** "I see you haven't ticked it" kills adoption in a week.
+- **Don't be a human reminder** for the app itself: if you have to remind the other person to look at it, the problem remains.
+- **Don't switch apps every month.** Every switch starts from zero, and the sceptical partner is proved more right each time.
+
+## If they have the "wrong" phone
+
+Sometimes a partner doesn't use the app because it works worse on their system or something's missing. It's worth checking: more in [one parent on iPhone, the other on Android](/en/blog/app-di-famiglia-iphone-android-web).
+
+## In short
+
+Joining has to be easy, the app is built together, the other person needs things of their own to receive, old habits get closed and you start with one or two features. A family app only works if it truly belongs to the family — meaning both of you.
+""",
+        },
+    },
+    {
+        "slug": "impegni-sportivi-dei-figli",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "spese", "documenti"], "related": ["orari-dopo-scuola-genitori-che-lavorano", "rientro-a-scuola-organizzazione", "storia-sanitaria-dei-figli"],
+        "it": {
+            "title": "Due figli, due squadre: come gestire in famiglia allenamenti, partite e trasferte",
+            "desc": "Allenamenti che cambiano, partite comunicate il giovedì per la domenica, certificati in scadenza e quote da pagare. Un sistema per lo sport dei figli che non dipende da un genitore solo.",
+            "body": """
+Lo sport dei figli è una delle cose più belle e più faticose da organizzare. Con un figlio è gestibile. Con due, in due squadre diverse, diventa un secondo lavoro: allenamenti in giorni diversi, partite fissate all'ultimo, trasferte, divise da lavare, certificati medici, quote, gruppi WhatsApp da cinquanta messaggi al giorno.
+
+Quasi sempre questo lavoro ricade su un genitore, quello che legge i gruppi. Ecco come distribuirlo.
+
+## 1. Un calendario per tutti, non il gruppo della squadra
+
+Il gruppo WhatsApp della squadra è la fonte delle informazioni, ma è un pessimo archivio: l'orario della partita di domenica è sepolto sotto le foto dell'ultima trasferta. Chi legge il gruppo deve **trasferire subito** le informazioni in un posto che vedono entrambi i genitori.
+
+Nel [calendario di famiglia](/strumenti/calendario), con il nome del figlio all'inizio del titolo:
+
+- **allenamenti fissi** della stagione
+- **partite e gare**, con orario di ritrovo (non di inizio) e indirizzo
+- **trasferte**, con la partenza
+- **eventi di squadra**: foto, feste, tornei
+
+Un evento aggiunto da un genitore compare subito all'altro, con il promemoria. Nessuno deve più chiedere «dov'è la partita?».
+
+## 2. Chi accompagna è una cosa da fare
+
+Con due figli e due campi diversi, la domanda della settimana è sempre la stessa: chi porta chi. Ogni accompagnamento diventa una [cosa da fare](/strumenti/to-do) assegnata: «Luca · partita a Monza · ritrovo 9:00». Il promemoria arriva a chi accompagna. Se si organizza un passaggio con altri genitori della squadra, si scrive nel titolo, così è chiaro che quel turno è coperto.
+
+## 3. La borsa, non all'ultimo minuto
+
+Divisa lavata, parastinchi, borraccia, scarpe giuste, documento per la trasferta. Una voce ricorrente la sera prima della partita — «preparare borsa di Sara» — assegnata al figlio se è grande abbastanza, al genitore se è piccolo, evita la domenica mattina alla ricerca del calzettone.
+
+## 4. Certificati e documenti
+
+Per l'attività sportiva agonistica e non agonistica serve un certificato medico, con una scadenza. Salvate il certificato nei [documenti](/strumenti/documenti) del figlio e mettete nel calendario la **data di scadenza**, con un promemoria almeno un mese prima: le visite per il certificato si prenotano con anticipo, e senza certificato valido non si gioca.
+
+Nella stessa cartella: tesserino della federazione, moduli di iscrizione, autorizzazioni per le trasferte.
+
+## 5. Quote e spese
+
+Iscrizione, quota mensile, divisa, trasferte, tornei, il regalo per l'allenatore a fine anno. Lo sport costa, e le spese arrivano sparse. Registrarle nelle [spese](/strumenti/spese) per figlio e per categoria mostra quanto costa davvero ogni attività — un dato utile quando a giugno si decide se rinnovare, e nelle famiglie separate quando si dividono le spese straordinarie.
+
+## 6. La stagione, vista dall'alto
+
+A inizio stagione mettete insieme i calendari delle due squadre e cercate i conflitti: due partite alla stessa ora in città diverse, un torneo nel weekend delle vacanze. Accorgersene a settembre permette di organizzarsi con nonni o altri genitori; accorgersene il venerdì prima no.
+
+## In sintesi
+
+Le informazioni escono dal gruppo della squadra e finiscono nel calendario di famiglia, ogni accompagnamento ha un responsabile, la borsa si prepara la sera prima, certificati e scadenze sono in un posto sicuro e le spese si registrano per figlio. Lo sport resta faticoso. Ma non è più il lavoro nascosto di un genitore solo.
+""",
+        },
+        "en": {
+            "title": "Two kids, two teams: managing practices, matches and away games as a family",
+            "desc": "Practices that change, Sunday matches announced on Thursday, expiring medical certificates and fees to pay. A system for kids' sport that doesn't depend on one parent.",
+            "body": """
+Children's sport is one of the loveliest and most tiring things to organise. With one child it's manageable. With two, in two different teams, it becomes a second job: practices on different days, matches set at the last minute, away games, kit to wash, medical certificates, fees, team group chats with fifty messages a day.
+
+This work almost always falls to one parent, the one who reads the group chats. Here's how to share it.
+
+## 1. One calendar for everyone, not the team chat
+
+The team group chat is the source of information, but a terrible archive: Sunday's match time is buried under photos from the last away game. Whoever reads the chat needs to **move the information straight away** to a place both parents can see.
+
+In the [family calendar](/en/tools/calendario), with the child's name first in the title:
+
+- **regular practices** for the season
+- **matches and competitions**, with meeting time (not kick-off) and address
+- **away games**, with departure time
+- **team events**: photos, parties, tournaments
+
+An event added by one parent appears immediately for the other, with the reminder. Nobody has to ask "where's the match?" any more.
+
+## 2. Who drives is a to-do
+
+With two children and two different pitches, the week's question is always the same: who takes whom. Every lift becomes an assigned [to-do](/en/tools/to-do): "Luke · away match · meet 9:00". The reminder goes to whoever's driving. If you arrange a lift with other team parents, put it in the title so it's clear that turn is covered.
+
+## 3. The kit bag, not at the last minute
+
+Clean kit, shin pads, water bottle, the right boots, ID for the away game. A recurring item the evening before a match — "pack Sara's bag" — assigned to the child if they're old enough, to a parent if they're small, avoids a Sunday morning hunt for the missing sock.
+
+## 4. Certificates and documents
+
+Many sports require a medical certificate, with an expiry date. Save the certificate in the child's [documents](/en/tools/documenti) and put the **expiry date** in the calendar, with a reminder at least a month before: check-ups for certificates need booking ahead, and without a valid certificate there's no playing.
+
+In the same folder: federation membership card, registration forms, away-game authorisations.
+
+## 5. Fees and costs
+
+Registration, monthly fee, kit, away games, tournaments, the end-of-season present for the coach. Sport costs money, and the costs arrive scattered. Recording them in [expenses](/en/tools/spese) by child and category shows what each activity really costs — useful in June when deciding whether to renew, and in separated families when splitting extra expenses.
+
+## 6. The season, seen from above
+
+At the start of the season, put the two teams' calendars together and look for clashes: two matches at the same time in different towns, a tournament on the holiday weekend. Spotting it in September lets you arrange grandparents or other parents; spotting it the Friday before doesn't.
+
+## In short
+
+Information leaves the team chat and lands in the family calendar, every lift has an owner, the bag is packed the night before, certificates and expiry dates are somewhere safe and costs are recorded by child. Sport stays tiring. But it's no longer one parent's hidden job.
+""",
+        },
+    },
 ]

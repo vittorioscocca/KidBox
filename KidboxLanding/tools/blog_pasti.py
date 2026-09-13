@@ -622,4 +622,241 @@ Work backwards from dinner time. Three weeks before: menu, guests and allergies;
 """,
         },
     },
+    # ── Pasti e spesa · terzo lotto ────────────────────────────────────
+    {
+        "slug": "cosa-si-mangia-stasera",
+        "category": "pasti-e-spesa", "date": "2026-09-13",
+        "tools": ["note", "lista-della-spesa", "assistente-ai"], "related": ["menu-della-settimana-in-famiglia", "preparare-i-pasti-in-anticipo", "pasti-in-famiglia-con-budget"],
+        "it": {
+            "title": "«Cosa si mangia stasera?»: come togliersi la domanda una volta per tutte",
+            "desc": "La domanda arriva ogni giorno alle sei, quando si è più stanchi. Un sistema in quattro pezzi — rotazione, dispensa base, piatti d'emergenza, lista — che la fa sparire.",
+            "body": """
+Ci sono domande difficili e domande faticose. «Cosa si mangia stasera?» è di quelle faticose: non è complicata, ma arriva ogni giorno, sempre alla stessa ora, quando si è appena rientrati e non si ha più voglia di decidere niente. Ed è quasi sempre la stessa persona a doverla risolvere.
+
+Il problema non è cucinare. È **decidere**, ogni sera, da zero. Togliere quella decisione è più semplice di quanto sembri.
+
+## 1. La rotazione delle cene
+
+Le famiglie mangiano, in realtà, una ventina di piatti a rotazione. Scriveteli. Poi assegnate a ogni sera della settimana un **tipo** di piatto, non una ricetta:
+
+- **lunedì**: legumi
+- **martedì**: pesce
+- **mercoledì**: pasta o riso
+- **giovedì**: uova o formaggi
+- **venerdì**: pizza o cena libera
+- **sabato**: carne
+- **domenica**: avanzi, o si cucina insieme
+
+Con la categoria già decisa, la domanda diventa «quale legume?», ed è molto più facile. Tenete l'elenco dei piatti e la rotazione in una [nota condivisa](/strumenti/note): chi rientra prima sa già cosa preparare, senza chiedere.
+
+## 2. La dispensa base
+
+La cena d'emergenza si improvvisa solo se in casa c'è sempre qualcosa. Definite la **dispensa base**: le cose che non devono mai mancare.
+
+- pasta, riso, legumi in scatola, passata
+- uova, un formaggio che dura
+- verdure surgelate, pane in freezer
+- olio, aglio, cipolle, spezie di base
+
+Quando uno di questi finisce, va subito nella [lista della spesa condivisa](/strumenti/lista-della-spesa). Non «la prossima volta»: subito, da chi l'ha finito.
+
+## 3. Tre piatti d'emergenza
+
+Ogni famiglia dovrebbe avere tre cene da **quindici minuti** fatte solo con la dispensa base, che tutti mangiano senza protestare. Una frittata con le verdure surgelate, una pasta con i legumi, un riso saltato. Sono il paracadute delle sere impossibili, e rendono accettabile anche la sera in cui salta tutto.
+
+## 4. Decidere una volta a settimana
+
+La rotazione funziona meglio se una volta a settimana — la domenica, dieci minuti — si scelgono i piatti della settimana e si scrive la lista della spesa di conseguenza. È il metodo del [menù della settimana](/blog/menu-della-settimana-in-famiglia), in versione leggera: non serve pianificare tutto, bastano le cene.
+
+## Chi cucina, chi decide
+
+Una domanda che vale la pena farsi: la stessa persona **decide** e **cucina**? Separare le due cose alleggerisce molto. Chi decide il menù la domenica non deve essere per forza chi cucina il martedì; con la rotazione scritta, chiunque rientri può cucinare.
+
+## Se volete delegare anche la scelta
+
+Per le famiglie con il piano Pro, l'[assistente di KidBox](/strumenti/assistente-ai) può proporre idee per le cene partendo da quello che gli dite di avere in casa, e il Piano Alimentare genera un menù settimanale su misura della famiglia. Ma il sistema sopra funziona benissimo anche senza: la cosa importante è non decidere da zero ogni sera.
+
+## In sintesi
+
+Una rotazione per tipo di piatto, una dispensa base che non si svuota mai, tre cene d'emergenza da quindici minuti e dieci minuti la domenica. La domanda delle sei non sparirà del tutto. Ma avrà quasi sempre già una risposta.
+""",
+        },
+        "en": {
+            "title": "\"What's for dinner tonight?\": how to get rid of the question for good",
+            "desc": "The question arrives every day at six, when you're most tired. A four-part system — rotation, basic pantry, emergency dishes, list — that makes it disappear.",
+            "body": """
+Some questions are hard and some are tiring. "What's for dinner tonight?" is the tiring kind: it isn't complicated, but it comes every day, always at the same time, just when you've got home and don't want to decide anything else. And it's almost always the same person who has to answer it.
+
+The problem isn't cooking. It's **deciding**, every evening, from scratch. Removing that decision is simpler than it looks.
+
+## 1. The dinner rotation
+
+Families actually eat about twenty dishes on rotation. Write them down. Then give each evening of the week a **type** of dish, not a recipe:
+
+- **Monday**: pulses
+- **Tuesday**: fish
+- **Wednesday**: pasta or rice
+- **Thursday**: eggs or cheese
+- **Friday**: pizza or free night
+- **Saturday**: meat
+- **Sunday**: leftovers, or cook together
+
+With the category decided, the question becomes "which pulses?", which is far easier. Keep the list of dishes and the rotation in a [shared note](/en/tools/note): whoever gets home first already knows what to make, without asking.
+
+## 2. The basic pantry
+
+An emergency dinner can only be improvised if there's always something in the house. Define the **basic pantry**: the things that must never run out.
+
+- pasta, rice, tinned pulses, passata
+- eggs, a long-lasting cheese
+- frozen vegetables, bread in the freezer
+- oil, garlic, onions, basic spices
+
+When one of these runs out, it goes straight onto the [shared grocery list](/en/tools/lista-della-spesa). Not "next time": straight away, by whoever finished it.
+
+## 3. Three emergency dishes
+
+Every family should have three **fifteen-minute** dinners made only from the basic pantry that everyone eats without complaint. An omelette with frozen veg, pasta with pulses, fried rice. They're the parachute for impossible evenings, and make even the evening when everything goes wrong bearable.
+
+## 4. Decide once a week
+
+The rotation works best if once a week — Sunday, ten minutes — you pick the week's dishes and write the grocery list accordingly. It's the [weekly menu](/en/blog/menu-della-settimana-in-famiglia) method, in a light version: you don't need to plan everything, just dinners.
+
+## Who cooks, who decides
+
+A question worth asking: does the same person **decide** and **cook**? Separating the two lightens the load a lot. Whoever decides the menu on Sunday needn't be whoever cooks on Tuesday; with the rotation written down, whoever gets home can cook.
+
+## If you want to delegate the choice too
+
+For families on the Pro plan, the [KidBox assistant](/en/tools/assistente-ai) can suggest dinner ideas based on what you tell it you have at home, and the Meal Plan generates a weekly menu tailored to the family. But the system above works perfectly well without it: what matters is not deciding from scratch every evening.
+
+## In short
+
+A rotation by type of dish, a basic pantry that never empties, three fifteen-minute emergency dinners and ten minutes on Sunday. The six o'clock question won't vanish completely. But it will almost always already have an answer.
+""",
+        },
+    },
+    {
+        "slug": "preparare-i-pasti-in-anticipo",
+        "category": "pasti-e-spesa", "date": "2026-09-13",
+        "tools": ["lista-della-spesa", "to-do", "calendario"], "related": ["cosa-si-mangia-stasera", "menu-della-settimana-in-famiglia", "pasti-in-famiglia-con-budget"],
+        "it": {
+            "title": "Preparare i pasti in anticipo quando si ha poco tempo: il metodo delle due ore",
+            "desc": "Due ore la domenica per cene pronte in venti minuti tutta la settimana. Cosa cucinare prima, cosa no, come conservarlo e come dividersi il lavoro in famiglia.",
+            "body": """
+Il meal prep — preparare i pasti in anticipo — ha una reputazione un po' estrema: file di contenitori identici, pollo e broccoli per cinque giorni. Per una famiglia non funziona, e non serve. Serve una versione più flessibile: **preparare i pezzi**, non i piatti finiti, così che ogni sera la cena richieda venti minuti invece di un'ora.
+
+## Il principio: pezzi, non piatti
+
+Invece di cucinare cinque cene complete, la domenica si preparano gli **ingredienti di base** che poi si combinano in modi diversi:
+
+- una **base di cereali**: riso, farro, orzo cotti
+- una **proteina** cotta: pollo al forno, legumi, polpette
+- **verdure** già lavate e tagliate, qualcuna arrostita
+- un **sugo** o una salsa: pomodoro, pesto, una crema di verdure
+- **uova sode**, per colazioni e insalate veloci
+
+Con questi pezzi in frigo, il martedì il riso diventa un riso saltato con le verdure, il mercoledì il pollo finisce in un'insalata, il giovedì il sugo condisce la pasta.
+
+## Le due ore della domenica
+
+Un ordine che funziona:
+
+1. **Accendere il forno** e metterci verdure e proteina insieme (60 minuti che lavorano da soli)
+2. **Cuocere i cereali** sul fuoco nel frattempo
+3. **Lavare e tagliare** le verdure crude
+4. **Preparare il sugo**
+5. **Raffreddare e mettere nei contenitori**, con etichetta e data
+
+Il lavoro attivo è meno di un'ora: il resto è attesa.
+
+## Cosa si prepara prima, e cosa no
+
+Si conservano bene in frigo per 3-4 giorni cereali cotti, legumi, carni cotte, sughi e verdure arrostite. Meglio invece preparare al momento il pesce, le insalate condite e le verdure a foglia tagliate. Per la seconda metà della settimana, congelate parte di sughi e proteine e scongelatele la sera prima.
+
+Per le regole precise di conservazione, attenetevi alle indicazioni sulle confezioni e alle linee guida per la sicurezza alimentare: in caso di dubbio, si butta.
+
+## Tutto parte dalla lista
+
+Il meal prep funziona solo se la domenica in casa ci sono gli ingredienti. La spesa si fa il sabato, a partire dal piano: dai pezzi che volete preparare si ricava la [lista della spesa condivisa](/strumenti/lista-della-spesa), e chiunque vada al supermercato compra esattamente quello.
+
+## Dividersi il lavoro
+
+Le due ore della domenica non devono essere il lavoro di una persona sola. Una divisione tipica:
+
+- un adulto al **forno e fornelli**
+- l'altro a **lavare, tagliare, porzionare**
+- i figli, secondo l'età: lavare le verdure, sgusciare le uova, attaccare le etichette
+
+Scritti come [cose da fare](/strumenti/to-do) assegnate, con un promemoria la domenica mattina, i compiti non dipendono da chi si ricorda. E se una domenica non si può, si sposta la sessione nel [calendario](/strumenti/calendario) al giorno in cui c'è tempo, invece di saltarla.
+
+## Le sere, poi
+
+Con i pezzi pronti, ogni cena è una **combinazione**: una base, una proteina, una verdura, un condimento. Venti minuti, quasi sempre meno. E la domanda «cosa si mangia stasera?» si risponde aprendo il frigo — ne parliamo in [cosa si mangia stasera](/blog/cosa-si-mangia-stasera).
+
+## In sintesi
+
+Preparare pezzi e non piatti, due ore la domenica con il forno che lavora da solo, conservare con criterio e congelare per la seconda metà della settimana, fare la spesa dalla lista e dividersi il lavoro. Non è una dieta e non è una religione: è un modo di comprarsi tempo per le sere in cui non ce n'è.
+""",
+        },
+        "en": {
+            "title": "Meal prep when you're short on time: the two-hour method",
+            "desc": "Two hours on Sunday for dinners ready in twenty minutes all week. What to cook ahead, what not to, how to store it and how to share the work as a family.",
+            "body": """
+Meal prep has a slightly extreme reputation: rows of identical containers, chicken and broccoli for five days. For a family it doesn't work, and it isn't needed. What's needed is a more flexible version: **prepare components**, not finished dishes, so each evening dinner takes twenty minutes instead of an hour.
+
+## The principle: components, not dishes
+
+Instead of cooking five complete dinners, on Sunday you prepare **basic ingredients** that then combine in different ways:
+
+- a **grain base**: cooked rice, spelt, barley
+- a cooked **protein**: roast chicken, pulses, meatballs
+- **vegetables** already washed and chopped, some roasted
+- a **sauce**: tomato, pesto, a vegetable purée
+- **hard-boiled eggs**, for quick breakfasts and salads
+
+With these in the fridge, on Tuesday the rice becomes fried rice with vegetables, on Wednesday the chicken goes into a salad, on Thursday the sauce dresses the pasta.
+
+## The two Sunday hours
+
+An order that works:
+
+1. **Turn on the oven** and put vegetables and protein in together (60 minutes that work on their own)
+2. **Cook the grains** on the hob meanwhile
+3. **Wash and chop** the raw vegetables
+4. **Make the sauce**
+5. **Cool and portion into containers**, labelled and dated
+
+Active work is under an hour: the rest is waiting.
+
+## What to prep ahead, and what not
+
+Cooked grains, pulses, cooked meat, sauces and roasted vegetables keep well in the fridge for 3-4 days. Fish, dressed salads and cut leafy greens are better made fresh. For the second half of the week, freeze some sauce and protein and defrost them the night before.
+
+For precise storage rules, follow packaging instructions and food safety guidelines: if in doubt, throw it out.
+
+## It all starts from the list
+
+Meal prep only works if the ingredients are in the house on Sunday. Shop on Saturday, from the plan: the components you want to prepare give you the [shared grocery list](/en/tools/lista-della-spesa), and whoever goes to the supermarket buys exactly that.
+
+## Sharing the work
+
+The two Sunday hours shouldn't be one person's job. A typical split:
+
+- one adult at the **oven and hob**
+- the other **washing, chopping, portioning**
+- the children, by age: washing vegetables, peeling eggs, sticking on labels
+
+Written as assigned [to-dos](/en/tools/to-do), with a reminder on Sunday morning, the tasks don't depend on who remembers. And if a Sunday doesn't work, move the session in the [calendar](/en/tools/calendario) to a day with time, instead of skipping it.
+
+## The evenings, then
+
+With components ready, each dinner is a **combination**: a base, a protein, a vegetable, a sauce. Twenty minutes, usually less. And "what's for dinner tonight?" is answered by opening the fridge — more in [what's for dinner tonight](/en/blog/cosa-si-mangia-stasera).
+
+## In short
+
+Prep components not dishes, two hours on Sunday with the oven doing the work, store sensibly and freeze for the second half of the week, shop from the list and share the work. It isn't a diet or a religion: it's a way of buying time for the evenings when there isn't any.
+""",
+        },
+    },
 ]

@@ -757,4 +757,358 @@ Talk about the children, not the couple, on one written channel, with clear resp
 """,
         },
     },
+    # ── Genitori separati · terzo lotto ────────────────────────────────
+    {
+        "slug": "genitorialita-parallela",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["calendario", "documenti", "spese"], "related": ["confini-nella-co-genitorialita", "calendario-genitori-separati", "documenti-dei-figli-in-due-case"],
+        "it": {
+            "title": "Genitorialità parallela: cos'è e quando funziona meglio della co-genitorialità",
+            "desc": "Quando ogni conversazione con l'ex diventa un conflitto, collaborare di più non è la soluzione. La genitorialità parallela riduce il contatto al minimo e mette tutto per iscritto.",
+            "body": """
+Il modello che si consiglia di solito ai genitori separati è la co-genitorialità: decidere insieme, parlarsi spesso, mantenere regole simili nelle due case. Funziona bene quando tra gli ex c'è un minimo di collaborazione. Ma quando ogni telefonata finisce in una lite, spingere per più dialogo spesso peggiora le cose — e i figli sono in mezzo.
+
+Per queste situazioni esiste un'alternativa: la **genitorialità parallela**.
+
+Questo articolo descrive un modello organizzativo. Le decisioni su affido, tempi e comunicazioni in caso di conflitto vanno prese con il proprio avvocato o con un mediatore familiare, e seguono quanto stabilito dal giudice.
+
+## Cos'è la genitorialità parallela
+
+Nella genitorialità parallela ogni genitore gestisce il tempo con i figli **in modo autonomo**, e il contatto tra i due si riduce a ciò che è strettamente necessario:
+
+- **comunicazioni solo scritte**, brevi e sulla logistica
+- **nessuna discussione** su come l'altro gestisce la propria casa
+- **informazioni sui figli condivise**, ma senza bisogno di parlarsi
+- **decisioni importanti** secondo quanto già stabilito, non rinegoziate ogni volta
+
+Non è una sconfitta: è un modo di proteggere i figli dal conflitto finché i genitori non riescono a collaborare. In molti casi, dopo qualche tempo di contatto ridotto, la tensione scende abbastanza da permettere una co-genitorialità vera.
+
+## Co-genitorialità o parallela: come capire
+
+Qualche segnale che la genitorialità parallela può funzionare meglio:
+
+- le conversazioni, anche brevi, **degenerano quasi sempre**
+- i figli **assistono** a discussioni ai passaggi di consegne
+- uno dei due usa la logistica per **riaprire vecchi conflitti**
+- dopo ogni contatto uno dei due ha bisogno di giorni per riprendersi
+
+## 1. Il calendario sostituisce le telefonate
+
+Il calendario dei turni è il documento centrale: chi ha i figli e quando, dove avvengono i passaggi, gli impegni fissi. In un [calendario condiviso](/strumenti/calendario) entrambi lo vedono uguale, e le domande «quando li prendi?» spariscono.
+
+Le modifiche si propongono per iscritto, e **non esistono finché non sono nel calendario**.
+
+## 2. Informazioni sui figli senza conversazioni
+
+Il genitore che ha i figli in un certo periodo ha informazioni che servono anche all'altro: una visita, un farmaco, una comunicazione della scuola. Nella genitorialità parallela queste informazioni si **depositano**, non si raccontano:
+
+- le visite e i referti nei [documenti](/strumenti/documenti) condivisi, cifrati
+- gli eventi della scuola nel calendario
+- le note essenziali — un farmaco da continuare — in una nota condivisa
+
+Ognuno le trova quando gli servono, senza dover chiedere.
+
+## 3. Le spese, con i documenti accanto
+
+Le spese straordinarie per i figli sono una delle prime cause di conflitto. Registrarle nelle [spese](/strumenti/spese) condivise con chi ha pagato e lo scontrino allegato rende la ripartizione un fatto, non una discussione. Quale spesa si divide e in che percentuale lo stabiliscono gli accordi di separazione: lo strumento serve solo a tenerne il conto.
+
+## 4. Messaggi brevi, neutri, verificabili
+
+Le poche comunicazioni necessarie seguono una forma fissa: **cosa, quando, cosa serve**. «Sabato passaggio alle 17 a scuola invece che a casa per la gita. Serve la divisa.» Niente commenti, niente toni, niente passato. Un messaggio che potrebbe leggere un mediatore senza imbarazzo.
+
+## 5. Ognuno la sua casa
+
+Regole diverse nelle due case sono inevitabili, e nella genitorialità parallela si accettano: orari, cibo, schermi. L'unico limite resta la salute e la sicurezza dei figli, per il resto non si interviene.
+
+## In sintesi
+
+Quando la collaborazione non è possibile, ridurre il contatto protegge i figli. Il calendario al posto delle telefonate, le informazioni depositate e non raccontate, le spese documentate, messaggi brevi e neutri, e ogni casa gestita in autonomia. È un modo di smettere di combattere senza smettere di essere genitori.
+""",
+        },
+        "en": {
+            "title": "Parallel parenting: what it is and when it works better than co-parenting",
+            "desc": "When every conversation with your ex turns into conflict, collaborating more isn't the answer. Parallel parenting keeps contact to a minimum and puts everything in writing.",
+            "body": """
+The model usually recommended to separated parents is co-parenting: deciding together, talking often, keeping similar rules in both homes. It works well when there's a minimum of cooperation between the exes. But when every phone call ends in a row, pushing for more dialogue often makes things worse — and the children are caught in the middle.
+
+For these situations there's an alternative: **parallel parenting**.
+
+This article describes an organisational model. Decisions about custody, time and communication in conflict situations should be made with your lawyer or a family mediator, and follow what the court has ordered.
+
+## What parallel parenting is
+
+In parallel parenting each parent runs their time with the children **independently**, and contact between the two is reduced to what's strictly necessary:
+
+- **written communication only**, short and about logistics
+- **no discussion** of how the other runs their home
+- **information about the children shared**, but without needing to talk
+- **major decisions** made as already agreed, not renegotiated each time
+
+It isn't a defeat: it's a way of protecting the children from conflict until the parents are able to cooperate. In many cases, after a period of reduced contact, tension drops enough for genuine co-parenting to become possible.
+
+## Co-parenting or parallel: how to tell
+
+A few signs that parallel parenting may work better:
+
+- conversations, even short ones, **almost always escalate**
+- the children **witness** arguments at handovers
+- one parent uses logistics to **reopen old conflicts**
+- after every contact one of you needs days to recover
+
+## 1. The calendar replaces phone calls
+
+The custody calendar is the central document: who has the children and when, where handovers happen, fixed commitments. In a [shared calendar](/en/tools/calendario) both of you see it the same way, and "when are you picking them up?" questions disappear.
+
+Changes are proposed in writing, and **don't exist until they're in the calendar**.
+
+## 2. Information about the children without conversations
+
+The parent who has the children during a given period has information the other needs too: an appointment, a medicine, a school notice. In parallel parenting that information is **deposited**, not recounted:
+
+- appointments and reports in the shared, encrypted [documents](/en/tools/documenti)
+- school events in the calendar
+- essential notes — a medicine to continue — in a shared note
+
+Each parent finds it when they need it, without having to ask.
+
+## 3. Expenses, with receipts alongside
+
+Extra expenses for the children are one of the main causes of conflict. Recording them in shared [expenses](/en/tools/spese) with who paid and the receipt attached turns the split into a fact, not an argument. Which expenses are shared and in what proportion is set by the separation agreement: the tool just keeps the count.
+
+## 4. Short, neutral, verifiable messages
+
+The few necessary messages follow a fixed form: **what, when, what's needed**. "Saturday handover at 5pm at school instead of home because of the trip. Uniform needed." No comments, no tone, no past. A message a mediator could read without embarrassment.
+
+## 5. Each to their own home
+
+Different rules in the two homes are inevitable, and in parallel parenting they're accepted: bedtimes, food, screens. The only limit remains the children's health and safety; otherwise, you don't intervene.
+
+## In short
+
+When cooperation isn't possible, reducing contact protects the children. The calendar instead of phone calls, information deposited rather than recounted, documented expenses, short neutral messages, and each home run independently. It's a way to stop fighting without stopping being parents.
+""",
+        },
+    },
+    {
+        "slug": "co-genitorialita-a-distanza",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["calendario", "chat", "foto-e-video", "wallet"], "related": ["calendario-genitori-separati", "documenti-dei-figli-in-due-case", "genitorialita-parallela"],
+        "it": {
+            "title": "Genitori separati a distanza: come restare presenti quando si vive in un'altra città",
+            "desc": "Weekend lunghi, viaggi, vacanze divise e videochiamate. Come organizzare la co-genitorialità quando tra le due case ci sono ore di strada o di volo.",
+            "body": """
+Quando i genitori separati vivono nella stessa città, il problema principale è coordinarsi. Quando vivono in città diverse — a volte in paesi diversi — il problema diventa un altro: **come restare presenti** nella vita di tutti i giorni dei figli quando la si vede solo a weekend alterni o durante le vacanze.
+
+La distanza non si annulla. Ma si può organizzare in modo che pesi meno, soprattutto sui figli.
+
+## 1. Un calendario pensato per blocchi lunghi
+
+Con la distanza, i turni non sono più «martedì e giovedì»: sono **blocchi** — un weekend lungo al mese, metà delle vacanze estive, Natale ad anni alterni. Programmarli con largo anticipo è essenziale, perché ci sono viaggi da prenotare.
+
+Nel [calendario condiviso](/strumenti/calendario), per ogni blocco:
+
+- le date esatte e **chi accompagna** il viaggio
+- l'orario e il luogo del passaggio (stazione, aeroporto, casa)
+- gli impegni dei figli che il blocco fa saltare, da recuperare o spostare
+
+Una vista che copre i mesi successivi evita la scoperta, a tre settimane dalla partenza, che il weekend coincide con la gara di nuoto.
+
+## 2. I viaggi come progetto condiviso
+
+Ogni viaggio dei figli tra le due case è una piccola logistica: biglietti, documenti, bagaglio, chi li aspetta all'arrivo. Nel [wallet](/strumenti/wallet) di KidBox si possono caricare i biglietti in PDF, e restano consultabili dal telefono di entrambi i genitori; carta d'identità e tessera sanitaria dei figli, cifrate, sono a portata di mano per chiunque li accompagni.
+
+Per i ragazzi che iniziano a viaggiare da soli, l'accordo su chi li aspetta e come ci si avvisa all'arrivo va scritto prima, non improvvisato in stazione.
+
+## 3. Presenza a distanza, con regolarità
+
+Il genitore lontano rischia di diventare «quello delle vacanze». La presenza quotidiana si costruisce con piccoli contatti **regolari**, non con lunghe telefonate occasionali:
+
+- una **videochiamata a orario fisso**, due o tre volte a settimana, concordata con l'altro genitore
+- messaggi brevi nei momenti importanti: la verifica, la partita, il primo giorno di scuola
+- sapere cosa succede: gli eventi della scuola e le visite, visibili nel calendario
+
+La regolarità conta più della durata. Dieci minuti ogni martedì valgono più di un'ora a sorpresa.
+
+## 4. Le informazioni arrivano senza chiedere
+
+Il genitore che vive lontano è spesso l'ultimo a sapere: della febbre, della nota a scuola, del cambio di allenatore. Per non dipendere dai racconti:
+
+- le visite e i documenti dei figli nei documenti condivisi
+- gli eventi nel calendario comune
+- la [chat di famiglia](/strumenti/chat) per le comunicazioni tra genitori, separata dalle chat personali
+
+## 5. Ricordi in comune
+
+Quando si vive lontano, si perdono anche le foto: la recita, la festa, la gita. Un [album condiviso](/strumenti/foto-e-video) in cui entrambi i genitori caricano le foto dei figli permette al genitore lontano di vedere la vita di tutti i giorni, e ai figli di sapere che anche l'altro genitore la vede.
+
+## 6. Le spese dei viaggi
+
+La distanza costa: biglietti, benzina, autostrade, a volte un albergo. Come si dividono è una questione degli accordi di separazione; tenerne traccia nelle spese condivise, con le ricevute, evita che diventi motivo di conflitto.
+
+## In sintesi
+
+Blocchi di tempo programmati con largo anticipo, viaggi organizzati come progetti con biglietti e documenti a portata di entrambi, contatti regolari invece che occasionali, informazioni e foto condivise senza doverle chiedere. La distanza resta. La sensazione di essere lontani dalla vita dei figli può diminuire molto.
+""",
+        },
+        "en": {
+            "title": "Long-distance co-parenting: staying present when you live in another city",
+            "desc": "Long weekends, travel, split holidays and video calls. How to organise co-parenting when the two homes are hours apart by road or plane.",
+            "body": """
+When separated parents live in the same city, the main problem is coordination. When they live in different cities — sometimes different countries — the problem becomes something else: **how to stay present** in the children's everyday life when you only see it every other weekend or during holidays.
+
+Distance doesn't go away. But it can be organised so it weighs less, especially on the children.
+
+## 1. A calendar built for long blocks
+
+With distance, turns are no longer "Tuesday and Thursday": they're **blocks** — a long weekend a month, half the summer holidays, Christmas in alternate years. Planning them well in advance is essential, because there are journeys to book.
+
+In the [shared calendar](/en/tools/calendario), for each block:
+
+- the exact dates and **who accompanies** the journey
+- the time and place of the handover (station, airport, home)
+- the children's commitments the block will miss, to be made up or moved
+
+A view covering the coming months avoids discovering, three weeks before leaving, that the weekend clashes with the swimming gala.
+
+## 2. Journeys as a shared project
+
+Every trip between the two homes is a small logistics job: tickets, documents, luggage, who's waiting at arrival. KidBox's [wallet](/en/tools/wallet) can hold tickets as PDFs, readable from both parents' phones; the children's encrypted ID cards and health cards are to hand for whoever travels with them.
+
+For teenagers starting to travel alone, the agreement on who meets them and how they'll check in on arrival should be written beforehand, not improvised at the station.
+
+## 3. Presence at a distance, with regularity
+
+The parent who lives far away risks becoming "the holiday parent". Everyday presence is built through small, **regular** contact, not long occasional calls:
+
+- a **video call at a fixed time**, two or three times a week, agreed with the other parent
+- short messages at important moments: the test, the match, the first day of school
+- knowing what's happening: school events and appointments, visible in the calendar
+
+Regularity matters more than length. Ten minutes every Tuesday beats an hour out of the blue.
+
+## 4. Information arrives without asking
+
+The distant parent is often the last to know: about the fever, the note from school, the new coach. So as not to depend on second-hand accounts:
+
+- the children's appointments and documents in shared documents
+- events in the common calendar
+- the [family chat](/en/tools/chat) for messages between parents, separate from personal chats
+
+## 5. Shared memories
+
+When you live far away, you also miss the photos: the school play, the party, the trip. A [shared album](/en/tools/foto-e-video) where both parents upload the children's photos lets the distant parent see everyday life, and lets the children know the other parent sees it too.
+
+## 6. Travel costs
+
+Distance costs money: tickets, fuel, tolls, sometimes a hotel. How they're split is a matter for the separation agreement; tracking them in shared expenses, with receipts, keeps them from becoming a source of conflict.
+
+## In short
+
+Blocks of time planned well in advance, journeys organised as projects with tickets and documents available to both, regular rather than occasional contact, information and photos shared without having to ask. The distance remains. The feeling of being far from your children's lives can shrink a lot.
+""",
+        },
+    },
+    {
+        "slug": "nuovo-partner-e-co-genitorialita",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["famiglia", "calendario", "chat"], "related": ["famiglia-allargata-organizzazione", "confini-nella-co-genitorialita", "calendario-famiglia-ricomposta"],
+        "it": {
+            "title": "Co-genitorialità con un nuovo partner in casa: una guida pratica",
+            "desc": "Quando un genitore separato inizia una nuova relazione, cambiano gli equilibri con i figli e con l'ex. Cosa condividere, con chi, e in che ordine.",
+            "body": """
+Un nuovo partner cambia molte cose in una famiglia separata. Per il genitore è una buona notizia; per i figli può essere una novità difficile; per l'altro genitore, a volte, una fonte di tensione. E a livello pratico pone domande concrete: il nuovo partner deve sapere i turni? Può andare a prendere i bambini? Deve vedere le informazioni sulla loro salute?
+
+Non esiste una risposta unica, ma esiste un ordine sensato in cui porsi queste domande.
+
+## 1. Prima i figli, poi la logistica
+
+La velocità con cui un nuovo partner entra nella vita dei figli dipende dalla loro età, dalla serenità della separazione e dalla solidità della relazione. Da un punto di vista organizzativo, la regola è semplice: **la logistica segue la relazione, non la precede**. Un partner di tre mesi non deve essere il contatto di emergenza della scuola.
+
+Se ci sono dubbi su come e quando presentare il partner ai figli, un confronto con uno psicologo dell'età evolutiva può essere utile.
+
+## 2. Dire all'altro genitore, prima che lo sappia dai figli
+
+Quando la relazione diventa stabile e il partner inizia a essere presente nella vita dei figli, l'altro genitore dovrebbe saperlo **da voi**, in modo breve e fattuale. Non per chiedere un permesso, ma perché scoprirlo dai racconti dei figli è la via più rapida per un conflitto.
+
+## 3. Cosa condividere con il nuovo partner
+
+Tre livelli, da aprire in ordine e solo quando serve:
+
+- **La vita di casa**: calendario domestico, spesa, faccende. È il primo livello, e il più naturale se convivete.
+- **La logistica dei figli**: turni, orari, attività. Serve se il partner partecipa agli accompagnamenti.
+- **Le informazioni sensibili**: salute, documenti, comunicazioni con l'altro genitore. Restano tra i genitori, salvo accordi diversi.
+
+In KidBox si può far parte di [più famiglie](/strumenti/famiglia) e passare dall'una all'altra: una per la casa con il nuovo partner, una per l'organizzazione dei figli con l'altro genitore. Calendario, documenti e chat di ognuna restano separati, e il nuovo partner vede la vita di casa senza entrare nella famiglia dei vostri figli con l'ex.
+
+## 4. Il calendario della casa nuova
+
+I turni dei figli condizionano anche la vita del partner: le sere in cui i figli ci sono, i weekend liberi, le vacanze. Riportare i turni nel [calendario](/strumenti/calendario) della famiglia di casa — anche solo come «bambini da noi» — permette al partner di organizzarsi senza dover chiedere ogni volta, e senza vedere i dettagli che non lo riguardano.
+
+## 5. Chi può andare a prendere i figli
+
+Se il partner inizia ad accompagnare o ritirare i figli:
+
+- se ne parla **prima** con l'altro genitore
+- si verifica con la scuola quali deleghe servono
+- il partner compare nel calendario come chi accompagna, così è chiaro a tutti
+
+## 6. Il partner non sostituisce un genitore
+
+Anche nella quotidianità più condivisa, le decisioni sui figli restano dei due genitori. Il nuovo partner può essere un adulto di riferimento prezioso, ma le conversazioni sulla scuola, la salute e le regole importanti avvengono tra i genitori — nella loro [chat](/strumenti/chat), non in una chat allargata.
+
+## In sintesi
+
+La logistica segue la relazione. L'altro genitore lo sa da voi, le informazioni si aprono a livelli, la casa nuova e la co-genitorialità hanno contesti separati, il calendario della casa riporta i turni e le decisioni sui figli restano dei genitori. Così il nuovo partner entra in famiglia senza entrare in mezzo.
+""",
+        },
+        "en": {
+            "title": "Co-parenting with a new partner at home: a practical guide",
+            "desc": "When a separated parent starts a new relationship, the balance with the children and the ex shifts. What to share, with whom, and in what order.",
+            "body": """
+A new partner changes a lot in a separated family. For the parent it's good news; for the children it can be a difficult change; for the other parent, sometimes, a source of tension. And in practical terms it raises concrete questions: should the new partner know the custody schedule? Can they pick the children up? Should they see information about their health?
+
+There's no single answer, but there's a sensible order in which to ask these questions.
+
+## 1. Children first, then logistics
+
+How quickly a new partner enters the children's lives depends on their age, how calm the separation is and how solid the relationship is. Organisationally the rule is simple: **logistics follow the relationship, they don't lead it**. A three-month partner shouldn't be the school's emergency contact.
+
+If you're unsure how and when to introduce your partner to the children, talking to a child psychologist can help.
+
+## 2. Tell the other parent, before they hear it from the children
+
+When the relationship becomes stable and the partner starts being present in the children's lives, the other parent should hear it **from you**, briefly and factually. Not to ask permission, but because finding out from the children's stories is the fastest route to conflict.
+
+## 3. What to share with the new partner
+
+Three levels, to open in order and only when needed:
+
+- **Home life**: household calendar, groceries, chores. The first level, and the most natural if you live together.
+- **The children's logistics**: turns, times, activities. Needed if the partner helps with drop-offs.
+- **Sensitive information**: health, documents, communication with the other parent. It stays between the parents, unless agreed otherwise.
+
+In KidBox you can belong to [more than one family](/en/tools/famiglia) and switch between them: one for the home with your new partner, one for organising the children with their other parent. Each has its own calendar, documents and chat, and the new partner sees home life without joining your children's family with your ex.
+
+## 4. The new household's calendar
+
+The children's turns shape the partner's life too: the evenings the children are there, free weekends, holidays. Copying turns into the household family's [calendar](/en/tools/calendario) — even just as "kids with us" — lets the partner plan without asking every time, and without seeing details that don't concern them.
+
+## 5. Who can collect the children
+
+If the partner starts dropping off or collecting the children:
+
+- discuss it **first** with the other parent
+- check with the school which authorisations are needed
+- the partner appears in the calendar as the one accompanying, so it's clear to everyone
+
+## 6. A partner doesn't replace a parent
+
+Even in the most shared everyday life, decisions about the children remain with the two parents. The new partner can be a valuable adult in their lives, but conversations about school, health and important rules happen between the parents — in their [chat](/en/tools/chat), not in a wider group.
+
+## In short
+
+Logistics follow the relationship. The other parent hears it from you, information opens in levels, the new household and co-parenting have separate contexts, the household calendar shows the turns and decisions about the children stay with the parents. That way the new partner joins the family without getting caught in the middle.
+""",
+        },
+    },
 ]

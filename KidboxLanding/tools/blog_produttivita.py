@@ -640,4 +640,229 @@ Map the real windows, sort them into deep, short and home blocks, put deep block
 """,
         },
     },
+    # ── Produttività in casa · terzo lotto ─────────────────────────────
+    {
+        "slug": "routine-del-mattino-in-famiglia",
+        "category": "produttivita-in-casa", "date": "2026-09-13",
+        "tools": ["to-do", "calendario"], "related": ["routine-della-sera-in-famiglia", "far-fare-le-faccende-ai-bambini", "rientro-a-scuola-organizzazione"],
+        "it": {
+            "title": "La routine del mattino in famiglia: uscire di casa in orario senza urlare",
+            "desc": "Tra la sveglia e la porta ci sono quaranta minuti e venti cose da fare. Come costruire una mattina che funziona anche quando tutti sono in ritardo.",
+            "body": """
+Le mattine di una famiglia con figli hanno una caratteristica crudele: c'è un orario fisso — la campanella, il treno, il cartellino — e un numero di cose da fare che non sta mai nel tempo disponibile. Il risultato, in molte case, è sempre lo stesso: gli ultimi dieci minuti si passano a cercare scarpe e a urlare.
+
+Una buona routine del mattino non rende la mattina rilassata. La rende **prevedibile**, che è quello che serve.
+
+## La regola zero: metà mattina si fa la sera prima
+
+Nessuna routine del mattino regge senza la sera prima. Zaini pronti, vestiti scelti, colazione impostata, documenti e moduli firmati vicino alla porta: tutto quello che si può fare la sera, si fa la sera. Il metodo completo è in [la routine della sera in famiglia](/blog/routine-della-sera-in-famiglia).
+
+La mattina resta così solo quello che non si può anticipare: svegliarsi, lavarsi, vestirsi, mangiare, uscire.
+
+## 1. Partire dall'orario di uscita, a ritroso
+
+Scrivete l'orario in cui la porta deve chiudersi, e andate indietro:
+
+- **7:45** — porta chiusa
+- **7:35** — scarpe, giacche, zaini in spalla
+- **7:15** — colazione
+- **7:00** — bagno e vestiti
+- **6:50** — sveglia dei figli
+- **6:30** — sveglia degli adulti
+
+Quasi sempre si scopre che la sveglia è troppo tardi di dieci minuti. Quei dieci minuti sono la differenza tra una mattina tesa e una che regge.
+
+## 2. Gli adulti prima dei figli
+
+Il consiglio più semplice e più ignorato: un genitore **già pronto** quando si svegliano i figli cambia completamente la mattina. Chi deve ancora farsi la doccia mentre cerca le calze del figlio non ha margine per nessun imprevisto.
+
+## 3. Ruoli fissi tra i genitori
+
+La mattina funziona male quando i due genitori fanno tutto e niente. Dividete ruoli fissi: uno segue la colazione, l'altro vestiti e zaini. Uno accompagna, l'altro chiude casa. Se i turni cambiano a seconda dei giorni — chi accompagna il lunedì, chi il giovedì — scriveteli nel [calendario](/strumenti/calendario) di famiglia, così la sera prima entrambi sanno cosa li aspetta.
+
+## 4. La lista della porta
+
+Accanto alla porta, o come lista fissa, le cose che si dimenticano sempre: chiavi, telefono, merenda, occhiali, abbonamento, la cosa speciale del giorno — la tuta per ginnastica il martedì, il flauto il giovedì.
+
+La «cosa speciale del giorno» funziona bene come [cosa da fare](/strumenti/to-do) con un promemoria la sera prima, assegnata a chi prepara lo zaino: il martedì sera arriva «tuta per ginnastica», e il mercoledì mattina non si torna indietro a prenderla.
+
+## 5. Figli autonomi, a piccoli passi
+
+Dai quattro-cinque anni i bambini possono fare da soli una parte della mattina: vestirsi con i vestiti preparati, portare la tazza nel lavandino, mettersi le scarpe. Una sequenza sempre uguale, magari disegnata per i più piccoli, toglie al genitore il ruolo di regista che ripete ogni passaggio.
+
+## 6. Niente schermi prima della porta
+
+Televisione, tablet e telefoni sono il modo più efficace per perdere dieci minuti senza accorgersene. Vale anche per gli adulti: il telefono si guarda dopo che la porta è chiusa.
+
+## Quando salta
+
+Salterà: un bambino malato, una notte insonne, la neve. Nei giorni storti si tagliano i passaggi non essenziali, si esce con la colazione in mano, e il giorno dopo si riparte dalla routine. Non serve una mattina perfetta, serve una mattina di default.
+
+## In sintesi
+
+La sera prima fa metà del lavoro. La mattina si pianifica a ritroso dall'orario di uscita, gli adulti si preparano prima dei figli, i genitori hanno ruoli fissi, la cosa speciale del giorno arriva come promemoria la sera prima e gli schermi aspettano. Uscire di casa senza urlare è possibile. Quasi tutti i giorni.
+""",
+        },
+        "en": {
+            "title": "The family morning routine: out of the door on time without shouting",
+            "desc": "Between the alarm and the front door there are forty minutes and twenty things to do. How to build a morning that works even when everyone's running late.",
+            "body": """
+Mornings in a family with children have a cruel feature: there's a fixed time — the school bell, the train, clocking in — and a number of things to do that never fits the time available. The result, in many homes, is always the same: the last ten minutes are spent hunting for shoes and shouting.
+
+A good morning routine doesn't make the morning relaxed. It makes it **predictable**, which is what you need.
+
+## Rule zero: half the morning happens the night before
+
+No morning routine holds without the evening before. Bags packed, clothes chosen, breakfast set out, signed forms by the door: everything that can be done in the evening gets done in the evening. The full method is in [the family evening routine](/en/blog/routine-della-sera-in-famiglia).
+
+That leaves the morning with only what can't be done in advance: waking up, washing, dressing, eating, leaving.
+
+## 1. Start from leaving time, and work back
+
+Write down the time the door has to close, and go backwards:
+
+- **7:45** — door closed
+- **7:35** — shoes, coats, bags on
+- **7:15** — breakfast
+- **7:00** — bathroom and dressing
+- **6:50** — children's alarm
+- **6:30** — adults' alarm
+
+You'll almost always find the alarm is ten minutes too late. Those ten minutes are the difference between a tense morning and one that holds.
+
+## 2. Adults before children
+
+The simplest and most ignored advice: a parent who's **already ready** when the children wake up changes the whole morning. Someone who still needs to shower while hunting for their child's socks has no margin for anything unexpected.
+
+## 3. Fixed roles between parents
+
+Mornings go badly when both parents do everything and nothing. Split fixed roles: one handles breakfast, the other clothes and bags. One does the school run, the other locks up. If turns change by day — who drives on Monday, who on Thursday — put them in the family [calendar](/en/tools/calendario), so both know the night before what's coming.
+
+## 4. The door list
+
+By the door, or as a fixed list, the things that always get forgotten: keys, phone, snack, glasses, travel pass, the day's special item — PE kit on Tuesday, the recorder on Thursday.
+
+The "day's special item" works well as a [to-do](/en/tools/to-do) with a reminder the evening before, assigned to whoever packs the bag: on Tuesday evening "PE kit" arrives, and on Wednesday morning nobody has to go back for it.
+
+## 5. Independent children, in small steps
+
+From four or five, children can do part of the morning themselves: dress in the clothes laid out, take their cup to the sink, put on their shoes. A sequence that's always the same, perhaps drawn for the youngest, removes the parent's role as a director repeating every step.
+
+## 6. No screens before the door
+
+TV, tablets and phones are the most effective way to lose ten minutes without noticing. That goes for adults too: the phone gets checked after the door is closed.
+
+## When it falls apart
+
+It will: a sick child, a sleepless night, snow. On bad days you cut the non-essentials, leave with breakfast in hand, and restart the routine the next day. You don't need a perfect morning, you need a default morning.
+
+## In short
+
+The night before does half the work. The morning is planned backwards from leaving time, adults get ready before children, parents have fixed roles, the day's special item arrives as a reminder the evening before and screens wait. Leaving the house without shouting is possible. Most days.
+""",
+        },
+    },
+    {
+        "slug": "budget-di-casa-spese-condivise",
+        "category": "produttivita-in-casa", "date": "2026-09-13",
+        "tools": ["spese", "casa", "veicoli", "assistente-ai"], "related": ["pasti-in-famiglia-con-budget", "scadenze-di-casa-bollette-garanzie", "spese-dei-figli-genitori-separati"],
+        "it": {
+            "title": "Il budget di casa in coppia: seguire le spese condivise senza litigare",
+            "desc": "I soldi sono una delle prime cause di discussione in coppia, e quasi sempre per mancanza di informazioni, non di soldi. Un sistema semplice per sapere quanto costa la casa e chi ha pagato cosa.",
+            "body": """
+In molte coppie le discussioni sui soldi non nascono da quanto si spende, ma da **quanto non si sa**. Chi ha pagato la bolletta? Quanto abbiamo speso per la macchina quest'anno? Perché questo mese siamo arrivati a fine mese così stretti? Senza risposte, ognuno ha la sua impressione — e le impressioni sui soldi sono quasi sempre ingiuste verso l'altro.
+
+Non serve un foglio di calcolo complicato. Serve un sistema che dia risposte senza lavoro.
+
+Questo articolo parla di organizzazione, non di consulenza finanziaria: per investimenti, mutui e tasse c'è il commercialista o un consulente.
+
+## 1. Decidere il modello, prima dei numeri
+
+Le coppie gestiscono i soldi in modi molto diversi, e nessuno è sbagliato:
+
+- **tutto in comune**: un conto unico, tutte le spese insieme
+- **conto comune per la casa**: ognuno versa una quota, le spese di casa escono da lì
+- **conti separati**: si divide ogni spesa comune, a metà o in proporzione al reddito
+
+Il modello va scelto **insieme e per iscritto**. Metà delle discussioni nascono dal fatto che uno pensava di dividere a metà e l'altro in proporzione.
+
+## 2. Categorie poche e chiare
+
+Per capire dove vanno i soldi bastano una decina di categorie: casa (affitto o mutuo, bollette), spesa alimentare, auto, figli, salute, scuola, tempo libero, vacanze, abbonamenti, varie. Più categorie di così, e smettete di registrare.
+
+## 3. Registrare in trenta secondi, da chiunque
+
+Il sistema funziona solo se registrare una spesa è immediato, e se lo fanno entrambi. Nelle [spese di famiglia](/strumenti/spese) di KidBox ogni voce ha importo, categoria, **chi ha pagato** e, se serve, per quale figlio, con la foto dello scontrino.
+
+La parte che fa risparmiare più tempo è che molte spese **nascono da sole**: una bolletta registrata tra le scadenze di [casa](/strumenti/casa), un tagliando nella scheda dei [veicoli](/strumenti/veicoli), una visita medica con il suo costo compaiono automaticamente nelle spese, senza scriverle due volte.
+
+## 4. Chi ha anticipato cosa
+
+Nelle coppie con conti separati il problema principale non è quanto si spende, ma **chi ha anticipato**. Con «chi ha pagato» su ogni voce, il riepilogo mostra quanto ha speso ciascuno per le cose comuni, e il conguaglio di fine mese diventa un numero, non una trattativa.
+
+## 5. Le spese fisse in calendario
+
+Affitto, mutuo, assicurazioni, bollo, abbonamenti annuali: le spese fisse sono prevedibili, ma quelle annuali arrivano sempre come una sorpresa. Mettetele tra le scadenze con un promemoria qualche settimana prima, e non saranno più il motivo per cui un mese è andato storto. Ne parliamo in [scadenze di casa: bollette e garanzie](/blog/scadenze-di-casa-bollette-garanzie).
+
+## 6. Dieci minuti al mese
+
+Una volta al mese, insieme, dieci minuti sul riepilogo: il totale per categoria, il confronto con i mesi precedenti, eventuali spese inattese. Non per giudicare chi ha speso cosa, ma per decidere insieme se cambiare qualcosa. Il riepilogo di KidBox si può anche esportare in un file per il foglio di calcolo, se volete fare analisi più approfondite.
+
+Con il piano Pro, una fattura o uno scontrino si possono importare e l'[assistente](/strumenti/assistente-ai) propone da solo la spesa da registrare.
+
+## In sintesi
+
+Un modello di gestione scelto insieme e scritto, poche categorie, registrazione immediata da parte di entrambi con le spese che nascono da sole dalle altre schede, chi ha pagato su ogni voce, le spese annuali tra le scadenze e dieci minuti al mese. I soldi resteranno un tema. Ma se ne parlerà con i numeri davanti, invece che con le impressioni.
+""",
+        },
+        "en": {
+            "title": "A household budget as a couple: tracking shared expenses without arguing",
+            "desc": "Money is one of the top causes of arguments in couples, and usually for lack of information, not lack of money. A simple system to know what the home costs and who paid for what.",
+            "body": """
+In many couples, arguments about money don't come from how much is spent, but from **how much isn't known**. Who paid the bill? How much did we spend on the car this year? Why were we so tight at the end of this month? Without answers, each person has their own impression — and impressions about money are almost always unfair to the other.
+
+You don't need a complicated spreadsheet. You need a system that gives answers without work.
+
+This article is about organisation, not financial advice: for investments, mortgages and tax, talk to an accountant or an adviser.
+
+## 1. Decide the model before the numbers
+
+Couples manage money in very different ways, and none is wrong:
+
+- **everything shared**: one account, all expenses together
+- **a joint account for the home**: each pays in a share, household costs come out of it
+- **separate accounts**: each shared cost is split, half and half or in proportion to income
+
+Choose the model **together and in writing**. Half of all arguments come from one person thinking you split evenly and the other thinking proportionally.
+
+## 2. Few, clear categories
+
+To understand where money goes, about ten categories are enough: home (rent or mortgage, bills), groceries, car, children, health, school, leisure, holidays, subscriptions, other. Any more and you stop recording.
+
+## 3. Record in thirty seconds, by anyone
+
+The system only works if recording an expense is instant, and both of you do it. In KidBox's [family expenses](/en/tools/spese) every entry has an amount, category, **who paid** and, if needed, which child, with a photo of the receipt.
+
+The biggest time-saver is that many expenses **create themselves**: a bill recorded among [home](/en/tools/casa) deadlines, a service in the [vehicles](/en/tools/veicoli) section, a medical appointment with its cost appear automatically in expenses, without being written twice.
+
+## 4. Who paid for what
+
+In couples with separate accounts the main problem isn't how much is spent, but **who paid upfront**. With "who paid" on every entry, the summary shows how much each person spent on shared things, and the end-of-month settling up becomes a number, not a negotiation.
+
+## 5. Fixed costs as deadlines
+
+Rent, mortgage, insurance, road tax, annual subscriptions: fixed costs are predictable, but the annual ones always arrive as a surprise. Add them as deadlines with a reminder a few weeks ahead, and they'll stop being the reason a month went wrong. More in [household deadlines: bills and warranties](/en/blog/scadenze-di-casa-bollette-garanzie).
+
+## 6. Ten minutes a month
+
+Once a month, together, ten minutes on the summary: totals by category, comparison with previous months, any unexpected costs. Not to judge who spent what, but to decide together whether to change anything. KidBox's expenses can also be exported to a spreadsheet file, if you want to dig deeper.
+
+With the Pro plan, you can import a bill or receipt and the [assistant](/en/tools/assistente-ai) suggests the expense to record.
+
+## In short
+
+A money model chosen together and written down, few categories, instant recording by both of you with expenses created automatically from other sections, who paid on every entry, annual costs as deadlines and ten minutes a month. Money will still be a topic. But you'll discuss it with the numbers in front of you, instead of impressions.
+""",
+        },
+    },
 ]

@@ -603,4 +603,108 @@ Don't judge day one: judge week three. Who maintains the chart, whether it cover
 """,
         },
     },
+    # ── Confronti · terzo lotto ────────────────────────────────────────
+    {
+        "slug": "app-di-famiglia-iphone-android-web",
+        "category": "confronti", "date": "2026-09-13",
+        "tools": ["famiglia", "calendario", "chat", "documenti"], "related": ["app-per-coppie-cosa-serve", "app-di-famiglia-gratis-cosa-guardare", "partner-non-usa-app-di-famiglia"],
+        "it": {
+            "title": "Un genitore con iPhone, l'altro con Android: cosa deve fare un'app di famiglia",
+            "desc": "La famiglia mista è la norma, e molte app lo gestiscono male. Cosa verificare prima di scegliere: parità di funzioni, sincronizzazione, web e cosa succede cambiando telefono.",
+            "body": """
+In moltissime famiglie i telefoni non sono tutti uguali: un genitore ha l'iPhone, l'altro Android, il nonno un tablet, il figlio grande un telefono ereditato. È la norma, non l'eccezione. Eppure molte soluzioni per organizzarsi in famiglia funzionano bene solo se tutti usano lo stesso sistema.
+
+Ecco cosa verificare prima di scegliere un'app di famiglia per una casa «mista».
+
+## 1. Esiste davvero su entrambi?
+
+Sembra ovvio, ma non lo è. Alcuni strumenti sono nati per un sistema e sull'altro hanno una versione ridotta, o solo un'app web. Controllate:
+
+- che ci sia un'**app nativa** su App Store **e** su Google Play
+- che siano aggiornate con una frequenza simile
+- che l'app sull'altro sistema non sia un semplice «visualizzatore»
+
+## 2. Stesse funzioni, non «quasi»
+
+Il problema più subdolo è la differenza di funzioni. Se su un telefono si possono allegare documenti e sull'altro no, o se i promemoria arrivano solo a uno, prima o poi la persona con la versione ridotta smette di usare l'app — e tutto torna sulle spalle dell'altra.
+
+Chiedetevi per ogni funzione importante: **calendario, liste, spese, documenti, chat, promemoria** funzionano allo stesso modo su entrambi?
+
+## 3. Sincronizzazione in tempo reale
+
+Una lista della spesa che si aggiorna dopo cinque minuti è una lista in cui si comprano due volte le stesse cose. La sincronizzazione tra sistemi diversi deve essere **immediata**: un evento aggiunto sull'iPhone deve comparire sull'Android mentre lo si guarda.
+
+E deve funzionare **senza connessione**: le modifiche fatte in cantina o in aereo si allineano appena torna la rete, senza conflitti.
+
+## 4. Il browser, per chi organizza dal computer
+
+Molte cose di famiglia si organizzano dal computer: le vacanze, le bollette, i documenti da scaricare. Una **versione web** completa è preziosa per chi passa la giornata alla scrivania, e utile anche quando il telefono è scarico o perso.
+
+## 5. Cosa succede cambiando telefono
+
+Si cambia telefono ogni pochi anni, e a volte si cambia sistema. Verificate che i dati **appartengano all'account**, non al dispositivo: passando da iPhone ad Android (o viceversa) si accede e si ritrova tutto. Particolare attenzione ai dati cifrati: la chiave deve potersi recuperare con l'accesso, altrimenti i documenti restano illeggibili.
+
+## 6. Le integrazioni del sistema
+
+Ogni sistema ha le sue comodità: widget, compilazione automatica delle password, integrazione con i dati di salute del telefono. È normale che un'app le sfrutti diversamente su iPhone e Android; l'importante è che **i dati di famiglia** restino gli stessi per tutti.
+
+## Dove si colloca KidBox
+
+KidBox ha un'app nativa per iPhone e una per Android con le stesse funzioni, e una [web app](https://app.kidboxapp.com) per il browser. Tutte usano gli stessi dati di famiglia in tempo reale: [calendario](/strumenti/calendario), liste, [chat](/strumenti/chat), [documenti](/strumenti/documenti) cifrati e il resto. La chiave di cifratura della famiglia si recupera con l'accesso all'account, quindi cambiando telefono — anche sistema — i dati tornano leggibili. Sull'iPhone ci sono in più alcune estensioni del sistema, come i widget e l'AutoFill delle password.
+
+## In sintesi
+
+Un'app nativa vera su entrambi i sistemi, le stesse funzioni, sincronizzazione immediata e offline, una versione web per il computer e dati legati all'account e non al telefono. Se una di queste manca, il membro della famiglia con il telefono «sbagliato» smetterà di usarla.
+""",
+        },
+        "en": {
+            "title": "One parent on iPhone, the other on Android: what a family app has to do",
+            "desc": "Mixed-phone families are the norm, and many apps handle them badly. What to check before choosing: feature parity, sync, the web and what happens when you switch phones.",
+            "body": """
+In a great many families the phones aren't all the same: one parent has an iPhone, the other Android, grandad has a tablet, the eldest a hand-me-down phone. That's the norm, not the exception. Yet many family organising tools only work well if everyone uses the same system.
+
+Here's what to check before choosing a family app for a "mixed" household.
+
+## 1. Does it really exist on both?
+
+It sounds obvious, but it isn't. Some tools were built for one system and have a reduced version on the other, or only a web app. Check:
+
+- that there's a **native app** on the App Store **and** Google Play
+- that both are updated at a similar pace
+- that the app on the other system isn't just a "viewer"
+
+## 2. The same features, not "nearly"
+
+The sneakiest problem is feature differences. If one phone can attach documents and the other can't, or reminders only reach one person, sooner or later whoever has the reduced version stops using the app — and everything lands back on the other.
+
+For each important feature ask: do **calendar, lists, expenses, documents, chat and reminders** work the same way on both?
+
+## 3. Real-time sync
+
+A grocery list that updates after five minutes is a list where things get bought twice. Sync across systems has to be **immediate**: an event added on the iPhone should appear on the Android while you're looking at it.
+
+And it has to work **offline**: changes made in the basement or on a plane sync as soon as the connection returns, without conflicts.
+
+## 4. The browser, for whoever organises from a computer
+
+A lot of family organising happens at a computer: holidays, bills, documents to download. A full **web version** is valuable for whoever spends the day at a desk, and handy when a phone is flat or lost.
+
+## 5. What happens when you change phones
+
+People change phones every few years, and sometimes change systems. Check that data **belongs to the account**, not the device: moving from iPhone to Android (or back) you sign in and find everything. Pay particular attention to encrypted data: the key must be recoverable by signing in, otherwise documents stay unreadable.
+
+## 6. System integrations
+
+Each system has its conveniences: widgets, password autofill, integration with the phone's health data. It's normal for an app to use them differently on iPhone and Android; what matters is that **the family's data** stays the same for everyone.
+
+## Where KidBox fits
+
+KidBox has a native iPhone app and a native Android app with the same features, plus a [web app](https://app.kidboxapp.com) for the browser. They all use the same family data in real time: [calendar](/en/tools/calendario), lists, [chat](/en/tools/chat), encrypted [documents](/en/tools/documenti) and the rest. The family encryption key is recovered by signing in to your account, so when you change phone — even system — your data is readable again. On iPhone there are also some system extensions, such as widgets and password AutoFill.
+
+## In short
+
+A real native app on both systems, the same features, immediate and offline sync, a web version for the computer and data tied to the account rather than the phone. If any of these is missing, the family member with the "wrong" phone will stop using it.
+""",
+        },
+    },
 ]

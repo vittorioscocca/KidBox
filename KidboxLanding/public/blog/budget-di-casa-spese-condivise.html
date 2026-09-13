@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Co-parenting: running two homes without friction · KidBox Blog</title>
-  <meta name="description" content="Custody calendar, shared expenses, the kids&#x27; documents and communication that stays civil: the logistics of separation, done right.">
-  <meta property="og:title" content="Co-parenting: running two homes without friction · KidBox Blog">
-  <meta property="og:description" content="Custody calendar, shared expenses, the kids&#x27; documents and communication that stays civil: the logistics of separation, done right.">
-  <meta property="og:type" content="website">
+  <title>Il budget di casa in coppia: seguire le spese condivise senza litigare · Blog KidBox</title>
+  <meta name="description" content="I soldi sono una delle prime cause di discussione in coppia, e quasi sempre per mancanza di informazioni, non di soldi. Un sistema semplice per sapere quanto costa la casa e chi ha pagato cosa.">
+  <meta property="og:title" content="Il budget di casa in coppia: seguire le spese condivise senza litigare · Blog KidBox">
+  <meta property="og:description" content="I soldi sono una delle prime cause di discussione in coppia, e quasi sempre per mancanza di informazioni, non di soldi. Un sistema semplice per sapere quanto costa la casa e chi ha pagato cosa.">
+  <meta property="og:type" content="article">
   <meta property="og:image" content="https://kidboxapp.com/icon.png">
-  <link rel="canonical" href="https://kidboxapp.com/en/blog/genitori-separati">
-  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/blog/genitori-separati">
-  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/blog/genitori-separati">
+  <link rel="canonical" href="https://kidboxapp.com/blog/budget-di-casa-spese-condivise">
+  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/blog/budget-di-casa-spese-condivise">
+  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/blog/budget-di-casa-spese-condivise">
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" href="../../icon.png?v=2">
+  <link rel="icon" type="image/png" href="../icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
 <style>
@@ -179,6 +179,76 @@
   .mini-list .ck { flex-shrink:0; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; color:#fff; margin-top:2px; }
   .band-visual { display:flex; justify-content:center; }
 
+  /* VOCE / ALEXA — il pannello è volutamente scuro in entrambi i temi:
+     è la cucina di sera, con l'anello dell'Echo acceso. */
+  .voice { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:20px 0 10px; }
+  .voice-copy .p-eyebrow { color:#1f9dc9; }
+  @media (prefers-color-scheme: dark) { .voice-copy .p-eyebrow { color:#4fd8ff; } }
+  :root[data-theme="dark"] .voice-copy .p-eyebrow { color:#4fd8ff; }
+  :root[data-theme="light"] .voice-copy .p-eyebrow { color:#1f9dc9; }
+  .voice-visual { display:flex; justify-content:center; }
+  .voice-panel { position:relative; width:100%; max-width:410px; border-radius:var(--r-lg); padding:30px 24px 24px; overflow:hidden;
+    background:linear-gradient(165deg,#13202e 0%,#080d14 62%); border:1px solid rgba(79,216,255,0.18); box-shadow:var(--shadow-lg); }
+  .voice-panel::after { content:''; position:absolute; top:-96px; left:50%; transform:translateX(-50%); width:300px; height:200px;
+    background:radial-gradient(ellipse at center,rgba(79,216,255,.30),transparent 70%); filter:blur(16px); pointer-events:none; }
+
+  /* Echo */
+  .echo { position:relative; width:118px; height:120px; margin:4px auto 14px; }
+  .echo-cyl { position:absolute; left:16px; right:16px; top:24px; bottom:6px; background:linear-gradient(150deg,#3d4855,#171d26);
+    border-radius:16px 16px 20px 20px / 12px 12px 26px 26px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 18px 30px rgba(0,0,0,.45); }
+  .echo-cyl::before { content:''; position:absolute; inset:8px 10px 12px; border-radius:12px;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 4px); }
+  .echo-ring { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:3px solid #4fd8ff;
+    background:radial-gradient(ellipse at center,rgba(79,216,255,.28),transparent 70%); animation:ringpulse 3.2s ease-in-out infinite; }
+  @keyframes ringpulse { 0%,100% { opacity:.6; box-shadow:0 0 10px rgba(79,216,255,.45), inset 0 0 8px rgba(79,216,255,.35); }
+                         50%     { opacity:1;  box-shadow:0 0 28px rgba(79,216,255,.85), inset 0 0 16px rgba(79,216,255,.6); } }
+  .echo-halo { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:2px solid rgba(79,216,255,.55); animation:halo 3.2s ease-out infinite; }
+  .echo-halo.h2 { animation-delay:1.6s; }
+  @keyframes halo { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(1.9); opacity:0; } }
+
+  /* Onda vocale */
+  .wave { display:flex; align-items:center; justify-content:center; gap:4px; height:30px; margin-bottom:14px; }
+  .wave i { width:4px; height:7px; border-radius:3px; background:linear-gradient(180deg,#7ee6ff,#1b8fc4); animation:wv 1.15s ease-in-out infinite; }
+  .wave i:nth-child(1){animation-delay:0s} .wave i:nth-child(2){animation-delay:.12s} .wave i:nth-child(3){animation-delay:.24s}
+  .wave i:nth-child(4){animation-delay:.36s} .wave i:nth-child(5){animation-delay:.18s} .wave i:nth-child(6){animation-delay:.30s}
+  .wave i:nth-child(7){animation-delay:.06s} .wave i:nth-child(8){animation-delay:.42s} .wave i:nth-child(9){animation-delay:.20s}
+  @keyframes wv { 0%,100% { height:7px; opacity:.4; } 50% { height:26px; opacity:1; } }
+
+  /* Le frasi si alternano */
+  .say { position:relative; height:66px; margin-bottom:14px; }
+  .say span { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:0 6px;
+    font-size:0.95rem; font-weight:600; line-height:1.35; color:#eaf6ff; opacity:0; animation:sayc 13.5s ease-in-out infinite; }
+  .say span b { color:#4fd8ff; font-weight:700; }
+  .say span:nth-child(2){ animation-delay:4.5s } .say span:nth-child(3){ animation-delay:9s }
+  @keyframes sayc { 0%{opacity:0;transform:translateY(7px)} 5%{opacity:1;transform:none} 28%{opacity:1;transform:none} 33%,100%{opacity:0;transform:translateY(-7px)} }
+
+  /* Cosa compare nell'app */
+  .voice-out { background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:12px; }
+  .vo-h { font-size:0.62rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(234,246,255,.45); margin:2px 0 9px; display:flex; align-items:center; gap:6px; }
+  .vrow { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:11px; background:rgba(255,255,255,.05); margin-bottom:6px; }
+  .vrow .vck { width:16px; height:16px; border-radius:50%; border:1.5px solid rgba(234,246,255,.32); flex-shrink:0; }
+  .vrow .v1 { font-size:0.79rem; font-weight:700; color:#f2f8ff; }
+  .vrow .v2 { font-size:0.63rem; color:rgba(234,246,255,.45); }
+  .vrow .vnew { margin-left:auto; font-size:0.56rem; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#08121a; background:#4fd8ff; padding:3px 8px; border-radius:50px; flex-shrink:0; }
+  .vrow.pop { animation:vpop 13.5s ease-in-out infinite; }
+  .vrow.pop.d2 { animation-delay:4.5s } .vrow.pop.d3 { animation-delay:9s }
+  @keyframes vpop { 0%{opacity:.25; transform:translateX(-8px)} 6%,100%{opacity:1; transform:none} }
+
+  /* Le frasi, per esteso */
+  .phrases { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:26px; }
+  .phrase { display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:8px 15px 8px 11px; box-shadow:var(--shadow); }
+  .phrase .pw { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:0.62rem; color:#08121a; background:#4fd8ff; flex-shrink:0; }
+  .voice-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
+  .voice-note b { color:var(--text); }
+  @media (max-width:860px) { .voice { grid-template-columns:1fr; gap:34px; padding-bottom:0; } }
+  @media (prefers-reduced-motion:reduce) {
+    .echo-ring,.wave i,.vrow.pop { animation:none; }
+    .echo-halo { animation:none; opacity:0; }
+    .say span { animation:none; opacity:0; }
+    .say span:first-child { opacity:1; }
+  }
+
   /* AGENTS */
   .agents { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:44px; }
   .agent { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:30px 26px; box-shadow:var(--shadow); transition:transform .2s,box-shadow .2s; position:relative; overflow:hidden; }
@@ -308,131 +378,131 @@
 </head>
 <body>
 <nav>
-  <a class="logo" href="../../index.html#top"><img src="../../icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
+  <a class="logo" href="../index.html#top"><img src="../icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
   <div class="nav-r">
-    <a class="nav-lnk nav-hide" href="../../index.html#prodotti">Products</a>
-    <a class="nav-lnk nav-hide" href="../../index.html#ai">AI Intelligence</a>
-    <a class="nav-lnk nav-hide" href="../../index.html#prezzi">Pricing</a>
-    <a class="nav-lnk nav-hide" href="../../guide-en.html">Guide</a>
-    <a class="nav-lnk nav-hide" href="../../en/tools/">Tools</a>
-    <a class="nav-lnk nav-hide" href="../../en/blog/">Blog</a>
-    <div class="nav-lang nav-hide"><a href="../../blog/genitori-separati" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
-    <button class="theme-btn" id="tg" aria-label="Toggle theme">◐</button>
-    <a class="nav-cta" href="../../index.html#scarica">Download free</a>
+    <a class="nav-lnk nav-hide" href="../index.html#prodotti">Prodotti</a>
+    <a class="nav-lnk nav-hide" href="../index.html#voce">Voce</a>
+    <a class="nav-lnk nav-hide" href="../index.html#ai">Intelligenza AI</a>
+    <a class="nav-lnk nav-hide" href="../index.html#prezzi">Prezzi</a>
+    <a class="nav-lnk nav-hide" href="../guide.html">Guida</a>
+    <a class="nav-lnk nav-hide" href="../strumenti/">Strumenti</a>
+    <a class="nav-lnk nav-hide" href="../blog/">Blog</a>
+    <div class="nav-lang nav-hide"><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="../en/blog/budget-di-casa-spese-condivise" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
+    <button class="theme-btn" id="tg" aria-label="Cambia tema">◐</button>
+    <a class="nav-cta" href="../index.html#scarica">Scarica gratis</a>
   </div>
 </nav>
 <div class="wrap">
 
-<div class="crumbs"><a href="../../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><span class="cur">Co-parenting</span></div>
-<div class="b-head rv">
-  <h1>Co-parenting: running two homes without friction</h1>
-  <p>Custody calendar, shared expenses, the kids&#x27; documents and communication that stays civil: the logistics of separation, done right.</p>
-</div>
-<div class="b-grid">
-  <a class="b-card rv" href="famiglia-allargata-organizzazione">
-    <h3>Blended families: staying organised without mixing everything up</h3>
-    <p>New partners, children from different relationships, two homes and an ex to coordinate with. How to keep the right information apart without losing anyone.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="calendario-famiglia-ricomposta">
-    <h3>A blended family calendar that actually works</h3>
-    <p>Children on different schedules, two exes to coordinate with, a home whose make-up changes every week. How to build a calendar everyone reads the same way.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="confini-nella-co-genitorialita">
-    <h3>Co-parenting boundaries that protect your peace of mind</h3>
-    <p>Midnight messages, decisions made alone, arguments that always drift back to the past. Six practical boundaries for co-parenting that doesn&#x27;t wear you down.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="genitorialita-parallela">
-    <h3>Parallel parenting: what it is and when it works better than co-parenting</h3>
-    <p>When every conversation with your ex turns into conflict, collaborating more isn&#x27;t the answer. Parallel parenting keeps contact to a minimum and puts everything in writing.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="co-genitorialita-a-distanza">
-    <h3>Long-distance co-parenting: staying present when you live in another city</h3>
-    <p>Long weekends, travel, split holidays and video calls. How to organise co-parenting when the two homes are hours apart by road or plane.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="nuovo-partner-e-co-genitorialita">
-    <h3>Co-parenting with a new partner at home: a practical guide</h3>
-    <p>When a separated parent starts a new relationship, the balance with the children and the ex shifts. What to share, with whom, and in what order.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="calendario-genitori-separati">
-    <h3>The co-parenting calendar: staying aligned without arguing</h3>
-    <p>Custody rotation, the kids&#x27; commitments, handovers: how to build a shared calendar between two homes that takes logistics out of the fights.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>11 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="spese-dei-figli-genitori-separati">
-    <h3>Kids&#x27; expenses between separated parents: splitting them without conflict</h3>
-    <p>Dentist, sports, books, school trips: how to log the kids&#x27; extra expenses, receipts included, so that neither of you has to keep score.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>7 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="documenti-dei-figli-in-due-case">
-    <h3>The kids&#x27; documents when there are two homes</h3>
-    <p>Health card, test results, vaccinations, report cards, passport: where to keep them so both parents always have them, without asking the other.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>3 Sep 2026</span></span>
-  </a>
-</div>
-<div style="height:24px"></div>
-
+<div class="crumbs"><a href="../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><a href="produttivita-in-casa">Produttività in casa</a><span>/</span><span class="cur">Il budget di casa in coppia: seguire le spese condivise senza litigare</span></div>
+<article class="b-art">
+  <header class="b-art-head rv">
+    <h1>Il budget di casa in coppia: seguire le spese condivise senza litigare</h1>
+    <div class="b-art-meta"><span>Il team KidBox</span><span class="sep">·</span><span>Aggiornato il 13 set 2026</span><span class="sep">·</span><span>3 min di lettura</span></div>
+  </header>
+  
 <div class="t-hero rv">
   <div class="device sm"><div class="screen"><div class="notch"></div>
-      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Good morning, Vitto</div><div class="scr-h">Your family</div></div>
+      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Buongiorno, Vittorio</div><div class="scr-h">La tua famiglia</div></div>
       <div class="scr-body">
         <div class="dash">
-          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Health</div><div class="td">Visits &amp; vaccines</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documents</div><div class="td">Important papers</div></div></div>
-          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Family</div></div></div>
-          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Location</div><div class="td">Where everyone is</div></div></div>
-          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Travel</div><div class="td">AI itineraries</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Passwords</div><div class="td">Credentials</div></div></div>
+          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Salute</div><div class="td">Visite e vaccini</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documenti</div><div class="td">Carte importanti</div></div></div>
+          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Famiglia</div></div></div>
+          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Posizione</div><div class="td">Dove sono tutti</div></div></div>
+          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Viaggi</div><div class="td">Itinerari AI</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Password</div><div class="td">Credenziali</div></div></div>
         </div>
       </div>
     </div></div>
   <div class="t-hero-copy">
-    <div class="eyebrow"><span class="dot"></span>Get the app</div>
-    <h2>The whole family, <span class="g">in a single app.</span></h2>
-    <p>The family organiser for iPhone, Android and the browser, end-to-end encrypted. Free for a family of two parents.</p>
+    <div class="eyebrow"><span class="dot"></span>Scarica l'app</div>
+    <h2>Tutta la famiglia, <span class="g">in un'unica app.</span></h2>
+    <p>L'organizer di famiglia per iPhone, Android e browser, cifrato end-to-end. Gratis per una famiglia di due genitori.</p>
     <div class="hero-cta">
-    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
-    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
-    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
+    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
   </div>
 
   </div>
 </div>
+  <div class="b-body">
+<p>In molte coppie le discussioni sui soldi non nascono da quanto si spende, ma da <strong>quanto non si sa</strong>. Chi ha pagato la bolletta? Quanto abbiamo speso per la macchina quest'anno? Perché questo mese siamo arrivati a fine mese così stretti? Senza risposte, ognuno ha la sua impressione — e le impressioni sui soldi sono quasi sempre ingiuste verso l'altro.</p>
+<p>Non serve un foglio di calcolo complicato. Serve un sistema che dia risposte senza lavoro.</p>
+<p>Questo articolo parla di organizzazione, non di consulenza finanziaria: per investimenti, mutui e tasse c'è il commercialista o un consulente.</p>
+<h2>1. Decidere il modello, prima dei numeri</h2>
+<p>Le coppie gestiscono i soldi in modi molto diversi, e nessuno è sbagliato:</p>
+<ul><li><strong>tutto in comune</strong>: un conto unico, tutte le spese insieme</li><li><strong>conto comune per la casa</strong>: ognuno versa una quota, le spese di casa escono da lì</li><li><strong>conti separati</strong>: si divide ogni spesa comune, a metà o in proporzione al reddito</li></ul>
+<p>Il modello va scelto <strong>insieme e per iscritto</strong>. Metà delle discussioni nascono dal fatto che uno pensava di dividere a metà e l'altro in proporzione.</p>
+<h2>2. Categorie poche e chiare</h2>
+<p>Per capire dove vanno i soldi bastano una decina di categorie: casa (affitto o mutuo, bollette), spesa alimentare, auto, figli, salute, scuola, tempo libero, vacanze, abbonamenti, varie. Più categorie di così, e smettete di registrare.</p>
+<h2>3. Registrare in trenta secondi, da chiunque</h2>
+<p>Il sistema funziona solo se registrare una spesa è immediato, e se lo fanno entrambi. Nelle <a href="../strumenti/spese">spese di famiglia</a> di KidBox ogni voce ha importo, categoria, <strong>chi ha pagato</strong> e, se serve, per quale figlio, con la foto dello scontrino.</p>
+<p>La parte che fa risparmiare più tempo è che molte spese <strong>nascono da sole</strong>: una bolletta registrata tra le scadenze di <a href="../strumenti/casa">casa</a>, un tagliando nella scheda dei <a href="../strumenti/veicoli">veicoli</a>, una visita medica con il suo costo compaiono automaticamente nelle spese, senza scriverle due volte.</p>
+<h2>4. Chi ha anticipato cosa</h2>
+<p>Nelle coppie con conti separati il problema principale non è quanto si spende, ma <strong>chi ha anticipato</strong>. Con «chi ha pagato» su ogni voce, il riepilogo mostra quanto ha speso ciascuno per le cose comuni, e il conguaglio di fine mese diventa un numero, non una trattativa.</p>
+<h2>5. Le spese fisse in calendario</h2>
+<p>Affitto, mutuo, assicurazioni, bollo, abbonamenti annuali: le spese fisse sono prevedibili, ma quelle annuali arrivano sempre come una sorpresa. Mettetele tra le scadenze con un promemoria qualche settimana prima, e non saranno più il motivo per cui un mese è andato storto. Ne parliamo in <a href="../blog/scadenze-di-casa-bollette-garanzie">scadenze di casa: bollette e garanzie</a>.</p>
+<h2>6. Dieci minuti al mese</h2>
+<p>Una volta al mese, insieme, dieci minuti sul riepilogo: il totale per categoria, il confronto con i mesi precedenti, eventuali spese inattese. Non per giudicare chi ha speso cosa, ma per decidere insieme se cambiare qualcosa. Il riepilogo di KidBox si può anche esportare in un file per il foglio di calcolo, se volete fare analisi più approfondite.</p>
+<p>Con il piano Pro, una fattura o uno scontrino si possono importare e l'<a href="../strumenti/assistente-ai">assistente</a> propone da solo la spesa da registrare.</p>
+<h2>In sintesi</h2>
+<p>Un modello di gestione scelto insieme e scritto, poche categorie, registrazione immediata da parte di entrambi con le spese che nascono da sole dalle altre schede, chi ha pagato su ogni voce, le spese annuali tra le scadenze e dieci minuti al mese. I soldi resteranno un tema. Ma se ne parlerà con i numeri davanti, invece che con le impressioni.</p>
+  </div>
+  <section class="b-sec"><h2>Gli strumenti di cui parla l'articolo</h2><div class="b-tools"><a href="../strumenti/spese">💶 Spese di famiglia per categoria</a><a href="../strumenti/casa">🏠 Casa: garanzie, manutenzioni e scadenze</a><a href="../strumenti/veicoli">🚗 Veicoli: bollo, assicurazione, revisione</a><a href="../strumenti/assistente-ai">✨ Assistente AI di famiglia</a></div></section>
+  <section class="b-sec">
+    <h2>Da leggere dopo</h2>
+    <div class="b-grid">
+  <a class="b-card rv" href="pasti-in-famiglia-con-budget">
+    <h3>Pianificare i pasti in famiglia con un budget, senza mangiare peggio</h3>
+    <p>La spesa alimentare è la voce che si controlla meglio, e quella che si controlla meno. Un metodo in cinque passi per spendere meno senza tagliare la qualità.</p>
+    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
+  </a>
+  <a class="b-card rv" href="scadenze-di-casa-bollette-garanzie">
+    <h3>Bollette, garanzie e revisioni: le scadenze di casa che nessuno ricorda</h3>
+    <p>Le scadenze domestiche costano soldi quando si dimenticano. Come metterle tutte in un posto solo, con i documenti attaccati, e non pensarci più.</p>
+    <span class="b-meta"><span>4 min di lettura</span><span>·</span><span>5 set 2026</span></span>
+  </a>
+  <a class="b-card rv" href="spese-dei-figli-genitori-separati">
+    <h3>Le spese dei figli tra genitori separati: come dividerle senza conflitti</h3>
+    <p>Dentista, sport, libri, gite: come registrare le spese straordinarie dei figli, con le ricevute, in modo che nessuno dei due debba tenere il conto.</p>
+    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>7 set 2026</span></span>
+  </a>
+    </div>
+    <p class="b-more"><a href="produttivita-in-casa">Altri articoli su Produttività in casa →</a> &nbsp; <a href="./">Tutti gli articoli →</a></p>
+  </section>
+</article>
 </div>
 
 <section id="scarica" class="wrap">
   <div class="final rv">
-    <div class="kicker">Start today</div>
-    <h2>Your family deserves an app that keeps up.</h2>
-    <p>Free to start. No card required.</p>
+    <div class="kicker">Inizia oggi</div>
+    <h2>La famiglia merita un'app all'altezza.</h2>
+    <p>Gratuita per iniziare. Nessuna carta richiesta.</p>
     <div class="hero-cta" style="justify-content:center">
-    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
-    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
-    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
+    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
   </div>
 
   </div>
   <footer>
     <div class="foot">
-      <span>© 2026 KidBox · Made with ❤️ in Italy</span>
+      <span>© 2026 KidBox · Fatto con ❤️ in Italia</span>
       <div class="foot-links">
-        <a href="../../guide-en.html">Guide</a>
-        <a href="../../en/tools/">Tools</a>
-        <a href="../../en/blog/">Blog</a>
-        <a href="../../index.html#prezzi">Pricing</a>
-        <a href="../../privacy-en.html">Privacy</a>
-        <a href="../../terms-en.html">Terms</a>
-        <a href="../../support-en.html">Support</a>
-        <a href="../../data-deletion-en.html">Data Deletion</a>
-        <a href="#" data-consent-open>Cookie preferences</a>
+        <a href="../guide.html">Guida</a>
+        <a href="../strumenti/">Strumenti</a>
+        <a href="../blog/">Blog</a>
+        <a href="../index.html#prezzi">Prezzi</a>
+        <a href="../privacy.html">Privacy</a>
+        <a href="../terms.html">Termini</a>
+        <a href="../support.html">Supporto</a>
+        <a href="../data-deletion.html">Eliminazione Dati</a>
+        <a href="#" data-consent-open>Preferenze cookie</a>
       </div>
       <div class="foot-social">
-        <a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
+        <a href="https://www.facebook.com/profile.php?id=61574265148948&locale=it_IT" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
         <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
       </div>
     </div>
@@ -451,5 +521,6 @@
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
 </script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Il budget di casa in coppia: seguire le spese condivise senza litigare", "description": "I soldi sono una delle prime cause di discussione in coppia, e quasi sempre per mancanza di informazioni, non di soldi. Un sistema semplice per sapere quanto costa la casa e chi ha pagato cosa.", "datePublished": "2026-09-13", "dateModified": "2026-09-13", "inLanguage": "it", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/blog/budget-di-casa-spese-condivise"}</script>
 </body>
 </html>
