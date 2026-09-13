@@ -126,44 +126,51 @@ function LoginScreen() {
 
   return (
     <div className="login-screen">
-      <img className="logo" src="/icon.png" alt="KidBox" />
-      <h1>KidBox</h1>
-      <p className="subtitle">Accedi per organizzare la tua famiglia</p>
+      <header className="login-brand">
+        <img className="logo" src="/icon.png" alt="KidBox" />
+        <div>
+          <h1>KidBox</h1>
+          <p className="subtitle">La tua famiglia, in un'unica app.</p>
+        </div>
+      </header>
 
-      {error && <p className="error">{error}</p>}
+      <section className="login-card">
+        <h2>Accedi a KidBox</h2>
+        <p className="lead">Scegli come accedere.</p>
 
-      <div className="providers">
-        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithGoogle, "google")}>
-          <GoogleIcon /> Accedi con Google
-        </button>
-        <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithApple, "apple")}>
-          <AppleIcon /> Accedi con Apple
-        </button>
-        {/* Nascosto finché l'app Meta è in modalità sviluppo: chi lo premeva
-            riceveva «questa app non funziona», che si legge come un guasto di
-            KidBox. Torna da solo quando il flag remoto passa a true, senza un
-            nuovo rilascio — stessa logica di iOS e Android. */}
-        {facebookEnabled && (
-          <button className="auth-btn" disabled={pending} onClick={() => runProvider(signInWithFacebook, "facebook")}>
-            <FacebookIcon /> Accedi con Facebook
+        {error && <p className="error">{error}</p>}
+
+        <div className="providers">
+          <button className="auth-btn ghost" disabled={pending} onClick={() => runProvider(signInWithGoogle, "google")}>
+            <GoogleIcon /> Continua con Google
           </button>
-        )}
+          <button className="auth-btn ghost" disabled={pending} onClick={() => runProvider(signInWithApple, "apple")}>
+            <AppleIcon /> Continua con Apple
+          </button>
+          {/* Nascosto finché l'app Meta è in modalità sviluppo: chi lo premeva
+              riceveva «questa app non funziona», che si legge come un guasto di
+              KidBox. Torna da solo quando il flag remoto passa a true, senza un
+              nuovo rilascio — stessa logica di iOS e Android. */}
+          {facebookEnabled && (
+            <button className="auth-btn ghost" disabled={pending} onClick={() => runProvider(signInWithFacebook, "facebook")}>
+              <FacebookIcon /> Continua con Facebook
+            </button>
+          )}
+        </div>
 
-        {!showEmailForm && (
+        <div className="divider">o</div>
+
+        {!showEmailForm ? (
           <button className="auth-btn secondary" onClick={() => setShowEmailForm(true)}>
-            <EmailIcon /> Accedi con email
+            <EmailIcon /> Continua con email
           </button>
-        )}
-      </div>
-
-      {showEmailForm && (
-        <>
-          <div className="divider">email</div>
+        ) : (
           <form className="email-form" onSubmit={handleEmailSubmit}>
             <input
               type="email"
               placeholder="Email"
               required
+              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -186,8 +193,16 @@ function LoginScreen() {
               {isSignUp ? "Hai già un account? Accedi" : "Non hai un account? Registrati"}
             </button>
           </form>
-        </>
-      )}
+        )}
+      </section>
+
+      <footer className="login-footer">
+        <a href="https://kidboxapp.com/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://kidboxapp.com/terms.html" target="_blank" rel="noopener noreferrer">Termini</a>
+        <span aria-hidden="true">·</span>
+        <a href="mailto:passboxcontact@gmail.com">Contatti</a>
+      </footer>
     </div>
   );
 }
