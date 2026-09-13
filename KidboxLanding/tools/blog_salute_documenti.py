@@ -439,4 +439,566 @@ Health data and children's documents deserve more care than a photo in a chat. U
 """,
         },
     },
+    # ── Salute e documenti · secondo lotto ─────────────────────────────
+    {
+        "slug": "farmaci-e-terapie-dei-figli",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["salute", "to-do", "note"], "related": ["cartella-clinica-di-famiglia", "figlio-malato-organizzarsi-tra-genitori", "viaggiare-con-farmaci-e-allergie"],
+        "it": {
+            "title": "Farmaci e terapie dei figli: chi li dà, a che ora e come non sbagliare dose",
+            "desc": "Un antibiotico tre volte al giorno, due genitori, i nonni al pomeriggio e la domanda «gliel'hai già dato?». Come organizzare una terapia in famiglia senza dosi saltate né doppie.",
+            "body": """
+Quando un figlio deve prendere un farmaco per qualche giorno — un antibiotico, uno sciroppo, un antinfiammatorio — la parte difficile non è ricordarsi di comprarlo. È ricordarsi, tre volte al giorno per una settimana, **se è già stato dato e da chi**. Con due genitori, i nonni che coprono il pomeriggio e una babysitter la sera, la domanda «gliel'hai già dato?» diventa la più frequente della casa.
+
+Questo articolo parla di organizzazione. Farmaci, dosi, orari e durata della terapia sono indicati dal pediatra o dal medico: seguite le sue indicazioni e il foglietto illustrativo, e in caso di dubbio chiedete a lui o al farmacista.
+
+## Il rischio vero: la dose doppia o saltata
+
+Nelle famiglie gli errori di terapia nascono quasi sempre da un passaggio di consegne: un genitore dà la dose delle 8 e non lo dice, l'altro la dà di nuovo alle 9; oppure ognuno pensa che l'abbia data l'altro. Serve un posto dove **ogni dose data venga segnata**, visibile a tutti quelli che si occupano del bambino.
+
+## 1. Scrivere la terapia, subito
+
+Uscendo dallo studio, prima di dimenticare, scrivete:
+
+- **nome del farmaco** e forma (sciroppo, compresse, gocce)
+- **dose** esatta, come indicata dal medico
+- **orari** o intervallo tra le dosi
+- **durata**: fino a quando
+- **come prenderlo**: a stomaco pieno o vuoto, diluito, ecc.
+- eventuali **avvertenze** del medico
+
+Nella scheda [salute](/strumenti/salute) del figlio la cura si registra con il medico che l'ha prescritta, e la ricetta si allega. Resta nello storico: la prossima volta che un medico chiede «ha già preso questo antibiotico?», la risposta c'è.
+
+## 2. Ogni dose come cosa da fare
+
+Per la durata della terapia, ogni dose diventa una [cosa da fare](/strumenti/to-do) con il suo orario e un promemoria, assegnata a chi quel giorno ha il bambino: «Amoxicillina Luca — 8:00», «— 16:00», «— 24:00». Chi la dà la spunta. Chiunque apra la lista vede se la dose del pomeriggio è stata data, senza telefonare.
+
+Una terapia di sette giorni sono una ventina di voci: si creano in cinque minuti la sera della visita, e tolgono ogni dubbio per una settimana.
+
+## 3. Le istruzioni per chi non c'era
+
+Nonni, babysitter, l'altro genitore che arriva dal lavoro: chi non era dal medico ha bisogno delle istruzioni complete. Una [nota condivisa](/strumenti/note) con la terapia — farmaco, dose, orari, come darlo, cosa fare se il bambino vomita la dose, numero del pediatra — evita le telefonate e le interpretazioni.
+
+## 4. Il flacone giusto, nel posto giusto
+
+Qualche regola pratica:
+
+- **un solo posto** per i farmaci in uso, fuori dalla portata dei bambini
+- **il dosatore** che accompagna il farmaco, non un cucchiaio di casa
+- **la data di apertura** scritta sul flacone, se il foglietto indica una scadenza dopo l'apertura
+- nelle famiglie con due case, **il farmaco viaggia con il bambino**, insieme alle istruzioni
+
+## 5. Le terapie lunghe
+
+Per le terapie croniche o lunghe — un farmaco per l'asma, un integratore prescritto — il rischio cambia: non è la dose doppia, è **finire il farmaco** o dimenticare di rinnovare la ricetta. Mettete nel calendario un promemoria per il rinnovo qualche giorno prima che la confezione finisca, e la data del controllo dal medico.
+
+## 6. A terapia finita
+
+Quando la terapia finisce, si toglie il flacone dal posto dei farmaci in uso, si controlla la scadenza di quello che avanza e si chiude la cura nella scheda salute. Lo storico delle terapie passate è una delle informazioni che un medico chiede più spesso.
+
+## In sintesi
+
+Scrivere la terapia uscendo dallo studio, ogni dose come cosa da fare con orario e responsabile, istruzioni complete in una nota per chi non c'era, farmaci in un posto solo con il loro dosatore, promemoria per i rinnovi delle terapie lunghe e ogni cura registrata nello storico. Nessuna dose saltata, nessuna doppia, e nessuna telefonata per chiederlo.
+""",
+        },
+        "en": {
+            "title": "Your children's medicines: who gives them, when, and how not to get the dose wrong",
+            "desc": "An antibiotic three times a day, two parents, grandparents in the afternoon and the question \"have you already given it?\". How to organise a course of treatment at home with no missed or double doses.",
+            "body": """
+When a child needs to take a medicine for a few days — an antibiotic, a syrup, an anti-inflammatory — the hard part isn't remembering to buy it. It's remembering, three times a day for a week, **whether it's been given and by whom**. With two parents, grandparents covering afternoons and a babysitter in the evening, "have you already given it?" becomes the most asked question in the house.
+
+This article is about organisation. Medicines, doses, times and length of treatment are set by your paediatrician or doctor: follow their instructions and the patient leaflet, and if in doubt ask them or a pharmacist.
+
+## The real risk: a double or missed dose
+
+In families, medication errors almost always come from a handover: one parent gives the 8am dose and doesn't say so, the other gives it again at 9; or each thinks the other gave it. You need a place where **every dose given gets marked**, visible to everyone caring for the child.
+
+## 1. Write the treatment down, straight away
+
+Leaving the surgery, before you forget, write down:
+
+- **name of the medicine** and form (syrup, tablets, drops)
+- the exact **dose**, as prescribed
+- **times** or interval between doses
+- **duration**: until when
+- **how to take it**: with or without food, diluted, and so on
+- any **warnings** from the doctor
+
+In the child's [health](/en/tools/salute) section the treatment is recorded with the prescribing doctor, and the prescription attached. It stays in the history: next time a doctor asks "has he had this antibiotic before?", the answer is there.
+
+## 2. Each dose as a to-do
+
+For the length of the treatment, each dose becomes a [to-do](/en/tools/to-do) with its time and a reminder, assigned to whoever has the child that day: "Amoxicillin Luke — 8:00", "— 16:00", "— 24:00". Whoever gives it ticks it. Anyone opening the list can see whether the afternoon dose was given, without phoning.
+
+A seven-day course is about twenty items: created in five minutes on the evening of the visit, they remove all doubt for a week.
+
+## 3. Instructions for whoever wasn't there
+
+Grandparents, babysitters, the other parent coming home from work: anyone who wasn't at the doctor's needs complete instructions. A [shared note](/en/tools/note) with the treatment — medicine, dose, times, how to give it, what to do if the child vomits the dose, the paediatrician's number — avoids phone calls and guesswork.
+
+## 4. The right bottle, in the right place
+
+A few practical rules:
+
+- **one place** for medicines in use, out of children's reach
+- **the measuring device** that comes with the medicine, not a kitchen spoon
+- **the opening date** written on the bottle, if the leaflet gives a shelf life after opening
+- in two-home families, **the medicine travels with the child**, together with the instructions
+
+## 5. Long-term treatments
+
+For chronic or long treatments — an asthma inhaler, a prescribed supplement — the risk changes: not a double dose, but **running out** or forgetting to renew the prescription. Put a reminder in the calendar to renew a few days before the pack runs out, and the date of the next check-up.
+
+## 6. When the course ends
+
+When treatment ends, take the bottle out of the medicines-in-use spot, check the expiry of what's left and close the treatment in the health section. The history of past treatments is one of the things doctors ask about most.
+
+## In short
+
+Write the treatment down leaving the surgery, each dose as a to-do with a time and an owner, full instructions in a note for whoever wasn't there, medicines in one place with their measuring device, renewal reminders for long treatments and every course recorded in the history. No missed doses, no doubles, and no phone calls to check.
+""",
+        },
+    },
+    {
+        "slug": "figlio-malato-organizzarsi-tra-genitori",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["calendario", "note", "chat", "salute"], "related": ["farmaci-e-terapie-dei-figli", "orari-dopo-scuola-genitori-che-lavorano", "cartella-clinica-di-famiglia"],
+        "it": {
+            "title": "Il figlio si ammala e lavorate entrambi: come organizzarsi nelle prime 24 ore",
+            "desc": "Una telefonata dalla scuola alle 10, due riunioni, nessun nonno libero. Chi va a prenderlo, chi resta a casa domani, cosa dire al pediatra. Un piano da decidere prima che serva.",
+            "body": """
+Succede sempre nel giorno peggiore: la scuola chiama alle 10, il bambino ha la febbre, entrambi i genitori hanno la giornata piena. Nei minuti successivi si decidono al telefono, di fretta, cose che richiederebbero calma: chi esce dal lavoro, chi resta a casa domani, chi chiama il pediatra, dove sono la tessera sanitaria e il termometro.
+
+Il modo per affrontare meglio quel momento è deciderne una parte **prima**.
+
+Questo articolo parla di organizzazione familiare. Per sintomi, cure e quando portare il bambino dal medico o in pronto soccorso, il riferimento è il pediatra; in caso di emergenza chiamate il 112.
+
+## 1. Il piano «figlio malato», scritto oggi
+
+In un momento tranquillo, decidete insieme e scrivete in una [nota condivisa](/strumenti/note):
+
+- **chi esce per primo** se chiama la scuola, a seconda dei giorni della settimana
+- **chi resta a casa il primo giorno** e chi il secondo, alternandovi
+- **la rete di aiuto**: nonni, vicini, babysitter, con i giorni in cui sono disponibili
+- **i numeri utili**: pediatra, guardia medica, farmacia di turno, scuola
+- **le regole di rientro** della scuola o del nido, se ce ne sono
+
+Deciso a mente fredda, il piano toglie la trattativa più faticosa proprio quando si ha meno energia.
+
+## 2. Le prime ore: dividere subito
+
+Quando arriva la chiamata, i compiti da dividere sono sempre gli stessi:
+
+- **uno va a prendere** il bambino
+- **l'altro chiama il pediatra** o prenota la visita, e riorganizza il giorno dopo
+
+In una [chat di famiglia](/strumenti/chat) dedicata, due messaggi bastano per sapere chi fa cosa. E il [calendario](/strumenti/calendario) aiuta a vedere al volo chi ha impegni non spostabili domani.
+
+## 3. Il diario dei sintomi
+
+Il pediatra fa quasi sempre le stesse domande: da quando ha la febbre, quanto è salita, cosa ha mangiato, cosa gli avete dato e a che ora. Quando il bambino passa da un genitore all'altro, o dai nonni, queste informazioni si perdono.
+
+Una nota condivisa con un **diario semplice** — ora, temperatura, sintomi, farmaci dati — compilata da chiunque sia con il bambino, dà al pediatra un quadro preciso e al genitore che arriva la sera tutte le informazioni. Se il medico prescrive una terapia, le dosi si organizzano come spieghiamo in [farmaci e terapie dei figli](/blog/farmaci-e-terapie-dei-figli).
+
+## 4. La visita e i documenti
+
+Per la visita servono tessera sanitaria, eventuale libretto e informazioni su allergie e farmaci. Con la scheda [salute](/strumenti/salute) del figlio e la cartella clinica riepilogativa sul telefono, chiunque porti il bambino dal medico ha tutto con sé. Dopo la visita, esito e ricetta si registrano nello storico.
+
+## 5. I giorni di assenza
+
+Una malattia di tre giorni con due genitori che lavorano si regge solo alternandosi. Mettete nel calendario **chi è a casa ogni giorno**, e riorganizzate lì gli impegni del resto della famiglia. Verificate con il vostro datore di lavoro e il contratto quali permessi o congedi sono previsti per la malattia dei figli.
+
+## 6. Dopo
+
+Guarito il bambino, cinque minuti per aggiornare il piano: la rete di aiuto ha funzionato? Il turno era equo? È la manutenzione che rende il piano utile la volta successiva — che, con i figli piccoli, non tarda mai.
+
+## In sintesi
+
+Un piano scritto prima: chi esce, chi resta a casa, la rete di aiuto, i numeri utili. Nelle prime ore compiti divisi in due messaggi, un diario dei sintomi condiviso, documenti e storico sanitario sul telefono e i giorni di assenza organizzati nel calendario. La febbre arriverà comunque nel giorno sbagliato. La confusione, un po' meno.
+""",
+        },
+        "en": {
+            "title": "Your child is ill and you both work: getting organised in the first 24 hours",
+            "desc": "A call from school at 10am, two meetings, no grandparents free. Who picks them up, who stays home tomorrow, what to tell the paediatrician. A plan to decide before you need it.",
+            "body": """
+It always happens on the worst day: school calls at 10, your child has a fever, both parents have a full day. In the next few minutes you decide over the phone, in a rush, things that deserve calm: who leaves work, who stays home tomorrow, who calls the paediatrician, where the health card and thermometer are.
+
+The way to handle that moment better is to decide part of it **in advance**.
+
+This article is about family organisation. For symptoms, treatment and when to take your child to a doctor or A&E, your paediatrician is the reference; in an emergency call your local emergency number.
+
+## 1. The "sick child" plan, written today
+
+At a calm moment, decide together and write in a [shared note](/en/tools/note):
+
+- **who leaves first** if school calls, depending on the day of the week
+- **who stays home on day one** and who on day two, alternating
+- **the support network**: grandparents, neighbours, babysitters, with the days they're available
+- **useful numbers**: paediatrician, out-of-hours doctor, late-night pharmacy, school
+- the school's or nursery's **return rules**, if any
+
+Decided with a cool head, the plan removes the most tiring negotiation exactly when you have the least energy.
+
+## 2. The first hours: split straight away
+
+When the call comes, the tasks to split are always the same:
+
+- **one goes to collect** the child
+- **the other calls the paediatrician** or books a visit, and reorganises the next day
+
+In a dedicated [family chat](/en/tools/chat), two messages are enough to know who's doing what. And the [calendar](/en/tools/calendario) helps you see at a glance who has immovable commitments tomorrow.
+
+## 3. The symptom diary
+
+The paediatrician almost always asks the same questions: since when has the fever been there, how high did it go, what have they eaten, what did you give them and when. When the child moves from one parent to the other, or to grandparents, this information gets lost.
+
+A shared note with a **simple diary** — time, temperature, symptoms, medicines given — filled in by whoever is with the child, gives the paediatrician a precise picture and the parent arriving in the evening all the information. If the doctor prescribes treatment, doses can be organised as explained in [your children's medicines](/en/blog/farmaci-e-terapie-dei-figli).
+
+## 4. The visit and documents
+
+For the visit you need the health card, any records and information on allergies and medicines. With the child's [health](/en/tools/salute) section and the summary health record on your phone, whoever takes the child to the doctor has everything. After the visit, outcome and prescription go into the history.
+
+## 5. The days off
+
+A three-day illness with two working parents only works by alternating. Put **who's home each day** in the calendar, and reorganise the rest of the family's commitments there. Check with your employer and contract what leave is available when children are ill.
+
+## 6. Afterwards
+
+Once your child is better, five minutes to update the plan: did the support network work? Was the split fair? That maintenance is what makes the plan useful next time — which, with young children, never takes long.
+
+## In short
+
+A plan written in advance: who leaves, who stays home, the support network, useful numbers. In the first hours, tasks split in two messages, a shared symptom diary, documents and health history on your phone and days off organised in the calendar. The fever will still arrive on the wrong day. The confusion, a little less.
+""",
+        },
+    },
+    {
+        "slug": "dati-di-salute-dal-telefono",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["salute", "assistente-ai"], "related": ["piano-fitness-in-famiglia", "cartella-clinica-di-famiglia", "dati-sanitari-cifrati"],
+        "it": {
+            "title": "Passi, battito, pressione: cosa fare dei dati di salute che il telefono raccoglie già",
+            "desc": "Apple Health e Health Connect registrano ogni giorno dati che nessuno guarda. Cosa sono, cosa possono dire e cosa no, e come usarli in famiglia rispettando la privacy di ognuno.",
+            "body": """
+Il telefono in tasca e l'orologio al polso raccolgono ogni giorno una quantità sorprendente di dati sulla salute: quanti passi facciamo, il battito cardiaco, a volte la pressione e l'ossigenazione del sangue, gli allenamenti. Su iPhone finiscono in **Apple Health**, su Android in **Health Connect**. E quasi sempre restano lì, senza che nessuno li guardi.
+
+Usati con buon senso, questi dati possono aiutare a capire le proprie abitudini. Usati male, possono generare ansia inutile.
+
+Questo articolo non è un consiglio medico. I dati raccolti da telefoni e dispositivi indossabili non sono esami clinici: per qualunque dubbio sulla vostra salute, parlatene con il medico.
+
+## Cosa raccolgono, di solito
+
+A seconda dei dispositivi che usate, Apple Health e Health Connect possono contenere:
+
+- **passi** e **distanza** percorsa
+- **frequenza cardiaca**
+- **pressione arteriosa**, se usate un misuratore compatibile
+- **saturazione dell'ossigeno** (SpO₂), su alcuni orologi
+- **calorie attive** bruciate con il movimento
+- **allenamenti** registrati
+
+## Cosa possono dire, e cosa no
+
+Questi dati sono utili soprattutto per le **tendenze**: se vi muovete più o meno del mese scorso, se l'attività fisica è costante, come cambia il battito a riposo nel tempo. Un singolo valore anomalo, invece, può dipendere da mille fattori — un orologio allacciato male, un sensore sporco — e non va interpretato da soli. Se una tendenza vi preoccupa, portatela al medico.
+
+## Come li usa KidBox
+
+Nella scheda [salute](/strumenti/salute) di KidBox, **se date il permesso**, possono entrare automaticamente passi, battito, pressione, SpO₂, calorie attive, allenamenti e distanza da Apple Health o Health Connect. Il permesso si dà per ogni tipo di dato, e si può togliere in qualunque momento dalle impostazioni del telefono.
+
+A cosa servono dentro l'app:
+
+- vederli **accanto al resto della storia sanitaria**: visite, esami, cure
+- con il piano Pro, il **Piano Fitness** usa gli allenamenti registrati per chiudere le sedute e preparare un report settimanale; ne parliamo in [il piano fitness in famiglia](/blog/piano-fitness-in-famiglia)
+- sempre con il Pro, l'[assistente](/strumenti/assistente-ai) può usarli come contesto quando glielo chiedete, scegliendo voi se condividere un riassunto o chiedere ogni volta
+
+## La privacy in famiglia
+
+I dati di salute di un adulto sono suoi, anche in una famiglia che condivide tutto il resto. Qualche regola di buon senso:
+
+- **ognuno decide** se collegare i propri dati, e quali
+- i dati dei **figli adolescenti** sono una questione delicata: meglio parlarne con loro che attivarli in silenzio
+- **non usare i dati per controllare**: i passi del partner non sono un argomento di discussione
+
+Ne parliamo anche in [perché i dati sanitari vanno cifrati](/blog/dati-sanitari-cifrati).
+
+## Un uso sano
+
+- **Guardare le settimane**, non i giorni
+- **Un obiettivo semplice**, come camminare di più, invece di inseguire ogni numero
+- **Il medico per i dubbi**, non i forum
+- **Spegnere le notifiche** che creano ansia: nessuno ha bisogno di sapere il battito ogni ora
+
+## In sintesi
+
+Il telefono raccoglie già passi, battito, pressione, ossigenazione, calorie e allenamenti. Servono per le tendenze, non per le diagnosi. In KidBox entrano solo con il vostro permesso, accanto alla storia sanitaria, e con il Pro alimentano il Piano Fitness e l'assistente. In famiglia ognuno decide dei propri dati. E per ogni dubbio, il medico.
+""",
+        },
+        "en": {
+            "title": "Steps, heart rate, blood pressure: what to do with the health data your phone already collects",
+            "desc": "Apple Health and Health Connect record data every day that nobody looks at. What it is, what it can and can't tell you, and how to use it as a family while respecting everyone's privacy.",
+            "body": """
+The phone in your pocket and the watch on your wrist collect a surprising amount of health data every day: how many steps you take, your heart rate, sometimes blood pressure and blood oxygen, workouts. On iPhone it ends up in **Apple Health**, on Android in **Health Connect**. And it almost always just sits there, unread.
+
+Used sensibly, this data can help you understand your habits. Used badly, it can create needless anxiety.
+
+This article isn't medical advice. Data collected by phones and wearables isn't a clinical test: for any concern about your health, talk to your doctor.
+
+## What they usually collect
+
+Depending on your devices, Apple Health and Health Connect may contain:
+
+- **steps** and **distance** covered
+- **heart rate**
+- **blood pressure**, if you use a compatible monitor
+- **blood oxygen saturation** (SpO₂), on some watches
+- **active calories** burned through movement
+- recorded **workouts**
+
+## What they can tell you, and what they can't
+
+This data is mainly useful for **trends**: whether you're moving more or less than last month, whether exercise is consistent, how resting heart rate changes over time. A single odd value, on the other hand, can come from a thousand things — a loose watch strap, a dirty sensor — and shouldn't be interpreted on your own. If a trend worries you, take it to your doctor.
+
+## How KidBox uses it
+
+In KidBox's [health](/en/tools/salute) section, **if you give permission**, steps, heart rate, blood pressure, SpO₂, active calories, workouts and distance can flow in automatically from Apple Health or Health Connect. Permission is given per data type, and can be withdrawn at any time in your phone's settings.
+
+What it's for inside the app:
+
+- seeing it **next to the rest of the health history**: visits, tests, treatments
+- with the Pro plan, the **Fitness Plan** uses recorded workouts to complete sessions and prepare a weekly report; more in [a fitness plan for the family](/en/blog/piano-fitness-in-famiglia)
+- also with Pro, the [assistant](/en/tools/assistente-ai) can use it as context when you ask, with you choosing whether to share a summary or be asked each time
+
+## Privacy within the family
+
+An adult's health data is theirs, even in a family that shares everything else. A few common-sense rules:
+
+- **each person decides** whether to connect their data, and which
+- **teenagers'** data is a delicate matter: better to talk it through with them than switch it on quietly
+- **don't use the data to keep tabs**: your partner's step count isn't something to argue about
+
+More in [why health data should be encrypted](/en/blog/dati-sanitari-cifrati).
+
+## Healthy use
+
+- **Look at weeks**, not days
+- **One simple goal**, like walking more, rather than chasing every number
+- **The doctor for concerns**, not forums
+- **Turn off anxiety-inducing notifications**: nobody needs their heart rate every hour
+
+## In short
+
+Your phone already collects steps, heart rate, blood pressure, oxygen, calories and workouts. It's for trends, not diagnoses. In KidBox it flows in only with your permission, next to the health history, and with Pro it feeds the Fitness Plan and the assistant. In a family each person decides about their own data. And for any concern, see the doctor.
+""",
+        },
+    },
+    {
+        "slug": "piano-fitness-in-famiglia",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["salute", "calendario", "assistente-ai"], "related": ["dati-di-salute-dal-telefono", "lavorare-a-blocchi-con-i-figli", "menu-della-settimana-in-famiglia"],
+        "it": {
+            "title": "Fare attività fisica quando si hanno figli: un piano che sta nella settimana vera",
+            "desc": "Tre allenamenti a settimana sembrano pochi finché non si prova a incastrarli tra lavoro, scuola e cene. Come costruire un piano di movimento realistico, in coppia e con i figli.",
+            "body": """
+Quasi tutti i genitori sanno che dovrebbero muoversi di più. Quasi nessuno ci riesce con costanza. Non per mancanza di volontà: perché i piani di allenamento sono pensati per chi ha il tempo libero sotto controllo, e un genitore quel controllo non ce l'ha. Salta un allenamento per la febbre del figlio, poi uno per una riunione, e dopo due settimane il piano è finito.
+
+Serve un piano che parta dalla settimana reale.
+
+Prima di iniziare un'attività fisica nuova, soprattutto se avete problemi di salute o non vi allenate da tempo, parlatene con il medico. Questo articolo dà indicazioni organizzative, non mediche.
+
+## 1. Partire dal tempo che c'è
+
+L'errore classico è partire dall'obiettivo — «tre ore di palestra a settimana» — e cercare il tempo. Funziona il contrario: guardate la settimana tipo nel [calendario](/strumenti/calendario) di famiglia e trovate le **finestre reali**: la pausa pranzo del martedì, la mattina presto del giovedì, la domenica mentre i figli sono a calcio.
+
+Spesso sono finestre di 20-30 minuti. Vanno benissimo.
+
+## 2. Gli allenamenti come appuntamenti
+
+Un allenamento che sta solo nelle intenzioni salta al primo imprevisto. Uno che sta nel calendario, con un orario e un promemoria, ha molte più probabilità di succedere. E se il calendario è condiviso, il partner sa che il giovedì alle 7 non siete disponibili — e magari che quella mattina tocca a lui preparare la colazione.
+
+## 3. In coppia: alternarsi
+
+Per due genitori, il modo più efficace di allenarsi con costanza è **alternarsi**: io il martedì e il giovedì, tu il mercoledì e il sabato, mentre l'altro sta con i figli. Scritto nel calendario, lo schema diventa un accordo, e nessuno dei due deve chiedere il permesso ogni volta.
+
+## 4. Con i figli, non nonostante i figli
+
+Una parte del movimento può essere fatta **con** i figli:
+
+- camminate e giri in bici nel weekend
+- il parco giochi, dove l'adulto si muove invece di sedersi sulla panchina
+- il tragitto casa-scuola a piedi, quando è possibile
+- un'attività sportiva che si può fare insieme
+
+Non sostituisce un allenamento vero, ma porta movimento nelle giornate in cui altro non c'è.
+
+## 5. Obiettivi piccoli, misurati sulle settimane
+
+Un piano realistico si misura sulle **settimane**, non sui singoli giorni: tre sedute su tre è un'ottima settimana, due su tre è una buona settimana. Guardare le tendenze di un mese — con i dati di movimento che il telefono raccoglie già, come spieghiamo in [cosa fare dei dati di salute del telefono](/blog/dati-di-salute-dal-telefono) — motiva molto più del singolo allenamento saltato.
+
+## Il Piano Fitness di KidBox
+
+Con il piano Pro, KidBox genera un **Piano Fitness** personalizzato con l'AI, a partire dal profilo: allenamenti programmati nel calendario con i promemoria, sedute che si chiudono da sole quando l'allenamento viene registrato in Apple Health o Health Connect, lo storico e un report settimanale. È un punto di partenza da adattare alla vostra settimana, non una prescrizione.
+
+## 6. Quando salta
+
+Salterà. La regola è non recuperare tutto nel weekend, e non ricominciare da zero: si riprende dall'allenamento successivo in calendario. Un piano che sopravvive alle settimane storte vale più di uno perfetto che dura un mese.
+
+## In sintesi
+
+Partire dalle finestre reali della settimana, mettere gli allenamenti nel calendario come appuntamenti, alternarsi con il partner, muoversi anche con i figli, misurare le settimane invece dei giorni e riprendere senza sensi di colpa. Non sarà il piano più ambizioso. Sarà quello che fate davvero.
+""",
+        },
+        "en": {
+            "title": "Exercising when you have kids: a plan that fits the real week",
+            "desc": "Three workouts a week sounds like little until you try to fit them between work, school and dinners. How to build a realistic exercise plan, as a couple and with your children.",
+            "body": """
+Almost every parent knows they should move more. Almost none manage it consistently. Not through lack of willpower: training plans are designed for people in control of their free time, and parents don't have that control. One workout goes because of a child's fever, another for a meeting, and two weeks later the plan is over.
+
+You need a plan that starts from the real week.
+
+Before starting a new exercise routine, especially if you have health problems or haven't trained in a while, talk to your doctor. This article gives organisational tips, not medical ones.
+
+## 1. Start from the time you have
+
+The classic mistake is starting from the goal — "three hours at the gym a week" — and looking for the time. The opposite works: look at your typical week in the family [calendar](/en/tools/calendario) and find the **real windows**: Tuesday's lunch break, early Thursday morning, Sunday while the kids are at football.
+
+They're often 20-30 minute windows. That's perfectly fine.
+
+## 2. Workouts as appointments
+
+A workout that only exists as an intention disappears at the first surprise. One that's in the calendar, with a time and a reminder, is far more likely to happen. And if the calendar is shared, your partner knows you're unavailable at 7 on Thursday — and perhaps that it's their turn to make breakfast that morning.
+
+## 3. As a couple: take turns
+
+For two parents, the most effective way to exercise consistently is to **alternate**: me on Tuesday and Thursday, you on Wednesday and Saturday, while the other is with the kids. Written in the calendar, the pattern becomes an agreement, and neither needs to ask permission each time.
+
+## 4. With the children, not despite them
+
+Some of your movement can happen **with** the children:
+
+- weekend walks and bike rides
+- the playground, where the adult moves instead of sitting on the bench
+- walking the school run, where possible
+- a sport you can do together
+
+It doesn't replace a real workout, but it brings movement into days when there's nothing else.
+
+## 5. Small goals, measured over weeks
+
+A realistic plan is measured over **weeks**, not individual days: three sessions out of three is a great week, two out of three a good one. Looking at a month's trends — with the activity data your phone already collects, as we explain in [what to do with your phone's health data](/en/blog/dati-di-salute-dal-telefono) — motivates far more than a single skipped workout.
+
+## KidBox's Fitness Plan
+
+With the Pro plan, KidBox generates a personalised **Fitness Plan** with AI, based on your profile: workouts scheduled in the calendar with reminders, sessions that complete themselves when the workout is recorded in Apple Health or Health Connect, a history and a weekly report. It's a starting point to adapt to your week, not a prescription.
+
+## 6. When it slips
+
+It will. The rule is not to cram everything into the weekend, and not to start over from zero: pick up from the next workout in the calendar. A plan that survives bad weeks is worth more than a perfect one that lasts a month.
+
+## In short
+
+Start from the week's real windows, put workouts in the calendar as appointments, alternate with your partner, move with your children too, measure weeks instead of days and pick up again without guilt. It won't be the most ambitious plan. It'll be the one you actually do.
+""",
+        },
+    },
+    {
+        "slug": "spese-mediche-di-famiglia",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["spese", "salute", "documenti", "assistente-ai"], "related": ["cartella-clinica-di-famiglia", "budget-di-casa-spese-condivise", "spese-dei-figli-genitori-separati"],
+        "it": {
+            "title": "Spese mediche di famiglia: raccogliere scontrini e fatture per il 730 senza la caccia di maggio",
+            "desc": "Visite private, farmaci, dentista, occhiali: le spese sanitarie di una famiglia sono tante e sparse. Come tenerle in ordine durante l'anno, con le ricevute, per non perdere detrazioni e non passare un weekend a cercarle.",
+            "body": """
+Ogni primavera, in molte famiglie, arriva la stessa caccia: gli scontrini della farmacia in una scatola, le fatture del dentista nelle email, la ricevuta della visita privata chissà dove. Le spese sanitarie sono tra le poche che possono dare diritto a una detrazione nella dichiarazione dei redditi, ma solo se si hanno i documenti. E ricostruirle a maggio significa perderne una parte.
+
+Questo articolo parla di organizzazione. Le regole fiscali — cosa è detraibile, in che misura, con quali requisiti di pagamento e documentazione — cambiano nel tempo: per il vostro caso fanno fede le istruzioni ufficiali dell'Agenzia delle Entrate, il CAF o il commercialista.
+
+## Perché conviene tenerle in ordine
+
+In Italia molte spese sanitarie sostenute per sé e per i familiari a carico possono essere detratte in parte nella dichiarazione dei redditi, oltre una franchigia. Una parte dei dati arriva già nella dichiarazione precompilata, ma non sempre tutto, e per molte spese sono richiesti documenti e, in diversi casi, un pagamento tracciabile. Avere scontrini e fatture ordinati permette di verificare la precompilata e integrare ciò che manca.
+
+A prescindere dal fisco, sapere quanto spende la famiglia per la salute è utile di per sé.
+
+## 1. Registrare la spesa quando la si fa
+
+La regola che toglie la caccia di maggio: **ogni spesa sanitaria si registra il giorno in cui la si fa**, con la foto della ricevuta. Trenta secondi in farmacia o all'uscita dallo studio.
+
+Nelle [spese di famiglia](/strumenti/spese) di KidBox ogni voce ha importo, categoria, chi ha pagato e per quale figlio, con lo scontrino allegato. E una visita o un esame registrati nella scheda [salute](/strumenti/salute) con il loro costo diventano **automaticamente** una spesa di famiglia: non si scrive due volte.
+
+## 2. Le ricevute, al sicuro e ritrovabili
+
+Scontrini della farmacia con il codice fiscale, fatture del dentista, ricevute delle visite private, fattura degli occhiali: fotografati o in PDF, vanno nei [documenti](/strumenti/documenti) di famiglia, in una cartella per anno. Gli scontrini termici sbiadiscono in pochi mesi: la foto fatta subito è spesso l'unica copia leggibile a maggio.
+
+Con il piano Pro si può importare una fattura e l'[assistente](/strumenti/assistente-ai) legge i dati e propone la spesa da registrare, da confermare prima di salvare.
+
+## 3. Per chi, e come si è pagato
+
+Due informazioni che contano quando si prepara la dichiarazione:
+
+- **per quale familiare** è la spesa: ogni figlio, ogni adulto
+- **come è stata pagata**: carta, bancomat, bonifico o contanti, perché per molte spese la tracciabilità del pagamento può essere un requisito
+
+Annotatele nella voce di spesa, e il riepilogo di fine anno sarà già diviso.
+
+## 4. Il riepilogo di fine anno
+
+A gennaio, filtrate le spese dell'anno precedente per la categoria salute: il totale, diviso per persona, con le ricevute accanto. Le spese si possono esportare in un file per il foglio di calcolo, da portare al CAF o al commercialista. Quello che prima richiedeva un weekend diventa mezz'ora.
+
+## 5. Nelle famiglie separate
+
+Le spese mediche dei figli sono spesso tra le spese straordinarie da ripartire tra i genitori, secondo gli accordi di separazione. Registrarle con chi ha pagato e la ricevuta allegata risolve due problemi insieme: la ripartizione tra i genitori e la documentazione per la dichiarazione. Ne parliamo in [spese dei figli tra genitori separati](/blog/spese-dei-figli-genitori-separati).
+
+## In sintesi
+
+Ogni spesa sanitaria registrata il giorno stesso con la foto della ricevuta, visite ed esami che diventano spese da soli, ricevute in una cartella per anno, per chi è la spesa e come è stata pagata, e a gennaio un riepilogo esportabile. La dichiarazione resta una seccatura. Ma senza la caccia agli scontrini.
+""",
+        },
+        "en": {
+            "title": "Family medical expenses: keeping receipts and invoices in order all year",
+            "desc": "Private visits, medicines, the dentist, glasses: a family's health costs are many and scattered. How to keep them in order through the year, with receipts, so you don't lose tax relief or spend a weekend hunting for them.",
+            "body": """
+Every spring, in many families, the same hunt begins: pharmacy receipts in a box, dentist invoices in email, the private visit receipt who knows where. In several countries some health expenses can reduce your tax bill, but only if you have the paperwork. And rebuilding a year of them in one weekend means losing some.
+
+This article is about organisation. Tax rules — what's deductible, how much, with what payment and documentation requirements — vary by country and change over time: for your case, rely on official guidance or an accountant. The examples below refer to Italy.
+
+## Why it's worth keeping them in order
+
+In Italy many health expenses for yourself and dependants can be partly deducted in your tax return, above a threshold. Some of the data is pre-filled, but not always all of it, and many expenses require documents and, in several cases, traceable payment. Having receipts and invoices in order lets you check the pre-filled return and add what's missing.
+
+Tax aside, knowing how much the family spends on health is useful in itself.
+
+## 1. Record the expense when it happens
+
+The rule that ends the spring hunt: **every health expense is recorded on the day it's paid**, with a photo of the receipt. Thirty seconds at the pharmacy or leaving the surgery.
+
+In KidBox's [family expenses](/en/tools/spese) every entry has amount, category, who paid and which child, with the receipt attached. And a visit or test recorded in the [health](/en/tools/salute) section with its cost **automatically** becomes a family expense: no writing it twice.
+
+## 2. Receipts, safe and findable
+
+Pharmacy receipts, dentist invoices, private visit receipts, the glasses invoice: photographed or as PDFs, they go in the family [documents](/en/tools/documenti), in a folder per year. Thermal receipts fade within months: the photo taken straight away is often the only readable copy by spring.
+
+With the Pro plan you can import an invoice and the [assistant](/en/tools/assistente-ai) reads it and suggests the expense to record, for you to confirm before saving.
+
+## 3. Who it was for, and how it was paid
+
+Two details that matter when preparing a tax return:
+
+- **which family member** the expense was for: each child, each adult
+- **how it was paid**: card, bank transfer or cash, because for many expenses traceable payment can be a requirement
+
+Note them in the expense entry, and the year-end summary will already be split.
+
+## 4. The year-end summary
+
+In January, filter the previous year's expenses by the health category: the total, split by person, with receipts alongside. Expenses can be exported to a spreadsheet file for your accountant. What used to take a weekend becomes half an hour.
+
+## 5. In separated families
+
+Children's medical expenses are often among the extra costs split between parents under the separation agreement. Recording them with who paid and the receipt attached solves two problems at once: the split between parents and the documentation for tax. More in [children's expenses between separated parents](/en/blog/spese-dei-figli-genitori-separati).
+
+## In short
+
+Every health expense recorded the same day with a photo of the receipt, visits and tests that become expenses on their own, receipts in a folder per year, who it was for and how it was paid, and in January an exportable summary. Tax returns stay a chore. But without the receipt hunt.
+""",
+        },
+    },
 ]
