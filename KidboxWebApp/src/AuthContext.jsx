@@ -15,10 +15,36 @@ import { auth } from "./firebase";
 
 const AuthContext = createContext(null);
 
+const isPasswordUnverified = (u) =>
+  u.providerData.some((p) => p.providerId === "password") && !u.emailVerified;
+
+/** Stesso `code` di Firebase così `friendlyError` lo traduce come gli altri. */
+export class EmailNotVerifiedError extends Error {
+  constructor() {
+    super("Email address not verified.");
+    this.code = "kidbox/email-not-verified";
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = loading, null = signed out
 
-  useEffect(() => onAuthStateChanged(auth, setUser), []);
+  /**
+   * Senza email verificata non si entra: stessa regola di iOS e Android.
+   * Vale anche per la sessione ripristinata all'apertura — copre chi si era
+   * registrato prima che il controllo esistesse.
+   */
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (u) => {
+        if (u && isPasswordUnverified(u)) {
+          signOut(auth);
+          return;
+        }
+        setUser(u);
+      }),
+    []
+  );
 
   const signInWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
 
@@ -31,7 +57,17 @@ export function AuthProvider({ children }) {
 
   const signInWithFacebook = () => signInWithPopup(auth, new FacebookAuthProvider());
 
-  const signInWithEmail = (email, password) => signInWithEmailAndPassword(auth, email, password);
+  const signInWithEmail = async (email, password) => {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    if (isPasswordUnverified(result.user)) {
+      // Reinvio best effort: Firebase lo rifiuta se il link è appena partito,
+      // e non deve coprire il motivo vero del rifiuto.
+      await sendEmailVerification(result.user).catch(() => {});
+      await signOut(auth);
+      throw new EmailNotVerifiedError();
+    }
+    return result;
+  };
 
   /**
    * Come `LoginViewModel.registerEmail` su iOS: si crea l'account, si manda il
