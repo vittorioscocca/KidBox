@@ -95,7 +95,19 @@ final class LoginViewModel: ObservableObject {
         defer { isBusy = false }
         
         do {
-            try await Auth.auth().signIn(withEmail: email, password: password)
+            let result = try await Auth.auth().signIn(withEmail: email, password: password)
+            // Senza email verificata non si entra. `AppCoordinator` farebbe
+            // comunque il sign-out, ma in silenzio: qui si spiega il perché e si
+            // rimanda il link (best effort: Firebase lo rifiuta se è appena partito).
+            let user = result.user
+            let isEmailProvider = user.providerData.contains { $0.providerID == "password" }
+            if isEmailProvider && !user.isEmailVerified {
+                try? await user.sendEmailVerification()
+                try? Auth.auth().signOut()
+                errorMessage = "Email non verificata. Ti abbiamo inviato di nuovo il link: apri l'email, verifica l'indirizzo e poi accedi."
+                KBLog.auth.kbInfo("LoginViewModel signInEmail rejected: email not verified")
+                return
+            }
             KBLog.auth.kbInfo("LoginViewModel signInEmail success")
         } catch {
             errorMessage = friendlyError(error)

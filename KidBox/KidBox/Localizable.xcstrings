@@ -20940,6 +20940,28 @@
         }
       }
     },
+    "Email non verificata. Ti abbiamo inviato di nuovo il link: apri l'email, verifica l'indirizzo e poi accedi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email not verified. We sent you the link again: open the email, verify your address, then sign in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correo no verificado. Te hemos enviado el enlace de nuevo: abre el correo, verifica la dirección y luego inicia sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-mail non vérifié. Nous vous avons renvoyé le lien : ouvrez l'e-mail, vérifiez votre adresse, puis connectez-vous."
+          }
+        }
+      }
+    },
     "Email di recupero inviata." : {
       "localizations" : {
         "en" : {
