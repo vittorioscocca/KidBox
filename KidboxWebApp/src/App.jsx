@@ -27,6 +27,7 @@ import Garage from "./pages/Garage";
 import Viaggi from "./pages/Viaggi";
 import Assistente from "./pages/Assistente";
 import Impostazioni from "./pages/Impostazioni";
+import ImpostazioniDettaglio from "./pages/ImpostazioniDettaglio";
 import Famiglia from "./pages/Famiglia";
 import Chat from "./pages/Chat";
 import Salute from "./pages/Salute";
@@ -241,6 +242,7 @@ function AuthedApp() {
             {/* Il Profilo è confluito in Impostazioni: i vecchi link continuano a funzionare. */}
             <Route path="/account/profilo" element={<Navigate to="/account/impostazioni" replace />} />
             <Route path="/account/impostazioni" element={<Impostazioni />} />
+            <Route path="/account/impostazioni/:section" element={<ImpostazioniDettaglio />} />
             <Route path="/account/family" element={<Famiglia />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/todo" element={<TodoPage />} />

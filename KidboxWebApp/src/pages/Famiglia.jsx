@@ -16,6 +16,7 @@ import { useChildren } from "../hooks/useChildren";
 import { db } from "../firebase";
 import { useTranslation } from "../i18n/LocaleContext";
 import Barcode from "../components/Barcode";
+import { PageHeader } from "../components/SettingsRows";
 import {
   createInvite,
   deleteFamily,
@@ -174,9 +175,7 @@ export default function Famiglia() {
   if (!currentFamilyId) {
     return (
       <div className="fam-page">
-        <header className="pw-header">
-          <h1>{f.title}</h1>
-        </header>
+        <PageHeader title={f.title} back="/account/impostazioni" backLabel={t.settings.title} />
         <section className="set-card">
           <h2>{f.noFamily}</h2>
           <p className="pw-hint">{f.noFamilyHint}</p>
@@ -187,9 +186,7 @@ export default function Famiglia() {
 
   return (
     <div className="fam-page">
-      <header className="pw-header">
-        <h1>{f.title}</h1>
-      </header>
+      <PageHeader title={f.title} back="/account/impostazioni" backLabel={t.settings.title} />
       <p className="pw-hint">{f.intro}</p>
 
       {error && <p className="error">{error}</p>}

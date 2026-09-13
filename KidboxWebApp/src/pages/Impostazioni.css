@@ -10,6 +10,36 @@
   max-width: 760px;
 }
 
+/* Intestazione: freccia indietro tonda + titolo, come sul telefono. */
+.set-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.set-header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.set-back {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.set-back:hover {
+  background: var(--border);
+}
+
 .set-group {
   display: flex;
   flex-direction: column;
