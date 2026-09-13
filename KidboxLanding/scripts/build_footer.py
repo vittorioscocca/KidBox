@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Genera il footer «mappa del sito» di index.html e index-en.html.
+Genera il footer «mappa del sito» di index.html e index-en.html e delle pagine
+statiche (guida, supporto, privacy, termini, eliminazione dati).
 
     python3 scripts/build_footer.py
 
@@ -209,10 +210,53 @@ def apply(lang):
     f.write_text(t, encoding="utf-8")
 
 
+# Pagine statiche scritte a mano: (italiano, inglese). Hanno un loro <style>
+# con variabili --c-*, quindi il footer riceve la classe sf-static che mappa le
+# variabili e neutralizza le regole globali di p, ul e li delle pagine legali.
+STATIC = [("guide.html", "guide-en.html"), ("support.html", "support-en.html"),
+          ("privacy.html", "privacy-en.html"), ("terms.html", "terms-en.html"),
+          ("data-deletion.html", "data-deletion-en.html")]
+
+STATIC_CSS = CSS.replace("  /* footer:css:end */", """  footer.sf-static { --border:var(--c-border); --text:var(--c-text); --muted:var(--c-muted); --faint:var(--c-muted);
+    max-width:1100px; margin:40px auto 0; padding:26px 24px 30px; font-family:inherit; }
+  footer.sf-static p { margin:0 0 8px; font-weight:400; line-height:1.45; color:inherit; font-size:inherit; }
+  footer.sf-static ul { margin:0; color:inherit; font-weight:400; }
+  footer.sf-static ul li { padding:0; border:0; position:static; font-size:inherit; margin:0 0 7px; }
+  footer.sf-static ul li::before { content:none; }
+  /* footer:css:end */""")
+
+OLD_STATIC_CSS = re.compile(
+    r"\n[ \t]*(?:/\* ── FOOTER ── \*/\n[ \t]*)?footer \{[^}]*\}\n[ \t]*footer p \{[^}]*\}"
+    r"\n[ \t]*footer a \{[^}]*\}\n[ \t]*footer a:hover \{[^}]*\}")
+
+
+def apply_static(name, lang, twin):
+    f = PUBLIC / name
+    t = f.read_text(encoding="utf-8")
+    home = L[lang]["src"]
+    block = footer(lang).replace("<footer>", '<footer class="sf-static">', 1)
+    block = re.sub(r'href="#([a-z]+)"', lambda m: f'href="{home}#{m.group(1)}"', block)
+    block = re.sub(r'data-lang-other href="[^"]*"', f'data-lang-other href="{twin}"', block)
+    if "<!-- footer:start -->" in t:
+        t = re.sub(r"<!-- footer:start -->.*?<!-- footer:end -->", lambda m: block, t, flags=re.S)
+    else:
+        t, n = re.subn(r"<footer>.*?</footer>", lambda m: block, t, count=1, flags=re.S)
+        assert n == 1, f"footer non trovato in {f}"
+    if "/* footer:css:start */" in t:
+        t = re.sub(r"\n  /\* footer:css:start \*/.*?/\* footer:css:end \*/", lambda m: STATIC_CSS, t, flags=re.S)
+    else:
+        t, n = OLD_STATIC_CSS.subn(lambda m: STATIC_CSS, t, count=1)
+        assert n == 1, f"CSS del footer non trovato in {f}"
+    f.write_text(t, encoding="utf-8")
+
+
 def main():
     for lang in L:
         apply(lang)
-    print("footer: index.html e index-en.html aggiornati")
+    for it, en in STATIC:
+        apply_static(it, "it", en)
+        apply_static(en, "en", it)
+    print(f"footer: home IT/EN e {len(STATIC) * 2} pagine statiche aggiornate")
 
 
 if __name__ == "__main__":
