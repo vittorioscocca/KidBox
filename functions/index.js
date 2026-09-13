@@ -6706,6 +6706,13 @@ exports.unregisterAdminNotifications = onCall(
 /**
  * Callable (admin only): restituisce uid + createdAt (ms) per tutti gli utenti Auth.
  * Usato dalla console per mostrare la data di prima registrazione.
+ *
+ * `lastActiveAt` è l'ultimo contatto dell'app con Auth, uguale per iOS, Android
+ * e web: il più recente fra `lastSignInTime` (login esplicito, raro con la
+ * sessione salvata) e `lastRefreshTime` (rinnovo del token, circa ogni ora
+ * d'uso). Conta anche il lavoro in background — la posizione condivisa rinnova
+ * il token senza che l'app venga aperta — quindi è «l'app è viva», non «l'ha
+ * aperta». Resta comunque molto più vicino al vero di `users/{uid}.updatedAt`.
  */
 exports.getAuthUsersData = onCall(
     {region: "europe-west1", maxInstances: 20},
@@ -6719,9 +6726,13 @@ exports.getAuthUsersData = onCall(
       do {
         const listResult = await admin.auth().listUsers(1000, pageToken);
         for (const u of listResult.users) {
+          const ms = (t) => (t ? new Date(t).getTime() || 0 : 0);
+          const lastSignInAt = ms(u.metadata.lastSignInTime);
           result.push({
             uid: u.uid,
             createdAt: parseInt(u.metadata.creationTime ? new Date(u.metadata.creationTime).getTime() : 0, 10),
+            lastSignInAt,
+            lastActiveAt: Math.max(lastSignInAt, ms(u.metadata.lastRefreshTime)),
             email: u.email || "",
             displayName: u.displayName || "",
           });
