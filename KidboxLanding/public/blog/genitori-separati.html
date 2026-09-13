@@ -350,7 +350,9 @@
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
-  .b-art .t-hero .device { max-width:200px; }
+  /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
+     allunga; lo si rimpicciolisce intero, proporzioni comprese. */
+  .b-art .t-hero .device { width:300px; max-width:none; zoom:.72; }
   .b-art .t-hero-copy h2 { font-size:clamp(1.5rem,3vw,2rem); }
   .b-art .t-hero-copy p { font-size:0.98rem; margin-bottom:18px; }
   .b-body { font-size:1.08rem; line-height:1.72; }

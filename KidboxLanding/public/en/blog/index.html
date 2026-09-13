@@ -280,7 +280,9 @@
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
-  .b-art .t-hero .device { max-width:200px; }
+  /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
+     allunga; lo si rimpicciolisce intero, proporzioni comprese. */
+  .b-art .t-hero .device { width:300px; max-width:none; zoom:.72; }
   .b-art .t-hero-copy h2 { font-size:clamp(1.5rem,3vw,2rem); }
   .b-art .t-hero-copy p { font-size:0.98rem; margin-bottom:18px; }
   .b-body { font-size:1.08rem; line-height:1.72; }
@@ -373,7 +375,7 @@
     <span class="b-meta"><span>4 min read</span><span>·</span><span>5 Sep 2026</span></span>
   </a>
   </div>
-  <p class="b-more"><a href="casa-e-faccende">All 3 articles on Home and chores →</a></p>
+  <p class="b-more"><a href="casa-e-faccende">All articles on Home and chores →</a></p>
 </section>
 <section class="b-cat">
   <div class="b-cat-title">Co-parenting: running two homes without friction</div>
@@ -395,7 +397,7 @@
     <span class="b-meta"><span>3 min read</span><span>·</span><span>3 Sep 2026</span></span>
   </a>
   </div>
-  <p class="b-more"><a href="genitori-separati">All 3 articles on Co-parenting →</a></p>
+  <p class="b-more"><a href="genitori-separati">All articles on Co-parenting →</a></p>
 </section>
 <section class="b-cat">
   <div class="b-cat-title">Comparisons: which family app to choose</div>
@@ -417,7 +419,7 @@
     <span class="b-meta"><span>3 min read</span><span>·</span><span>2 Sep 2026</span></span>
   </a>
   </div>
-  <p class="b-more"><a href="confronti">All 3 articles on App comparisons →</a></p>
+  <p class="b-more"><a href="confronti">All articles on App comparisons →</a></p>
 </section>
 <section class="b-cat">
   <div class="b-cat-title">Family organisation: the complete guide to a home that works</div>
@@ -439,7 +441,7 @@
     <span class="b-meta"><span>3 min read</span><span>·</span><span>30 Aug 2026</span></span>
   </a>
   </div>
-  <p class="b-more"><a href="organizzazione-familiare">All 3 articles on Family organisation →</a></p>
+  <p class="b-more"><a href="organizzazione-familiare">All articles on Family organisation →</a></p>
 </section>
 <section class="b-cat">
   <div class="b-cat-title">Meals and groceries: planning without losing your mind</div>
@@ -461,7 +463,7 @@
     <span class="b-meta"><span>3 min read</span><span>·</span><span>1 Sep 2026</span></span>
   </a>
   </div>
-  <p class="b-more"><a href="pasti-e-spesa">All 3 articles on Meals and groceries →</a></p>
+  <p class="b-more"><a href="pasti-e-spesa">All articles on Meals and groceries →</a></p>
 </section>
 <section class="b-cat">
   <div class="b-cat-title">Getting organised at home: routines, time and clarity for parents</div>
@@ -488,7 +490,7 @@
     <span class="b-meta"><span>4 min read</span><span>·</span><span>28 Aug 2026</span></span>
   </a>
   </div>
-  <p class="b-more"><a href="produttivita-in-casa">All 4 articles on Productivity at home →</a></p>
+  <p class="b-more"><a href="produttivita-in-casa">All articles on Productivity at home →</a></p>
 </section>
 </div>
 

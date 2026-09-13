@@ -351,6 +351,9 @@ def main():
             build_tool(lang, tool, images)
     for lang in LANGS:
         build_index(lang)
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_sitemap
+    build_sitemap.main()
     print(f"{len(TOOLS)} strumenti × {len(LANGS)} lingue generati in public/")
 
 

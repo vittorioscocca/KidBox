@@ -44,7 +44,7 @@ LANGS = {
         "hero_eyebrow": "Scarica l'app", "hero_h": "Tutta la famiglia, <span class=\"g\">in un'unica app.</span>",
         "hero_p": "L'organizer di famiglia per iPhone, Android e browser, cifrato end-to-end. Gratis per una famiglia di due genitori.",
         "final_kicker": "Inizia oggi", "final_h": "La famiglia merita un'app all'altezza.", "final_p": "Gratuita per iniziare. Nessuna carta richiesta.",
-        "all_in": "Tutti gli {n} articoli su {cat} →", "min": "{n} min di lettura", "by": "Il team KidBox", "updated": "Aggiornato il",
+        "all_in": "Tutti gli articoli su {cat} →", "min": "{n} min di lettura", "by": "Il team KidBox", "updated": "Aggiornato il",
         "related": "Da leggere dopo", "tools": "Gli strumenti di cui parla l'articolo", "in_cat": "Altri articoli su {cat}", "back": "Tutti gli articoli",
         "months": ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"],
     },
@@ -58,7 +58,7 @@ LANGS = {
         "hero_eyebrow": "Get the app", "hero_h": "The whole family, <span class=\"g\">in a single app.</span>",
         "hero_p": "The family organiser for iPhone, Android and the browser, end-to-end encrypted. Free for a family of two parents.",
         "final_kicker": "Start today", "final_h": "Your family deserves an app that keeps up.", "final_p": "Free to start. No card required.",
-        "all_in": "All {n} articles on {cat} →", "min": "{n} min read", "by": "The KidBox team", "updated": "Updated",
+        "all_in": "All articles on {cat} →", "min": "{n} min read", "by": "The KidBox team", "updated": "Updated",
         "related": "Read next", "tools": "The tools this article talks about", "in_cat": "More on {cat}", "back": "All articles",
         "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     },
@@ -99,7 +99,9 @@ BLOG_CSS = """
   .b-art-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:0.9rem; align-items:center; }
   .b-art-meta .sep { color:var(--faint); }
   .b-art .t-hero { margin:8px 0 40px; padding:36px; grid-template-columns:220px 1fr; gap:32px; }
-  .b-art .t-hero .device { max-width:200px; }
+  /* Il telefono è disegnato per 300px: restringerlo fa andare a capo le tessere e lo
+     allunga; lo si rimpicciolisce intero, proporzioni comprese. */
+  .b-art .t-hero .device { width:300px; max-width:none; zoom:.72; }
   .b-art .t-hero-copy h2 { font-size:clamp(1.5rem,3vw,2rem); }
   .b-art .t-hero-copy p { font-size:0.98rem; margin-bottom:18px; }
   .b-body { font-size:1.08rem; line-height:1.72; }
@@ -253,7 +255,7 @@ def build_index(lang):
   <p class="b-cat-desc">{html.escape(desc)}</p>
   <div class="b-grid">{cards}
   </div>
-  <p class="b-more"><a href="{cslug}">{html.escape(L['all_in'].format(n=len(arts), cat=short))}</a></p>
+  <p class="b-more"><a href="{cslug}">{html.escape(L['all_in'].format(cat=short))}</a></p>
 </section>"""
     body = f"""
 <div class="crumbs"><a href="{prefix}index.html">{L['home']}</a><span>/</span><span class="cur">{L['blog']}</span></div>
@@ -376,6 +378,8 @@ def main():
                 build_category(lang, cslug, arts)
         build_index(lang)
     n = len(ARTICLES)
+    import build_sitemap
+    build_sitemap.main()
     print(f"{n} articoli × {len(LANGS)} lingue generati in public/ "
           f"({sum(words(a['it']['body']) for a in ARTICLES)} parole IT)")
 
