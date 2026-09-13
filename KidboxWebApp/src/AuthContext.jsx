@@ -29,22 +29,10 @@ export class EmailNotVerifiedError extends Error {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = loading, null = signed out
 
-  /**
-   * Senza email verificata non si entra: stessa regola di iOS e Android.
-   * Vale anche per la sessione ripristinata all'apertura — copre chi si era
-   * registrato prima che il controllo esistesse.
-   */
-  useEffect(
-    () =>
-      onAuthStateChanged(auth, (u) => {
-        if (u && isPasswordUnverified(u)) {
-          signOut(auth);
-          return;
-        }
-        setUser(u);
-      }),
-    []
-  );
+  // La sessione ripristinata NON si controlla: chi si era registrato prima
+  // del blocco sull'email non verificata resta dentro. Il rifiuto vale solo
+  // al login esplicito (`signInWithEmail`).
+  useEffect(() => onAuthStateChanged(auth, setUser), []);
 
   const signInWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
 
