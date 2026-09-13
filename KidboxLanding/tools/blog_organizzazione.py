@@ -4,7 +4,7 @@
 ARTICLES = [
     {
         "slug": "documenti-di-famiglia-in-ordine",
-        "category": "organizzazione-familiare", "date": "2026-09-12",
+        "category": "salute-e-documenti", "date": "2026-09-12",
         "tools": ["documenti", "wallet", "password"], "related": ["scadenze-di-casa-bollette-garanzie", "documenti-dei-figli-in-due-case", "storia-sanitaria-dei-figli"],
         "it": {
             "title": "I documenti di famiglia in ordine, una volta per tutte",
@@ -157,7 +157,7 @@ From that day the drawer stops growing, because new documents have somewhere to 
     },
     {
         "slug": "storia-sanitaria-dei-figli",
-        "category": "organizzazione-familiare", "date": "2026-09-04",
+        "category": "salute-e-documenti", "date": "2026-09-04",
         "tools": ["salute", "documenti"], "related": ["documenti-di-famiglia-in-ordine", "documenti-dei-figli-in-due-case"],
         "it": {
             "title": "La storia sanitaria dei figli: cosa tenere, dove, e perché serve al medico",

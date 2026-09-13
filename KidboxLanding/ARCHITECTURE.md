@@ -18,7 +18,7 @@ Tutto sotto `public/` (root di hosting):
 | `data-deletion.html` | Eliminazione Dati · KidBox | Istruzioni cancellazione account/dati (richiesto da App/Play Store) |
 | `404.html` | Pagina non trovata | Fallback |
 | `strumenti/` + `en/tools/` | Strumenti KidBox | **Generate**: una pagina per scheda dell'app (card + dettaglio con schermate, «come funziona», FAQ, collegati). Sorgente in `tools/tools_data.py`, generatore `scripts/build_tools.py`; non modificare l'HTML a mano |
-| `blog/` + `en/blog/` | Blog KidBox | **Generate**: indice per categorie, una pagina per categoria e una per articolo (testo, box «scarica l'app», strumenti citati, articoli collegati, JSON-LD `Article`). Sorgente in `tools/blog_data.py` + `tools/blog_*.py` (un modulo per categoria, markdown minimo), generatore `scripts/build_blog.py`; non modificare l'HTML a mano. Gli articoli sono originali: mai copiare testi altrui |
+| `blog/` + `en/blog/` | Blog KidBox | **Generate**: indice per categorie, una pagina per categoria e una per articolo (testo, box «scarica l'app», strumenti citati, articoli collegati, JSON-LD `Article`). Sorgente in `tools/blog_data.py` + `tools/blog_*.py` (un modulo per categoria, 9 categorie, markdown minimo), generatore `scripts/build_blog.py`; non modificare l'HTML a mano. Gli articoli sono originali: mai copiare testi altrui |
 
 - **`public/screenshots/`** — screenshot dell'app per sezione (Home, Note, Calendario, Password, Chat, Wallet, Animali, Documenti, Posizione, Garage, To-Do, Foto e Video, Spese, Casa, Wizard, …). Catturati da iPhone 17 Pro. Usati in `index.html`/`guide.html`.
 - **`public/icon.png`** — logo/app icon.

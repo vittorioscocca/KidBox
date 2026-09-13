@@ -64,6 +64,24 @@ CATEGORIES = {
         "en": ("Productivity at home", "Getting organised at home: routines, time and clarity for parents",
                "Routines that hold, reminders that land at the right moment and less mental load for whoever keeps the family together."),
     },
+    "salute-e-documenti": {
+        "it": ("Salute e documenti", "Salute e documenti: la storia sanitaria e le carte di tutta la famiglia",
+               "Vaccini, visite, referti, carte d'identità e passaporti: come tenerli in ordine, al sicuro e a portata di entrambi i genitori."),
+        "en": ("Health and documents", "Health and documents: the whole family's medical history and paperwork",
+               "Vaccinations, visits, reports, ID cards and passports: keeping them in order, safe and within reach of both parents."),
+    },
+    "viaggi-in-famiglia": {
+        "it": ("Viaggi in famiglia", "Viaggi in famiglia: organizzare vacanze che piacciono a tutti",
+               "Itinerari a misura di bambini, documenti e valigie, budget e spese di viaggio, dalla prenotazione al ritorno."),
+        "en": ("Family travel", "Family travel: planning holidays everyone enjoys",
+               "Child-friendly itineraries, documents and packing, budgets and travel costs, from booking to coming home."),
+    },
+    "animali-e-auto": {
+        "it": ("Animali e auto", "Animali e auto: le scadenze di casa che non stanno in casa",
+               "Il libretto del cane e del gatto, chi se ne occupa, bollo, assicurazione, revisione e manutenzione dell'auto di famiglia."),
+        "en": ("Pets and cars", "Pets and cars: household deadlines that live outside the house",
+               "Your dog's and cat's health record, who looks after them, road tax, insurance, inspections and family car maintenance."),
+    },
 }
 
 ARTICLES = [
@@ -1490,5 +1508,8 @@ from blog_confronti import ARTICLES as _CF  # noqa: E402
 from blog_organizzazione import ARTICLES as _OR  # noqa: E402
 from blog_pasti import ARTICLES as _PA  # noqa: E402
 from blog_produttivita import ARTICLES as _PR  # noqa: E402
+from blog_salute_documenti import ARTICLES as _SD  # noqa: E402
+from blog_viaggi import ARTICLES as _VI  # noqa: E402
+from blog_animali_auto import ARTICLES as _AA  # noqa: E402
 
-ARTICLES += _GS + _CF + _OR + _PA + _PR
+ARTICLES += _GS + _CF + _OR + _PA + _PR + _SD + _VI + _AA
