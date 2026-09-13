@@ -29,10 +29,23 @@ export class EmailNotVerifiedError extends Error {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = loading, null = signed out
 
-  // La sessione ripristinata NON si controlla: chi si era registrato prima
-  // del blocco sull'email non verificata resta dentro. Il rifiuto vale solo
-  // al login esplicito (`signInWithEmail`).
-  useEffect(() => onAuthStateChanged(auth, setUser), []);
+  /**
+   * Senza email verificata non si entra, nemmeno con la sessione ripristinata
+   * all'apertura: gemello di `AppCoordinator.startSessionListener` su iOS.
+   * Al 13/09/2026 i 10 account email non verificati non erano mai tornati
+   * dopo il giorno di registrazione, quindi qui non si espelle nessuno.
+   */
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (u) => {
+        if (u && isPasswordUnverified(u)) {
+          signOut(auth);
+          return;
+        }
+        setUser(u);
+      }),
+    []
+  );
 
   const signInWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
 
