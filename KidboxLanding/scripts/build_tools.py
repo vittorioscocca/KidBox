@@ -119,10 +119,11 @@ def extract(src, pattern):
     return m.group(0)
 
 
-def rebase_links(block, depth):
-    """I link relativi della landing vanno riportati alla radice del sito."""
+def rebase_links(block, depth, home="index.html"):
+    """I link relativi della landing vanno riportati alla radice del sito.
+    Le ancore (#prezzi…) puntano alla home della lingua della pagina."""
     prefix = "../" * depth
-    block = re.sub(r'href="#([a-z]+)"', lambda m: f'href="{prefix}index.html#{m.group(1)}"', block)
+    block = re.sub(r'href="#([a-z]+)"', lambda m: f'href="{prefix}{home}#{m.group(1)}"', block)
     block = re.sub(r'href="(?!https?://|mailto:|#|\.\./|/)([^"]+)"', lambda m: f'href="{prefix}{m.group(1)}"', block)
     block = re.sub(r'src="(?!https?://|/|\.\./)([^"]+)"', lambda m: f'src="{prefix}{m.group(1)}"', block)
     return block
@@ -131,7 +132,7 @@ def rebase_links(block, depth):
 def nav_for(lang, depth, L, other_href):
     src = (PUBLIC / L["src"]).read_text(encoding="utf-8")
     nav = extract(src, r"<nav>.*?</nav>")
-    nav = rebase_links(nav, depth)
+    nav = rebase_links(nav, depth, L["src"])
     # Il selettore di lingua deve portare alla pagina gemella, non alla home.
     nav = re.sub(r'<div class="nav-lang nav-hide">.*?</div>',
                  f'<div class="nav-lang nav-hide">'
@@ -148,7 +149,7 @@ def parts_for(lang, depth):
     style = extract(src, r"<style>.*?</style>")
     style = style.replace("</style>", TOOLS_CSS + "</style>")
     stores = extract(src, r'<div class="hero-cta">.*?</div>\n')
-    footer = rebase_links(extract(src, r"<footer>.*?</footer>"), depth)
+    footer = rebase_links(extract(src, r"<footer>.*?</footer>"), depth, L["src"])
     phone = extract(src, r'<div class="device sm">.*?\n    </div></div>')
     return style, stores, footer, phone
 
@@ -200,6 +201,7 @@ def page(lang, title, desc, canonical, body, depth):
     prefix = "../" * depth
     other = ("../" * depth) + LANGS[lang]["other_dir"] + "/" + canonical
     nav = nav_for(lang, depth, L, other)
+    footer = re.sub(r'data-lang-other href="[^"]*"', f'data-lang-other href="{other}"', footer)
     return f"""<!DOCTYPE html>
 <html lang="{lang}">
 <head>
@@ -347,6 +349,9 @@ def build_tool(lang, tool, images):
 
 
 def main():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import build_footer
+    build_footer.main()
     for tool in TOOLS:
         images = build_images(tool)
         for lang in LANGS:

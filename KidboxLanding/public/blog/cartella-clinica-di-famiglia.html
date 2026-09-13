@@ -297,14 +297,27 @@
   .final { text-align:center; background:var(--accent-l); border:1px solid rgba(232,131,58,.16); border-radius:var(--r-lg); padding:72px 24px; }
   .final h2 { font-size:clamp(1.9rem,4vw,2.8rem); font-weight:800; letter-spacing:-0.03em; max-width:18ch; margin:0 auto 14px; text-wrap:balance; }
   .final p { color:var(--muted); margin-bottom:30px; }
-  footer { border-top:1px solid var(--border); margin-top:70px; padding:34px 0; }
-  .foot { display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px; align-items:center; font-size:0.84rem; color:var(--muted); }
-  .foot a { color:var(--muted); text-decoration:none; }
-  .foot a:hover { color:var(--accent); }
-  .foot-links { display:flex; gap:20px; flex-wrap:wrap; }
-  .foot-social { display:flex; gap:12px; }
-  .foot-social a { width:34px; height:34px; border-radius:8px; background:var(--border); display:grid; place-items:center; color:var(--muted); transition:background .2s,color .2s; }
-  .foot-social a:hover { background:var(--accent); color:#fff; }
+  /* footer:css:start */
+  footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
+  .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .sf-notes p { margin:0 0 8px; }
+  .sf-notes p:last-child { margin-bottom:0; }
+  .sf-grid { align-items:start; display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:26px; padding:24px 0 26px; }
+  .sf-col h3 { font-size:0.78rem; font-weight:700; color:var(--text); margin:0 0 10px; letter-spacing:0; }
+  .sf-col ul + h3 { margin-top:24px; }
+  .sf-col ul { list-style:none; margin:0; padding:0; }
+  .sf-col li { margin:0 0 7px; }
+  .sf-col a, .sf-bottom a { color:var(--muted); text-decoration:none; }
+  .sf-col a:hover, .sf-bottom a:hover { color:var(--text); text-decoration:underline; }
+  .sf-bottom { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 28px; }
+  .sf-bottom-l { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; }
+  .sf-legal { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-legal a + a::before { content:"|"; color:var(--faint); margin:0 10px; }
+  .sf-lang strong { color:var(--text); font-weight:600; }
+  .sf-lang span { color:var(--faint); margin:0 6px; }
+  @media (max-width:900px) { .sf-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:600px) { .sf-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 18px; } }
+  /* footer:css:end */
 
   .rv { opacity:0; transform:translateY(26px); transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1); }
   .rv.in { opacity:1; transform:none; }
@@ -488,23 +501,17 @@
 
   </div>
   <footer>
-    <div class="foot">
-      <span>© 2026 KidBox · Fatto con ❤️ in Italia</span>
-      <div class="foot-links">
-        <a href="../guide.html">Guida</a>
-        <a href="../strumenti/">Strumenti</a>
-        <a href="../blog/">Blog</a>
-        <a href="../index.html#prezzi">Prezzi</a>
-        <a href="../privacy.html">Privacy</a>
-        <a href="../terms.html">Termini</a>
-        <a href="../support.html">Supporto</a>
-        <a href="../data-deletion.html">Eliminazione Dati</a>
-        <a href="#" data-consent-open>Preferenze cookie</a>
-      </div>
-      <div class="foot-social">
-        <a href="https://www.facebook.com/profile.php?id=61574265148948&locale=it_IT" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
-        <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
-      </div>
+    <div class="sf-notes"><p>Alcune funzioni — l&#x27;assistente AI, il Piano Alimentare e il Piano Fitness, i viaggi con itinerario AI e la lettura dei documenti con l&#x27;AI — richiedono il piano Pro o Max. Il piano Free include 5 messaggi di prova con l&#x27;assistente.</p><p>La skill Alexa è disponibile solo in italiano. Le funzioni possono cambiare e alcune potrebbero non essere disponibili su tutte le piattaforme.</p><p>App Store è un marchio di Apple Inc. Google Play è un marchio di Google LLC. Alexa è un marchio di Amazon.com, Inc. o delle sue affiliate.</p></div>
+    <div class="sf-grid" role="navigation" aria-label="Mappa del sito">
+      <div class="sf-col"><h3>Organizzazione</h3><ul><li><a href="../strumenti/calendario">Calendario</a></li><li><a href="../strumenti/to-do">Cose da fare</a></li><li><a href="../strumenti/lista-della-spesa">Lista della spesa</a></li><li><a href="../strumenti/spese">Spese</a></li><li><a href="../strumenti/note">Note</a></li></ul><h3>Documenti e sicurezza</h3><ul><li><a href="../strumenti/documenti">Documenti</a></li><li><a href="../strumenti/password">Password</a></li><li><a href="../strumenti/wallet">Wallet</a></li></ul></div>
+      <div class="sf-col"><h3>Famiglia</h3><ul><li><a href="../strumenti/famiglia">Famiglia e inviti</a></li><li><a href="../strumenti/chat">Chat</a></li><li><a href="../strumenti/posizione">Posizione</a></li><li><a href="../strumenti/foto-e-video">Foto e video</a></li></ul><h3>Salute, casa e auto</h3><ul><li><a href="../strumenti/salute">Salute</a></li><li><a href="../strumenti/casa">Casa</a></li><li><a href="../strumenti/veicoli">Veicoli</a></li><li><a href="../strumenti/animali">Animali</a></li><li><a href="../strumenti/">Tutti gli strumenti →</a></li></ul></div>
+      <div class="sf-col"><h3>Blog</h3><ul><li><a href="../blog/casa-e-faccende">Casa e faccende</a></li><li><a href="../blog/genitori-separati">Genitori separati</a></li><li><a href="../blog/confronti">Confronti tra app</a></li><li><a href="../blog/organizzazione-familiare">Organizzazione familiare</a></li><li><a href="../blog/pasti-e-spesa">Pasti e spesa</a></li><li><a href="../blog/produttivita-in-casa">Produttività in casa</a></li><li><a href="../blog/salute-e-documenti">Salute e documenti</a></li><li><a href="../blog/viaggi-in-famiglia">Viaggi in famiglia</a></li><li><a href="../blog/animali-e-auto">Animali e auto</a></li><li><a href="../blog/">Tutti gli articoli →</a></li></ul></div>
+      <div class="sf-col"><h3>Intelligenza AI</h3><ul><li><a href="../strumenti/assistente-ai">Assistente AI</a></li><li><a href="../strumenti/viaggi">Viaggi</a></li></ul><h3>Voce</h3><ul><li><a href="../strumenti/alexa">Alexa</a></li></ul><h3>Scarica</h3><ul><li><a href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener">App Store</a></li><li><a href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener">Google Play</a></li></ul></div>
+      <div class="sf-col"><h3>KidBox</h3><ul><li><a href="../index.html#prodotti">Prodotti</a></li><li><a href="../index.html#ai">Intelligenza AI</a></li><li><a href="../index.html#prezzi">Prezzi</a></li><li><a href="../guide.html">Guida</a></li><li><a href="https://app.kidboxapp.com">Apri la web app</a></li></ul><h3>Supporto e privacy</h3><ul><li><a href="../support.html">Supporto</a></li><li><a href="../privacy.html">Privacy</a></li><li><a href="../terms.html">Termini di servizio</a></li><li><a href="../data-deletion.html">Eliminazione dati</a></li><li><a href="#" data-consent-open>Preferenze cookie</a></li></ul><h3>Seguici</h3><ul><li><a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener">Facebook</a></li><li><a href="https://www.instagram.com/kidbox_app" target="_blank" rel="noopener">Instagram</a></li></ul></div>
+    </div>
+    <div class="sf-bottom">
+      <div class="sf-bottom-l"><span>Copyright © 2026 KidBox. Tutti i diritti riservati. Fatto con ❤️ in Italia.</span><div class="sf-legal"><a href="../privacy.html">Privacy</a><a href="../terms.html">Termini</a><a href="#" data-consent-open>Cookie</a><a href="../data-deletion.html">Eliminazione dati</a></div></div>
+      <div class="sf-lang">Italia · <strong aria-current="true">Italiano</strong><span>|</span><a data-lang-other href="../en/blog/cartella-clinica-di-famiglia">English</a></div>
     </div>
   </footer>
 </section>

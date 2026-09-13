@@ -181,6 +181,7 @@ def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website"):
         style, stores, footer, phone = parts_for(lang, depth)
         other = ("../" * depth) + L["other_dir"] + "/" + canonical
         nav = nav_for(lang, depth, L, other)
+        footer = re.sub(r'data-lang-other href="[^"]*"', f'data-lang-other href="{other}"', footer)
     finally:
         build_tools.LANGS = saved
     style = style.replace(build_tools.TOOLS_CSS + "</style>", BLOG_CSS + "</style>")
@@ -369,6 +370,8 @@ def check():
 
 
 def main():
+    import build_footer
+    build_footer.main()
     check()
     groups = by_category()
     for lang in LANGS:
