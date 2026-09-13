@@ -723,7 +723,7 @@ export default function Impostazioni() {
       {/* La skill esiste solo in italiano: vedi `isAlexaAvailable`. */}
       {isAlexaAvailable(locale) && (
         <section className="set-group">
-          <h2 className="set-group-label">Alexa</h2>
+          <h2 className="set-group-label">{t.alexa.title}</h2>
           <AlexaCard />
         </section>
       )}

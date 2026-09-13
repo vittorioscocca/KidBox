@@ -148,7 +148,6 @@ export default function AlexaCard() {
 
   return (
     <section className="set-card">
-      <h2>{a.title}</h2>
 
       <span className="set-row-text">
         <strong>{headline}</strong>
