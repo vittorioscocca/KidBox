@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Getting organised at home: routines, time and clarity for parents · KidBox Blog</title>
-  <meta name="description" content="Routines that hold, reminders that land at the right moment and less mental load for whoever keeps the family together.">
-  <meta property="og:title" content="Getting organised at home: routines, time and clarity for parents · KidBox Blog">
-  <meta property="og:description" content="Routines that hold, reminders that land at the right moment and less mental load for whoever keeps the family together.">
-  <meta property="og:type" content="website">
+  <title>Bambini difficili a tavola: pianificare i pasti senza fare il cuoco di tre menù · Blog KidBox</title>
+  <meta name="description" content="Un figlio mangia solo pasta in bianco, l&#x27;altro rifiuta tutto ciò che è verde. Come pianificare pasti che vanno bene a tutta la famiglia senza trasformare ogni cena in una trattativa.">
+  <meta property="og:title" content="Bambini difficili a tavola: pianificare i pasti senza fare il cuoco di tre menù · Blog KidBox">
+  <meta property="og:description" content="Un figlio mangia solo pasta in bianco, l&#x27;altro rifiuta tutto ciò che è verde. Come pianificare pasti che vanno bene a tutta la famiglia senza trasformare ogni cena in una trattativa.">
+  <meta property="og:type" content="article">
   <meta property="og:image" content="https://kidboxapp.com/icon.png">
-  <link rel="canonical" href="https://kidboxapp.com/en/blog/produttivita-in-casa">
-  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/blog/produttivita-in-casa">
-  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/blog/produttivita-in-casa">
+  <link rel="canonical" href="https://kidboxapp.com/blog/bambini-difficili-a-tavola">
+  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/blog/bambini-difficili-a-tavola">
+  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/blog/bambini-difficili-a-tavola">
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" href="../../icon.png?v=2">
+  <link rel="icon" type="image/png" href="../icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
 <style>
@@ -179,6 +179,76 @@
   .mini-list .ck { flex-shrink:0; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; color:#fff; margin-top:2px; }
   .band-visual { display:flex; justify-content:center; }
 
+  /* VOCE / ALEXA — il pannello è volutamente scuro in entrambi i temi:
+     è la cucina di sera, con l'anello dell'Echo acceso. */
+  .voice { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:20px 0 10px; }
+  .voice-copy .p-eyebrow { color:#1f9dc9; }
+  @media (prefers-color-scheme: dark) { .voice-copy .p-eyebrow { color:#4fd8ff; } }
+  :root[data-theme="dark"] .voice-copy .p-eyebrow { color:#4fd8ff; }
+  :root[data-theme="light"] .voice-copy .p-eyebrow { color:#1f9dc9; }
+  .voice-visual { display:flex; justify-content:center; }
+  .voice-panel { position:relative; width:100%; max-width:410px; border-radius:var(--r-lg); padding:30px 24px 24px; overflow:hidden;
+    background:linear-gradient(165deg,#13202e 0%,#080d14 62%); border:1px solid rgba(79,216,255,0.18); box-shadow:var(--shadow-lg); }
+  .voice-panel::after { content:''; position:absolute; top:-96px; left:50%; transform:translateX(-50%); width:300px; height:200px;
+    background:radial-gradient(ellipse at center,rgba(79,216,255,.30),transparent 70%); filter:blur(16px); pointer-events:none; }
+
+  /* Echo */
+  .echo { position:relative; width:118px; height:120px; margin:4px auto 14px; }
+  .echo-cyl { position:absolute; left:16px; right:16px; top:24px; bottom:6px; background:linear-gradient(150deg,#3d4855,#171d26);
+    border-radius:16px 16px 20px 20px / 12px 12px 26px 26px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 18px 30px rgba(0,0,0,.45); }
+  .echo-cyl::before { content:''; position:absolute; inset:8px 10px 12px; border-radius:12px;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 4px); }
+  .echo-ring { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:3px solid #4fd8ff;
+    background:radial-gradient(ellipse at center,rgba(79,216,255,.28),transparent 70%); animation:ringpulse 3.2s ease-in-out infinite; }
+  @keyframes ringpulse { 0%,100% { opacity:.6; box-shadow:0 0 10px rgba(79,216,255,.45), inset 0 0 8px rgba(79,216,255,.35); }
+                         50%     { opacity:1;  box-shadow:0 0 28px rgba(79,216,255,.85), inset 0 0 16px rgba(79,216,255,.6); } }
+  .echo-halo { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:2px solid rgba(79,216,255,.55); animation:halo 3.2s ease-out infinite; }
+  .echo-halo.h2 { animation-delay:1.6s; }
+  @keyframes halo { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(1.9); opacity:0; } }
+
+  /* Onda vocale */
+  .wave { display:flex; align-items:center; justify-content:center; gap:4px; height:30px; margin-bottom:14px; }
+  .wave i { width:4px; height:7px; border-radius:3px; background:linear-gradient(180deg,#7ee6ff,#1b8fc4); animation:wv 1.15s ease-in-out infinite; }
+  .wave i:nth-child(1){animation-delay:0s} .wave i:nth-child(2){animation-delay:.12s} .wave i:nth-child(3){animation-delay:.24s}
+  .wave i:nth-child(4){animation-delay:.36s} .wave i:nth-child(5){animation-delay:.18s} .wave i:nth-child(6){animation-delay:.30s}
+  .wave i:nth-child(7){animation-delay:.06s} .wave i:nth-child(8){animation-delay:.42s} .wave i:nth-child(9){animation-delay:.20s}
+  @keyframes wv { 0%,100% { height:7px; opacity:.4; } 50% { height:26px; opacity:1; } }
+
+  /* Le frasi si alternano */
+  .say { position:relative; height:66px; margin-bottom:14px; }
+  .say span { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:0 6px;
+    font-size:0.95rem; font-weight:600; line-height:1.35; color:#eaf6ff; opacity:0; animation:sayc 13.5s ease-in-out infinite; }
+  .say span b { color:#4fd8ff; font-weight:700; }
+  .say span:nth-child(2){ animation-delay:4.5s } .say span:nth-child(3){ animation-delay:9s }
+  @keyframes sayc { 0%{opacity:0;transform:translateY(7px)} 5%{opacity:1;transform:none} 28%{opacity:1;transform:none} 33%,100%{opacity:0;transform:translateY(-7px)} }
+
+  /* Cosa compare nell'app */
+  .voice-out { background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:12px; }
+  .vo-h { font-size:0.62rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(234,246,255,.45); margin:2px 0 9px; display:flex; align-items:center; gap:6px; }
+  .vrow { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:11px; background:rgba(255,255,255,.05); margin-bottom:6px; }
+  .vrow .vck { width:16px; height:16px; border-radius:50%; border:1.5px solid rgba(234,246,255,.32); flex-shrink:0; }
+  .vrow .v1 { font-size:0.79rem; font-weight:700; color:#f2f8ff; }
+  .vrow .v2 { font-size:0.63rem; color:rgba(234,246,255,.45); }
+  .vrow .vnew { margin-left:auto; font-size:0.56rem; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#08121a; background:#4fd8ff; padding:3px 8px; border-radius:50px; flex-shrink:0; }
+  .vrow.pop { animation:vpop 13.5s ease-in-out infinite; }
+  .vrow.pop.d2 { animation-delay:4.5s } .vrow.pop.d3 { animation-delay:9s }
+  @keyframes vpop { 0%{opacity:.25; transform:translateX(-8px)} 6%,100%{opacity:1; transform:none} }
+
+  /* Le frasi, per esteso */
+  .phrases { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:26px; }
+  .phrase { display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:8px 15px 8px 11px; box-shadow:var(--shadow); }
+  .phrase .pw { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:0.62rem; color:#08121a; background:#4fd8ff; flex-shrink:0; }
+  .voice-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
+  .voice-note b { color:var(--text); }
+  @media (max-width:860px) { .voice { grid-template-columns:1fr; gap:34px; padding-bottom:0; } }
+  @media (prefers-reduced-motion:reduce) {
+    .echo-ring,.wave i,.vrow.pop { animation:none; }
+    .echo-halo { animation:none; opacity:0; }
+    .say span { animation:none; opacity:0; }
+    .say span:first-child { opacity:1; }
+  }
+
   /* AGENTS */
   .agents { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:44px; }
   .agent { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:30px 26px; box-shadow:var(--shadow); transition:transform .2s,box-shadow .2s; position:relative; overflow:hidden; }
@@ -308,131 +378,131 @@
 </head>
 <body>
 <nav>
-  <a class="logo" href="../../index.html#top"><img src="../../icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
+  <a class="logo" href="../index.html#top"><img src="../icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
   <div class="nav-r">
-    <a class="nav-lnk nav-hide" href="../../index.html#prodotti">Products</a>
-    <a class="nav-lnk nav-hide" href="../../index.html#ai">AI Intelligence</a>
-    <a class="nav-lnk nav-hide" href="../../index.html#prezzi">Pricing</a>
-    <a class="nav-lnk nav-hide" href="../../guide-en.html">Guide</a>
-    <a class="nav-lnk nav-hide" href="../../en/tools/">Tools</a>
-    <a class="nav-lnk nav-hide" href="../../en/blog/">Blog</a>
-    <div class="nav-lang nav-hide"><a href="../../blog/produttivita-in-casa" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
-    <button class="theme-btn" id="tg" aria-label="Toggle theme">◐</button>
-    <a class="nav-cta" href="../../index.html#scarica">Download free</a>
+    <a class="nav-lnk nav-hide" href="../index.html#prodotti">Prodotti</a>
+    <a class="nav-lnk nav-hide" href="../index.html#voce">Voce</a>
+    <a class="nav-lnk nav-hide" href="../index.html#ai">Intelligenza AI</a>
+    <a class="nav-lnk nav-hide" href="../index.html#prezzi">Prezzi</a>
+    <a class="nav-lnk nav-hide" href="../guide.html">Guida</a>
+    <a class="nav-lnk nav-hide" href="../strumenti/">Strumenti</a>
+    <a class="nav-lnk nav-hide" href="../blog/">Blog</a>
+    <div class="nav-lang nav-hide"><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="../en/blog/bambini-difficili-a-tavola" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
+    <button class="theme-btn" id="tg" aria-label="Cambia tema">◐</button>
+    <a class="nav-cta" href="../index.html#scarica">Scarica gratis</a>
   </div>
 </nav>
 <div class="wrap">
 
-<div class="crumbs"><a href="../../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><span class="cur">Productivity at home</span></div>
-<div class="b-head rv">
-  <h1>Getting organised at home: routines, time and clarity for parents</h1>
-  <p>Routines that hold, reminders that land at the right moment and less mental load for whoever keeps the family together.</p>
-</div>
-<div class="b-grid">
-  <a class="b-card rv" href="lavorare-a-blocchi-con-i-figli">
-    <h3>Time blocking with kids at home: getting more done in less time</h3>
-    <p>With children around, time arrives in twenty-minute pieces. Time blocking adapted for parents: realistic blocks, tasks ready to go and a calendar shared with your partner.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="routine-del-mattino-in-famiglia">
-    <h3>The family morning routine: out of the door on time without shouting</h3>
-    <p>Between the alarm and the front door there are forty minutes and twenty things to do. How to build a morning that works even when everyone&#x27;s running late.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="budget-di-casa-spese-condivise">
-    <h3>A household budget as a couple: tracking shared expenses without arguing</h3>
-    <p>Money is one of the top causes of arguments in couples, and usually for lack of information, not lack of money. A simple system to know what the home costs and who paid for what.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="riordino-della-domenica">
-    <h3>The Sunday reset: 30 minutes as a family to start Monday well</h3>
-    <p>Home, calendar, fridge and school bags: a four-block weekly reset done together on Sunday, turning Monday morning from an emergency into a normal day.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="tempo-davanti-agli-schermi-in-famiglia">
-    <h3>Screen time in the family: rules that hold, for adults too</h3>
-    <p>Fights over the tablet, phones at the table, video games until late. How to write screen rules the whole family shares, and make them last longer than a week.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="routine-della-sera-in-famiglia">
-    <h3>The evening routine that actually works for families</h3>
-    <p>Between 6pm and 9pm you decide how tomorrow goes. A four-block routine, with what to prepare in the evening so you don&#x27;t run in the morning.</p>
-    <span class="b-meta"><span>4 min read</span><span>·</span><span>10 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="lista-condivisa-per-coppie">
-    <h3>The shared to-do list a couple actually uses</h3>
-    <p>Shared lists die because they become the place where one person offloads tasks on the other. Five rules for a couple&#x27;s list that stays alive.</p>
-    <span class="b-meta"><span>4 min read</span><span>·</span><span>8 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="promemoria-che-funzionano">
-    <h3>Reminders that work: why most get ignored and how to set them</h3>
-    <p>A reminder at the wrong moment is noise. The rules for family notifications that arrive when you can act — and reach the right person.</p>
-    <span class="b-meta"><span>3 min read</span><span>·</span><span>5 Sep 2026</span></span>
-  </a>
-  <a class="b-card rv" href="carico-mentale-dei-genitori">
-    <h3>The mental load of parents: what it is, why it falls on one person and how to unload it</h3>
-    <p>It&#x27;s not the housework: it&#x27;s thinking about the housework. How to make the invisible load visible and move it from one person&#x27;s head into a shared system.</p>
-    <span class="b-meta"><span>4 min read</span><span>·</span><span>28 Aug 2026</span></span>
-  </a>
-</div>
-<div style="height:24px"></div>
-
+<div class="crumbs"><a href="../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><a href="pasti-e-spesa">Pasti e spesa</a><span>/</span><span class="cur">Bambini difficili a tavola: pianificare i pasti senza fare il cuoco di tre menù</span></div>
+<article class="b-art">
+  <header class="b-art-head rv">
+    <h1>Bambini difficili a tavola: pianificare i pasti senza fare il cuoco di tre menù</h1>
+    <div class="b-art-meta"><span>Il team KidBox</span><span class="sep">·</span><span>Aggiornato il 13 set 2026</span><span class="sep">·</span><span>3 min di lettura</span></div>
+  </header>
+  
 <div class="t-hero rv">
   <div class="device sm"><div class="screen"><div class="notch"></div>
-      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Good morning, Vitto</div><div class="scr-h">Your family</div></div>
+      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Buongiorno, Vittorio</div><div class="scr-h">La tua famiglia</div></div>
       <div class="scr-body">
         <div class="dash">
-          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Health</div><div class="td">Visits &amp; vaccines</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documents</div><div class="td">Important papers</div></div></div>
-          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Family</div></div></div>
-          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Location</div><div class="td">Where everyone is</div></div></div>
-          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Travel</div><div class="td">AI itineraries</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Passwords</div><div class="td">Credentials</div></div></div>
+          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Salute</div><div class="td">Visite e vaccini</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documenti</div><div class="td">Carte importanti</div></div></div>
+          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Famiglia</div></div></div>
+          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Posizione</div><div class="td">Dove sono tutti</div></div></div>
+          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Viaggi</div><div class="td">Itinerari AI</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Password</div><div class="td">Credenziali</div></div></div>
         </div>
       </div>
     </div></div>
   <div class="t-hero-copy">
-    <div class="eyebrow"><span class="dot"></span>Get the app</div>
-    <h2>The whole family, <span class="g">in a single app.</span></h2>
-    <p>The family organiser for iPhone, Android and the browser, end-to-end encrypted. Free for a family of two parents.</p>
+    <div class="eyebrow"><span class="dot"></span>Scarica l'app</div>
+    <h2>Tutta la famiglia, <span class="g">in un'unica app.</span></h2>
+    <p>L'organizer di famiglia per iPhone, Android e browser, cifrato end-to-end. Gratis per una famiglia di due genitori.</p>
     <div class="hero-cta">
-    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
-    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
-    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
+    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
   </div>
 
   </div>
 </div>
+  <div class="b-body">
+<p>Quasi tutti i bambini, a un certo punto, diventano selettivi a tavola. Rifiutano le verdure, vogliono solo cibi di un colore, dichiarano di odiare un piatto che adoravano la settimana prima. Per i genitori il rischio è scivolare nel ruolo di cuoco d'emergenza: una cena per gli adulti, una per il figlio che non mangia niente, una terza per l'altro.</p>
+<p>Questo articolo parla di organizzazione dei pasti. Se un bambino mangia pochissimo, perde peso, ha episodi di vomito o blocchi con molti alimenti, o se ci sono allergie o intolleranze, il riferimento è il pediatra.</p>
+<h2>Un menù, non tre</h2>
+<p>La regola che toglie più fatica: <strong>si cucina un solo menù per tutta la famiglia</strong>. Non significa obbligare il bambino a mangiare tutto, ma evitare di preparare piatti su richiesta. Il modo per renderlo possibile è costruire ogni pasto con un accorgimento semplice.</p>
+<h2>Il piatto sicuro</h2>
+<p>In ogni pasto, accanto al piatto principale, c'è sempre <strong>almeno un alimento che il bambino mangia volentieri</strong>: il pane, la pasta semplice, un formaggio, la frutta. Il bambino sa che non resterà a digiuno, e la tensione a tavola cala. Il resto del piatto è un'offerta, non un obbligo.</p>
+<h2>Scomporre, non nascondere</h2>
+<p>Molti bambini selettivi preferiscono i cibi <strong>separati</strong>: la pasta da una parte, il sugo dall'altra, le verdure non mescolate. Servire i piatti scomposti — ognuno si compone il suo — permette di cucinare una sola cosa e lasciare a ciascuno un margine di scelta.</p>
+<p>Nascondere le verdure nei piatti funziona a volte, ma se il bambino se ne accorge rischia di non fidarsi più di niente.</p>
+<h2>Esposizione ripetuta, senza pressione</h2>
+<p>Un alimento nuovo può essere rifiutato molte volte prima di essere accettato. Proponetelo <strong>spesso, in piccole quantità, senza insistere</strong>: un pezzetto nel piatto, nessun commento se resta lì. La pressione — «almeno assaggialo» ripetuto dieci volte — di solito ottiene l'effetto opposto.</p>
+<h2>Pianificare con i figli</h2>
+<p>I bambini mangiano più volentieri ciò che hanno contribuito a scegliere o preparare. Qualche idea:</p>
+<ul><li>una sera a settimana <strong>sceglie il menù un figlio</strong>, dentro la rotazione della famiglia</li><li>i figli <strong>lavano le verdure</strong> o mescolano l'impasto</li><li>al supermercato ogni figlio sceglie <strong>una verdura o un frutto</strong> da provare</li></ul>
+<p>Il menù settimanale con queste regole sta bene in una <a href="../strumenti/note">nota condivisa</a> tra i genitori, con accanto l'elenco dei piatti sicuri di ciascun figlio: chiunque cucini sa cosa aggiungere senza chiedere. Il metodo del menù è spiegato in <a href="../blog/menu-della-settimana-in-famiglia">il menù della settimana in famiglia</a>.</p>
+<h2>Allergie e intolleranze in un posto sicuro</h2>
+<p>Se un figlio ha allergie o intolleranze diagnosticate, l'informazione deve essere <strong>a disposizione di chiunque cucini</strong> per lui: genitori, nonni, babysitter. Nella scheda <a href="../strumenti/salute">salute</a> di KidBox allergie e referti del figlio restano registrati e consultabili dai membri della famiglia. Con il piano Pro, il Piano Alimentare tiene conto delle allergie registrate nel generare il menù settimanale, e l'<a href="../strumenti/assistente-ai">assistente</a> può suggerire varianti di un piatto — ma non sostituisce il pediatra o un dietista.</p>
+<h2>Cosa evitare</h2>
+<ul><li><strong>Premi con il dolce</strong> per aver finito le verdure: insegna che le verdure sono la punizione e il dolce il premio</li><li><strong>Commenti sul corpo o sul peso</strong> a tavola</li><li><strong>Lotte di potere</strong>: il bambino vince sempre, perché è lui a decidere se ingoiare</li></ul>
+<h2>In sintesi</h2>
+<p>Un solo menù per tutti, con un piatto sicuro in ogni pasto, cibi serviti scomposti, alimenti nuovi proposti spesso e senza pressione, figli coinvolti nella scelta e nella preparazione, allergie registrate dove tutti le trovano. La tavola non diventerà sempre serena. Ma smetterà di essere il campo di battaglia della giornata.</p>
+  </div>
+  <section class="b-sec"><h2>Gli strumenti di cui parla l'articolo</h2><div class="b-tools"><a href="../strumenti/note">📝 Note di famiglia cifrate</a><a href="../strumenti/salute">🩺 Salute dei figli: visite, vaccini, cartella clinica</a><a href="../strumenti/assistente-ai">✨ Assistente AI di famiglia</a></div></section>
+  <section class="b-sec">
+    <h2>Da leggere dopo</h2>
+    <div class="b-grid">
+  <a class="b-card rv" href="cosa-si-mangia-stasera">
+    <h3>«Cosa si mangia stasera?»: come togliersi la domanda una volta per tutte</h3>
+    <p>La domanda arriva ogni giorno alle sei, quando si è più stanchi. Un sistema in quattro pezzi — rotazione, dispensa base, piatti d&#x27;emergenza, lista — che la fa sparire.</p>
+    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
+  </a>
+  <a class="b-card rv" href="menu-della-settimana-in-famiglia">
+    <h3>Il menù della settimana in famiglia: farlo in dieci minuti (o farlo fare all&#x27;AI)</h3>
+    <p>Decidere cosa si mangia una volta a settimana toglie la domanda peggiore della giornata. Un metodo in tre passi, e come il Piano Alimentare di KidBox lo costruisce partendo dalla vostra famiglia.</p>
+    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>6 set 2026</span></span>
+  </a>
+  <a class="b-card rv" href="storia-sanitaria-dei-figli">
+    <h3>La storia sanitaria dei figli: cosa tenere, dove, e perché serve al medico</h3>
+    <p>Vaccini, visite, esami, cure: come costruire uno storico clinico dei figli che qualunque genitore possa mostrare a qualunque medico, in un tocco.</p>
+    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>4 set 2026</span></span>
+  </a>
+    </div>
+    <p class="b-more"><a href="pasti-e-spesa">Altri articoli su Pasti e spesa →</a> &nbsp; <a href="./">Tutti gli articoli →</a></p>
+  </section>
+</article>
 </div>
 
 <section id="scarica" class="wrap">
   <div class="final rv">
-    <div class="kicker">Start today</div>
-    <h2>Your family deserves an app that keeps up.</h2>
-    <p>Free to start. No card required.</p>
+    <div class="kicker">Inizia oggi</div>
+    <h2>La famiglia merita un'app all'altezza.</h2>
+    <p>Gratuita per iniziare. Nessuna carta richiesta.</p>
     <div class="hero-cta" style="justify-content:center">
-    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
-    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
-    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
+    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
   </div>
 
   </div>
   <footer>
     <div class="foot">
-      <span>© 2026 KidBox · Made with ❤️ in Italy</span>
+      <span>© 2026 KidBox · Fatto con ❤️ in Italia</span>
       <div class="foot-links">
-        <a href="../../guide-en.html">Guide</a>
-        <a href="../../en/tools/">Tools</a>
-        <a href="../../en/blog/">Blog</a>
-        <a href="../../index.html#prezzi">Pricing</a>
-        <a href="../../privacy-en.html">Privacy</a>
-        <a href="../../terms-en.html">Terms</a>
-        <a href="../../support-en.html">Support</a>
-        <a href="../../data-deletion-en.html">Data Deletion</a>
-        <a href="#" data-consent-open>Cookie preferences</a>
+        <a href="../guide.html">Guida</a>
+        <a href="../strumenti/">Strumenti</a>
+        <a href="../blog/">Blog</a>
+        <a href="../index.html#prezzi">Prezzi</a>
+        <a href="../privacy.html">Privacy</a>
+        <a href="../terms.html">Termini</a>
+        <a href="../support.html">Supporto</a>
+        <a href="../data-deletion.html">Eliminazione Dati</a>
+        <a href="#" data-consent-open>Preferenze cookie</a>
       </div>
       <div class="foot-social">
-        <a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
+        <a href="https://www.facebook.com/profile.php?id=61574265148948&locale=it_IT" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
         <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
       </div>
     </div>
@@ -451,5 +521,6 @@
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
 </script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Bambini difficili a tavola: pianificare i pasti senza fare il cuoco di tre menù", "description": "Un figlio mangia solo pasta in bianco, l'altro rifiuta tutto ciò che è verde. Come pianificare pasti che vanno bene a tutta la famiglia senza trasformare ogni cena in una trattativa.", "datePublished": "2026-09-13", "dateModified": "2026-09-13", "inLanguage": "it", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/blog/bambini-difficili-a-tavola"}</script>
 </body>
 </html>

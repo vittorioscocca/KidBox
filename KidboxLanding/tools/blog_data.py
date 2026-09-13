@@ -1221,6 +1221,267 @@ Make all the work visible with an inventory written together, look at the list i
 """,
         },
     },
+    # ── Casa e faccende · quarto lotto ─────────────────────────────────
+    {
+        "slug": "tabella-delle-faccende-per-bambini",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "note"], "related": ["faccende-per-eta-bambini", "far-fare-le-faccende-ai-bambini", "rotazione-delle-faccende"],
+        "it": {
+            "title": "La tabella delle faccende per bambini: come costruirla, età per età",
+            "desc": "Figure per chi non legge, caselle per chi va alle elementari, una lista sul telefono per i ragazzi. Come fare una tabella delle faccende che i figli guardano davvero.",
+            "body": """
+Una tabella delle faccende per bambini sembra la cosa più semplice del mondo: un foglio, i nomi, le caselle. Eppure la maggior parte finisce ingiallita sul frigo dopo tre settimane. Il problema quasi mai è l'idea: è che la tabella è fatta per l'adulto che la disegna, non per il bambino che dovrebbe usarla.
+
+Ecco come costruirne una che funzioni, adattata all'età.
+
+## Le regole che valgono sempre
+
+- **Poche voci**: due o tre faccende per bambino, non dieci
+- **Sempre le stesse** per almeno un mese, poi si cambia
+- **Un momento preciso** per ogni faccenda: «dopo cena», non «oggi»
+- **Una definizione di fatto**: cosa vuol dire «camera in ordine»
+- **Alla loro altezza**: letteralmente, dove la vedono senza chiedere
+
+Per scegliere le faccende giuste per ogni età c'è la guida alle [faccende adatte all'età](/blog/faccende-per-eta-bambini).
+
+## 3-5 anni: figure, non parole
+
+I bambini che non leggono hanno bisogno di **immagini**: un disegno o una foto per ogni faccenda — il cesto dei giochi, la tazza nel lavandino, le scarpe al loro posto.
+
+- una riga per faccenda, con la figura
+- una calamita o un adesivo da spostare quando è fatta
+- nessun punteggio: spostare la calamita è già la soddisfazione
+
+A questa età la tabella è anche un modo di imparare la sequenza della giornata.
+
+## 6-9 anni: caselle e settimana
+
+Alle elementari funziona la tabella settimanale classica: faccende sulle righe, giorni sulle colonne, una spunta per casella. Qualche accorgimento:
+
+- **plastificata**, con un pennarello cancellabile, così si riusa
+- **una tabella per figlio**, per evitare confronti e liti
+- la domenica sera si guarda insieme e si ricomincia
+
+Premi per ogni casella meglio di no: il riconoscimento è vedere la settimana piena.
+
+## 10-13 anni: dalla carta al telefono
+
+Verso le medie la tabella di carta inizia a sembrare «da piccoli». Se il ragazzo ha il suo telefono, una [lista di cose da fare](/strumenti/to-do) condivisa prende il suo posto: ogni faccenda è una voce assegnata con un promemoria all'ora giusta, e il genitore la vede spuntata senza chiedere. Perché la voce sia sua, il ragazzo deve essere membro della famiglia su KidBox con il proprio account; se non lo è, si può comunque indicare a quale figlio si riferisce ogni voce.
+
+## Adolescenti: niente tabella
+
+Con gli adolescenti la tabella vera e propria non funziona più: si passa a **aree di responsabilità** concordate insieme. Lo spieghiamo in [faccende per adolescenti](/blog/faccende-per-adolescenti).
+
+## Tabella per più figli
+
+Con più figli di età diverse:
+
+- ogni figlio ha la **sua** tabella, nel formato adatto alla sua età
+- le faccende che ruotano tra fratelli seguono una [rotazione chiara](/blog/rotazione-delle-faccende), scritta
+- le regole comuni — cosa succede se una faccenda salta — stanno in una [nota condivisa](/strumenti/note) tra i genitori, così entrambi rispondono allo stesso modo
+
+## I genitori prima dei figli
+
+Una tabella funziona solo se gli adulti la rispettano: se un giorno la faccenda la fa il genitore «perché si fa prima», il messaggio è che la tabella è facoltativa. Meglio una faccenda fatta male dal bambino che fatta bene da un adulto.
+
+## In sintesi
+
+Poche voci, sempre le stesse, con un momento preciso. Figure per i piccoli, caselle settimanali alle elementari, una lista sul telefono per i ragazzi, aree di responsabilità per gli adolescenti. La tabella migliore non è la più bella: è quella che il bambino guarda senza che nessuno glielo dica.
+""",
+        },
+        "en": {
+            "title": "A chore chart for kids: how to build one, age by age",
+            "desc": "Pictures for non-readers, tick boxes for primary school, a phone list for older kids. How to make a chore chart children actually look at.",
+            "body": """
+A chore chart for kids looks like the simplest thing in the world: a sheet, names, boxes. Yet most end up yellowing on the fridge after three weeks. The problem is hardly ever the idea: it's that the chart is made for the adult who draws it, not the child meant to use it.
+
+Here's how to build one that works, adapted to age.
+
+## Rules that always apply
+
+- **Few items**: two or three chores per child, not ten
+- **Always the same** for at least a month, then change
+- **A precise moment** for each chore: "after dinner", not "today"
+- **A definition of done**: what "tidy room" means
+- **At their height**: literally, where they can see it without asking
+
+To choose the right chores for each age, see the guide to [age-appropriate chores](/en/blog/faccende-per-eta-bambini).
+
+## Ages 3-5: pictures, not words
+
+Children who can't read need **images**: a drawing or photo for each chore — the toy basket, the cup in the sink, shoes in their place.
+
+- one row per chore, with the picture
+- a magnet or sticker to move when it's done
+- no points: moving the magnet is satisfaction enough
+
+At this age the chart is also a way of learning the shape of the day.
+
+## Ages 6-9: boxes and the week
+
+In primary school the classic weekly chart works: chores down the side, days across the top, a tick per box. A few tips:
+
+- **laminated**, with a wipe-off pen, so it can be reused
+- **one chart per child**, to avoid comparisons and squabbles
+- on Sunday evening look at it together and start again
+
+Better no reward per box: the recognition is seeing a full week.
+
+## Ages 10-13: from paper to phone
+
+Towards secondary school a paper chart starts to feel "babyish". If your child has their own phone, a shared [to-do list](/en/tools/to-do) takes its place: each chore is an assigned item with a reminder at the right time, and the parent sees it ticked without asking. For the item to be theirs, the child needs to be a member of the family in KidBox with their own account; if not, you can still note which child each item is about.
+
+## Teenagers: no chart
+
+With teenagers a proper chart stops working: you move to **areas of responsibility** agreed together. We explain it in [chores for teenagers](/en/blog/faccende-per-adolescenti).
+
+## A chart for several children
+
+With several children of different ages:
+
+- each child has **their own** chart, in the format that suits their age
+- chores that rotate between siblings follow a clear, written [rotation](/en/blog/rotazione-delle-faccende)
+- shared rules — what happens if a chore is skipped — live in a [shared note](/en/tools/note) between parents, so both respond the same way
+
+## Parents first
+
+A chart only works if the adults respect it: if one day a parent does the chore "because it's quicker", the message is that the chart is optional. Better a chore done badly by the child than done well by an adult.
+
+## In short
+
+Few items, always the same, with a precise moment. Pictures for little ones, weekly boxes in primary school, a phone list for older kids, areas of responsibility for teenagers. The best chart isn't the prettiest: it's the one children look at without being told.
+""",
+        },
+    },
+    {
+        "slug": "rotazione-delle-faccende",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "calendario"], "related": ["tabella-delle-faccende-per-bambini", "piano-settimanale-delle-pulizie", "faccende-tra-adulti"],
+        "it": {
+            "title": "Come costruire una rotazione delle faccende che la famiglia usa davvero",
+            "desc": "La rotazione toglie il «perché sempre io?», ma solo se è semplice, scritta e prevedibile. Tre schemi di rotazione e le regole per farli durare.",
+            "body": """
+In ogni famiglia ci sono faccende che nessuno vuole: il bagno, la spazzatura, la lettiera del gatto. Assegnarle sempre alla stessa persona genera rancore; decidere ogni volta chi tocca genera discussioni. La rotazione risolve entrambi i problemi — a patto che sia costruita bene.
+
+## Quando conviene ruotare, e quando no
+
+La rotazione non è sempre la risposta giusta:
+
+- **Ruotare** conviene per le faccende sgradite e uguali per tutti: bagno, spazzatura, lavastoviglie, animali.
+- **Non ruotare** conviene per le aree che richiedono continuità o competenza: le bollette, la manutenzione dell'auto, la spesa settimanale. Lì è meglio un titolare fisso, come spieghiamo in [faccende tra adulti](/blog/faccende-tra-adulti).
+
+Mescolare le due cose — ruotare anche le bollette — porta a scadenze perse.
+
+## Tre schemi di rotazione
+
+### 1. Rotazione settimanale semplice
+
+Ogni persona ha un blocco di faccende per una settimana, poi si scala. Con tre persone e tre blocchi:
+
+- **settimana 1**: A bagno, B spazzatura, C lavastoviglie
+- **settimana 2**: A spazzatura, B lavastoviglie, C bagno
+- **settimana 3**: A lavastoviglie, B bagno, C spazzatura
+
+È lo schema più facile da ricordare, e il più adatto alle famiglie con figli.
+
+### 2. Rotazione a giorni fissi
+
+Per le faccende quotidiane — sparecchiare, dar da mangiare al cane — ognuno ha i suoi giorni fissi: lunedì e giovedì a te, martedì e venerdì a me. Non cambia mai, quindi non c'è niente da ricordare.
+
+### 3. Rotazione pesata
+
+Non tutte le faccende pesano uguale. Si dà a ciascuna un peso — bagno 3, spazzatura 1 — e si ruota in modo che ognuno abbia più o meno lo stesso totale. Funziona bene tra adulti o con figli grandi, quando le discussioni sull'equità sono frequenti.
+
+## Le regole che la fanno durare
+
+### Scritta, in un posto che vedono tutti
+
+Una rotazione a memoria dura due settimane. Va scritta: nel [calendario](/strumenti/calendario) di famiglia come evento settimanale («Settimana bagno: Marco»), oppure come [cose da fare](/strumenti/to-do) assegnate, con il promemoria che arriva a chi tocca quella settimana. Nessuno deve più chiedere «di chi è il turno?».
+
+### Gli scambi sono permessi, se scritti
+
+Chi ha un impegno può scambiare il turno — ma lo scambio si scrive, e si riassegna la voce. Uno scambio a voce diventa, dopo una settimana, «io non me lo ricordo».
+
+### Nessuno rifà il lavoro dell'altro
+
+Se il bagno è fatto male, lo si dice a chi aveva il turno, e lo sistema lui. Se un genitore interviene e lo rifà, la rotazione ha appena perso un partecipante.
+
+### Si rivede ogni mese
+
+Dopo un mese: la rotazione è equa? C'è una faccenda che salta sempre? Le età dei figli sono cambiate? Dieci minuti di revisione evitano che la rotazione diventi un'altra fonte di lamentele.
+
+## Con i figli piccoli
+
+I bambini sotto i sette-otto anni partecipano meglio a rotazioni **brevi e visibili** — faccende a giorni fissi, con una [tabella](/blog/tabella-delle-faccende-per-bambini) a figure — che a turni settimanali astratti.
+
+## In sintesi
+
+Ruotare le faccende sgradite, tenere un titolare per quelle che richiedono continuità. Scegliere uno schema — settimanale, a giorni fissi o pesato —, scriverlo dove tutti lo vedono, permettere scambi solo per iscritto, non rifare il lavoro altrui e rivederlo ogni mese. La rotazione non rende il bagno piacevole. Rende giusto chi lo pulisce.
+""",
+        },
+        "en": {
+            "title": "How to build a chore rotation your family will actually use",
+            "desc": "A rotation removes \"why always me?\", but only if it's simple, written and predictable. Three rotation schemes and the rules that make them last.",
+            "body": """
+Every family has chores nobody wants: the bathroom, the bins, the cat's litter tray. Always giving them to the same person breeds resentment; deciding each time whose turn it is breeds arguments. A rotation fixes both — provided it's built well.
+
+## When to rotate, and when not
+
+A rotation isn't always the right answer:
+
+- **Rotate** unpleasant chores that are the same for everyone: bathroom, bins, dishwasher, pets.
+- **Don't rotate** areas that need continuity or know-how: bills, car maintenance, the weekly shop. There a fixed owner works better, as we explain in [chores between adults](/en/blog/faccende-tra-adulti).
+
+Mixing the two — rotating the bills too — leads to missed deadlines.
+
+## Three rotation schemes
+
+### 1. Simple weekly rotation
+
+Each person has a block of chores for a week, then it shifts. With three people and three blocks:
+
+- **week 1**: A bathroom, B bins, C dishwasher
+- **week 2**: A bins, B dishwasher, C bathroom
+- **week 3**: A dishwasher, B bathroom, C bins
+
+It's the easiest scheme to remember, and the best fit for families with children.
+
+### 2. Fixed-day rotation
+
+For daily chores — clearing the table, feeding the dog — each person has fixed days: Monday and Thursday are yours, Tuesday and Friday mine. It never changes, so there's nothing to remember.
+
+### 3. Weighted rotation
+
+Not all chores weigh the same. Give each a weight — bathroom 3, bins 1 — and rotate so everyone has roughly the same total. It works well between adults or with older children, when fairness arguments are frequent.
+
+## The rules that make it last
+
+### Written, where everyone can see it
+
+A rotation kept in memory lasts two weeks. It needs writing down: in the family [calendar](/en/tools/calendario) as a weekly event ("Bathroom week: Mark"), or as assigned [to-dos](/en/tools/to-do), with the reminder going to whoever's turn it is that week. Nobody has to ask "whose turn is it?" again.
+
+### Swaps allowed, if written
+
+Someone with a commitment can swap — but the swap gets written down, and the item reassigned. A verbal swap becomes, a week later, "I don't remember that".
+
+### Nobody redoes someone else's work
+
+If the bathroom is done badly, tell whoever had the turn, and they fix it. If a parent steps in and redoes it, the rotation has just lost a participant.
+
+### Review it monthly
+
+After a month: is the rotation fair? Is there a chore that always gets skipped? Have the children's ages changed? Ten minutes of review stop the rotation becoming another source of complaints.
+
+## With young children
+
+Children under seven or eight join in better with **short, visible** rotations — fixed-day chores, with a picture [chart](/en/blog/tabella-delle-faccende-per-bambini) — than with abstract weekly turns.
+
+## In short
+
+Rotate the unpleasant chores, keep a fixed owner for the ones needing continuity. Pick a scheme — weekly, fixed-day or weighted —, write it where everyone sees it, allow swaps only in writing, don't redo others' work and review it monthly. A rotation doesn't make the bathroom pleasant. It makes who cleans it fair.
+""",
+        },
+    },
 ]
 
 # Le altre categorie vivono in un modulo ciascuna, per tenere i file leggibili.

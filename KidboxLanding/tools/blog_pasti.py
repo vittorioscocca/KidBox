@@ -859,4 +859,112 @@ Prep components not dishes, two hours on Sunday with the oven doing the work, st
 """,
         },
     },
+    # ── Pasti e spesa · quarto lotto ───────────────────────────────────
+    {
+        "slug": "bambini-difficili-a-tavola",
+        "category": "pasti-e-spesa", "date": "2026-09-13",
+        "tools": ["note", "salute", "assistente-ai"], "related": ["cosa-si-mangia-stasera", "menu-della-settimana-in-famiglia", "storia-sanitaria-dei-figli"],
+        "it": {
+            "title": "Bambini difficili a tavola: pianificare i pasti senza fare il cuoco di tre menù",
+            "desc": "Un figlio mangia solo pasta in bianco, l'altro rifiuta tutto ciò che è verde. Come pianificare pasti che vanno bene a tutta la famiglia senza trasformare ogni cena in una trattativa.",
+            "body": """
+Quasi tutti i bambini, a un certo punto, diventano selettivi a tavola. Rifiutano le verdure, vogliono solo cibi di un colore, dichiarano di odiare un piatto che adoravano la settimana prima. Per i genitori il rischio è scivolare nel ruolo di cuoco d'emergenza: una cena per gli adulti, una per il figlio che non mangia niente, una terza per l'altro.
+
+Questo articolo parla di organizzazione dei pasti. Se un bambino mangia pochissimo, perde peso, ha episodi di vomito o blocchi con molti alimenti, o se ci sono allergie o intolleranze, il riferimento è il pediatra.
+
+## Un menù, non tre
+
+La regola che toglie più fatica: **si cucina un solo menù per tutta la famiglia**. Non significa obbligare il bambino a mangiare tutto, ma evitare di preparare piatti su richiesta. Il modo per renderlo possibile è costruire ogni pasto con un accorgimento semplice.
+
+## Il piatto sicuro
+
+In ogni pasto, accanto al piatto principale, c'è sempre **almeno un alimento che il bambino mangia volentieri**: il pane, la pasta semplice, un formaggio, la frutta. Il bambino sa che non resterà a digiuno, e la tensione a tavola cala. Il resto del piatto è un'offerta, non un obbligo.
+
+## Scomporre, non nascondere
+
+Molti bambini selettivi preferiscono i cibi **separati**: la pasta da una parte, il sugo dall'altra, le verdure non mescolate. Servire i piatti scomposti — ognuno si compone il suo — permette di cucinare una sola cosa e lasciare a ciascuno un margine di scelta.
+
+Nascondere le verdure nei piatti funziona a volte, ma se il bambino se ne accorge rischia di non fidarsi più di niente.
+
+## Esposizione ripetuta, senza pressione
+
+Un alimento nuovo può essere rifiutato molte volte prima di essere accettato. Proponetelo **spesso, in piccole quantità, senza insistere**: un pezzetto nel piatto, nessun commento se resta lì. La pressione — «almeno assaggialo» ripetuto dieci volte — di solito ottiene l'effetto opposto.
+
+## Pianificare con i figli
+
+I bambini mangiano più volentieri ciò che hanno contribuito a scegliere o preparare. Qualche idea:
+
+- una sera a settimana **sceglie il menù un figlio**, dentro la rotazione della famiglia
+- i figli **lavano le verdure** o mescolano l'impasto
+- al supermercato ogni figlio sceglie **una verdura o un frutto** da provare
+
+Il menù settimanale con queste regole sta bene in una [nota condivisa](/strumenti/note) tra i genitori, con accanto l'elenco dei piatti sicuri di ciascun figlio: chiunque cucini sa cosa aggiungere senza chiedere. Il metodo del menù è spiegato in [il menù della settimana in famiglia](/blog/menu-della-settimana-in-famiglia).
+
+## Allergie e intolleranze in un posto sicuro
+
+Se un figlio ha allergie o intolleranze diagnosticate, l'informazione deve essere **a disposizione di chiunque cucini** per lui: genitori, nonni, babysitter. Nella scheda [salute](/strumenti/salute) di KidBox allergie e referti del figlio restano registrati e consultabili dai membri della famiglia. Con il piano Pro, il Piano Alimentare tiene conto delle allergie registrate nel generare il menù settimanale, e l'[assistente](/strumenti/assistente-ai) può suggerire varianti di un piatto — ma non sostituisce il pediatra o un dietista.
+
+## Cosa evitare
+
+- **Premi con il dolce** per aver finito le verdure: insegna che le verdure sono la punizione e il dolce il premio
+- **Commenti sul corpo o sul peso** a tavola
+- **Lotte di potere**: il bambino vince sempre, perché è lui a decidere se ingoiare
+
+## In sintesi
+
+Un solo menù per tutti, con un piatto sicuro in ogni pasto, cibi serviti scomposti, alimenti nuovi proposti spesso e senza pressione, figli coinvolti nella scelta e nella preparazione, allergie registrate dove tutti le trovano. La tavola non diventerà sempre serena. Ma smetterà di essere il campo di battaglia della giornata.
+""",
+        },
+        "en": {
+            "title": "Picky eaters: planning meals without cooking three different menus",
+            "desc": "One child eats only plain pasta, the other refuses anything green. How to plan meals that work for the whole family without turning every dinner into a negotiation.",
+            "body": """
+Almost all children, at some point, become picky at the table. They refuse vegetables, want food of only one colour, declare they hate a dish they loved last week. For parents the risk is sliding into the role of short-order cook: one dinner for the adults, one for the child who eats nothing, a third for the other.
+
+This article is about meal organisation. If a child eats very little, loses weight, vomits or refuses many foods, or if there are allergies or intolerances, the right reference is the paediatrician.
+
+## One menu, not three
+
+The rule that saves the most effort: **cook one menu for the whole family**. It doesn't mean forcing the child to eat everything, but not cooking dishes on request. The way to make it possible is to build every meal with one simple trick.
+
+## The safe food
+
+At every meal, alongside the main dish, there's always **at least one food the child happily eats**: bread, plain pasta, a cheese, fruit. The child knows they won't go hungry, and tension at the table drops. The rest of the plate is an offer, not an obligation.
+
+## Deconstruct, don't hide
+
+Many picky eaters prefer foods **separate**: pasta on one side, sauce on the other, vegetables not mixed in. Serving dishes deconstructed — everyone assembles their own — lets you cook one thing and still give everyone some choice.
+
+Hiding vegetables in dishes sometimes works, but if the child notices, they may stop trusting anything.
+
+## Repeated exposure, without pressure
+
+A new food can be refused many times before being accepted. Offer it **often, in small amounts, without insisting**: a small piece on the plate, no comment if it stays there. Pressure — "at least taste it" repeated ten times — usually has the opposite effect.
+
+## Plan with the children
+
+Children eat more willingly what they helped choose or prepare. A few ideas:
+
+- one evening a week **a child chooses the menu**, within the family rotation
+- children **wash the vegetables** or stir the mixture
+- at the supermarket each child picks **one vegetable or fruit** to try
+
+The weekly menu with these rules fits well in a [shared note](/en/tools/note) between parents, next to each child's list of safe foods: whoever's cooking knows what to add without asking. The menu method is explained in [the family weekly menu](/en/blog/menu-della-settimana-in-famiglia).
+
+## Allergies and intolerances somewhere safe
+
+If a child has diagnosed allergies or intolerances, that information must be **available to anyone cooking** for them: parents, grandparents, babysitters. In KidBox's [health](/en/tools/salute) section the child's allergies and reports stay recorded and readable by family members. With the Pro plan, the Meal Plan takes recorded allergies into account when generating the weekly menu, and the [assistant](/en/tools/assistente-ai) can suggest variations of a dish — but neither replaces a paediatrician or dietitian.
+
+## What to avoid
+
+- **Dessert as a reward** for finishing vegetables: it teaches that vegetables are the punishment and dessert the prize
+- **Comments about body or weight** at the table
+- **Power struggles**: the child always wins, because they decide whether to swallow
+
+## In short
+
+One menu for everyone, with a safe food at every meal, dishes served deconstructed, new foods offered often and without pressure, children involved in choosing and preparing, allergies recorded where everyone can find them. The table won't always be peaceful. But it will stop being the day's battlefield.
+""",
+        },
+    },
 ]

@@ -1111,4 +1111,271 @@ Logistics follow the relationship. The other parent hears it from you, informati
 """,
         },
     },
+    # ── Genitori separati · quarto lotto ───────────────────────────────
+    {
+        "slug": "comunicazione-tra-genitori-separati",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["chat", "calendario", "note"], "related": ["confini-nella-co-genitorialita", "genitorialita-parallela", "calendario-di-affido"],
+        "it": {
+            "title": "Comunicare con l'ex sui figli: come scrivere messaggi che non accendono liti",
+            "desc": "Un messaggio sbagliato sull'orario del cambio casa può diventare una lite di tre giorni. Una struttura semplice per messaggi brevi, chiari e neutri, con esempi prima e dopo.",
+            "body": """
+Dopo una separazione, la maggior parte dei conflitti tra genitori non nasce dalle grandi decisioni: nasce dai messaggi di tutti i giorni. Un orario cambiato, una richiesta fatta male, una frase che l'altro legge come un'accusa. E una volta scritto, un messaggio resta — e si rilegge.
+
+Scrivere bene all'altro genitore è un'abilità che si impara. Questa guida propone una struttura semplice.
+
+## Il principio: informare, non convincere
+
+Un messaggio tra genitori separati ha quasi sempre uno di questi scopi: **informare** (c'è la recita giovedì), **chiedere** (puoi tenere i bambini sabato?), **confermare** (va bene per le 17). Quasi mai serve convincere l'altro di qualcosa, e i messaggi che provano a farlo sono quelli che degenerano.
+
+## La struttura: breve, informativo, gentile, fermo
+
+Un buon messaggio ha quattro caratteristiche:
+
+- **Breve**: tre-quattro righe. I messaggi lunghi contengono sempre qualcosa di troppo.
+- **Informativo**: fatti, date, orari, cosa serve. Niente opinioni sull'altro.
+- **Gentile**: un saluto, un grazie. Non per ingraziarsi l'altro, ma per abbassare la temperatura.
+- **Fermo**: chiaro su cosa si chiede o si comunica, senza giustificazioni infinite.
+
+## Prima e dopo
+
+**Prima:**
+
+> Come al solito non mi hai detto niente della gita e l'ho saputo dalla maestra. Sabato te li porto alle 18 perché la gita finisce tardi, se per te è un problema pazienza.
+
+**Dopo:**
+
+> Ciao, sabato la gita di classe finisce alle 17:30: ti porto i bambini alle 18 invece che alle 17. Ho messo la gita nel calendario. Grazie.
+
+Il secondo messaggio dice tutto quello che serve e non contiene niente a cui rispondere male.
+
+## Cosa lasciare fuori
+
+- **Il passato**: «come al solito», «l'ultima volta», «sempre»
+- **Le parole assolute**: mai, sempre, niente
+- **Le supposizioni sulle intenzioni**: «l'hai fatto apposta»
+- **I nuovi partner**, salvo che la questione riguardi davvero la logistica dei figli
+- **I figli come messaggeri**: nessun «dillo a tuo padre»
+
+## Quando si riceve un messaggio aggressivo
+
+Si risponde **solo alla parte pratica**, con la stessa struttura, e si ignora il resto. Se non c'è una parte pratica, spesso non serve rispondere. Aspettare qualche ora prima di rispondere a un messaggio che fa arrabbiare è quasi sempre una buona idea.
+
+## Un solo canale, accanto alle informazioni
+
+Molti messaggi si possono evitare del tutto quando le informazioni sono già in un posto che entrambi vedono. Se la gita è nel [calendario](/strumenti/calendario) condiviso, il messaggio diventa superfluo. Se le istruzioni per un farmaco sono in una [nota](/strumenti/note) condivisa, nessuno deve chiederle.
+
+Per i messaggi che restano, conviene **un solo canale scritto**, dedicato alla logistica dei figli: una [chat di famiglia](/strumenti/chat) separata dalle chat personali tiene le conversazioni in ordine e accanto a calendario e documenti.
+
+## Quando serve aiuto
+
+Se ogni scambio, anche ben scritto, degenera, può aiutare un mediatore familiare, oppure passare a un modello di [genitorialità parallela](/blog/genitorialita-parallela) con contatti ridotti al minimo. In presenza di minacce o violenza, i riferimenti sono l'avvocato e le autorità competenti.
+
+## In sintesi
+
+Informare, non convincere. Messaggi brevi, informativi, gentili e fermi, senza passato, parole assolute e supposizioni. Rispondere solo alla parte pratica, spostare le informazioni in un calendario e in note condivise, e usare un solo canale scritto. I figli non leggono i vostri messaggi — ma sentono il clima che creano.
+""",
+        },
+        "en": {
+            "title": "Talking to your ex about the kids: writing messages that don't start fights",
+            "desc": "One wrong message about handover time can become a three-day row. A simple structure for short, clear, neutral messages, with before-and-after examples.",
+            "body": """
+After a separation, most conflict between parents doesn't come from the big decisions: it comes from everyday messages. A changed time, a badly phrased request, a sentence the other person reads as an accusation. And once written, a message stays — and gets reread.
+
+Writing well to your children's other parent is a skill that can be learned. This guide offers a simple structure.
+
+## The principle: inform, don't persuade
+
+A message between separated parents almost always has one of these purposes: **informing** (the school play is on Thursday), **asking** (can you have the kids on Saturday?), **confirming** (5pm is fine). It almost never needs to persuade the other person of anything, and messages that try are the ones that escalate.
+
+## The structure: brief, informative, friendly, firm
+
+A good message has four qualities:
+
+- **Brief**: three or four lines. Long messages always contain something extra.
+- **Informative**: facts, dates, times, what's needed. No opinions about the other person.
+- **Friendly**: a hello, a thank you. Not to win them over, but to lower the temperature.
+- **Firm**: clear about what you're asking or saying, without endless justification.
+
+## Before and after
+
+**Before:**
+
+> As usual you didn't tell me anything about the trip and I heard it from the teacher. I'll bring them on Saturday at 6 because the trip finishes late, if that's a problem for you, too bad.
+
+**After:**
+
+> Hi, Saturday's class trip finishes at 5:30: I'll bring the kids at 6 instead of 5. I've put the trip in the calendar. Thanks.
+
+The second message says everything needed and contains nothing to respond badly to.
+
+## What to leave out
+
+- **The past**: "as usual", "last time", "always"
+- **Absolute words**: never, always, nothing
+- **Assumptions about intentions**: "you did it on purpose"
+- **New partners**, unless the issue genuinely concerns the children's logistics
+- **Children as messengers**: no "tell your dad"
+
+## When you get an aggressive message
+
+Reply **only to the practical part**, with the same structure, and ignore the rest. If there's no practical part, often no reply is needed. Waiting a few hours before answering a message that makes you angry is almost always a good idea.
+
+## One channel, next to the information
+
+Many messages can be avoided entirely when the information is already somewhere both of you can see. If the trip is in the shared [calendar](/en/tools/calendario), the message becomes unnecessary. If the instructions for a medicine are in a shared [note](/en/tools/note), nobody has to ask.
+
+For the messages that remain, **one written channel** dedicated to the children's logistics works best: a [family chat](/en/tools/chat) separate from personal chats keeps conversations in order and next to the calendar and documents.
+
+## When you need help
+
+If every exchange, even well written, escalates, a family mediator can help, or moving to a [parallel parenting](/en/blog/genitorialita-parallela) model with minimal contact. Where there are threats or violence, the right references are a lawyer and the relevant authorities.
+
+## In short
+
+Inform, don't persuade. Brief, informative, friendly and firm messages, without the past, absolute words or assumptions. Reply only to the practical part, move information into a shared calendar and notes, and use a single written channel. Children don't read your messages — but they feel the climate those messages create.
+""",
+        },
+    },
+    {
+        "slug": "calendario-di-affido",
+        "category": "genitori-separati", "date": "2026-09-13",
+        "tools": ["calendario", "to-do"], "related": ["calendario-genitori-separati", "calendario-famiglia-ricomposta", "comunicazione-tra-genitori-separati"],
+        "it": {
+            "title": "Gli schemi di calendario per l'affido condiviso: settimane alterne, 2-2-3, 5-2 e gli altri",
+            "desc": "Come funzionano gli schemi più usati per dividere il tempo dei figli tra due case, per quali età e situazioni si prestano, e come trasformarli in un calendario leggibile.",
+            "body": """
+Quando i genitori si separano con affido condiviso, una delle prime cose da definire è **come si divide il tempo** dei figli tra le due case. Esistono alcuni schemi ricorrenti, ognuno con vantaggi e limiti. Conoscerli aiuta a discuterne con più chiarezza — con l'altro genitore, con il mediatore, con l'avvocato.
+
+Questo articolo descrive gli schemi dal punto di vista organizzativo. Tempi e modalità dell'affido vanno concordati tra i genitori con i propri legali e, dove previsto, stabiliti dal giudice, tenendo conto prima di tutto dell'interesse dei figli.
+
+## Settimane alterne (7-7)
+
+I figli stanno una settimana intera con un genitore e la successiva con l'altro, con il cambio sempre nello stesso giorno.
+
+- **Pro**: pochi passaggi, settimane lunghe e stabili, facile da ricordare
+- **Contro**: sette giorni senza vedere un genitore possono essere tanti, soprattutto per i più piccoli
+- **Si presta**: a figli in età scolare o più grandi, con case vicine alla scuola
+
+Una variante comune aggiunge **una cena a metà settimana** con l'altro genitore.
+
+## 2-2-3
+
+Lunedì e martedì con un genitore, mercoledì e giovedì con l'altro, poi un weekend lungo di tre giorni alternato. La settimana dopo lo schema si inverte.
+
+- **Pro**: nessuno dei due passa più di tre giorni senza vedere i figli
+- **Contro**: molti passaggi, che richiedono case vicine e buona collaborazione
+- **Si presta**: a bambini piccoli, per i quali una settimana è lunga
+
+## 2-2-5-5
+
+Due giorni fissi con ciascun genitore durante la settimana (per esempio lunedì-martedì e mercoledì-giovedì, sempre uguali), e weekend alternati da venerdì a lunedì.
+
+- **Pro**: i giorni feriali sono sempre gli stessi, e questo aiuta con attività e lavoro
+- **Contro**: blocchi di cinque giorni per ciascun genitore a settimane alterne
+- **Si presta**: a famiglie in cui ogni genitore ha giorni fissi più liberi
+
+## 5-2 e weekend alterni
+
+I figli vivono prevalentemente in una casa durante la settimana e stanno con l'altro genitore nei weekend, tutti o a settimane alterne, spesso con un pomeriggio infrasettimanale.
+
+- **Pro**: una sola base per la settimana scolastica
+- **Contro**: un genitore rischia di diventare «quello del weekend»
+- **Si presta**: quando le case sono lontane o gli orari di lavoro sono molto diversi
+
+## Vacanze e festività
+
+Qualunque schema si scelga, le vacanze funzionano quasi sempre a parte: estate divisa in blocchi, Natale e Capodanno alternati negli anni, compleanni e feste secondo accordi specifici. Vanno decisi e scritti **all'inizio dell'anno**, non a dicembre.
+
+## Dallo schema al calendario
+
+Uno schema ben scelto non serve a niente se nessuno sa, un martedì qualunque, dove dormono i figli. Trasformatelo in un [calendario condiviso](/strumenti/calendario):
+
+- un evento per ogni **periodo** con un genitore, con il nome dei figli
+- un evento per ogni **passaggio**, con orario e luogo
+- le **eccezioni** e gli scambi scritti come eventi, appena concordati
+- le **vacanze** inserite per l'intero anno
+
+Le cose da portare al cambio casa — il farmaco, la divisa, i libri — funzionano bene come [cose da fare](/strumenti/to-do) assegnate a chi prepara la borsa, con un promemoria la sera prima.
+
+Come costruire e mantenere il calendario nel tempo lo spieghiamo in [il calendario per genitori separati](/blog/calendario-genitori-separati).
+
+## Rivedere lo schema
+
+Uno schema adatto a un bambino di tre anni raramente è adatto allo stesso bambino a dodici. Scuola, sport e amicizie cambiano le esigenze. Rivedere lo schema — nei modi previsti dagli accordi — è normale, e spesso necessario.
+
+## In sintesi
+
+Settimane alterne per stabilità, 2-2-3 per contatti frequenti con i piccoli, 2-2-5-5 per giorni feriali fissi, 5-2 quando le case sono lontane. Le vacanze a parte, decise a inizio anno. E qualunque schema, scritto in un calendario che entrambi i genitori leggono uguale.
+""",
+        },
+        "en": {
+            "title": "Shared custody schedules: week on week off, 2-2-3, 5-2 and more",
+            "desc": "How the most common schedules for dividing children's time between two homes work, which ages and situations they suit, and how to turn them into a readable calendar.",
+            "body": """
+When parents separate with shared custody, one of the first things to settle is **how the children's time is divided** between the two homes. There are a few recurring schedules, each with advantages and limits. Knowing them helps you discuss it more clearly — with the other parent, a mediator, a lawyer.
+
+This article describes the schedules from an organisational point of view. Custody time and arrangements should be agreed between parents with their lawyers and, where applicable, set by the court, putting the children's interests first.
+
+## Week on, week off (7-7)
+
+The children spend a whole week with one parent and the next with the other, always switching on the same day.
+
+- **Pros**: few handovers, long stable weeks, easy to remember
+- **Cons**: seven days without seeing a parent can be a lot, especially for young children
+- **Suits**: school-age children or older, with both homes near school
+
+A common variant adds **a midweek dinner** with the other parent.
+
+## 2-2-3
+
+Monday and Tuesday with one parent, Wednesday and Thursday with the other, then an alternating three-day long weekend. The following week the pattern flips.
+
+- **Pros**: neither parent goes more than three days without seeing the children
+- **Cons**: lots of handovers, which need nearby homes and good cooperation
+- **Suits**: young children, for whom a week is long
+
+## 2-2-5-5
+
+Two fixed weekdays with each parent (for example Monday-Tuesday and Wednesday-Thursday, always the same), and alternating weekends from Friday to Monday.
+
+- **Pros**: weekdays are always the same, which helps with activities and work
+- **Cons**: five-day blocks with each parent in alternate weeks
+- **Suits**: families where each parent has fixed days that are freer
+
+## 5-2 and alternate weekends
+
+The children live mainly in one home during the week and spend weekends with the other parent, every weekend or alternate ones, often with a midweek afternoon.
+
+- **Pros**: one base for the school week
+- **Cons**: one parent risks becoming "the weekend parent"
+- **Suits**: when homes are far apart or work schedules very different
+
+## Holidays and festivities
+
+Whatever schedule you choose, holidays almost always work separately: summer split into blocks, Christmas and New Year alternating by year, birthdays and celebrations by specific agreement. Decide and write them down **at the start of the year**, not in December.
+
+## From schedule to calendar
+
+A well-chosen schedule is useless if nobody knows, on an ordinary Tuesday, where the children are sleeping. Turn it into a [shared calendar](/en/tools/calendario):
+
+- one event for each **period** with a parent, with the children's names
+- one event for each **handover**, with time and place
+- **exceptions** and swaps written as events, as soon as they're agreed
+- **holidays** entered for the whole year
+
+Things to bring at handover — the medicine, the kit, the books — work well as [to-dos](/en/tools/to-do) assigned to whoever packs the bag, with a reminder the evening before.
+
+How to build and maintain the calendar over time is covered in [the calendar for separated parents](/en/blog/calendario-genitori-separati).
+
+## Reviewing the schedule
+
+A schedule that suits a three-year-old rarely suits the same child at twelve. School, sport and friendships change what's needed. Reviewing the schedule — in the ways the agreements allow — is normal, and often necessary.
+
+## In short
+
+Week on, week off for stability, 2-2-3 for frequent contact with little ones, 2-2-5-5 for fixed weekdays, 5-2 when homes are far apart. Holidays handled separately, decided at the start of the year. And whatever the schedule, written in a calendar both parents read the same way.
+""",
+        },
+    },
 ]

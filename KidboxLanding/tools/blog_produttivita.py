@@ -865,4 +865,259 @@ A money model chosen together and written down, few categories, instant recordin
 """,
         },
     },
+    # ── Produttività in casa · quarto lotto ────────────────────────────
+    {
+        "slug": "riordino-della-domenica",
+        "category": "produttivita-in-casa", "date": "2026-09-13",
+        "tools": ["calendario", "lista-della-spesa", "to-do"], "related": ["riunione-di-famiglia", "piano-settimanale-delle-pulizie", "routine-del-mattino-in-famiglia"],
+        "it": {
+            "title": "Il riordino della domenica: 30 minuti in famiglia per partire bene il lunedì",
+            "desc": "Casa, calendario, frigo e zaini: un reset settimanale in quattro blocchi da fare tutti insieme la domenica, che trasforma il lunedì mattina da emergenza a giornata normale.",
+            "body": """
+Il lunedì mattina difficile si prepara la domenica sera. Vestiti da lavare scoperti all'ultimo, frigo vuoto, un'uscita della scuola dimenticata, lo zaino ancora com'era venerdì. Nessuna di queste cose è grave. Tutte insieme, alle 7:30 del lunedì, lo sono.
+
+Il **riordino della domenica** — un reset settimanale di mezz'ora — è il modo per arrivare al lunedì con la casa e la settimana già in ordine.
+
+## Quando e come
+
+- **Domenica pomeriggio o prima di cena**, sempre alla stessa ora
+- **30 minuti**, con un timer: quando suona, si smette
+- **tutta la famiglia**, ognuno con il suo blocco
+- una playlist aiuta più di quanto si pensi
+
+Mettetelo nel [calendario](/strumenti/calendario) come appuntamento ricorrente: se è in calendario, succede.
+
+## Blocco 1 — La casa (10 minuti)
+
+Non è una pulizia a fondo: è un riordino veloce degli spazi comuni.
+
+- ogni oggetto torna al suo posto
+- lavastoviglie svuotata, lavandino libero
+- una lavatrice avviata con quello che serve per lunedì
+- spazzatura e raccolta differenziata fuori
+
+Ognuno prende una stanza. I figli la loro camera e il loro angolo del soggiorno.
+
+## Blocco 2 — Il frigo e la spesa (5 minuti)
+
+Si apre il frigo, si butta ciò che è scaduto, si guarda cosa manca per i primi giorni della settimana. Quello che manca va subito nella [lista della spesa condivisa](/strumenti/lista-della-spesa), così chi passa al supermercato lunedì sa cosa prendere.
+
+Se avete un menù settimanale, questo è il momento di confermarlo.
+
+## Blocco 3 — La settimana (10 minuti)
+
+Il blocco più importante, da fare tra adulti con i figli grandi presenti:
+
+- si scorre il calendario della settimana: impegni, visite, uscite, riunioni
+- si decide **chi accompagna chi** nei giorni critici
+- si assegnano le [cose da fare](/strumenti/to-do) della settimana: la telefonata al pediatra, la bolletta, il modulo per la scuola
+- si segnala qualunque conflitto di orario
+
+Se in famiglia fate anche la [riunione settimanale](/blog/riunione-di-famiglia), il riordino della domenica può esserne la parte pratica, subito dopo.
+
+## Blocco 4 — Zaini e borse (5 minuti)
+
+- zaini dei figli svuotati da fogli e merende vecchie
+- comunicazioni della scuola lette e firmate
+- materiale speciale per lunedì preparato (tuta, flauto, libro della biblioteca)
+- borse del lavoro degli adulti riordinate
+
+## Il lunedì che cambia
+
+Dopo tre o quattro domeniche il riordino diventa un'abitudine, e cambia il lunedì: si esce di casa sapendo cosa succede nella settimana, con il frigo pronto e senza scoperte. È lo stesso principio della [routine del mattino](/blog/routine-del-mattino-in-famiglia): la mattina funziona se il lavoro è stato fatto prima.
+
+## Quando la domenica non c'è
+
+Weekend fuori, ospiti, stanchezza. Il riordino non si recupera: si fa la versione minima — il calendario della settimana e la lista della spesa, cinque minuti — e si riprende la domenica successiva.
+
+## In sintesi
+
+Mezz'ora la domenica, con il timer e tutta la famiglia. Casa riordinata, frigo controllato e lista della spesa aggiornata, settimana vista insieme con compiti assegnati, zaini e borse pronti. Il lunedì non diventerà il giorno preferito di nessuno. Ma smetterà di essere un'emergenza.
+""",
+        },
+        "en": {
+            "title": "The Sunday reset: 30 minutes as a family to start Monday well",
+            "desc": "Home, calendar, fridge and school bags: a four-block weekly reset done together on Sunday, turning Monday morning from an emergency into a normal day.",
+            "body": """
+A difficult Monday morning is prepared on Sunday evening. Clothes that need washing discovered at the last minute, an empty fridge, a forgotten school trip, the school bag exactly as it was on Friday. None of these is serious. All together, at 7:30 on Monday, they are.
+
+The **Sunday reset** — a half-hour weekly reset — is the way to reach Monday with the home and the week already in order.
+
+## When and how
+
+- **Sunday afternoon or before dinner**, always at the same time
+- **30 minutes**, with a timer: when it goes off, you stop
+- **the whole family**, each with their own block
+- a playlist helps more than you'd think
+
+Put it in the [calendar](/en/tools/calendario) as a recurring appointment: if it's in the calendar, it happens.
+
+## Block 1 — The home (10 minutes)
+
+Not a deep clean: a quick tidy of shared spaces.
+
+- everything goes back where it belongs
+- dishwasher emptied, sink clear
+- a wash on with what's needed for Monday
+- rubbish and recycling out
+
+Everyone takes a room. The children do their bedroom and their corner of the living room.
+
+## Block 2 — Fridge and groceries (5 minutes)
+
+Open the fridge, throw out anything expired, see what's missing for the first days of the week. What's missing goes straight onto the [shared grocery list](/en/tools/lista-della-spesa), so whoever passes the supermarket on Monday knows what to get.
+
+If you have a weekly menu, this is the moment to confirm it.
+
+## Block 3 — The week (10 minutes)
+
+The most important block, done between adults with older children present:
+
+- go through the week's calendar: commitments, appointments, trips, meetings
+- decide **who drives whom** on critical days
+- assign the week's [to-dos](/en/tools/to-do): the call to the paediatrician, the bill, the school form
+- flag any scheduling clash
+
+If your family also holds a [weekly meeting](/en/blog/riunione-di-famiglia), the Sunday reset can be its practical part, straight afterwards.
+
+## Block 4 — Bags (5 minutes)
+
+- children's school bags emptied of old papers and snacks
+- school notices read and signed
+- special items for Monday prepared (PE kit, recorder, library book)
+- adults' work bags sorted
+
+## The Monday that changes
+
+After three or four Sundays the reset becomes a habit, and Monday changes: you leave home knowing what the week holds, with the fridge ready and no surprises. It's the same principle as the [morning routine](/en/blog/routine-del-mattino-in-famiglia): the morning works if the work was done beforehand.
+
+## When there's no Sunday
+
+A weekend away, guests, exhaustion. The reset isn't made up later: do the minimum version — the week's calendar and the grocery list, five minutes — and pick it up again the following Sunday.
+
+## In short
+
+Half an hour on Sunday, with a timer and the whole family. Home tidied, fridge checked and grocery list updated, the week reviewed together with tasks assigned, bags ready. Monday won't become anyone's favourite day. But it will stop being an emergency.
+""",
+        },
+    },
+    {
+        "slug": "tempo-davanti-agli-schermi-in-famiglia",
+        "category": "produttivita-in-casa", "date": "2026-09-13",
+        "tools": ["note", "calendario"], "related": ["riunione-di-famiglia", "routine-della-sera-in-famiglia", "faccende-per-adolescenti"],
+        "it": {
+            "title": "Il tempo davanti agli schermi in famiglia: regole che reggono, anche per gli adulti",
+            "desc": "Litigi per il tablet, telefoni a tavola, videogiochi fino a tardi. Come scrivere regole sugli schermi condivise da tutta la famiglia, e farle durare più di una settimana.",
+            "body": """
+Il tempo davanti agli schermi è una delle fonti di discussione più frequenti nelle famiglie di oggi. Il tablet che non si spegne, il telefono a tavola, i videogiochi che si allungano, e i genitori che chiedono di posare il telefono mentre scorrono il proprio.
+
+Non esiste una regola giusta per tutte le famiglie. Esiste però un modo di arrivare a regole che **reggono**: chiare, scritte, uguali per tutti dove possibile.
+
+Per le indicazioni su quanto tempo davanti agli schermi sia adatto a ogni età, il riferimento sono il pediatra e le raccomandazioni delle società pediatriche.
+
+## Perché le regole sugli schermi falliscono
+
+- **Sono decise sul momento**, quando il genitore è già esasperato
+- **Cambiano ogni settimana**, a seconda dell'umore
+- **Valgono solo per i figli**, mentre gli adulti fanno il contrario
+- **Nessuno le ricorda uguali**: «avevi detto un'ora», «no, avevo detto dopo i compiti»
+
+## 1. Decidere insieme, in un momento tranquillo
+
+Le regole sugli schermi non si decidono durante il litigio. Si decidono in un momento calmo — la [riunione di famiglia](/blog/riunione-di-famiglia) è perfetta — ascoltando anche i figli. Un adolescente che ha partecipato alla decisione la rispetta molto di più di uno a cui è stata imposta.
+
+## 2. Luoghi e momenti, prima dei minuti
+
+Contare i minuti è faticoso e genera trattative. Le regole più facili da rispettare riguardano **dove** e **quando**, non quanto:
+
+- **niente schermi a tavola**, per nessuno
+- **niente schermi in camera** di notte: i dispositivi si caricano fuori
+- **niente schermi prima di scuola** o prima dei compiti finiti
+- **un'ora di stop prima di dormire**
+
+Solo dopo, se serve, si aggiunge un tempo massimo per i giorni di scuola e uno per il weekend.
+
+## 3. Le stesse regole per gli adulti
+
+Se a tavola il telefono non c'è, non c'è per nessuno. I figli copiano quello che vedono molto più di quello che sentono. Un genitore che posa il telefono all'ingresso ottiene più di qualunque predica.
+
+## 4. Scriverle
+
+Le regole concordate vanno scritte, in modo semplice, in un posto che tutti vedono uguale. Una [nota condivisa](/strumenti/note) di famiglia con le regole e le eccezioni — i film del sabato sera, le videochiamate con i nonni, i compiti fatti al computer — chiude le discussioni del tipo «non me l'avevi detto».
+
+## 5. Tempo senza schermi, in calendario
+
+Togliere gli schermi funziona meglio se si **aggiunge** qualcos'altro. Mettete nel [calendario](/strumenti/calendario) di famiglia momenti fissi senza schermi: la passeggiata della domenica, la serata giochi da tavolo, la cena con gli amici. Un vuoto da riempire genera noia e lamentele; un'attività in programma no.
+
+## 6. Gli strumenti tecnici, se servono
+
+I sistemi operativi di iPhone e Android hanno funzioni di controllo parentale per limitare app e orari sui dispositivi dei figli. Possono essere utili, soprattutto con i più piccoli. KidBox non include un controllo parentale degli schermi: aiuta a scrivere e condividere le regole e a organizzare il tempo, ma i limiti tecnici si impostano dalle impostazioni del telefono o del tablet.
+
+## Rivederle con l'età
+
+Le regole per un bambino di sei anni non valgono per un ragazzo di quattordici. Rivedetele a ogni inizio anno scolastico, insieme, e date più autonomia a mano a mano che i figli dimostrano di saperla gestire.
+
+## In sintesi
+
+Regole decise in un momento tranquillo e ascoltando i figli, basate su luoghi e momenti prima che sui minuti, valide anche per gli adulti, scritte in una nota condivisa, con tempo senza schermi pianificato in calendario e riviste con l'età. Le discussioni non spariranno. Ma avranno una regola a cui rimandare, invece che l'umore della serata.
+""",
+        },
+        "en": {
+            "title": "Screen time in the family: rules that hold, for adults too",
+            "desc": "Fights over the tablet, phones at the table, video games until late. How to write screen rules the whole family shares, and make them last longer than a week.",
+            "body": """
+Screen time is one of the most frequent sources of argument in families today. The tablet that won't switch off, phones at the table, gaming sessions that stretch on, and parents asking kids to put their phone down while scrolling their own.
+
+There's no rule that's right for every family. But there is a way to reach rules that **hold**: clear, written, the same for everyone where possible.
+
+For guidance on how much screen time suits each age, the right references are your paediatrician and paediatric society recommendations.
+
+## Why screen rules fail
+
+- **They're decided on the spot**, when a parent is already exasperated
+- **They change every week**, depending on mood
+- **They only apply to the children**, while adults do the opposite
+- **Nobody remembers them the same way**: "you said an hour", "no, I said after homework"
+
+## 1. Decide together, at a calm moment
+
+Screen rules aren't decided in the middle of a fight. They're decided at a calm moment — the [family meeting](/en/blog/riunione-di-famiglia) is perfect — listening to the children too. A teenager who took part in the decision respects it far more than one who had it imposed.
+
+## 2. Places and times, before minutes
+
+Counting minutes is tiring and breeds negotiation. The easiest rules to keep are about **where** and **when**, not how long:
+
+- **no screens at the table**, for anyone
+- **no screens in bedrooms** at night: devices charge outside
+- **no screens before school** or before homework is done
+- **an hour off before sleep**
+
+Only after that, if needed, add a maximum time for school days and one for weekends.
+
+## 3. The same rules for adults
+
+If there are no phones at the table, there are none for anyone. Children copy what they see far more than what they hear. A parent who leaves their phone by the door achieves more than any lecture.
+
+## 4. Write them down
+
+Agreed rules should be written simply, somewhere everyone sees the same way. A family [shared note](/en/tools/note) with the rules and the exceptions — Saturday movie night, video calls with grandparents, homework on the computer — ends "you never told me" arguments.
+
+## 5. Screen-free time, in the calendar
+
+Removing screens works better if you **add** something else. Put fixed screen-free moments in the family [calendar](/en/tools/calendario): the Sunday walk, board game night, dinner with friends. An empty gap breeds boredom and complaints; a planned activity doesn't.
+
+## 6. Technical tools, if needed
+
+iPhone and Android operating systems have parental control features to limit apps and times on children's devices. They can help, especially with younger children. KidBox doesn't include screen-time parental controls: it helps you write and share the rules and organise time, but technical limits are set in the phone or tablet settings.
+
+## Review them as children grow
+
+Rules for a six-year-old don't work for a fourteen-year-old. Review them at the start of each school year, together, and give more independence as children show they can handle it.
+
+## In short
+
+Rules decided at a calm moment and with the children's input, based on places and times before minutes, applying to adults too, written in a shared note, with screen-free time planned in the calendar and reviewed as children grow. The arguments won't vanish. But they'll have a rule to point to, instead of the evening's mood.
+""",
+        },
+    },
 ]

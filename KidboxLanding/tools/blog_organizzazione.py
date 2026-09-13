@@ -1045,4 +1045,247 @@ Information leaves the team chat and lands in the family calendar, every lift ha
 """,
         },
     },
+    # ── Organizzazione familiare · quarto lotto ────────────────────────
+    {
+        "slug": "riunione-di-famiglia",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["calendario", "note", "to-do"], "related": ["routine-della-sera-in-famiglia", "partner-non-usa-app-di-famiglia", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "La riunione di famiglia settimanale: 20 minuti che risparmiano ore di discussioni",
+            "desc": "Una volta a settimana, tutti intorno al tavolo: la settimana che arriva, un problema da risolvere, una cosa bella. Come condurla perché non diventi un processo né una predica.",
+            "body": """
+L'espressione «riunione di famiglia» fa pensare a qualcosa di solenne, o peggio a una seduta di rimproveri. In realtà, fatta bene, è l'opposto: **venti minuti a settimana** in cui tutti sanno cosa succede, i problemi si affrontano prima di diventare litigi e i figli hanno uno spazio in cui la loro voce conta.
+
+## Perché funziona
+
+Nelle famiglie senza un momento fisso per parlarsi, le cose si decidono in corridoio, al volo, quando qualcuno è già arrabbiato. La riunione sposta queste conversazioni in un momento **tranquillo e prevedibile**. E dà a tutti un'informazione preziosa: se c'è un problema, c'è anche un posto dove portarlo.
+
+## Quando e quanto
+
+- **Una volta a settimana**, sempre lo stesso giorno: la domenica pomeriggio o sera funziona per quasi tutti
+- **Venti minuti**, trenta al massimo. Una riunione lunga non la vuole fare nessuno la settimana dopo
+- **Tutti presenti**, dai quattro-cinque anni in su, con i telefoni lontani
+
+Mettetela nel [calendario](/strumenti/calendario) di famiglia come appuntamento ricorrente: se è in calendario esiste, se no la prima settimana piena salta.
+
+## La scaletta in quattro punti
+
+### 1. Una cosa bella (3 minuti)
+
+Ognuno dice una cosa che è andata bene nella settimana, o un grazie a qualcun altro. Sembra un dettaglio: è ciò che fa sì che la riunione non venga associata solo ai problemi.
+
+### 2. La settimana che arriva (7 minuti)
+
+Si guarda insieme il calendario: impegni, chi accompagna chi, cene fuori, visite, verifiche. È il momento in cui si scoprono i conflitti — la partita e la festa alla stessa ora — quando c'è ancora tempo per risolverli.
+
+### 3. Un problema da risolvere (7 minuti)
+
+**Uno solo** a settimana. Chiunque può proporlo, anche i figli: il bagno lasciato in disordine, i litigi per il tablet, la paghetta. Si raccolgono idee, si sceglie una soluzione da provare per una settimana, e la settimana dopo si verifica se funziona.
+
+La regola d'oro: si parla del problema, non della persona. «Il bagno la mattina è sempre occupato», non «Giulia ci mette sempre un'ora».
+
+### 4. Chi fa cosa (3 minuti)
+
+Le decisioni prese diventano azioni con un nome: chi prenota, chi compra, chi chiama. Scritte come [cose da fare](/strumenti/to-do) assegnate, non si perdono tra una riunione e l'altra.
+
+## Il verbale in una nota
+
+Una [nota condivisa](/strumenti/note) con una riga per ogni riunione — data, problema discusso, soluzione scelta — sembra burocrazia. È utile: dopo qualche mese si vede quali problemi tornano, quali soluzioni hanno funzionato, e si evita di rifare la stessa discussione due volte.
+
+## Cosa non fare
+
+- **Non usarla per i rimproveri.** Se ogni riunione diventa la lista delle colpe, i figli smetteranno di partecipare.
+- **Non decidere tutto i genitori.** Su alcune cose i genitori hanno l'ultima parola, ed è giusto dirlo. Ma se i figli non decidono mai niente, capiranno presto che la riunione è finta.
+- **Non allungarla.** Se un problema richiede più tempo, se ne parla tra genitori a parte, o si riprende la settimana dopo.
+
+## Con figli di età diverse
+
+Con i più piccoli, la riunione può essere ancora più breve e concreta: cosa facciamo sabato, cosa mangiamo domenica. Con gli adolescenti, dare loro il ruolo di chi conduce la riunione ogni tanto aumenta molto la partecipazione.
+
+## In sintesi
+
+Venti minuti a settimana, sempre lo stesso giorno, in calendario. Una cosa bella, la settimana che arriva, un solo problema, chi fa cosa. Un verbale di una riga, niente rimproveri e decisioni vere anche per i figli. Non eliminerà le discussioni. Ma le porterà in un momento in cui si possono risolvere.
+""",
+        },
+        "en": {
+            "title": "The weekly family meeting: 20 minutes that save hours of arguments",
+            "desc": "Once a week, everyone round the table: the week ahead, one problem to solve, one good thing. How to run it so it becomes neither a trial nor a lecture.",
+            "body": """
+The phrase "family meeting" suggests something solemn, or worse, a telling-off session. Done well, it's the opposite: **twenty minutes a week** where everyone knows what's happening, problems get tackled before they turn into rows and children have a space where their voice counts.
+
+## Why it works
+
+In families without a fixed time to talk, things get decided in the hallway, on the fly, when someone is already cross. The meeting moves those conversations to a **calm, predictable** moment. And it gives everyone a valuable piece of information: if there's a problem, there's also a place to bring it.
+
+## When and how long
+
+- **Once a week**, always the same day: Sunday afternoon or evening works for almost everyone
+- **Twenty minutes**, thirty at most. Nobody wants to repeat a long meeting the next week
+- **Everyone present**, from four or five upwards, with phones away
+
+Put it in the family [calendar](/en/tools/calendario) as a recurring appointment: if it's in the calendar it exists, if not it disappears the first busy week.
+
+## The four-point agenda
+
+### 1. One good thing (3 minutes)
+
+Everyone shares something that went well that week, or thanks someone else. It looks like a detail: it's what stops the meeting being associated only with problems.
+
+### 2. The week ahead (7 minutes)
+
+Look at the calendar together: commitments, who's driving whom, dinners out, appointments, tests. It's when clashes get spotted — the match and the party at the same time — while there's still time to fix them.
+
+### 3. One problem to solve (7 minutes)
+
+**Only one** a week. Anyone can raise it, children included: the bathroom left messy, fights over the tablet, pocket money. Gather ideas, choose a solution to try for a week, and check the following week whether it worked.
+
+The golden rule: talk about the problem, not the person. "The bathroom is always busy in the morning", not "Julia always takes an hour".
+
+### 4. Who does what (3 minutes)
+
+Decisions become actions with a name: who books, who buys, who calls. Written as assigned [to-dos](/en/tools/to-do), they don't get lost between meetings.
+
+## The minutes in a note
+
+A [shared note](/en/tools/note) with one line per meeting — date, problem discussed, solution chosen — looks like bureaucracy. It's useful: after a few months you can see which problems keep coming back, which solutions worked, and you avoid having the same discussion twice.
+
+## What not to do
+
+- **Don't use it for telling-offs.** If every meeting becomes a list of faults, the children will stop taking part.
+- **Don't let parents decide everything.** On some things parents have the last word, and it's fine to say so. But if children never decide anything, they'll soon realise the meeting is fake.
+- **Don't let it run long.** If a problem needs more time, parents discuss it separately, or it continues next week.
+
+## With children of different ages
+
+With the youngest, the meeting can be even shorter and more concrete: what are we doing on Saturday, what are we eating on Sunday. With teenagers, letting them run the meeting now and then boosts participation a lot.
+
+## In short
+
+Twenty minutes a week, always the same day, in the calendar. One good thing, the week ahead, a single problem, who does what. One-line minutes, no telling-offs and real decisions for the children too. It won't eliminate arguments. But it will move them to a moment when they can be solved.
+""",
+        },
+    },
+    {
+        "slug": "regali-di-natale-organizzazione",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["note", "spese", "calendario", "to-do"], "related": ["cena-di-natale-organizzazione", "pasti-in-famiglia-con-budget", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "Organizzare i regali di Natale in famiglia: lista, budget e niente corse il 23 dicembre",
+            "desc": "Figli, nonni, maestre, amici, lo scambio in ufficio: i regali di Natale sono un progetto con decine di voci. Come gestirli in due, dentro un budget, senza rovinare le sorprese.",
+            "body": """
+I regali di Natale sono uno dei lavori invisibili più pesanti dell'anno. Non è solo comprarli: è ricordarsi di tutti, avere un'idea per ciascuno, restare nel budget, ordinarli in tempo, nasconderli, incartarli. E quasi sempre è un genitore solo a tenere tutto in testa, fino alla corsa del 23 dicembre.
+
+Con un po' di organizzazione a inizio novembre, il lavoro si divide e il Natale arriva più leggero.
+
+## 1. La lista delle persone
+
+Tutto parte da un elenco completo di **chi riceve un regalo**, diviso per gruppi:
+
+- figli
+- partner
+- nonni e parenti stretti
+- zii, cugini, padrini e madrine
+- maestre, allenatori, babysitter
+- amici e scambi (ufficio, classe)
+
+Scritto la prima volta, questo elenco si riusa ogni anno: basta aggiornarlo.
+
+## 2. Il budget, prima delle idee
+
+Decidete insieme **il totale** che volete spendere, e poi dividetelo per gruppo e per persona. Fatto al contrario — prima le idee, poi i conti — il budget salta sempre.
+
+Registrare ogni acquisto nelle [spese di famiglia](/strumenti/spese), con una categoria dedicata ai regali, mostra in tempo reale quanto manca al tetto. A gennaio, il riepilogo dice quanto è costato davvero il Natale: un numero utile per l'anno dopo.
+
+## 3. Idee tutto l'anno, non a dicembre
+
+Le idee migliori arrivano a caso: il figlio che a giugno si ferma davanti a una vetrina, il nonno che a settembre dice che il suo ombrello si è rotto. Tenete una **nota delle idee regalo** sempre aperta, e aggiungete la voce nel momento in cui arriva.
+
+## Attenzione alle sorprese
+
+In KidBox note e liste sono **di tutta la famiglia**: tutti i membri le vedono. Se un figlio grande ha il suo account nella famiglia, vedrà anche la nota dei regali. Per le sorprese conviene tenere le idee per i figli fuori dall'app di famiglia — per esempio in una nota personale sul telefono — e usare le liste condivise per i regali degli altri.
+
+## 4. Dall'idea all'acquisto
+
+Quando un'idea diventa decisione, diventa una [cosa da fare](/strumenti/to-do) assegnata: «ordinare libro per nonna — Marco». Così ognuno sa cosa gli tocca, e nessuno compra due volte lo stesso regalo.
+
+Per ogni acquisto online, la data di consegna prevista va nel [calendario](/strumenti/calendario): se entro il 15 dicembre non è arrivato, c'è ancora tempo per un piano B.
+
+## 5. Le date da ricordare
+
+Qualche data da mettere in calendario a inizio novembre:
+
+- **fine novembre**: idee chiuse e budget confermato
+- **inizio dicembre**: ordini online completati
+- **metà dicembre**: tutto arrivato, si incarta
+- **recite e feste di classe**: i regalini per maestre e compagni servono prima di Natale
+
+## 6. Dividersi il lavoro
+
+Una divisione che funziona: un genitore si occupa dei regali per la propria famiglia d'origine, l'altro per la sua; i regali per i figli si decidono insieme; maestre e allenatori a turno, un anno ciascuno. Scritta nelle cose da fare, la divisione regge anche a dicembre.
+
+## In sintesi
+
+Una lista delle persone da riusare ogni anno, il budget prima delle idee, una nota delle idee aperta tutto l'anno (con le sorprese dei figli tenute fuori dalle liste condivise), ogni acquisto con un responsabile, le date in calendario e il lavoro diviso. Il 23 dicembre si può passare a incartare, invece che a correre.
+""",
+        },
+        "en": {
+            "title": "Organising Christmas presents as a family: list, budget and no rush on 23 December",
+            "desc": "Children, grandparents, teachers, friends, the office swap: Christmas presents are a project with dozens of items. How to handle them together, within budget, without spoiling surprises.",
+            "body": """
+Christmas presents are one of the heaviest invisible jobs of the year. It isn't just buying them: it's remembering everyone, having an idea for each, staying within budget, ordering in time, hiding them, wrapping them. And almost always one parent holds it all in their head, right up to the 23 December rush.
+
+With a bit of organisation in early November, the work gets shared and Christmas arrives lighter.
+
+## 1. The list of people
+
+Everything starts from a complete list of **who gets a present**, grouped:
+
+- children
+- partner
+- grandparents and close family
+- aunts, uncles, cousins, godparents
+- teachers, coaches, babysitters
+- friends and swaps (office, class)
+
+Written once, this list gets reused every year: just update it.
+
+## 2. The budget, before the ideas
+
+Decide together **the total** you want to spend, then split it by group and by person. Done the other way round — ideas first, numbers later — the budget always blows.
+
+Recording each purchase in [family expenses](/en/tools/spese), with a category for presents, shows in real time how much is left under the ceiling. In January, the summary shows what Christmas really cost: a useful number for next year.
+
+## 3. Ideas all year, not in December
+
+The best ideas come at random: your child stopping in front of a shop window in June, grandad mentioning in September that his umbrella broke. Keep a **present ideas note** always open, and add the item the moment it comes.
+
+## Watch out for surprises
+
+In KidBox notes and lists belong **to the whole family**: every member sees them. If an older child has their own account in the family, they'll see the presents note too. For surprises, keep ideas for the children outside the family app — for example in a personal note on your phone — and use shared lists for everyone else's presents.
+
+## 4. From idea to purchase
+
+When an idea becomes a decision, it becomes an assigned [to-do](/en/tools/to-do): "order book for grandma — Mark". So everyone knows what's theirs, and nobody buys the same present twice.
+
+For every online order, the expected delivery date goes in the [calendar](/en/tools/calendario): if it hasn't arrived by 15 December, there's still time for a plan B.
+
+## 5. Dates to remember
+
+A few dates to put in the calendar in early November:
+
+- **end of November**: ideas settled and budget confirmed
+- **early December**: online orders placed
+- **mid-December**: everything arrived, time to wrap
+- **school plays and class parties**: small presents for teachers and classmates are needed before Christmas
+
+## 6. Sharing the work
+
+A split that works: each parent handles presents for their own side of the family; presents for the children are decided together; teachers and coaches alternate, one year each. Written in the to-dos, the split holds even in December.
+
+## In short
+
+A list of people to reuse each year, the budget before the ideas, an ideas note open all year (with the children's surprises kept out of shared lists), every purchase with an owner, dates in the calendar and the work shared. On 23 December you can be wrapping, instead of rushing.
+""",
+        },
+    },
 ]
