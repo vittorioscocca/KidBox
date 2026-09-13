@@ -1288,4 +1288,956 @@ A list of people to reuse each year, the budget before the ideas, an ideas note 
 """,
         },
     },
+    # ── Organizzazione familiare · chat ────────────────────────────────
+    {
+        "slug": "chat-di-famiglia-separata-da-whatsapp",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["chat", "calendario", "documenti"], "related": ["organizer-di-famiglia-vs-calendario-e-chat", "vocali-in-famiglia-trascritti", "dati-sanitari-cifrati"],
+        "it": {
+            "title": "Perché una chat di famiglia separata da WhatsApp (e cosa metterci dentro)",
+            "desc": "Il gruppo «Famiglia» si mescola con quello del calcetto, del lavoro e della classe, e le informazioni importanti spariscono. Cosa cambia con una chat che sta accanto a calendario e documenti.",
+            "body": """
+Quasi ogni famiglia ha un gruppo di chat chiamato «Famiglia», «Casa» o con un cuoricino. Ci sono dentro gli orari della pediatra, la foto della ricetta, «compra il latte», il video del bambino che canta, la password del Wi-Fi e tre discussioni su dove passare Natale. Tutto nella stessa app in cui arrivano i messaggi del lavoro, del gruppo della classe e degli amici.
+
+Funziona, finché non serve ritrovare qualcosa.
+
+## I limiti del gruppo di famiglia nella solita chat
+
+- **Tutto si mescola**: una notifica della famiglia arriva tra venti del lavoro, e si perde
+- **Le informazioni scorrono via**: l'orario della visita di martedì è sepolto sotto le foto di domenica
+- **Nessuna conseguenza**: «ricordati la bolletta» non diventa una scadenza, «giovedì c'è la recita» non diventa un evento
+- **I file si disperdono**: referti e documenti restano nella galleria del telefono di chi li ha ricevuti
+- **Il gruppo si allarga**: basta un parente aggiunto per cortesia e le conversazioni private non lo sono più
+
+## Cosa cambia con una chat dentro l'app di famiglia
+
+La [chat di famiglia](/strumenti/chat) di KidBox non sostituisce le altre chat: è **un posto dedicato** alle conversazioni della famiglia, nella stessa app in cui ci sono già calendario, liste, spese e documenti.
+
+- **Solo i membri della famiglia**, e nessun altro: non ci sono gruppi da creare né persone da aggiungere per sbaglio
+- **Cifrata end-to-end**: i messaggi si cifrano sul vostro dispositivo e si decifrano su quello dell'altro; anche le notifiche vengono decifrate sul telefono
+- **Messaggi, foto, video, documenti, vocali**, con la possibilità di rispondere a un messaggio preciso, reagire e menzionare qualcuno
+- **Galleria dei media**: foto e file inviati si ritrovano senza scorrere all'infinito
+- **Dal telefono e dal web**, con gli stessi messaggi
+
+## Cosa scrivere lì, e cosa no
+
+La chat di famiglia funziona meglio con uno scopo chiaro:
+
+- **sì**: logistica («chi prende Sara alle 5?»), comunicazioni sui figli, decisioni da prendere, foto e video da condividere tra genitori
+- **meglio altrove**: gli appuntamenti vanno nel [calendario](/strumenti/calendario), le cose da fare nelle liste, i documenti nella sezione [documenti](/strumenti/documenti)
+
+Il principio: **la chat è per parlarsi, non per archiviare**. Se in chat nasce un appuntamento, lo si mette in calendario; se arriva un referto, lo si carica nei documenti. Dopo, in chat basta scrivere «l'ho messo in calendario».
+
+## E il gruppo WhatsApp di sempre?
+
+Non serve abbandonarlo: con nonni, zii e amici resta il posto giusto. La chat di famiglia è per **il nucleo** che si organizza insieme — genitori, e figli grandi se sono membri — e per le cose che non devono uscire da lì.
+
+## Se non vi serve
+
+La chat si può **disattivare** dalle Impostazioni: gli altri continuano a scriversi, e riattivandola ritrovate i messaggi. Non tutte le famiglie ne hanno bisogno, ed è giusto poterla spegnere.
+
+## In sintesi
+
+Il gruppo di famiglia nella chat di tutti i giorni mescola, disperde e non trasforma niente in azioni. Una chat dentro l'app di famiglia, cifrata, con solo i membri e accanto a calendario e documenti, tiene separate le conversazioni che contano. La regola per usarla bene: in chat ci si parla, poi le cose vanno al loro posto.
+""",
+        },
+        "en": {
+            "title": "Why have a family chat separate from WhatsApp (and what to put in it)",
+            "desc": "The \"Family\" group gets mixed up with football, work and the school class, and important information disappears. What changes with a chat that sits next to the calendar and documents.",
+            "body": """
+Almost every family has a chat group called "Family", "Home" or just a heart emoji. It holds the paediatrician's appointment times, a photo of the prescription, "buy milk", a video of the toddler singing, the Wi-Fi password and three arguments about where to spend Christmas. All in the same app that brings work messages, the school class group and friends.
+
+It works, until you need to find something.
+
+## The limits of the family group in your usual chat app
+
+- **Everything gets mixed**: a family notification arrives among twenty from work, and gets lost
+- **Information scrolls away**: Tuesday's appointment time is buried under Sunday's photos
+- **Nothing follows**: "remember the bill" doesn't become a deadline, "the school play is Thursday" doesn't become an event
+- **Files scatter**: reports and documents stay in the gallery of whoever received them
+- **The group grows**: add one relative out of politeness and private conversations aren't private any more
+
+## What changes with a chat inside the family app
+
+KidBox's [family chat](/en/tools/chat) doesn't replace other chats: it's **a dedicated place** for family conversations, in the same app that already holds the calendar, lists, expenses and documents.
+
+- **Family members only**, nobody else: no groups to create and nobody added by mistake
+- **End-to-end encrypted**: messages are encrypted on your device and decrypted on the other person's; notifications are decrypted on the phone too
+- **Messages, photos, videos, documents, voice notes**, with replies to a specific message, reactions and mentions
+- **Media gallery**: photos and files sent can be found without endless scrolling
+- **On phone and web**, with the same messages
+
+## What to write there, and what not
+
+The family chat works best with a clear purpose:
+
+- **yes**: logistics ("who's collecting Sara at 5?"), messages about the children, decisions to make, photos and videos to share between parents
+- **better elsewhere**: appointments belong in the [calendar](/en/tools/calendario), to-dos in lists, documents in the [documents](/en/tools/documenti) section
+
+The principle: **chat is for talking, not for storing**. If an appointment comes up in chat, it goes in the calendar; if a report arrives, it goes in documents. Then in chat you just write "I've put it in the calendar".
+
+## What about the usual WhatsApp group?
+
+No need to abandon it: with grandparents, aunts, uncles and friends it's still the right place. The family chat is for **the core** that organises together — parents, and older children if they're members — and for things that shouldn't leave it.
+
+## If you don't need it
+
+The chat can be **switched off** in Settings: others keep messaging each other, and turning it back on brings the messages back. Not every family needs one, and it's right to be able to switch it off.
+
+## In short
+
+A family group in your everyday chat app mixes things up, scatters them and turns nothing into action. A chat inside the family app, encrypted, with members only and next to the calendar and documents, keeps the conversations that matter apart. The rule for using it well: talk in chat, then put things where they belong.
+""",
+        },
+    },
+    {
+        "slug": "vocali-in-famiglia-trascritti",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["chat"], "related": ["chat-di-famiglia-separata-da-whatsapp", "comunicazione-tra-genitori-separati", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "I vocali in famiglia: quando aiutano, quando no, e come leggerli invece di ascoltarli",
+            "desc": "Un vocale da tre minuti arriva mentre sei in riunione, e dentro c'è un orario che ti serve. Regole semplici per usare bene i messaggi vocali tra genitori, e perché la trascrizione cambia tutto.",
+            "body": """
+I messaggi vocali sono diventati il modo più naturale di comunicare in famiglia. Si registrano mentre si guida, mentre si cucina, con le mani occupate dalla spesa. Per chi li manda sono comodissimi. Per chi li riceve, un po' meno: un vocale di tre minuti arriva in riunione, in treno, con il bambino che dorme in braccio — e dentro, da qualche parte, c'è l'orario della pediatra.
+
+Non serve rinunciare ai vocali. Serve usarli con qualche regola, e poterli leggere quando non si possono ascoltare.
+
+## Quando i vocali aiutano
+
+- **mani occupate**: alla guida (con l'auto ferma o in vivavoce, secondo le regole), mentre si cucina
+- **cose da spiegare**: un problema, una situazione, un'emozione, dove il tono conta
+- **messaggi affettuosi**: la buonanotte al genitore lontano, il racconto del bambino
+
+## Quando è meglio scrivere
+
+- **informazioni precise**: orari, indirizzi, importi, nomi di farmaci
+- **decisioni**: «facciamo così» va scritto, perché si rilegge
+- **cose da ritrovare**: un vocale non si cerca, un testo sì
+- **messaggi a chi è al lavoro**, quando probabilmente non può ascoltare
+
+## Qualche regola tra genitori
+
+- **Brevi**: se supera il minuto, forse è una telefonata
+- **L'informazione all'inizio**: «Pediatra spostata a giovedì alle 17» nei primi cinque secondi, poi il resto
+- **Orari e numeri anche per iscritto**: un vocale con dentro un orario va seguito da una riga di testo, o messo direttamente in calendario
+- **Niente discussioni a vocali**: le conversazioni difficili si fanno a voce, dal vivo o al telefono, non con monologhi alternati
+
+## La trascrizione: leggere un vocale in cinque secondi
+
+Il problema principale dei vocali — doverli ascoltare — si risolve leggendoli. Nella [chat di famiglia](/strumenti/chat) di KidBox i vocali **vengono trascritti sul telefono**: il testo compare sotto il messaggio, e si legge in riunione, in treno o con il bambino che dorme, senza cuffie.
+
+Due vantaggi in più:
+
+- **si trova quello che serve**: l'orario, l'indirizzo, il nome, senza riascoltare tutto
+- **la trascrizione usa il riconoscimento vocale del telefono**: su iPhone avviene sul dispositivo; su Android l'app usa il riconoscimento sul dispositivo quando il telefono lo offre, altrimenti il servizio di riconoscimento vocale di sistema
+
+La trascrizione automatica può sbagliare parole, soprattutto con rumore di fondo, nomi propri o numeri: per le informazioni importanti, un'occhiata al testo e, se c'è un dubbio, all'audio.
+
+## Dal vocale all'azione
+
+Un vocale che contiene qualcosa da fare non deve restare in chat:
+
+- un **appuntamento** va nel [calendario](/strumenti/calendario)
+- una **cosa da fare** nella lista, assegnata
+- un **articolo da comprare** nella lista della spesa
+
+Chi riceve il vocale lo trasforma, e risponde con due parole: «messo in calendario». È il modo più semplice per non perdere niente e per far sapere all'altro che l'informazione è arrivata.
+
+## I figli e i vocali
+
+I figli grandi che sono membri della famiglia usano volentieri i vocali. Vale la pena insegnare anche a loro le stesse regole: brevi, con l'informazione all'inizio, e gli orari scritti.
+
+## In sintesi
+
+I vocali sono perfetti con le mani occupate e per le cose in cui conta il tono; per orari, decisioni e cose da ritrovare è meglio scrivere. Brevi, con l'informazione all'inizio, mai per discutere. La trascrizione sul telefono permette di leggerli ovunque, e ogni vocale che contiene un impegno si trasforma in un evento o una cosa da fare.
+""",
+        },
+        "en": {
+            "title": "Voice notes in the family: when they help, when they don't, and how to read them instead of listening",
+            "desc": "A three-minute voice note arrives while you're in a meeting, and somewhere in it is a time you need. Simple rules for using voice messages well between parents, and why transcription changes everything.",
+            "body": """
+Voice messages have become the most natural way to communicate in families. You record them while driving, cooking, hands full of shopping. For the sender they're very convenient. For the recipient, less so: a three-minute voice note arrives in a meeting, on the train, with a sleeping baby in your arms — and somewhere inside is the paediatrician's appointment time.
+
+No need to give up voice notes. Just use them with a few rules, and be able to read them when you can't listen.
+
+## When voice notes help
+
+- **hands busy**: driving (parked, or hands-free where the law allows), cooking
+- **things to explain**: a problem, a situation, a feeling, where tone matters
+- **affectionate messages**: goodnight to the parent far away, the child's story
+
+## When it's better to write
+
+- **precise information**: times, addresses, amounts, medicine names
+- **decisions**: "let's do this" should be written, because it gets reread
+- **things to find again**: you can't search a voice note, you can search text
+- **messages to someone at work**, who probably can't listen
+
+## A few rules between parents
+
+- **Short**: if it's over a minute, maybe it's a phone call
+- **Information first**: "Paediatrician moved to Thursday at 5" in the first five seconds, then the rest
+- **Times and numbers in writing too**: a voice note containing a time should be followed by a line of text, or put straight in the calendar
+- **No arguing by voice note**: difficult conversations happen by voice, in person or by phone, not as alternating monologues
+
+## Transcription: reading a voice note in five seconds
+
+The main problem with voice notes — having to listen — is solved by reading them. In KidBox's [family chat](/en/tools/chat) voice notes **are transcribed on the phone**: the text appears under the message, readable in a meeting, on the train or with a sleeping baby, without headphones.
+
+Two more advantages:
+
+- **you find what you need**: the time, the address, the name, without replaying everything
+- **transcription uses the phone's speech recognition**: on iPhone it happens on the device; on Android the app uses on-device recognition when the phone offers it, otherwise the system speech recognition service
+
+Automatic transcription can get words wrong, especially with background noise, names or numbers: for important information, glance at the text and, if in doubt, the audio.
+
+## From voice note to action
+
+A voice note containing something to do shouldn't stay in chat:
+
+- an **appointment** goes in the [calendar](/en/tools/calendario)
+- a **to-do** goes on the list, assigned
+- an **item to buy** goes on the grocery list
+
+Whoever receives the voice note turns it into action, and replies in two words: "in the calendar". It's the simplest way to lose nothing and let the other person know the information arrived.
+
+## Children and voice notes
+
+Older children who are family members love voice notes. It's worth teaching them the same rules: short, information first, and times in writing.
+
+## In short
+
+Voice notes are perfect with busy hands and for things where tone matters; for times, decisions and things to find again, write. Short, information first, never for arguing. On-phone transcription lets you read them anywhere, and every voice note with a commitment in it becomes an event or a to-do.
+""",
+        },
+    },
+    {
+        "slug": "gruppi-whatsapp-della-classe",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["calendario", "to-do", "chat"], "related": ["rientro-a-scuola-organizzazione", "impegni-sportivi-dei-figli", "carico-mentale-dei-genitori"],
+        "it": {
+            "title": "Il gruppo WhatsApp della classe: come sopravvivere a 80 messaggi al giorno senza perdere le comunicazioni importanti",
+            "desc": "Tra auguri, foto, discussioni e «qualcuno sa i compiti?» c'è la gita da pagare entro venerdì. Come filtrare il gruppo dei genitori, dividerselo in coppia e trasformare le informazioni utili in calendario e cose da fare.",
+            "body": """
+Il gruppo dei genitori della classe è uno degli strumenti più utili e più estenuanti della vita scolastica. Utile, perché lì passano le informazioni che non arrivano da nessun'altra parte: la gita, il regalo per la maestra, lo sciopero di domani. Estenuante, perché quelle informazioni sono sepolte sotto ottanta messaggi al giorno di auguri, pollici alzati, foto della recita e discussioni sui compiti.
+
+E quasi sempre c'è un solo genitore per figlio che lo legge davvero.
+
+## Il problema: un canale rumoroso con informazioni importanti
+
+Nel gruppo della classe si mescolano:
+
+- **comunicazioni con una scadenza**: pagamenti, autorizzazioni, materiale da portare
+- **eventi**: riunioni, feste, uscite, scioperi
+- **richieste**: «chi mi manda la foto del diario?»
+- **rumore**: auguri, ringraziamenti, conversazioni tra pochi
+
+Il rischio non è perdersi il rumore. È perdersi le prime due categorie.
+
+## 1. Silenziare senza sparire
+
+La prima regola è proteggersi: **silenziate le notifiche** del gruppo e decidete due momenti al giorno per leggerlo — per esempio a pranzo e dopo cena. Le comunicazioni scolastiche raramente richiedono una risposta entro dieci minuti; quando è davvero urgente, le rappresentanti di solito scrivono anche in privato o chiamano.
+
+## 2. Chi legge, in coppia
+
+Il gruppo della classe è un classico esempio di **carico mentale** che ricade su un genitore. Se entrambi i genitori sono nel gruppo, dividetevelo: uno segue la classe del grande, l'altro quella del piccolo, oppure a settimane alterne. Se nel gruppo c'è un solo genitore, quel genitore ha un compito preciso: **trasferire** le informazioni importanti dove le vede anche l'altro.
+
+## 3. Estrarre, non ricordare
+
+La regola che cambia tutto: ogni volta che nel gruppo compare qualcosa di importante, **esce subito dal gruppo** e va nel posto giusto.
+
+- **Eventi e date** — riunione, gita, festa, sciopero — nel [calendario](/strumenti/calendario) di famiglia, con il nome del figlio nel titolo e un promemoria
+- **Scadenze e cose da portare** — pagare la gita, firmare l'autorizzazione, portare la tuta — come [cose da fare](/strumenti/to-do) assegnate, con la data
+- **Comunicazioni da condividere con l'altro genitore** — una riga nella [chat di famiglia](/strumenti/chat): «Gita il 12, 15 euro entro venerdì, l'ho messa in calendario»
+
+Da quel momento, il messaggio nel gruppo può anche sparire sotto altri cento: l'informazione è al sicuro.
+
+## 4. Rispondere il meno possibile
+
+Non è necessario rispondere a ogni messaggio. Un pollice per confermare, una risposta quando vi chiedono qualcosa direttamente, e basta. I gruppi diventano più leggeri quando meno persone rispondono a tutto.
+
+## 5. Le regole che aiutano tutto il gruppo
+
+Se siete rappresentanti, o avete l'occasione di proporlo, qualche regola rende il gruppo più utile per tutti:
+
+- **solo comunicazioni** sulla classe
+- **auguri e ringraziamenti in privato**
+- **una comunicazione importante in un messaggio solo**, con data e scadenza chiare
+- **un riepilogo settimanale** delle scadenze, se qualcuno se ne occupa
+
+## 6. Le foto dei bambini
+
+Le foto di recite e feste girano spesso nel gruppo. Pensateci prima di condividerle: nella foto ci sono anche figli di altri, i cui genitori potrebbero non volerlo. Le foto dei vostri figli possono stare nell'album di famiglia, non nel gruppo di trenta famiglie.
+
+## In sintesi
+
+Silenziare il gruppo e leggerlo in due momenti al giorno, dividerselo in coppia, estrarre subito eventi, scadenze e cose da portare nel calendario e nelle cose da fare, avvisare l'altro genitore in una riga, rispondere il meno possibile e fare attenzione alle foto. Il gruppo della classe resterà rumoroso. Voi, un po' meno.
+""",
+        },
+        "en": {
+            "title": "The class parents' WhatsApp group: surviving 80 messages a day without missing what matters",
+            "desc": "Among birthday wishes, photos, arguments and \"does anyone know the homework?\" is the trip that must be paid by Friday. How to filter the parents' group, share it as a couple and turn useful information into calendar events and to-dos.",
+            "body": """
+The class parents' group is one of the most useful and most exhausting tools of school life. Useful, because information passes through it that arrives nowhere else: the trip, the teacher's present, tomorrow's strike. Exhausting, because that information is buried under eighty messages a day of birthday wishes, thumbs up, school play photos and homework debates.
+
+And usually only one parent per child really reads it.
+
+## The problem: a noisy channel with important information
+
+The class group mixes:
+
+- **messages with a deadline**: payments, permission slips, things to bring
+- **events**: meetings, parties, trips, strikes
+- **requests**: "can someone send me a photo of the homework?"
+- **noise**: wishes, thanks, conversations between a few people
+
+The risk isn't missing the noise. It's missing the first two categories.
+
+## 1. Mute without disappearing
+
+The first rule is self-protection: **mute the group's notifications** and pick two times a day to read it — say at lunch and after dinner. School messages rarely need a reply within ten minutes; when something is truly urgent, class reps usually also message privately or call.
+
+## 2. Who reads it, as a couple
+
+The class group is a classic example of **mental load** falling on one parent. If both parents are in the group, share it: one follows the eldest's class, the other the youngest's, or alternate weeks. If only one parent is in the group, that parent has a specific job: **moving** important information to where the other can see it.
+
+## 3. Extract, don't remember
+
+The rule that changes everything: whenever something important appears in the group, **it leaves the group straight away** and goes to the right place.
+
+- **Events and dates** — meeting, trip, party, strike — in the family [calendar](/en/tools/calendario), with the child's name in the title and a reminder
+- **Deadlines and things to bring** — pay for the trip, sign the permission slip, bring PE kit — as assigned [to-dos](/en/tools/to-do), with the date
+- **Messages to share with the other parent** — one line in the [family chat](/en/tools/chat): "Trip on the 12th, €15 by Friday, it's in the calendar"
+
+From then on, the group message can vanish under a hundred others: the information is safe.
+
+## 4. Reply as little as possible
+
+You don't need to reply to every message. A thumbs up to confirm, an answer when you're asked something directly, and that's it. Groups get lighter when fewer people reply to everything.
+
+## 5. Rules that help the whole group
+
+If you're a class rep, or get the chance to suggest it, a few rules make the group more useful for everyone:
+
+- **class information only**
+- **wishes and thanks in private**
+- **one important message per topic**, with a clear date and deadline
+- **a weekly summary** of deadlines, if someone takes it on
+
+## 6. Photos of the children
+
+School play and party photos often circulate in the group. Think before sharing: other people's children are in the photo, and their parents may not want that. Your own children's photos can live in the family album, not in a group of thirty families.
+
+## In short
+
+Mute the group and read it twice a day, share it as a couple, move events, deadlines and things to bring into the calendar and to-dos straight away, tell the other parent in one line, reply as little as possible and take care with photos. The class group will stay noisy. You, a little less.
+""",
+        },
+    },
+    {
+        "slug": "chat-con-figli-adolescenti",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["chat", "famiglia", "posizione"], "related": ["faccende-per-adolescenti", "posizione-famiglia-senza-controllo", "tempo-davanti-agli-schermi-in-famiglia"],
+        "it": {
+            "title": "La chat di famiglia con i figli adolescenti: regole, rispetto e niente sorveglianza",
+            "desc": "Il figlio di quattordici anni entra nella chat di famiglia: cosa si scrive lì, cosa resta tra genitori, come si evita che diventi lo strumento dei rimproveri. Una guida pratica per una comunicazione che funzioni.",
+            "body": """
+Quando i figli arrivano all'adolescenza e hanno un telefono, la comunicazione in famiglia cambia. I messaggi diventano un canale importante: «esco alle sei», «mi vieni a prendere?», «stasera mangio da Luca». Farli entrare nella chat di famiglia può semplificare molto la logistica. Ma solo se la chat non diventa il luogo dei controlli e dei rimproveri.
+
+## Chi entra nella chat di famiglia
+
+Nella [chat](/strumenti/chat) di KidBox ci sono **tutti i membri della famiglia**, e nessun altro. Un figlio entra nella chat quando entra nella famiglia con il proprio account, come membro. Prima di invitarlo, due cose da sapere:
+
+- **i membri vedono le parti condivise della famiglia**: calendario, liste, note, documenti, foto. Pensate a cosa è opportuno che un adolescente veda — e cosa, eventualmente, tenere fuori dall'app, come le idee per i regali o le conversazioni tra genitori
+- **un account in più conta tra i membri** della famiglia: i profili dei figli senza account no. I piani sono spiegati nella [sezione prezzi](/index.html#prezzi)
+
+## Cosa si scrive lì
+
+La chat con i figli funziona se ha uno scopo chiaro e leggero:
+
+- **logistica**: orari, passaggi, dove sei, a che ora torni
+- **informazioni utili**: la cena è pronta, la nonna arriva domenica
+- **cose belle**: una foto, un complimento, una battuta
+
+## Cosa non si scrive lì
+
+- **rimproveri e discussioni**: le conversazioni difficili si fanno a voce, a quattr'occhi
+- **decisioni tra genitori** che riguardano il figlio: prima si parla tra adulti, poi con lui
+- **commenti su amici, voti, aspetto** davanti a tutta la famiglia
+
+Una regola semplice: **in chat solo quello che direste volentieri a tavola**, davanti a tutti.
+
+## Le conversazioni tra genitori
+
+Se nella chat di famiglia c'è anche il figlio, i genitori hanno bisogno di **un altro spazio** per le loro conversazioni: una chat privata a due fuori dall'app, o semplicemente parlarne a voce. Nella chat di KidBox tutti i membri vedono tutti i messaggi: non è il posto per le discussioni tra adulti.
+
+## Rispondere, e non pretendere risposte immediate
+
+Gli adolescenti vivono il telefono in modo diverso dagli adulti. Qualche accordo evita molte liti:
+
+- **cosa richiede una risposta** («mi vieni a prendere?») e cosa no
+- **entro quanto** rispondere a un messaggio dei genitori quando si è fuori
+- **niente messaggi a raffica** se non risponde subito: prima una telefonata, poi eventualmente preoccuparsi
+
+## Posizione: un accordo, non un obbligo
+
+Molti genitori vorrebbero sapere dove sono i figli adolescenti. La [condivisione della posizione](/strumenti/posizione) di KidBox la accende e la spegne ognuno per sé, e chi smette di condividere viene segnalato agli altri. È uno strumento che funziona solo se è **concordato**: imposto di nascosto, rompe la fiducia molto più di quanto rassicuri. Ne parliamo in [la posizione della famiglia senza controllo](/blog/posizione-famiglia-senza-controllo).
+
+## Un'eccezione: la sicurezza
+
+Qualunque regola sulla chat si ferma davanti alla sicurezza. Il messaggio più importante da dare a un adolescente è questo: **se sei in difficoltà, scrivi o chiama, e nessuno ti farà la predica** per come ci sei arrivato. Si parla dopo.
+
+## In sintesi
+
+Il figlio entra nella chat quando è membro della famiglia, sapendo cosa vedrà. In chat logistica, informazioni e cose belle; rimproveri, decisioni tra genitori e commenti personali a voce. I genitori hanno un loro spazio per parlarsi, le risposte hanno regole concordate, la posizione si condivide solo se è un accordo. E per i momenti di difficoltà, una promessa: prima si aiuta, poi si parla.
+""",
+        },
+        "en": {
+            "title": "The family chat with teenagers: rules, respect and no surveillance",
+            "desc": "Your fourteen-year-old joins the family chat: what gets written there, what stays between parents, how to stop it becoming a telling-off tool. A practical guide to communication that works.",
+            "body": """
+When children reach their teens and have a phone, family communication changes. Messages become an important channel: "I'm heading out at six", "can you pick me up?", "I'm eating at Luke's tonight". Bringing them into the family chat can simplify logistics a lot. But only if the chat doesn't become a place for checking up and telling off.
+
+## Who joins the family chat
+
+KidBox's [chat](/en/tools/chat) includes **all family members**, and nobody else. A child joins the chat when they join the family with their own account, as a member. Before inviting them, two things to know:
+
+- **members see the family's shared areas**: calendar, lists, notes, documents, photos. Think about what's appropriate for a teenager to see — and what, if anything, to keep outside the app, like present ideas or conversations between parents
+- **an extra account counts as a family member**: children's profiles without accounts don't. Plans are explained in the [pricing section](/index-en.html#prezzi)
+
+## What goes there
+
+A chat with your children works if its purpose is clear and light:
+
+- **logistics**: times, lifts, where are you, when are you back
+- **useful information**: dinner's ready, grandma's coming on Sunday
+- **nice things**: a photo, a compliment, a joke
+
+## What doesn't go there
+
+- **telling-offs and arguments**: difficult conversations happen out loud, face to face
+- **decisions between parents** about the child: adults talk first, then talk with them
+- **comments on friends, grades or looks** in front of the whole family
+
+A simple rule: **only write in chat what you'd happily say at the dinner table**, in front of everyone.
+
+## Conversations between parents
+
+If your child is in the family chat, parents need **another space** for their conversations: a private chat for two outside the app, or simply talking in person. In KidBox's chat all members see all messages: it isn't the place for adult discussions.
+
+## Replying, and not demanding instant replies
+
+Teenagers experience phones differently from adults. A few agreements prevent many arguments:
+
+- **what needs a reply** ("can you pick me up?") and what doesn't
+- **how soon** to reply to a parent's message when out
+- **no message barrages** if they don't reply straight away: call first, then worry if needed
+
+## Location: an agreement, not an obligation
+
+Many parents would like to know where their teenagers are. KidBox's [location sharing](/en/tools/posizione) is switched on and off by each person themselves, and others are told when someone stops sharing. It only works if it's **agreed**: imposed in secret, it breaks trust far more than it reassures. More in [family location without surveillance](/en/blog/posizione-famiglia-senza-controllo).
+
+## One exception: safety
+
+Any chat rule stops where safety begins. The most important message to give a teenager is this: **if you're in trouble, message or call, and nobody will lecture you** about how you got there. The talking comes later.
+
+## In short
+
+A child joins the chat when they're a family member, knowing what they'll see. In chat: logistics, information and nice things; telling-offs, parental decisions and personal comments happen out loud. Parents have their own space to talk, replies follow agreed rules, and location is shared only by agreement. And for difficult moments, a promise: help first, talk later.
+""",
+        },
+    },
+    # ── Organizzazione familiare · posizione ───────────────────────────
+    {
+        "slug": "condivisione-temporanea-della-posizione",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["posizione", "chat"], "related": ["posizione-famiglia-senza-controllo", "zone-di-arrivo-scuola-e-casa", "viaggio-in-auto-con-bambini"],
+        "it": {
+            "title": "Condividere la posizione solo per qualche ora: quando serve e come farlo bene",
+            "desc": "Il viaggio in auto di rientro, la serata fuori, il primo concerto del figlio grande. Non serve condividere la posizione sempre: basta farlo quando conta, e lasciare che si spenga da sola.",
+            "body": """
+Quando si parla di condividere la posizione in famiglia, si immagina subito una condivisione permanente: tutti vedono dove sono tutti, sempre. A molte persone, giustamente, non piace. Ma tra «sempre» e «mai» c'è una possibilità molto più usata nella vita reale: **condividere la posizione per qualche ora**, quando serve, e lasciare che si spenga da sola.
+
+## Quando serve davvero
+
+- **un viaggio in auto**: il genitore che guida di notte, chi aspetta a casa sa quando sta per arrivare senza telefonare
+- **una serata fuori** in un posto che non si conosce
+- **un'escursione** o una corsa in solitaria
+- **il figlio grande** al primo concerto, alla prima uscita in città, al primo viaggio in treno da solo
+- **un appuntamento** in cui ci si deve ritrovare in un posto affollato
+
+In tutti questi casi l'esigenza ha un inizio e una fine. La condivisione dovrebbe avere lo stesso.
+
+## Come funziona in KidBox
+
+Nella sezione [Posizione](/strumenti/posizione) di KidBox ognuno decide per sé se condividere, e come:
+
+- **condivisione continua**, finché non la si spegne
+- **condivisione temporanea**, per **2, 3 o 8 ore**: allo scadere si ferma da sola, senza doversi ricordare di spegnerla
+
+Chi condivide compare sulla mappa ai membri della famiglia, con l'**ultimo aggiornamento** e il livello della **batteria**. Si può smettere in qualunque momento, e gli altri vengono avvisati che la condivisione è terminata. Le coordinate in tempo reale sono visibili solo ai membri della famiglia e non vengono conservate come storico dei movimenti.
+
+## Qualche buona abitudine
+
+### Dirlo, non solo farlo
+
+Una condivisione temporanea funziona meglio se accompagnata da una riga nella [chat di famiglia](/strumenti/chat): «Parto adesso, condivido la posizione per 3 ore». Chi è a casa sa cosa aspettarsi, e non si preoccupa se il puntino si ferma in autogrill.
+
+### Scegliere la durata giusta
+
+- **2 ore** per una commissione, un tragitto, un appuntamento
+- **3 ore** per una serata o un viaggio medio
+- **8 ore** per una giornata fuori o un viaggio lungo
+
+Se il viaggio si allunga, si riattiva; se finisce prima, si spegne.
+
+### La batteria
+
+Una condivisione attiva usa i servizi di localizzazione del telefono. Nei viaggi lunghi, un caricabatterie in auto evita di arrivare a destinazione con il telefono spento — proprio quando la condivisione serviva.
+
+### Nessuno ha l'obbligo
+
+La condivisione è una scelta di chi condivide, non una richiesta di chi guarda. Con i figli adolescenti in particolare, funziona solo se è **un accordo**: ne parliamo in [la chat di famiglia con i figli adolescenti](/blog/chat-con-figli-adolescenti).
+
+## Quando conviene una zona invece
+
+Se l'esigenza è sapere solo quando qualcuno **arriva** in un posto preciso — la scuola, la casa, la palestra — non serve seguire il puntino sulla mappa: basta una zona con l'avviso all'arrivo. Lo spieghiamo in [le zone di arrivo](/blog/zone-di-arrivo-scuola-e-casa).
+
+## In sintesi
+
+Tra condividere sempre e non condividere mai, la condivisione temporanea copre quasi tutte le esigenze reali: viaggi, serate, prime uscite. In KidBox si attiva per 2, 3 o 8 ore e si ferma da sola, è visibile solo alla famiglia e non lascia uno storico. Detta in chat, scelta con la durata giusta e sempre concordata, rassicura senza controllare.
+""",
+        },
+        "en": {
+            "title": "Sharing your location for just a few hours: when it helps and how to do it well",
+            "desc": "The drive home, a night out, your teenager's first concert. You don't need to share location all the time: just when it matters, and let it switch itself off.",
+            "body": """
+When people talk about sharing location in a family, they immediately picture permanent sharing: everyone sees where everyone is, always. Many people, rightly, don't like that. But between "always" and "never" there's an option used far more in real life: **sharing location for a few hours**, when it helps, and letting it switch itself off.
+
+## When it really helps
+
+- **a car journey**: the parent driving at night; whoever waits at home knows when they're nearly there without calling
+- **a night out** somewhere unfamiliar
+- **a hike** or a solo run
+- **an older child** at their first concert, first trip into town, first train journey alone
+- **meeting up** in a crowded place
+
+In each case the need has a start and an end. The sharing should too.
+
+## How it works in KidBox
+
+In KidBox's [Location](/en/tools/posizione) section each person decides for themselves whether to share, and how:
+
+- **continuous sharing**, until switched off
+- **temporary sharing**, for **2, 3 or 8 hours**: when time's up it stops by itself, with no need to remember to turn it off
+
+Whoever shares appears on the map for family members, with the **last update** and **battery** level. You can stop at any time, and others are told the sharing has ended. Real-time coordinates are visible only to family members and aren't kept as a history of movements.
+
+## A few good habits
+
+### Say it, don't just do it
+
+Temporary sharing works better with a line in the [family chat](/en/tools/chat): "Leaving now, sharing location for 3 hours". Whoever's home knows what to expect, and doesn't worry if the dot stops at a service station.
+
+### Pick the right duration
+
+- **2 hours** for an errand, a short trip, an appointment
+- **3 hours** for an evening or a medium journey
+- **8 hours** for a day out or a long journey
+
+If the trip runs long, turn it on again; if it ends early, switch it off.
+
+### Battery
+
+Active sharing uses the phone's location services. On long journeys, a car charger avoids arriving with a dead phone — just when sharing was needed.
+
+### Nobody is obliged
+
+Sharing is the choice of whoever shares, not a demand from whoever watches. With teenagers especially, it only works as **an agreement**: more in [the family chat with teenagers](/en/blog/chat-con-figli-adolescenti).
+
+## When a zone works better
+
+If all you need is to know when someone **arrives** somewhere specific — school, home, the gym — you don't need to follow the dot on the map: a zone with an arrival alert is enough. We explain it in [arrival zones](/en/blog/zone-di-arrivo-scuola-e-casa).
+
+## In short
+
+Between always sharing and never sharing, temporary sharing covers almost every real need: journeys, evenings, first outings. In KidBox it's switched on for 2, 3 or 8 hours and stops by itself, is visible only to the family and leaves no history. Announced in chat, with the right duration and always agreed, it reassures without controlling.
+""",
+        },
+    },
+    {
+        "slug": "zone-di-arrivo-scuola-e-casa",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["posizione", "calendario"], "related": ["condivisione-temporanea-della-posizione", "orari-dopo-scuola-genitori-che-lavorano", "primo-tragitto-da-solo-del-figlio"],
+        "it": {
+            "title": "Le zone di arrivo: sapere che sono arrivati a scuola o a casa senza guardare la mappa",
+            "desc": "Non serve seguire il puntino sulla mappa per sapere se il figlio è arrivato a scuola o se il partner è uscito dal lavoro. Come impostare zone con un avviso all'arrivo e alla partenza, e usarle con misura.",
+            "body": """
+Molte volte, quando pensiamo alla posizione di un familiare, non vogliamo davvero sapere **dove** si trova in ogni momento. Vogliamo sapere una cosa sola: **è arrivato?** A scuola, a casa, in palestra, dai nonni. Guardare la mappa ogni cinque minuti è ansiogeno per chi guarda e invadente per chi è guardato. Una zona con un avviso all'arrivo risponde alla domanda vera, e basta.
+
+## Cosa sono le zone
+
+Una zona — tecnicamente un *geofence* — è un'area attorno a un luogo: la scuola, la casa, l'ufficio, la casa dei nonni. Quando un membro della famiglia che condivide la posizione **entra** o **esce** da quell'area, arriva una notifica: «Sara è arrivata a scuola», «Marco è uscito dal lavoro».
+
+## Come funzionano in KidBox
+
+Nella sezione [Posizione](/strumenti/posizione) di KidBox:
+
+1. **crea un luogo**: scuola, casa, palestra, nonni
+2. **regola il raggio** dell'area, in base alla dimensione del posto e alla precisione che serve
+3. **scegli i membri** a cui si applica: la zona «scuola» per i figli, la zona «ufficio» per un genitore
+4. ricevi l'**avviso all'arrivo e alla partenza**
+
+Le zone funzionano solo per chi **condivide la posizione**, e richiedono che il telefono consenta all'app di accedere alla posizione anche in background. Ognuno può smettere di condividere in qualunque momento, e gli altri vengono avvisati.
+
+## Le zone più utili
+
+- **Scuola**: per i figli che ci vanno da soli, a piedi, in bici o con i mezzi
+- **Casa**: il ritorno dalla scuola, dall'allenamento, da una serata
+- **Nonni o babysitter**: il bambino è arrivato dopo il passaggio
+- **Palestra o campo**: soprattutto quando lo accompagna qualcun altro
+- **Ufficio**: «è uscito dal lavoro», utile per organizzare cena e ritiri
+
+## Il raggio giusto
+
+Un raggio troppo piccolo può non far scattare l'avviso, perché la posizione del telefono non è precisa al metro, soprattutto tra gli edifici. Un raggio troppo grande avvisa quando la persona è ancora a qualche strada di distanza. Partite da un raggio medio — un paio di centinaia di metri — e aggiustatelo dopo qualche giorno di prova.
+
+## Usarle con misura
+
+Le zone sono uno strumento leggero, ma restano uno strumento di posizione. Qualche principio:
+
+- **poche zone**, quelle che rispondono a una domanda reale
+- **concordate** con chi ne è interessato, soprattutto con i figli adolescenti e con il partner
+- **non sostituiscono la fiducia**: se un avviso non arriva, prima di preoccuparsi ricordate che batteria scarica, telefono spento o posizione disattivata sono molto più probabili di un problema
+- **da togliere** quando non servono più
+
+Ne parliamo più in generale in [la posizione della famiglia senza controllo](/blog/posizione-famiglia-senza-controllo).
+
+## Zone e calendario
+
+Le zone funzionano bene insieme al [calendario](/strumenti/calendario): se nel calendario c'è «Luca a nuoto, ritiro 18:15», l'avviso «Luca è uscito dalla piscina» dice a chi deve andarlo a prendere che è il momento. Nessun messaggio, nessuna telefonata.
+
+## In sintesi
+
+Una zona risponde alla domanda che conta davvero — è arrivato? — senza seguire il puntino sulla mappa. In KidBox si crea un luogo, si regola il raggio, si scelgono i membri e arriva l'avviso all'arrivo e alla partenza, per chi condivide la posizione. Poche zone, concordate, con il raggio giusto e senza farle diventare un sostituto della fiducia.
+""",
+        },
+        "en": {
+            "title": "Arrival zones: knowing they've reached school or home without watching the map",
+            "desc": "You don't need to follow a dot on a map to know your child got to school or your partner left work. How to set up zones with arrival and departure alerts, and use them sparingly.",
+            "body": """
+Often, when we think about a family member's location, we don't really want to know **where** they are every moment. We want to know one thing: **have they arrived?** At school, at home, at the gym, at the grandparents'. Checking the map every five minutes is stressful for the watcher and intrusive for the watched. A zone with an arrival alert answers the real question, and nothing more.
+
+## What zones are
+
+A zone — technically a *geofence* — is an area around a place: school, home, the office, the grandparents' house. When a family member who shares their location **enters** or **leaves** that area, a notification arrives: "Sara has arrived at school", "Mark has left work".
+
+## How they work in KidBox
+
+In KidBox's [Location](/en/tools/posizione) section:
+
+1. **create a place**: school, home, gym, grandparents
+2. **adjust the radius** of the area, based on the size of the place and the precision you need
+3. **choose the members** it applies to: the "school" zone for the children, the "office" zone for a parent
+4. get an **alert on arrival and departure**
+
+Zones only work for people who **share their location**, and need the phone to allow the app location access in the background too. Anyone can stop sharing at any time, and others are told.
+
+## The most useful zones
+
+- **School**: for children who go on their own, on foot, by bike or by public transport
+- **Home**: coming back from school, practice, an evening out
+- **Grandparents or babysitter**: the child has arrived after a drop-off
+- **Gym or pitch**: especially when someone else drives them
+- **Office**: "has left work", handy for planning dinner and pick-ups
+
+## The right radius
+
+Too small a radius may not trigger the alert, because phone location isn't accurate to the metre, especially between buildings. Too large and it alerts while the person is still a few streets away. Start with a medium radius — a couple of hundred metres — and adjust after a few days of trying.
+
+## Use them sparingly
+
+Zones are a light tool, but still a location tool. A few principles:
+
+- **few zones**, the ones that answer a real question
+- **agreed** with the people involved, especially teenagers and your partner
+- **not a substitute for trust**: if an alert doesn't arrive, before worrying remember a flat battery, a phone switched off or location turned off are far more likely than a problem
+- **removed** when no longer needed
+
+More broadly, see [family location without surveillance](/en/blog/posizione-famiglia-senza-controllo).
+
+## Zones and the calendar
+
+Zones work well with the [calendar](/en/tools/calendario): if the calendar says "Luke swimming, pick-up 6:15", the alert "Luke has left the pool" tells whoever's collecting that it's time. No messages, no calls.
+
+## In short
+
+A zone answers the question that really matters — have they arrived? — without following a dot on the map. In KidBox you create a place, set the radius, choose members and get arrival and departure alerts for those sharing their location. Few zones, agreed, with the right radius, and never a substitute for trust.
+""",
+        },
+    },
+    {
+        "slug": "primo-tragitto-da-solo-del-figlio",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["posizione", "chat", "calendario"], "related": ["zone-di-arrivo-scuola-e-casa", "orari-dopo-scuola-genitori-che-lavorano", "chat-con-figli-adolescenti"],
+        "it": {
+            "title": "Il primo tragitto da solo verso scuola: prepararlo per gradi, con o senza telefono",
+            "desc": "Andare a scuola da soli è una tappa importante di autonomia, per i figli e per i genitori. Come prepararla passo per passo, quali accordi prendere, cosa prevede la scuola e come usare la tecnologia senza farne una stampella.",
+            "body": """
+Il giorno in cui un figlio va a scuola da solo per la prima volta è una piccola rivoluzione. Per lui è autonomia, fiducia, crescita. Per i genitori, un misto di orgoglio e di ansia che si concentra in un quarto d'ora: il tempo del tragitto.
+
+Non esiste un'età giusta per tutti: dipende dal bambino, dal percorso, dalla città. Esiste però un modo per arrivarci preparati.
+
+Questo articolo dà indicazioni organizzative. In Italia, per l'uscita autonoma da scuola dei minori di 14 anni è di norma richiesta un'autorizzazione dei genitori secondo le modalità previste dalla scuola: informatevi presso l'istituto sulle regole e sui moduli.
+
+## 1. Il percorso, prima del giorno
+
+Il tragitto va conosciuto molto bene prima di farlo da soli:
+
+- **percorrerlo insieme** più volte, a piedi, alla stessa ora in cui lo farà
+- **scegliere il percorso più sicuro**, non il più breve: attraversamenti con semaforo o strisce, strade trafficate da evitare
+- **individuare i punti di riferimento**: il bar dove fermarsi se c'è un problema, un negoziante conosciuto
+- **parlare delle situazioni**: cosa fare se un amico propone un'altra strada, se si perde l'autobus, se uno sconosciuto si avvicina
+
+## 2. Per gradi
+
+L'autonomia si costruisce a passi:
+
+1. **il genitore a distanza**: il bambino davanti, il genitore qualche metro dietro
+2. **il genitore a metà strada**: si ritrovano a un punto concordato
+3. **con un amico**: il tragitto fatto insieme a un compagno
+4. **da solo**
+
+Ogni passo per qualche giorno, finché il bambino — e il genitore — sono tranquilli.
+
+## 3. Gli accordi
+
+Poche regole chiare, dette e ripetute:
+
+- **nessuna deviazione** dal percorso concordato
+- **orario**: si esce a quest'ora, si arriva entro quest'ora
+- **cosa fare se succede qualcosa**: fermarsi in un luogo sicuro, chiedere aiuto a un adulto, chiamare
+- **i numeri da sapere** a memoria, non solo nel telefono
+
+## 4. Con il telefono, se c'è
+
+Non tutti i bambini che vanno a scuola da soli hanno un telefono, e non è indispensabile. Se ce l'hanno e sono membri della famiglia su KidBox con il proprio account, qualche strumento può aiutare nelle prime settimane:
+
+- una **zona di arrivo** sulla scuola nella sezione [Posizione](/strumenti/posizione): il genitore riceve l'avviso quando il figlio arriva, senza chiamarlo e senza guardare la mappa. Lo spieghiamo in [le zone di arrivo](/blog/zone-di-arrivo-scuola-e-casa)
+- un **messaggio breve** nella [chat di famiglia](/strumenti/chat) all'arrivo, se lo concordate: «arrivato»
+- la **condivisione della posizione** attivata dal figlio, anche solo per il tragitto
+
+La tecnologia deve essere **un aiuto temporaneo**, non una stampella permanente. Dopo qualche settimana tranquilla, vale la pena ridurre: prima togliere il messaggio, poi magari anche l'avviso.
+
+## 5. Il calendario della settimana
+
+Gli orari cambiano: uscita anticipata, sciopero, gita, rientro pomeridiano. Metterli nel [calendario](/strumenti/calendario) di famiglia, con il nome del figlio, permette a tutti di sapere in anticipo quando il tragitto sarà diverso — e di dirlo al figlio la sera prima.
+
+## 6. Fidarsi, e dirlo
+
+Il messaggio più importante per un bambino che inizia ad andare da solo non riguarda il percorso: è **«mi fido di te»**. E il secondo: **«se succede qualcosa, non c'è nessun problema a chiamare»**. Un figlio che sa di poter chiedere aiuto senza essere rimproverato è più sicuro di uno seguito passo per passo.
+
+## In sintesi
+
+Conoscere il percorso insieme, arrivarci per gradi, poche regole chiare, l'autorizzazione della scuola dove richiesta. Se c'è un telefono, una zona di arrivo e un messaggio concordato per le prime settimane, da ridurre con il tempo. Gli orari speciali in calendario. E, soprattutto, fiducia detta ad alta voce.
+""",
+        },
+        "en": {
+            "title": "Your child's first walk to school alone: preparing step by step, with or without a phone",
+            "desc": "Going to school alone is an important milestone of independence, for children and parents. How to prepare it step by step, which agreements to make, what school requires and how to use technology without it becoming a crutch.",
+            "body": """
+The day a child goes to school alone for the first time is a small revolution. For them it's independence, trust, growing up. For parents, a mix of pride and anxiety concentrated into fifteen minutes: the length of the journey.
+
+There's no right age for everyone: it depends on the child, the route, the town. But there is a way to get there prepared.
+
+This article gives organisational tips. Rules on children leaving school unaccompanied vary: in Italy, for example, parents of under-14s normally need to give the school authorisation in the form it requires. Check your school's rules and forms.
+
+## 1. The route, before the day
+
+The route needs to be very familiar before doing it alone:
+
+- **walk it together** several times, at the same time of day they'll do it
+- **choose the safest route**, not the shortest: crossings with lights or zebra crossings, busy roads to avoid
+- **identify landmarks**: the café to stop at if there's a problem, a shopkeeper you know
+- **talk through situations**: what to do if a friend suggests another way, if they miss the bus, if a stranger approaches
+
+## 2. Step by step
+
+Independence is built in stages:
+
+1. **parent at a distance**: the child in front, the parent a few metres behind
+2. **parent halfway**: meeting at an agreed point
+3. **with a friend**: the route done with a classmate
+4. **alone**
+
+Each stage for a few days, until the child — and the parent — feel calm.
+
+## 3. The agreements
+
+A few clear rules, said and repeated:
+
+- **no detours** from the agreed route
+- **timing**: leave at this time, arrive by this time
+- **what to do if something happens**: stop somewhere safe, ask an adult for help, call
+- **the numbers to know** by heart, not just in the phone
+
+## 4. With a phone, if they have one
+
+Not every child who walks to school has a phone, and it isn't essential. If they have one and are a family member in KidBox with their own account, a few tools can help in the first weeks:
+
+- an **arrival zone** at school in the [Location](/en/tools/posizione) section: the parent gets an alert when the child arrives, without calling or watching the map. We explain it in [arrival zones](/en/blog/zone-di-arrivo-scuola-e-casa)
+- a **short message** in the [family chat](/en/tools/chat) on arrival, if you agree it: "here"
+- **location sharing** switched on by the child, even just for the journey
+
+Technology should be **temporary help**, not a permanent crutch. After a few calm weeks, it's worth scaling back: first drop the message, then perhaps the alert too.
+
+## 5. The week's calendar
+
+Times change: early finish, strike, school trip, afternoon session. Putting them in the family [calendar](/en/tools/calendario), with the child's name, lets everyone know in advance when the journey will be different — and tell the child the evening before.
+
+## 6. Trust, and say so
+
+The most important message for a child starting to go alone isn't about the route: it's **"I trust you"**. And the second: **"if anything happens, it's absolutely fine to call"**. A child who knows they can ask for help without being told off is safer than one followed every step of the way.
+
+## In short
+
+Learn the route together, get there in stages, a few clear rules, school authorisation where required. If there's a phone, an arrival zone and an agreed message for the first weeks, scaled back over time. Special timings in the calendar. And above all, trust said out loud.
+""",
+        },
+    },
+    {
+        "slug": "posizione-in-coppia-e-privacy",
+        "category": "organizzazione-familiare", "date": "2026-09-13",
+        "tools": ["posizione", "chat"], "related": ["posizione-famiglia-senza-controllo", "condivisione-temporanea-della-posizione", "app-per-coppie-cosa-serve"],
+        "it": {
+            "title": "Condividere la posizione in coppia: comodità, fiducia e il diritto di spegnerla",
+            "desc": "Sapere se il partner è già uscito dal lavoro è comodo. Sentirsi osservati non lo è. Come decidere insieme se, quando e come condividere la posizione tra adulti, senza trasformarla in controllo.",
+            "body": """
+Tra genitori, condividere la posizione può essere semplicemente pratico: sapere se l'altro è già uscito dal lavoro per decidere chi va a prendere i figli, se è ancora in coda in tangenziale, se il treno è arrivato. Ma la stessa funzione, in un momento di tensione, può diventare uno strumento di sospetto. La differenza non la fa la tecnologia: la fa l'accordo tra le due persone.
+
+Questo articolo parla di organizzazione e di buone pratiche. Se in una relazione la posizione, il telefono o i movimenti vengono controllati contro la volontà di uno dei due, non si tratta più di organizzazione: esistono centri antiviolenza e numeri di supporto a cui rivolgersi, in Italia il 1522.
+
+## Perché condividere, se lo si sceglie
+
+- **logistica quotidiana**: chi arriva prima a casa, chi può passare in farmacia
+- **viaggi e spostamenti lunghi**: sapere che l'altro sta arrivando, senza telefonare alla guida
+- **tranquillità**: una corsa serale, un rientro tardi
+- **emergenze**: sapere dove si trova l'altro se succede qualcosa
+
+## I principi di un accordo sano
+
+### Una scelta di chi condivide
+
+Nella sezione [Posizione](/strumenti/posizione) di KidBox ognuno decide per sé se condividere: nessuno può attivare la condivisione della posizione di un altro. È giusto così: la posizione di un adulto è sua.
+
+### Reciproca, ma non obbligatoria
+
+Una condivisione che funziona è di solito reciproca. Ma nessuno dei due deve sentirsi obbligato: se uno preferisce non condividere, o condividere solo in certi momenti, è una scelta legittima.
+
+### Spegnerla è un diritto
+
+La condivisione si può **spegnere in qualunque momento**, e gli altri vengono avvisati. Questo avviso è importante: rende la cosa trasparente in entrambe le direzioni. Spegnere la posizione non deve diventare motivo di sospetto o di discussione.
+
+### Temporanea, quando basta
+
+Molte esigenze pratiche hanno un inizio e una fine. La **condivisione temporanea** per 2, 3 o 8 ore copre il viaggio, la serata, la giornata fuori, e si ferma da sola. Ne parliamo in [condividere la posizione solo per qualche ora](/blog/condivisione-temporanea-della-posizione).
+
+### Nessuno storico
+
+In KidBox le coordinate in tempo reale sono visibili solo ai membri della famiglia e **non vengono conservate come storico** dei movimenti: si vede dov'è una persona adesso, se condivide, non dove è stata ieri.
+
+## Le domande da farsi insieme
+
+Prima di attivare la condivisione, una conversazione breve:
+
+- **perché** la vogliamo: logistica, sicurezza, tranquillità?
+- **sempre o solo in certi momenti**?
+- **cosa succede se uno dei due la spegne**? (Risposta giusta: niente.)
+- **la usiamo per organizzarci, non per verificare**: siamo d'accordo?
+
+## Quando la posizione diventa un problema
+
+Qualche segnale che la condivisione sta diventando controllo:
+
+- si guarda la mappa **per verificare** quello che l'altro ha detto
+- spegnere la posizione **provoca discussioni**
+- uno dei due **non si sente libero** di non condividere
+
+In questi casi la soluzione non è tecnica: è parlarne, e se serve spegnere la condivisione finché il clima non torna sereno.
+
+## Posizione e chat
+
+Spesso un messaggio vale più della mappa: «esco adesso», «sono in coda, arrivo alle 8». Una riga nella [chat di famiglia](/strumenti/chat) comunica intenzioni, non solo coordinate, e non ha bisogno di nessuna condivisione attiva.
+
+## In sintesi
+
+Condividere la posizione in coppia può essere molto comodo, se è una scelta di chi condivide, reciproca ma non obbligatoria, spegnibile senza conseguenze, temporanea quando basta e senza storico. Parlatene prima, usatela per organizzarvi e non per verificare, e ricordate che un messaggio spesso vale più di un puntino sulla mappa.
+""",
+        },
+        "en": {
+            "title": "Sharing location as a couple: convenience, trust and the right to switch it off",
+            "desc": "Knowing whether your partner has left work is handy. Feeling watched isn't. How to decide together whether, when and how to share location between adults, without it becoming control.",
+            "body": """
+Between parents, sharing location can simply be practical: knowing whether the other has left work to decide who collects the children, whether they're still stuck in traffic, whether the train has arrived. But the same feature, in a tense moment, can become a tool of suspicion. The difference isn't the technology: it's the agreement between the two people.
+
+This article is about organisation and good practice. If in a relationship someone's location, phone or movements are monitored against their will, it's no longer about organisation: there are support services and helplines for this (in Italy, 1522; elsewhere, your national domestic abuse helpline).
+
+## Why share, if you choose to
+
+- **everyday logistics**: who gets home first, who can stop at the pharmacy
+- **journeys**: knowing the other is on their way, without calling while they drive
+- **peace of mind**: an evening run, a late return
+- **emergencies**: knowing where the other is if something happens
+
+## The principles of a healthy agreement
+
+### The sharer's choice
+
+In KidBox's [Location](/en/tools/posizione) section each person decides for themselves whether to share: nobody can turn on someone else's location sharing. That's how it should be: an adult's location is their own.
+
+### Mutual, but not compulsory
+
+Sharing that works is usually mutual. But neither person should feel obliged: if one prefers not to share, or only at certain times, that's a legitimate choice.
+
+### Switching it off is a right
+
+Sharing can be **switched off at any time**, and others are told. That notice matters: it makes things transparent both ways. Turning off location mustn't become a reason for suspicion or argument.
+
+### Temporary, when that's enough
+
+Many practical needs have a start and an end. **Temporary sharing** for 2, 3 or 8 hours covers the journey, the evening, the day out, and stops by itself. More in [sharing your location for just a few hours](/en/blog/condivisione-temporanea-della-posizione).
+
+### No history
+
+In KidBox real-time coordinates are visible only to family members and **aren't kept as a history** of movements: you see where someone is now, if they're sharing, not where they were yesterday.
+
+## Questions to ask together
+
+Before turning on sharing, a short conversation:
+
+- **why** do we want it: logistics, safety, peace of mind?
+- **always, or only at certain times**?
+- **what happens if one of us switches it off**? (Right answer: nothing.)
+- **we use it to organise, not to check up**: agreed?
+
+## When location becomes a problem
+
+A few signs sharing is turning into control:
+
+- the map gets checked **to verify** what the other person said
+- switching location off **causes arguments**
+- one person **doesn't feel free** not to share
+
+In these cases the fix isn't technical: talk about it, and if needed switch sharing off until things are calm again.
+
+## Location and chat
+
+Often a message is worth more than the map: "leaving now", "stuck in traffic, home by 8". A line in the [family chat](/en/tools/chat) communicates intentions, not just coordinates, and needs no active sharing.
+
+## In short
+
+Sharing location as a couple can be very convenient, if it's the sharer's choice, mutual but not compulsory, switchable off without consequences, temporary when that's enough and without history. Talk about it first, use it to organise rather than to check, and remember a message is often worth more than a dot on a map.
+""",
+        },
+    },
 ]
