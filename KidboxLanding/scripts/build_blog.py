@@ -200,6 +200,7 @@ def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website"):
   <link rel="canonical" href="{SITE}/{L['dir']}/{canonical}">
   <link rel="alternate" hreflang="it" href="{SITE}/{LANGS['it']['dir']}/{canonical}">
   <link rel="alternate" hreflang="en" href="{SITE}/{LANGS['en']['dir']}/{canonical}">
+  <link rel="alternate" hreflang="x-default" href="{SITE}/{LANGS['it']['dir']}/{canonical}">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="{prefix}icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">

@@ -214,6 +214,7 @@ def page(lang, title, desc, canonical, body, depth):
   <link rel="canonical" href="https://kidboxapp.com/{L['dir']}/{canonical}">
   <link rel="alternate" hreflang="it" href="https://kidboxapp.com/{LANGS['it']['dir']}/{canonical}">
   <link rel="alternate" hreflang="en" href="https://kidboxapp.com/{LANGS['en']['dir']}/{canonical}">
+  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/{LANGS['it']['dir']}/{canonical}">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="{prefix}icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">

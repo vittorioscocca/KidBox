@@ -12,7 +12,9 @@ elencate in `STATIC`: una pagina nuova scritta a mano va aggiunta lì.
 Ogni URL porta le alternative hreflang it/en. Gli URL sono quelli puliti
 serviti da Firebase (`cleanUrls`), senza `.html`.
 """
+import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -35,11 +37,25 @@ STATIC = [
 ]
 
 
+def git_date(*files):
+    """Ultima modifica dei sorgenti: data dell'ultimo commit che li tocca, oggi
+    se hanno modifiche non committate. Mai l'mtime, che cambia a ogni build."""
+    paths = [str(f) for f in files]
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", *paths], cwd=ROOT,
+                           capture_output=True, text=True).stdout.strip()
+    if dirty:
+        return date.today().isoformat()
+    out = subprocess.run(["git", "log", "-1", "--format=%cs", "--", *paths], cwd=ROOT,
+                         capture_output=True, text=True).stdout.strip()
+    return out or None
+
+
 def pairs():
     """Coppie (path it, path en, lastmod o None)."""
-    out = [(it, en, None) for it, en in STATIC]
-    out.append(("strumenti/", "en/tools/", None))
-    out += [(f"strumenti/{t['slug']}", f"en/tools/{t['slug']}", None) for t in TOOLS]
+    out = [(it, en, git_date(PUBLIC / f"{it or 'index'}.html", PUBLIC / f"{en}.html")) for it, en in STATIC]
+    tools_src = (ROOT / "tools" / "tools_data.py", ROOT / "scripts" / "build_tools.py")
+    out.append(("strumenti/", "en/tools/", git_date(*tools_src)))
+    out += [(f"strumenti/{t['slug']}", f"en/tools/{t['slug']}", git_date(*tools_src)) for t in TOOLS]
     newest = max(a["date"] for a in ARTICLES)
     out.append(("blog/", "en/blog/", newest))
     for cslug in CATEGORIES:
@@ -53,7 +69,7 @@ def pairs():
 def url_entry(loc, it, en, lastmod):
     alts = "".join(
         f'\n    <xhtml:link rel="alternate" hreflang="{lang}" href="{escape(f"{SITE}/{p}")}"/>'
-        for lang, p in (("it", it), ("en", en))
+        for lang, p in (("it", it), ("en", en), ("x-default", it))
     )
     mod = f"\n    <lastmod>{lastmod}</lastmod>" if lastmod else ""
     return f"  <url>\n    <loc>{escape(f'{SITE}/{loc}')}</loc>{mod}{alts}\n  </url>"
