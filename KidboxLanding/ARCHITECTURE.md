@@ -18,6 +18,7 @@ Tutto sotto `public/` (root di hosting):
 | `data-deletion.html` | Eliminazione Dati · KidBox | Istruzioni cancellazione account/dati (richiesto da App/Play Store) |
 | `404.html` | Pagina non trovata | Fallback |
 | `strumenti/` + `en/tools/` | Strumenti KidBox | **Generate**: una pagina per scheda dell'app (card + dettaglio con schermate, «come funziona», FAQ, collegati). Sorgente in `tools/tools_data.py`, generatore `scripts/build_tools.py`; non modificare l'HTML a mano |
+| `blog/` + `en/blog/` | Blog KidBox | **Generate**: indice per categorie, una pagina per categoria e una per articolo (testo, box «scarica l'app», strumenti citati, articoli collegati, JSON-LD `Article`). Sorgente in `tools/blog_data.py` + `tools/blog_*.py` (un modulo per categoria, markdown minimo), generatore `scripts/build_blog.py`; non modificare l'HTML a mano. Gli articoli sono originali: mai copiare testi altrui |
 
 - **`public/screenshots/`** — screenshot dell'app per sezione (Home, Note, Calendario, Password, Chat, Wallet, Animali, Documenti, Posizione, Garage, To-Do, Foto e Video, Spese, Casa, Wizard, …). Catturati da iPhone 17 Pro. Usati in `index.html`/`guide.html`.
 - **`public/icon.png`** — logo/app icon.
@@ -38,7 +39,7 @@ Tutto sotto `public/` (root di hosting):
 
 ## 3. Quando modifichi qui
 
-- Nessun framework / nessun bundler: modifica diretta dell'HTML, niente `npm`/build. Eccezione: la sezione Strumenti si rigenera con `python3 scripts/build_tools.py` (prende stile, nav, store e footer da `index.html`/`index-en.html`, quindi va rilanciato anche dopo un ritocco a quelli).
+- Nessun framework / nessun bundler: modifica diretta dell'HTML, niente `npm`/build. Eccezione: le sezioni Strumenti e Blog si rigenerano con `python3 scripts/build_tools.py` e `python3 scripts/build_blog.py` (prendono stile, nav, store e footer da `index.html`/`index-en.html`, quindi vanno rilanciati entrambi anche dopo un ritocco a quelli).
 - `cleanUrls` è attivo: `/strumenti/calendario` serve `calendario.html`, e gli URL con `.html` reindirizzano a quelli puliti.
 - Nuovi screenshot → metti i PNG in `public/screenshots/<Sezione>/` e referenziali nell'HTML (beneficiano della cache immutabile).
 - Cambi a privacy/termini/data-deletion → aggiorna sia `public/*.html` sia `../docs/*/index.html` per non far divergere le due copie pubblicate.
