@@ -1500,6 +1500,614 @@ Rotate the unpleasant chores, keep a fixed owner for the ones needing continuity
 """,
         },
     },
+    # ── Casa e faccende · quinto lotto: la casa ────────────────────────
+    {
+        "slug": "manutenzione-caldaia-e-impianti",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["casa", "calendario", "documenti"], "related": ["garanzie-degli-elettrodomestici", "scadenze-di-casa-bollette-garanzie", "bollette-e-contratti-di-casa"],
+        "it": {
+            "title": "Caldaia, condizionatore e impianti di casa: la manutenzione che nessuno ricorda (finché si rompe)",
+            "desc": "Il controllo della caldaia, i filtri del condizionatore, l'addolcitore, il depuratore. Come tenere traccia delle manutenzioni di casa, chi le fa e quando tocca la prossima.",
+            "body": """
+La manutenzione degli impianti di casa ha una caratteristica: finché tutto funziona, nessuno ci pensa. Poi la caldaia si blocca il primo giorno di freddo, il condizionatore butta aria calda a luglio, e si scopre che l'ultimo controllo era di tre anni fa — o che nessuno sa quando è stato fatto.
+
+Una manutenzione regolare costa meno delle riparazioni d'urgenza, allunga la vita degli impianti e, per alcuni, è anche un obbligo.
+
+Questo articolo dà indicazioni organizzative. Periodicità e interventi necessari dipendono dal tipo di impianto, dalle indicazioni del produttore e dell'installatore e, per la caldaia, dalle norme nazionali e regionali: verificateli con un tecnico abilitato.
+
+## Gli impianti da tenere sotto controllo
+
+- **caldaia**: manutenzione periodica e controllo di efficienza energetica secondo le scadenze previste; il libretto di impianto va tenuto aggiornato
+- **condizionatori** e pompe di calore: pulizia dei filtri, sanificazione, controllo prima della stagione
+- **scaldabagno**
+- **addolcitore o depuratore** dell'acqua: sale, filtri, cartucce
+- **impianto elettrico**: salvavita da provare periodicamente
+- **ventilazione e cappa**: filtri
+- **canna fumaria e stufe**, dove presenti
+
+## 1. Il censimento, una volta
+
+Il primo passo è sapere cosa avete. Nella sezione [Casa](/strumenti/casa) di KidBox si censiscono i beni: per ogni impianto marca, modello, numero di serie, data d'acquisto e scadenza della garanzia, con il **manuale in PDF** allegato. Nelle note, i dati del tecnico che lo segue: utili quando si chiama l'assistenza.
+
+## 2. Ogni manutenzione con la data della prossima
+
+Il cuore del sistema: sulla scheda di ogni impianto si impostano **la data della prossima manutenzione e ogni quanti mesi va ripetuta**, con il promemoria attivo. Uscito il tecnico, due minuti: si aggiorna la data della prossima e si allega il rapporto.
+
+Il rapporto del tecnico — per la caldaia, il rapporto di controllo — fotografato o in PDF, va allegato alla scheda e finisce nei [documenti](/strumenti/documenti) di famiglia: se serve mostrarlo a un controllo, o all'acquirente quando si vende la casa, è lì. Nel nome del file la data dell'intervento, così i rapporti formano uno storico.
+
+## 3. Le manutenzioni fai-da-te
+
+Non tutto richiede un tecnico. Pulire i filtri del condizionatore, aggiungere il sale all'addolcitore, provare il salvavita: sono piccoli compiti che si dimenticano. Metteteli nel [calendario](/strumenti/calendario) di famiglia come eventi ricorrenti — mensili o annuali — con il promemoria, e decidete chi se ne occupa.
+
+## 4. Prenotare prima della stagione
+
+I tecnici sono più liberi **fuori stagione**. Il controllo della caldaia si prenota in tarda estate o inizio autunno, quello del condizionatore in primavera. Un promemoria un mese prima dell'inizio della stagione evita di trovarsi al freddo, o al caldo, in lista d'attesa.
+
+## 5. Chi se ne occupa
+
+Come per le altre aree della casa, conviene un **titolare**: chi segue gli impianti prenota i tecnici, conserva i rapporti e registra le manutenzioni. L'altro vede tutto — scadenze, storico, costi — senza doversene ricordare. Ne parliamo in [faccende tra adulti](/blog/faccende-tra-adulti).
+
+## 6. Quanto costa mantenere la casa
+
+Il costo di ogni intervento va nelle [spese di famiglia](/strumenti/spese), con una categoria per la casa; se il tecnico emette una fattura da pagare più avanti, registratela come scadenza di pagamento in Casa, che diventa spesa quando è pagata. Dopo un anno si sa quanto costano davvero gli impianti, e se un apparecchio vecchio richiede interventi sempre più frequenti — un dato utile per decidere quando sostituirlo.
+
+## In sintesi
+
+Un censimento degli impianti con manuali e dati, la prossima manutenzione impostata con periodicità e promemoria e i rapporti allegati, i piccoli controlli fai-da-te come eventi ricorrenti in calendario, i tecnici prenotati fuori stagione, un titolare per gli impianti e i costi seguiti nel tempo. La caldaia si romperà comunque, un giorno. Ma molto più tardi.
+""",
+        },
+        "en": {
+            "title": "Boiler, air conditioning and home systems: the maintenance nobody remembers (until it breaks)",
+            "desc": "The boiler service, air conditioner filters, the water softener, the purifier. How to track home maintenance, who does it and when the next one is due.",
+            "body": """
+Home system maintenance has one feature: while everything works, nobody thinks about it. Then the boiler cuts out on the first cold day, the air conditioning blows hot air in July, and you discover the last service was three years ago — or nobody knows when it was.
+
+Regular maintenance costs less than emergency repairs, extends the life of systems and, for some, is a legal requirement.
+
+This article gives organisational tips. Frequency and required work depend on the system, the manufacturer's and installer's instructions and, for boilers, national and regional rules: check them with a qualified engineer.
+
+## Systems to keep an eye on
+
+- **boiler**: periodic servicing and efficiency checks as required; keep its logbook up to date
+- **air conditioners** and heat pumps: filter cleaning, sanitising, pre-season check
+- **water heater**
+- **water softener or purifier**: salt, filters, cartridges
+- **electrics**: test the circuit breaker (RCD) periodically
+- **ventilation and cooker hood**: filters
+- **chimney and stoves**, where present
+
+## 1. The inventory, once
+
+The first step is knowing what you have. In KidBox's [Home](/en/tools/casa) section you record household items: for each system, brand, model, serial number, purchase date and warranty expiry, with the **PDF manual** attached. In the notes, the engineer's details: handy when you call for service.
+
+## 2. Every service with the next due date
+
+The heart of the system: on each system's record you set **the next service date and how many months between services**, with the reminder on. Once the engineer leaves, two minutes: update the next date and attach the report.
+
+The engineer's report, photographed or as a PDF, is attached to the record and goes into the family [documents](/en/tools/documenti): if you need to show it at an inspection, or to a buyer when selling the house, it's there. Put the service date in the file name, so the reports build a history.
+
+## 3. DIY maintenance
+
+Not everything needs an engineer. Cleaning air conditioner filters, topping up softener salt, testing the RCD: small jobs that get forgotten. Put them in the family [calendar](/en/tools/calendario) as recurring events — monthly or yearly — with a reminder, and decide who handles each one.
+
+## 4. Book before the season
+
+Engineers are freer **out of season**. Book the boiler service in late summer or early autumn, the air conditioning in spring. A reminder a month before the season starts saves you waiting in the cold, or the heat.
+
+## 5. Who handles it
+
+As with other areas of the home, an **owner** helps: whoever looks after the systems books engineers, keeps reports and records services. The other sees everything — deadlines, history, costs — without having to remember. More in [chores between adults](/en/blog/faccende-tra-adulti).
+
+## 6. What upkeep costs
+
+The cost of each service goes into [family expenses](/en/tools/spese), under a home category; if the engineer's invoice is due later, record it as a payment deadline in Home, which becomes an expense when paid. After a year you know what the systems really cost, and whether an old appliance needs more and more frequent repairs — useful for deciding when to replace it.
+
+## In short
+
+An inventory of systems with manuals and details, the next service set with its interval and a reminder, reports attached, small DIY checks as recurring calendar events, engineers booked out of season, an owner for the systems and costs tracked over time. The boiler will still break one day. But much later.
+""",
+        },
+    },
+    {
+        "slug": "garanzie-degli-elettrodomestici",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["casa", "documenti", "calendario"], "related": ["manutenzione-caldaia-e-impianti", "quanto-tempo-conservare-i-documenti", "scadenze-di-casa-bollette-garanzie"],
+        "it": {
+            "title": "Garanzie degli elettrodomestici: lo scontrino sbiadito, il manuale perso e il guasto al ventitreesimo mese",
+            "desc": "La lavatrice si rompe, e la garanzia sarebbe ancora valida — se si trovasse lo scontrino. Come conservare prove d'acquisto, manuali e scadenze delle garanzie di casa, e usarle quando serve.",
+            "body": """
+La scena è classica: la lavastoviglie smette di funzionare dopo un anno e mezzo. Sarebbe in garanzia. Ma lo scontrino era termico e ora è un foglietto bianco, la fattura online era nell'email di un genitore che l'ha cancellata, e il manuale con il numero di assistenza è finito chissà dove. Si paga la riparazione, o si ricompra.
+
+Le garanzie funzionano solo se si può dimostrare quando e dove si è comprato. E questo richiede cinque minuti al momento dell'acquisto.
+
+Questo articolo dà indicazioni organizzative. Durata, condizioni e modalità di garanzia legale e commerciale dipendono dalla normativa sui consumatori e dal venditore o produttore: verificatele sul sito ufficiale, con il venditore o con un'associazione di consumatori.
+
+## Garanzia legale e garanzia commerciale
+
+Per i beni acquistati da un consumatore nell'Unione europea esiste una **garanzia legale di conformità**, di norma di almeno due anni, che si fa valere nei confronti del **venditore**. Alcuni produttori o venditori offrono in più una **garanzia commerciale** o estesa, con condizioni proprie, a volte legata alla registrazione del prodotto. Leggete le condizioni al momento dell'acquisto: registrazioni con scadenza e servizi a pagamento sono spesso nelle pagine meno lette.
+
+## Cosa conservare
+
+- **la prova d'acquisto**: scontrino o fattura, con data, venditore e prodotto
+- **il certificato** di garanzia commerciale, se c'è
+- **il manuale** d'uso, con i dati dell'assistenza
+- **modello e numero di serie**
+
+## 1. Fotografare lo scontrino il giorno stesso
+
+Gli scontrini termici sbiadiscono in pochi mesi. La regola più utile: **fotografare lo scontrino il giorno dell'acquisto**, prima che finisca in un cassetto. Le fatture online si scaricano in PDF subito, senza lasciarle solo nell'email.
+
+## 2. Una scheda per ogni bene
+
+Nella sezione [Casa](/strumenti/casa) di KidBox ogni elettrodomestico ha la sua scheda: **marca, modello, numero di serie, data d'acquisto, scadenza della garanzia**, con il **manuale in PDF** allegato. Anche lo scontrino allegato finisce nei [documenti](/strumenti/documenti) cifrati di famiglia, collegato al bene: si ritrova dalla scheda della lavatrice o dall'archivio.
+
+## 3. La scadenza della garanzia in calendario
+
+Con la scadenza della garanzia impostata sulla scheda e il promemoria attivo, l'avviso arriva prima che scada; se volete un anticipo preciso, aggiungete anche un evento nel [calendario](/strumenti/calendario) **un mese prima**. È il momento giusto per un controllo: quel rumore strano che fa la lavatrice da settimane va segnalato adesso, non il mese dopo la scadenza.
+
+## 4. Quando si rompe
+
+- aprite la scheda: data d'acquisto, venditore, scadenza, scontrino, manuale
+- **verificate se è in garanzia** e a chi rivolgervi: venditore per la garanzia legale, produttore per quella commerciale
+- descrivete il problema per iscritto e conservate la comunicazione
+- annotate data e numero della pratica
+
+## 5. Riparazioni e sostituzioni
+
+Il rapporto o la ricevuta di ogni riparazione si allega alla scheda del bene, con la data nel nome del file: anche se in garanzia non si paga niente, lo storico resta utile. Il costo delle riparazioni a pagamento va nelle spese di famiglia. E se un apparecchio si rompe spesso, quello storico aiuta a decidere quando conviene sostituirlo.
+
+Quando lo sostituite, eliminate o aggiornate la scheda del vecchio e create quella del nuovo, con il nuovo scontrino fotografato il giorno stesso.
+
+## Non solo elettrodomestici
+
+Lo stesso metodo vale per tutto ciò che ha una garanzia e costa abbastanza da volerla usare: telefoni, computer, televisori, biciclette, passeggini, mobili.
+
+## In sintesi
+
+Conoscere la differenza tra garanzia legale e commerciale, fotografare lo scontrino il giorno dell'acquisto, una scheda per bene con modello, data, garanzia e manuale, la scadenza della garanzia con il suo promemoria, e ricevute e rapporti delle riparazioni allegati. Il guasto al ventitreesimo mese arriverà comunque. Ma questa volta lo pagherà la garanzia.
+""",
+        },
+        "en": {
+            "title": "Appliance warranties: the faded receipt, the lost manual and the fault in month 23",
+            "desc": "The washing machine breaks, and the warranty would still apply — if the receipt could be found. How to keep proof of purchase, manuals and warranty dates for household items, and use them when needed.",
+            "body": """
+It's a classic: the dishwasher stops working after eighteen months. It should be under warranty. But the receipt was thermal paper and is now blank, the online invoice was in one parent's email and got deleted, and the manual with the service number is who knows where. You pay for the repair, or buy a new one.
+
+Warranties only work if you can prove when and where you bought something. And that takes five minutes at the time of purchase.
+
+This article gives organisational tips. The length, terms and process for statutory and commercial warranties depend on consumer law and the seller or manufacturer: check official sources, the seller or a consumer organisation.
+
+## Statutory and commercial warranties
+
+For goods bought by consumers in the European Union there's a **statutory guarantee of conformity**, normally at least two years, claimed from the **seller**. Other countries have their own consumer rights. Some manufacturers or sellers also offer a **commercial** or extended warranty with its own terms, sometimes requiring product registration. Read the terms when you buy: registration deadlines and paid services are often in the least-read pages.
+
+## What to keep
+
+- **proof of purchase**: receipt or invoice, with date, seller and product
+- the commercial warranty **certificate**, if any
+- the **user manual**, with service details
+- **model and serial number**
+
+## 1. Photograph the receipt the same day
+
+Thermal receipts fade within months. The most useful rule: **photograph the receipt on the day you buy**, before it disappears into a drawer. Download online invoices as PDFs straight away, rather than leaving them only in email.
+
+## 2. One record per item
+
+In KidBox's [Home](/en/tools/casa) section each appliance has its record: **brand, model, serial number, purchase date, warranty expiry**, with the **PDF manual** attached. The attached receipt also goes into the family's encrypted [documents](/en/tools/documenti), linked to the item: you find it from the washing machine's record or from the archive.
+
+## 3. Warranty expiry in the calendar
+
+With the warranty expiry set on the record and the reminder on, you're alerted before it ends; for a precise lead time, also add an event in the [calendar](/en/tools/calendario) **a month before**. It's the right moment for a check: that strange noise the washing machine has been making for weeks should be reported now, not the month after it expires.
+
+## 4. When it breaks
+
+- open the record: purchase date, seller, expiry, receipt, manual
+- **check whether it's under warranty** and who to contact: the seller for statutory rights, the manufacturer for a commercial warranty
+- describe the problem in writing and keep the correspondence
+- note the date and case number
+
+## 5. Repairs and replacements
+
+The report or receipt for each repair is attached to the item's record, with the date in the file name: even if it's free under warranty, the history is useful. The cost of paid repairs goes into family expenses. And if an appliance keeps breaking, that history helps decide when to replace it.
+
+When you replace it, delete or update the old record and create a new one, with the new receipt photographed the same day.
+
+## Not just appliances
+
+The same method works for anything with a warranty that's worth claiming: phones, computers, TVs, bikes, buggies, furniture.
+
+## In short
+
+Know the difference between statutory and commercial warranties, photograph the receipt on the day of purchase, one record per item with model, date, warranty and manual, warranty expiry with its reminder, and repair receipts and reports attached. The fault in month 23 will still come. But this time the warranty pays.
+""",
+        },
+    },
+    {
+        "slug": "bollette-e-contratti-di-casa",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["casa", "spese", "calendario"], "related": ["scadenze-di-casa-bollette-garanzie", "budget-di-casa-spese-condivise", "fatture-e-referti-letti-dall-ai"],
+        "it": {
+            "title": "Bollette e contratti di casa: pagamenti, rinnovi, disdette e aumenti che nessuno nota",
+            "desc": "Luce, gas, internet, assicurazione casa, abbonamenti: contratti con scadenze, rinnovi automatici e prezzi che cambiano. Come tenerli in un posto solo e accorgersi in tempo di cosa conviene cambiare.",
+            "body": """
+Una casa ha una decina di contratti attivi: luce, gas, acqua, internet, telefono, assicurazione, a volte l'allarme, il condominio, gli abbonamenti ai servizi di streaming. Ognuno con le sue bollette, le sue scadenze, le sue condizioni. E quasi sempre sono intestati e seguiti da un genitore solo, che è anche l'unico a sapere quando scade l'offerta del gas o quanto si paga davvero per internet.
+
+Il risultato tipico non è la bolletta non pagata, ma **l'aumento non notato**: l'offerta che scade e passa a un prezzo più alto, il servizio che nessuno usa più e continua ad addebitarsi.
+
+Questo articolo dà indicazioni organizzative. Condizioni, recesso e rinnovi dipendono dai singoli contratti e dalla normativa: per il vostro caso fanno fede il contratto, il fornitore e le autorità di settore.
+
+## 1. L'elenco dei contratti
+
+Il primo passo è vedere il quadro completo. Per ogni contratto:
+
+- **fornitore** e tipo di servizio
+- **intestatario**
+- **costo** mensile o annuale, e come si paga
+- **data di inizio** e durata dell'offerta o del vincolo
+- **come si disdice** e con quale preavviso
+- **area clienti**: le credenziali vanno nelle [password](/strumenti/password) di famiglia
+
+## 2. Scadenze e pagamenti nella sezione Casa
+
+Nella sezione [Casa](/strumenti/casa) di KidBox bollette, tasse e contratti si registrano come **scadenze e pagamenti**, con importo, promemoria e ricevuta allegata. Quando sono pagati diventano automaticamente [spese di famiglia](/strumenti/spese): nessuna doppia registrazione.
+
+Il promemoria arriva ai membri della famiglia con le notifiche attive: anche chi non è l'intestatario sa che la bolletta sta per scadere.
+
+## 3. La domiciliazione, con un occhio
+
+La domiciliazione bancaria elimina il rischio di dimenticare un pagamento, ma anche l'abitudine di **guardare** le bollette. Se pagate con addebito automatico, registrate comunque ogni bolletta con il suo importo: il confronto mese per mese nelle spese mostra subito se qualcosa è aumentato.
+
+## 4. I promemoria che fanno risparmiare
+
+Oltre alle scadenze di pagamento, ci sono date che valgono soldi. Mettetele nel [calendario](/strumenti/calendario):
+
+- **fine dell'offerta** di luce e gas: un mese prima, per confrontare
+- **fine del vincolo** di internet e telefono
+- **rinnovo** dell'assicurazione casa: un mese prima, per valutare altre proposte
+- **rinnovo annuale** degli abbonamenti: una settimana prima, per decidere se servono ancora
+
+## 5. Il controllo annuale
+
+Una volta all'anno, un'ora insieme sull'elenco dei contratti e sul riepilogo delle spese per categoria:
+
+- quali servizi **non usate più**
+- quali costi sono **aumentati** rispetto all'anno prima
+- quali offerte **conviene confrontare**
+
+È l'ora dell'anno che rende di più.
+
+## 6. Chi se ne occupa
+
+I contratti di casa sono un'area che richiede continuità: conviene un **titolare**, che segue scadenze, confronti e disdette. L'altro vede tutto e può intervenire se serve. Ne parliamo in [faccende tra adulti](/blog/faccende-tra-adulti).
+
+Con il piano Pro, una bolletta si può anche importare e far leggere all'AI, che propone la spesa e il promemoria del pagamento: ne parliamo in [dalla bolletta alla scadenza in un tocco](/blog/fatture-e-referti-letti-dall-ai).
+
+## In sintesi
+
+Un elenco completo dei contratti con costi, vincoli e modalità di disdetta, bollette registrate come scadenze che diventano spese, domiciliazione senza smettere di guardare gli importi, promemoria per fine offerte e rinnovi, un controllo annuale e un titolare. Le bollette non costeranno meno da sole. Ma vi accorgerete quando costano troppo.
+""",
+        },
+        "en": {
+            "title": "Household bills and contracts: payments, renewals, cancellations and price rises nobody notices",
+            "desc": "Electricity, gas, broadband, home insurance, subscriptions: contracts with deadlines, auto-renewals and changing prices. How to keep them in one place and spot in time what's worth switching.",
+            "body": """
+A home has around a dozen active contracts: electricity, gas, water, broadband, phone, insurance, sometimes an alarm, building management, streaming subscriptions. Each with its bills, deadlines and terms. And almost always they're in one parent's name and handled by them, the only one who knows when the gas deal ends or what broadband really costs.
+
+The typical result isn't an unpaid bill, but **the unnoticed price rise**: the deal that ends and rolls onto a higher rate, the service nobody uses that keeps charging.
+
+This article gives organisational tips. Terms, cancellation and renewals depend on each contract and local regulation: for your case, rely on the contract, the supplier and the relevant regulator.
+
+## 1. The list of contracts
+
+The first step is seeing the full picture. For each contract:
+
+- **supplier** and type of service
+- **account holder**
+- monthly or annual **cost**, and how it's paid
+- **start date** and length of the deal or minimum term
+- **how to cancel** and with how much notice
+- **online account**: logins go in the family [passwords](/en/tools/password)
+
+## 2. Deadlines and payments in the Home section
+
+In KidBox's [Home](/en/tools/casa) section, bills, taxes and contracts are recorded as **deadlines and payments**, with amount, reminder and receipt attached. Once paid they automatically become [family expenses](/en/tools/spese): no double entry.
+
+The reminder reaches family members with notifications on: even whoever isn't the account holder knows the bill is due.
+
+## 3. Direct debit, with an eye on it
+
+Direct debit removes the risk of forgetting a payment, but also the habit of **looking** at bills. If you pay by direct debit, still record each bill with its amount: comparing month by month in expenses shows straight away if something has gone up.
+
+## 4. Reminders that save money
+
+Beyond payment deadlines, some dates are worth money. Put them in the [calendar](/en/tools/calendario):
+
+- **end of the energy deal**: a month before, to compare
+- **end of the broadband and phone minimum term**
+- **home insurance renewal**: a month before, to weigh other offers
+- **annual subscription renewals**: a week before, to decide whether they're still needed
+
+## 5. The annual review
+
+Once a year, an hour together on the contracts list and the expense summary by category:
+
+- which services you **no longer use**
+- which costs have **gone up** since last year
+- which deals are **worth comparing**
+
+It's the best-paid hour of the year.
+
+## 6. Who handles it
+
+Household contracts need continuity: an **owner** helps, handling deadlines, comparisons and cancellations. The other sees everything and can step in if needed. More in [chores between adults](/en/blog/faccende-tra-adulti).
+
+With the Pro plan, you can also import a bill for the AI to read, and it suggests the expense and a payment reminder: more in [from bill to deadline in one tap](/en/blog/fatture-e-referti-letti-dall-ai).
+
+## In short
+
+A complete list of contracts with costs, terms and how to cancel, bills recorded as deadlines that become expenses, direct debit without ignoring the amounts, reminders for deal ends and renewals, an annual review and an owner. Bills won't get cheaper by themselves. But you'll notice when they cost too much.
+""",
+        },
+    },
+    {
+        "slug": "trasloco-in-famiglia-checklist",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["to-do", "calendario", "casa", "spese"], "related": ["bollette-e-contratti-di-casa", "rientro-a-scuola-organizzazione", "digitalizzare-i-documenti-di-casa"],
+        "it": {
+            "title": "Il trasloco con i figli: la checklist per settimane, dalle utenze alla scuola",
+            "desc": "Scatoloni, ditta, volture, cambio di residenza, scuola nuova e bambini da tenere tranquilli. Una checklist divisa per settimane e tra i genitori, per arrivare nella casa nuova senza dimenticare niente.",
+            "body": """
+Il trasloco è uno dei progetti più complessi che una famiglia affronta: decine di cose da fare, molte con una data precisa, alcune che dipendono da altre, tutte mentre la vita quotidiana continua. Con i figli si aggiungono la scuola, le attività, e il bisogno di rendere il cambiamento meno faticoso anche per loro.
+
+Il modo per non perdersi è trattarlo come un progetto: una lista, un calendario, i compiti divisi.
+
+Questo articolo dà indicazioni organizzative. Pratiche come cambio di residenza, volture delle utenze e iscrizioni scolastiche seguono procedure e tempi che dipendono dal Comune, dai fornitori e dalla scuola: verificateli con loro.
+
+## La lista del trasloco
+
+Create una [lista di cose da fare](/strumenti/to-do) «Trasloco», condivisa tra i genitori, con **ogni voce assegnata** e, dove serve, una data e un promemoria. Le date importanti — ritiro delle chiavi, giorno del trasloco, fine del contratto vecchio — vanno anche nel [calendario](/strumenti/calendario).
+
+## Due mesi prima
+
+- **ditta di traslochi**: preventivi e prenotazione, soprattutto nei mesi più richiesti
+- **disdetta** del contratto d'affitto, rispettando il preavviso previsto
+- **scuola**: iscrizione o trasferimento dei figli, e informazioni su tempi e documenti
+- **attività** dei figli: sport, musica, cosa si interrompe e cosa si trova nel nuovo quartiere
+- **inventario**: cosa si porta, cosa si vende o si regala
+
+## Un mese prima
+
+- **utenze della casa nuova**: volture o nuove attivazioni di luce, gas, acqua, internet, con la data di attivazione — internet richiede spesso più tempo
+- **utenze della casa vecchia**: disdette o volture con la lettura dei contatori il giorno del trasloco
+- **cambio di indirizzo**: banca, assicurazioni, medico, abbonamenti, servizi online
+- **scatoloni**: iniziare dalle stanze e dagli oggetti meno usati
+
+## Una settimana prima
+
+- **scatola dei primi giorni** per ogni membro della famiglia: vestiti, farmaci, caricatori, lenzuola, il peluche
+- **documenti importanti** in una borsa che viaggia con voi, non con la ditta
+- **frigo e congelatore** svuotati
+- **chi tiene i bambini** il giorno del trasloco, se sono piccoli
+
+## Il giorno del trasloco
+
+- **letture dei contatori** in entrambe le case, fotografate
+- **foto dello stato** della casa vecchia alla riconsegna
+- **controllo** che tutti gli scatoloni siano arrivati
+
+## Dopo il trasloco
+
+- **cambio di residenza** presso il Comune, nei tempi previsti
+- aggiornamento dell'indirizzo sui **documenti** dove richiesto, e sulla carta di circolazione dell'auto secondo le regole in vigore
+- **medico di base e pediatra**, se cambiate zona
+- nella sezione [Casa](/strumenti/casa): nuove **scadenze e pagamenti** — bollette, tasse, assicurazione — e il censimento di impianti ed elettrodomestici della casa nuova
+
+## I bambini
+
+Per i figli un trasloco è una perdita prima che una novità: la cameretta, gli amici, la strada di scuola. Qualche accorgimento:
+
+- **coinvolgerli**: preparare la propria scatola, scegliere dove mettere le cose nella camera nuova
+- **la loro stanza per prima**, montata subito
+- **routine uguali** nei giorni del trasloco, per quanto possibile
+- **salutare**: amici, vicini, i posti preferiti
+
+## Le spese
+
+Un trasloco costa più del preventivo della ditta: cauzioni, attivazioni, piccoli acquisti, pasti fuori. Registrarle con una categoria dedicata nelle [spese](/strumenti/spese) mostra il costo reale, ed è utile anche se alcune spese sono da ripartire.
+
+## In sintesi
+
+Una lista condivisa con ogni voce assegnata e le date in calendario. Due mesi prima ditta, disdetta e scuola; un mese prima utenze e cambi di indirizzo; una settimana prima le scatole dei primi giorni. Il giorno stesso letture e foto, dopo residenza e scadenze della casa nuova. E i bambini coinvolti fin dall'inizio.
+""",
+        },
+        "en": {
+            "title": "Moving house with children: a week-by-week checklist, from utilities to school",
+            "desc": "Boxes, removal firm, utility transfers, change of address, a new school and children to keep calm. A checklist split by weeks and between parents, to reach the new home without forgetting anything.",
+            "body": """
+Moving house is one of the most complex projects a family takes on: dozens of things to do, many with a set date, some depending on others, all while everyday life carries on. With children you add school, activities, and the need to make the change easier for them too.
+
+The way not to get lost is to treat it as a project: a list, a calendar, tasks shared out.
+
+This article gives organisational tips. Formalities like registering a change of address, transferring utilities and school applications follow procedures and timelines set by your local authority, suppliers and school: check with them.
+
+## The moving list
+
+Create a shared "Move" [to-do list](/en/tools/to-do) between parents, with **every item assigned** and, where needed, a date and reminder. Key dates — collecting keys, moving day, the old contract ending — also go in the [calendar](/en/tools/calendario).
+
+## Two months before
+
+- **removal firm**: quotes and booking, especially in busy months
+- **notice** on the old tenancy, respecting the required notice period
+- **school**: applications or transfers for the children, and information on timings and documents
+- the children's **activities**: sport, music, what stops and what's available in the new area
+- **inventory**: what's coming, what gets sold or given away
+
+## A month before
+
+- **new home utilities**: transfers or new connections for electricity, gas, water, broadband, with activation dates — broadband often takes longest
+- **old home utilities**: cancellations or transfers with meter readings on moving day
+- **change of address**: bank, insurers, doctor, subscriptions, online services
+- **packing**: start with the least-used rooms and items
+
+## A week before
+
+- **first-days box** for each family member: clothes, medicines, chargers, bedding, the favourite toy
+- **important documents** in a bag that travels with you, not the removal firm
+- **fridge and freezer** emptied
+- **who looks after the children** on moving day, if they're young
+
+## Moving day
+
+- **meter readings** at both homes, photographed
+- **photos of the condition** of the old home at handover
+- **check** every box has arrived
+
+## After the move
+
+- **register the change of address** with the local authority, within the required time
+- update the address on **documents** where required, including vehicle registration as local rules require
+- **GP and paediatrician**, if you've changed area
+- in the [Home](/en/tools/casa) section: new **deadlines and payments** — bills, taxes, insurance — and an inventory of the new home's systems and appliances
+
+## The children
+
+For children, a move is a loss before it's an adventure: the bedroom, friends, the walk to school. A few things help:
+
+- **involve them**: packing their own box, choosing where things go in the new room
+- **their room first**, set up straight away
+- **the same routines** during moving days, as far as possible
+- **saying goodbye**: friends, neighbours, favourite places
+
+## Costs
+
+A move costs more than the removal quote: deposits, connection fees, small purchases, meals out. Recording them under a dedicated category in [expenses](/en/tools/spese) shows the real cost, and helps if some costs need splitting.
+
+## In short
+
+A shared list with every item assigned and dates in the calendar. Two months before: removal firm, notice and school; a month before: utilities and address changes; a week before: the first-days boxes. On the day: readings and photos; afterwards: change of address and the new home's deadlines. And the children involved from the start.
+""",
+        },
+    },
+    {
+        "slug": "tasse-e-assicurazione-della-casa",
+        "category": "casa-e-faccende", "date": "2026-09-13",
+        "tools": ["casa", "spese", "calendario"], "related": ["bollette-e-contratti-di-casa", "budget-di-casa-spese-condivise", "quanto-tempo-conservare-i-documenti"],
+        "it": {
+            "title": "TARI, IMU, assicurazione e condominio: le scadenze della casa che arrivano una o due volte l'anno",
+            "desc": "Le spese della casa che non arrivano ogni mese sono quelle che si dimenticano, e che fanno saltare il budget. Come metterle in fila, con i promemoria giusti e le ricevute al sicuro.",
+            "body": """
+Le bollette arrivano ogni mese o due, e dopo un po' ci si abitua. Le spese della casa che arrivano **una o due volte l'anno** sono un'altra storia: la tassa sui rifiuti, eventuali imposte sull'immobile, l'assicurazione, le rate condominiali straordinarie, la manutenzione della caldaia. Poche, ma importanti — e proprio perché rare, facili da dimenticare o da non mettere in conto.
+
+Questo articolo dà indicazioni organizzative. Importi, esenzioni, scadenze e modalità di pagamento di tasse e tributi dipendono dalla normativa nazionale e dal vostro Comune, e cambiano nel tempo: per il vostro caso fanno fede il sito del Comune, l'Agenzia delle Entrate, l'amministratore di condominio o il commercialista.
+
+## Le scadenze tipiche
+
+### TARI (tassa sui rifiuti)
+
+Si paga al Comune, di solito in una o più rate durante l'anno, con scadenze che ogni Comune stabilisce. L'avviso di pagamento arriva per posta o in formato digitale: se non arriva, la tassa resta dovuta, quindi conviene conoscere le scadenze.
+
+### IMU
+
+È l'imposta municipale sugli immobili. Per l'abitazione principale di norma non è dovuta, salvo alcune categorie; lo è in genere per seconde case e altri immobili. Le scadenze tipiche sono due rate annuali. Verificate il vostro caso con il Comune o il commercialista.
+
+### Assicurazione casa
+
+Una polizza per la casa — incendio, danni, responsabilità civile — ha una scadenza annuale. In alcuni casi, per esempio con un mutuo, può essere richiesta. Il rinnovo è il momento per rivedere coperture e prezzo.
+
+### Condominio
+
+Rate ordinarie periodiche e, a volte, rate straordinarie per lavori deliberati dall'assemblea. Le seconde sono quelle che sorprendono di più.
+
+### Altre
+
+A seconda della casa: canone per il passo carrabile, manutenzioni obbligatorie degli impianti, contributi di consorzi.
+
+## 1. Metterle in fila, una volta
+
+All'inizio dell'anno fate l'elenco di tutte le spese annuali o semestrali della casa, con scadenza e importo stimato. Nella sezione [Casa](/strumenti/casa) di KidBox ognuna diventa una **scadenza di pagamento**, con importo, promemoria e ricevuta allegata. Il promemoria arriva a tutti i membri della famiglia con le notifiche attive.
+
+## 2. Il promemoria con l'anticipo giusto
+
+- **tasse**: una o due settimane prima, per avere tempo di verificare l'importo
+- **assicurazione**: un mese prima, per confrontare offerte
+- **rate straordinarie del condominio**: appena deliberate, con la data di ogni rata nel [calendario](/strumenti/calendario)
+
+## 3. Pagate, diventano spese
+
+Quando segnate una scadenza come pagata, diventa automaticamente una [spesa di famiglia](/strumenti/spese). Nel riepilogo annuale si vede quanto costa davvero la casa, oltre alle bollette — un dato fondamentale per il budget.
+
+## 4. Accantonare, invece di subire
+
+Le spese annuali pesano perché arrivano tutte insieme. Un trucco semplice: sommate le spese annuali previste, dividete per dodici, e mettete da parte quella cifra ogni mese. Quando arriva la rata, i soldi ci sono già. Ne parliamo in [il budget di casa in coppia](/blog/budget-di-casa-spese-condivise).
+
+## 5. Le ricevute, al sicuro
+
+Le ricevute di pagamento di tasse e tributi vanno conservate per il periodo in cui possono essere contestate. Allegate alla scadenza, finiscono nei documenti cifrati di famiglia e si ritrovano dalla scadenza o dall'archivio. Per i tempi indicativi di conservazione c'è la guida [quanto tempo conservare i documenti](/blog/quanto-tempo-conservare-i-documenti).
+
+## In sintesi
+
+Mettere in fila una volta all'anno tutte le spese non mensili della casa, registrarle come scadenze con importo e promemoria, dare a ciascuna l'anticipo giusto, lasciarle diventare spese da sole quando pagate, accantonare ogni mese la quota e conservare le ricevute. La casa costa quello che costa. Ma senza sorprese a giugno e a dicembre.
+""",
+        },
+        "en": {
+            "title": "Council tax, property tax, insurance and service charges: the home deadlines that come once or twice a year",
+            "desc": "The home costs that don't arrive monthly are the ones that get forgotten, and wreck the budget. How to line them up, with the right reminders and receipts kept safe.",
+            "body": """
+Bills arrive every month or two, and after a while you get used to them. Home costs that come **once or twice a year** are another matter: waste or council tax, property taxes, insurance, extra building service charges, the boiler service. Few, but significant — and precisely because they're rare, easy to forget or leave out of the budget.
+
+This article gives organisational tips. Amounts, exemptions, deadlines and payment methods for taxes depend on national rules and your local authority, and change over time: for your case, rely on your local authority, the tax office, your building manager or an accountant. The examples use Italy (TARI waste tax, IMU property tax).
+
+## Typical deadlines
+
+### Waste tax (TARI in Italy)
+
+Paid to the local council, usually in one or more instalments during the year, on dates each council sets. The payment notice arrives by post or digitally: if it doesn't arrive, the tax is still due, so it's worth knowing the dates.
+
+### Property tax (IMU in Italy)
+
+In Italy the municipal property tax is usually not due on your main home, except for certain categories; it generally applies to second homes and other property, typically in two annual instalments. Other countries have their own property or council taxes. Check your case with your council or accountant.
+
+### Home insurance
+
+A home policy — fire, damage, liability — renews annually. In some cases, such as with a mortgage, it may be required. Renewal is the time to review cover and price.
+
+### Building service charges
+
+Regular instalments and, sometimes, extra ones for works approved by the owners' meeting. The extra ones are the most surprising.
+
+### Others
+
+Depending on the home: driveway permits, compulsory system maintenance, local association fees.
+
+## 1. Line them up, once
+
+At the start of the year, list every annual or six-monthly home cost, with due date and estimated amount. In KidBox's [Home](/en/tools/casa) section each becomes a **payment deadline**, with amount, reminder and receipt attached. The reminder reaches every family member with notifications on.
+
+## 2. Reminders with the right lead time
+
+- **taxes**: one or two weeks before, to check the amount
+- **insurance**: a month before, to compare offers
+- **extra service charges**: as soon as they're approved, with each instalment date in the [calendar](/en/tools/calendario)
+
+## 3. Once paid, they become expenses
+
+When you mark a deadline as paid, it automatically becomes a [family expense](/en/tools/spese). The annual summary shows what the home really costs beyond the bills — essential for the budget.
+
+## 4. Set money aside, instead of taking the hit
+
+Annual costs hurt because they arrive all at once. A simple trick: add up the expected annual costs, divide by twelve, and put that amount aside every month. When the instalment arrives, the money is already there. More in [a household budget as a couple](/en/blog/budget-di-casa-spese-condivise).
+
+## 5. Receipts, kept safe
+
+Tax payment receipts should be kept for as long as they can be challenged. Attached to the deadline, they go into the family's encrypted documents and can be found from the deadline or the archive. For indicative retention periods, see [how long to keep family documents](/en/blog/quanto-tempo-conservare-i-documenti).
+
+## In short
+
+Once a year, line up every non-monthly home cost, record them as deadlines with amount and reminder, give each the right lead time, let them become expenses when paid, set aside a monthly share and keep the receipts. The home costs what it costs. But without surprises in June and December.
+""",
+        },
+    },
 ]
 
 # Le altre categorie vivono in un modulo ciascuna, per tenere i file leggibili.

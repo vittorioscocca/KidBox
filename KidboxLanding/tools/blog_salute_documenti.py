@@ -1001,4 +1001,590 @@ Every health expense recorded the same day with a photo of the receipt, visits a
 """,
         },
     },
+    # ── Salute e documenti · terzo lotto: documenti ────────────────────
+    {
+        "slug": "password-di-famiglia-condivise",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["password", "note"], "related": ["dati-sanitari-cifrati", "documenti-di-famiglia-in-ordine", "app-per-coppie-cosa-serve"],
+        "it": {
+            "title": "Le password di famiglia: quali condividere, dove tenerle e come smettere di mandarle in chat",
+            "desc": "Il Wi-Fi, lo streaming, il portale della scuola, l'area clienti della luce. Due genitori condividono decine di credenziali. Come organizzarle in modo sicuro, tenendo private quelle personali.",
+            "body": """
+Una famiglia condivide più password di quanto pensi: il Wi-Fi di casa, il servizio di streaming, il registro elettronico della scuola, l'area clienti della luce e del gas, il portale della sanità, l'account del supermercato online. E quasi sempre le condivide nel modo peggiore: un messaggio in chat, un biglietto sul frigo, «è il nome del cane con l'anno di nascita».
+
+Organizzarle bene non richiede di diventare esperti di sicurezza. Richiede di decidere **cosa** si condivide e **dove** lo si tiene.
+
+## Perché la chat non va bene
+
+- **resta per sempre** nella cronologia, nei backup, a volte su più dispositivi
+- **si inoltra per sbaglio**
+- **non si aggiorna**: quando la password cambia, la vecchia resta lì e confonde
+- **chiunque acceda al telefono** la trova
+
+## 1. Separare famiglia e personale
+
+Non tutte le password vanno condivise. Una divisione semplice:
+
+- **di famiglia**: Wi-Fi, streaming, utenze, scuola, sanità dei figli, assicurazioni, servizi usati da entrambi
+- **personali**: email, banca personale, social, lavoro
+
+In [Password](/strumenti/password) di KidBox ogni credenziale si salva come **di famiglia** o **personale**. Quelle di famiglia sono cifrate con la chiave di famiglia e visibili ai membri; quelle personali usano una chiave derivata dalla vostra identità, e nemmeno gli altri membri della famiglia possono leggerle.
+
+## 2. Un posto solo, cifrato
+
+Il principio è lo stesso dei documenti: **un posto solo**, cifrato, accessibile a chi deve. Per ogni credenziale: sito o servizio, nome utente, password, e una nota se serve — «l'account è intestato a Marco», «codice cliente nella bolletta».
+
+## 3. Niente più copia e incolla
+
+Una password che bisogna copiare a mano è una password che finisce in un biglietto. Con AutoFill attivo, su iPhone e Android KidBox inserisce la credenziale direttamente nel sito o nell'app, senza copiarla.
+
+## 4. Password forti, finalmente
+
+Il motivo per cui le password di famiglia sono deboli è che devono ricordarle due persone. Quando sono salvate e si compilano da sole, non serve più ricordarle: si possono usare password **lunghe e casuali**, create con il generatore.
+
+## 5. Il controllo di sicurezza
+
+Periodicamente vale la pena controllare quali password sono deboli, riutilizzate in più servizi o comparse in violazioni di dati note. L'audit di KidBox lo fa senza mai inviare le password in chiaro: per le violazioni usa il servizio Have I Been Pwned con la tecnica k-anonymity, cioè invia solo una piccola parte dell'hash della password.
+
+## 6. Quando qualcosa cambia
+
+- **cambio password**: si aggiorna nel posto unico, e l'altro genitore ha subito quella nuova
+- **babysitter o nonni**: il Wi-Fi si può dare a voce o su un biglietto; le altre credenziali restano in famiglia
+- **un servizio disdetto**: si cancella la credenziale, così l'elenco resta pulito
+
+## L'account principale, protetto bene
+
+Tutto questo funziona se l'accesso all'app è ben protetto: una password robusta e unica per l'account, e il telefono con blocco schermo. È la chiave di tutte le altre.
+
+## In sintesi
+
+Separare le password di famiglia da quelle personali, tenerle in un posto solo e cifrato invece che in chat, lasciare che si compilino da sole, usare password forti create dal generatore, controllare periodicamente quelle deboli o trapelate e aggiornare tutto in un punto solo. E proteggere bene l'account che le custodisce.
+""",
+        },
+        "en": {
+            "title": "Family passwords: which to share, where to keep them and how to stop sending them in chat",
+            "desc": "Wi-Fi, streaming, the school portal, the energy supplier's account. Two parents share dozens of logins. How to organise them securely, while keeping personal ones private.",
+            "body": """
+A family shares more passwords than you'd think: home Wi-Fi, the streaming service, the school's online register, the electricity and gas accounts, the health portal, the online supermarket. And they're almost always shared in the worst way: a chat message, a note on the fridge, "it's the dog's name and the year we were born".
+
+Organising them well doesn't require becoming a security expert. It requires deciding **what** to share and **where** to keep it.
+
+## Why chat doesn't work
+
+- **it stays forever** in history and backups, sometimes on several devices
+- **it gets forwarded by mistake**
+- **it doesn't update**: when a password changes, the old one lingers and confuses
+- **anyone with access to the phone** can find it
+
+## 1. Separate family and personal
+
+Not every password needs sharing. A simple split:
+
+- **family**: Wi-Fi, streaming, utilities, school, children's health, insurance, services both use
+- **personal**: email, personal banking, social media, work
+
+In KidBox [Passwords](/en/tools/password) each login is saved as **family** or **personal**. Family ones are encrypted with the family key and visible to members; personal ones use a key derived from your identity, so not even other family members can read them.
+
+## 2. One place, encrypted
+
+The principle is the same as for documents: **one place**, encrypted, accessible to those who need it. For each login: site or service, username, password, and a note if helpful — "account is in Mark's name", "customer code on the bill".
+
+## 3. No more copy and paste
+
+A password you have to copy by hand is a password that ends up on a sticky note. With AutoFill on, on iPhone and Android KidBox fills the login straight into the site or app, without copying.
+
+## 4. Strong passwords, at last
+
+Family passwords are weak because two people have to remember them. Once they're saved and fill themselves in, nobody needs to remember them: you can use **long, random** passwords created with the generator.
+
+## 5. The security check
+
+It's worth checking periodically which passwords are weak, reused across services or exposed in known data breaches. KidBox's audit does this without ever sending passwords in plain text: for breaches it uses Have I Been Pwned with k-anonymity, sending only a small part of the password's hash.
+
+## 6. When things change
+
+- **password change**: update it in the one place, and the other parent has the new one immediately
+- **babysitter or grandparents**: Wi-Fi can be given verbally or on a card; other logins stay in the family
+- **a cancelled service**: delete the login, so the list stays clean
+
+## The main account, well protected
+
+All this works if access to the app is well protected: a strong, unique password for the account, and a screen lock on the phone. It's the key to all the others.
+
+## In short
+
+Separate family passwords from personal ones, keep them in one encrypted place instead of chat, let them fill in automatically, use strong generated passwords, check periodically for weak or breached ones and update everything in one place. And protect the account that holds them.
+""",
+        },
+    },
+    {
+        "slug": "quanto-tempo-conservare-i-documenti",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["documenti", "casa"], "related": ["documenti-di-famiglia-in-ordine", "digitalizzare-i-documenti-di-casa", "bollette-e-contratti-di-casa"],
+        "it": {
+            "title": "Bollette, ricevute, dichiarazioni: quanto tempo conservare i documenti di famiglia",
+            "desc": "Cassetti pieni di carte vecchie di vent'anni e, quando serve, la ricevuta che non si trova. Una guida orientativa su cosa tenere, per quanto, e come archiviarlo senza riempire la casa.",
+            "body": """
+Quasi ogni famiglia ha due problemi opposti con i documenti: conserva troppo — scatole di bollette di quindici anni fa — e allo stesso tempo, quando arriva una contestazione, non trova la ricevuta che servirebbe. La soluzione è sapere, a grandi linee, **per quanto tempo** vale la pena tenere ogni tipo di documento, e tenerlo in modo da ritrovarlo.
+
+Attenzione: i tempi indicati qui sotto sono **orientativi** e si basano su termini di prescrizione e regole fiscali italiane che possono cambiare e avere eccezioni. Per il vostro caso fanno fede le fonti ufficiali, il commercialista o un'associazione di consumatori. Nel dubbio, conservate.
+
+## Documenti da tenere per sempre
+
+- atti di **nascita, matrimonio**, sentenze di separazione e divorzio
+- **atti notarili**: compravendite, successioni, donazioni
+- **titoli di studio** e documenti previdenziali
+- documentazione **sanitaria** importante: cartelle cliniche, referti rilevanti, vaccinazioni
+- **garanzie e certificazioni** di impianti della casa, finché la casa è vostra
+
+## Documenti fiscali
+
+- **dichiarazioni dei redditi** e documenti che le giustificano (spese detratte, ricevute): in genere **almeno cinque anni** dopo l'anno di presentazione, perché l'Agenzia delle Entrate può fare controlli entro quel periodo; alcune situazioni prevedono termini più lunghi
+- **bollo auto**: di norma almeno tre anni
+- **multe e cartelle**: fino alla fine dei termini di prescrizione indicati
+
+## Bollette e utenze
+
+- **luce e gas**: le ricevute di pagamento, orientativamente, almeno per il periodo in cui il fornitore può richiedere somme arretrate
+- **acqua, telefono, internet**: stesse considerazioni
+- **contratti** delle utenze: finché sono attivi, e un po' dopo la chiusura
+
+## Casa
+
+- **affitto**: ricevute dei canoni e contratto, almeno cinque anni
+- **condominio**: verbali e ricevute delle spese, alcuni anni
+- **mutuo**: contratto e quietanza di estinzione, a lungo
+- **lavori e bonus edilizi**: fatture e documentazione per tutta la durata dell'agevolazione e oltre
+
+## Acquisti
+
+- **scontrini e fatture** di beni in garanzia: per tutta la durata della garanzia
+- **manuali** degli elettrodomestici: finché li avete
+
+## Come archiviarli senza riempire la casa
+
+Tenere a lungo non significa tenere tutto in carta. La maggior parte dei documenti di questo elenco si può conservare in **copia digitale** — fermo restando che per alcuni atti l'originale ha un valore che la copia non ha, e va conservato.
+
+Nei [documenti](/strumenti/documenti) di KidBox si organizzano in **cartelle e categorie** — Fisco, Casa, Utenze, Salute, Acquisti — con la ricerca per nome e tag. Il nome del file che include anno e tipo — «2025 · 730 · Marco» — rende la ricerca immediata. Una ricevuta allegata a una scadenza di [Casa](/strumenti/casa) resta collegata a quella scadenza: la ritrovate da entrambe le parti.
+
+Ne parliamo in [digitalizzare i documenti di casa](/blog/digitalizzare-i-documenti-di-casa).
+
+## Una pulizia all'anno
+
+Una volta all'anno, a gennaio, si guarda l'archivio: si aggiunge l'anno appena chiuso, si eliminano i documenti che hanno superato il periodo di conservazione. Un'ora, invece di scatole che crescono per sempre.
+
+## In sintesi
+
+Per sempre gli atti personali, notarili e sanitari importanti; almeno cinque anni i documenti fiscali; le bollette per il periodo in cui possono essere contestate; scontrini e manuali finché dura la garanzia o l'oggetto. Tempi orientativi, da verificare per il vostro caso. E un archivio digitale ordinato per categorie, con una pulizia all'anno.
+""",
+        },
+        "en": {
+            "title": "Bills, receipts, tax returns: how long to keep family documents",
+            "desc": "Drawers full of twenty-year-old papers and, when needed, the receipt that can't be found. A rough guide to what to keep, for how long, and how to file it without filling the house.",
+            "body": """
+Almost every family has two opposite problems with documents: they keep too much — boxes of bills from fifteen years ago — and yet, when a dispute arises, can't find the one receipt that would help. The answer is knowing, roughly, **how long** each type of document is worth keeping, and keeping it where you can find it.
+
+Note: the periods below are **indicative only**, based on Italian limitation periods and tax rules that change and have exceptions; other countries' rules differ. For your own case, rely on official sources, an accountant or a consumer organisation. When in doubt, keep it.
+
+## Documents to keep for ever
+
+- **birth and marriage** certificates, separation and divorce rulings
+- **notarial deeds**: property purchases, inheritances, gifts
+- **qualifications** and pension records
+- important **medical** documentation: hospital records, significant reports, vaccinations
+- **warranties and certificates** for the home's systems, as long as you own the home
+
+## Tax documents
+
+- **tax returns** and supporting documents (deducted expenses, receipts): in Italy generally **at least five years** after filing, since the tax authority can audit within that period; some situations allow longer
+- **vehicle tax**: in Italy usually at least three years
+- **fines and tax demands**: until the relevant limitation period ends
+
+## Bills and utilities
+
+- **electricity and gas**: payment receipts, roughly for as long as the supplier can claim arrears
+- **water, phone, internet**: the same logic
+- utility **contracts**: while active, and for a while after closing
+
+## The home
+
+- **rent**: receipts and the tenancy agreement, at least five years
+- **building management**: minutes and expense receipts, several years
+- **mortgage**: contract and redemption statement, for a long time
+- **renovations and building incentives**: invoices and paperwork for the full length of the incentive and beyond
+
+## Purchases
+
+- **receipts and invoices** for items under warranty: for the whole warranty period
+- appliance **manuals**: as long as you own them
+
+## Filing them without filling the house
+
+Keeping for a long time doesn't mean keeping everything on paper. Most documents on this list can be kept as **digital copies** — although for some deeds the original has a value a copy doesn't, and must be kept.
+
+In KidBox [documents](/en/tools/documenti) they're organised in **folders and categories** — Tax, Home, Utilities, Health, Purchases — with search by name and tag. A file name that includes year and type — "2025 · Tax return · Mark" — makes searching instant. A receipt attached to a [Home](/en/tools/casa) deadline stays linked to it: you'll find it from either side.
+
+More in [digitising your household documents](/en/blog/digitalizzare-i-documenti-di-casa).
+
+## One clear-out a year
+
+Once a year, in January, review the archive: add the year just closed, delete documents past their retention period. An hour, instead of boxes that grow for ever.
+
+## In short
+
+For ever: personal, notarial and important medical documents; at least five years for tax documents (in Italy); bills for as long as they can be disputed; receipts and manuals for as long as the warranty or item lasts. Indicative periods, to check for your case. And a digital archive organised by category, with a yearly clear-out.
+""",
+        },
+    },
+    {
+        "slug": "digitalizzare-i-documenti-di-casa",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["documenti", "wallet"], "related": ["quanto-tempo-conservare-i-documenti", "documenti-di-famiglia-in-ordine", "dati-sanitari-cifrati"],
+        "it": {
+            "title": "Digitalizzare i documenti di casa: il metodo per svuotare i cassetti in un weekend",
+            "desc": "Tre cassetti di carte, due scatole di ricevute e un raccoglitore di garanzie. Come passare a un archivio digitale ordinato, cifrato e condiviso tra i genitori, senza impazzire e senza buttare gli originali sbagliati.",
+            "body": """
+Ogni casa ha il suo cassetto dei documenti. Poi il secondo. Poi la scatola in cantina. Quando serve un documento — la garanzia della lavatrice, il contratto dell'affitto, il libretto delle vaccinazioni — si svuota tutto sul tavolo e si spera. E se l'altro genitore non è a casa, non ha modo di trovarlo.
+
+Digitalizzare l'archivio di famiglia sembra un lavoro enorme. Con un metodo, bastano un weekend e una mezz'ora a settimana dopo.
+
+## Prima di iniziare: cosa non buttare
+
+Una copia digitale è comodissima, ma **per alcuni documenti l'originale resta necessario**: atti notarili, documenti d'identità, certificati ufficiali, titoli di studio, contratti firmati, alcuni documenti fiscali. La digitalizzazione serve a **ritrovare** e **consultare** i documenti, non a sostituire gli originali che hanno valore legale. In caso di dubbio, conservate l'originale in un posto sicuro e unico.
+
+## 1. Decidere le categorie
+
+Prima di fotografare, decidete le cartelle. Poche e chiare:
+
+- **Identità e famiglia**: atti, documenti personali
+- **Salute**: per ogni membro
+- **Casa**: contratti, mutuo o affitto, condominio, impianti
+- **Utenze**: luce, gas, acqua, internet
+- **Fisco**: dichiarazioni e ricevute, per anno
+- **Auto**: libretti, assicurazioni, interventi
+- **Acquisti e garanzie**
+- **Scuola**: per ogni figlio
+
+Nei [documenti](/strumenti/documenti) di KidBox cartelle e categorie si creano a piacere, e la ricerca trova i file per nome e per tag.
+
+## 2. Tre pile
+
+Svuotate il cassetto e dividete tutto in tre pile:
+
+- **da digitalizzare e conservare** in originale
+- **da digitalizzare e poi eliminare** (secondo i tempi di conservazione)
+- **da eliminare subito**: pubblicità, doppioni, documenti scaduti da tempo
+
+Per i tempi, trovate una guida orientativa in [quanto tempo conservare i documenti](/blog/quanto-tempo-conservare-i-documenti).
+
+## 3. Fotografare bene
+
+Non serve uno scanner: lo smartphone basta, con qualche accorgimento:
+
+- **luce naturale**, documento su un fondo scuro
+- **tutte le pagine**, anche il retro se contiene informazioni
+- **un file per documento**, non una foto per pagina sparsa
+- **PDF** per i documenti di più pagine
+
+## 4. Nomi che si trovano
+
+Il nome del file fa la differenza tra un archivio e un mucchio digitale. Uno schema semplice: **anno · tipo · chi/cosa**. «2024 · Contratto affitto · Via Roma», «2025 · Garanzia · Lavatrice», «2026 · Pagella · Sara». Aggiungete un tag quando serve.
+
+## 5. Il posto giusto per ogni cosa
+
+- **documenti d'identità** di tutti: nel [wallet](/strumenti/wallet), con la scadenza in evidenza
+- **ricevute di scadenze e interventi**: allegate direttamente alla scadenza di casa, all'intervento dell'auto o alla visita medica, così finiscono nei documenti ma restano collegate all'evento
+- **tutto il resto**: nella cartella della sua categoria
+
+## 6. Cifrato e condiviso
+
+Un archivio digitale di famiglia contiene documenti molto delicati. In KidBox i file vengono cifrati sul dispositivo con la chiave di famiglia prima di essere caricati, e sono visibili solo ai membri della famiglia. Ne parliamo in [perché la cifratura non è un dettaglio](/blog/dati-sanitari-cifrati).
+
+## Dopo il weekend: la regola dei nuovi arrivi
+
+L'archivio resta in ordine solo se ogni nuovo documento entra **quando arriva**: la bolletta, la ricevuta, la comunicazione della scuola. Trenta secondi. Una volta alla settimana, dieci minuti per quello che si è accumulato.
+
+## In sintesi
+
+Conservare gli originali che hanno valore legale, decidere poche categorie, dividere tutto in tre pile, fotografare bene con un file per documento, dare nomi con anno, tipo e oggetto, mettere ogni cosa nel posto giusto e far entrare i documenti nuovi il giorno in cui arrivano. I cassetti si svuotano una volta. Poi restano vuoti.
+""",
+        },
+        "en": {
+            "title": "Digitising your household documents: a method to empty the drawers in a weekend",
+            "desc": "Three drawers of papers, two boxes of receipts and a binder of warranties. How to switch to a tidy, encrypted digital archive shared between parents, without losing your mind or throwing away the wrong originals.",
+            "body": """
+Every home has its document drawer. Then a second one. Then the box in the loft. When you need a document — the washing machine warranty, the tenancy agreement, the vaccination record — you tip everything onto the table and hope. And if the other parent isn't home, they have no way of finding it.
+
+Digitising the family archive sounds like a huge job. With a method, one weekend and half an hour a week afterwards is enough.
+
+## Before you start: what not to throw away
+
+A digital copy is very convenient, but **for some documents the original is still required**: notarial deeds, identity documents, official certificates, qualifications, signed contracts, some tax documents. Digitising is for **finding** and **consulting** documents, not replacing originals with legal value. When in doubt, keep the original in one safe place.
+
+## 1. Decide the categories
+
+Before photographing, decide the folders. Few and clear:
+
+- **Identity and family**: certificates, personal documents
+- **Health**: for each member
+- **Home**: contracts, mortgage or rent, building management, systems
+- **Utilities**: electricity, gas, water, internet
+- **Tax**: returns and receipts, by year
+- **Car**: registration, insurance, repairs
+- **Purchases and warranties**
+- **School**: for each child
+
+In KidBox [documents](/en/tools/documenti) you create folders and categories as you like, and search finds files by name and tag.
+
+## 2. Three piles
+
+Empty the drawer and split everything into three piles:
+
+- **digitise and keep** the original
+- **digitise, then discard** (according to retention periods)
+- **discard now**: advertising, duplicates, long-expired documents
+
+For retention periods, see the rough guide in [how long to keep family documents](/en/blog/quanto-tempo-conservare-i-documenti).
+
+## 3. Photograph well
+
+You don't need a scanner: a smartphone is enough, with a few tips:
+
+- **natural light**, document on a dark background
+- **every page**, including the back if it has information
+- **one file per document**, not scattered photos per page
+- **PDF** for multi-page documents
+
+## 4. Names you can find
+
+The file name is the difference between an archive and a digital heap. A simple scheme: **year · type · who/what**. "2024 · Tenancy agreement · High Street", "2025 · Warranty · Washing machine", "2026 · Report card · Sara". Add a tag when useful.
+
+## 5. The right place for everything
+
+- everyone's **ID documents**: in the [wallet](/en/tools/wallet), with the expiry date highlighted
+- **receipts for deadlines and jobs**: attached directly to the home deadline, the car job or the medical visit, so they go into documents but stay linked to the event
+- **everything else**: in its category's folder
+
+## 6. Encrypted and shared
+
+A family digital archive holds very sensitive documents. In KidBox files are encrypted on the device with the family key before upload, and visible only to family members. More in [why encryption isn't a detail](/en/blog/dati-sanitari-cifrati).
+
+## After the weekend: the new-arrivals rule
+
+The archive only stays tidy if every new document goes in **when it arrives**: the bill, the receipt, the school letter. Thirty seconds. Once a week, ten minutes for whatever has piled up.
+
+## In short
+
+Keep originals with legal value, decide a few categories, split everything into three piles, photograph well with one file per document, name files with year, type and subject, put everything in the right place and add new documents the day they arrive. The drawers get emptied once. Then they stay empty.
+""",
+        },
+    },
+    {
+        "slug": "wallet-di-famiglia-carte-e-biglietti",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["wallet", "documenti"], "related": ["scadenze-documenti-di-identita", "volare-con-bambini", "lista-della-spesa-condivisa"],
+        "it": {
+            "title": "Il wallet di famiglia: carte fedeltà, biglietti e tessere sul telefono di entrambi i genitori",
+            "desc": "La tessera del supermercato ce l'ha solo lei, i biglietti del treno sono nell'email di lui, la tessera sanitaria del bambino è nel portafoglio sbagliato. Come avere tutto a portata di mano di chi ne ha bisogno.",
+            "body": """
+Il portafoglio di una famiglia è diviso in due, e la metà che serve è sempre nell'altra tasca. La carta fedeltà del supermercato è nel portafoglio di un genitore, mentre alla cassa c'è l'altro. I biglietti del treno sono in un'email che solo uno dei due ha ricevuto. La tessera sanitaria del figlio è nel portafoglio di chi oggi non l'ha portato dal pediatra.
+
+Un wallet di famiglia condiviso risolve questo problema quotidiano.
+
+## Le carte fedeltà
+
+Quasi ogni negozio ha la sua tessera: supermercato, farmacia, benzinaio, negozio per animali, libreria. Averle fisicamente tutte è scomodo, e spesso ne ha una copia sola un genitore.
+
+Nel [wallet](/strumenti/wallet) di KidBox basta inquadrare il codice a barre una volta: da lì in poi lo mostra il telefono di **chiunque in famiglia**, ridisegnato a schermo nello stesso formato dell'originale, così la cassa lo legge. Punti e sconti si accumulano sulla stessa tessera, chiunque faccia la spesa.
+
+Alcuni negozi potrebbero non accettare codici mostrati dal telefono: in quel caso conviene tenere anche la tessera fisica.
+
+## I biglietti
+
+Treni, aerei, concerti, musei, la gita della scuola: i biglietti arrivano in PDF nella casella email di chi ha prenotato. Quando si viaggia in famiglia, avere tutti i biglietti sul telefono di un solo genitore è un rischio.
+
+Caricando il PDF nel wallet, l'AI legge data, orario, posti e codice, e mostra un biglietto pulito da esibire. Se un campo non si legge, lo si corregge a mano. I biglietti sono visibili a entrambi i genitori, e nella sezione [Viaggi](/strumenti/viaggi) (piano Pro) si ritrovano dal viaggio con un tocco.
+
+Verificate sempre con la compagnia o l'organizzatore se il biglietto va mostrato nel formato originale o stampato.
+
+## Le tessere e i documenti d'identità
+
+Carta d'identità, tessera sanitaria, passaporto dei figli: nel wallet si salvano **cifrati**, con la **scadenza in evidenza**. Sono utili quando serve un dato — il codice fiscale per una prenotazione, il numero del documento per un check-in — e l'originale è a casa.
+
+Una copia sul telefono non sostituisce il documento originale per i controlli o per viaggiare: serve a sapere cosa si ha, quando scade, e a ritrovare i dati in fretta. Ne parliamo in [carta d'identità e passaporto dei figli](/blog/scadenze-documenti-di-identita).
+
+## Cosa mettere nel wallet, e cosa no
+
+- **sì**: carte fedeltà, biglietti, tessere di iscrizione (palestra, biblioteca, piscina), documenti d'identità e sanitari
+- **no**: numeri di carte di credito o codici bancari — per le credenziali ci sono le [password](/strumenti/password), per i contratti i [documenti](/strumenti/documenti)
+
+## Una pulizia ogni tanto
+
+Biglietti di viaggi passati, tessere di negozi chiusi, carte scadute: una volta ogni qualche mese si eliminano. Il wallet resta leggero, e trovare la carta giusta alla cassa richiede un secondo.
+
+## In sintesi
+
+Carte fedeltà inquadrate una volta e mostrate dal telefono di chiunque, biglietti in PDF letti dall'AI e visibili a entrambi i genitori, documenti d'identità cifrati con la scadenza in evidenza, niente dati bancari nel wallet e una pulizia periodica. La metà del portafoglio che serve è finalmente nella tasca giusta.
+""",
+        },
+        "en": {
+            "title": "The family wallet: loyalty cards, tickets and cards on both parents' phones",
+            "desc": "Only she has the supermarket card, the train tickets are in his email, the child's health card is in the wrong wallet. How to have everything to hand for whoever needs it.",
+            "body": """
+A family's wallet is split in two, and the half you need is always in the other pocket. The supermarket loyalty card is in one parent's wallet, while the other is at the till. The train tickets are in an email only one of you received. The child's health card is in the wallet of the parent who didn't take them to the paediatrician today.
+
+A shared family wallet fixes this everyday problem.
+
+## Loyalty cards
+
+Almost every shop has its card: supermarket, pharmacy, petrol station, pet shop, bookshop. Carrying them all is awkward, and often only one parent has a copy.
+
+In KidBox's [wallet](/en/tools/wallet) you scan the barcode once: from then on **anyone in the family** can show it on their phone, redrawn on screen in the same format as the original, so the till can read it. Points and discounts build up on the same card, whoever does the shopping.
+
+Some shops may not accept codes shown on a phone: in that case keep the physical card too.
+
+## Tickets
+
+Trains, flights, concerts, museums, the school trip: tickets arrive as PDFs in the inbox of whoever booked. When travelling as a family, having every ticket on one parent's phone is a risk.
+
+Upload the PDF to the wallet and the AI reads date, time, seats and code, showing a clean ticket to present. If a field can't be read, you correct it by hand. Tickets are visible to both parents, and in the [Family trips](/en/tools/viaggi) section (Pro plan) you reach them from the trip in one tap.
+
+Always check with the carrier or organiser whether the ticket must be shown in its original format or printed.
+
+## Cards and ID documents
+
+ID cards, health cards, the children's passports: in the wallet they're saved **encrypted**, with the **expiry date highlighted**. Useful when you need a detail — a tax number for a booking, a document number for check-in — and the original is at home.
+
+A copy on your phone doesn't replace the original for checks or travel: it's for knowing what you have, when it expires, and finding details quickly. More in [children's ID cards and passports](/en/blog/scadenze-documenti-di-identita).
+
+## What to put in the wallet, and what not
+
+- **yes**: loyalty cards, tickets, membership cards (gym, library, pool), ID and health documents
+- **no**: credit card numbers or banking codes — logins belong in [passwords](/en/tools/password), contracts in [documents](/en/tools/documenti)
+
+## A clear-out now and then
+
+Tickets for past trips, cards for closed shops, expired cards: every few months, delete them. The wallet stays light, and finding the right card at the till takes a second.
+
+## In short
+
+Loyalty cards scanned once and shown from anyone's phone, PDF tickets read by the AI and visible to both parents, ID documents encrypted with expiry dates highlighted, no banking details in the wallet and a periodic clear-out. The half of the wallet you need is finally in the right pocket.
+""",
+        },
+    },
+    {
+        "slug": "fatture-e-referti-letti-dall-ai",
+        "category": "salute-e-documenti", "date": "2026-09-13",
+        "tools": ["documenti", "assistente-ai", "spese", "veicoli"], "related": ["digitalizzare-i-documenti-di-casa", "bollette-e-contratti-di-casa", "cartella-clinica-di-famiglia"],
+        "it": {
+            "title": "Dalla bolletta alla scadenza in un tocco: far leggere fatture e referti all'AI",
+            "desc": "Ogni bolletta nasconde una scadenza e una spesa, ogni referto una visita da registrare. Come l'AI può leggere il documento e proporre cosa creare, lasciando a voi l'ultima parola.",
+            "body": """
+Ogni documento che arriva in casa porta con sé del lavoro nascosto. Una bolletta significa una scadenza da ricordare e una spesa da registrare. Una fattura dell'idraulico, una spesa e magari un intervento da annotare. Un referto, una visita da inserire nella storia sanitaria e forse un controllo da prenotare. Nessuno di questi passaggi è difficile. Tutti insieme, ogni settimana, sono quelli che si rimandano.
+
+È esattamente il tipo di lavoro che un'intelligenza artificiale può alleggerire.
+
+## Come funziona in KidBox
+
+Con il piano Pro, dalla sezione [Documenti](/strumenti/documenti) o dall'[assistente](/strumenti/assistente-ai) si importa un documento — una fattura, una bolletta, un referto — e l'AI:
+
+1. **legge** il documento: importi, date, fornitore, tipo di prestazione
+2. **propone** cosa registrare: una spesa, un evento in calendario, una cosa da fare, una nota, un intervento sull'auto, una visita medica o un vaccino — e un nome chiaro per il file
+3. **mostra** la proposta prima di salvare, così potete correggerla, completarla o scartarla
+
+Nulla viene creato senza la vostra conferma. L'AI è un assistente che prepara il lavoro, non un sistema che decide al posto vostro.
+
+## Qualche esempio
+
+### La bolletta della luce
+
+L'AI legge importo e scadenza, e propone la **spesa** e un **evento in calendario** o una **cosa da fare** con il promemoria per il pagamento. La bolletta resta nei documenti, con un nome che si ritrova. Se tenete le bollette tra le scadenze di [Casa](/strumenti/casa), lì la inserite a mano: quella sezione non viene compilata dall'AI.
+
+### La fattura dell'officina
+
+Il tagliando dell'auto: l'AI propone l'**intervento** nella scheda del veicolo, con data, chilometri e costo, che diventa anche una [spesa di famiglia](/strumenti/spese).
+
+### Il referto di una visita
+
+Dal referto l'AI propone di registrare la **visita** nella scheda salute del figlio, con data e medico; da un certificato vaccinale, il **vaccino**; e se il referto indica un controllo successivo, un **promemoria** per prenotarlo.
+
+## Cosa controllare sempre
+
+L'AI può sbagliare a leggere, soprattutto con documenti fotografati male o molto complessi. Prima di confermare verificate sempre:
+
+- **importi**: soprattutto su bollette con più voci, conguagli o rate
+- **date**: scadenza di pagamento, data della prestazione
+- **a chi si riferisce**: quale figlio, quale casa, quale auto
+- **per i documenti sanitari**: l'AI registra i dati, ma l'interpretazione del referto spetta al medico
+
+## La privacy
+
+Per leggere un documento, il suo contenuto viene inviato al servizio di intelligenza artificiale che KidBox usa, Anthropic, come descritto nell'informativa privacy. L'importazione avviene solo quando la scegliete voi, documento per documento. I documenti archiviati nella sezione Documenti restano cifrati con la chiave di famiglia.
+
+## Quando conviene, e quando no
+
+- **conviene** per bollette, fatture e referti che arrivano con regolarità, e quando il tempo per registrarli manca
+- **conviene meno** per documenti semplici che si registrano in pochi secondi a mano, o per quelli che non volete inviare a un servizio esterno
+
+## In sintesi
+
+L'AI legge fatture, bollette e referti, propone spese, eventi, cose da fare, interventi, visite e vaccini, e aspetta la vostra conferma. Importi, date e destinatari vanno sempre controllati, e l'interpretazione dei referti resta al medico. Il lavoro nascosto dei documenti non sparisce. Ma si riduce a un controllo e un tocco.
+""",
+        },
+        "en": {
+            "title": "From bill to deadline in one tap: letting AI read invoices and medical reports",
+            "desc": "Every bill hides a deadline and an expense, every medical report a visit to record. How AI can read the document and suggest what to create, while leaving the final say to you.",
+            "body": """
+Every document that comes into the house brings hidden work with it. A bill means a deadline to remember and an expense to record. A plumber's invoice, an expense and perhaps a job to note. A medical report, a visit to add to the health history and maybe a check-up to book. None of these steps is hard. All together, every week, they're the ones that get put off.
+
+It's exactly the kind of work artificial intelligence can lighten.
+
+## How it works in KidBox
+
+With the Pro plan, from the [Documents](/en/tools/documenti) section or the [assistant](/en/tools/assistente-ai) you import a document — an invoice, a bill, a medical report — and the AI:
+
+1. **reads** it: amounts, dates, supplier, type of service
+2. **suggests** what to record: an expense, a calendar event, a to-do, a note, a car job, a medical visit or a vaccination — and a clear name for the file
+3. **shows** the suggestion before saving, so you can correct it, complete it or discard it
+
+Nothing is created without your confirmation. The AI is an assistant that prepares the work, not a system that decides for you.
+
+## A few examples
+
+### The electricity bill
+
+The AI reads amount and due date, and suggests the **expense** plus a **calendar event** or a **to-do** with a payment reminder. The bill stays in documents, under a name you can find. If you track bills among [Home](/en/tools/casa) deadlines, you add it there by hand: that section isn't filled in by the AI.
+
+### The garage invoice
+
+The car's service: the AI suggests the **job** on the vehicle record, with date, mileage and cost, which also becomes a [family expense](/en/tools/spese).
+
+### A visit report
+
+From the report, the AI suggests recording the **visit** in the child's health section, with date and doctor; from a vaccination certificate, the **vaccination**; and if the report mentions a follow-up, a **reminder** to book it.
+
+## What to always check
+
+AI can misread, especially with badly photographed or very complex documents. Before confirming, always check:
+
+- **amounts**: especially on bills with several items, adjustments or instalments
+- **dates**: payment due date, date of service
+- **who it's for**: which child, which home, which car
+- **for medical documents**: the AI records the data, but interpreting the report is the doctor's job
+
+## Privacy
+
+To read a document, its content is sent to the AI service KidBox uses, Anthropic, as described in the privacy policy. Importing only happens when you choose, document by document. Documents stored in the Documents section remain encrypted with the family key.
+
+## When it's worth it, and when not
+
+- **worth it** for bills, invoices and reports that arrive regularly, and when there's no time to record them
+- **less worth it** for simple documents you can enter by hand in seconds, or ones you'd rather not send to an external service
+
+## In short
+
+The AI reads invoices, bills and medical reports, suggests expenses, events, to-dos, car jobs, visits and vaccinations, and waits for your confirmation. Amounts, dates and recipients always need checking, and interpreting reports stays with the doctor. The hidden work of documents doesn't vanish. But it shrinks to a check and a tap.
+""",
+        },
+    },
 ]

@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salute e documenti: la storia sanitaria e le carte di tutta la famiglia · Blog KidBox</title>
-  <meta name="description" content="Vaccini, visite, referti, carte d&#x27;identità e passaporti: come tenerli in ordine, al sicuro e a portata di entrambi i genitori.">
-  <meta property="og:title" content="Salute e documenti: la storia sanitaria e le carte di tutta la famiglia · Blog KidBox">
-  <meta property="og:description" content="Vaccini, visite, referti, carte d&#x27;identità e passaporti: come tenerli in ordine, al sicuro e a portata di entrambi i genitori.">
-  <meta property="og:type" content="website">
+  <title>Appliance warranties: the faded receipt, the lost manual and the fault in month 23 · KidBox Blog</title>
+  <meta name="description" content="The washing machine breaks, and the warranty would still apply — if the receipt could be found. How to keep proof of purchase, manuals and warranty dates for household items, and use them when needed.">
+  <meta property="og:title" content="Appliance warranties: the faded receipt, the lost manual and the fault in month 23 · KidBox Blog">
+  <meta property="og:description" content="The washing machine breaks, and the warranty would still apply — if the receipt could be found. How to keep proof of purchase, manuals and warranty dates for household items, and use them when needed.">
+  <meta property="og:type" content="article">
   <meta property="og:image" content="https://kidboxapp.com/icon.png">
-  <link rel="canonical" href="https://kidboxapp.com/blog/salute-e-documenti">
-  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/blog/salute-e-documenti">
-  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/blog/salute-e-documenti">
-  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/blog/salute-e-documenti">
+  <link rel="canonical" href="https://kidboxapp.com/en/blog/garanzie-degli-elettrodomestici">
+  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/blog/garanzie-degli-elettrodomestici">
+  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/blog/garanzie-degli-elettrodomestici">
+  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/blog/garanzie-degli-elettrodomestici">
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" href="../icon.png?v=2">
+  <link rel="icon" type="image/png" href="../../icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
 <style>
@@ -180,76 +180,6 @@
   .mini-list .ck { flex-shrink:0; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:0.7rem; color:#fff; margin-top:2px; }
   .band-visual { display:flex; justify-content:center; }
 
-  /* VOCE / ALEXA — il pannello è volutamente scuro in entrambi i temi:
-     è la cucina di sera, con l'anello dell'Echo acceso. */
-  .voice { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding:20px 0 10px; }
-  .voice-copy .p-eyebrow { color:#1f9dc9; }
-  @media (prefers-color-scheme: dark) { .voice-copy .p-eyebrow { color:#4fd8ff; } }
-  :root[data-theme="dark"] .voice-copy .p-eyebrow { color:#4fd8ff; }
-  :root[data-theme="light"] .voice-copy .p-eyebrow { color:#1f9dc9; }
-  .voice-visual { display:flex; justify-content:center; }
-  .voice-panel { position:relative; width:100%; max-width:410px; border-radius:var(--r-lg); padding:30px 24px 24px; overflow:hidden;
-    background:linear-gradient(165deg,#13202e 0%,#080d14 62%); border:1px solid rgba(79,216,255,0.18); box-shadow:var(--shadow-lg); }
-  .voice-panel::after { content:''; position:absolute; top:-96px; left:50%; transform:translateX(-50%); width:300px; height:200px;
-    background:radial-gradient(ellipse at center,rgba(79,216,255,.30),transparent 70%); filter:blur(16px); pointer-events:none; }
-
-  /* Echo */
-  .echo { position:relative; width:118px; height:120px; margin:4px auto 14px; }
-  .echo-cyl { position:absolute; left:16px; right:16px; top:24px; bottom:6px; background:linear-gradient(150deg,#3d4855,#171d26);
-    border-radius:16px 16px 20px 20px / 12px 12px 26px 26px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), 0 18px 30px rgba(0,0,0,.45); }
-  .echo-cyl::before { content:''; position:absolute; inset:8px 10px 12px; border-radius:12px;
-    background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 4px); }
-  .echo-ring { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:3px solid #4fd8ff;
-    background:radial-gradient(ellipse at center,rgba(79,216,255,.28),transparent 70%); animation:ringpulse 3.2s ease-in-out infinite; }
-  @keyframes ringpulse { 0%,100% { opacity:.6; box-shadow:0 0 10px rgba(79,216,255,.45), inset 0 0 8px rgba(79,216,255,.35); }
-                         50%     { opacity:1;  box-shadow:0 0 28px rgba(79,216,255,.85), inset 0 0 16px rgba(79,216,255,.6); } }
-  .echo-halo { position:absolute; left:10px; right:10px; top:10px; height:32px; border-radius:50%; border:2px solid rgba(79,216,255,.55); animation:halo 3.2s ease-out infinite; }
-  .echo-halo.h2 { animation-delay:1.6s; }
-  @keyframes halo { 0% { transform:scale(1); opacity:.6; } 100% { transform:scale(1.9); opacity:0; } }
-
-  /* Onda vocale */
-  .wave { display:flex; align-items:center; justify-content:center; gap:4px; height:30px; margin-bottom:14px; }
-  .wave i { width:4px; height:7px; border-radius:3px; background:linear-gradient(180deg,#7ee6ff,#1b8fc4); animation:wv 1.15s ease-in-out infinite; }
-  .wave i:nth-child(1){animation-delay:0s} .wave i:nth-child(2){animation-delay:.12s} .wave i:nth-child(3){animation-delay:.24s}
-  .wave i:nth-child(4){animation-delay:.36s} .wave i:nth-child(5){animation-delay:.18s} .wave i:nth-child(6){animation-delay:.30s}
-  .wave i:nth-child(7){animation-delay:.06s} .wave i:nth-child(8){animation-delay:.42s} .wave i:nth-child(9){animation-delay:.20s}
-  @keyframes wv { 0%,100% { height:7px; opacity:.4; } 50% { height:26px; opacity:1; } }
-
-  /* Le frasi si alternano */
-  .say { position:relative; height:66px; margin-bottom:14px; }
-  .say span { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:0 6px;
-    font-size:0.95rem; font-weight:600; line-height:1.35; color:#eaf6ff; opacity:0; animation:sayc 13.5s ease-in-out infinite; }
-  .say span b { color:#4fd8ff; font-weight:700; }
-  .say span:nth-child(2){ animation-delay:4.5s } .say span:nth-child(3){ animation-delay:9s }
-  @keyframes sayc { 0%{opacity:0;transform:translateY(7px)} 5%{opacity:1;transform:none} 28%{opacity:1;transform:none} 33%,100%{opacity:0;transform:translateY(-7px)} }
-
-  /* Cosa compare nell'app */
-  .voice-out { background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:12px; }
-  .vo-h { font-size:0.62rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(234,246,255,.45); margin:2px 0 9px; display:flex; align-items:center; gap:6px; }
-  .vrow { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:11px; background:rgba(255,255,255,.05); margin-bottom:6px; }
-  .vrow .vck { width:16px; height:16px; border-radius:50%; border:1.5px solid rgba(234,246,255,.32); flex-shrink:0; }
-  .vrow .v1 { font-size:0.79rem; font-weight:700; color:#f2f8ff; }
-  .vrow .v2 { font-size:0.63rem; color:rgba(234,246,255,.45); }
-  .vrow .vnew { margin-left:auto; font-size:0.56rem; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:#08121a; background:#4fd8ff; padding:3px 8px; border-radius:50px; flex-shrink:0; }
-  .vrow.pop { animation:vpop 13.5s ease-in-out infinite; }
-  .vrow.pop.d2 { animation-delay:4.5s } .vrow.pop.d3 { animation-delay:9s }
-  @keyframes vpop { 0%{opacity:.25; transform:translateX(-8px)} 6%,100%{opacity:1; transform:none} }
-
-  /* Le frasi, per esteso */
-  .phrases { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:26px; }
-  .phrase { display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);
-    background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:8px 15px 8px 11px; box-shadow:var(--shadow); }
-  .phrase .pw { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:0.62rem; color:#08121a; background:#4fd8ff; flex-shrink:0; }
-  .voice-note { text-align:center; font-size:0.82rem; color:var(--muted); margin-top:18px; }
-  .voice-note b { color:var(--text); }
-  @media (max-width:860px) { .voice { grid-template-columns:1fr; gap:34px; padding-bottom:0; } }
-  @media (prefers-reduced-motion:reduce) {
-    .echo-ring,.wave i,.vrow.pop { animation:none; }
-    .echo-halo { animation:none; opacity:0; }
-    .say span { animation:none; opacity:0; }
-    .say span:first-child { opacity:1; }
-  }
-
   /* AGENTS */
   .agents { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:44px; }
   .agent { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:30px 26px; box-shadow:var(--shadow); transition:transform .2s,box-shadow .2s; position:relative; overflow:hidden; }
@@ -379,167 +309,131 @@
 </head>
 <body>
 <nav>
-  <a class="logo" href="../index.html#top"><img src="../icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
+  <a class="logo" href="../../index.html#top"><img src="../../icon.png" alt="KidBox"><span>Kid<span class="ac">Box</span></span></a>
   <div class="nav-r">
-    <a class="nav-lnk nav-hide" href="../index.html#prodotti">Prodotti</a>
-    <a class="nav-lnk nav-hide" href="../index.html#voce">Voce</a>
-    <a class="nav-lnk nav-hide" href="../index.html#ai">Intelligenza AI</a>
-    <a class="nav-lnk nav-hide" href="../index.html#prezzi">Prezzi</a>
-    <a class="nav-lnk nav-hide" href="../guide.html">Guida</a>
-    <a class="nav-lnk nav-hide" href="../strumenti/">Strumenti</a>
-    <a class="nav-lnk nav-hide" href="../blog/">Blog</a>
-    <div class="nav-lang nav-hide"><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="../en/blog/salute-e-documenti" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
-    <button class="theme-btn" id="tg" aria-label="Cambia tema">◐</button>
-    <a class="nav-cta" href="../index.html#scarica">Scarica gratis</a>
+    <a class="nav-lnk nav-hide" href="../../index.html#prodotti">Products</a>
+    <a class="nav-lnk nav-hide" href="../../index.html#ai">AI Intelligence</a>
+    <a class="nav-lnk nav-hide" href="../../index.html#prezzi">Pricing</a>
+    <a class="nav-lnk nav-hide" href="../../guide-en.html">Guide</a>
+    <a class="nav-lnk nav-hide" href="../../en/tools/">Tools</a>
+    <a class="nav-lnk nav-hide" href="../../en/blog/">Blog</a>
+    <div class="nav-lang nav-hide"><a href="../../blog/garanzie-degli-elettrodomestici" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
+    <button class="theme-btn" id="tg" aria-label="Toggle theme">◐</button>
+    <a class="nav-cta" href="../../index.html#scarica">Download free</a>
   </div>
 </nav>
 <div class="wrap">
 
-<div class="crumbs"><a href="../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><span class="cur">Salute e documenti</span></div>
-<div class="b-head rv">
-  <h1>Salute e documenti: la storia sanitaria e le carte di tutta la famiglia</h1>
-  <p>Vaccini, visite, referti, carte d&#x27;identità e passaporti: come tenerli in ordine, al sicuro e a portata di entrambi i genitori.</p>
-</div>
-<div class="b-grid">
-  <a class="b-card rv" href="libretto-vaccinale-dei-figli">
-    <h3>Il libretto vaccinale dei figli: come tenerlo in ordine e non perdere un richiamo</h3>
-    <p>Il libretto di carta si perde, i richiami arrivano dopo anni e la scuola o il campo estivo chiedono il certificato all&#x27;ultimo. Come avere le vaccinazioni dei figli sempre a portata di mano.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="cartella-clinica-di-famiglia">
-    <h3>La cartella clinica di famiglia: cosa tenere, come ordinarla e quando serve davvero</h3>
-    <p>Pronto soccorso di notte, un nuovo pediatra, uno specialista che chiede gli esami di due anni fa. Cosa conservare della salute di ogni membro della famiglia, e come ritrovarlo in trenta secondi.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="scadenze-documenti-di-identita">
-    <h3>Carta d&#x27;identità e passaporto dei figli: le scadenze da non scoprire in aeroporto</h3>
-    <p>I documenti dei minori durano meno di quelli degli adulti, e le prenotazioni per rinnovarli si trovano con settimane di anticipo. Come tenere sotto controllo le scadenze di tutta la famiglia.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="dati-sanitari-cifrati">
-    <h3>Referti e documenti dei figli online: perché la cifratura non è un dettaglio</h3>
-    <p>Mandare un referto su WhatsApp o salvarlo in un cloud qualunque è comodo. Cosa succede davvero ai dati sanitari della famiglia, e cosa significa che un&#x27;app li cifra con una chiave solo vostra.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="farmaci-e-terapie-dei-figli">
-    <h3>Farmaci e terapie dei figli: chi li dà, a che ora e come non sbagliare dose</h3>
-    <p>Un antibiotico tre volte al giorno, due genitori, i nonni al pomeriggio e la domanda «gliel&#x27;hai già dato?». Come organizzare una terapia in famiglia senza dosi saltate né doppie.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="figlio-malato-organizzarsi-tra-genitori">
-    <h3>Il figlio si ammala e lavorate entrambi: come organizzarsi nelle prime 24 ore</h3>
-    <p>Una telefonata dalla scuola alle 10, due riunioni, nessun nonno libero. Chi va a prenderlo, chi resta a casa domani, cosa dire al pediatra. Un piano da decidere prima che serva.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="dati-di-salute-dal-telefono">
-    <h3>Passi, battito, pressione: cosa fare dei dati di salute che il telefono raccoglie già</h3>
-    <p>Apple Health e Health Connect registrano ogni giorno dati che nessuno guarda. Cosa sono, cosa possono dire e cosa no, e come usarli in famiglia rispettando la privacy di ognuno.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="piano-fitness-in-famiglia">
-    <h3>Fare attività fisica quando si hanno figli: un piano che sta nella settimana vera</h3>
-    <p>Tre allenamenti a settimana sembrano pochi finché non si prova a incastrarli tra lavoro, scuola e cene. Come costruire un piano di movimento realistico, in coppia e con i figli.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="spese-mediche-di-famiglia">
-    <h3>Spese mediche di famiglia: raccogliere scontrini e fatture per il 730 senza la caccia di maggio</h3>
-    <p>Visite private, farmaci, dentista, occhiali: le spese sanitarie di una famiglia sono tante e sparse. Come tenerle in ordine durante l&#x27;anno, con le ricevute, per non perdere detrazioni e non passare un weekend a cercarle.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="password-di-famiglia-condivise">
-    <h3>Le password di famiglia: quali condividere, dove tenerle e come smettere di mandarle in chat</h3>
-    <p>Il Wi-Fi, lo streaming, il portale della scuola, l&#x27;area clienti della luce. Due genitori condividono decine di credenziali. Come organizzarle in modo sicuro, tenendo private quelle personali.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="quanto-tempo-conservare-i-documenti">
-    <h3>Bollette, ricevute, dichiarazioni: quanto tempo conservare i documenti di famiglia</h3>
-    <p>Cassetti pieni di carte vecchie di vent&#x27;anni e, quando serve, la ricevuta che non si trova. Una guida orientativa su cosa tenere, per quanto, e come archiviarlo senza riempire la casa.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="digitalizzare-i-documenti-di-casa">
-    <h3>Digitalizzare i documenti di casa: il metodo per svuotare i cassetti in un weekend</h3>
-    <p>Tre cassetti di carte, due scatole di ricevute e un raccoglitore di garanzie. Come passare a un archivio digitale ordinato, cifrato e condiviso tra i genitori, senza impazzire e senza buttare gli originali sbagliati.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="wallet-di-famiglia-carte-e-biglietti">
-    <h3>Il wallet di famiglia: carte fedeltà, biglietti e tessere sul telefono di entrambi i genitori</h3>
-    <p>La tessera del supermercato ce l&#x27;ha solo lei, i biglietti del treno sono nell&#x27;email di lui, la tessera sanitaria del bambino è nel portafoglio sbagliato. Come avere tutto a portata di mano di chi ne ha bisogno.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="fatture-e-referti-letti-dall-ai">
-    <h3>Dalla bolletta alla scadenza in un tocco: far leggere fatture e referti all&#x27;AI</h3>
-    <p>Ogni bolletta nasconde una scadenza e una spesa, ogni referto una visita da registrare. Come l&#x27;AI può leggere il documento e proporre cosa creare, lasciando a voi l&#x27;ultima parola.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>13 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="documenti-di-famiglia-in-ordine">
-    <h3>I documenti di famiglia in ordine, una volta per tutte</h3>
-    <p>Un metodo in tre livelli — cartelle, schede, wallet — per non cercare mai più un documento, e perché la cifratura non è un dettaglio.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>12 set 2026</span></span>
-  </a>
-  <a class="b-card rv" href="storia-sanitaria-dei-figli">
-    <h3>La storia sanitaria dei figli: cosa tenere, dove, e perché serve al medico</h3>
-    <p>Vaccini, visite, esami, cure: come costruire uno storico clinico dei figli che qualunque genitore possa mostrare a qualunque medico, in un tocco.</p>
-    <span class="b-meta"><span>3 min di lettura</span><span>·</span><span>4 set 2026</span></span>
-  </a>
-</div>
-<div style="height:24px"></div>
-
+<div class="crumbs"><a href="../../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><a href="casa-e-faccende">Home and chores</a><span>/</span><span class="cur">Appliance warranties: the faded receipt, the lost manual and the fault in month 23</span></div>
+<article class="b-art">
+  <header class="b-art-head rv">
+    <h1>Appliance warranties: the faded receipt, the lost manual and the fault in month 23</h1>
+    <div class="b-art-meta"><span>The KidBox team</span><span class="sep">·</span><span>Updated 13 Sep 2026</span><span class="sep">·</span><span>3 min read</span></div>
+  </header>
+  
 <div class="t-hero rv">
   <div class="device sm"><div class="screen"><div class="notch"></div>
-      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Buongiorno, Vittorio</div><div class="scr-h">La tua famiglia</div></div>
+      <div class="scr-top" style="text-align:left"><div class="scr-time">9:41 · Good morning, Vitto</div><div class="scr-h">Your family</div></div>
       <div class="scr-body">
         <div class="dash">
-          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Salute</div><div class="td">Visite e vaccini</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documenti</div><div class="td">Carte importanti</div></div></div>
-          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Famiglia</div></div></div>
-          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Posizione</div><div class="td">Dove sono tutti</div></div></div>
-          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Viaggi</div><div class="td">Itinerari AI</div></div></div>
-          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Password</div><div class="td">Credenziali</div></div></div>
+          <div class="tile" style="background:var(--accent-l)"><span class="ti">🩺</span><div><div class="tl">Health</div><div class="td">Visits &amp; vaccines</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">📄</span><div><div class="tl">Documents</div><div class="td">Important papers</div></div></div>
+          <div class="tile" style="background:rgba(46,158,107,.12)"><span class="ti">💬</span><div><div class="tl">Chat</div><div class="td">Family</div></div></div>
+          <div class="tile" style="background:rgba(43,124,184,.12)"><span class="ti">📍</span><div><div class="tl">Location</div><div class="td">Where everyone is</div></div></div>
+          <div class="tile" style="background:rgba(212,134,10,.12)"><span class="ti">✈️</span><div><div class="tl">Travel</div><div class="td">AI itineraries</div></div></div>
+          <div class="tile" style="background:rgba(124,92,191,.12)"><span class="ti">🔐</span><div><div class="tl">Passwords</div><div class="td">Credentials</div></div></div>
         </div>
       </div>
     </div></div>
   <div class="t-hero-copy">
-    <div class="eyebrow"><span class="dot"></span>Scarica l'app</div>
-    <h2>Tutta la famiglia, <span class="g">in un'unica app.</span></h2>
-    <p>L'organizer di famiglia per iPhone, Android e browser, cifrato end-to-end. Gratis per una famiglia di due genitori.</p>
+    <div class="eyebrow"><span class="dot"></span>Get the app</div>
+    <h2>The whole family, <span class="g">in a single app.</span></h2>
+    <p>The family organiser for iPhone, Android and the browser, end-to-end encrypted. Free for a family of two parents.</p>
     <div class="hero-cta">
-    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
-    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
-    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
+    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
   </div>
 
   </div>
 </div>
+  <div class="b-body">
+<p>It's a classic: the dishwasher stops working after eighteen months. It should be under warranty. But the receipt was thermal paper and is now blank, the online invoice was in one parent's email and got deleted, and the manual with the service number is who knows where. You pay for the repair, or buy a new one.</p>
+<p>Warranties only work if you can prove when and where you bought something. And that takes five minutes at the time of purchase.</p>
+<p>This article gives organisational tips. The length, terms and process for statutory and commercial warranties depend on consumer law and the seller or manufacturer: check official sources, the seller or a consumer organisation.</p>
+<h2>Statutory and commercial warranties</h2>
+<p>For goods bought by consumers in the European Union there's a <strong>statutory guarantee of conformity</strong>, normally at least two years, claimed from the <strong>seller</strong>. Other countries have their own consumer rights. Some manufacturers or sellers also offer a <strong>commercial</strong> or extended warranty with its own terms, sometimes requiring product registration. Read the terms when you buy: registration deadlines and paid services are often in the least-read pages.</p>
+<h2>What to keep</h2>
+<ul><li><strong>proof of purchase</strong>: receipt or invoice, with date, seller and product</li><li>the commercial warranty <strong>certificate</strong>, if any</li><li>the <strong>user manual</strong>, with service details</li><li><strong>model and serial number</strong></li></ul>
+<h2>1. Photograph the receipt the same day</h2>
+<p>Thermal receipts fade within months. The most useful rule: <strong>photograph the receipt on the day you buy</strong>, before it disappears into a drawer. Download online invoices as PDFs straight away, rather than leaving them only in email.</p>
+<h2>2. One record per item</h2>
+<p>In KidBox's <a href="../../en/tools/casa">Home</a> section each appliance has its record: <strong>brand, model, serial number, purchase date, warranty expiry</strong>, with the <strong>PDF manual</strong> attached. The attached receipt also goes into the family's encrypted <a href="../../en/tools/documenti">documents</a>, linked to the item: you find it from the washing machine's record or from the archive.</p>
+<h2>3. Warranty expiry in the calendar</h2>
+<p>With the warranty expiry set on the record and the reminder on, you're alerted before it ends; for a precise lead time, also add an event in the <a href="../../en/tools/calendario">calendar</a> <strong>a month before</strong>. It's the right moment for a check: that strange noise the washing machine has been making for weeks should be reported now, not the month after it expires.</p>
+<h2>4. When it breaks</h2>
+<ul><li>open the record: purchase date, seller, expiry, receipt, manual</li><li><strong>check whether it's under warranty</strong> and who to contact: the seller for statutory rights, the manufacturer for a commercial warranty</li><li>describe the problem in writing and keep the correspondence</li><li>note the date and case number</li></ul>
+<h2>5. Repairs and replacements</h2>
+<p>The report or receipt for each repair is attached to the item's record, with the date in the file name: even if it's free under warranty, the history is useful. The cost of paid repairs goes into family expenses. And if an appliance keeps breaking, that history helps decide when to replace it.</p>
+<p>When you replace it, delete or update the old record and create a new one, with the new receipt photographed the same day.</p>
+<h2>Not just appliances</h2>
+<p>The same method works for anything with a warranty that's worth claiming: phones, computers, TVs, bikes, buggies, furniture.</p>
+<h2>In short</h2>
+<p>Know the difference between statutory and commercial warranties, photograph the receipt on the day of purchase, one record per item with model, date, warranty and manual, warranty expiry with its reminder, and repair receipts and reports attached. The fault in month 23 will still come. But this time the warranty pays.</p>
+  </div>
+  <section class="b-sec"><h2>The tools this article talks about</h2><div class="b-tools"><a href="../../en/tools/casa">🏠 Home: warranties, maintenance and deadlines</a><a href="../../en/tools/documenti">📄 Encrypted family documents</a><a href="../../en/tools/calendario">📅 Shared family calendar</a></div></section>
+  <section class="b-sec">
+    <h2>Read next</h2>
+    <div class="b-grid">
+  <a class="b-card rv" href="manutenzione-caldaia-e-impianti">
+    <h3>Boiler, air conditioning and home systems: the maintenance nobody remembers (until it breaks)</h3>
+    <p>The boiler service, air conditioner filters, the water softener, the purifier. How to track home maintenance, who does it and when the next one is due.</p>
+    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
+  </a>
+  <a class="b-card rv" href="quanto-tempo-conservare-i-documenti">
+    <h3>Bills, receipts, tax returns: how long to keep family documents</h3>
+    <p>Drawers full of twenty-year-old papers and, when needed, the receipt that can&#x27;t be found. A rough guide to what to keep, for how long, and how to file it without filling the house.</p>
+    <span class="b-meta"><span>3 min read</span><span>·</span><span>13 Sep 2026</span></span>
+  </a>
+  <a class="b-card rv" href="scadenze-di-casa-bollette-garanzie">
+    <h3>Bills, warranties and inspections: the household deadlines nobody remembers</h3>
+    <p>Household deadlines cost money when forgotten. How to put them all in one place, documents attached, and stop thinking about them.</p>
+    <span class="b-meta"><span>4 min read</span><span>·</span><span>5 Sep 2026</span></span>
+  </a>
+    </div>
+    <p class="b-more"><a href="casa-e-faccende">More on Home and chores →</a> &nbsp; <a href="./">All articles →</a></p>
+  </section>
+</article>
 </div>
 
 <section id="scarica" class="wrap">
   <div class="final rv">
-    <div class="kicker">Inizia oggi</div>
-    <h2>La famiglia merita un'app all'altezza.</h2>
-    <p>Gratuita per iniziare. Nessuna carta richiesta.</p>
+    <div class="kicker">Start today</div>
+    <h2>Your family deserves an app that keeps up.</h2>
+    <p>Free to start. No card required.</p>
     <div class="hero-cta" style="justify-content:center">
-    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Scarica su</span><span class="st-main">App Store</span></span></a>
-    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Disponibile su</span><span class="st-main">Google Play</span></span></a>
-    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Apri subito</span><span class="st-main">Web App</span></span></a>
+    <a class="store" href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg><span class="st-in"><span class="st-sub">Download on the</span><span class="st-main">App Store</span></span></a>
+    <a class="store" href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.22.99.14l12.44-7.18-2.75-2.75-10.68 9.79z" fill="#EA4335"/><path d="M22.47 10.22 19.4 8.44l-3.08 3.08 3.08 3.08 3.1-1.79a1.74 1.74 0 0 0 0-3.04l-.03.45z" fill="#FBBC04"/><path d="M3.18.24A1.74 1.74 0 0 0 2 1.84v20.32c0 .66.36 1.24.99 1.6L14.63 12 3.18.24z" fill="#4285F4"/><path d="M16.61 5.44 3.18.24c-.35-.09-.69-.04-.99.13L14.63 12l3.07-3.07-1.09-3.49z" fill="#34A853"/></svg><span class="st-in"><span class="st-sub">Get it on</span><span class="st-main">Google Play</span></span></a>
+    <a class="store store-web" href="https://app.kidboxapp.com" target="_blank" rel="noopener"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M2.8 12h18.4"/><path d="M12 2.8c2.4 2.5 3.7 5.7 3.7 9.2s-1.3 6.7-3.7 9.2c-2.4-2.5-3.7-5.7-3.7-9.2S9.6 5.3 12 2.8z"/></svg><span class="st-in"><span class="st-sub">Open now</span><span class="st-main">Web App</span></span></a>
   </div>
 
   </div>
   <footer>
     <div class="foot">
-      <span>© 2026 KidBox · Fatto con ❤️ in Italia</span>
+      <span>© 2026 KidBox · Made with ❤️ in Italy</span>
       <div class="foot-links">
-        <a href="../guide.html">Guida</a>
-        <a href="../strumenti/">Strumenti</a>
-        <a href="../blog/">Blog</a>
-        <a href="../index.html#prezzi">Prezzi</a>
-        <a href="../privacy.html">Privacy</a>
-        <a href="../terms.html">Termini</a>
-        <a href="../support.html">Supporto</a>
-        <a href="../data-deletion.html">Eliminazione Dati</a>
-        <a href="#" data-consent-open>Preferenze cookie</a>
+        <a href="../../guide-en.html">Guide</a>
+        <a href="../../en/tools/">Tools</a>
+        <a href="../../en/blog/">Blog</a>
+        <a href="../../index.html#prezzi">Pricing</a>
+        <a href="../../privacy-en.html">Privacy</a>
+        <a href="../../terms-en.html">Terms</a>
+        <a href="../../support-en.html">Support</a>
+        <a href="../../data-deletion-en.html">Data Deletion</a>
+        <a href="#" data-consent-open>Cookie preferences</a>
       </div>
       <div class="foot-social">
-        <a href="https://www.facebook.com/profile.php?id=61574265148948&locale=it_IT" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
+        <a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg></a>
         <a href="https://www.instagram.com/kidbox_app?utm_source=qr" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
       </div>
     </div>
@@ -558,5 +452,6 @@
     document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
   })();
 </script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Appliance warranties: the faded receipt, the lost manual and the fault in month 23", "description": "The washing machine breaks, and the warranty would still apply — if the receipt could be found. How to keep proof of purchase, manuals and warranty dates for household items, and use them when needed.", "datePublished": "2026-09-13", "dateModified": "2026-09-13", "inLanguage": "en", "author": {"@type": "Organization", "name": "KidBox"}, "publisher": {"@type": "Organization", "name": "KidBox", "logo": {"@type": "ImageObject", "url": "https://kidboxapp.com/icon.png"}}, "mainEntityOfPage": "https://kidboxapp.com/en/blog/garanzie-degli-elettrodomestici"}</script>
 </body>
 </html>
