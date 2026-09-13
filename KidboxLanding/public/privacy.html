@@ -6,19 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy · KidBox</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <!-- Meta Pixel -->
-  <script>
-    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-    document,'script','https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1335685042033994');
-    fbq('track', 'PageView');
-  </script>
-  <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=1335685042033994&ev=PageView&noscript=1"/></noscript>
-  <!-- Fine Meta Pixel -->
+  <!-- Meta Pixel: parte solo dopo il consenso, vedi assets/consent.js -->
+  <script src="/assets/consent.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
   <style>
@@ -153,7 +142,7 @@
     <div class="page-hero">
       <span class="section-label">Legale</span>
       <h1>Privacy Policy</h1>
-      <span class="updated">Ultimo aggiornamento: 7 settembre 2026 · GDPR compliant</span>
+      <span class="updated">Ultimo aggiornamento: 13 settembre 2026 · GDPR compliant</span>
     </div>
 
     <p>KidBox è un'applicazione pensata per la gestione condivisa di informazioni familiari — chat, documenti, note, attività e salute dei bambini. Questa informativa spiega in modo trasparente quali dati trattiamo, perché e con chi li condividiamo.</p>
@@ -190,6 +179,10 @@
 
     <h2>Identificatori dispositivo</h2>
     <p>KidBox raccoglie l'<strong>identificatore del dispositivo</strong> (Firebase Instance ID / FCM token) per l'invio di notifiche push. Il Facebook Login SDK può raccogliere l'advertising ID del dispositivo a fini di attribuzione delle installazioni e campagne pubblicitarie. Consulta la <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Privacy Policy di Meta</a> per dettagli.</p>
+
+    <h2 id="cookie">Cookie e Meta Pixel su questo sito</h2>
+    <p>Il sito kidboxapp.com può usare il <strong>Meta Pixel</strong> per misurare l'efficacia delle nostre campagne pubblicitarie: imposta cookie di Meta e le comunica le pagine visitate e i dati tecnici del browser. Il Pixel parte <strong>solo dopo il tuo consenso</strong> (GDPR Art. 6.1.a e art. 122 del Codice Privacy), dato dal banner che compare alla prima visita; se rifiuti o non rispondi non viene caricato nulla. Puoi cambiare scelta in qualunque momento dal link «Preferenze cookie» in fondo a ogni pagina. La scelta è salvata solo nel tuo browser. Il Pixel non riguarda l'app né i dati che vi inserisci. Per il trattamento di Meta vedi la sua <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Privacy Policy</a>.</p>
+    <p><a href="#" data-consent-open style="color:var(--c-accent)">Preferenze cookie</a></p>
 
     <h2>Dati sensibili</h2>
     <p>KidBox tratta <strong>dati sanitari</strong> (parametri vitali, farmaci, visite mediche, dati di fitness da Health Connect) classificati come dati sensibili ai sensi del GDPR Art. 9. Questi dati sono raccolti esclusivamente su consenso esplicito dell'utente, conservati in modo cifrato su Google Firebase, e non vengono condivisi con terze parti salvo il caso in cui l'utente attivi la funzione AI (vedi sezione Assistente AI). I dati sanitari non vengono mai utilizzati per finalità pubblicitarie.</p>
@@ -260,6 +253,7 @@
       <a href="terms.html">Termini</a>
       <a href="support.html">Supporto</a>
       <a href="data-deletion.html">Eliminazione Dati</a>
+      <a href="#" data-consent-open>Preferenze cookie</a>
     </div>
   </footer>
 </body>

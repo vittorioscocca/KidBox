@@ -22,6 +22,8 @@ Tutto sotto `public/` (root di hosting):
 
 - **`public/screenshots/`** — screenshot dell'app per sezione (Home, Note, Calendario, Password, Chat, Wallet, Animali, Documenti, Posizione, Garage, To-Do, Foto e Video, Spese, Casa, Wizard, …). Catturati da iPhone 17 Pro. Usati in `index.html`/`guide.html`.
 - **`public/icon.png`** — logo/app icon.
+- **`public/assets/consent.js`** — banner di consenso e caricamento del **Meta Pixel**: il Pixel parte solo dopo «Accetta» (chiave `kidbox:marketingConsent` in localStorage). Ogni pagina lo include nello `<head>` (i generatori lo aggiungono da soli); `data-no-banner` su `scarica.html`, che reindirizza subito. Mai rimettere lo snippet `fbq` direttamente in una pagina. Il link «Preferenze cookie» (`data-consent-open`) riapre il banner; l'informativa è la sezione `#cookie` di `privacy.html`/`privacy-en.html`.
+- **`public/sitemap.xml` + `robots.txt`** — generati da `scripts/build_sitemap.py` (lanciato anche dagli altri due generatori); una pagina statica nuova va aggiunta a `STATIC`.
 - **`public/tools-img/`** — screenshot ridotti in WebP per le pagine Strumenti, generati da `scripts/build_tools.py` a partire da `public/screenshots/`.
 
 > ⚠️ Le pagine legali esistono **anche** in `../docs/{privacy,terms,support,data-deletion}/index.html` (+ `../docs/privacy.md`), servite separatamente (es. GitHub Pages). Se aggiorni una policy, **allinea entrambe le copie**.
