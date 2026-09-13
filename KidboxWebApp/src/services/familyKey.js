@@ -1,4 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 /**
@@ -23,6 +23,12 @@ const enc = new TextEncoder();
 const keyCache = new Map();
 const rawKeyCache = new Map();
 
+function bytesToB64(bytes) {
+  let bin = "";
+  for (const byte of bytes) bin += String.fromCharCode(byte);
+  return btoa(bin);
+}
+
 function b64ToBytes(b64) {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -34,7 +40,7 @@ function b64ToBytes(b64) {
  * ikm  = SHA-256("{userId}:{familyId}:{context}")
  * key  = HKDF-SHA256(ikm, salt, info = "{context}:{userId}:{familyId}", 32 byte)
  */
-async function deriveEscrowKey(userId, familyId) {
+async function deriveEscrowKey(userId, familyId, usages = ["decrypt"]) {
   const ikmBytes = await crypto.subtle.digest(
     "SHA-256",
     enc.encode(`${userId}:${familyId}:${ESCROW_CONTEXT}`)
@@ -52,7 +58,44 @@ async function deriveEscrowKey(userId, familyId) {
     ikm,
     256
   );
-  return crypto.subtle.importKey("raw", bits, "AES-GCM", false, ["decrypt"]);
+  return crypto.subtle.importKey("raw", bits, "AES-GCM", false, usages);
+}
+
+/** Stesso valore di `FamilyKeyEscrowService.currentVersion` su iOS. */
+const ESCROW_VERSION = 1;
+
+/**
+ * Deposita la chiave di famiglia sull'escrow del membro corrente.
+ *
+ * Porting di `FamilyKeyEscrowService.backup`. Sul web è un passo obbligato e
+ * non un backup: non c'è un Keychain, quindi la chiave appena generata (o
+ * appena ricevuta da un invito) sopravvive alla sessione solo qui. Il payload
+ * segue il formato dei nativi — ciphertext e tag separati — perché lo stesso
+ * documento va letto anche da iOS e Android dopo un cambio device.
+ */
+export async function backupFamilyKey({ familyId, userId, rawKey }) {
+  const escrowKey = await deriveEscrowKey(userId, familyId, ["encrypt"]);
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const sealed = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, escrowKey, rawKey)
+  );
+  const cipher = sealed.slice(0, sealed.length - 16);
+  const tag = sealed.slice(sealed.length - 16);
+
+  await setDoc(doc(db, "families", familyId, "memberKeyBackups", userId), {
+    cipher: bytesToB64(cipher),
+    nonce: bytesToB64(nonce),
+    tag: bytesToB64(tag),
+    updatedAt: serverTimestamp(),
+    version: ESCROW_VERSION,
+  });
+
+  const cacheKey = `${userId}.${familyId}`;
+  rawKeyCache.set(cacheKey, new Uint8Array(rawKey));
+  keyCache.set(
+    cacheKey,
+    await crypto.subtle.importKey("raw", rawKey, "AES-GCM", false, ["encrypt", "decrypt"])
+  );
 }
 
 /** Errore distinguibile: la famiglia non ha (ancora) un backup della chiave. */

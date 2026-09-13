@@ -98,6 +98,10 @@
       Dopo aver installato l'app, torna qui e riapri il link che hai ricevuto:
       l'invito si aprirà direttamente in KidBox.
     </p>
+
+    <p class="muted">
+      Sei da computer? <a id="web-join" href="https://app.kidboxapp.com/join">Accetta l'invito dalla web app</a>.
+    </p>
   </div>
 
   <div class="consent" id="consent" role="dialog" aria-label="Statistiche d'uso">
@@ -161,6 +165,11 @@
 
       document.getElementById("consent-yes").onclick = function () { decide("granted"); };
       document.getElementById("consent-no").onclick = function () { decide("denied"); };
+
+      // Il link alla web app porta con sé query e frammento: il segreto sta
+      // nel frammento e non arriva mai al server, né qui né di là.
+      document.getElementById("web-join").href =
+        "https://app.kidboxapp.com/join" + location.search + location.hash;
 
       // Il tap sullo store è il passo che dice se la pagina funziona.
       document.querySelectorAll(".stores a").forEach(function (a) {

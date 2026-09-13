@@ -3,8 +3,8 @@
  * di `SettingsView` (iOS): di che famiglia faccio parte, chi c'è dentro, come
  * invito qualcuno e come ne esco.
  *
- * Creare una famiglia da zero ed entrare con un codice restano nell'app: sono
- * il percorso di onboarding, e chi apre il sito una famiglia ce l'ha già.
+ * Creare una famiglia da zero ed entrare con un invito stanno nel wizard di
+ * onboarding (`Onboarding.jsx`), che compare a chi non ha una famiglia.
  * Generare l'invito invece sta qui, perché è la cosa che si viene a cercare da
  * un computer — il link si incolla dove serve senza passare dal telefono.
  */

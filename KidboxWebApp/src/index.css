@@ -8,6 +8,9 @@
   --accent: #e8833a;
   --accent2: #c96a20;
   --border: rgba(180, 120, 60, 0.14);
+  /* Card in rilievo sul fondo (accesso, onboarding). */
+  --card: #ffffff;
+  --card-shadow: 0 18px 50px rgba(28, 16, 8, 0.08);
   /* Fa seguire il tema anche ai controlli nativi (checkbox, select, barre di
      scorrimento): senza, restano chiari su fondo scuro. */
   color-scheme: light;
@@ -20,6 +23,8 @@
     --text: #f6efe6;
     --muted: rgba(246, 239, 230, 0.6);
     --border: rgba(255, 180, 100, 0.12);
+    --card: #1e150c;
+    --card-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -29,6 +34,8 @@
   --text: #f6efe6;
   --muted: rgba(246, 239, 230, 0.6);
   --border: rgba(255, 180, 100, 0.12);
+  --card: #1e150c;
+  --card-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
 }
 
 * {

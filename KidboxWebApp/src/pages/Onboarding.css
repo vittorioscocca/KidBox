@@ -1,0 +1,278 @@
+/* Wizard di benvenuto: stessa card della schermata di accesso, con in alto
+   «Indietro» e «Salta» e in basso i puntini delle pagine. */
+.onb-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 16px;
+}
+
+.onb-top {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+}
+
+.onb-back,
+.onb-skip,
+.onb-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.onb-back:hover,
+.onb-skip:hover,
+.onb-link:hover {
+  color: var(--text);
+}
+
+.onb-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  box-shadow: var(--card-shadow);
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.onb-card h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.onb-lead,
+.onb-muted {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.onb-muted {
+  font-size: 0.85rem;
+}
+
+/* ── Presentazione ─────────────────────────────────────────────────────── */
+.onb-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  padding: 12px 0 8px;
+  animation: onb-in 0.35s ease both;
+}
+
+@keyframes onb-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.onb-info-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  font-size: 2.6rem;
+  box-shadow: 0 14px 34px rgba(28, 16, 8, 0.18);
+}
+
+.onb-info-title {
+  font-size: 1.7rem;
+}
+
+/* ── Scelta percorso ───────────────────────────────────────────────────── */
+.onb-paths {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onb-path {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.onb-path:hover {
+  background: var(--border);
+  border-color: var(--accent);
+}
+
+.onb-path-icon {
+  font-size: 1.7rem;
+  flex-shrink: 0;
+}
+
+.onb-path strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.onb-path small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+.onb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onb-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.onb-form input,
+.onb-form textarea,
+.onb-linkbox {
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  width: 100%;
+  resize: vertical;
+}
+
+.onb-form input:focus,
+.onb-form textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* ── Pulsanti ──────────────────────────────────────────────────────────── */
+.onb-cta,
+.onb-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 22px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.onb-cta {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  margin-top: 4px;
+}
+
+.onb-cta:hover:not(:disabled) {
+  background: var(--accent2);
+}
+
+.onb-cta:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.onb-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: rgba(180, 120, 60, 0.35);
+}
+
+.onb-secondary:hover {
+  background: var(--border);
+}
+
+.onb-success {
+  color: var(--accent2);
+  font-weight: 700;
+}
+
+.onb-error {
+  color: #c0392b;
+  font-size: 0.9rem;
+}
+
+.onb-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.onb-qr svg,
+.onb-qr canvas,
+.onb-qr img {
+  width: 200px;
+  height: 200px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+/* ── Puntini ───────────────────────────────────────────────────────────── */
+.onb-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.onb-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.onb-dots span.on {
+  background: var(--accent);
+  width: 22px;
+  border-radius: 4px;
+}

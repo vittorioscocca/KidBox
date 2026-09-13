@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import * as analytics from "./services/analytics";
 import ConsentBanner from "./components/ConsentBanner";
-import { FamilyProvider } from "./FamilyContext";
+import { FamilyProvider, useFamily } from "./FamilyContext";
+import Onboarding from "./pages/Onboarding";
+import { clearPendingInvite, pendingInvite } from "./services/pendingInvite";
 import { LocaleProvider, useTranslation } from "./i18n/LocaleContext";
 import { ThemeProvider } from "./ThemeContext";
 import { facebookLoginEnabled, refreshFeatureFlags } from "./services/featureFlags";
@@ -218,7 +220,8 @@ function AuthedApp() {
 
   return (
     <FamilyProvider>
-      <BrowserRouter>
+      <FamilyGate>
+        <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
@@ -250,9 +253,56 @@ function AuthedApp() {
             ))}
           </Route>
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </FamilyGate>
     </FamilyProvider>
   );
+}
+
+/**
+ * Gate famiglia, come `RootGateView` su iOS: la Home si vede solo se esiste
+ * davvero una famiglia. Chi non ne ha — nuovo iscritto, o chi ne è uscito —
+ * passa dal wizard, che crea la famiglia o fa entrare con un invito.
+ *
+ * Un invito arrivato dall'URL (`/join?…#k=…`) forza il wizard anche a chi una
+ * famiglia ce l'ha già, saltando la presentazione: è lo scenario del partner
+ * che si fa invitare in una seconda famiglia.
+ */
+function FamilyGate({ children }) {
+  const { families, error, reload, selectFamily } = useFamily();
+  const { t } = useTranslation();
+  const [invite, setInvite] = useState(pendingInvite);
+
+  // Il link riaperto per sbaglio di una famiglia in cui si è già: si va lì e
+  // basta, senza bruciare l'invito.
+  const alreadyIn = !!invite && !!families?.some((f) => f.id === invite.familyId);
+  useEffect(() => {
+    if (!alreadyIn) return;
+    clearPendingInvite();
+    selectFamily(invite.familyId);
+    setInvite(null);
+  }, [alreadyIn, invite, selectFamily]);
+
+  if (error && !families) return <p className="loading">{error}</p>;
+  if (!families || alreadyIn) return <p className="loading">{t.login.loading}</p>;
+
+  if (families.length === 0 || invite) {
+    return (
+      <Onboarding
+        pendingInvite={invite}
+        hasFamily={families.length > 0}
+        memberOf={families.map((f) => f.id)}
+        onFinish={(familyId) => {
+          clearPendingInvite();
+          setInvite(null);
+          if (familyId) selectFamily(familyId);
+          reload();
+        }}
+      />
+    );
+  }
+
+  return children;
 }
 
 function AppShell() {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { collection, doc, getDoc, getDocs, onSnapshot } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
 import { db } from "./firebase";
@@ -12,6 +12,11 @@ export function FamilyProvider({ children }) {
   const [currentFamilyId, setCurrentFamilyId] = useState(
     () => localStorage.getItem("kidbox:currentFamilyId") || null
   );
+
+  // Contatore che forza la rilettura: l'onboarding crea o aggiunge una
+  // famiglia e la lista va ricaricata senza passare da un reload di pagina.
+  const [reloadTick, setReloadTick] = useState(0);
+  const reload = useCallback(() => setReloadTick((n) => n + 1), []);
 
   useEffect(() => {
     if (!user) return;
@@ -43,7 +48,7 @@ export function FamilyProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, reloadTick]);
 
   useEffect(() => {
     if (!families || families.length === 0) return;
@@ -84,7 +89,7 @@ export function FamilyProvider({ children }) {
 
   return (
     <FamilyContext.Provider
-      value={{ families, error, currentFamily, currentFamilyId, selectFamily }}
+      value={{ families, error, currentFamily, currentFamilyId, selectFamily, reload }}
     >
       {children}
     </FamilyContext.Provider>

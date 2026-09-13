@@ -78,6 +78,24 @@ export async function saveProfile({ uid, familyId, firstName, lastName, familyAd
   return displayName;
 }
 
+/**
+ * Solo nome e cognome, come `UserProfileWriter.saveNames` (iOS): è il
+ * salvataggio dell'onboarding, che non deve toccare indirizzo o altro. Il
+ * `displayName` va sul membro famiglia da chi crea o entra nella famiglia,
+ * perché a questo punto il documento membro non esiste ancora.
+ */
+export async function saveNames({ uid, email, firstName, lastName }) {
+  const fn = firstName.trim();
+  const ln = lastName.trim();
+  const displayName = `${fn} ${ln}`.trim() || PLACEHOLDER_NAME;
+  await setDoc(
+    userRef(uid),
+    { firstName: fn, lastName: ln, displayName, email: email || "", updatedAt: Timestamp.now() },
+    { merge: true }
+  );
+  return displayName;
+}
+
 /* ── Avatar ──────────────────────────────────────────────────────────────── */
 
 const avatarPath = (uid, familyId) =>
