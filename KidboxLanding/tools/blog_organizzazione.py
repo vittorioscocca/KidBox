@@ -975,7 +975,7 @@ Con due figli e due campi diversi, la domanda della settimana è sempre la stess
 
 ## 3. La borsa, non all'ultimo minuto
 
-Divisa lavata, parastinchi, borraccia, scarpe giuste, documento per la trasferta. Una voce ricorrente la sera prima della partita — «preparare borsa di Sara» — assegnata al figlio se è grande abbastanza, al genitore se è piccolo, evita la domenica mattina alla ricerca del calzettone.
+Divisa lavata, parastinchi, borraccia, scarpe giuste, documento per la trasferta. Una cosa da fare la sera prima di ogni partita — «preparare borsa di Sara» — assegnata al figlio se è grande abbastanza, al genitore se è piccolo, evita la domenica mattina alla ricerca del calzettone.
 
 ## 4. Certificati e documenti
 
@@ -1023,7 +1023,7 @@ With two children and two different pitches, the week's question is always the s
 
 ## 3. The kit bag, not at the last minute
 
-Clean kit, shin pads, water bottle, the right boots, ID for the away game. A recurring item the evening before a match — "pack Sara's bag" — assigned to the child if they're old enough, to a parent if they're small, avoids a Sunday morning hunt for the missing sock.
+Clean kit, shin pads, water bottle, the right boots, ID for the away game. A to-do the evening before each match — "pack Sara's bag" — assigned to the child if they're old enough, to a parent if they're small, avoids a Sunday morning hunt for the missing sock.
 
 ## 4. Certificates and documents
 
