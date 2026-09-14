@@ -1801,10 +1801,14 @@ const CLINICAL_RECORD_MIN_UNITS = 3;
 // alto. Parity con `AIAskAIPayload.mealPlanMinUnits`.
 const MEAL_PLAN_MIN_UNITS = 5;
 const MEAL_PLAN_MAX_TOKENS = 8192;
-// Piano fitness: stessa natura del piano alimentare — generazione lunga di
-// scrittura, non di ragionamento clinico, quindi Haiku. Output JSON su 4
-// settimane, one-shot senza caching. Parity con `AIAskAIPayload.fitnessPlanMinUnits`.
+// Piano fitness: dal 14/09/2026 tutto il modulo (generazione, spostamento
+// seduta, adeguamento settimanale, copilota) gira su Sonnet, per scelta del
+// prodotto. Output JSON su 4 settimane, one-shot senza caching. Sonnet costa
+// ~3× Haiku per token, quindi ogni chiamata del modulo scala il triplo delle
+// unità: il piano 3 × max(5, payload), le chiamate brevi 3 × payload.
+// Parity con `AIAskAIPayload.fitnessPlanMinUnits` e `fitnessUnitsMultiplier`.
 const FITNESS_PLAN_MIN_UNITS = 5;
+const FITNESS_UNITS_MULTIPLIER = 3;
 const FITNESS_PLAN_MAX_TOKENS = 8192;
 
 /** Regole server aggiunte al system prompt cartella clinica (affiancano il prompt client). */
@@ -1876,7 +1880,7 @@ function isMealPlanAskAI(data) {
 }
 
 /**
- * Generazione del piano fitness: Haiku + max_tokens esteso, output JSON.
+ * Generazione del piano fitness: Sonnet + max_tokens esteso, output JSON.
  * @param {object} data body della callable
  * @return {boolean}
  */
@@ -2332,11 +2336,12 @@ exports.askAI = onCall(
       const fitnessPlan = isFitnessPlanAskAI({purpose});
       const fitnessAssist = isFitnessAssistAskAI({purpose});
       // Due assi distinti, da non confondere:
-      // - `sonnetGeneration`: serve ragionamento clinico → solo la cartella clinica.
-      //   Il piano alimentare è scrittura, e su Haiku costa ~3× meno ed è più veloce.
+      // - `sonnetGeneration`: la cartella clinica (ragionamento clinico) e tutto il
+      //   modulo Piano Fitness (scelta di prodotto). Il piano alimentare resta su
+      //   Haiku: è scrittura, e costa ~3× meno ed è più veloce.
       // - `oneShotGeneration`: chiamata singola, mai riletta → il prompt caching
       //   sarebbe solo un write a 1,25× senza nessun read successivo.
-      const sonnetGeneration = clinicalRecord;
+      const sonnetGeneration = clinicalRecord || fitnessPlan || fitnessAssist;
       const oneShotGeneration = clinicalRecord || mealPlan || fitnessPlan;
 
       // Unità base calcolate sulla dimensione del payload.
@@ -2348,8 +2353,11 @@ exports.askAI = onCall(
       let messageUnits = payloadUnits;
       if (clinicalRecord) messageUnits = Math.max(CLINICAL_RECORD_MIN_UNITS, payloadUnits);
       if (mealPlan) messageUnits = Math.max(MEAL_PLAN_MIN_UNITS, payloadUnits);
-      if (fitnessPlan) messageUnits = Math.max(FITNESS_PLAN_MIN_UNITS, payloadUnits);
-      const isLargeContext = messageUnits > 1;
+      if (fitnessPlan) messageUnits = FITNESS_UNITS_MULTIPLIER * Math.max(FITNESS_PLAN_MIN_UNITS, payloadUnits);
+      if (fitnessAssist) messageUnits = FITNESS_UNITS_MULTIPLIER * payloadUnits;
+      // Il moltiplicatore del fitness è prezzo, non dimensione: il "contesto
+      // ampio" resta legato al payload, altrimenti il copilota lo segnalerebbe sempre.
+      const isLargeContext = fitnessAssist ? payloadUnits > 1 : messageUnits > 1;
 
       await assertFamilyMember(uid, familyId);
 
