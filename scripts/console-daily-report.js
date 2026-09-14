@@ -211,7 +211,17 @@ async function main() {
     )
   );
   out.metrics = days.map((date, i) => ({ date, ...(rollups[i] || { missing: true }) }));
-  if (!rollups[13]) out.notes.push(`Il rollup metrics/${yesterday} non esiste: analyticsRollupDaily (03:15) non ha girato o è fallito.`);
+  if (!rollups[13]) {
+    // Il rollup di ieri lo scrive analyticsRollupDaily alle 03:15 Europe/Rome:
+    // prima di quell'ora la sua assenza è normale, dopo è un guasto.
+    const romeHour = Number(new Date().toLocaleString("en-US", { timeZone: TZ, hour: "2-digit", hour12: false }));
+    const isYesterdayDefault = yesterday === shiftDay(romeDate(), -1);
+    out.notes.push(
+      isYesterdayDefault && romeHour < 4
+        ? `Il rollup metrics/${yesterday} non c'è ancora: analyticsRollupDaily gira alle 03:15 (${TZ}). Non è un guasto a quest'ora.`
+        : `Il rollup metrics/${yesterday} non esiste: analyticsRollupDaily (03:15) non ha girato o è fallito.`
+    );
+  }
 
   // 4. Costi AI del mese e ticket aperti.
   out.ai = (await getDoc(tok, `ai_costs/${month}`, ["calls", "inputTokens", "outputTokens", "costUsd"])) || { calls: 0, costUsd: 0 };

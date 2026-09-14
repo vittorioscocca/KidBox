@@ -81,13 +81,15 @@ const BREAKDOWNS = [
   ["ai_message_sent", "agent_type"],
 ];
 
-function isoDay(d) {
-  return d.toISOString().slice(0, 10);
+// «Ieri» nel fuso della property (Europe/Rome), come gli altri due script:
+// con la data UTC, tra mezzanotte e le 02:00 il giorno sarebbe sbagliato.
+function romeDate(d = new Date()) {
+  return d.toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
 }
 function shiftDay(iso, n) {
-  const d = new Date(`${iso}T00:00:00Z`);
+  const d = new Date(`${iso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
-  return isoDay(d);
+  return d.toISOString().slice(0, 10);
 }
 
 function token() {
@@ -155,7 +157,7 @@ async function main() {
   const args = process.argv.slice(2);
   const asJson = args.includes("--json");
   const dayArg = args[args.indexOf("--day") + 1];
-  const yesterday = args.includes("--day") && dayArg ? dayArg : shiftDay(isoDay(new Date()), -1);
+  const yesterday = args.includes("--day") && dayArg ? dayArg : shiftDay(romeDate(), -1);
   const dayBefore = shiftDay(yesterday, -1);
   const seriesStart = shiftDay(yesterday, -13); // 14 giorni compreso ieri
   const baseStart = shiftDay(yesterday, -7); // i 7 giorni prima di ieri
