@@ -11,14 +11,20 @@
  * G-0PG65CW2VF, quindi in GA4 landing e web app sono entrambe `platform=web`
  * e si distinguono solo per `hostName`).
  *
- * Il token viene dalle Application Default Credentials di gcloud, che devono
- * essere state create con lo scope Analytics (una tantum, nel browser):
+ * Il token si ottiene impersonando il service account `ga4-reader`
+ * (nessun ruolo IAM: è Visualizzatore della property in GA4, e basta):
  *
- *   gcloud auth application-default login \
- *     --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/analytics.readonly
+ *   gcloud auth print-access-token \
+ *     --impersonate-service-account=ga4-reader@kidbox-42cd7.iam.gserviceaccount.com \
+ *     --scopes=https://www.googleapis.com/auth/analytics.readonly
  *
- * Il token «normale» di `gcloud auth print-access-token` NON basta: non ha lo
- * scope Analytics e la Data API risponde 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT.
+ * Perché così e non con un login utente: il token «normale» di gcloud non ha
+ * lo scope Analytics (403 ACCESS_TOKEN_SCOPE_INSUFFICIENT), e
+ * `gcloud auth application-default login --scopes=...analytics.readonly`
+ * viene rifiutato da Google («Questa app è bloccata»: il client OAuth di
+ * gcloud non è verificato per quello scope). L'impersonazione richiede
+ * `roles/iam.serviceAccountTokenCreator` sul service account, concesso
+ * all'utente il 14/09/2026.
  *
  * Lo script legge e basta: nessuna scrittura, nessun file prodotto. La
  * lettura critica dei numeri (cosa misura davvero ciascun evento) sta nel
@@ -28,6 +34,7 @@
 const { execFileSync } = require("node:child_process");
 
 const PROPERTY = "523225071";
+const SERVICE_ACCOUNT = "ga4-reader@kidbox-42cd7.iam.gserviceaccount.com";
 const API = `https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:runReport`;
 
 // Eventi che valgono un funnel, in ordine di lettura. Gli altri (screen_view,
@@ -85,16 +92,22 @@ function shiftDay(iso, n) {
 
 function token() {
   try {
-    return execFileSync("gcloud", ["auth", "application-default", "print-access-token"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    }).trim();
+    return execFileSync(
+      "gcloud",
+      [
+        "auth",
+        "print-access-token",
+        `--impersonate-service-account=${SERVICE_ACCOUNT}`,
+        "--scopes=https://www.googleapis.com/auth/analytics.readonly",
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
+    ).trim();
   } catch (e) {
     console.error(
-      "Non riesco a ottenere un token dalle Application Default Credentials.\n" +
-        "Serve un login una tantum con lo scope Analytics:\n\n" +
-        "  gcloud auth application-default login \\\n" +
-        "    --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/analytics.readonly\n"
+      `Non riesco a impersonare ${SERVICE_ACCOUNT}.\n` +
+        "Serve gcloud autenticato come ing.vittorioscocca@gmail.com, che ha\n" +
+        "roles/iam.serviceAccountTokenCreator su quel service account.\n" +
+        (e.stderr ? `\n${String(e.stderr).trim()}\n` : "")
     );
     process.exit(2);
   }
@@ -106,7 +119,6 @@ async function runReport(tok, body) {
     headers: {
       Authorization: `Bearer ${tok}`,
       "Content-Type": "application/json",
-      "x-goog-user-project": "kidbox-42cd7",
     },
     body: JSON.stringify(body),
   });
@@ -353,10 +365,10 @@ function print(o) {
 
 main().catch((e) => {
   console.error(`Errore GA4 Data API: ${e.message}${e.reason ? ` (${e.reason})` : ""}`);
-  if (e.reason === "ACCESS_TOKEN_SCOPE_INSUFFICIENT") {
+  if (e.status === 403) {
     console.error(
-      "Le ADC non hanno lo scope Analytics. Rifai il login:\n" +
-        "  gcloud auth application-default login --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/analytics.readonly"
+      `Il service account ${SERVICE_ACCOUNT} non è (più) Visualizzatore della property GA4 ${PROPERTY}:\n` +
+        "GA4 → Amministrazione → Gestione degli accessi alla proprietà → aggiungi quell'email con ruolo Visualizzatore."
     );
   }
   process.exit(1);
