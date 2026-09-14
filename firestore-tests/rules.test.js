@@ -260,6 +260,28 @@ async function check(nome, promessa) {
       assertFails(env.authenticatedContext("revocato4").firestore()
           .collection(`families/${FAM_PASS}/members`).get()));
 
+  // ── MEMBRO «RESUSCITATO» DAL NOME ──────────────────
+  //
+  // iOS e web aggiornano il nome con `setData({displayName, updatedAt}, merge)`
+  // sul documento membro. Se il membro è stato revocato cancellando il
+  // documento, quella scrittura lo ricrea con solo nome e data: non deve
+  // valere come iscrizione.
+  console.log("\n── MEMBRO «RESUSCITATO» DAL NOME ──────────────────");
+  const RESUSCITATO = "resuscitato5";
+  const dbRes = env.authenticatedContext(RESUSCITATO).firestore();
+  await check("resuscitato: la scrittura del nome ricrea il documento (auto-creazione ancora libera)",
+      assertSucceeds(dbRes.doc(`families/${FAM_PASS}/members/${RESUSCITATO}`)
+          .set({displayName: "Nome", updatedAt: new Date()}, {merge: true})));
+  await check("resuscitato: senza role NON legge la famiglia",
+      assertFails(dbRes.doc(`families/${FAM_PASS}`).get()));
+  await check("resuscitato: senza role NON elenca i membri",
+      assertFails(dbRes.collection(`families/${FAM_PASS}/members`).get()));
+  // In PRODUZIONE la riattivazione da sé riesce ancora: la stretta vive in
+  // `firestore.rules.next` ed è verificata in fondo a questo file.
+  await check("revocato da Android: rimettere isDeleted false da sé riesce ancora",
+      assertSucceeds(env.authenticatedContext("revocato4").firestore()
+          .doc(`families/${FAM_PASS}/members/revocato4`).update({isDeleted: false})));
+
   // ── INVITI ─────────────────────────────────────────
   //
   // Senza queste strette la regola anti-auto-iscrizione di `firestore.rules.next`
@@ -461,6 +483,55 @@ async function check(nome, promessa) {
   await check("invito: NON si possono cambiare altri campi passando di qui",
       assertFails(nxConsuma.doc(`families/${FAM}/invites/inv-vergine`)
           .update({usedAt: new Date(), usedBy: CONSUMA, familyName: "Altro"})));
+
+  // ── RIATTIVAZIONE DOPO UNA REVOCA ──────────────────
+  //
+  // Android revoca con `isDeleted: true` e il documento resta. Rimettere
+  // `isDeleted: false` da sé deve richiedere un invito NUOVO consumato a
+  // proprio nome: quello del primo ingresso è ancora sul documento.
+  console.log("\n── RIATTIVAZIONE DOPO UNA REVOCA ──────────────────");
+  const RIATT = "riattiva6";
+  const nxRiatt = envNext.authenticatedContext(RIATT).firestore();
+  const DOMANI_NX = new Date(Date.now() + 24 * 3600 * 1000);
+  await envNext.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM}/invites/inv-primo`).set({usedAt: new Date(), usedBy: RIATT, expiresAt: DOMANI_NX});
+    await adm.doc(`families/${FAM}/invites/inv-rientro`).set({usedAt: new Date(), usedBy: RIATT, expiresAt: DOMANI_NX});
+    await adm.doc(`families/${FAM}/invites/inv-rientro-altrui`).set({usedAt: new Date(), usedBy: "altro6", expiresAt: DOMANI_NX});
+    await adm.doc(`families/${FAM}/invites/inv-rientro-vergine`).set({usedAt: null, usedBy: null, expiresAt: DOMANI_NX});
+    await adm.doc(`families/${FAM}/members/${RIATT}`)
+        .set({uid: RIATT, role: "member", isDeleted: true, inviteId: "inv-primo"});
+  });
+  const riattiva = (extra) => nxRiatt.doc(`families/${FAM}/members/${RIATT}`)
+      .set({uid: RIATT, role: "member", isDeleted: false, updatedBy: RIATT, ...extra}, {merge: true});
+  await check("revocato: aggiornare il nome restando revocato è permesso",
+      assertSucceeds(nxRiatt.doc(`families/${FAM}/members/${RIATT}`)
+          .set({displayName: "Nome", updatedAt: new Date()}, {merge: true})));
+  await check("attacco: si riattiva senza invito NON passa",
+      assertFails(riattiva({})));
+  await check("attacco: si riattiva riusando l'invito del primo ingresso NON passa",
+      assertFails(riattiva({inviteId: "inv-primo"})));
+  await check("attacco: si riattiva con un invito mai consumato NON passa",
+      assertFails(riattiva({inviteId: "inv-rientro-vergine"})));
+  await check("attacco: si riattiva con un invito consumato da un altro NON passa",
+      assertFails(riattiva({inviteId: "inv-rientro-altrui"})));
+  await check("attacco: cancellare il campo isDeleted NON riattiva",
+      assertFails(nxRiatt.doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: deleteField()})));
+  await check("rientro legittimo: nuovo invito consumato a proprio nome (addMember) passa",
+      assertSucceeds(riattiva({inviteId: "inv-rientro"})));
+  await check("rientrato: legge la famiglia",
+      assertSucceeds(nxRiatt.doc(`families/${FAM}`).get()));
+  await envNext.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: true});
+  });
+  await check("owner: riattiva un membro revocato senza invito",
+      assertSucceeds(envNext.authenticatedContext(UID).firestore()
+          .doc(`families/${FAM}/members/${RIATT}`).update({isDeleted: false})));
+  await check("membro: esce cancellando il proprio documento",
+      assertSucceeds(nxRiatt.doc(`families/${FAM}/members/${RIATT}`).delete()));
+  await check("uscito: la scrittura del nome NON ricrea il documento senza invito",
+      assertFails(nxRiatt.doc(`families/${FAM}/members/${RIATT}`)
+          .set({displayName: "Nome", updatedAt: new Date()}, {merge: true})));
 
   // Creazione famiglia: documento famiglia e membro proprietario nascono nello
   // stesso batch, quando la famiglia ancora non esiste per le rules.

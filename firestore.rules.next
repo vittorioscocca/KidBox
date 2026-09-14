@@ -1,8 +1,9 @@
 // ⏳ VERSIONE FUTURA — non è questa che si deploya.
 //
-// Identica a `firestore.rules` tranne l'`allow create` di
-// `families/{familyId}/members/{uid}`, che qui chiude l'auto-iscrizione
-// pretendendo l'invito consumato (`joinedWithValidInvite`).
+// Identica a `firestore.rules` tranne `allow create` e `allow update` di
+// `families/{familyId}/members/{uid}`, che qui chiudono l'auto-iscrizione e la
+// auto-riattivazione dopo una revoca, pretendendo l'invito consumato
+// (`joinedWithValidInvite`).
 //
 // Le app già installate NON scrivono `inviteId` sul documento membro: con
 // questa regola attiva ogni join da un'app non aggiornata viene negato.
@@ -101,8 +102,18 @@ service cloud.firestore {
       // famiglia, sul web elencando i membri, a proprietà già ceduta.
       // Assente = non cancellato, come già lo leggono i client
       // (`isDeleted !== true` sul web). Verificato il 14/09/2026.
+      //
+      // `role` invece è obbligatorio. iOS e web aggiornano il nome con
+      // `setData({displayName, updatedAt}, merge)` sul documento membro: se nel
+      // frattempo il membro è stato revocato cancellando il documento (iOS, web),
+      // quella scrittura lo RICREA con solo nome e data. Con `isDeleted` letto
+      // come assente = attivo, un documento così avrebbe riaperto la famiglia a
+      // chi ne era stato tolto. Ogni creazione vera di un membro scrive `role`
+      // (creazione famiglia e join, su tutti i client), e il 14/09/2026 nessun
+      // membro di una famiglia esistente ne era privo.
       return isSignedIn()
         && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid))
+        && ('role' in get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data)
         && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.get('isDeleted', false) != true;
     }
 
@@ -261,10 +272,26 @@ service cloud.firestore {
           ))
           || isOwner(familyId)
         );
-        // Update e delete restano com'erano: qui il documento esiste già, quindi
-        // l'iscrizione è stata autorizzata a suo tempo. Servono per rinominarsi,
-        // per il soft-delete e per l'uscita volontaria.
-        allow update, delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
+        // L'update del proprio documento resta libero (rinominarsi, soft-delete)
+        // TRANNE la riattivazione. La revoca da Android non cancella il documento
+        // ma lo marca `isDeleted: true`: senza questo vincolo il revocato poteva
+        // rimettere `isDeleted: false` da sé e rientrare senza invito. Chi si
+        // riattiva deve esibire un invito consumato a proprio nome, e DIVERSO da
+        // quello già scritto sul documento — l'`inviteId` del primo ingresso è
+        // ancora lì, consumato proprio da lui, e varrebbe come prova eterna.
+        // Il rientro legittimo (`addMember` con merge su documento esistente)
+        // porta il nuovo `inviteId` su iOS, Android e web dalla 2.2.6: è per le
+        // app precedenti che questa regola aspetta insieme all'`allow create`.
+        allow update: if isSignedIn() && (
+          isOwner(familyId)
+          || (uid == request.auth.uid && (
+            !(resource.data.get('isDeleted', false) == true
+              && request.resource.data.get('isDeleted', false) != true)
+            || (request.resource.data.get('inviteId', '') != resource.data.get('inviteId', '')
+              && joinedWithValidInvite(familyId))
+          ))
+        );
+        allow delete: if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
         allow get:  if isSignedIn() && (uid == request.auth.uid || isOwner(familyId));
         allow list: if isMemberOrOwner(familyId);
       }
