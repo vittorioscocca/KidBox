@@ -51,7 +51,7 @@ Le due conseguenze pratiche:
 
 | Nome | Cosa guarda | Soglia |
 |---|---|---|
-| KidBox — scheduler in errore | esecuzioni non-ok dei 7 scheduler | 0 (qualsiasi errore) |
+| KidBox — scheduler in errore | esecuzioni non-ok degli 8 scheduler | 0 (qualsiasi errore) |
 | KidBox — scheduler muto | scheduler che smette di essere invocato | assenza di esecuzioni |
 | KidBox — errore applicativo | log severity>=ERROR da qualsiasi function | 0, finestra 10 min |
 | KidBox — letture Firestore verso il free tier | letture ultime 24h | 35.000 (70% del free tier) |
@@ -61,7 +61,8 @@ Le due conseguenze pratiche:
 **Scheduler coperti dalla policy "in errore"** — l'elenco è cablato nel filtro,
 un nuovo scheduler va aggiunto lì a mano: `analyticsRollupDaily`,
 `cleanupResolvedCases`, `expireTemporaryLocations`, `garbageCollectDeleted`,
-`notifyDueTodoReminders`, `notifyUpcomingWalletTickets`, `syncPlansConfig`.
+`notifyDueTodoReminders`, `notifyUpcomingWalletTickets`, `stripExpiredInvites`,
+`syncPlansConfig`.
 
 ### "Scheduler muto": il buco che le altre due non vedono
 
@@ -78,7 +79,7 @@ Finestre calibrate sui gap veri misurati dal 20/08 al 10/09, non a occhio:
 |---|---|---|---|
 | `expireTemporaryLocations`, `notifyDueTodoReminders` | 5 min | 5 min | 30 min |
 | `notifyUpcomingWalletTickets` | 60 min | 2h25m | 4h |
-| `analyticsRollupDaily`, `cleanupResolvedCases`, `garbageCollectDeleted`, `syncPlansConfig` | cron 02:00 / 03:00 / 03:15 / 03:30 | 23h45m | 26h |
+| `analyticsRollupDaily`, `cleanupResolvedCases`, `garbageCollectDeleted`, `syncPlansConfig`, `stripExpiredInvites` | cron 02:00 / 03:00 / 03:15 / 03:30 / 03:45 | 23h45m | 26h |
 
 **`cleanupResolvedCases` è passato a cron il 10/09**, ed è il motivo per cui è
 in tabella. Usava `every 24 hours`, che è un **intervallo** e riparte a ogni
@@ -111,6 +112,16 @@ avvenuto regolarmente (completo in 1,4s, ripuliti 4 wallet ticket e 1 foto);
 lo stesso giorno `garbageCollectDeleted` è entrato nell'elenco `one_of(...)`
 della condizione «cron notturno fermo da 26h». **Tutti e 7 gli scheduler sono
 ora sorvegliati**, sia dalla policy "in errore" sia da "muto".
+
+**`stripExpiredInvites` è entrato il 14/09/2026** (cron `45 3 * * *` Europe/Rome:
+toglie la chiave di famiglia wrappata dagli inviti scaduti, vedi
+`functions/invitesCleanup.js`). Aggiunto via PATCH API a entrambe le policy —
+l'elenco `one_of(...)` di «in errore» e quello della condizione «cron notturno
+fermo da 26h» di «muto» — solo **dopo** aver verificato che la serie
+`execution_count` contenesse già un'esecuzione (giro lanciato a mano alle 11:31
+UTC dello stesso giorno): a finestra vuota avrebbe aperto subito un incidente
+falso, come spiegato sopra per `garbageCollectDeleted`. **Gli scheduler sorvegliati
+sono ora 8**, tutti in entrambe le policy.
 
 Sui cron notturni l'assenza non è utilizzabile per lo stesso cap: la serie di
 uno scheduler giornaliero ha buchi di 24h per costruzione, quindi una condizione
