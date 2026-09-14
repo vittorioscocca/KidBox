@@ -2256,10 +2256,27 @@ async function checkAndIncrementAIUsage(familyId, uid, quota, incrementBy = 1) {
     const current = Math.max(familyCount, userCount);
 
     if (current + delta > limit) {
-      const message = isLifetime ?
-        `Hai già usato tutti i ${limit} messaggi AI gratuiti del piano Free. Passa a Pro per continuare a usare l'assistente.` :
-        `La famiglia ha raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`;
-      throw new HttpsError("resource-exhausted", message);
+      const remaining = Math.max(0, limit - current);
+      let message;
+      if (isLifetime) {
+        message = `Hai già usato tutti i ${limit} messaggi AI gratuiti del piano Free. Passa a Pro per continuare a usare l'assistente.`;
+      } else if (delta > 1 && remaining > 0) {
+        // Un messaggio "pesante" (Sonnet, contesto ampio) scala più di un'unità:
+        // se restano 5 messaggi e questo ne costa 6, dire solo "limite
+        // raggiunto" è incomprensibile per chi vede 95/100.
+        message = `Questo messaggio costa ${delta} messaggi AI perché il contesto è ampio, ` +
+          `e oggi alla famiglia ne restano ${remaining} su ${limit}. Riprova domani.`;
+      } else {
+        message = `La famiglia ha raggiunto il limite di ${limit} messaggi AI per oggi. Riprova domani.`;
+      }
+      // I numeri viaggiano anche nei details, così i client possono comporre
+      // la frase nella lingua dell'utente.
+      throw new HttpsError("resource-exhausted", message, {
+        reason: isLifetime ? "lifetime-limit" : "daily-limit",
+        units: delta,
+        remaining,
+        limit,
+      });
     }
 
     tx.set(ref, {
