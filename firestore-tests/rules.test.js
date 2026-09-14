@@ -203,6 +203,99 @@ async function check(nome, promessa) {
   await check("escrow: NON si LISTA la collezione",
       assertFails(dbMembro.collection(`families/${FAM}/memberKeyBackups`).get()));
 
+  // ── INVITI ─────────────────────────────────────────
+  //
+  // Senza queste strette la regola anti-auto-iscrizione di `firestore.rules.next`
+  // non chiuderebbe nulla: un estraneo che conosce il `familyId` poteva elencare
+  // gli inviti pendenti (o fabbricarsene uno), marcarlo a proprio nome e
+  // presentarlo come prova. Qui si verifica che l'attacco fallisca e che ogni
+  // uso reale dei client — versioni già installate comprese — passi ancora.
+  console.log("\n── INVITI ─────────────────────────────────────────");
+  const DOMANI = new Date(Date.now() + 24 * 3600 * 1000);
+  const IERI = new Date(Date.now() - 24 * 3600 * 1000);
+  const invitoPendente = () => ({
+    createdAt: new Date(), createdBy: UID, expiresAt: DOMANI,
+    familyName: "Rossi", createdByDisplayName: "Mario",
+    secretHash: "h", kdfSalt: "s",
+    wrappedKeyCipher: "c", wrappedKeyNonce: "n", wrappedKeyTag: "t",
+    usedAt: null, usedBy: null,
+  });
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM}/invites/inv-anteprima`).set(invitoPendente());
+    await adm.doc(`families/${FAM}/invites/inv-nuovo-client`).set(invitoPendente());
+    await adm.doc(`families/${FAM}/invites/inv-vecchio-client`).set(invitoPendente());
+    await adm.doc(`families/${FAM}/invites/inv-scaduto`)
+        .set({...invitoPendente(), expiresAt: IERI});
+    await adm.doc(`families/${FAM}/invites/inv-senza-scadenza`)
+        .set({...invitoPendente(), expiresAt: null});
+    await adm.doc(`families/${FAM}/invites/inv-per-altri`).set(invitoPendente());
+  });
+
+  // Chi riceve il link: non è ancora membro.
+  const INVITATO = "invitato5";
+  const dbInvitato = env.authenticatedContext(INVITATO).firestore();
+  await check("invito: chi ha il link LEGGE l'anteprima per id",
+      assertSucceeds(dbInvitato.doc(`families/${FAM}/invites/inv-anteprima`).get()));
+
+  // Consumo come lo fanno oggi iOS, Android e web: transazione get + update che
+  // svuota il materiale cifrato.
+  await check("invito: consumo del client attuale (transazione) passa",
+      assertSucceeds(dbInvitato.runTransaction(async (txn) => {
+        const ref = dbInvitato.doc(`families/${FAM}/invites/inv-nuovo-client`);
+        await txn.get(ref);
+        txn.update(ref, {
+          usedAt: new Date(), usedBy: INVITATO,
+          secretHash: deleteField(), kdfSalt: deleteField(),
+          wrappedKeyCipher: deleteField(), wrappedKeyNonce: deleteField(),
+          wrappedKeyTag: deleteField(),
+        });
+      })));
+
+  // Consumo come lo fanno le app già installate (iOS e Android fino ad agosto
+  // 2026): solo usedAt/usedBy, poi join e cancellazione dell'invito da membro.
+  const VECCHIO = "vecchioclient3";
+  const dbVecchio = env.authenticatedContext(VECCHIO).firestore();
+  await check("invito: consumo della versione vecchia (solo usedAt/usedBy) passa",
+      assertSucceeds(dbVecchio.runTransaction(async (txn) => {
+        const ref = dbVecchio.doc(`families/${FAM}/invites/inv-vecchio-client`);
+        await txn.get(ref);
+        txn.update(ref, {usedAt: new Date(), usedBy: VECCHIO});
+      })));
+  await check("invito: la versione vecchia entra e poi cancella l'invito",
+      assertSucceeds((async () => {
+        await dbVecchio.doc(`families/${FAM}/members/${VECCHIO}`)
+            .set({uid: VECCHIO, role: "member", isDeleted: false});
+        await dbVecchio.doc(`families/${FAM}/invites/inv-vecchio-client`).delete();
+      })()));
+
+  await check("invito: il PROPRIETARIO (membro senza isDeleted) ne crea uno",
+      assertSucceeds(db.doc(`families/${FAM}/invites/inv-da-owner`).set(invitoPendente())));
+  await check("invito: un MEMBRO non proprietario ne crea uno",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/invites/inv-da-membro`)
+          .set({...invitoPendente(), createdBy: MEMBRO})));
+  await check("invito: chi l'ha creato lo revoca",
+      assertSucceeds(dbMembro.doc(`families/${FAM}/invites/inv-da-membro`).delete()));
+  await check("invito: un membro elenca gli inviti della famiglia",
+      assertSucceeds(dbMembro.collection(`families/${FAM}/invites`).get()));
+
+  // L'attacco.
+  const PREDONE = "predone8";
+  const dbPredone = env.authenticatedContext(PREDONE).firestore();
+  await check("attacco: un estraneo NON elenca gli inviti pendenti",
+      assertFails(dbPredone.collection(`families/${FAM}/invites`).get()));
+  await check("attacco: un estraneo NON si fabbrica un invito",
+      assertFails(dbPredone.doc(`families/${FAM}/invites/inv-falso`).set(invitoPendente())));
+  await check("attacco: NON consuma un invito a nome di un altro",
+      assertFails(dbPredone.doc(`families/${FAM}/invites/inv-per-altri`)
+          .update({usedAt: new Date(), usedBy: "qualcunaltro"})));
+  await check("attacco: NON consuma un invito scaduto",
+      assertFails(dbPredone.doc(`families/${FAM}/invites/inv-scaduto`)
+          .update({usedAt: new Date(), usedBy: PREDONE})));
+  await check("invito: senza expiresAt NON si consuma",
+      assertFails(dbPredone.doc(`families/${FAM}/invites/inv-senza-scadenza`)
+          .update({usedAt: new Date(), usedBy: PREDONE})));
+
   // ── LA VERSIONE FUTURA: firestore.rules.next ───────
   //
   // Ambiente separato perché è un ruleset diverso: `firestore.rules.next`
@@ -237,9 +330,10 @@ async function check(nome, promessa) {
     // Invito consumato dal nuovo membro (usedBy = lui).
     await adm.doc(`families/${FAM}/invites/inv-ok`)
         .set({usedAt: new Date(), usedBy: NUOVO, secretHash: "x"});
-    // Invito mai consumato.
+    // Invito mai consumato, ancora valido.
     await adm.doc(`families/${FAM}/invites/inv-vergine`)
-        .set({usedAt: null, usedBy: null, secretHash: "x"});
+        .set({usedAt: null, usedBy: null, secretHash: "x",
+          expiresAt: new Date(Date.now() + 24 * 3600 * 1000)});
     // Invito consumato da qualcun altro.
     await adm.doc(`families/${FAM}/invites/inv-altrui`)
         .set({usedAt: new Date(), usedBy: "qualcunaltro", secretHash: "x"});
@@ -267,11 +361,30 @@ async function check(nome, promessa) {
       assertFails(nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
           .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-altrui"})));
 
+  // L'attacco per intero, con solo il familyId in mano: ogni strada per
+  // procurarsi un invito marcato a proprio nome deve essere chiusa.
+  await check("attacco completo: NON elenca gli inviti per trovarne uno pendente",
+      assertFails(nxIntruso.collection(`families/${FAM}/invites`).get()));
+  await check("attacco completo: NON si fabbrica un invito da consumare",
+      assertFails(nxIntruso.doc(`families/${FAM}/invites/inv-fabbricato`).set({
+        usedAt: null, usedBy: null, secretHash: "mio",
+        expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
+      })));
+  await check("attacco completo: e quindi NON entra",
+      assertFails((async () => {
+        // Se la creazione fosse passata, proverebbe a consumarlo e a entrare.
+        await nxIntruso.doc(`families/${FAM}/invites/inv-fabbricato`)
+            .update({usedAt: new Date(), usedBy: INTRUSO}).catch(() => {});
+        await nxIntruso.doc(`families/${FAM}/members/${INTRUSO}`)
+            .set({uid: INTRUSO, role: "member", isDeleted: false, inviteId: "inv-fabbricato"});
+      })()));
+
   // Consumare l'invito significa anche svuotarlo del materiale crittografico:
   // l'invito ora sopravvive all'uso, e un documento che resta non deve
   // continuare a contenere la chiave di famiglia wrappata.
   await envNext.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().doc(`families/${FAM}/invites/inv-da-consumare`).set({
+      expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
       usedAt: null, usedBy: null, secretHash: "h", kdfSalt: "s",
       wrappedKeyCipher: "c", wrappedKeyNonce: "n", wrappedKeyTag: "t",
     });

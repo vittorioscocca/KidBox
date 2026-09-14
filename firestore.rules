@@ -202,10 +202,27 @@ service cloud.firestore {
       // iOS, Android e web prima di cambiarlo.
 
       match /invites/{inviteId} {
-        // La lettura è aperta a chiunque sia autenticato: chi riceve il QR o il
-        // link non è ancora membro, e senza il `secret` — che sta nel link e non
-        // qui — il materiale cifrato è inservibile.
-        allow read, create: if isSignedIn();
+        // Il GET di un invito è aperto a chiunque sia autenticato: chi riceve il
+        // QR o il link non è ancora membro, e senza il `secret` — che sta nel
+        // link e non qui — il materiale cifrato è inservibile. Tutti i client
+        // (iOS, Android, web, versioni vecchie comprese) leggono l'invito per id:
+        // anteprima e transazione di consumo sono `get`.
+        //
+        // La LIST invece è solo dei membri. Aperta a tutti, bastava conoscere il
+        // `familyId` — che nel QR e nel link viaggia in chiaro — per elencare gli
+        // inviti pendenti di una famiglia altrui, marcarne uno a proprio nome e
+        // presentarlo come prova a `members/{uid}`. Per i membri la lista la dà
+        // comunque anche il wildcard delle sottocollezioni: qui è esplicita.
+        allow get: if isSignedIn();
+        allow list: if isMemberOrOwner(familyId);
+        // Crea inviti solo chi è già nella famiglia: con la creazione aperta, un
+        // estraneo poteva fabbricarsi un invito con un segreto suo, consumarlo ed
+        // entrare, scavalcando qualsiasi controllo su `members/{uid}`.
+        // Verificato il 13/09/2026: iOS, Android e web creano l'invito solo dopo
+        // che la scrittura della famiglia è confermata dal server, e in
+        // produzione ogni membro non proprietario ha `isDeleted` (senza, la
+        // valutazione di `isMember` andrebbe in errore).
+        allow create: if isMemberOrOwner(familyId);
         // Consumare l'invito. Oltre a `usedAt`/`usedBy` si lascia CANCELLARE il
         // materiale crittografico, e i client lo fanno nella stessa transazione:
         // l'invito ora sopravvive all'uso (serve alle regole di `members` come
@@ -216,8 +233,20 @@ service cloud.firestore {
         // `usedAt == null` resta la condizione: l'invito è a uso singolo, e
         // nessuno può riscrivere `usedBy` su un invito già consumato per
         // spacciarlo come proprio.
+        //
+        // Chi consuma lo marca a nome proprio e mai di un altro, e solo prima
+        // della scadenza: i client lo controllano già, qui diventa vincolante
+        // anche per chi scrive con l'SDK a mano. Ogni invito in produzione ha
+        // `expiresAt` timestamp (verificato il 13/09/2026, 557 documenti), e i
+        // client vecchi scrivono `usedBy = uid`, quindi nessun join legittimo
+        // cambia esito. Unico effetto visibile: con l'orologio del telefono
+        // indietro, a invito appena scaduto l'utente riceve un permesso negato
+        // invece di «invito scaduto».
         allow update: if isSignedIn()
           && resource.data.usedAt == null
+          && resource.data.expiresAt is timestamp
+          && request.time < resource.data.expiresAt
+          && request.resource.data.usedBy == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['usedAt', 'usedBy', 'kdfSalt', 'secretHash',
                       'wrappedKeyCipher', 'wrappedKeyNonce', 'wrappedKeyTag']);
