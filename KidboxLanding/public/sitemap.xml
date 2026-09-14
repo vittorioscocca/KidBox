@@ -2,366 +2,916 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://kidboxapp.com/</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/index-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/index-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/index-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/index-en</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/index-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/index-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/index-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/index-es</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/index-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/index-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/index-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/index-fr</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/index-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/index-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/index-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/guide</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/guide"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/guide-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/guide-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/guide-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/guide"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/guide-en</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/guide"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/guide-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/guide-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/guide-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/guide"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/guide-es</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/guide-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/guide-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/guide-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/guide"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/guide-fr</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/guide-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/guide-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/guide-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/guide"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/support</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/support"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/support-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/support-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/support-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/support"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/support-en</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/support"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/support-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/support-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/support-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/support"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/support-es</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/support"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/support-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/support-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/support-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/support"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/support-fr</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/support"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/support-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/support-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/support-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/support"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/privacy</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/privacy"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/privacy-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/privacy-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/privacy-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/privacy"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/privacy-en</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/privacy"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/privacy-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/privacy-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/privacy-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/privacy"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/privacy-es</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/privacy"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/privacy-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/privacy-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/privacy-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/privacy"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/privacy-fr</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/privacy"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/privacy-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/privacy-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/privacy-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/privacy"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/terms</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/terms"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/terms-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/terms-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/terms-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/terms"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/terms-en</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/terms"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/terms-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/terms-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/terms-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/terms"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/terms-es</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/terms"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/terms-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/terms-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/terms-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/terms"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/terms-fr</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/terms"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/terms-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/terms-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/terms-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/terms"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/data-deletion</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/data-deletion"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/data-deletion-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/data-deletion-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/data-deletion-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/data-deletion"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/data-deletion-en</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/data-deletion"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/data-deletion-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/data-deletion-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/data-deletion-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/data-deletion"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/data-deletion-es</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/data-deletion"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/data-deletion-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/data-deletion-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/data-deletion-fr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/data-deletion"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/data-deletion-fr</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/data-deletion"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/data-deletion-en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/data-deletion-es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/data-deletion-fr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/data-deletion"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/calendario</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/calendario"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/calendario"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/calendario"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/calendario</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/calendario"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/calendario"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/calendario</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/calendario"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/calendario"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/calendario</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/calendario"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/calendario"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/calendario"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/calendario"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/to-do</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/to-do"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/to-do"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/to-do"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/to-do</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/to-do"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/to-do"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/to-do</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/to-do"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/to-do"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/to-do</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/to-do"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/to-do"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/to-do"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/to-do"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/lista-della-spesa</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/lista-della-spesa"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/lista-della-spesa</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/lista-della-spesa</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/lista-della-spesa</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/lista-della-spesa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/lista-della-spesa"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/lista-della-spesa"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/note</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/note"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/note"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/note"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/note</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/note"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/note"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/note</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/note"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/note"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/note</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/note"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/note"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/note"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/note"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/spese</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/spese"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/spese"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/spese"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/spese</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/spese"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/spese"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/spese</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/spese"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/spese"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/spese</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/spese"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/spese"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/spese"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/spese"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/wallet</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/wallet"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/wallet"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/wallet"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/wallet</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/wallet"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/wallet"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/wallet</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/wallet"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/wallet"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/wallet</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/wallet"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/wallet"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/wallet"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/wallet"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/documenti</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/documenti"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/documenti"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/documenti"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/documenti</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/documenti"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/documenti"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/documenti</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/documenti"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/documenti"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/documenti</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/documenti"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/documenti"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/documenti"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/documenti"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/password</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/password"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/password"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/password"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/password</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/password"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/password"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/password</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/password"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/password"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/password</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/password"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/password"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/password"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/password"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/foto-e-video</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/foto-e-video"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/foto-e-video"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/foto-e-video"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/foto-e-video</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/foto-e-video"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/foto-e-video"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/foto-e-video</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/foto-e-video"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/foto-e-video</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/foto-e-video"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/foto-e-video"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/foto-e-video"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/chat</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/chat"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/chat"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/chat"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/chat</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/chat"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/chat"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/chat</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/chat"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/chat"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/chat</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/chat"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/chat"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/chat"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/chat"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/salute</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/salute"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/salute"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/salute"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/salute</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/salute"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/salute"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/salute</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/salute"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/salute"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/salute</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/salute"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/salute"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/salute"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/salute"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/casa</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/casa"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/casa"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/casa"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/casa</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/casa"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/casa"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/casa</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/casa"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/casa"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/casa</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/casa"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/casa"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/casa"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/casa"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/veicoli</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/veicoli"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/veicoli"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/veicoli"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/veicoli</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/veicoli"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/veicoli"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/veicoli</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/veicoli"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/veicoli</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/veicoli"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/veicoli"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/veicoli"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/animali</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/animali"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/animali"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/animali"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/animali</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/animali"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/animali"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/animali</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/animali"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/animali"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/animali</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/animali"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/animali"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/animali"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/animali"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/posizione</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/posizione"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/posizione"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/posizione"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/posizione</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/posizione"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/posizione"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/posizione</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/posizione"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/posizione"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/posizione</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/posizione"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/posizione"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/posizione"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/posizione"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/viaggi</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/viaggi"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/viaggi"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/viaggi"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/viaggi</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/viaggi"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/viaggi"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/viaggi</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/viaggi"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/viaggi</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/viaggi"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/viaggi"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/viaggi"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/assistente-ai</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/assistente-ai"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/assistente-ai"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/assistente-ai"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/assistente-ai</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/assistente-ai"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/assistente-ai"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/assistente-ai</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/assistente-ai"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/assistente-ai</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/assistente-ai"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/assistente-ai"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/assistente-ai"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/alexa</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/alexa"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/alexa"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/alexa"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/alexa</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/alexa"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/alexa"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/alexa"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/strumenti/famiglia</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/famiglia"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/famiglia"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/famiglia"/>
   </url>
   <url>
     <loc>https://kidboxapp.com/en/tools/famiglia</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-14</lastmod>
     <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/famiglia"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/famiglia"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/es/tools/famiglia</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/famiglia"/>
+  </url>
+  <url>
+    <loc>https://kidboxapp.com/fr/tools/famiglia</loc>
+    <lastmod>2026-09-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="it" href="https://kidboxapp.com/strumenti/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidboxapp.com/en/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://kidboxapp.com/es/tools/famiglia"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://kidboxapp.com/fr/tools/famiglia"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/strumenti/famiglia"/>
   </url>
   <url>

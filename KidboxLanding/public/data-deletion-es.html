@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eliminación de datos · KidBox</title>
+  <link rel="canonical" href="https://kidboxapp.com/data-deletion-es">
+  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/data-deletion">
+  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/data-deletion-en">
+  <link rel="alternate" hreflang="es" href="https://kidboxapp.com/data-deletion-es">
+  <link rel="alternate" hreflang="fr" href="https://kidboxapp.com/data-deletion-fr">
+  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/data-deletion">
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Google Analytics e Meta Pixel: partono solo dopo il consenso, vedi assets/consent.js -->
+  <script src="/assets/consent.js" defer></script>
+  <script src="/assets/lang.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #fdf7f0; --c-bg2: #f5ebe0; --c-surface: #ffffff;
+      --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
+      --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
+      --c-accent-l: #fdf0e4; --c-green: #2e9e6b; --c-green-l: #edfaf4;
+      --c-red: #d63b3b; --c-red-l: #fff0f0;
+      --shadow: 0 2px 20px rgba(180,100,30,0.08); --shadow-lg: 0 8px 48px rgba(180,100,30,0.14);
+      --radius-lg: 24px; --radius-md: 16px; --c-nav-bg: rgba(253,247,240,0.92);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #18110a; --c-bg2: #221810; --c-surface: #2a1e14;
+        --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
+        --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
+        --c-accent-l: rgba(240,144,80,0.12); --c-green: #3bbf80; --c-green-l: rgba(59,191,128,0.1);
+        --c-red: #f06060; --c-red-l: rgba(240,96,96,0.1);
+        --shadow: 0 2px 20px rgba(0,0,0,0.3); --shadow-lg: 0 8px 48px rgba(0,0,0,0.4);
+        --c-nav-bg: rgba(24,17,10,0.92);
+      }
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.7; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: var(--c-nav-bg); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: var(--c-text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo-name { display: inline; font-size: 0; }
+    .nav-logo-name span { font-size: 1.2rem; }
+    .nav-logo-name span.accent { color: var(--c-accent); }
+    .nav-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 500; color: var(--c-muted);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-back:hover { color: var(--c-accent); }
+
+    main { max-width: 740px; margin: 0 auto; padding: 112px 24px 80px; }
+
+    .page-hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--c-border);
+      margin-bottom: 48px;
+    }
+    .section-label {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--c-accent); margin-bottom: 12px;
+    }
+    h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .intro { font-size: 1.02rem; color: var(--c-muted); font-weight: 300; line-height: 1.75; }
+
+    h2 {
+      font-size: 1.1rem; font-weight: 700;
+      margin: 40px 0 16px; color: var(--c-text);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2::before {
+      content: ''; display: block; width: 3px; height: 18px;
+      background: var(--c-accent); border-radius: 2px; flex-shrink: 0;
+    }
+    p { color: var(--c-muted); font-weight: 300; margin-bottom: 14px; line-height: 1.75; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+    .step {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 16px 20px;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow);
+      transition: border-color .2s;
+    }
+    .step:hover { border-color: rgba(232,131,58,0.25); }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--c-accent); color: #fff;
+      font-size: 0.8rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-text strong { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+    .step-text span { font-size: 0.85rem; color: var(--c-muted); font-weight: 300; }
+
+    /* Warning */
+    .warning-box {
+      background: var(--c-red-l); border: 1px solid rgba(214,59,59,0.2);
+      border-left: 3px solid var(--c-red);
+      border-radius: var(--radius-md); padding: 16px 20px; margin: 20px 0;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .warning-box p { color: var(--c-red); margin: 0; font-size: 0.9rem; font-weight: 400; }
+
+    /* Email box */
+    .email-box {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); padding: 28px 28px;
+      box-shadow: var(--shadow); margin: 16px 0;
+    }
+    .email-box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+    .email-box p { font-size: 0.9rem; margin-bottom: 16px; }
+    .email-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px; background: var(--c-accent); color: #fff;
+      border-radius: 50px; font-weight: 600; font-size: 0.9rem;
+      text-decoration: none; transition: background .2s, transform .2s;
+      box-shadow: 0 4px 14px rgba(232,131,58,0.3);
+    }
+    .email-btn:hover { background: var(--c-accent2); transform: translateY(-1px); }
+
+    /* Deleted list */
+    .deleted-list { list-style: none; padding: 0; margin: 16px 0; }
+    .deleted-list li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 16px;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); margin-bottom: 8px;
+      font-size: 0.92rem; color: var(--c-muted); font-weight: 300;
+      box-shadow: var(--shadow);
+    }
+    .deleted-list li .x { color: var(--c-red); font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+
+    /* Support grid */
+    .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+    .support-card {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); padding: 24px;
+      box-shadow: var(--shadow); transition: border-color .2s;
+    }
+    .support-card:hover { border-color: rgba(232,131,58,0.25); }
+    .support-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+    .support-card p { font-size: 0.85rem; margin-bottom: 12px; }
+    .support-card a { color: var(--c-accent); text-decoration: none; font-weight: 500; font-size: 0.88rem; }
+    .support-card a:hover { color: var(--c-accent2); }
+
+  /* langmenu:css:start */
+  .lang-menu { position:relative; font-size:0.82rem; font-weight:600; }
+  .lang-menu summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:50px;
+    border:1px solid var(--border, var(--c-border)); color:var(--muted, var(--c-muted)); user-select:none; }
+  .lang-menu summary::-webkit-details-marker { display:none; }
+  .lang-menu summary:hover, .lang-menu[open] summary { color:var(--text, var(--c-text)); border-color:var(--accent, var(--c-accent)); }
+  .lang-list { position:absolute; right:0; top:calc(100% + 8px); min-width:150px; padding:6px; border-radius:14px; z-index:200;
+    background:var(--surface, var(--c-surface)); border:1px solid var(--border, var(--c-border)); box-shadow:0 12px 32px rgba(0,0,0,.18); }
+  .lang-list a { display:block; padding:8px 12px; border-radius:9px; color:var(--text, var(--c-text)); text-decoration:none; font-weight:500; white-space:nowrap; }
+  .lang-list a:hover { background:var(--border, var(--c-border)); }
+  .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
+  /* langmenu:css:end */
+  /* footer:css:start */
+  footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
+  .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .sf-notes p { margin:0 0 8px; }
+  .sf-notes p:last-child { margin-bottom:0; }
+  .sf-grid { align-items:start; display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:26px; padding:24px 0 26px; }
+  .sf-col h3 { font-size:0.78rem; font-weight:700; color:var(--text); margin:0 0 10px; letter-spacing:0; }
+  .sf-col ul + h3 { margin-top:24px; }
+  .sf-col ul { list-style:none; margin:0; padding:0; }
+  .sf-col li { margin:0 0 7px; }
+  .sf-col a, .sf-bottom a { color:var(--muted); text-decoration:none; }
+  .sf-col a:hover, .sf-bottom a:hover { color:var(--text); text-decoration:underline; }
+  .sf-bottom { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 28px; }
+  .sf-bottom-l { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; }
+  .sf-legal { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-legal a + a::before { content:"|"; color:var(--faint); margin:0 10px; }
+  .sf-lang { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-lang > * + *::before { content:"·"; color:var(--faint); margin:0 8px; }
+  .sf-lang strong { color:var(--text); font-weight:600; }
+  @media (max-width:900px) { .sf-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:600px) { .sf-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 18px; } }
+  footer.sf-static { --border:var(--c-border); --text:var(--c-text); --muted:var(--c-muted); --faint:var(--c-muted);
+    max-width:1100px; margin:40px auto 0; padding:26px 24px 30px; font-family:inherit; }
+  footer.sf-static p { margin:0 0 8px; font-weight:400; line-height:1.45; color:inherit; font-size:inherit; }
+  footer.sf-static ul { margin:0; color:inherit; font-weight:400; }
+  footer.sf-static ul li { padding:0; border:0; position:static; font-size:inherit; margin:0 0 7px; }
+  footer.sf-static ul li::before { content:none; }
+  /* footer:css:end */
+
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; }
+      main { padding: 100px 20px 60px; }
+      .support-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index-es.html">
+      <img src="icon.png" alt="KidBox">
+      <span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
+    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="nav-back" href="index-es.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al inicio
+      </a>
+      <details class="lang-menu"><summary aria-label="Idioma"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>ES</span></summary><div class="lang-list"><a href="data-deletion.html" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="data-deletion-en.html" hreflang="en" lang="en" data-lang="en">English</a><a href="data-deletion-es.html" hreflang="es" lang="es" data-lang="es" aria-current="true">Español</a><a href="data-deletion-fr.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></div></details>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-hero">
+      <span class="section-label">Cuenta</span>
+      <h1>Eliminación de datos</h1>
+      <p class="intro">Tienes el control total de tus datos. Puedes eliminar tu cuenta y todo el contenido asociado en cualquier momento — directamente desde la app o contactando con el soporte.</p>
+    </div>
+
+    <h2>Eliminar desde la app</h2>
+    <p>El método más rápido, disponible directamente en tu dispositivo:</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Abre KidBox</strong><span>En tu iPhone o iPad</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Ve a Perfil</strong><span>Toca el icono abajo a la derecha</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Desplázate hasta abajo</strong><span>Toca «Eliminar cuenta»</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Confirma la eliminación</strong><span>El proceso es inmediato e irreversible</span></div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <span>⚠️</span>
+      <p>La eliminación de la cuenta es <strong>permanente e irreversible</strong>. Todos los datos se borrarán de inmediato.</p>
+    </div>
+
+    <h2>Solicitud por correo electrónico</h2>
+    <p>Si no puedes acceder a la app, envíanos una solicitud. Tramitamos las solicitudes en un plazo de 30 días.</p>
+    <div class="email-box">
+      <h3>Escribe al soporte</h3>
+      <p>Indica la dirección de correo asociada a tu cuenta de KidBox.</p>
+      <a class="email-btn" href="mailto:passboxcontact@gmail.com?subject=KidBox account deletion request">
+        ✉️ &nbsp;Escribe a passboxcontact@gmail.com
+      </a>
+    </div>
+
+    <h2>Qué se elimina</h2>
+    <ul class="deleted-list">
+      <li><span class="x">✕</span> Datos de la cuenta (correo, nombre, foto, credenciales)</li>
+      <li><span class="x">✕</span> Contenido familiar (chat, notas, documentos, fotos, calendario, tareas, gastos)</li>
+      <li><span class="x">✕</span> Datos de salud (visitas, medicamentos, vacunas, análisis, perfiles pediátricos)</li>
+      <li><span class="x">✕</span> Preferencias, ajustes y memoria de la IA</li>
+    </ul>
+    <p style="font-size:0.85rem">⚠️ El contenido compartido con otros miembros de la familia sigue siendo visible para ellos hasta que lo eliminen.</p>
+
+    <h2>Datos de uso de la app</h2>
+    <p>Para entender cómo se usa KidBox y mejorar la app, registramos algunas acciones de forma agregada (por ejemplo, abrir un documento o una sección), <strong>sin guardar el contenido</strong> de lo que ves — ni títulos, ni textos, ni ubicación exacta.</p>
+    <p>Estos datos <strong>se eliminan junto con tu cuenta</strong>. En cualquier caso, se borran automáticamente a los <strong>90 días</strong>, aunque no elimines nada.</p>
+
+    <h2>Suscripciones activas</h2>
+    <p>Eliminar la cuenta <strong>no cancela automáticamente</strong> las suscripciones activas. Antes de continuar, cancela la suscripción en <strong>Ajustes del iPhone → Tu nombre → Suscripciones → KidBox</strong>.</p>
+
+    <h2>¿Necesitas ayuda?</h2>
+    <p>Para cualquier duda sobre la eliminación de datos o tu privacidad, escríbenos por correo o usa el <a href="support-es.html" style="color:var(--c-accent);font-weight:500;text-decoration:none">chat de soporte en la app</a>.</p>
+    <div class="email-box">
+      <h3>Privacidad y aspectos legales</h3>
+      <p>Cuestiones relativas a datos personales, RGPD y derechos de los usuarios.</p>
+      <a class="email-btn" href="mailto:passboxcontact@gmail.com">
+        ✉️ &nbsp;Escribe a passboxcontact@gmail.com
+      </a>
+    </div>
+    <div class="contact-block" style="margin-top:40px;padding:24px 28px;background:var(--c-surface);border-radius:16px;border:1px solid var(--c-border);">
+      <p><strong>Responsable del tratamiento:</strong> Vittorio Scocca — KidBox<br>
+      <strong>Delegado de protección de datos (DPO):</strong> Vittorio Scocca<br>
+      <strong>Contacto:</strong> <a style="color:var(--c-accent)" href="mailto:passboxcontact@gmail.com">passboxcontact@gmail.com</a></p>
+      <p style="margin-top:12px">KidBox recoge datos personales, entre ellos contactos, ubicación, datos de salud e identificadores del dispositivo. Para la información completa sobre la recogida, el uso y la cesión de los datos consulta nuestra <a style="color:var(--c-accent)" href="privacy-es.html">Política de privacidad</a>.</p>
+    </div>
+  </main>
+
+  <!-- footer:start -->
+  <footer class="sf-static">
+    <div class="sf-notes"><p>Algunas funciones — el asistente de IA, el Plan de Alimentación y el Plan Fitness, los viajes con itinerario de IA y la lectura de documentos con IA — requieren el plan Pro o Max. El plan Free incluye 5 mensajes de prueba con el asistente.</p><p>Las funciones pueden cambiar y algunas podrían no estar disponibles en todas las plataformas.</p><p>App Store es una marca de Apple Inc. Google Play es una marca de Google LLC.</p></div>
+    <div class="sf-grid" role="navigation" aria-label="Mapa del sitio">
+      <div class="sf-col"><h3>Organización</h3><ul><li><a href="es/tools/calendario">Calendario</a></li><li><a href="es/tools/to-do">Tareas</a></li><li><a href="es/tools/lista-della-spesa">Lista de la compra</a></li><li><a href="es/tools/spese">Gastos</a></li><li><a href="es/tools/note">Notas</a></li></ul><h3>Documentos y seguridad</h3><ul><li><a href="es/tools/documenti">Documentos</a></li><li><a href="es/tools/password">Contraseñas</a></li><li><a href="es/tools/wallet">Wallet</a></li></ul></div>
+      <div class="sf-col"><h3>Familia</h3><ul><li><a href="es/tools/famiglia">Familia e invitaciones</a></li><li><a href="es/tools/chat">Chat</a></li><li><a href="es/tools/posizione">Ubicación</a></li><li><a href="es/tools/foto-e-video">Fotos y vídeos</a></li></ul><h3>Salud, hogar y coche</h3><ul><li><a href="es/tools/salute">Salud</a></li><li><a href="es/tools/casa">Hogar</a></li><li><a href="es/tools/veicoli">Vehículos</a></li><li><a href="es/tools/animali">Mascotas</a></li><li><a href="es/tools/">Todas las herramientas →</a></li></ul></div>
+      <div class="sf-col"><h3>Blog</h3><ul><li><a href="es/blog/">Todos los artículos →</a></li></ul></div>
+      <div class="sf-col"><h3>IA</h3><ul><li><a href="es/tools/assistente-ai">Asistente de IA</a></li><li><a href="es/tools/viaggi">Viajes</a></li></ul><h3>Descargar</h3><ul><li><a href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener">App Store</a></li><li><a href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener">Google Play</a></li></ul></div>
+      <div class="sf-col"><h3>KidBox</h3><ul><li><a href="index-es.html#prodotti">Productos</a></li><li><a href="index-es.html#ai">IA</a></li><li><a href="index-es.html#prezzi">Precios</a></li><li><a href="guide-es.html">Guía</a></li><li><a href="https://app.kidboxapp.com">Abrir la web app</a></li></ul><h3>Soporte y privacidad</h3><ul><li><a href="support-es.html">Soporte</a></li><li><a href="privacy-es.html">Privacidad</a></li><li><a href="terms-es.html">Términos del servicio</a></li><li><a href="data-deletion-es.html">Eliminación de datos</a></li><li><a href="#" data-consent-open>Preferencias de cookies</a></li></ul><h3>Síguenos</h3><ul><li><a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener">Facebook</a></li><li><a href="https://www.instagram.com/kidbox_app" target="_blank" rel="noopener">Instagram</a></li></ul></div>
+    </div>
+    <div class="sf-bottom">
+      <div class="sf-bottom-l"><span>Copyright © 2026 KidBox. Todos los derechos reservados. Hecho con ❤️ en Italia.</span><div class="sf-legal"><a href="privacy-es.html">Privacidad</a><a href="terms-es.html">Términos</a><a href="#" data-consent-open>Cookies</a><a href="data-deletion-es.html">Eliminación de datos</a></div></div>
+      <div class="sf-lang"><a data-lang-alt="it" hreflang="it" href="data-deletion.html">Italiano</a><a data-lang-alt="en" hreflang="en" href="data-deletion-en.html">English</a><strong aria-current="true">Español</strong><a data-lang-alt="fr" hreflang="fr" href="data-deletion-fr.html">Français</a></div>
+    </div>
+  </footer>
+  <!-- footer:end -->
+</body>
+</html>

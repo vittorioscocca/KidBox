@@ -25,6 +25,9 @@ ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 sys.path.insert(0, str(ROOT / "tools"))
 from tools_data import TOOLS  # noqa: E402
+from site_langs import HOME, LANG_JS, LANGS as ALL_LANGS, TOOLS_DIR, lang_menu  # noqa: E402
+
+SITE = "https://kidboxapp.com"
 
 LANGS = {
     "it": {
@@ -54,6 +57,34 @@ LANGS = {
         "free": "Included in Free", "pro": "Pro plan", "open": "Open in the web app", "shots": "In the app",
         "final_kicker": "Start today", "final_h": "Your family deserves an app that keeps up.", "final_p": "Free to start. No card required.",
         "guide": "guide-en.html",
+    },
+    "es": {
+        "src": "index-es.html", "dir": "es/tools",
+        "home": "Inicio", "tools": "Herramientas",
+        "index_title": "Herramientas de KidBox · Todo lo que la app hace por tu familia",
+        "index_desc": "Calendario, listas, gastos, documentos, salud, chat, ubicación, viajes e IA: cada herramienta de KidBox explicada, con capturas y preguntas frecuentes.",
+        "index_h1": "Las herramientas de KidBox",
+        "index_p": "Todo lo que la app hace por una familia, sección por sección: qué resuelve, cómo funciona y las preguntas que más nos hacen. Gratis para una familia de dos padres.",
+        "hero_eyebrow": "Descarga la app", "hero_h": "Toda la familia, <span class=\"g\">en una sola app.</span>",
+        "hero_p": "El organizador familiar para iPhone, Android y navegador, cifrado de extremo a extremo. Gratis para empezar, sin tarjeta.",
+        "how": "Cómo funciona", "faq": "Preguntas frecuentes", "related": "Herramientas relacionadas", "all_tools": "Todas las herramientas",
+        "free": "Incluido en Free", "pro": "Plan Pro", "open": "Abrir en la web app", "shots": "En la app",
+        "final_kicker": "Empieza hoy", "final_h": "Tu familia merece una app a su altura.", "final_p": "Gratis para empezar. Sin tarjeta.",
+        "guide": "guide-es.html",
+    },
+    "fr": {
+        "src": "index-fr.html", "dir": "fr/tools",
+        "home": "Accueil", "tools": "Outils",
+        "index_title": "Outils KidBox · Tout ce que l'app fait pour votre famille",
+        "index_desc": "Calendrier, listes, dépenses, documents, santé, chat, localisation, voyages et IA : chaque outil KidBox expliqué, avec captures d'écran et questions fréquentes.",
+        "index_h1": "Les outils de KidBox",
+        "index_p": "Tout ce que l'app fait pour une famille, rubrique par rubrique : ce qu'elle résout, comment elle fonctionne et les questions qu'on nous pose le plus. Gratuit pour une famille de deux parents.",
+        "hero_eyebrow": "Télécharger l'app", "hero_h": "Toute la famille, <span class=\"g\">dans une seule app.</span>",
+        "hero_p": "L'organiseur familial pour iPhone, Android et navigateur, chiffré de bout en bout. Gratuit pour commencer, sans carte.",
+        "how": "Comment ça marche", "faq": "Questions fréquentes", "related": "Outils associés", "all_tools": "Tous les outils",
+        "free": "Inclus dans Free", "pro": "Offre Pro", "open": "Ouvrir dans l'app web", "shots": "Dans l'app",
+        "final_kicker": "Commencez aujourd'hui", "final_h": "Votre famille mérite une app à la hauteur.", "final_p": "Gratuit pour commencer. Sans carte.",
+        "guide": "guide-fr.html",
     },
 }
 
@@ -129,18 +160,42 @@ def rebase_links(block, depth, home="index.html"):
     return block
 
 
-def nav_for(lang, depth, L, other_href):
+def active_langs():
+    """Lingue la cui home esiste: le altre non si generano (arrivano a lotti)."""
+    return [l for l in ALL_LANGS if (PUBLIC / HOME[l]).exists()]
+
+
+def alternates(lang, depth, dirs, canonical, has):
+    """Href relativi della pagina gemella in ogni lingua (`hrefs`, per menu e
+    footer; senza gemella → home di quella lingua) e percorsi assoluti delle
+    gemelle che esistono (`real`, per hreflang)."""
+    prefix = "../" * depth
+    homes = {l: HOME[l] if (PUBLIC / HOME[l]).exists() else HOME["en"] for l in ALL_LANGS}
+    real = {l: f"{dirs[l]}/{canonical}" for l in active_langs() if has(l)}
+    hrefs = {l: prefix + real[l] if l in real else prefix + homes[l] for l in ALL_LANGS}
+    return hrefs, real
+
+
+def head_links(lang, real):
+    alts = "".join(f'\n  <link rel="alternate" hreflang="{l}" href="{SITE}/{p}">' for l, p in real.items())
+    xdef = real.get("it") or real[lang]
+    return (f'  <link rel="canonical" href="{SITE}/{real[lang]}">{alts}'
+            f'\n  <link rel="alternate" hreflang="x-default" href="{SITE}/{xdef}">')
+
+
+def nav_for(lang, depth, L, hrefs):
     src = (PUBLIC / L["src"]).read_text(encoding="utf-8")
     nav = extract(src, r"<nav>.*?</nav>")
     nav = rebase_links(nav, depth, L["src"])
-    # Il selettore di lingua deve portare alla pagina gemella, non alla home.
-    nav = re.sub(r'<div class="nav-lang nav-hide">.*?</div>',
-                 f'<div class="nav-lang nav-hide">'
-                 f'<a href="{other_href if lang == "en" else "#"}" style="color:var(--{"muted" if lang == "en" else "accent"})" onclick="localStorage.setItem(\'kidbox_lang\',\'it\')">IT</a>'
-                 f'<span style="color:var(--muted)">|</span>'
-                 f'<a href="{other_href if lang == "it" else "#"}" style="color:var(--{"muted" if lang == "it" else "accent"})" onclick="localStorage.setItem(\'kidbox_lang\',\'en\')">EN</a>'
-                 f'</div>', nav, flags=re.S)
+    # Il menu delle lingue deve portare alla pagina gemella, non alla home.
+    nav = re.sub(r'<details class="lang-menu">.*?</details>', lambda m: lang_menu(lang, hrefs), nav, count=1, flags=re.S)
     return nav
+
+
+def footer_langs(footer, hrefs):
+    for l, h in hrefs.items():
+        footer = re.sub(rf'(data-lang-alt="{l}" hreflang="{l}" href=")[^"]*"', lambda m: m.group(1) + h + '"', footer)
+    return footer
 
 
 def parts_for(lang, depth):
@@ -199,9 +254,12 @@ def page(lang, title, desc, canonical, body, depth):
     L = LANGS[lang]
     style, stores, footer, phone = parts_for(lang, depth)
     prefix = "../" * depth
-    other = ("../" * depth) + LANGS[lang]["other_dir"] + "/" + canonical
-    nav = nav_for(lang, depth, L, other)
-    footer = re.sub(r'data-lang-other href="[^"]*"', f'data-lang-other href="{other}"', footer)
+    slug = canonical
+    has = (lambda l: l in LANGS and any(l in t for t in TOOLS)) if not slug else \
+          (lambda l: any(t["slug"] == slug and l in t for t in TOOLS))
+    hrefs, real = alternates(lang, depth, TOOLS_DIR, canonical, has)
+    nav = nav_for(lang, depth, L, hrefs)
+    footer = footer_langs(footer, hrefs)
     return f"""<!DOCTYPE html>
 <html lang="{lang}">
 <head>
@@ -213,14 +271,12 @@ def page(lang, title, desc, canonical, body, depth):
   <meta property="og:description" content="{html.escape(desc)}">
   <meta property="og:type" content="website">
   <meta property="og:image" content="{prefix}icon.png">
-  <link rel="canonical" href="https://kidboxapp.com/{L['dir']}/{canonical}">
-  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/{LANGS['it']['dir']}/{canonical}">
-  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/{LANGS['en']['dir']}/{canonical}">
-  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/{LANGS['it']['dir']}/{canonical}">
+{head_links(lang, real)}
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="{prefix}icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
+  <script src="{LANG_JS}" defer></script>
 {style}
 </head>
 <body>
@@ -273,9 +329,9 @@ def build_index(lang):
     L = LANGS[lang]
     depth = L["dir"].count("/") + 1
     prefix = "../" * depth
-    cards = "".join(card(t, lang) for t in TOOLS)
+    cards = "".join(card(t, lang) for t in TOOLS if lang in t)
     body = f"""
-<div class="crumbs"><a href="{prefix}index.html">{L['home']}</a><span>/</span><span class="cur">{L['tools']}</span></div>
+<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><span class="cur">{L['tools']}</span></div>
 %HERO%
 <div class="t-head rv">
   <h1>{L['index_h1']}</h1>
@@ -309,14 +365,14 @@ def build_tool(lang, tool, images):
     faq = "".join(
         f'<details><summary>{html.escape(q)}</summary><p>{html.escape(a)}</p></details>' for q, a in T["faq"]
     )
-    related = "".join(card(by_slug[s], lang) for s in tool["related"] if s in by_slug)
+    related = "".join(card(by_slug[s], lang) for s in tool["related"] if s in by_slug and lang in by_slug[s])
     faq_ld = {
         "@context": "https://schema.org", "@type": "FAQPage",
         "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in T["faq"]],
     }
     import json
     body = f"""
-<div class="crumbs"><a href="{prefix}index.html">{L['home']}</a><span>/</span><a href="./">{L['tools']}</a><span>/</span><span class="cur">{html.escape(T['title'])}</span></div>
+<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><a href="./">{L['tools']}</a><span>/</span><span class="cur">{html.escape(T['title'])}</span></div>
 %HERO%
 <div class="t-title rv">
   <span class="t-ico {tool['tint']}">{tool['icon']}</span>
@@ -352,16 +408,19 @@ def main():
     sys.path.insert(0, str(ROOT / "scripts"))
     import build_footer
     build_footer.main()
+    langs = [l for l in active_langs() if l in LANGS]
     for tool in TOOLS:
         images = build_images(tool)
-        for lang in LANGS:
-            build_tool(lang, tool, images)
-    for lang in LANGS:
-        build_index(lang)
+        for lang in langs:
+            if lang in tool:
+                build_tool(lang, tool, images)
+    for lang in langs:
+        if any(lang in t for t in TOOLS):
+            build_index(lang)
     sys.path.insert(0, str(ROOT / "scripts"))
     import build_sitemap
     build_sitemap.main()
-    print(f"{len(TOOLS)} strumenti × {len(LANGS)} lingue generati in public/")
+    print(f"strumenti generati in public/ per: {', '.join(l for l in langs if any(l in t for t in TOOLS))}")
 
 
 if __name__ == "__main__":

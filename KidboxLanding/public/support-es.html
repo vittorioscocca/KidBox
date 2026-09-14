@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soporte · KidBox</title>
+  <link rel="canonical" href="https://kidboxapp.com/support-es">
+  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/support">
+  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/support-en">
+  <link rel="alternate" hreflang="es" href="https://kidboxapp.com/support-es">
+  <link rel="alternate" hreflang="fr" href="https://kidboxapp.com/support-fr">
+  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/support">
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Google Analytics e Meta Pixel: partono solo dopo il consenso, vedi assets/consent.js -->
+  <script src="/assets/consent.js" defer></script>
+  <script src="/assets/lang.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #fdf7f0; --c-bg2: #f5ebe0; --c-surface: #ffffff;
+      --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
+      --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
+      --c-accent-l: #fdf0e4; --c-green: #2e9e6b; --c-green-l: #edfaf4;
+      --c-blue: #2b7cb8; --c-blue-l: rgba(43,124,184,0.08);
+      --shadow: 0 2px 20px rgba(180,100,30,0.08); --shadow-lg: 0 8px 48px rgba(180,100,30,0.14);
+      --radius-lg: 24px; --radius-md: 16px; --c-nav-bg: rgba(253,247,240,0.92);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #18110a; --c-bg2: #221810; --c-surface: #2a1e14;
+        --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
+        --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
+        --c-accent-l: rgba(240,144,80,0.12); --c-green: #3bbf80; --c-green-l: rgba(59,191,128,0.1);
+        --c-blue: #5ba3d9; --c-blue-l: rgba(91,163,217,0.1);
+        --shadow: 0 2px 20px rgba(0,0,0,0.3); --shadow-lg: 0 8px 48px rgba(0,0,0,0.4);
+        --c-nav-bg: rgba(24,17,10,0.92);
+      }
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.7; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: var(--c-nav-bg); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em;
+      color: var(--c-text); text-decoration: none;
+    }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo-name { display: inline; font-size: 0; }
+    .nav-logo-name span { font-size: 1.2rem; }
+    .nav-logo-name span.accent { color: var(--c-accent); }
+    .nav-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 500; color: var(--c-muted);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-back:hover { color: var(--c-accent); }
+
+    main { max-width: 740px; margin: 0 auto; padding: 112px 24px 80px; }
+
+    .page-hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--c-border);
+      margin-bottom: 48px;
+    }
+    .section-label {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--c-accent); margin-bottom: 12px;
+    }
+    h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .intro { font-size: 1.02rem; color: var(--c-muted); font-weight: 300; line-height: 1.75; }
+
+    h2 {
+      font-size: 1.1rem; font-weight: 700;
+      margin: 40px 0 16px; color: var(--c-text);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2::before {
+      content: ''; display: block; width: 3px; height: 18px;
+      background: var(--c-accent); border-radius: 2px; flex-shrink: 0;
+    }
+    p { color: var(--c-muted); font-weight: 300; margin-bottom: 14px; line-height: 1.75; }
+
+    /* Hero card */
+    .hero-card {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg); padding: 36px;
+      box-shadow: var(--shadow-lg); margin-bottom: 32px;
+      position: relative; overflow: hidden;
+    }
+    .hero-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--c-accent), var(--c-accent2));
+    }
+    .hero-card-icon {
+      font-size: 2.8rem; margin-bottom: 16px; display: block;
+    }
+    .hero-card h2 {
+      font-size: 1.4rem; margin: 0 0 10px;
+    }
+    .hero-card h2::before { display: none; }
+    .hero-card p { font-size: 1rem; margin-bottom: 0; }
+
+    /* Feature list */
+    .feature-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .feature-item {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 20px 22px;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow);
+      transition: border-color .2s;
+    }
+    .feature-item:hover { border-color: rgba(232,131,58,0.25); }
+    .feature-icon {
+      font-size: 1.4rem; flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--c-accent-l); display: flex; align-items: center; justify-content: center;
+    }
+    .feature-text strong { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; color: var(--c-text); }
+    .feature-text span { font-size: 0.88rem; color: var(--c-muted); font-weight: 300; line-height: 1.6; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+    .step {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 16px 20px;
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius-md); box-shadow: var(--shadow);
+      transition: border-color .2s;
+    }
+    .step:hover { border-color: rgba(232,131,58,0.25); }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--c-accent); color: #fff;
+      font-size: 0.8rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+    }
+    .step-text strong { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+    .step-text span { font-size: 0.85rem; color: var(--c-muted); font-weight: 300; }
+
+    /* Info box */
+    .info-box {
+      background: var(--c-blue-l); border: 1px solid rgba(43,124,184,0.18);
+      border-left: 3px solid var(--c-blue);
+      border-radius: var(--radius-md); padding: 16px 20px; margin: 20px 0;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .info-box p { color: var(--c-blue); margin: 0; font-size: 0.9rem; font-weight: 400; }
+    @media (prefers-color-scheme: dark) {
+      .info-box p { color: var(--c-blue); }
+    }
+
+    /* Green box */
+    .green-box {
+      background: var(--c-green-l); border: 1px solid rgba(46,158,107,0.18);
+      border-left: 3px solid var(--c-green);
+      border-radius: var(--radius-md); padding: 16px 20px; margin: 20px 0;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .green-box p { color: var(--c-green); margin: 0; font-size: 0.9rem; font-weight: 400; }
+
+  /* langmenu:css:start */
+  .lang-menu { position:relative; font-size:0.82rem; font-weight:600; }
+  .lang-menu summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:50px;
+    border:1px solid var(--border, var(--c-border)); color:var(--muted, var(--c-muted)); user-select:none; }
+  .lang-menu summary::-webkit-details-marker { display:none; }
+  .lang-menu summary:hover, .lang-menu[open] summary { color:var(--text, var(--c-text)); border-color:var(--accent, var(--c-accent)); }
+  .lang-list { position:absolute; right:0; top:calc(100% + 8px); min-width:150px; padding:6px; border-radius:14px; z-index:200;
+    background:var(--surface, var(--c-surface)); border:1px solid var(--border, var(--c-border)); box-shadow:0 12px 32px rgba(0,0,0,.18); }
+  .lang-list a { display:block; padding:8px 12px; border-radius:9px; color:var(--text, var(--c-text)); text-decoration:none; font-weight:500; white-space:nowrap; }
+  .lang-list a:hover { background:var(--border, var(--c-border)); }
+  .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
+  /* langmenu:css:end */
+  /* footer:css:start */
+  footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
+  .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .sf-notes p { margin:0 0 8px; }
+  .sf-notes p:last-child { margin-bottom:0; }
+  .sf-grid { align-items:start; display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:26px; padding:24px 0 26px; }
+  .sf-col h3 { font-size:0.78rem; font-weight:700; color:var(--text); margin:0 0 10px; letter-spacing:0; }
+  .sf-col ul + h3 { margin-top:24px; }
+  .sf-col ul { list-style:none; margin:0; padding:0; }
+  .sf-col li { margin:0 0 7px; }
+  .sf-col a, .sf-bottom a { color:var(--muted); text-decoration:none; }
+  .sf-col a:hover, .sf-bottom a:hover { color:var(--text); text-decoration:underline; }
+  .sf-bottom { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 28px; }
+  .sf-bottom-l { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; }
+  .sf-legal { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-legal a + a::before { content:"|"; color:var(--faint); margin:0 10px; }
+  .sf-lang { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-lang > * + *::before { content:"·"; color:var(--faint); margin:0 8px; }
+  .sf-lang strong { color:var(--text); font-weight:600; }
+  @media (max-width:900px) { .sf-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:600px) { .sf-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 18px; } }
+  footer.sf-static { --border:var(--c-border); --text:var(--c-text); --muted:var(--c-muted); --faint:var(--c-muted);
+    max-width:1100px; margin:40px auto 0; padding:26px 24px 30px; font-family:inherit; }
+  footer.sf-static p { margin:0 0 8px; font-weight:400; line-height:1.45; color:inherit; font-size:inherit; }
+  footer.sf-static ul { margin:0; color:inherit; font-weight:400; }
+  footer.sf-static ul li { padding:0; border:0; position:static; font-size:inherit; margin:0 0 7px; }
+  footer.sf-static ul li::before { content:none; }
+  /* footer:css:end */
+
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; }
+      main { padding: 100px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index-es.html">
+      <img src="icon.png" alt="KidBox">
+      <span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
+    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="nav-back" href="index-es.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al inicio
+      </a>
+      <details class="lang-menu"><summary aria-label="Idioma"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>ES</span></summary><div class="lang-list"><a href="support.html" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="support-en.html" hreflang="en" lang="en" data-lang="en">English</a><a href="support-es.html" hreflang="es" lang="es" data-lang="es" aria-current="true">Español</a><a href="support-fr.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></div></details>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-hero">
+      <span class="section-label">Ayuda</span>
+      <h1>Soporte</h1>
+      <p class="intro">¿Tienes un problema, una duda o una sugerencia? El soporte de KidBox está integrado en la app — sin correos ni formularios externos.</p>
+    </div>
+
+    <div class="hero-card">
+      <span class="hero-card-icon">💬</span>
+      <h2>Chat de soporte con IA</h2>
+      <p>Abre un chat directo con el asistente de IA de KidBox desde <strong>Ajustes</strong>. Describe el problema con tus palabras, adjunta hasta 5 capturas de pantalla para mostrar qué falla y el asistente entenderá lo que necesitas.</p>
+    </div>
+
+    <h2>Cómo funciona</h2>
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">✍️</div>
+        <div class="feature-text">
+          <strong>Descríbelo con tus palabras</strong>
+          <span>Sin formularios. Escribe simplemente lo que pasa — la IA entiende el contexto y ya sabe cómo ayudarte.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🖼️</div>
+        <div class="feature-text">
+          <strong>Adjunta hasta 5 capturas</strong>
+          <span>Muestra exactamente qué falla. Las capturas ayudan al asistente a identificar el problema sin largas explicaciones.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-text">
+          <strong>Detección automática de errores</strong>
+          <span>Si el asistente detecta un error, te pide permiso para adjuntar automáticamente los registros del sistema — así el equipo ya tiene todo lo necesario para investigar.</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📨</div>
+        <div class="feature-text">
+          <strong>Envíalo como ticket con un toque</strong>
+          <span>Al final del chat puedes enviar la conversación como ticket de soporte. Llega directamente al equipo, sin pasos intermedios.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="green-box">
+      <span>✅</span>
+      <p>Los registros del sistema se adjuntan <strong>solo con tu consentimiento explícito</strong> y nunca contienen datos personales ni el contenido de tu familia.</p>
+    </div>
+
+    <h2>Cómo abrir el chat de soporte</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Abre KidBox</strong><span>En tu iPhone o iPad</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Ve a Ajustes</strong><span>Toca el icono ⚙️ abajo a la derecha</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Toca «Soporte»</strong><span>Se abre el chat con el asistente de IA</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Describe el problema y envíalo</strong><span>El equipo recibe el ticket y responde lo antes posible</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <span>ℹ️</span>
+      <p>El chat de soporte está disponible para todos los usuarios de KidBox, también en el plan gratuito.</p>
+    </div>
+
+    <div class="contact-block" style="margin-top:40px;padding:24px 28px;background:var(--c-surface);border-radius:16px;border:1px solid var(--c-border);">
+      <p><strong>Responsable del tratamiento:</strong> Vittorio Scocca — KidBox<br>
+      <strong>Delegado de protección de datos (DPO):</strong> Vittorio Scocca<br>
+      <strong>Contacto:</strong> <a style="color:var(--c-accent)" href="mailto:passboxcontact@gmail.com">passboxcontact@gmail.com</a></p>
+      <p style="margin-top:12px">KidBox recoge datos personales, entre ellos contactos, ubicación, datos de salud e identificadores del dispositivo. Para la información completa consulta nuestra <a style="color:var(--c-accent)" href="privacy-es.html">Política de privacidad</a>.</p>
+    </div>
+  </main>
+
+  <!-- footer:start -->
+  <footer class="sf-static">
+    <div class="sf-notes"><p>Algunas funciones — el asistente de IA, el Plan de Alimentación y el Plan Fitness, los viajes con itinerario de IA y la lectura de documentos con IA — requieren el plan Pro o Max. El plan Free incluye 5 mensajes de prueba con el asistente.</p><p>Las funciones pueden cambiar y algunas podrían no estar disponibles en todas las plataformas.</p><p>App Store es una marca de Apple Inc. Google Play es una marca de Google LLC.</p></div>
+    <div class="sf-grid" role="navigation" aria-label="Mapa del sitio">
+      <div class="sf-col"><h3>Organización</h3><ul><li><a href="es/tools/calendario">Calendario</a></li><li><a href="es/tools/to-do">Tareas</a></li><li><a href="es/tools/lista-della-spesa">Lista de la compra</a></li><li><a href="es/tools/spese">Gastos</a></li><li><a href="es/tools/note">Notas</a></li></ul><h3>Documentos y seguridad</h3><ul><li><a href="es/tools/documenti">Documentos</a></li><li><a href="es/tools/password">Contraseñas</a></li><li><a href="es/tools/wallet">Wallet</a></li></ul></div>
+      <div class="sf-col"><h3>Familia</h3><ul><li><a href="es/tools/famiglia">Familia e invitaciones</a></li><li><a href="es/tools/chat">Chat</a></li><li><a href="es/tools/posizione">Ubicación</a></li><li><a href="es/tools/foto-e-video">Fotos y vídeos</a></li></ul><h3>Salud, hogar y coche</h3><ul><li><a href="es/tools/salute">Salud</a></li><li><a href="es/tools/casa">Hogar</a></li><li><a href="es/tools/veicoli">Vehículos</a></li><li><a href="es/tools/animali">Mascotas</a></li><li><a href="es/tools/">Todas las herramientas →</a></li></ul></div>
+      <div class="sf-col"><h3>Blog</h3><ul><li><a href="es/blog/">Todos los artículos →</a></li></ul></div>
+      <div class="sf-col"><h3>IA</h3><ul><li><a href="es/tools/assistente-ai">Asistente de IA</a></li><li><a href="es/tools/viaggi">Viajes</a></li></ul><h3>Descargar</h3><ul><li><a href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener">App Store</a></li><li><a href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener">Google Play</a></li></ul></div>
+      <div class="sf-col"><h3>KidBox</h3><ul><li><a href="index-es.html#prodotti">Productos</a></li><li><a href="index-es.html#ai">IA</a></li><li><a href="index-es.html#prezzi">Precios</a></li><li><a href="guide-es.html">Guía</a></li><li><a href="https://app.kidboxapp.com">Abrir la web app</a></li></ul><h3>Soporte y privacidad</h3><ul><li><a href="support-es.html">Soporte</a></li><li><a href="privacy-es.html">Privacidad</a></li><li><a href="terms-es.html">Términos del servicio</a></li><li><a href="data-deletion-es.html">Eliminación de datos</a></li><li><a href="#" data-consent-open>Preferencias de cookies</a></li></ul><h3>Síguenos</h3><ul><li><a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener">Facebook</a></li><li><a href="https://www.instagram.com/kidbox_app" target="_blank" rel="noopener">Instagram</a></li></ul></div>
+    </div>
+    <div class="sf-bottom">
+      <div class="sf-bottom-l"><span>Copyright © 2026 KidBox. Todos los derechos reservados. Hecho con ❤️ en Italia.</span><div class="sf-legal"><a href="privacy-es.html">Privacidad</a><a href="terms-es.html">Términos</a><a href="#" data-consent-open>Cookies</a><a href="data-deletion-es.html">Eliminación de datos</a></div></div>
+      <div class="sf-lang"><a data-lang-alt="it" hreflang="it" href="support.html">Italiano</a><a data-lang-alt="en" hreflang="en" href="support-en.html">English</a><strong aria-current="true">Español</strong><a data-lang-alt="fr" hreflang="fr" href="support-fr.html">Français</a></div>
+    </div>
+  </footer>
+  <!-- footer:end -->
+</body>
+</html>

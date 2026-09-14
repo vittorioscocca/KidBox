@@ -34,9 +34,30 @@
   var PIXEL_ID = "1335685042033994";
   var script = document.currentScript;
   var noBanner = script && script.hasAttribute("data-no-banner");
-  var en = (document.documentElement.lang || "it").slice(0, 2) === "en";
+  var lang = (document.documentElement.lang || "it").slice(0, 2);
 
-  var T = en
+  var TEXTS = {
+    es: {
+        title: "Cookies: estadísticas y publicidad",
+        body: "Usamos Google Analytics para contar las visitas y saber qué páginas son útiles, y el Meta Pixel para medir nuestros anuncios. Ambos instalan cookies, y ninguno se activa hasta que elijas.",
+        more: "Más información",
+        href: "/privacy-es#cookie",
+        none: "Rechazar",
+        stats: "Solo estadísticas",
+        all: "Aceptar todo",
+    },
+    fr: {
+        title: "Cookies : statistiques et publicité",
+        body: "Nous utilisons Google Analytics pour compter les visites et savoir quelles pages sont utiles, et le Meta Pixel pour mesurer nos publicités. Tous deux déposent des cookies, et aucun ne s'active tant que vous n'avez pas choisi.",
+        more: "En savoir plus",
+        href: "/privacy-fr#cookie",
+        none: "Refuser",
+        stats: "Statistiques uniquement",
+        all: "Tout accepter",
+    },
+  };
+
+  var T = TEXTS[lang] || (lang === "en"
     ? {
         title: "Cookies: statistics and advertising",
         body: "We use Google Analytics to count visits and see which pages help, and the Meta Pixel to measure our ads. Both set cookies, and neither runs until you choose.",
@@ -54,7 +75,7 @@
         none: "Rifiuta",
         stats: "Solo statistiche",
         all: "Accetta tutto",
-      };
+      });
 
   function read(key) {
     try {

@@ -683,3 +683,12 @@ TOOLS = [
         },
     },
 ]
+
+# Spagnolo e francese (Alexa esclusa: la skill è solo in italiano).
+from tools_data_es_fr import ES as _ES, FR as _FR  # noqa: E402
+
+for _t in TOOLS:
+    if _t["slug"] in _ES:
+        _t["es"] = _ES[_t["slug"]]
+    if _t["slug"] in _FR:
+        _t["fr"] = _FR[_t["slug"]]

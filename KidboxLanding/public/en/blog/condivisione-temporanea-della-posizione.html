@@ -17,6 +17,7 @@
   <link rel="icon" type="image/png" href="../../icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
+  <script src="/assets/lang.js" defer></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -227,6 +228,18 @@
   .final { text-align:center; background:var(--accent-l); border:1px solid rgba(232,131,58,.16); border-radius:var(--r-lg); padding:72px 24px; }
   .final h2 { font-size:clamp(1.9rem,4vw,2.8rem); font-weight:800; letter-spacing:-0.03em; max-width:18ch; margin:0 auto 14px; text-wrap:balance; }
   .final p { color:var(--muted); margin-bottom:30px; }
+  /* langmenu:css:start */
+  .lang-menu { position:relative; font-size:0.82rem; font-weight:600; }
+  .lang-menu summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:50px;
+    border:1px solid var(--border, var(--c-border)); color:var(--muted, var(--c-muted)); user-select:none; }
+  .lang-menu summary::-webkit-details-marker { display:none; }
+  .lang-menu summary:hover, .lang-menu[open] summary { color:var(--text, var(--c-text)); border-color:var(--accent, var(--c-accent)); }
+  .lang-list { position:absolute; right:0; top:calc(100% + 8px); min-width:150px; padding:6px; border-radius:14px; z-index:200;
+    background:var(--surface, var(--c-surface)); border:1px solid var(--border, var(--c-border)); box-shadow:0 12px 32px rgba(0,0,0,.18); }
+  .lang-list a { display:block; padding:8px 12px; border-radius:9px; color:var(--text, var(--c-text)); text-decoration:none; font-weight:500; white-space:nowrap; }
+  .lang-list a:hover { background:var(--border, var(--c-border)); }
+  .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
+  /* langmenu:css:end */
   /* footer:css:start */
   footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
   .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
@@ -243,8 +256,9 @@
   .sf-bottom-l { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; }
   .sf-legal { display:flex; flex-wrap:wrap; align-items:center; }
   .sf-legal a + a::before { content:"|"; color:var(--faint); margin:0 10px; }
+  .sf-lang { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-lang > * + *::before { content:"·"; color:var(--faint); margin:0 8px; }
   .sf-lang strong { color:var(--text); font-weight:600; }
-  .sf-lang span { color:var(--faint); margin:0 6px; }
   @media (max-width:900px) { .sf-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
   @media (max-width:600px) { .sf-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 18px; } }
   /* footer:css:end */
@@ -330,14 +344,14 @@
     <a class="nav-lnk nav-hide" href="../../guide-en.html">Guide</a>
     <a class="nav-lnk nav-hide" href="../../en/tools/">Tools</a>
     <a class="nav-lnk nav-hide" href="../../en/blog/">Blog</a>
-    <div class="nav-lang nav-hide"><a href="../../blog/condivisione-temporanea-della-posizione" style="color:var(--muted)" onclick="localStorage.setItem('kidbox_lang','it')">IT</a><span style="color:var(--muted)">|</span><a href="#" style="color:var(--accent)" onclick="localStorage.setItem('kidbox_lang','en')">EN</a></div>
+    <details class="lang-menu"><summary aria-label="Language"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>EN</span></summary><div class="lang-list"><a href="../../blog/condivisione-temporanea-della-posizione" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="../../en/blog/condivisione-temporanea-della-posizione" hreflang="en" lang="en" data-lang="en" aria-current="true">English</a><a href="../../index-es.html" hreflang="es" lang="es" data-lang="es">Español</a><a href="../../index-fr.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></div></details>
     <button class="theme-btn" id="tg" aria-label="Toggle theme">◐</button>
     <a class="nav-cta" href="../../index-en.html#scarica">Download free</a>
   </div>
 </nav>
 <div class="wrap">
 
-<div class="crumbs"><a href="../../index.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><a href="organizzazione-familiare">Family organisation</a><span>/</span><span class="cur">Sharing your location for just a few hours: when it helps and how to do it well</span></div>
+<div class="crumbs"><a href="../../index-en.html">Home</a><span>/</span><a href="./">Blog</a><span>/</span><a href="organizzazione-familiare">Family organisation</a><span>/</span><span class="cur">Sharing your location for just a few hours: when it helps and how to do it well</span></div>
 <article class="b-art">
   <header class="b-art-head rv">
     <h1>Sharing your location for just a few hours: when it helps and how to do it well</h1>
@@ -442,7 +456,7 @@
     </div>
     <div class="sf-bottom">
       <div class="sf-bottom-l"><span>Copyright © 2026 KidBox. All rights reserved. Made with ❤️ in Italy.</span><div class="sf-legal"><a href="../../privacy-en.html">Privacy</a><a href="../../terms-en.html">Terms</a><a href="#" data-consent-open>Cookies</a><a href="../../data-deletion-en.html">Data deletion</a></div></div>
-      <div class="sf-lang">Italy · <strong aria-current="true">English</strong><span>|</span><a data-lang-other href="../../blog/condivisione-temporanea-della-posizione">Italiano</a></div>
+      <div class="sf-lang"><a data-lang-alt="it" hreflang="it" href="../../blog/condivisione-temporanea-della-posizione">Italiano</a><strong aria-current="true">English</strong><a data-lang-alt="es" hreflang="es" href="../../index-es.html">Español</a><a data-lang-alt="fr" hreflang="fr" href="../../index-fr.html">Français</a></div>
     </div>
   </footer>
 </section>

@@ -27,8 +27,9 @@ PUBLIC = ROOT / "public"
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "scripts"))
 from blog_data import ARTICLES, CATEGORIES  # noqa: E402
-from build_tools import (SCRIPT, extract, final_block, hero, nav_for,  # noqa: E402
-                         parts_for, rebase_links)
+from build_tools import (SCRIPT, active_langs, alternates, extract, final_block,  # noqa: E402
+                         footer_langs, head_links, hero, nav_for, parts_for, rebase_links)
+from site_langs import BLOG_DIR, LANG_JS  # noqa: E402
 import build_tools  # noqa: E402
 
 SITE = "https://kidboxapp.com"
@@ -47,6 +48,7 @@ LANGS = {
         "all_in": "Tutti gli articoli su {cat} →", "min": "{n} min di lettura", "by": "Il team KidBox", "updated": "Aggiornato il",
         "related": "Da leggere dopo", "tools": "Gli strumenti di cui parla l'articolo", "in_cat": "Altri articoli su {cat}", "back": "Tutti gli articoli",
         "months": ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"],
+        "suffix": "Blog KidBox", "soon": "",
     },
     "en": {
         "src": "index-en.html", "dir": "en/blog", "other_dir": "blog", "tools_dir": "en/tools",
@@ -61,6 +63,39 @@ LANGS = {
         "all_in": "All articles on {cat} →", "min": "{n} min read", "by": "The KidBox team", "updated": "Updated",
         "related": "Read next", "tools": "The tools this article talks about", "in_cat": "More on {cat}", "back": "All articles",
         "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        "suffix": "KidBox Blog", "soon": "",
+    },
+    "es": {
+        "src": "index-es.html", "dir": "es/blog", "tools_dir": "es/tools",
+        "home": "Inicio", "blog": "Blog", "articles": "Artículos",
+        "index_title": "Blog de KidBox · Organización familiar, hogar, hijos y padres separados",
+        "index_desc": "Guías prácticas para organizar la familia: tareas del hogar, vencimientos de casa, calendario entre dos casas, lista de la compra, documentos de los hijos y rutinas que funcionan.",
+        "index_h1": "El blog de KidBox",
+        "index_p": "Guías prácticas para una familia que funciona mejor: repartir las tareas, guardar los documentos de los hijos, organizarse en dos casas, planificar comidas y compra — y quitarse cosas de la cabeza.",
+        "hero_eyebrow": "Descarga la app", "hero_h": "Toda la familia, <span class=\"g\">en una sola app.</span>",
+        "hero_p": "El organizador familiar para iPhone, Android y navegador, cifrado de extremo a extremo. Gratis para una familia de dos padres.",
+        "final_kicker": "Empieza hoy", "final_h": "Tu familia merece una app a su altura.", "final_p": "Gratis para empezar. Sin tarjeta.",
+        "all_in": "Todos los artículos sobre {cat} →", "min": "{n} min de lectura", "by": "El equipo de KidBox", "updated": "Actualizado el",
+        "related": "Para seguir leyendo", "tools": "Las herramientas de las que habla el artículo", "in_cat": "Más sobre {cat}", "back": "Todos los artículos",
+        "months": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"],
+        "suffix": "Blog de KidBox",
+        "soon": "Estamos traduciendo los artículos al español. Mientras tanto, puedes leerlos en inglés en <a href=\"../../en/blog/\">el blog de KidBox</a>.",
+    },
+    "fr": {
+        "src": "index-fr.html", "dir": "fr/blog", "tools_dir": "fr/tools",
+        "home": "Accueil", "blog": "Blog", "articles": "Articles",
+        "index_title": "Blog KidBox · Organisation familiale, maison, enfants et coparentalité",
+        "index_desc": "Des guides pratiques pour organiser la famille : tâches ménagères, échéances de la maison, calendrier entre deux foyers, liste de courses, documents des enfants et routines qui tiennent.",
+        "index_h1": "Le blog de KidBox",
+        "index_p": "Des guides pratiques pour une famille qui tourne mieux : répartir les tâches, garder les documents des enfants, s'organiser entre deux maisons, planifier repas et courses — et se libérer l'esprit.",
+        "hero_eyebrow": "Télécharger l'app", "hero_h": "Toute la famille, <span class=\"g\">dans une seule app.</span>",
+        "hero_p": "L'organiseur familial pour iPhone, Android et navigateur, chiffré de bout en bout. Gratuit pour une famille de deux parents.",
+        "final_kicker": "Commencez aujourd'hui", "final_h": "Votre famille mérite une app à la hauteur.", "final_p": "Gratuit pour commencer. Sans carte.",
+        "all_in": "Tous les articles sur {cat} →", "min": "{n} min de lecture", "by": "L'équipe KidBox", "updated": "Mis à jour le",
+        "related": "À lire ensuite", "tools": "Les outils dont parle l'article", "in_cat": "Plus sur {cat}", "back": "Tous les articles",
+        "months": ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."],
+        "suffix": "Blog KidBox",
+        "soon": "Nous traduisons les articles en français. En attendant, vous pouvez les lire en anglais sur <a href=\"../../en/blog/\">le blog KidBox</a>.",
     },
 }
 
@@ -179,9 +214,9 @@ def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website"):
     build_tools.LANGS = {lang: L, **{k: v for k, v in saved.items() if k != lang}}
     try:
         style, stores, footer, phone = parts_for(lang, depth)
-        other = ("../" * depth) + L["other_dir"] + "/" + canonical
-        nav = nav_for(lang, depth, L, other)
-        footer = re.sub(r'data-lang-other href="[^"]*"', f'data-lang-other href="{other}"', footer)
+        hrefs, real = alternates(lang, depth, BLOG_DIR, canonical, lambda l: blog_has(l, canonical))
+        nav = nav_for(lang, depth, L, hrefs)
+        footer = footer_langs(footer, hrefs)
     finally:
         build_tools.LANGS = saved
     style = style.replace(build_tools.TOOLS_CSS + "</style>", BLOG_CSS + "</style>")
@@ -198,14 +233,12 @@ def page(lang, title, desc, canonical, body, depth, ld=None, og_type="website"):
   <meta property="og:description" content="{html.escape(desc)}">
   <meta property="og:type" content="{og_type}">
   <meta property="og:image" content="{SITE}/icon.png">
-  <link rel="canonical" href="{SITE}/{L['dir']}/{canonical}">
-  <link rel="alternate" hreflang="it" href="{SITE}/{LANGS['it']['dir']}/{canonical}">
-  <link rel="alternate" hreflang="en" href="{SITE}/{LANGS['en']['dir']}/{canonical}">
-  <link rel="alternate" hreflang="x-default" href="{SITE}/{LANGS['it']['dir']}/{canonical}">
+{head_links(lang, real) if lang in real else '  <meta name="robots" content="noindex">'}
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="{prefix}icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
+  <script src="{LANG_JS}" defer></script>
 {style}
 </head>
 <body>
@@ -231,10 +264,23 @@ def card(a, lang):
   </a>"""
 
 
-def by_category():
+def blog_has(lang, canonical):
+    """La pagina `canonical` del blog esiste in `lang`? ('' = indice)."""
+    if lang not in LANGS:
+        return False
+    if canonical == "":
+        # Un indice ancora vuoto (lingua in traduzione) non è una gemella da indicizzare.
+        return lang in ("it", "en") or any(lang in a for a in ARTICLES)
+    if canonical in CATEGORIES:
+        return lang in CATEGORIES[canonical] and any(a["category"] == canonical and lang in a for a in ARTICLES)
+    return any(a["slug"] == canonical and lang in a for a in ARTICLES)
+
+
+def by_category(lang="it"):
     groups = {slug: [] for slug in CATEGORIES}
     for a in ARTICLES:
-        groups[a["category"]].append(a)
+        if lang in a:
+            groups[a["category"]].append(a)
     for slug in groups:
         groups[slug].sort(key=lambda a: a["date"], reverse=True)
     return groups
@@ -244,13 +290,13 @@ def build_index(lang):
     L = LANGS[lang]
     depth = L["dir"].count("/") + 1
     prefix = "../" * depth
-    groups = by_category()
+    groups = by_category(lang)
     sections = ""
     for cslug, C in CATEGORIES.items():
-        short, long_title, desc = C[lang]
         arts = groups[cslug]
-        if not arts:
+        if not arts or lang not in C:
             continue
+        short, long_title, desc = C[lang]
         cards = "".join(card(a, lang) for a in arts[:4])
         sections += f"""
 <section class="b-cat">
@@ -261,13 +307,13 @@ def build_index(lang):
   <p class="b-more"><a href="{cslug}">{html.escape(L['all_in'].format(cat=short))}</a></p>
 </section>"""
     body = f"""
-<div class="crumbs"><a href="{prefix}index.html">{L['home']}</a><span>/</span><span class="cur">{L['blog']}</span></div>
+<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><span class="cur">{L['blog']}</span></div>
 <div class="b-head rv">
   <h1>{L['index_h1']}</h1>
   <p>{L['index_p']}</p>
 </div>
 %HERO%
-{sections}"""
+{sections or f'<section class="b-cat"><p class="b-cat-desc">{L["soon"]}</p></section>'}"""
     out = PUBLIC / L["dir"] / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page(lang, L["index_title"], L["index_desc"], "", body, depth), encoding="utf-8")
@@ -281,7 +327,7 @@ def build_category(lang, cslug, arts):
     prefix = "../" * depth
     cards = "".join(card(a, lang) for a in arts)
     body = f"""
-<div class="crumbs"><a href="{prefix}index.html">{L['home']}</a><span>/</span><a href="./">{L['blog']}</a><span>/</span><span class="cur">{html.escape(short)}</span></div>
+<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><a href="./">{L['blog']}</a><span>/</span><span class="cur">{html.escape(short)}</span></div>
 <div class="b-head rv">
   <h1>{html.escape(long_title)}</h1>
   <p>{html.escape(desc)}</p>
@@ -290,7 +336,7 @@ def build_category(lang, cslug, arts):
 </div>
 <div style="height:24px"></div>
 %HERO%"""
-    title = f"{long_title} · Blog KidBox" if lang == "it" else f"{long_title} · KidBox Blog"
+    title = f"{long_title} · {L['suffix']}"
     out = PUBLIC / L["dir"] / f"{cslug}.html"
     out.write_text(page(lang, title, desc, cslug, body, depth), encoding="utf-8")
 
@@ -308,14 +354,14 @@ def build_article(lang, a):
     # così le pagine funzionano anche aperte da file e sotto un prefisso.
     body_html = re.sub(r'href="/([^"]*)"', lambda m: f'href="{prefix}{m.group(1)}"', body_html)
 
-    related = "".join(card(by_slug[s], lang) for s in a["related"] if s in by_slug)
+    related = "".join(card(by_slug[s], lang) for s in a["related"] if s in by_slug and lang in by_slug[s])
     tool_links = ""
     if a["tools"]:
         from tools_data import TOOLS
         tmap = {t["slug"]: t for t in TOOLS}
         chips = "".join(
             f'<a href="{prefix}{L["tools_dir"]}/{s}">{tmap[s]["icon"]} {html.escape(tmap[s][lang]["title"])}</a>'
-            for s in a["tools"] if s in tmap
+            for s in a["tools"] if s in tmap and lang in tmap[s]
         )
         tool_links = f'<section class="b-sec"><h2>{L["tools"]}</h2><div class="b-tools">{chips}</div></section>'
 
@@ -329,7 +375,7 @@ def build_article(lang, a):
         "mainEntityOfPage": f"{SITE}/{L['dir']}/{a['slug']}",
     }
     body = f"""
-<div class="crumbs"><a href="{prefix}index.html">{L['home']}</a><span>/</span><a href="./">{L['blog']}</a><span>/</span><a href="{a['category']}">{html.escape(short)}</a><span>/</span><span class="cur">{html.escape(A['title'])}</span></div>
+<div class="crumbs"><a href="{prefix}{L['src']}">{L['home']}</a><span>/</span><a href="./">{L['blog']}</a><span>/</span><a href="{a['category']}">{html.escape(short)}</a><span>/</span><span class="cur">{html.escape(A['title'])}</span></div>
 <article class="b-art">
   <header class="b-art-head rv">
     <h1>{html.escape(A['title'])}</h1>
@@ -347,7 +393,7 @@ def build_article(lang, a):
     <p class="b-more"><a href="{a['category']}">{html.escape(L['in_cat'].format(cat=short))} →</a> &nbsp; <a href="./">{L['back']} →</a></p>
   </section>
 </article>"""
-    title = f"{A['title']} · Blog KidBox" if lang == "it" else f"{A['title']} · KidBox Blog"
+    title = f"{A['title']} · {L['suffix']}"
     out = PUBLIC / L["dir"] / f"{a['slug']}.html"
     out.write_text(page(lang, title, A["desc"], a["slug"], body, depth, ld=ld, og_type="article"), encoding="utf-8")
 
@@ -364,28 +410,35 @@ def check():
         if a["category"] not in CATEGORIES:
             raise SystemExit(f"{a['slug']}: categoria sconosciuta {a['category']}")
         for lang in LANGS:
-            for m in re.finditer(r"\]\(/(?:en/)?blog/([^)]+)\)", a[lang]["body"]):
-                if m.group(1) not in slugs:
-                    raise SystemExit(f"{a['slug']} [{lang}]: link a un articolo inesistente {m.group(1)}")
+            if lang not in a:
+                continue
+            for m in re.finditer(r"\]\(/(?:(en|es|fr)/)?blog/([^)]+)\)", a[lang]["body"]):
+                target = next((x for x in ARTICLES if x["slug"] == m.group(2)), None)
+                if target is None:
+                    raise SystemExit(f"{a['slug']} [{lang}]: link a un articolo inesistente {m.group(2)}")
+                if (m.group(1) or "it") != lang or lang not in target:
+                    raise SystemExit(f"{a['slug']} [{lang}]: link a {m.group(0)} non tradotto o in un'altra lingua")
 
 
 def main():
     import build_footer
     build_footer.main()
     check()
-    groups = by_category()
-    for lang in LANGS:
+    langs = [l for l in active_langs() if l in LANGS]
+    for lang in langs:
+        groups = by_category(lang)
         (PUBLIC / LANGS[lang]["dir"]).mkdir(parents=True, exist_ok=True)
         for a in ARTICLES:
-            build_article(lang, a)
+            if lang in a:
+                build_article(lang, a)
         for cslug, arts in groups.items():
-            if arts:
+            if arts and lang in CATEGORIES[cslug]:
                 build_category(lang, cslug, arts)
         build_index(lang)
     n = len(ARTICLES)
     import build_sitemap
     build_sitemap.main()
-    print(f"{n} articoli × {len(LANGS)} lingue generati in public/ "
+    print(f"{n} articoli; per lingua: " + ", ".join(f"{l} {sum(1 for a in ARTICLES if l in a)}" for l in langs) + " "
           f"({sum(words(a['it']['body']) for a in ARTICLES)} parole IT)")
 
 

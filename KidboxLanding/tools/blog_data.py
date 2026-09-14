@@ -2121,3 +2121,63 @@ from blog_viaggi import ARTICLES as _VI  # noqa: E402
 from blog_animali_auto import ARTICLES as _AA  # noqa: E402
 
 ARTICLES += _GS + _CF + _OR + _PA + _PR + _SD + _VI + _AA
+
+# Nomi delle categorie in spagnolo e francese (gli articoli arrivano a lotti).
+_CAT_ES_FR = {
+    "casa-e-faccende": {
+        "es": ("Casa y tareas", "Casa y tareas del hogar: la guía completa",
+               "Repartir las tareas sin discusiones, llevar al día los vencimientos de casa y mantener la rutina doméstica con toda la familia a bordo."),
+        "fr": ("Maison et tâches", "Maison et tâches ménagères : le guide complet",
+               "Répartir les tâches sans disputes, suivre les échéances de la maison et faire tourner la routine avec toute la famille à bord."),
+    },
+    "genitori-separati": {
+        "es": ("Padres separados", "Coparentalidad: organizarse en dos casas sin fricciones",
+               "Calendario de custodia, gastos compartidos, documentos de los hijos y una comunicación que no degenera: la logística de la separación, bien hecha."),
+        "fr": ("Parents séparés", "Coparentalité : s'organiser entre deux maisons sans friction",
+               "Calendrier de garde, dépenses partagées, papiers des enfants et une communication qui reste courtoise : la logistique de la séparation, bien faite."),
+    },
+    "confronti": {
+        "es": ("Comparativas de apps", "Comparativas: qué app familiar elegir",
+               "Qué mirar de verdad al elegir un organizador familiar, y por qué un calendario compartido, un chat y notas sueltas no bastan."),
+        "fr": ("Comparatifs d'apps", "Comparatifs : quelle app familiale choisir",
+               "Ce qui compte vraiment pour choisir un organiseur familial, et pourquoi un calendrier partagé, un chat et des notes éparpillées ne suffisent pas."),
+    },
+    "organizzazione-familiare": {
+        "es": ("Organización familiar", "Organización familiar: la guía completa para un hogar que funciona",
+               "Documentos, salud, vencimientos, contraseñas y recuerdos de toda la familia en un solo lugar, al alcance de ambos padres."),
+        "fr": ("Organisation familiale", "Organisation familiale : le guide complet d'une maison qui tourne",
+               "Documents, santé, échéances, mots de passe et souvenirs de toute la famille au même endroit, accessibles aux deux parents."),
+    },
+    "pasti-e-spesa": {
+        "es": ("Comidas y compra", "Comidas y compra: planificar sin volverse loco",
+               "Una lista de la compra compartida, el menú de la semana y una nevera que nunca se vacía por sorpresa."),
+        "fr": ("Repas et courses", "Repas et courses : planifier sans perdre la tête",
+               "Une liste de courses partagée, le menu de la semaine et un frigo qui ne se vide jamais par surprise."),
+    },
+    "produttivita-in-casa": {
+        "es": ("Productividad en casa", "Organizarse en casa: rutinas, tiempo y claridad para los padres",
+               "Rutinas que se sostienen, recordatorios que llegan en el momento justo y menos carga mental para quien mantiene unida a la familia."),
+        "fr": ("Productivité à la maison", "S'organiser à la maison : routines, temps et clarté pour les parents",
+               "Des routines qui tiennent, des rappels qui arrivent au bon moment et moins de charge mentale pour celui qui fait tenir la famille."),
+    },
+    "salute-e-documenti": {
+        "es": ("Salud y documentos", "Salud y documentos: el historial médico y los papeles de toda la familia",
+               "Vacunas, visitas, informes, DNI y pasaportes: cómo tenerlos en orden, seguros y al alcance de ambos padres."),
+        "fr": ("Santé et papiers", "Santé et papiers : le dossier médical et les documents de toute la famille",
+               "Vaccins, consultations, comptes rendus, cartes d'identité et passeports : les garder en ordre, en sécurité et à portée des deux parents."),
+    },
+    "viaggi-in-famiglia": {
+        "es": ("Viajes en familia", "Viajes en familia: organizar vacaciones que gusten a todos",
+               "Itinerarios pensados para niños, documentos y maletas, presupuesto y gastos de viaje, de la reserva a la vuelta."),
+        "fr": ("Voyages en famille", "Voyages en famille : organiser des vacances qui plaisent à tous",
+               "Itinéraires adaptés aux enfants, papiers et valises, budget et frais de voyage, de la réservation au retour."),
+    },
+    "animali-e-auto": {
+        "es": ("Mascotas y coche", "Mascotas y coche: los vencimientos de casa que no están en casa",
+               "La cartilla del perro y del gato, quién se ocupa de ellos, impuesto, seguro, ITV y mantenimiento del coche familiar."),
+        "fr": ("Animaux et voiture", "Animaux et voiture : les échéances de la maison qui sont hors de la maison",
+               "Le carnet de santé du chien et du chat, qui s'en occupe, assurance, contrôle technique et entretien de la voiture familiale."),
+    },
+}
+for _slug, _names in _CAT_ES_FR.items():
+    CATEGORIES[_slug].update(_names)

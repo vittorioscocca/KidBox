@@ -24,8 +24,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 sys.path.insert(0, str(ROOT / "tools"))
-from blog_data import CATEGORIES  # noqa: E402
+from blog_data import ARTICLES, CATEGORIES  # noqa: E402
 from tools_data import TOOLS  # noqa: E402
+from site_langs import (BLOG_DIR, HOME, LABEL, LANG_JS, LANG_MENU_CSS, LANGS, STATIC_BASES,  # noqa: E402
+                        TOOLS_DIR, clean_url, lang_menu, static_file)
 
 YEAR = 2026
 FACEBOOK = "https://www.facebook.com/profile.php?id=61574265148948"
@@ -92,6 +94,60 @@ L = {
         "region": "Italy", "other_label": "Italiano", "other_href": "index.html",
         "this_label": "English",
     },
+    "es": {
+        "src": "index-es.html", "tools": "es/tools", "blog": "es/blog",
+        "notes": [
+            "Algunas funciones — el asistente de IA, el Plan de Alimentación y el Plan Fitness, los viajes con itinerario de IA y la lectura de documentos con IA — requieren el plan Pro o Max. El plan Free incluye 5 mensajes de prueba con el asistente.",
+            "Las funciones pueden cambiar y algunas podrían no estar disponibles en todas las plataformas.",
+            "App Store es una marca de Apple Inc. Google Play es una marca de Google LLC.",
+        ],
+        "cols": [
+            ("Organización", ["calendario", "to-do", "lista-della-spesa", "spese", "note"],
+             "Documentos y seguridad", ["documenti", "password", "wallet"]),
+            ("Familia", ["famiglia", "chat", "posizione", "foto-e-video"],
+             "Salud, hogar y coche", ["salute", "casa", "veicoli", "animali"]),
+            ("IA", ["assistente-ai", "viaggi"], None, None),
+        ],
+        "all_tools": "Todas las herramientas", "blog_h": "Blog", "all_blog": "Todos los artículos",
+        "kidbox_h": "KidBox",
+        "kidbox": [("#prodotti", "Productos"), ("#ai", "IA"), ("#prezzi", "Precios"),
+                   ("guide-es.html", "Guía"), (WEBAPP, "Abrir la web app")],
+        "get_h": "Descargar", "ios": "App Store", "android": "Google Play",
+        "help_h": "Soporte y privacidad",
+        "help": [("support-es.html", "Soporte"), ("privacy-es.html", "Privacidad"), ("terms-es.html", "Términos del servicio"),
+                 ("data-deletion-es.html", "Eliminación de datos"), ("#consent", "Preferencias de cookies")],
+        "social_h": "Síguenos",
+        "copy": f"Copyright © {YEAR} KidBox. Todos los derechos reservados. Hecho con ❤️ en Italia.",
+        "legal": [("privacy-es.html", "Privacidad"), ("terms-es.html", "Términos"), ("#consent", "Cookies"),
+                  ("data-deletion-es.html", "Eliminación de datos")],
+    },
+    "fr": {
+        "src": "index-fr.html", "tools": "fr/tools", "blog": "fr/blog",
+        "notes": [
+            "Certaines fonctionnalités — l'assistant IA, le Plan alimentaire et le Plan fitness, les voyages avec itinéraire IA et la lecture des documents par l'IA — nécessitent l'abonnement Pro ou Max. L'offre Free comprend 5 messages d'essai avec l'assistant.",
+            "Les fonctionnalités peuvent évoluer et certaines peuvent ne pas être disponibles sur toutes les plateformes.",
+            "App Store est une marque d'Apple Inc. Google Play est une marque de Google LLC.",
+        ],
+        "cols": [
+            ("Organisation", ["calendario", "to-do", "lista-della-spesa", "spese", "note"],
+             "Documents et sécurité", ["documenti", "password", "wallet"]),
+            ("Famille", ["famiglia", "chat", "posizione", "foto-e-video"],
+             "Santé, maison et voiture", ["salute", "casa", "veicoli", "animali"]),
+            ("IA", ["assistente-ai", "viaggi"], None, None),
+        ],
+        "all_tools": "Tous les outils", "blog_h": "Blog", "all_blog": "Tous les articles",
+        "kidbox_h": "KidBox",
+        "kidbox": [("#prodotti", "Produits"), ("#ai", "IA"), ("#prezzi", "Tarifs"),
+                   ("guide-fr.html", "Guide"), (WEBAPP, "Ouvrir l'app web")],
+        "get_h": "Télécharger", "ios": "App Store", "android": "Google Play",
+        "help_h": "Assistance et confidentialité",
+        "help": [("support-fr.html", "Assistance"), ("privacy-fr.html", "Confidentialité"), ("terms-fr.html", "Conditions d'utilisation"),
+                 ("data-deletion-fr.html", "Suppression des données"), ("#consent", "Préférences cookies")],
+        "social_h": "Suivez-nous",
+        "copy": f"Copyright © {YEAR} KidBox. Tous droits réservés. Fait avec ❤️ en Italie.",
+        "legal": [("privacy-fr.html", "Confidentialité"), ("terms-fr.html", "Conditions"), ("#consent", "Cookies"),
+                  ("data-deletion-fr.html", "Suppression des données")],
+    },
 }
 
 # Nomi brevi degli strumenti per il footer (i titoli delle schede sono lunghi).
@@ -106,6 +162,16 @@ SHORT = {
            "famiglia": "Family and invites", "chat": "Chat", "posizione": "Location", "foto-e-video": "Photos and videos",
            "salute": "Health", "casa": "Home", "veicoli": "Vehicles", "animali": "Pets",
            "assistente-ai": "AI assistant", "viaggi": "Trips", "alexa": "Alexa"},
+    "es": {"calendario": "Calendario", "to-do": "Tareas", "lista-della-spesa": "Lista de la compra",
+           "spese": "Gastos", "note": "Notas", "documenti": "Documentos", "password": "Contraseñas", "wallet": "Wallet",
+           "famiglia": "Familia e invitaciones", "chat": "Chat", "posizione": "Ubicación", "foto-e-video": "Fotos y vídeos",
+           "salute": "Salud", "casa": "Hogar", "veicoli": "Vehículos", "animali": "Mascotas",
+           "assistente-ai": "Asistente de IA", "viaggi": "Viajes", "alexa": "Alexa"},
+    "fr": {"calendario": "Calendrier", "to-do": "Tâches", "lista-della-spesa": "Liste de courses",
+           "spese": "Dépenses", "note": "Notes", "documenti": "Documents", "password": "Mots de passe", "wallet": "Wallet",
+           "famiglia": "Famille et invitations", "chat": "Chat", "posizione": "Localisation", "foto-e-video": "Photos et vidéos",
+           "salute": "Santé", "casa": "Maison", "veicoli": "Véhicules", "animali": "Animaux",
+           "assistente-ai": "Assistant IA", "viaggi": "Voyages", "alexa": "Alexa"},
 }
 
 CSS = """
@@ -140,7 +206,7 @@ def link(href, label, extra=""):
 
 
 def ul(items):
-    return "<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>"
+    return "<ul>" + "".join(f"<li>{i}</li>" for i in items if i) + "</ul>"
 
 
 def store_links(src):
@@ -149,11 +215,16 @@ def store_links(src):
     return html.unescape(ios), html.unescape(android)
 
 
+def available(lang):
+    """Lingue la cui home esiste già (ES e FR arrivano a lotti)."""
+    return (PUBLIC / HOME[lang]).exists()
+
+
 def footer(lang):
     C = L[lang]
-    src = (PUBLIC / C["src"]).read_text(encoding="utf-8")
+    src = (PUBLIC / HOME["it"]).read_text(encoding="utf-8")
     ios, android = store_links(src)
-    slugs = {t["slug"] for t in TOOLS}
+    slugs = {t["slug"] for t in TOOLS if lang in t}
     tool = lambda s: link(f"{C['tools']}/{s}", SHORT[lang][s]) if s in slugs else ""
 
     cols = []
@@ -167,55 +238,115 @@ def footer(lang):
         cols.append(body)
 
     blog = f"<h3>{C['blog_h']}</h3>" + ul(
-        [link(f"{C['blog']}/{slug}", cat[lang][0]) for slug, cat in CATEGORIES.items()]
+        [link(f"{C['blog']}/{slug}", cat[lang][0]) for slug, cat in CATEGORIES.items()
+         if lang in cat and any(a["category"] == slug and lang in a for a in ARTICLES)]
         + [link(f"{C['blog']}/", C["all_blog"] + " →")])
     info = (f"<h3>{C['kidbox_h']}</h3>" + ul([link(h, t) for h, t in C["kidbox"]])
             + f"<h3>{C['help_h']}</h3>" + ul([link(h, t) for h, t in C["help"]])
             + f"<h3>{C['social_h']}</h3>" + ul([link(FACEBOOK, "Facebook"), link(INSTAGRAM, "Instagram")]))
-    # Ordine delle colonne: strumenti (3), blog, KidBox/supporto.
     grid = "".join(f'\n      <div class="sf-col">{c}</div>' for c in cols[:2] + [blog, cols[2], info])
 
     notes = "".join(f"<p>{html.escape(n)}</p>" for n in C["notes"])
     legal = "".join(link(h, t) for h, t in C["legal"])
-    lang_sw = (f'<strong aria-current="true">{C["this_label"]}</strong><span>|</span>'
-               f'<a data-lang-other href="{C["other_href"]}">{C["other_label"]}</a>')
+    # Le lingue: href di default alle home, i generatori li puntano alla gemella.
+    langs = "".join(
+        (f'<strong aria-current="true">{LABEL[l]}</strong>' if l == lang
+         else f'<a data-lang-alt="{l}" hreflang="{l}" href="{HOME[l]}">{LABEL[l]}</a>')
+        for l in LANGS)
+    aria = {"it": "Mappa del sito", "en": "Site map", "es": "Mapa del sitio", "fr": "Plan du site"}[lang]
     return f"""<!-- footer:start -->
   <footer>
     <div class="sf-notes">{notes}</div>
-    <div class="sf-grid" role="navigation" aria-label="{'Mappa del sito' if lang == 'it' else 'Site map'}">{grid}
+    <div class="sf-grid" role="navigation" aria-label="{aria}">{grid}
     </div>
     <div class="sf-bottom">
       <div class="sf-bottom-l"><span>{html.escape(C['copy'])}</span><div class="sf-legal">{legal}</div></div>
-      <div class="sf-lang">{C['region']} · {lang_sw}</div>
+      <div class="sf-lang">{langs}</div>
     </div>
   </footer>
   <!-- footer:end -->"""
 
 
-def apply(lang):
-    f = PUBLIC / L[lang]["src"]
+CSS = CSS.replace("""  .sf-lang strong { color:var(--text); font-weight:600; }
+  .sf-lang span { color:var(--faint); margin:0 6px; }""", """  .sf-lang { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-lang > * + *::before { content:"·"; color:var(--faint); margin:0 8px; }
+  .sf-lang strong { color:var(--text); font-weight:600; }""")
+
+
+def set_lang_hrefs(block, hrefs):
+    """Punta i link di lingua (menu e footer) alle pagine gemelle."""
+    for l, h in hrefs.items():
+        block = re.sub(rf'(data-lang-alt="{l}" hreflang="{l}" href=")[^"]*"', lambda m: m.group(1) + h + '"', block)
+    return block
+
+
+def head_alternates(t, paths):
+    """Canonical e hreflang nell'<head>: `paths` lingua → percorso dalla radice."""
+    site = "https://kidboxapp.com/"
+    t = re.sub(r'\n  <link rel="alternate" hreflang="[^"]+" href="[^"]*">', "", t)
+    alts = "".join(f'\n  <link rel="alternate" hreflang="{l}" href="{site}{clean_url(p)}">' for l, p in paths.items())
+    alts += f'\n  <link rel="alternate" hreflang="x-default" href="{site}{clean_url(paths["it"])}">'
+    t, n = re.subn(r'(\n  <link rel="canonical" href="[^"]*">)', lambda m: m.group(1) + alts, t, count=1)
+    assert n == 1, "canonical mancante"
+    return t
+
+
+def put_block(t, start, end, block, fallback_re, what, name):
+    if start in t:
+        return re.sub(re.escape(start) + r".*?" + re.escape(end), lambda m: block, t, flags=re.S)
+    t, n = re.subn(fallback_re, lambda m: block, t, count=1, flags=re.S)
+    assert n == 1, f"{what} non trovato in {name}"
+    return t
+
+
+def chrome(name, lang, hrefs, real, static=False):
+    """Footer, menu delle lingue, CSS, lang.js e hreflang di una pagina scritta a mano."""
+    f = PUBLIC / name
     t = f.read_text(encoding="utf-8")
+    home = HOME[lang]
+    # footer
     block = footer(lang)
-    if "<!-- footer:start -->" in t:
-        t = re.sub(r"<!-- footer:start -->.*?<!-- footer:end -->", lambda m: block, t, flags=re.S)
+    if static:
+        block = block.replace("<footer>", '<footer class="sf-static">', 1)
+        block = re.sub(r'href="#([a-z]+)"', lambda m: f'href="{home}#{m.group(1)}"', block)
+    block = set_lang_hrefs(block, hrefs)
+    t = put_block(t, "<!-- footer:start -->", "<!-- footer:end -->", block, r"<footer>.*?</footer>", "footer", name)
+    # menu delle lingue nella barra in alto
+    menu = lang_menu(lang, hrefs)
+    if "<details class=\"lang-menu\">" in t:
+        t = re.sub(r'<details class="lang-menu">.*?</details>', lambda m: menu, t, count=1, flags=re.S)
+    elif static:
+        t, n = re.subn(r'<div style="display:flex;align-items:center;gap:6px;font-size:0\.82rem;font-weight:600;">\s*<a [^>]*kidbox_lang.*?</div>',
+                       lambda m: menu, t, count=1, flags=re.S)
+        assert n == 1, f"selettore lingua non trovato in {name}"
     else:
-        t, n = re.subn(r"<footer>.*?</footer>", lambda m: block, t, count=1, flags=re.S)
-        assert n == 1, f"footer non trovato in {f}"
+        t, n = re.subn(r'<div class="nav-lang nav-hide">.*?</div>', lambda m: menu, t, count=1, flags=re.S)
+        assert n == 1, f"selettore lingua non trovato in {name}"
+    # CSS
+    css = (STATIC_CSS if static else CSS)
     if "/* footer:css:start */" in t:
-        t = re.sub(r"\n  /\* footer:css:start \*/.*?/\* footer:css:end \*/", lambda m: CSS, t, flags=re.S)
+        t = re.sub(r"\n  /\* footer:css:start \*/.*?/\* footer:css:end \*/", lambda m: css, t, flags=re.S)
+    elif static:
+        t, n = OLD_STATIC_CSS.subn(lambda m: css, t, count=1)
+        assert n == 1, f"CSS del footer non trovato in {name}"
     else:
-        old = re.compile(r"\n  footer \{[^\n]*\n(?:  \.foot[^\n]*\n)+")
-        t, n = old.subn(lambda m: CSS + "\n", t, count=1)
-        assert n == 1, f"CSS del footer non trovato in {f}"
+        t, n = re.compile(r"\n  footer \{[^\n]*\n(?:  \.foot[^\n]*\n)+").subn(lambda m: css + "\n", t, count=1)
+        assert n == 1, f"CSS del footer non trovato in {name}"
+    if "/* langmenu:css:start */" in t:
+        t = re.sub(r"\n  /\* langmenu:css:start \*/.*?/\* langmenu:css:end \*/", lambda m: LANG_MENU_CSS, t, flags=re.S)
+    else:
+        t = t.replace("\n  /* footer:css:start */", LANG_MENU_CSS + "\n  /* footer:css:start */", 1)
+    # script del menu
+    if LANG_JS not in t:
+        t, n = re.subn(r'(<script src="/assets/consent\.js" defer(?: data-no-banner)?></script>)',
+                       lambda m: m.group(1) + f'\n  <script src="{LANG_JS}" defer></script>', t, count=1)
+        assert n == 1, f"consent.js non trovato in {name}"
+    # hreflang
+    t = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="https://kidboxapp.com/{clean_url(name)}">', t, count=1)
+    t = head_alternates(t, real)
+    t = re.sub(r'<html lang="[a-z]+">', f'<html lang="{lang}">', t, count=1)
     f.write_text(t, encoding="utf-8")
 
-
-# Pagine statiche scritte a mano: (italiano, inglese). Hanno un loro <style>
-# con variabili --c-*, quindi il footer riceve la classe sf-static che mappa le
-# variabili e neutralizza le regole globali di p, ul e li delle pagine legali.
-STATIC = [("guide.html", "guide-en.html"), ("support.html", "support-en.html"),
-          ("privacy.html", "privacy-en.html"), ("terms.html", "terms-en.html"),
-          ("data-deletion.html", "data-deletion-en.html")]
 
 STATIC_CSS = CSS.replace("  /* footer:css:end */", """  footer.sf-static { --border:var(--c-border); --text:var(--c-text); --muted:var(--c-muted); --faint:var(--c-muted);
     max-width:1100px; margin:40px auto 0; padding:26px 24px 30px; font-family:inherit; }
@@ -230,33 +361,20 @@ OLD_STATIC_CSS = re.compile(
     r"\n[ \t]*footer a \{[^}]*\}\n[ \t]*footer a:hover \{[^}]*\}")
 
 
-def apply_static(name, lang, twin):
-    f = PUBLIC / name
-    t = f.read_text(encoding="utf-8")
-    home = L[lang]["src"]
-    block = footer(lang).replace("<footer>", '<footer class="sf-static">', 1)
-    block = re.sub(r'href="#([a-z]+)"', lambda m: f'href="{home}#{m.group(1)}"', block)
-    block = re.sub(r'data-lang-other href="[^"]*"', f'data-lang-other href="{twin}"', block)
-    if "<!-- footer:start -->" in t:
-        t = re.sub(r"<!-- footer:start -->.*?<!-- footer:end -->", lambda m: block, t, flags=re.S)
-    else:
-        t, n = re.subn(r"<footer>.*?</footer>", lambda m: block, t, count=1, flags=re.S)
-        assert n == 1, f"footer non trovato in {f}"
-    if "/* footer:css:start */" in t:
-        t = re.sub(r"\n  /\* footer:css:start \*/.*?/\* footer:css:end \*/", lambda m: STATIC_CSS, t, flags=re.S)
-    else:
-        t, n = OLD_STATIC_CSS.subn(lambda m: STATIC_CSS, t, count=1)
-        assert n == 1, f"CSS del footer non trovato in {f}"
-    f.write_text(t, encoding="utf-8")
-
-
 def main():
-    for lang in L:
-        apply(lang)
-    for it, en in STATIC:
-        apply_static(it, "it", en)
-        apply_static(en, "en", it)
-    print(f"footer: home IT/EN e {len(STATIC) * 2} pagine statiche aggiornate")
+    homes = {l: HOME[l] if available(l) else HOME["en"] for l in LANGS}
+    real_homes = {l: HOME[l] for l in LANGS if available(l)}
+    done = 0
+    for lang in real_homes:
+        chrome(HOME[lang], lang, homes, real_homes)
+        done += 1
+    for base in STATIC_BASES:
+        real = {l: static_file(base, l) for l in LANGS if (PUBLIC / static_file(base, l)).exists()}
+        hrefs = {l: real.get(l, homes[l]) for l in LANGS}
+        for lang in real:
+            chrome(static_file(base, lang), lang, hrefs, real, static=True)
+            done += 1
+    print(f"footer e menu lingue: {done} pagine scritte a mano aggiornate")
 
 
 if __name__ == "__main__":

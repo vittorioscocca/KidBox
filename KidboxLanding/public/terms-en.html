@@ -7,10 +7,13 @@
   <link rel="canonical" href="https://kidboxapp.com/terms-en">
   <link rel="alternate" hreflang="it" href="https://kidboxapp.com/terms">
   <link rel="alternate" hreflang="en" href="https://kidboxapp.com/terms-en">
+  <link rel="alternate" hreflang="es" href="https://kidboxapp.com/terms-es">
+  <link rel="alternate" hreflang="fr" href="https://kidboxapp.com/terms-fr">
   <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/terms">
   <link rel="icon" type="image/png" href="icon.png">
   <!-- Google Analytics e Meta Pixel: partono solo dopo il consenso, vedi assets/consent.js -->
   <script src="/assets/consent.js" defer></script>
+  <script src="/assets/lang.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
   <style>
@@ -119,6 +122,18 @@
     .contact-block a { color: var(--c-accent); text-decoration: none; font-weight: 500; }
     .contact-block a:hover { color: var(--c-accent2); }
 
+  /* langmenu:css:start */
+  .lang-menu { position:relative; font-size:0.82rem; font-weight:600; }
+  .lang-menu summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:50px;
+    border:1px solid var(--border, var(--c-border)); color:var(--muted, var(--c-muted)); user-select:none; }
+  .lang-menu summary::-webkit-details-marker { display:none; }
+  .lang-menu summary:hover, .lang-menu[open] summary { color:var(--text, var(--c-text)); border-color:var(--accent, var(--c-accent)); }
+  .lang-list { position:absolute; right:0; top:calc(100% + 8px); min-width:150px; padding:6px; border-radius:14px; z-index:200;
+    background:var(--surface, var(--c-surface)); border:1px solid var(--border, var(--c-border)); box-shadow:0 12px 32px rgba(0,0,0,.18); }
+  .lang-list a { display:block; padding:8px 12px; border-radius:9px; color:var(--text, var(--c-text)); text-decoration:none; font-weight:500; white-space:nowrap; }
+  .lang-list a:hover { background:var(--border, var(--c-border)); }
+  .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
+  /* langmenu:css:end */
   /* footer:css:start */
   footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
   .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
@@ -135,8 +150,9 @@
   .sf-bottom-l { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; }
   .sf-legal { display:flex; flex-wrap:wrap; align-items:center; }
   .sf-legal a + a::before { content:"|"; color:var(--faint); margin:0 10px; }
+  .sf-lang { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-lang > * + *::before { content:"·"; color:var(--faint); margin:0 8px; }
   .sf-lang strong { color:var(--text); font-weight:600; }
-  .sf-lang span { color:var(--faint); margin:0 6px; }
   @media (max-width:900px) { .sf-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
   @media (max-width:600px) { .sf-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 18px; } }
   footer.sf-static { --border:var(--c-border); --text:var(--c-text); --muted:var(--c-muted); --faint:var(--c-muted);
@@ -165,11 +181,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         Back to home
       </a>
-      <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;">
-        <a href="terms.html" onclick="localStorage.setItem('kidbox_lang','it')" style="color:var(--c-muted);text-decoration:none;">IT</a>
-        <span style="color:var(--c-muted)">|</span>
-        <a href="terms-en.html" onclick="localStorage.setItem('kidbox_lang','en')" style="color:var(--c-accent);text-decoration:none;">EN</a>
-      </div>
+      <details class="lang-menu"><summary aria-label="Language"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>EN</span></summary><div class="lang-list"><a href="terms.html" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="terms-en.html" hreflang="en" lang="en" data-lang="en" aria-current="true">English</a><a href="terms-es.html" hreflang="es" lang="es" data-lang="es">Español</a><a href="terms-fr.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></div></details>
     </div>
   </nav>
 
@@ -262,7 +274,7 @@
     </div>
     <div class="sf-bottom">
       <div class="sf-bottom-l"><span>Copyright © 2026 KidBox. All rights reserved. Made with ❤️ in Italy.</span><div class="sf-legal"><a href="privacy-en.html">Privacy</a><a href="terms-en.html">Terms</a><a href="#" data-consent-open>Cookies</a><a href="data-deletion-en.html">Data deletion</a></div></div>
-      <div class="sf-lang">Italy · <strong aria-current="true">English</strong><span>|</span><a data-lang-other href="terms.html">Italiano</a></div>
+      <div class="sf-lang"><a data-lang-alt="it" hreflang="it" href="terms.html">Italiano</a><strong aria-current="true">English</strong><a data-lang-alt="es" hreflang="es" href="terms-es.html">Español</a><a data-lang-alt="fr" hreflang="fr" href="terms-fr.html">Français</a></div>
     </div>
   </footer>
   <!-- footer:end -->

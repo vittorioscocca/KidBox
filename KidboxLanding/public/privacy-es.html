@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de privacidad · KidBox</title>
+  <link rel="canonical" href="https://kidboxapp.com/privacy-es">
+  <link rel="alternate" hreflang="it" href="https://kidboxapp.com/privacy">
+  <link rel="alternate" hreflang="en" href="https://kidboxapp.com/privacy-en">
+  <link rel="alternate" hreflang="es" href="https://kidboxapp.com/privacy-es">
+  <link rel="alternate" hreflang="fr" href="https://kidboxapp.com/privacy-fr">
+  <link rel="alternate" hreflang="x-default" href="https://kidboxapp.com/privacy">
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Google Analytics e Meta Pixel: partono solo dopo il consenso, vedi assets/consent.js -->
+  <script src="/assets/consent.js" defer></script>
+  <script src="/assets/lang.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-bg: #fdf7f0; --c-bg2: #f5ebe0; --c-surface: #ffffff;
+      --c-border: rgba(180,120,60,0.12); --c-text: #1c1008;
+      --c-muted: rgba(28,16,8,0.5); --c-accent: #e8833a; --c-accent2: #c96a20;
+      --c-accent-l: #fdf0e4; --shadow: 0 2px 20px rgba(180,100,30,0.08);
+      --radius-lg: 24px; --radius-md: 16px; --c-nav-bg: rgba(253,247,240,0.92);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-bg: #18110a; --c-bg2: #221810; --c-surface: #2a1e14;
+        --c-border: rgba(255,180,100,0.1); --c-text: #f5ede3;
+        --c-muted: rgba(245,237,227,0.5); --c-accent: #f09050; --c-accent2: #e8833a;
+        --c-accent-l: rgba(240,144,80,0.12); --shadow: 0 2px 20px rgba(0,0,0,0.3);
+        --c-nav-bg: rgba(24,17,10,0.92);
+      }
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--c-bg); color: var(--c-text); line-height: 1.7; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: var(--c-nav-bg); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: var(--c-text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo img { width: 32px; height: 32px; border-radius: 8px; }
+    .nav-logo-name { display: inline; font-size: 0; }
+    .nav-logo-name span { font-size: 1.2rem; }
+    .nav-logo-name span.accent { color: var(--c-accent); }
+    .nav-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 500; color: var(--c-muted);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-back:hover { color: var(--c-accent); }
+
+    main { max-width: 740px; margin: 0 auto; padding: 112px 24px 80px; }
+
+    .page-hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--c-border);
+      margin-bottom: 48px;
+    }
+    .section-label {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--c-accent); margin-bottom: 12px;
+    }
+    h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .updated {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--c-muted);
+      background: var(--c-accent-l); padding: 5px 14px;
+      border-radius: 50px; border: 1px solid rgba(232,131,58,0.2);
+    }
+
+    h2 {
+      font-size: 1.1rem; font-weight: 700;
+      margin: 40px 0 12px; color: var(--c-text);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2::before {
+      content: ''; display: block; width: 3px; height: 18px;
+      background: var(--c-accent); border-radius: 2px; flex-shrink: 0;
+    }
+    p { color: var(--c-muted); font-weight: 300; margin-bottom: 14px; line-height: 1.75; }
+    ul { color: var(--c-muted); font-weight: 300; padding-left: 0; margin-bottom: 14px; list-style: none; }
+    ul li {
+      padding: 7px 0 7px 20px; position: relative;
+      border-bottom: 1px solid var(--c-border); font-size: 0.95rem;
+    }
+    ul li:last-child { border-bottom: none; }
+    ul li::before { content: '→'; position: absolute; left: 0; color: var(--c-accent); font-weight: 600; font-size: 0.8rem; top: 9px; }
+
+    .highlight-box {
+      background: var(--c-accent-l);
+      border: 1px solid rgba(232,131,58,0.2);
+      border-left: 3px solid var(--c-accent);
+      border-radius: var(--radius-md);
+      padding: 20px 24px; margin: 24px 0;
+    }
+    .highlight-box p { margin: 0; color: var(--c-text); font-weight: 400; }
+
+    .contact-block {
+      margin-top: 48px; padding: 28px 32px;
+      background: var(--c-surface); border-radius: var(--radius-md);
+      border: 1px solid var(--c-border); box-shadow: var(--shadow);
+    }
+    .contact-block h2 { margin-top: 0; }
+    .contact-block a { color: var(--c-accent); text-decoration: none; font-weight: 500; }
+    .contact-block a:hover { color: var(--c-accent2); }
+
+  /* langmenu:css:start */
+  .lang-menu { position:relative; font-size:0.82rem; font-weight:600; }
+  .lang-menu summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:50px;
+    border:1px solid var(--border, var(--c-border)); color:var(--muted, var(--c-muted)); user-select:none; }
+  .lang-menu summary::-webkit-details-marker { display:none; }
+  .lang-menu summary:hover, .lang-menu[open] summary { color:var(--text, var(--c-text)); border-color:var(--accent, var(--c-accent)); }
+  .lang-list { position:absolute; right:0; top:calc(100% + 8px); min-width:150px; padding:6px; border-radius:14px; z-index:200;
+    background:var(--surface, var(--c-surface)); border:1px solid var(--border, var(--c-border)); box-shadow:0 12px 32px rgba(0,0,0,.18); }
+  .lang-list a { display:block; padding:8px 12px; border-radius:9px; color:var(--text, var(--c-text)); text-decoration:none; font-weight:500; white-space:nowrap; }
+  .lang-list a:hover { background:var(--border, var(--c-border)); }
+  .lang-list a[aria-current] { color:var(--accent, var(--c-accent)); font-weight:700; }
+  /* langmenu:css:end */
+  /* footer:css:start */
+  footer { border-top:1px solid var(--border); margin-top:70px; padding:26px 0 30px; font-size:0.78rem; color:var(--muted); line-height:1.45; }
+  .sf-notes { padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .sf-notes p { margin:0 0 8px; }
+  .sf-notes p:last-child { margin-bottom:0; }
+  .sf-grid { align-items:start; display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:26px; padding:24px 0 26px; }
+  .sf-col h3 { font-size:0.78rem; font-weight:700; color:var(--text); margin:0 0 10px; letter-spacing:0; }
+  .sf-col ul + h3 { margin-top:24px; }
+  .sf-col ul { list-style:none; margin:0; padding:0; }
+  .sf-col li { margin:0 0 7px; }
+  .sf-col a, .sf-bottom a { color:var(--muted); text-decoration:none; }
+  .sf-col a:hover, .sf-bottom a:hover { color:var(--text); text-decoration:underline; }
+  .sf-bottom { border-top:1px solid var(--border); padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 28px; }
+  .sf-bottom-l { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; }
+  .sf-legal { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-legal a + a::before { content:"|"; color:var(--faint); margin:0 10px; }
+  .sf-lang { display:flex; flex-wrap:wrap; align-items:center; }
+  .sf-lang > * + *::before { content:"·"; color:var(--faint); margin:0 8px; }
+  .sf-lang strong { color:var(--text); font-weight:600; }
+  @media (max-width:900px) { .sf-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  @media (max-width:600px) { .sf-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:22px 18px; } }
+  footer.sf-static { --border:var(--c-border); --text:var(--c-text); --muted:var(--c-muted); --faint:var(--c-muted);
+    max-width:1100px; margin:40px auto 0; padding:26px 24px 30px; font-family:inherit; }
+  footer.sf-static p { margin:0 0 8px; font-weight:400; line-height:1.45; color:inherit; font-size:inherit; }
+  footer.sf-static ul { margin:0; color:inherit; font-weight:400; }
+  footer.sf-static ul li { padding:0; border:0; position:static; font-size:inherit; margin:0 0 7px; }
+  footer.sf-static ul li::before { content:none; }
+  /* footer:css:end */
+
+    @media (max-width: 768px) { nav { padding: 14px 20px; } main { padding: 100px 20px 60px; } }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index-es.html">
+      <img src="icon.png" alt="KidBox">
+      <span class="nav-logo-name"><span>Kid</span><span class="accent">Box</span></span>
+    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a class="nav-back" href="index-es.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Volver al inicio
+      </a>
+      <details class="lang-menu"><summary aria-label="Idioma"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/></svg><span>ES</span></summary><div class="lang-list"><a href="privacy.html" hreflang="it" lang="it" data-lang="it">Italiano</a><a href="privacy-en.html" hreflang="en" lang="en" data-lang="en">English</a><a href="privacy-es.html" hreflang="es" lang="es" data-lang="es" aria-current="true">Español</a><a href="privacy-fr.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></div></details>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-hero">
+      <span class="section-label">Legal</span>
+      <h1>Política de privacidad</h1>
+      <span class="updated">Última actualización: 13 de septiembre de 2026 · Conforme al RGPD</span>
+    </div>
+
+    <p>KidBox es una aplicación pensada para la gestión compartida de la información familiar — chat, documentos, notas, actividades y salud de los hijos. Esta política explica con transparencia qué datos tratamos, por qué y con quién los compartimos. Esta es una traducción: en caso de discrepancia prevalece la versión italiana.</p>
+    <p><strong>Responsable del tratamiento:</strong> KidBox — Vittorio Scocca &nbsp;·&nbsp; <a style="color:var(--c-accent)" href="mailto:passboxcontact@gmail.com">passboxcontact@gmail.com</a></p>
+
+    <h2>Datos que recogemos</h2>
+    <ul>
+      <li><strong>Información personal:</strong> correo electrónico, nombre/alias, foto de perfil, credenciales de acceso, fecha de nacimiento</li>
+      <li><strong>Contactos:</strong> nombres y números de teléfono de familiares y contactos de emergencia introducidos por el usuario</li>
+      <li><strong>Datos y contenido familiar:</strong> chat, notas, documentos, archivos multimedia, eventos del calendario, tareas, gastos, datos de salud de los hijos</li>
+      <li><strong>Datos técnicos:</strong> tokens de notificación y registros de seguridad sin información identificable</li>
+      <li><strong>Datos de ubicación:</strong> solo cuando se activa expresamente la ubicación compartida</li>
+      <li><strong>Datos de uso:</strong> acciones en la app de forma agregada (por ejemplo, abrir un documento o una sección), sin el contenido de lo que ves — ni títulos, ni textos, ni ubicación exacta</li>
+    </ul>
+
+    <h2>Base jurídica del tratamiento (art. 6 del RGPD)</h2>
+    <p>El tratamiento de tus datos personales se basa en las siguientes bases jurídicas:</p>
+    <ul>
+      <li><strong>Ejecución de un contrato (art. 6.1.b):</strong> datos necesarios para ofrecer las funciones de la app (cuenta, contenido familiar, ubicación, notificaciones)</li>
+      <li><strong>Consentimiento (art. 6.1.a):</strong> datos de salud tratados mediante Health Connect y funciones de IA — consentimiento explícito obligatorio y revocable en cualquier momento</li>
+      <li><strong>Interés legítimo (art. 6.1.f):</strong> seguridad del servicio, prevención del fraude, registros técnicos</li>
+    </ul>
+
+    <h2>Para qué usamos tus datos</h2>
+    <ul>
+      <li>Acceso y autenticación</li>
+      <li>Prestación de las funciones principales</li>
+      <li>Notificaciones y novedades del servicio</li>
+      <li>Seguridad y mejora continua</li>
+    </ul>
+
+    <h2>Datos de ubicación</h2>
+    <p>KidBox puede recoger la <strong>ubicación precisa</strong> del dispositivo (GPS) cuando el usuario activa expresamente la función de ubicación familiar compartida. La ubicación también puede recogerse en segundo plano para el funcionamiento de las zonas familiares (geofence), previa autorización explícita. Los datos de ubicación se transmiten a Google Firebase y no se comparten con terceros con fines publicitarios.</p>
+
+    <h2>Identificadores del dispositivo</h2>
+    <p>KidBox recoge el <strong>identificador del dispositivo</strong> (Firebase Instance ID / token FCM) para enviar notificaciones push. El SDK de inicio de sesión de Facebook puede recoger el ID publicitario del dispositivo con fines de atribución de instalaciones y campañas publicitarias. Consulta la <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Política de privacidad de Meta</a> para más detalles.</p>
+
+    <h2 id="cookie">Cookies, estadísticas y Meta Pixel en este sitio web</h2>
+    <p>El sitio kidboxapp.com puede usar dos herramientas de terceros, cada una <strong>solo después de tu consentimiento</strong> (art. 6.1.a del RGPD y normativa ePrivacy), otorgado mediante el aviso que aparece en tu primera visita. Si rechazas o no respondes, no se carga nada.</p>
+    <ul>
+      <li><strong>Google Analytics 4</strong> (estadísticas): cuenta las visitas, las páginas vistas y los clics hacia App Store, Google Play y la web app, para saber qué contenidos son útiles. Instala cookies de Google (<code>_ga</code>). Google Signals y las señales publicitarias están desactivados. <a style="color:var(--c-accent)" href="https://policies.google.com/privacy" target="_blank">Política de privacidad de Google</a></li>
+      <li><strong>Meta Pixel</strong> (publicidad): mide el rendimiento de nuestras campañas; instala cookies de Meta y le comunica las páginas que visitas y datos técnicos del navegador. <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Política de privacidad de Meta</a></li>
+    </ul>
+    <p>Puedes aceptar solo las estadísticas, ambas herramientas o ninguna, y cambiar tu elección en cualquier momento desde el enlace «Preferencias de cookies» al pie de cada página; al retirar el consentimiento a las estadísticas se borran las cookies de Google Analytics. Tu elección se guarda solo en tu navegador. Estas herramientas afectan al sitio web, no a la app ni a los datos que introduces en ella.</p>
+    <p><a href="#" data-consent-open style="color:var(--c-accent)">Preferencias de cookies</a></p>
+
+    <h2>Datos sensibles</h2>
+    <p>KidBox trata <strong>datos de salud</strong> (parámetros vitales, medicamentos, visitas médicas, datos de actividad de Health Connect) clasificados como datos sensibles según el art. 9 del RGPD. Estos datos se recogen exclusivamente con el consentimiento explícito del usuario, se conservan cifrados en Google Firebase y no se comparten con terceros salvo que el usuario active la función de IA (ver la sección Asistente de IA). Los datos de salud nunca se usan con fines publicitarios.</p>
+
+    <h2>Health Connect (Android)</h2>
+    <p>En Android, KidBox puede leer datos de salud de <strong>Health Connect</strong>, exclusivamente después de que el usuario haya concedido cada permiso desde la pantalla del sistema de Health Connect. El consentimiento es por tipo de dato y puede revocarse en cualquier momento desde los ajustes de Health Connect, sin desinstalar KidBox.</p>
+    <p>KidBox solo <strong>lee</strong> los tipos de datos indicados a continuación y no <strong>escribe</strong> ninguno. Para cada uno indicamos la finalidad concreta:</p>
+    <ul>
+      <li><strong>Pasos</strong> — mostrar la actividad diaria en la sección Salud y ajustar el volumen del plan de entrenamiento.</li>
+      <li><strong>Frecuencia cardíaca</strong> (incluida la frecuencia en reposo) — mostrar los últimos valores registrados en la sección Salud y adaptar la intensidad del plan de entrenamiento.</li>
+      <li><strong>Peso</strong> — medida corporal usada para el plan de entrenamiento y el plan de alimentación, y para seguir su evolución en el tiempo.</li>
+      <li><strong>Altura</strong> — medida corporal usada junto con el peso para dimensionar el plan de entrenamiento y el plan de alimentación.</li>
+      <li><strong>Calorías activas quemadas</strong> — energía gastada durante los entrenamientos, registrada por un reloj o una app de fitness. Es el dato que KidBox usa para elaborar el <strong>informe semanal</strong> del plan de entrenamiento (calorías totales de la semana, junto con las sesiones completadas y los minutos realizados), para rellenar las calorías de una sesión completada y para estimar las necesidades energéticas en el plan de alimentación. Sin este dato, el informe semanal solo puede mostrar la duración, no el esfuerzo real.</li>
+      <li><strong>Ejercicio</strong> — tipo, fecha y duración de las sesiones registradas, para cotejar los entrenamientos realmente hechos con los planificados.</li>
+    </ul>
+    <p>Los datos leídos de Health Connect se conservan cifrados en Google Firebase y se comparten solo dentro del grupo familiar del usuario. Nunca se usan con fines publicitarios, nunca se venden a terceros y nunca alimentan perfiles. Se envían a Anthropic solo cuando el usuario activa expresamente una función de IA que los necesita (plan de entrenamiento, plan de alimentación, asistente), como se describe en la sección Asistente de IA. Al eliminar la cuenta se borran junto con todos los demás datos.</p>
+
+    <h2>Cesión de datos a terceros</h2>
+    <p><strong>No vendemos tus datos.</strong> Los datos se comparten exclusivamente con los siguientes proveedores técnicos para prestar el servicio:</p>
+    <ul>
+      <li><strong>Google Firebase</strong> (Firestore, Storage, Auth, Functions, Messaging) — almacenamiento, autenticación, notificaciones push. <a style="color:var(--c-accent)" href="https://firebase.google.com/support/privacy" target="_blank">Política de privacidad</a></li>
+      <li><strong>Anthropic</strong> — tratamiento con IA previo consentimiento explícito (preguntas + contexto familiar/de salud seleccionado por el usuario). <a style="color:var(--c-accent)" href="https://www.anthropic.com/privacy" target="_blank">Política de privacidad</a></li>
+      <li><strong>Meta (Facebook)</strong> — SDK de inicio de sesión de Facebook para autenticación y atribución de campañas publicitarias (ID publicitario). <a style="color:var(--c-accent)" href="https://www.facebook.com/privacy/policy/" target="_blank">Política de privacidad</a></li>
+      <li><strong>Google Maps Platform</strong> — visualización de mapas y geocodificación de direcciones. <a style="color:var(--c-accent)" href="https://policies.google.com/privacy" target="_blank">Política de privacidad</a></li>
+      <li><strong>Google Play Billing</strong> — gestión de suscripciones y compras dentro de la app. <a style="color:var(--c-accent)" href="https://policies.google.com/privacy" target="_blank">Política de privacidad</a></li>
+    </ul>
+
+    <h2>Asistente de IA y Anthropic</h2>
+    <div class="highlight-box">
+      <p>Los datos enviados a Anthropic incluyen tus preguntas y el contexto familiar necesario para responder (nombres, eventos, datos de salud). Se requiere <strong>consentimiento explícito</strong> antes del primer uso — revocable en cualquier momento desde los ajustes de la app.</p>
+    </div>
+
+    <h2>Conservación de los datos</h2>
+    <p>Los datos se conservan solo durante el tiempo estrictamente necesario para prestar el servicio. Al eliminar la cuenta, todos los datos asociados se borran de forma permanente. Los <strong>datos de uso</strong> también se borran automáticamente a los <strong>90 días</strong>, aunque no haya ninguna solicitud.</p>
+
+    <h2>Eliminación de la cuenta</h2>
+    <p>Puedes eliminar tu cuenta en cualquier momento desde los ajustes de la app: <strong>Perfil → Eliminar cuenta</strong>. Consulta nuestra <a style="color:var(--c-accent)" href="data-deletion-es.html">página de eliminación de datos</a> para más detalles.</p>
+
+    <h2>Delegado de protección de datos (DPO)</h2>
+    <p>El responsable del tratamiento actúa también como punto de contacto para la protección de datos. Para cualquier consulta sobre tus datos personales escribe a: <a style="color:var(--c-accent)" href="mailto:passboxcontact@gmail.com">passboxcontact@gmail.com</a></p>
+
+    <h2>Tus derechos (arts. 15–22 del RGPD)</h2>
+    <p>Tienes derecho a <strong>solicitar la supresión de tus datos personales</strong> en cualquier momento (derecho de supresión, art. 17 del RGPD). Puedes ejercer los siguientes derechos contactando con nosotros o directamente en la app:</p>
+    <ul>
+      <li>Acceso a tus datos (art. 15)</li>
+      <li>Rectificación de información inexacta (art. 16)</li>
+      <li>Supresión de los datos — derecho al olvido (art. 17)</li>
+      <li>Limitación del tratamiento (art. 18)</li>
+      <li>Portabilidad de los datos (art. 20)</li>
+      <li>Oposición al tratamiento (art. 21)</li>
+      <li>Retirada de consentimientos concretos en cualquier momento</li>
+      <li>Derecho a presentar una reclamación ante la autoridad de control — <strong>Garante per la protezione dei dati personali</strong> (<a style="color:var(--c-accent)" href="https://www.garanteprivacy.it" target="_blank">garanteprivacy.it</a>)</li>
+    </ul>
+
+    <h2>Seguridad</h2>
+    <p>KidBox aplica cifrado de extremo a extremo y medidas avanzadas de autenticación para proteger los datos de tu familia.</p>
+
+    <div class="contact-block">
+      <h2>Contacto</h2>
+      <p>Para cualquier consulta sobre privacidad escribe a <a href="mailto:passboxcontact@gmail.com">passboxcontact@gmail.com</a></p>
+    </div>
+  </main>
+
+  <!-- footer:start -->
+  <footer class="sf-static">
+    <div class="sf-notes"><p>Algunas funciones — el asistente de IA, el Plan de Alimentación y el Plan Fitness, los viajes con itinerario de IA y la lectura de documentos con IA — requieren el plan Pro o Max. El plan Free incluye 5 mensajes de prueba con el asistente.</p><p>Las funciones pueden cambiar y algunas podrían no estar disponibles en todas las plataformas.</p><p>App Store es una marca de Apple Inc. Google Play es una marca de Google LLC.</p></div>
+    <div class="sf-grid" role="navigation" aria-label="Mapa del sitio">
+      <div class="sf-col"><h3>Organización</h3><ul><li><a href="es/tools/calendario">Calendario</a></li><li><a href="es/tools/to-do">Tareas</a></li><li><a href="es/tools/lista-della-spesa">Lista de la compra</a></li><li><a href="es/tools/spese">Gastos</a></li><li><a href="es/tools/note">Notas</a></li></ul><h3>Documentos y seguridad</h3><ul><li><a href="es/tools/documenti">Documentos</a></li><li><a href="es/tools/password">Contraseñas</a></li><li><a href="es/tools/wallet">Wallet</a></li></ul></div>
+      <div class="sf-col"><h3>Familia</h3><ul><li><a href="es/tools/famiglia">Familia e invitaciones</a></li><li><a href="es/tools/chat">Chat</a></li><li><a href="es/tools/posizione">Ubicación</a></li><li><a href="es/tools/foto-e-video">Fotos y vídeos</a></li></ul><h3>Salud, hogar y coche</h3><ul><li><a href="es/tools/salute">Salud</a></li><li><a href="es/tools/casa">Hogar</a></li><li><a href="es/tools/veicoli">Vehículos</a></li><li><a href="es/tools/animali">Mascotas</a></li><li><a href="es/tools/">Todas las herramientas →</a></li></ul></div>
+      <div class="sf-col"><h3>Blog</h3><ul><li><a href="es/blog/">Todos los artículos →</a></li></ul></div>
+      <div class="sf-col"><h3>IA</h3><ul><li><a href="es/tools/assistente-ai">Asistente de IA</a></li><li><a href="es/tools/viaggi">Viajes</a></li></ul><h3>Descargar</h3><ul><li><a href="https://apps.apple.com/app/apple-store/id6761055375?pt=122946364&ct=MetaAds-Landing&mt=8" target="_blank" rel="noopener">App Store</a></li><li><a href="https://play.google.com/store/apps/details?id=it.vittorioscocca.kidbox" target="_blank" rel="noopener">Google Play</a></li></ul></div>
+      <div class="sf-col"><h3>KidBox</h3><ul><li><a href="index-es.html#prodotti">Productos</a></li><li><a href="index-es.html#ai">IA</a></li><li><a href="index-es.html#prezzi">Precios</a></li><li><a href="guide-es.html">Guía</a></li><li><a href="https://app.kidboxapp.com">Abrir la web app</a></li></ul><h3>Soporte y privacidad</h3><ul><li><a href="support-es.html">Soporte</a></li><li><a href="privacy-es.html">Privacidad</a></li><li><a href="terms-es.html">Términos del servicio</a></li><li><a href="data-deletion-es.html">Eliminación de datos</a></li><li><a href="#" data-consent-open>Preferencias de cookies</a></li></ul><h3>Síguenos</h3><ul><li><a href="https://www.facebook.com/profile.php?id=61574265148948" target="_blank" rel="noopener">Facebook</a></li><li><a href="https://www.instagram.com/kidbox_app" target="_blank" rel="noopener">Instagram</a></li></ul></div>
+    </div>
+    <div class="sf-bottom">
+      <div class="sf-bottom-l"><span>Copyright © 2026 KidBox. Todos los derechos reservados. Hecho con ❤️ en Italia.</span><div class="sf-legal"><a href="privacy-es.html">Privacidad</a><a href="terms-es.html">Términos</a><a href="#" data-consent-open>Cookies</a><a href="data-deletion-es.html">Eliminación de datos</a></div></div>
+      <div class="sf-lang"><a data-lang-alt="it" hreflang="it" href="privacy.html">Italiano</a><a data-lang-alt="en" hreflang="en" href="privacy-en.html">English</a><strong aria-current="true">Español</strong><a data-lang-alt="fr" hreflang="fr" href="privacy-fr.html">Français</a></div>
+    </div>
+  </footer>
+  <!-- footer:end -->
+</body>
+</html>

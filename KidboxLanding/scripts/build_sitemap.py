@@ -9,7 +9,7 @@ Lo lanciano anche `build_tools.py` e `build_blog.py` alla fine, così la mappa
 segue da sola gli strumenti e gli articoli aggiunti. Le pagine statiche sono
 elencate in `STATIC`: una pagina nuova scritta a mano va aggiunta lì.
 
-Ogni URL porta le alternative hreflang it/en. Gli URL sono quelli puliti
+Ogni URL porta le alternative hreflang delle traduzioni che esistono davvero. Gli URL sono quelli puliti
 serviti da Firebase (`cleanUrls`), senza `.html`.
 """
 import subprocess
@@ -26,21 +26,19 @@ from tools_data import TOOLS  # noqa: E402
 
 SITE = "https://kidboxapp.com"
 
-# (italiano, inglese) — join, scarica e 404 restano fuori: sono noindex o di servizio.
-STATIC = [
-    ("", "index-en"),
-    ("guide", "guide-en"),
-    ("support", "support-en"),
-    ("privacy", "privacy-en"),
-    ("terms", "terms-en"),
-    ("data-deletion", "data-deletion-en"),
-]
+LANGS = ["it", "en", "es", "fr"]
+TOOLS_DIR = {"it": "strumenti", "en": "en/tools", "es": "es/tools", "fr": "fr/tools"}
+BLOG_DIR = {"it": "blog", "en": "en/blog", "es": "es/blog", "fr": "fr/blog"}
+
+# Pagine scritte a mano: base italiana, le altre lingue sono `<base>-<lang>`.
+# join, scarica e 404 restano fuori: sono noindex o di servizio.
+STATIC = ["", "guide", "support", "privacy", "terms", "data-deletion"]
 
 
 def git_date(*files):
     """Ultima modifica dei sorgenti: data dell'ultimo commit che li tocca, oggi
     se hanno modifiche non committate. Mai l'mtime, che cambia a ogni build."""
-    paths = [str(f) for f in files]
+    paths = [str(f) for f in files if Path(f).exists()]
     dirty = subprocess.run(["git", "status", "--porcelain", "--", *paths], cwd=ROOT,
                            capture_output=True, text=True).stdout.strip()
     if dirty:
@@ -50,39 +48,53 @@ def git_date(*files):
     return out or None
 
 
-def pairs():
-    """Coppie (path it, path en, lastmod o None)."""
-    out = [(it, en, git_date(PUBLIC / f"{it or 'index'}.html", PUBLIC / f"{en}.html")) for it, en in STATIC]
-    tools_src = (ROOT / "tools" / "tools_data.py", ROOT / "scripts" / "build_tools.py")
-    out.append(("strumenti/", "en/tools/", git_date(*tools_src)))
-    out += [(f"strumenti/{t['slug']}", f"en/tools/{t['slug']}", git_date(*tools_src)) for t in TOOLS]
-    newest = max(a["date"] for a in ARTICLES)
-    out.append(("blog/", "en/blog/", newest))
-    for cslug in CATEGORIES:
+def source(loc):
+    return PUBLIC / ((loc.rstrip("/") + "/index.html") if loc.endswith("/") else f"{loc or 'index'}.html")
+
+
+def groups():
+    """Gruppi ({lingua: path}, lastmod o None): solo le traduzioni che esistono."""
+    out = []
+    for base in STATIC:
+        paths = {"it": base}
+        for l in LANGS[1:]:
+            name = f"{base or 'index'}-{l}"
+            if (PUBLIC / f"{name}.html").exists():
+                paths[l] = name
+        out.append((paths, git_date(*(source(p) for p in paths.values()))))
+    tools_src = (ROOT / "tools" / "tools_data.py", ROOT / "tools" / "tools_data_es_fr.py", ROOT / "scripts" / "build_tools.py")
+    tool_langs = [l for l in LANGS if any(l in t for t in TOOLS)]
+    out.append(({l: f"{TOOLS_DIR[l]}/" for l in tool_langs}, git_date(*tools_src)))
+    out += [({l: f"{TOOLS_DIR[l]}/{t['slug']}" for l in LANGS if l in t}, git_date(*tools_src)) for t in TOOLS]
+    blog_langs = [l for l in LANGS if any(l in a for a in ARTICLES)]
+    out.append(({l: f"{BLOG_DIR[l]}/" for l in blog_langs}, max(a["date"] for a in ARTICLES)))
+    for cslug, cat in CATEGORIES.items():
+        paths = {l: f"{BLOG_DIR[l]}/{cslug}" for l in LANGS
+                 if l in cat and any(a["category"] == cslug and l in a for a in ARTICLES)}
         dates = [a["date"] for a in ARTICLES if a["category"] == cslug]
-        if dates:
-            out.append((f"blog/{cslug}", f"en/blog/{cslug}", max(dates)))
-    out += [(f"blog/{a['slug']}", f"en/blog/{a['slug']}", a["date"]) for a in ARTICLES]
+        if paths:
+            out.append((paths, max(dates)))
+    out += [({l: f"{BLOG_DIR[l]}/{a['slug']}" for l in LANGS if l in a}, a["date"]) for a in ARTICLES]
     return out
 
 
-def url_entry(loc, it, en, lastmod):
-    alts = "".join(
+def url_entry(loc, paths, lastmod):
+    alts = list(paths.items()) + [("x-default", paths.get("it") or next(iter(paths.values())))]
+    links = "".join(
         f'\n    <xhtml:link rel="alternate" hreflang="{lang}" href="{escape(f"{SITE}/{p}")}"/>'
-        for lang, p in (("it", it), ("en", en), ("x-default", it))
+        for lang, p in alts
     )
     mod = f"\n    <lastmod>{lastmod}</lastmod>" if lastmod else ""
-    return f"  <url>\n    <loc>{escape(f'{SITE}/{loc}')}</loc>{mod}{alts}\n  </url>"
+    return f"  <url>\n    <loc>{escape(f'{SITE}/{loc}')}</loc>{mod}{links}\n  </url>"
 
 
 def main():
     entries = []
-    for it, en, lastmod in pairs():
-        for loc in (it, en):
-            src = PUBLIC / ((loc.rstrip("/") + "/index.html") if loc.endswith("/") else f"{loc or 'index'}.html")
-            if not src.exists():
-                raise SystemExit(f"sitemap: manca {src.relative_to(ROOT)} per /{loc}")
-            entries.append(url_entry(loc, it, en, lastmod))
+    for paths, lastmod in groups():
+        for loc in paths.values():
+            if not source(loc).exists():
+                raise SystemExit(f"sitemap: manca {source(loc).relative_to(ROOT)} per /{loc}")
+            entries.append(url_entry(loc, paths, lastmod))
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
