@@ -283,16 +283,16 @@ function print(o) {
   L.push("## Utenti attivi / nuovi / sessioni per giorno e piattaforma (14 gg)");
   const days = [...new Set(o.series.map((r) => r.date))].sort();
   const plats = [...new Set(o.series.map((r) => r.platform))].sort();
-  L.push(pad("giorno", 10) + plats.map((p) => pad(p + " act/new/sess", 20)).join("") + "totale att.");
+  L.push(pad("giorno", 12) + plats.map((p) => pad(`${p} att/nuovi/sess`, 22)).join("") + "totale att.");
   for (const d of days) {
     let tot = 0;
     const cells = plats.map((p) => {
       const r = o.series.find((x) => x.date === d && x.platform === p);
-      if (!r) return pad("-", 20);
+      if (!r) return pad("-", 22);
       tot += r.activeUsers;
-      return pad(`${r.activeUsers}/${r.newUsers}/${r.sessions}`, 20);
+      return pad(`${r.activeUsers}/${r.newUsers}/${r.sessions}`, 22);
     });
-    L.push(pad(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, 10) + cells.join("") + tot);
+    L.push(pad(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, 12) + cells.join("") + tot);
   }
   L.push("");
 
