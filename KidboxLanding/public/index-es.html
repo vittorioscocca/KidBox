@@ -102,10 +102,6 @@
   .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:0.76rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent2); background:var(--accent-l); border:1px solid rgba(232,131,58,0.22); padding:6px 15px; border-radius:50px; margin-bottom:26px; }
   .dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-  /* Marchio sopra il titolo: logo e "Kid" nel colore del testo, "Box" nell'accento, come nella barra in alto. */
-  .hero-brand { position:relative; z-index:1; display:inline-flex; align-items:center; gap:clamp(12px,1.6vw,18px); margin:0 auto 30px; font-size:clamp(2.2rem,5vw,3.4rem); font-weight:800; letter-spacing:-0.035em; line-height:1; color:var(--text); }
-  .hero-brand img { width:clamp(56px,7vw,80px); height:clamp(56px,7vw,80px); border-radius:22%; box-shadow:0 12px 32px rgba(232,131,58,.28); }
-  .hero-brand .ac { color:var(--accent); }
   .hero h1 { font-size:clamp(2.6rem,6.5vw,5rem); font-weight:800; line-height:1.02; letter-spacing:-0.04em; text-wrap:balance; margin:0 auto 22px; max-width:15ch; }
   .hero h1 .g { background:linear-gradient(120deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero > p { font-size:clamp(1.05rem,2vw,1.28rem); color:var(--muted); max-width:54ch; margin:0 auto 34px; }
@@ -314,7 +310,6 @@
 
 <div id="top" class="hero">
   <div class="hero-glow"></div>
-  <div class="hero-brand"><img src="icon.png" alt="KidBox" width="80" height="80"><span>Kid<span class="ac">Box</span></span></div>
   <h1>Toda tu familia,<br><span class="g">en una sola app.</span></h1>
   <p>Salud, documentos, chat, viajes, ubicación y contraseñas — organizados en un solo lugar, con agentes de IA que trabajan para ti incluso cuando la app está cerrada.</p>
   <div class="hero-cta">
