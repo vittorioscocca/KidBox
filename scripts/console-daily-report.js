@@ -216,12 +216,18 @@ async function main() {
   // 4. Costi AI del mese e ticket aperti.
   out.ai = (await getDoc(tok, `ai_costs/${month}`, ["calls", "inputTokens", "outputTokens", "costUsd"])) || { calls: 0, costUsd: 0 };
   out.ai.month = month;
-  const [casesNew, crashNew, supportNew] = await Promise.all([
+  // «new» è lo stato (backlog da triagare), «ieri» è l'arrivo: senza il
+  // secondo, cinque ticket fermi da luglio leggono come cinque crash di ieri.
+  const since = romeMidnight(yesterday);
+  const [casesNew, crashNew, supportNew, casesY, crashY, supportY] = await Promise.all([
     count(tok, "cases", eq("status", "new")),
     count(tok, "crash_reports", eq("status", "new")),
     count(tok, "support_tickets", eq("status", "new")),
+    count(tok, "cases", gte("createdAt", since)),
+    count(tok, "crash_reports", gte("createdAt", since)),
+    count(tok, "support_tickets", gte("createdAt", since)),
   ]);
-  out.tickets = { casesNew, crashNew, supportNew };
+  out.tickets = { casesNew, crashNew, supportNew, arrivedSinceYesterday: { cases: casesY, crash: crashY, support: supportY } };
 
   if (asJson) {
     process.stdout.write(JSON.stringify(out, null, 2) + "\n");
@@ -283,8 +289,10 @@ function print(o) {
   L.push(`## AI — mese ${o.ai.month}`);
   L.push(`Chiamate ${o.ai.calls || 0} · token in/out ${o.ai.inputTokens || 0}/${o.ai.outputTokens || 0} · costo ${(o.ai.costUsd || 0).toFixed(2)} USD`);
   L.push("");
-  L.push("## Ticket con status «new»");
-  L.push(`Bug/segnalazioni (cases) ${o.tickets.casesNew} · crash ${o.tickets.crashNew} · supporto chat ${o.tickets.supportNew}`);
+  const t = o.tickets, ar = t.arrivedSinceYesterday;
+  L.push("## Ticket");
+  L.push(`Arrivati da ieri: bug/segnalazioni ${ar.cases} · crash ${ar.crash} · supporto chat ${ar.support}`);
+  L.push(`Backlog con status «new» (qualunque data): bug/segnalazioni ${t.casesNew} · crash ${t.crashNew} · supporto chat ${t.supportNew}`);
   if (o.notes.length) {
     L.push("");
     L.push("## Note");
