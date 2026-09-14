@@ -162,6 +162,37 @@ final class AIService {
         return nil
     }
 
+    /// Frase localizzata per il limite giornaliero, dai `details` del server.
+    ///
+    /// Un messaggio del copilota fitness o della cartella clinica scala più di
+    /// un'unità: chi vede 95/100 e si sente dire "limite raggiunto" non capisce.
+    /// Il testo del server è solo in italiano, i numeri invece viaggiano nei
+    /// details e qui diventano una frase nella lingua dell'app.
+    private func quotaExceededMessage(_ error: NSError) -> String? {
+        guard let details = error.userInfo[FunctionsErrorDetailsKey] as? [String: Any],
+              details["reason"] as? String == "daily-limit",
+              let units = details["units"] as? Int,
+              let remaining = details["remaining"] as? Int,
+              let limit = details["limit"] as? Int
+        else { return nil }
+        if units > 1, remaining > 0 {
+            return String(
+                format: NSLocalizedString(
+                    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani.",
+                    comment: "AI daily quota: message costs more units than remaining"
+                ),
+                units, remaining, limit
+            )
+        }
+        return String(
+            format: NSLocalizedString(
+                "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani.",
+                comment: "AI daily quota reached"
+            ),
+            limit
+        )
+    }
+
     private func mapCallableError(_ error: NSError) -> AIServiceError {
         if error.domain == NSURLErrorDomain {
             switch error.code {
@@ -181,7 +212,7 @@ final class AIService {
 
         switch code {
         case .resourceExhausted:
-            return .rateLimitReached(message)
+            return .rateLimitReached(quotaExceededMessage(error) ?? message)
         case .permissionDenied:
             return .rateLimitReached(
                 message.isEmpty
@@ -232,7 +263,7 @@ final class AIService {
     // MARK: - Send message
     
     /// Sends the conversation to the AI and returns the assistant reply.
-    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` e `"fitnessPlan"` usano Haiku con max_tokens esteso; `"fitnessAdjust"` e `"fitnessCopilot"` sono chat riservate ai piani a pagamento; `nil` = Haiku (chat Salute, visite, esami, ecc.).
+    /// - Parameter purpose: `"clinicalRecord"` usa Sonnet lato server; `"mealPlan"` usa Haiku con max_tokens esteso; `"fitnessPlan"` usa Sonnet con max_tokens esteso; `"fitnessAdjust"` e `"fitnessCopilot"` sono chat su Sonnet riservate ai piani a pagamento (tutto il fitness scala 3× le unità); `nil` = Haiku (chat Salute, visite, esami, ecc.).
     func sendMessage(
         messages: [KBAIMessage],
         systemPrompt: String,
@@ -301,6 +332,9 @@ final class AIService {
             timeout = Self.mealPlanClientTimeout
         } else if purpose == "fitnessPlan" {
             timeout = Self.fitnessPlanClientTimeout
+        } else if purpose == "fitnessAdjust" || purpose == "fitnessCopilot" {
+            // Su Sonnet una modifica a più sedute supera i 70s di default.
+            timeout = Self.clinicalRecordClientTimeout
         }
         let timeoutLabel = timeout.map { "\($0)s" } ?? "default"
         KBLog.ai.kbDebug(

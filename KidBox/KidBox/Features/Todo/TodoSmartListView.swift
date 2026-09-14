@@ -21,8 +21,9 @@ struct TodoSmartListView: View {
     private let kind: TodoSmartKind
     
     @State private var didStartRealtime = false
-    @State private var showEditSheet = false
-    @State private var editingTodoId: String? = nil
+    /// `sheet(item:)` come in `TodoListView`: con `isPresented` più un id a parte
+    /// la sheet leggeva l'id del render precedente e apriva la form vuota.
+    @State private var editingTarget: TodoListView.TodoEditTarget? = nil
     @State private var showDeleteAllCompletedAlert = false
     
     /// Id del consumatore del listener: una sola smart list per `kind` è a
@@ -117,8 +118,7 @@ struct TodoSmartListView: View {
             if kind != .completed {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        editingTodoId = nil
-                        showEditSheet = true
+                        editingTarget = TodoListView.TodoEditTarget(id: UUID().uuidString, todoId: nil)
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -142,12 +142,12 @@ struct TodoSmartListView: View {
         } message: {
             Text("Vuoi eliminare tutti i to-do completati? L'operazione non è reversibile.")
         }
-        .sheet(isPresented: $showEditSheet) {
+        .sheet(item: $editingTarget) { target in
             TodoEditView(
                 familyId: familyId,
                 childId: childId,
                 listId: "",
-                todoIdToEdit: editingTodoId
+                todoIdToEdit: target.todoId
             )
         }
         .onAppear {
@@ -228,8 +228,7 @@ struct TodoSmartListView: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onTapGesture {
-            editingTodoId = todo.id
-            showEditSheet = true
+            editingTarget = TodoListView.TodoEditTarget(id: todo.id, todoId: todo.id)
         }
     }
     

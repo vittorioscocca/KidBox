@@ -123,6 +123,11 @@ struct TodoEditView: View {
         return email.isEmpty ? "Membro" : email
     }
     
+    /// Un to-do «Solo io» non lo vede nessun altro: l'unico assegnatario sensato è chi lo crea.
+    private var isPrivateScope: Bool {
+        KBVisibilityScope.normalized(selectedVisibilityScope) == KBVisibilityScope.onlyCreator
+    }
+
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -235,16 +240,18 @@ struct TodoEditView: View {
                 
                 Toggle("Urgente", isOn: $isUrgent)
                 
-                Section("Assegnato a") {
-                    Button {
-                        showAssigneePicker = true
-                    } label: {
-                        HStack {
-                            Text(assigneeLabel)
-                                .foregroundStyle(assignedTo == nil ? .secondary : .primary)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
+                if !isPrivateScope {
+                    Section("Assegnato a") {
+                        Button {
+                            showAssigneePicker = true
+                        } label: {
+                            HStack {
+                                Text(assigneeLabel)
+                                    .foregroundStyle(assignedTo == nil ? .secondary : .primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -286,6 +293,9 @@ struct TodoEditView: View {
                     dueDate = nil
                     wantsReminder = false
                 }
+            }
+            .onChange(of: selectedVisibilityScope) { _, _ in
+                if isPrivateScope, let uid = currentUID { assignedTo = uid }
             }
         }
         .sheet(isPresented: $showAssigneePicker) {
@@ -415,7 +425,6 @@ struct TodoEditView: View {
             existing.title = trimmedTitle
             existing.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existing.dueAt = hasDate ? dueDate : nil
-            existing.assignedTo = assignedTo
             if existing.createdBy == nil { existing.createdBy = uid }
             existing.priorityRaw = isUrgent ? 1 : 0
             
@@ -429,6 +438,9 @@ struct TodoEditView: View {
                     ? Array(selectedVisibilityMemberIds).sorted()
                     : []
             }
+            existing.assignedTo = KBVisibilityScope.normalized(existing.visibilityScope) == KBVisibilityScope.onlyCreator
+                ? uid
+                : assignedTo
             
             // ✅ Reminder logic
             if let due = existing.dueAt {
@@ -479,7 +491,7 @@ struct TodoEditView: View {
             isDeleted: false
         )
         
-        local.assignedTo = assignedTo
+        local.assignedTo = isPrivateScope ? uid : assignedTo
         local.createdBy = uid
         local.priorityRaw = isUrgent ? 1 : 0
         local.visibilityScope = selectedVisibilityScope

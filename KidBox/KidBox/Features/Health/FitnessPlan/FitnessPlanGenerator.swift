@@ -5,7 +5,7 @@
 //  Generazione del Piano Fitness via Cloud Function `askAI`:
 //  - `purpose: "fitnessPlan"` per il piano mensile (JSON, max_tokens esteso);
 //  - `purpose: "fitnessAdjust"` per lo spostamento di una seduta e per la
-//    proposta di adeguamento settimanale (payload piccolo, 1 messaggio).
+//    proposta di adeguamento settimanale (payload piccolo: 3 messaggi, Sonnet).
 //
 
 import FirebaseFunctions
@@ -227,7 +227,7 @@ enum FitnessPlanGenerator {
         )
 
         try await assertQuota(
-            units: AIAskAIPayload.messageUnits(
+            units: AIAskAIPayload.fitnessAssistMessageUnits(
                 totalChars: AIAskAIPayload.totalChars(
                     systemPrompt: systemPrompt,
                     messages: [KBAIMessage(role: .user, content: userContent)]
@@ -294,7 +294,7 @@ enum FitnessPlanGenerator {
         )
 
         try await assertQuota(
-            units: AIAskAIPayload.messageUnits(
+            units: AIAskAIPayload.fitnessAssistMessageUnits(
                 totalChars: AIAskAIPayload.totalChars(
                     systemPrompt: systemPrompt,
                     messages: [KBAIMessage(role: .user, content: userContent)]

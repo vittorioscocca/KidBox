@@ -211,6 +211,28 @@ struct SettingsView: View {
             }
             .listRowBackground(cardBackground)
 
+            // Sempre visibile, a differenza del popup di `ReviewPrompter` che
+            // decide il sistema. Chi è scontento ha la voce qui sopra.
+            Link(destination: ReviewPrompter.writeReviewURL) {
+                HStack(spacing: 12) {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(KBTheme.bubbleTint)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Valuta KidBox")
+                            .foregroundStyle(.primary)
+                        Text("Lascia una recensione sull'App Store")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .listRowBackground(cardBackground)
+
             NavigationLink {
                 UserGuideWebView()
             } label: {

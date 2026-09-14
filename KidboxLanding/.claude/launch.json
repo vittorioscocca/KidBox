@@ -1,11 +1,6 @@
 {
   "version": "0.0.1",
   "configurations": [
-    {
-      "name": "landing-preview",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4599", "--directory", "public"],
-      "port": 4599
-    }
+    { "name": "landing", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "5311", "--directory", "public"], "port": 5311 }
   ]
 }

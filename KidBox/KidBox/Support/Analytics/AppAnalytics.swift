@@ -97,10 +97,20 @@ enum AppAnalytics {
 
     static func contentCreated(type: String) {
         Analytics.logEvent("content_created", parameters: ["content_type": type])
+        // Stesso punto di passaggio di tutti i salvataggi: evita di ripetere
+        // la chiamata in ogni schermata.
+        ReviewPrompter.note(.contentCreated)
     }
 
     static func contentSharedRead(type: String) {
         Analytics.logEvent("content_shared_read", parameters: ["content_type": type])
+        ReviewPrompter.note(.sharedContentRead)
+    }
+
+    /// Richiesta del popup di recensione: il sistema può non mostrarlo, e non
+    /// dice mai se l'ha fatto.
+    static func reviewPromptRequested(trigger: String) {
+        Analytics.logEvent("review_prompt_requested", parameters: ["trigger": trigger])
     }
 
     static func aiPaywallShown(context: String) {

@@ -30590,24 +30590,24 @@
         }
       }
     },
-    "L'AI riorganizza i giorni rimanenti della settimana per non perdere l'obiettivo. Costa 1 messaggio AI." : {
+    "L'AI riorganizza i giorni rimanenti della settimana per non perdere l'obiettivo. Costa 3 messaggi AI." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The AI reorganizes the remaining days of the week so you don't lose the goal. It costs 1 AI message."
+            "value" : "The AI reorganizes the remaining days of the week so you don't lose the goal. It costs 3 AI messages."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La IA reorganiza los días restantes de la semana para no perder el objetivo. Cuesta 1 mensaje de IA."
+            "value" : "La IA reorganiza los días restantes de la semana para no perder el objetivo. Cuesta 3 mensajes de IA."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'IA réorganise les jours restants de la semaine pour ne pas perdre l'objectif. Cela coûte 1 message IA."
+            "value" : "L'IA réorganise les jours restants de la semaine pour ne pas perdre l'objectif. Cela coûte 3 messages IA."
           }
         }
       }
@@ -31370,24 +31370,24 @@
         }
       }
     },
-    "La proposta costa 1 messaggio AI." : {
+    "La proposta costa 3 messaggi AI." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The proposal costs 1 AI message."
+            "value" : "The proposal costs 3 AI messages."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La propuesta cuesta 1 mensaje de IA."
+            "value" : "La propuesta cuesta 3 mensajes de IA."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La proposition coûte 1 message IA."
+            "value" : "La proposition coûte 3 messages IA."
           }
         }
       }
@@ -31633,6 +31633,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre voix"
+          }
+        }
+      }
+    },
+    "Lascia una recensione sull'App Store" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave a review on the App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deja una reseña en la App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laisser un avis sur l'App Store"
           }
         }
       }
@@ -51965,6 +51987,156 @@
         }
       }
     },
+    "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani." : {
+      "comment" : "AI daily quota: message costs more units than remaining",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs %1$d AI messages because the context is large, and your family has only %2$d of %3$d left today. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta %1$d mensajes de IA porque el contexto es amplio, y hoy a la familia le quedan solo %2$d de %3$d. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte %1$d messages IA car le contexte est volumineux, et il n’en reste que %2$d sur %3$d à la famille aujourd’hui. Réessayez demain."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa %1$d messaggi AI perché il contesto è ampio, e oggi alla famiglia ne restano %2$d su %3$d. Riprova domani."
+          }
+        }
+      }
+    },
+    "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani." : {
+      "comment" : "AI daily quota reached",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your family has reached today’s limit of %d AI messages. Try again tomorrow."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La familia ha alcanzado el límite de %d mensajes de IA de hoy. Vuelve a intentarlo mañana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famille a atteint la limite de %d messages IA pour aujourd’hui. Réessayez demain."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La famiglia ha raggiunto il limite di %d messaggi AI per oggi. Riprova domani."
+          }
+        }
+      }
+    },
+    "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d." : {
+      "comment" : "Fitness copilot cost estimate exceeding remaining quota",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs about %1$d AI messages; %2$d left today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta unos %1$d mensajes de IA; hoy quedan %2$d."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte environ %1$d messages IA ; il en reste %2$d aujourd’hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa circa %1$d messaggi AI, oggi ne restano %2$d."
+          }
+        }
+      }
+    },
+    "Questo messaggio costa circa %d messaggi AI." : {
+      "comment" : "Fitness copilot cost estimate",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message costs about %d AI messages."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje cuesta unos %d mensajes de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce message coûte environ %d messages IA."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo messaggio costa circa %d messaggi AI."
+          }
+        }
+      }
+    },
+    "Seduta del %@ eliminata" : {
+      "comment" : "Fitness copilot deleted session",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session on %@ deleted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión del %@ eliminada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Séance du %@ supprimée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seduta del %@ eliminata"
+          }
+        }
+      }
+    },
     "Seduta del %@ sostituita" : {
       "comment" : "Fitness copilot replaced session",
       "localizations" : {
@@ -58638,6 +58810,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Devise"
+          }
+        }
+      }
+    },
+    "Valuta KidBox" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate KidBox"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valora KidBox"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noter KidBox"
           }
         }
       }

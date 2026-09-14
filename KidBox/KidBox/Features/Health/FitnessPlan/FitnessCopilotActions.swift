@@ -38,6 +38,68 @@ struct FitnessCopilotAction: Decodable {
         let name: String
         let detail: String?
         let notes: String?
+
+        private enum CodingKeys: String, CodingKey { case name, detail, notes }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            name = try c.decode(String.self, forKey: .name)
+            detail = c.lenientString(.detail)
+            notes = c.lenientString(.notes)
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type, sessionId, date, title, activityType, durationMinutes, intensity
+        case exercises, targets, targetKcal, notes, status
+    }
+
+    /// Decodifica tollerante: un campo scritto male («40» fra virgolette, 40.0,
+    /// un esercizio senza nome) non deve far cadere l'intera azione, e con lei
+    /// tutte le altre del blocco.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        type = try c.decode(String.self, forKey: .type)
+        // Il prompt elenca le sedute come `id=…`: il modello a volte copia
+        // anche il prefisso.
+        sessionId = c.lenientString(.sessionId).map {
+            $0.hasPrefix("id=") ? String($0.dropFirst(3)) : $0
+        }
+        date = c.lenientString(.date)
+        title = c.lenientString(.title)
+        activityType = c.lenientString(.activityType)
+        durationMinutes = c.lenientInt(.durationMinutes)
+        intensity = c.lenientString(.intensity)
+        exercises = (try? c.decode([FailableDecodable<Exercise>].self, forKey: .exercises))?
+            .compactMap(\.value)
+        targets = (try? c.decode([FailableDecodable<String>].self, forKey: .targets))?
+            .compactMap(\.value)
+        targetKcal = c.lenientInt(.targetKcal)
+        notes = c.lenientString(.notes)
+        status = c.lenientString(.status)
+    }
+}
+
+private struct FailableDecodable<T: Decodable>: Decodable {
+    let value: T?
+    init(from decoder: Decoder) throws { value = try? T(from: decoder) }
+}
+
+private extension KeyedDecodingContainer {
+    func lenientString(_ key: Key) -> String? {
+        if let string = try? decode(String.self, forKey: key) { return string }
+        if let int = try? decode(Int.self, forKey: key) { return String(int) }
+        return nil
+    }
+
+    func lenientInt(_ key: Key) -> Int? {
+        if let int = try? decode(Int.self, forKey: key) { return int }
+        if let double = try? decode(Double.self, forKey: key) { return Int(double.rounded()) }
+        if let string = try? decode(String.self, forKey: key) {
+            let digits = string.prefix { $0.isNumber }
+            return Int(digits)
+        }
+        return nil
     }
 }
 
@@ -46,13 +108,6 @@ struct FitnessCopilotProcessedReply {
     let plan: FitnessPlanDocument
     /// Riepilogo delle modifiche applicate, `nil` se non è cambiato nulla.
     let executionSummary: String?
-    /// Sedute che l'AI vuole eliminare: **non** ancora rimosse dal piano.
-    ///
-    /// L'eliminazione è l'unica azione che non si applica da sola. Le altre
-    /// sono rimediabili — una seduta spostata si rimette a posto, una segnata
-    /// per errore si riapre — mentre una seduta cancellata non torna indietro:
-    /// l'ultima parola resta all'utente.
-    let pendingDeletions: [FitnessSession]
     /// Azioni allegate alla risposta che non è stato possibile eseguire.
     ///
     /// Serve a non lasciar passare una conferma falsa: il testo discorsivo dice
@@ -67,48 +122,22 @@ enum FitnessCopilotActionExecutor {
     /// Estrae le azioni dalla risposta, le applica al piano e restituisce il
     /// testo ripulito da mostrare in chat.
     static func process(_ reply: String, plan: FitnessPlanDocument) -> FitnessCopilotProcessedReply {
-        guard
-            let startRange = reply.range(of: FitnessCopilotActionMarkers.start),
-            let endRange = reply.range(
-                of: FitnessCopilotActionMarkers.end,
-                range: startRange.upperBound..<reply.endIndex
-            )
-        else {
-            return FitnessCopilotProcessedReply(
-                displayText: reply.trimmingCharacters(in: .whitespacesAndNewlines),
-                plan: plan,
-                executionSummary: nil,
-                pendingDeletions: [],
-                failedActions: 0
-            )
-        }
+        let extracted = extractActions(from: reply)
+        let display = extracted.displayText
+        let actions = extracted.actions
 
-        let json = reply[startRange.upperBound..<endRange.lowerBound]
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        var display = reply
-        display.removeSubrange(startRange.lowerBound..<endRange.upperBound)
-        display = display.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard
-            let data = json.data(using: .utf8),
-            let actions = try? JSONDecoder().decode([FitnessCopilotAction].self, from: data),
-            !actions.isEmpty
-        else {
-            KBLog.ai.kbError("FitnessCopilot: blocco azioni non decodificabile")
-            // Il blocco c'era: la risposta parla di una modifica che non è
-            // avvenuta, e va segnalato.
+        // Nessun blocco: la risposta è solo testo.
+        guard extracted.blockFound else {
             return FitnessCopilotProcessedReply(
                 displayText: display,
                 plan: plan,
                 executionSummary: nil,
-                pendingDeletions: [],
-                failedActions: 1
+                failedActions: 0
             )
         }
 
         var updated = plan
         var applied: [String] = []
-        var pendingDeletions: [FitnessSession] = []
 
         for action in actions {
             // L'aggiunta è l'unica azione che non parte da una seduta esistente:
@@ -121,8 +150,8 @@ enum FitnessCopilotActionExecutor {
                     let weekIndex = updated.weekIndex(for: newDate),
                     let target = updated.weeks.firstIndex(where: { $0.index == weekIndex })
                 else { continue }
-                let title = action.title ?? ""
-                let activityType = action.activityType ?? ""
+                let activityType = action.activityType ?? action.title ?? ""
+                let title = action.title ?? activityType
                 guard !title.isEmpty, !activityType.isEmpty else { continue }
 
                 updated.weeks[target].sessions.append(
@@ -157,13 +186,22 @@ enum FitnessCopilotActionExecutor {
                   let existing = updated.session(id: sessionId)
             else { continue }
 
-            // L'eliminazione non si applica qui: si mette in attesa di conferma.
-            if action.type == "delete_session" {
-                pendingDeletions.append(existing)
-                continue
-            }
-
             switch action.type {
+            // Si applica subito come le altre: la richiesta in chat è già la
+            // conferma dell'utente. Con l'alert intermedio il modello scriveva
+            // "ho eliminato" e la seduta restava sul calendario.
+            case "delete_session":
+                updated.removeSession(id: sessionId)
+                applied.append(
+                    String(
+                        format: NSLocalizedString(
+                            "Seduta del %@ eliminata",
+                            comment: "Fitness copilot deleted session"
+                        ),
+                        FitnessPlanFormat.mediumDate(existing.date)
+                    )
+                )
+
             case "replace_session":
                 updated.updateSession(id: sessionId) { session in
                     if let title = action.title, !title.isEmpty { session.title = title }
@@ -241,11 +279,105 @@ enum FitnessCopilotActionExecutor {
             displayText: display,
             plan: updated,
             executionSummary: applied.isEmpty ? nil : applied.joined(separator: " · "),
-            pendingDeletions: pendingDeletions,
-            // Un'eliminazione in attesa non è un fallimento: è stata capita, e
-            // aspetta solo l'ultima parola dell'utente.
-            failedActions: max(0, actions.count - applied.count - pendingDeletions.count)
+            failedActions: max(0, actions.count - applied.count) + extracted.undecodable
         )
+    }
+
+    private struct ExtractedActions {
+        var displayText: String
+        var actions: [FitnessCopilotAction]
+        /// Azioni (o blocchi interi) che c'erano ma non si sono potute leggere.
+        var undecodable: Int
+        var blockFound: Bool
+    }
+
+    /// Estrae **tutti** i blocchi di azioni dalla risposta.
+    ///
+    /// Tre modi in cui una modifica annunciata andava persa senza avviso:
+    /// - il modello spezza le azioni in più blocchi, e si leggeva solo il primo;
+    /// - la risposta viene troncata dal limite di token prima del marcatore di
+    ///   chiusura, e il blocco non veniva nemmeno riconosciuto (né rimosso dal
+    ///   testo, né segnalato);
+    /// - un solo campo malformato faceva scartare l'intero array.
+    private static func extractActions(from reply: String) -> ExtractedActions {
+        var display = ""
+        var actions: [FitnessCopilotAction] = []
+        var undecodable = 0
+        var blockFound = false
+        var cursor = reply.startIndex
+
+        while let startRange = reply.range(of: FitnessCopilotActionMarkers.start, range: cursor..<reply.endIndex) {
+            blockFound = true
+            display += reply[cursor..<startRange.lowerBound]
+            guard let endRange = reply.range(
+                of: FitnessCopilotActionMarkers.end,
+                range: startRange.upperBound..<reply.endIndex
+            ) else {
+                // Blocco troncato: quel che resta non è testo da mostrare, e le
+                // azioni complete che contiene non sono affidabili.
+                KBLog.ai.kbError("FitnessCopilot: blocco azioni senza chiusura (risposta troncata?)")
+                undecodable += 1
+                cursor = reply.endIndex
+                break
+            }
+            let decoded = decodeActions(String(reply[startRange.upperBound..<endRange.lowerBound]))
+            actions += decoded.actions
+            undecodable += decoded.undecodable
+            cursor = endRange.upperBound
+        }
+        display += reply[cursor..<reply.endIndex]
+
+        return ExtractedActions(
+            displayText: display.trimmingCharacters(in: .whitespacesAndNewlines),
+            actions: actions,
+            undecodable: undecodable,
+            blockFound: blockFound
+        )
+    }
+
+    private static func decodeActions(_ raw: String) -> (actions: [FitnessCopilotAction], undecodable: Int) {
+        var json = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Recinzione Markdown attorno al JSON.
+        if json.hasPrefix("```") {
+            json = json.drop(while: { $0 != "\n" }).trimmingCharacters(in: .whitespacesAndNewlines)
+            if json.hasSuffix("```") { json = String(json.dropLast(3)) }
+        }
+
+        guard let data = json.data(using: .utf8),
+              let root = try? JSONSerialization.jsonObject(with: data)
+        else {
+            KBLog.ai.kbError("FitnessCopilot: blocco azioni non decodificabile")
+            return ([], 1)
+        }
+
+        // Array di azioni, singola azione, oppure `{"actions": [...]}`.
+        let elements: [Any]
+        if let array = root as? [Any] {
+            elements = array
+        } else if let object = root as? [String: Any], let nested = object["actions"] as? [Any] {
+            elements = nested
+        } else if let object = root as? [String: Any] {
+            elements = [object]
+        } else {
+            return ([], 1)
+        }
+
+        var actions: [FitnessCopilotAction] = []
+        var undecodable = 0
+        for element in elements {
+            guard JSONSerialization.isValidJSONObject(element),
+                  let elementData = try? JSONSerialization.data(withJSONObject: element),
+                  let action = try? JSONDecoder().decode(FitnessCopilotAction.self, from: elementData)
+            else {
+                undecodable += 1
+                continue
+            }
+            actions.append(action)
+        }
+        if undecodable > 0 {
+            KBLog.ai.kbError("FitnessCopilot: \(undecodable) azioni non decodificabili")
+        }
+        return (actions, undecodable)
     }
 
     /// Data in formato `yyyy-MM-dd`, come richiesto nel system prompt.

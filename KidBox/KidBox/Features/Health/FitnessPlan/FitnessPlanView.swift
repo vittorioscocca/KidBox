@@ -57,6 +57,9 @@ struct FitnessPlanView: View {
     @State private var showCopilot = false
     @State private var showCopilotConsent = false
     @State private var showHealthPermission = false
+    /// Piano appena generato: la richiesta di recensione aspetta la chiusura
+    /// del foglio dei permessi Salute, che altrimenti la farebbe scartare.
+    @State private var reviewAfterHealthPermission = false
     @State private var showMoveSheet: FitnessSession?
     /// Seduta aperta nell'editor manuale (stato, attività svolta, durata).
     @State private var editingSession: FitnessSession?
@@ -243,7 +246,11 @@ struct FitnessPlanView: View {
                 Task { await move(session: session, to: newDate) }
             }
         }
-        .sheet(isPresented: $showHealthPermission) {
+        .sheet(isPresented: $showHealthPermission, onDismiss: {
+            guard reviewAfterHealthPermission else { return }
+            reviewAfterHealthPermission = false
+            ReviewPrompter.note(.aiPlanGenerated)
+        }) {
             FitnessHealthPermissionSheet {
                 Task { await requestHealthAccess() }
             }
@@ -764,7 +771,7 @@ struct FitnessPlanView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle().fill(tint.opacity(0.12)).frame(width: 36, height: 36)
-                Image(systemName: "figure.run")
+                Image(systemName: FitnessActivityIcon.symbol(workoutTitle: workout.title))
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(tint)
             }
@@ -817,7 +824,7 @@ struct FitnessPlanView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle().fill(tint.opacity(0.15)).frame(width: 40, height: 40)
-                    Image(systemName: session.systemImage)
+                    Image(systemName: session.performedSystemImage)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(tint)
                 }
@@ -1204,7 +1211,7 @@ struct FitnessPlanView: View {
                 }
                 .font(.subheadline)
 
-                Text("La proposta costa 1 messaggio AI.")
+                Text("La proposta costa 3 messaggi AI.")
                     .font(.footnote)
                     .foregroundStyle(KBTheme.secondaryText(colorScheme))
             }
@@ -1415,7 +1422,10 @@ struct FitnessPlanView: View {
             adjustmentProposal = nil
             await persist(result.document, rescheduleNotifications: true)
             if KBHealthKitService.shared.isAvailable {
+                reviewAfterHealthPermission = true
                 showHealthPermission = true
+            } else {
+                ReviewPrompter.note(.aiPlanGenerated)
             }
         } catch {
             present(error)
@@ -1824,7 +1834,7 @@ private struct FitnessMoveSessionSheet: View {
                 )
                 .datePickerStyle(.graphical)
 
-                Text("L'AI riorganizza i giorni rimanenti della settimana per non perdere l'obiettivo. Costa 1 messaggio AI.")
+                Text("L'AI riorganizza i giorni rimanenti della settimana per non perdere l'obiettivo. Costa 3 messaggi AI.")
                     .font(.subheadline)
                     .foregroundStyle(KBTheme.secondaryText(colorScheme))
 

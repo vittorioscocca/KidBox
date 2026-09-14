@@ -562,6 +562,7 @@ struct KidBoxApp: App {
                 BadgeManager.shared.refreshAppBadge()
                 Task { await KBAnalytics.shared.logSessionStart(entryPoint: .icon) }
                 AppAnalytics.trackAppOpen()
+                ReviewPrompter.registerAppOpen()
                 Task { await KBSubscriptionManager.shared.refreshCurrentEntitlement() }
                 // Throttlato internamente a una chiamata ogni 6 ore.
                 Task { await AppUpdateChecker.shared.checkForUpdate() }

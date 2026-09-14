@@ -818,6 +818,7 @@ struct MealPlanView: View {
             currentSection = 0
             MealPlanStore.save(result.document, childId: childId)
             await MealPlanRemoteStore.upsert(result.document, childId: childId)
+            ReviewPrompter.note(.aiPlanGenerated)
         } catch {
             alertMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             showAlert = true

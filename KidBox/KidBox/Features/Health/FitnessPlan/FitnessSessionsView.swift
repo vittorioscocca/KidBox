@@ -172,7 +172,7 @@ struct FitnessSessionsView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle().fill(tint.opacity(0.15)).frame(width: 44, height: 44)
-                Image(systemName: session.systemImage)
+                Image(systemName: session.performedSystemImage)
                     .font(.headline)
                     .foregroundStyle(tint)
             }

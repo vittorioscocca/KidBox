@@ -277,10 +277,7 @@ struct HomeView: View {
     private var homeTitleHeader: some View {
         HStack(alignment: .center, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("KidBox")
-                    .font(.system(size: 34, weight: .heavy))
-                    .kerning(-0.5)
-                    .foregroundStyle(colorScheme == .dark ? .white : Color.primary)
+                KidBoxWordmark()
                 if hasFamily, let familyName = activeFamily?.name, !familyName.isEmpty {
                     Text(familyName)
                         .font(.system(size: 15, weight: .medium))

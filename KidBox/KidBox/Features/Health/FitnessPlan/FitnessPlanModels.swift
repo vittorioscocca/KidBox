@@ -495,23 +495,96 @@ struct FitnessSession: Codable, Equatable, Identifiable {
         return type.contains("ripos") || type.contains("rest") || type.contains("recupero")
     }
 
-    /// Icona SF Symbols dedotta dal tipo di attività.
+    /// Icona SF Symbols dedotta dal tipo di attività (vedi `FitnessActivityIcon`).
     var systemImage: String {
-        let type = (activityType + " " + title).lowercased()
-        let map: [(keys: [String], symbol: String)] = [
-            (["cors", "run", "jog"], "figure.run"),
-            (["camm", "walk", "passeg"], "figure.walk"),
-            (["forza", "pesi", "strength", "tonific"], "figure.strengthtraining.traditional"),
-            (["corpo libero", "calisten", "hiit", "circuit"], "figure.highintensity.intervaltraining"),
-            (["bici", "cicl", "cycl", "spinning"], "figure.outdoor.cycle"),
-            (["nuot", "swim", "piscina"], "figure.pool.swim"),
-            (["mobil", "stretch", "yoga", "pilates"], "figure.flexibility"),
-            (["ripos", "rest", "recupero"], "moon.zzz"),
-        ]
-        for entry in map where entry.keys.contains(where: { type.contains($0) }) {
-            return entry.symbol
+        FitnessActivityIcon.symbol(activityType: activityType, title: title)
+    }
+
+    /// Icona dell'attività svolta: se l'allenamento registrato era un altro
+    /// («Corsa» al posto della bici prevista), l'icona segue quello, come il
+    /// titolo mostrato accanto.
+    var performedSystemImage: String {
+        if status == .done, let actual = actualActivityTitle, !actual.isEmpty {
+            return FitnessActivityIcon.symbol(workoutTitle: actual)
         }
-        return "figure.mixed.cardio"
+        return systemImage
+    }
+}
+
+/// Sceglie l'icona di un'attività dal tipo e dal titolo scritti dall'AI.
+///
+/// Tre regole, perché le icone uscivano incoerenti per la stessa disciplina:
+/// - le parole si confrontano **per inizio di parola**, non come sottostringa
+///   («percorso» non è una corsa);
+/// - il **tipo** vince sul titolo, tranne quando è generico («cardio», «riposo
+///   attivo»): una seduta di forza con riscaldamento di corsa resta forza;
+/// - le chiavi coprono **italiano, inglese, spagnolo e francese**, perché l'AI
+///   risponde nella lingua dell'app.
+/// Parity con `FitnessActivityIcons` su Android.
+enum FitnessActivityIcon {
+
+    private struct Rule {
+        let symbol: String
+        let prefixes: [String]
+        var exact: [String] = []
+        var phrases: [String] = []
+        /// Regola generica: il tipo che la attiva cede il passo al titolo.
+        var generic = false
+    }
+
+    private static let rules: [Rule] = [
+        Rule(symbol: "figure.pool.swim", prefixes: ["nuot", "swim", "piscin", "natac", "natat", "nage"]),
+        Rule(symbol: "figure.outdoor.cycle", prefixes: ["bici", "ciclism", "cycling", "cyclist", "cyclette", "cyclisme", "spinning", "bike"], exact: ["velo"]),
+        Rule(symbol: "figure.rower", prefixes: ["vogat", "canott", "rowing", "rower", "remo", "rameur", "aviron"]),
+        Rule(symbol: "figure.dance", prefixes: ["danz", "dance", "danse", "ballo", "balli", "zumba", "baile"]),
+        Rule(symbol: "figure.yoga", prefixes: ["yoga"]),
+        Rule(symbol: "figure.pilates", prefixes: ["pilates"]),
+        Rule(symbol: "figure.hiking", prefixes: ["trekking", "escursion", "hike", "hiking", "randonn", "senderis"]),
+        Rule(symbol: "figure.run", prefixes: ["cors", "run", "jog", "footing", "fartlek", "ripetut", "carrer", "correr", "trote", "course", "sprint"]),
+        Rule(symbol: "figure.walk", prefixes: ["camm", "walk", "passeg", "marcia", "camina", "paseo", "marche"]),
+        Rule(symbol: "figure.highintensity.intervaltraining", prefixes: ["hiit", "tabata", "circuit", "crossfit", "calisten", "intervall", "interval"], phrases: ["corpo libero", "peso corporeo", "bodyweight"]),
+        Rule(symbol: "figure.core.training", prefixes: ["addomin", "abdomin", "abdos", "plank"], exact: ["core"]),
+        Rule(symbol: "figure.strengthtraining.functional", prefixes: ["funzional", "functional", "funcional", "fonctionnel"]),
+        Rule(symbol: "figure.strengthtraining.traditional", prefixes: ["forz", "pesi", "strength", "tonific", "fuerza", "pesas", "muscul", "force", "renforc", "palestr", "weight", "tonif"], exact: ["gym"]),
+        Rule(symbol: "figure.flexibility", prefixes: ["mobil", "stretch", "allungament", "flessib", "flexib", "estiram", "etirement", "souplesse"]),
+        Rule(symbol: "figure.elliptical", prefixes: ["ellittic", "elliptic", "eliptic"]),
+        Rule(symbol: "figure.soccer", prefixes: ["calcio", "calcett", "soccer", "futbol", "football"]),
+        Rule(symbol: "figure.tennis", prefixes: ["tennis", "tenis", "padel"]),
+        Rule(symbol: "figure.basketball", prefixes: ["basket", "balonces"]),
+        Rule(symbol: "figure.volleyball", prefixes: ["pallavol", "volley", "voley", "voleib"]),
+        Rule(symbol: "figure.boxing", prefixes: ["box", "pugil", "kickbox"]),
+        Rule(symbol: "figure.martial.arts", prefixes: ["karate", "judo", "taekwondo", "marzial", "martial", "marcial", "martiaux"]),
+        Rule(symbol: "figure.climbing", prefixes: ["arramp", "climb", "escalad", "boulder"]),
+        Rule(symbol: "figure.skiing.downhill", prefixes: ["skiing", "esqui"], exact: ["sci", "ski"]),
+        Rule(symbol: "moon.zzz", prefixes: ["ripos", "recuper", "descans", "repos", "recover"], exact: ["rest"], generic: true),
+        Rule(symbol: "figure.mixed.cardio", prefixes: ["cardio", "aerob"], generic: true),
+    ]
+
+    static let fallback = "figure.mixed.cardio"
+
+    static func symbol(activityType: String, title: String) -> String {
+        let fromType = rule(for: activityType)
+        if let fromType, !fromType.generic { return fromType.symbol }
+        if let fromTitle = rule(for: title) { return fromTitle.symbol }
+        return fromType?.symbol ?? fallback
+    }
+
+    /// Icona per un allenamento letto da Apple Salute, che ha solo un titolo.
+    static func symbol(workoutTitle: String) -> String {
+        rule(for: workoutTitle)?.symbol ?? fallback
+    }
+
+    private static func rule(for text: String) -> Rule? {
+        let normalized = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+        let words = normalized.split(whereSeparator: { !$0.isLetter }).map(String.init)
+        guard !words.isEmpty else { return nil }
+        let joined = words.joined(separator: " ")
+        return rules.first { rule in
+            rule.phrases.contains(where: { joined.contains($0) })
+                || words.contains(where: { word in
+                    rule.exact.contains(word) || rule.prefixes.contains(where: { word.hasPrefix($0) })
+                })
+        }
     }
 }
 

@@ -221,7 +221,7 @@ enum FitnessSessionActionHandler {
         } else {
             // Lo spostamento vero e proprio è deterministico e avviene subito,
             // così il calendario resta coerente anche con l'app chiusa. La
-            // riorganizzazione AI del resto della settimana costa un messaggio
+            // riorganizzazione AI del resto della settimana costa messaggi AI
             // e va chiesta con la rete disponibile: la esegue la dashboard alla
             // prima apertura, leggendo questo flag.
             guard let newDate = nextAvailableDate(for: sessionId, in: plan) else {

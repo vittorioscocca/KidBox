@@ -24,9 +24,13 @@ enum AIAskAIPayload {
     /// Parity con `MEAL_PLAN_MIN_UNITS` in `functions/index.js`.
     static let mealPlanMinUnits = 5
 
-    /// Unità minime per il piano fitness (Haiku + JSON lungo su 4 settimane).
-    /// Parity con `FITNESS_PLAN_MIN_UNITS` in `functions/index.js`.
+    /// Unità minime per il piano fitness (JSON lungo su 4 settimane), prima del
+    /// moltiplicatore. Parity con `FITNESS_PLAN_MIN_UNITS` in `functions/index.js`.
     static let fitnessPlanMinUnits = 5
+
+    /// Tutto il modulo Piano Fitness gira su Sonnet (~3× Haiku): ogni chiamata
+    /// scala il triplo delle unità. Parity con `FITNESS_UNITS_MULTIPLIER`.
+    static let fitnessUnitsMultiplier = 3
 
     static func totalChars(systemPrompt: String, messages: [KBAIMessage], pendingUserText: String = "") -> Int {
         let history = messages.reduce(0) { $0 + $1.content.count }
@@ -55,11 +59,20 @@ enum AIAskAIPayload {
         max(mealPlanMinUnits, messageUnits(totalChars: totalChars))
     }
 
-    /// Unità per il piano fitness: minimo fisso `fitnessPlanMinUnits`,
-    /// oppure le unità del payload se il contesto è molto grande.
+    /// Unità per il piano fitness: minimo fisso `fitnessPlanMinUnits` (o le
+    /// unità del payload se il contesto è molto grande), per `fitnessUnitsMultiplier`.
     static func fitnessPlanMessageUnits(totalChars: Int) -> Int {
-        max(fitnessPlanMinUnits, messageUnits(totalChars: totalChars))
+        fitnessUnitsMultiplier * max(fitnessPlanMinUnits, messageUnits(totalChars: totalChars))
     }
+
+    /// Unità per le chiamate brevi del Piano Fitness (spostamento seduta,
+    /// adeguamento settimanale, copilota): unità del payload per `fitnessUnitsMultiplier`.
+    static func fitnessAssistMessageUnits(totalChars: Int) -> Int {
+        fitnessUnitsMultiplier * messageUnits(totalChars: totalChars)
+    }
+
+    /// Unità di una chiamata breve del Piano Fitness con payload standard (testi dell'interfaccia).
+    static var fitnessAssistStandardUnits: Int { fitnessUnitsMultiplier }
 
     /// Testo da mostrare sopra l'input quando il contesto supera lo standard.
     static func transientLargeContextNotice() -> String {
