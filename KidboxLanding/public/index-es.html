@@ -83,8 +83,9 @@
 
   /* NAV */
   nav { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:var(--nav-bg); backdrop-filter:blur(24px); border-bottom:1px solid var(--border); }
-  .logo { display:flex; align-items:center; gap:9px; font-weight:700; font-size:1.18rem; letter-spacing:-0.02em; color:var(--text); text-decoration:none; }
-  .logo img { width:30px; height:30px; border-radius:8px; }
+  .logo { display:flex; align-items:center; gap:11px; font-weight:800; font-size:1.6rem; letter-spacing:-0.03em; color:var(--text); text-decoration:none; }
+  .logo img { width:42px; height:42px; border-radius:11px; }
+  @media (max-width:720px){ .logo { gap:8px; font-size:1.2rem; } .logo img { width:32px; height:32px; border-radius:8px; } }
   .logo .ac { color:var(--accent); }
   .nav-r { display:flex; align-items:center; gap:14px; }
   .nav-lnk { font-size:0.86rem; font-weight:600; color:var(--muted); text-decoration:none; transition:color .2s; }
