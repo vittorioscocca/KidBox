@@ -87,7 +87,6 @@ final class LoginViewModel: ObservableObject {
     
     // MARK: - Email / Password
     
-    /// Accesso con email e password esistenti.
     func signInEmail(email: String, password: String) async {
         KBLog.auth.kbInfo("LoginViewModel signInEmail requested")
         isBusy = true
