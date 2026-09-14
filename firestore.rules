@@ -59,9 +59,18 @@ service cloud.firestore {
     }
 
     function isMember(familyId) {
+      // `get('isDeleted', false)` e non `.isDeleted`: su un documento senza il
+      // campo l'accesso diretto va in ERRORE di valutazione, e l'errore nega.
+      // Il campo manca proprio sul membro owner creato da iOS e dal web
+      // (`createFamilyWithChild`, `createFamily`); finché è owner passa da
+      // `isOwner`, ma dopo il passaggio di proprietà diventa membro semplice e
+      // restava chiuso fuori: su Android l'uscita falliva rileggendo la
+      // famiglia, sul web elencando i membri, a proprietà già ceduta.
+      // Assente = non cancellato, come già lo leggono i client
+      // (`isDeleted !== true` sul web). Verificato il 14/09/2026.
       return isSignedIn()
         && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid))
-        && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.isDeleted != true;
+        && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.get('isDeleted', false) != true;
     }
 
     function isOwner(familyId) {
@@ -219,9 +228,7 @@ service cloud.firestore {
         // estraneo poteva fabbricarsi un invito con un segreto suo, consumarlo ed
         // entrare, scavalcando qualsiasi controllo su `members/{uid}`.
         // Verificato il 13/09/2026: iOS, Android e web creano l'invito solo dopo
-        // che la scrittura della famiglia è confermata dal server, e in
-        // produzione ogni membro non proprietario ha `isDeleted` (senza, la
-        // valutazione di `isMember` andrebbe in errore).
+        // che la scrittura della famiglia è confermata dal server.
         allow create: if isMemberOrOwner(familyId);
         // Consumare l'invito. Oltre a `usedAt`/`usedBy` si lascia CANCELLARE il
         // materiale crittografico, e i client lo fanno nella stessa transazione:

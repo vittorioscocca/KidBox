@@ -129,8 +129,8 @@ async function check(nome, promessa) {
   const MEMBRO = "membro2";
   await env.withSecurityRulesDisabled(async (ctx) => {
     const adm = ctx.firestore();
-    // `isDeleted` esplicito: `isMember()` legge quel campo, e su un documento
-    // che non ce l'ha la rule va in errore di valutazione, non in `false`.
+    // Un membro vero come lo scrivono i client al join. (Senza `isDeleted`
+    // `isMember()` lo tratta come attivo: vedi «PASSAGGIO DI PROPRIETÀ».)
     await adm.doc(`families/${FAM}/members/${MEMBRO}`)
         .set({uid: MEMBRO, role: "parent", isDeleted: false});
     await adm.doc(`families/${FAM}/memberKeyBackups/${UID}`)
@@ -202,6 +202,63 @@ async function check(nome, promessa) {
       assertSucceeds(dbMembro.collection(`families/${FAM}/chat/c1/messages`).get()));
   await check("escrow: NON si LISTA la collezione",
       assertFails(dbMembro.collection(`families/${FAM}/memberKeyBackups`).get()));
+
+  // ── PASSAGGIO DI PROPRIETÀ ─────────────────────────
+  //
+  // Regressione vera, trovata il 14/09/2026: iOS e web creano il membro owner
+  // SENZA `isDeleted`. Dopo aver ceduto la proprietà l'ex owner è un membro
+  // semplice, e `isMember()` leggeva `.isDeleted` con accesso diretto: errore
+  // di valutazione, quindi accesso negato. L'uscita falliva a proprietà già
+  // ceduta — su Android rileggendo la famiglia, sul web elencando i membri.
+  console.log("\n── PASSAGGIO DI PROPRIETÀ ─────────────────────────");
+  const EX_OWNER = "exowner4";
+  const EREDE = "erede4";
+  const FAM_PASS = "famiglia-passaggio";
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    const adm = ctx.firestore();
+    await adm.doc(`families/${FAM_PASS}`).set({name: "P", ownerUid: EX_OWNER});
+    // Forma esatta di iOS `createFamilyWithChild` e web `createFamily`.
+    await adm.doc(`families/${FAM_PASS}/members/${EX_OWNER}`).set({uid: EX_OWNER, role: "owner"});
+    await adm.doc(`families/${FAM_PASS}/members/${EREDE}`)
+        .set({uid: EREDE, role: "member", isDeleted: false});
+    await adm.doc(`users/${EX_OWNER}/memberships/${FAM_PASS}`).set({familyId: FAM_PASS, role: "owner"});
+  });
+  const dbEx = env.authenticatedContext(EX_OWNER).firestore();
+  await check("passaggio: l'owner cede la proprietà (batch dei client)",
+      assertSucceeds((() => {
+        const b = dbEx.batch();
+        b.update(dbEx.doc(`families/${FAM_PASS}`), {ownerUid: EREDE});
+        b.update(dbEx.doc(`families/${FAM_PASS}/members/${EREDE}`), {role: "owner"});
+        b.update(dbEx.doc(`families/${FAM_PASS}/members/${EX_OWNER}`), {role: "member"});
+        return b.commit();
+      })()));
+  await check("passaggio: l'ex owner senza isDeleted rilegge la famiglia (Android)",
+      assertSucceeds(dbEx.doc(`families/${FAM_PASS}`).get()));
+  await check("passaggio: l'ex owner senza isDeleted elenca i membri (web)",
+      assertSucceeds(dbEx.collection(`families/${FAM_PASS}/members`).get()));
+  await check("passaggio: l'ex owner esce cancellando il proprio membro",
+      assertSucceeds(dbEx.doc(`families/${FAM_PASS}/members/${EX_OWNER}`).delete()));
+  await check("passaggio: e la propria membership",
+      assertSucceeds(dbEx.doc(`users/${EX_OWNER}/memberships/${FAM_PASS}`).delete()));
+  await check("passaggio: uscito, NON legge più la famiglia",
+      assertFails(dbEx.doc(`families/${FAM_PASS}`).get()));
+  await check("passaggio: il nuovo owner legge e invita",
+      assertSucceeds(env.authenticatedContext(EREDE).firestore()
+          .doc(`families/${FAM_PASS}/invites/dopo-passaggio`).set({
+            createdBy: EREDE, usedAt: null, usedBy: null,
+            expiresAt: new Date(Date.now() + 24 * 3600 * 1000)})));
+
+  // Il default vale solo per il campo ASSENTE: un membro marcato cancellato
+  // (revoca da Android) resta fuori.
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().doc(`families/${FAM_PASS}/members/revocato4`)
+        .set({uid: "revocato4", role: "member", isDeleted: true});
+  });
+  await check("membro con isDeleted true: NON legge la famiglia",
+      assertFails(env.authenticatedContext("revocato4").firestore().doc(`families/${FAM_PASS}`).get()));
+  await check("membro con isDeleted true: NON elenca i membri",
+      assertFails(env.authenticatedContext("revocato4").firestore()
+          .collection(`families/${FAM_PASS}/members`).get()));
 
   // ── INVITI ─────────────────────────────────────────
   //
