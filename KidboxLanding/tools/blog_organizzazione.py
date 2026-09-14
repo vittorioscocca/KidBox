@@ -305,7 +305,7 @@ La tecnologia è la parte facile. Le regole sono quello che rende la cosa accett
 
 ## Le condivisioni a tempo
 
-Ci sono situazioni in cui serve la posizione precisa per un po': il figlio in gita, il partner che torna di notte da un viaggio, il nonno che va da solo in una città nuova. Per questi casi esiste la **condivisione temporanea**: la posizione in tempo reale per un'ora, tre ore, fino a stasera — poi si spegne da sola.
+Ci sono situazioni in cui serve la posizione precisa per un po': il figlio in gita, il partner che torna di notte da un viaggio, il nonno che va da solo in una città nuova. Per questi casi esiste la **condivisione temporanea**: la posizione in tempo reale per 2, 3 o 8 ore — poi si spegne da sola.
 
 È l'opposto della sorveglianza: la persona sceglie di farsi seguire per un motivo e per un tempo, e sa quando finisce.
 
@@ -355,7 +355,7 @@ Technology is the easy part. The rules are what makes it acceptable to everyone:
 
 ## Time-limited sharing
 
-There are situations where precise location is needed for a while: a child on a school trip, a partner driving back at night, a grandparent alone in a new city. For those there's **temporary sharing**: real-time location for one hour, three hours, until tonight — then it switches off by itself.
+There are situations where precise location is needed for a while: a child on a school trip, a partner driving back at night, a grandparent alone in a new city. For those there's **temporary sharing**: real-time location for 2, 3 or 8 hours — then it switches off by itself.
 
 It's the opposite of surveillance: the person chooses to be followed for a reason and for a time, and knows when it ends.
 

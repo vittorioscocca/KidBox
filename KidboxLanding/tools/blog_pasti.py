@@ -41,7 +41,7 @@ Per questo la regola numero tre è importante.
 Se aggiungere una voce richiede di sbloccare il telefono, aprire l'app, trovare la lista, digitare — con le mani sporche di sugo — non lo farai. Servono scorciatoie:
 
 - **A voce, ad Alexa**: «aggiungi il latte alla lista» mentre cucini. È il modo più naturale, e in KidBox funziona con gli Echo di casa. Ne parliamo nell'[articolo dedicato](/blog/spesa-con-alexa).
-- **Dal widget o dalla schermata di blocco** su iPhone, senza aprire l'app.
+- **Dal computer**: la lista è la stessa anche nella web app, così chi è alla scrivania aggiunge senza prendere il telefono.
 - **Dall'assistente AI**: «metti in lista quello che serve per la carbonara» fa il lavoro di pensare agli ingredienti.
 
 ### 4. Si spunta al carrello, non alla cassa
@@ -56,7 +56,7 @@ Quando le regole base sono consolidate, può avere senso una lista per il superm
 
 ### Le cose ricorrenti
 
-Latte, pane, frutta: tornano ogni settimana. Invece di riscriverle, la lista di KidBox ricorda cosa avete comprato e lo propone quando lo riscrivete. Non è un abbonamento automatico — quello finisce per riempire il frigo di cose che non servono — ma un suggerimento.
+Latte, pane, frutta: tornano ogni settimana. Meglio non affidarli a un abbonamento automatico, che finisce per riempire il frigo di cose che non servono: al rientro dalla spesa basta un'occhiata alla dispensa, e le cose di sempre tornano in lista prima di finire.
 
 ### La spesa per un evento
 
@@ -106,7 +106,7 @@ Which is why rule three matters.
 If adding an item means unlocking the phone, opening the app, finding the list, typing — with hands covered in sauce — you won't do it. You need shortcuts:
 
 - **By voice, to Alexa**: "add milk to the list" while cooking. It's the most natural way, and in KidBox it works with the Echo devices at home, in Italian only for now. We cover it in the [dedicated article](/en/blog/spesa-con-alexa).
-- **From the widget or the lock screen** on iPhone, without opening the app.
+- **From the computer**: the list is the same in the web app, so whoever's at their desk adds without picking up the phone.
 - **Through the AI assistant**: "put what I need for carbonara on the list" does the work of thinking about ingredients.
 
 ### 4. Tick at the trolley, not at the till
@@ -121,7 +121,7 @@ Once the basic rules are solid, one list for the supermarket and one for the spe
 
 ### Recurring items
 
-Milk, bread, fruit: they come back every week. Instead of retyping them, the KidBox list remembers what you've bought and suggests it as you type. It's not an automatic subscription — that ends up filling the fridge with things you don't need — but a suggestion.
+Milk, bread, fruit: they come back every week. Better not to hand them to an automatic subscription, which ends up filling the fridge with things you don't need: a glance at the pantry when you get back from the shop is enough, and the usual items go back on the list before they run out.
 
 ### Shopping for an event
 

@@ -325,7 +325,6 @@ Con una lista di famiglia:
 
 - ogni voce ha un responsabile e, se serve, un giorno
 - quando è fatta si spunta, e l'altro lo vede senza chiedere
-- le cose ricorrenti tornano da sole
 - il promemoria arriva dal telefono, non dal partner
 
 L'ultimo punto è quello che cambia davvero il clima in casa. «Hai portato fuori la spazzatura?» chiesto da una persona è un rimprovero; lo stesso messaggio da una notifica è un'informazione.
@@ -385,7 +384,6 @@ With a family list:
 
 - every item has an owner and, if needed, a day
 - when it's done it gets ticked, and the other person sees it without asking
-- recurring things come back on their own
 - the reminder comes from the phone, not from the partner
 
 That last point is what really changes the mood at home. "Did you take the rubbish out?" from a person is a reproach; the same message from a notification is information.

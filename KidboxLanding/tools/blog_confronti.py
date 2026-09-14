@@ -650,7 +650,7 @@ Ogni sistema ha le sue comodità: widget, compilazione automatica delle password
 
 ## Dove si colloca KidBox
 
-KidBox ha un'app nativa per iPhone e una per Android con le stesse funzioni, e una [web app](https://app.kidboxapp.com) per il browser. Tutte usano gli stessi dati di famiglia in tempo reale: [calendario](/strumenti/calendario), liste, [chat](/strumenti/chat), [documenti](/strumenti/documenti) cifrati e il resto. La chiave di cifratura della famiglia si recupera con l'accesso all'account, quindi cambiando telefono — anche sistema — i dati tornano leggibili. Sull'iPhone ci sono in più alcune estensioni del sistema, come i widget e l'AutoFill delle password.
+KidBox ha un'app nativa per iPhone e una per Android con le stesse funzioni, e una [web app](https://app.kidboxapp.com) per il browser. Tutte usano gli stessi dati di famiglia in tempo reale: [calendario](/strumenti/calendario), liste, [chat](/strumenti/chat), [documenti](/strumenti/documenti) cifrati e il resto. La chiave di cifratura della famiglia si recupera con l'accesso all'account, quindi cambiando telefono — anche sistema — i dati tornano leggibili. Sull'iPhone ci sono in più alcune estensioni del sistema, come la condivisione di file da altre app e l'AutoFill delle password.
 
 ## In sintesi
 
@@ -699,7 +699,7 @@ Each system has its conveniences: widgets, password autofill, integration with t
 
 ## Where KidBox fits
 
-KidBox has a native iPhone app and a native Android app with the same features, plus a [web app](https://app.kidboxapp.com) for the browser. They all use the same family data in real time: [calendar](/en/tools/calendario), lists, [chat](/en/tools/chat), encrypted [documents](/en/tools/documenti) and the rest. The family encryption key is recovered by signing in to your account, so when you change phone — even system — your data is readable again. On iPhone there are also some system extensions, such as widgets and password AutoFill.
+KidBox has a native iPhone app and a native Android app with the same features, plus a [web app](https://app.kidboxapp.com) for the browser. They all use the same family data in real time: [calendar](/en/tools/calendario), lists, [chat](/en/tools/chat), encrypted [documents](/en/tools/documenti) and the rest. The family encryption key is recovered by signing in to your account, so when you change phone — even system — your data is readable again. On iPhone there are also some system extensions, such as sharing files from other apps and password AutoFill.
 
 ## In short
 

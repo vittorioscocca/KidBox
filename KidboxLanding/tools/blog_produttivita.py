@@ -312,7 +312,7 @@ La regola:
 
 - I **to-do** notificano solo l'assegnatario.
 - Gli **eventi** notificano tutti, perché riguardano tutti.
-- Le **scadenze** notificano il responsabile dell'area.
+- Le **scadenze** avvisano la famiglia: se ne occupa chi ha in carico quell'area.
 - La **chat** notifica tutti, ma è l'unica.
 
 Se un membro riceve più di cinque notifiche di famiglia al giorno, qualcosa è impostato male.
@@ -362,7 +362,7 @@ In the [family calendar](/en/tools/calendario) an event's reminder reaches all m
 
 ### Deadlines
 
-Bills, warranties, insurance, inspections. Here lead time is everything: **7 days** for payments, **30 days** for things that need an action (cancel, book, renew). In the [Home section](/en/tools/casa) and the Vehicles section every deadline has its own lead time, and the notification reaches whoever owns that area.
+Bills, warranties, insurance, inspections. Here lead time is everything: **7 days** for payments, **30 days** for things that need an action (cancel, book, renew). In the [Home section](/en/tools/casa) and the Vehicles section every deadline has its own reminder, which reaches the family members with notifications on.
 
 ## Who gets it
 
@@ -372,7 +372,7 @@ The rule:
 
 - **To-dos** notify only the assignee.
 - **Events** notify everyone, because they concern everyone.
-- **Deadlines** notify the area's owner.
+- **Deadlines** notify the family: whoever owns that area deals with them.
 - **Chat** notifies everyone, but it's the only one.
 
 If a member gets more than five family notifications a day, something is set up wrong.
