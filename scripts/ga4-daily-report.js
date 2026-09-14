@@ -79,6 +79,29 @@ const BREAKDOWNS = [
   ["feature_first_use", "feature"],
   ["paywall_shown", "trigger_feature"],
   ["ai_message_sent", "agent_type"],
+  ["onboarding_step_shown", "step_name"],
+  ["onboarding_step_completed", "step_name"],
+  ["onboarding_abandoned", "last_step_seen"],
+  ["pre_signup_screen_shown", "screen_name"],
+];
+
+// Il funnel si legge per UTENTI, non per eventi: `onboarding_abandoned`
+// scattava a ogni background (8 per utente iOS) e `pre_signup_screen_shown`
+// a ogni apparizione della schermata. Sui 28 giorni, così ogni gradino è
+// «quante persone», e la finestra lunga assorbe i numeri piccoli.
+const FUNNEL_USERS = [
+  "first_open",
+  "pre_signup_screen_shown",
+  "login_attempted",
+  "signup_completed",
+  "onboarding_step_shown",
+  "onboarding_completed",
+  "family_created",
+  "invite_generated",
+  "family_join_attempted",
+  "family_joined",
+  "content_created",
+  "content_shared_read",
 ];
 
 // «Ieri» nel fuso della property (Europe/Rome), come gli altri due script:
@@ -228,6 +251,22 @@ async function main() {
     }
   }
 
+  // 3-ter. Funnel per utenti unici, 28 giorni e 7 giorni, per piattaforma.
+  const funnelRows = async (start, end) =>
+    rows(
+      await runReport(tok, {
+        dateRanges: [{ startDate: start, endDate: end }],
+        dimensions: [{ name: "eventName" }, { name: "platform" }],
+        metrics: [{ name: "totalUsers" }, { name: "eventCount" }],
+        dimensionFilter: eventFilter(FUNNEL_USERS),
+        limit: 200,
+      })
+    );
+  out.funnelUsers = {
+    d28: { start: shiftDay(yesterday, -27), end: yesterday, rows: await funnelRows(shiftDay(yesterday, -27), yesterday) },
+    d7: { start: shiftDay(yesterday, -6), end: yesterday, rows: await funnelRows(shiftDay(yesterday, -6), yesterday) },
+  };
+
   // 4. Web (web app + landing): pagine e sorgenti di traffico, ieri.
   out.web = {};
   out.web.pages = rows(
@@ -333,6 +372,20 @@ function print(o) {
     L.push(otherList.map(([k, v]) => `${k}=${v}`).join(", "));
     L.push("");
   }
+
+  // Funnel per utenti
+  const fu = (win, ev, plat) =>
+    win.rows.filter((r) => r.eventName === ev && (!plat || r.platform === plat)).reduce((a, r) => a + r.totalUsers, 0);
+  L.push(`## Funnel per UTENTI unici — 28 gg (${o.funnelUsers.d28.start} → ${o.funnelUsers.d28.end}) e 7 gg`);
+  L.push(pad("passo", 26) + pad("28gg tot", 10) + pad("Android", 9) + pad("iOS", 7) + pad("web", 6) + "7gg tot");
+  for (const ev of FUNNEL_USERS) {
+    const w = o.funnelUsers.d28;
+    const tot = fu(w, ev);
+    if (!tot && !fu(o.funnelUsers.d7, ev)) continue;
+    L.push(pad(ev, 26) + pad(tot, 10) + pad(fu(w, ev, "Android"), 9) + pad(fu(w, ev, "iOS"), 7) + pad(fu(w, ev, "web"), 6) + fu(o.funnelUsers.d7, ev));
+  }
+  L.push("Utenti unici per evento, non somma di eventi. login_attempted scatta solo sui provider social: signup_completed può superarlo.");
+  L.push("");
 
   // Breakdown
   const bk = Object.entries(o.breakdowns).filter(([, v]) => v.length);
