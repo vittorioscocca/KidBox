@@ -2181,3 +2181,8 @@ _CAT_ES_FR = {
 }
 for _slug, _names in _CAT_ES_FR.items():
     CATEGORIES[_slug].update(_names)
+
+# Articoli tradotti in spagnolo e francese (a lotti).
+from blog_i18n import apply as _apply_translations  # noqa: E402
+
+_apply_translations(ARTICLES)
