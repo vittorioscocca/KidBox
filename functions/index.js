@@ -11,6 +11,7 @@ const {logEvent: logAnalyticsEvent} = require("./analytics");
 // Catalogo piani: quote/prezzi/feature vivono SOLO in functions/plans.json.
 // Vedi functions/plansConfig.js e internal/plans-source-of-truth.md.
 const plansConfig = require("./plansConfig");
+const {stripExpiredInviteSecrets} = require("./invitesCleanup");
 // Testi delle notifiche push per lingua: il client scrive la lingua scelta su
 // `users/{uid}.notificationLanguage`, qui si traduce la cornice prima di inviare.
 const {
@@ -5748,6 +5749,28 @@ exports.garbageCollectDeleted = onSchedule(
       logger.info("garbageCollectDeleted: complete", {
         ...summary,
         complete,
+        elapsedMs: Date.now() - startedAt,
+      });
+    },
+);
+
+// Inviti scaduti: via la chiave di famiglia wrappata. Il perché in
+// `invitesCleanup.js`. Giornaliero per la stessa ragione di
+// `garbageCollectDeleted`: sopra le 25h lo scheduler non è sorvegliabile.
+exports.stripExpiredInvites = onSchedule(
+    {
+      schedule: "45 3 * * *",
+      timeZone: "Europe/Rome",
+      region: "europe-west1",
+      maxInstances: 1,
+      timeoutSeconds: 540,
+    },
+    async () => {
+      const startedAt = Date.now();
+      logger.info("stripExpiredInvites: start");
+      const res = await stripExpiredInviteSecrets({deadlineAt: startedAt + 480 * 1000});
+      logger.info("stripExpiredInvites: complete", {
+        ...res,
         elapsedMs: Date.now() - startedAt,
       });
     },
