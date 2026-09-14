@@ -24,13 +24,23 @@ export default function Sidebar() {
 
   return (
     <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
-      <button
-        className="collapse-btn"
-        onClick={toggleCollapsed}
-        title={collapsed ? "Espandi barra laterale" : "Riduci a sole icone"}
-      >
-        ⬍
-      </button>
+      <div className="sidebar-top">
+        <NavLink to="/" end className="sidebar-brand" title="KidBox">
+          <img src="/icon.png" alt="" />
+          {!collapsed && (
+            <span className="wordmark">
+              Kid<span className="wordmark-box">Box</span>
+            </span>
+          )}
+        </NavLink>
+        <button
+          className="collapse-btn"
+          onClick={toggleCollapsed}
+          title={collapsed ? "Espandi barra laterale" : "Riduci a sole icone"}
+        >
+          ⬍
+        </button>
+      </div>
 
       <div className="family-switcher">
         <button

@@ -16,8 +16,47 @@
   width: 68px;
 }
 
+/* Logo e marchio in alto a sinistra, come sulla landing: "Kid" nel colore
+   del testo, "Box" nell'accento. */
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sidebar.collapsed .sidebar-top {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 4px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.sidebar-brand img {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.sidebar-brand .wordmark {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
 .collapse-btn {
-  align-self: flex-end;
+  flex-shrink: 0;
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -28,10 +67,6 @@
   font-size: 0.9rem;
   transform: rotate(90deg);
   margin-bottom: 4px;
-}
-
-.sidebar.collapsed .collapse-btn {
-  align-self: center;
 }
 
 .collapse-btn:hover {
@@ -224,6 +259,11 @@
     font-size: 1rem;
   }
 
+  .sidebar .sidebar-top {
+    justify-content: center;
+  }
+
+  .sidebar-brand .wordmark,
   .sidebar .family-text,
   .sidebar .chevron,
   .sidebar .collapse-btn {

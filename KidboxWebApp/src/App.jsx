@@ -185,7 +185,9 @@ function LoginScreen() {
       <header className="login-brand">
         <img className="logo" src="/icon.png" alt="KidBox" />
         <div>
-          <h1>KidBox</h1>
+          <h1 className="wordmark">
+            Kid<span className="wordmark-box">Box</span>
+          </h1>
           <p className="subtitle">{L.tagline}</p>
         </div>
       </header>

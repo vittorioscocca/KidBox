@@ -54,3 +54,13 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Marchio "KidBox": "Kid" nel colore del testo, "Box" nell'accento, come
+   sulla landing. Globale perché compare sia nel login sia nella barra laterale. */
+.wordmark {
+  color: var(--text);
+}
+
+.wordmark-box {
+  color: var(--accent);
+}
