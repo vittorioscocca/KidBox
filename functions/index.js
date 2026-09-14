@@ -2386,6 +2386,10 @@ exports.askAI = onCall(
       if (clinicalRecord) maxTokens = CLINICAL_RECORD_MAX_TOKENS;
       if (mealPlan) maxTokens = MEAL_PLAN_MAX_TOKENS;
       if (fitnessPlan) maxTokens = FITNESS_PLAN_MAX_TOKENS;
+      // Il copilota può riscrivere più sedute in un solo blocco di azioni: a 4096
+      // la risposta si troncava prima del marcatore di chiusura e la modifica
+      // annunciata non veniva applicata.
+      if (purpose === "fitnessCopilot") maxTokens = FITNESS_PLAN_MAX_TOKENS;
       let effectiveSystemPrompt = systemPrompt;
       if (clinicalRecord) {
         effectiveSystemPrompt = `${systemPrompt.trim()}\n\n${CLINICAL_RECORD_SYSTEM_RULES}`;
