@@ -84,6 +84,28 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // scroll-spy: la voce attiva segue la sezione visibile
+  const navLinks = [...document.querySelectorAll('.nav-item[data-section]')];
+  const anchors = navLinks.map(l => document.getElementById(l.dataset.section)).filter(Boolean);
+  window.spyLock = 0;
+  navLinks.forEach(l => l.addEventListener('click', () => { spyLock = Date.now() + 900; }));
+  const updateSpy = () => {
+    if (Date.now() < spyLock) return;
+    const top = el => el.getBoundingClientRect().top + window.scrollY;
+    const y = window.scrollY + 80;
+    let current = anchors[0];
+    for (const a of anchors) { if (top(a) <= y) current = a; }
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 2) current = anchors[anchors.length - 1];
+    navLinks.forEach(l => l.classList.toggle('active', l.dataset.section === current?.id));
+    const bn = [...document.querySelectorAll('.bn-item[data-section]')];
+    let bnCur = bn[0];
+    for (const b of bn) { const a = document.getElementById(b.dataset.section); if (a && top(a) <= y) bnCur = b; }
+    bn.forEach(b => b.classList.toggle('active', b === bnCur));
+  };
+  window.addEventListener('scroll', updateSpy, { passive: true });
+  window.addEventListener('resize', updateSpy);
+  updateSpy();
+
   // sidebar toggle mobile
   document.getElementById('sidebar-toggle')?.addEventListener('click', toggleSidebar);
 
@@ -883,6 +905,7 @@ window.closeSidebar = function() {
 window.bnGo = function(el, sectionId) {
   document.querySelectorAll('.bn-item').forEach(i => i.classList.remove('active'));
   el.classList.add('active');
+  spyLock = Date.now() + 900;
   document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -2010,6 +2033,7 @@ nav.sidebar-nav {
 /* ── MAIN CONTENT ────────────────────── */
 .main{padding:24px 28px;max-width:1300px;flex:1}
 .err-box{background:color-mix(in srgb,var(--color-red) 8%,transparent);border:1px solid color-mix(in srgb,var(--color-red) 22%,transparent);border-radius:10px;padding:12px 16px;color:var(--color-red);font-size:12px;margin-bottom:16px;display:none}
+[id^="section-"]{scroll-margin-top:52px}
 .sec-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--color-dim);margin:32px 0 14px}
 .sec-title:first-child{margin-top:0}
 
@@ -2385,13 +2409,19 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <a class="nav-item" data-section="section-plans" href="#section-plans">
         <span class="nav-icon">🎁</span> Piani Override
       </a>
+      <a class="nav-item" data-section="section-pricing" href="#section-pricing">
+        <span class="nav-icon">🏷️</span> Listino piani
+      </a>
       <a class="nav-item" data-section="section-broadcast" href="#section-broadcast">
         <span class="nav-icon">🔔</span> Notifiche push
+      </a>
+      <a class="nav-item" data-section="section-active" href="#section-active">
+        <span class="nav-icon">📈</span> Utenti attivi
       </a>
       <a class="nav-item" data-section="section-families" href="#section-families">
         <span class="nav-icon">📋</span> Tutte le famiglie
       </a>
-      <a class="nav-item" data-section="section-funnel" href="#section-funnel">
+      <a class="nav-item" data-section="section-funnel-anchor" href="#section-funnel-anchor">
         <span class="nav-icon">📉</span> Funnel attivazione
       </a>
       <a class="nav-item" data-section="section-users-table" href="#section-users-table">
@@ -2694,6 +2724,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
           </div>
       </div>
 
+      <!-- LISTINO PIANI -->
+      <div id="section-pricing"></div>
       <div class="sec-title" style="margin-top:32px">🏷️ Listino piani</div>
       <div class="card" style="max-width:900px">
         <div class="card-lbl">Quote, prezzi e testi dei piani</div>
@@ -2784,9 +2816,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
-      <!-- TABELLA FAMIGLIE -->
-      <div id="section-families"></div>
       <!-- UTENTI ATTIVI -->
+      <div id="section-active"></div>
       <div class="sec-title" style="margin-top:32px">
         👥 Utenti attivi <span class="sub" id="au-window">—</span>
         <button class="btn-info" onclick="document.getElementById('au-info-modal').style.display='flex'" title="Cosa significano questi indici">i</button>
@@ -2847,6 +2878,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
         </div>
       </div>
 
+      <!-- TABELLA FAMIGLIE -->
+      <div id="section-families"></div>
       <div class="sec-title" style="margin-top:32px">📋 Tutte le famiglie</div>
       <div class="tcard">
         <div class="tcard-hdr">
@@ -2879,6 +2912,8 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
       <div style="height:32px"></div>
 
       <!-- FUNNEL ATTIVAZIONE -->
+      <div id="section-funnel-anchor"></div>
+      <div class="sec-title" style="margin-top:32px">📉 Funnel attivazione</div>
       <div id="section-funnel"></div>
       <div style="height:32px"></div>
 
@@ -3009,24 +3044,24 @@ tr:hover td{background:color-mix(in srgb,var(--color-orange) 3%,transparent)}
 
   <!-- BOTTOM NAV (mobile only) -->
   <nav id="bottom-nav">
-    <a class="bn-item active" onclick="bnGo(this,'section-users')">
+    <a class="bn-item active" data-section="section-users" onclick="bnGo(this,'section-users')">
       <span class="bn-icon">📊</span>
       <span class="bn-lbl">Overview</span>
     </a>
-    <a class="bn-item" onclick="bnGo(this,'section-families')">
+    <a class="bn-item" data-section="section-families" onclick="bnGo(this,'section-families')">
       <span class="bn-icon">📋</span>
       <span class="bn-lbl">Famiglie</span>
     </a>
-    <a class="bn-item" onclick="bnGo(this,'section-funnel')">
+    <a class="bn-item" data-section="section-funnel-anchor" onclick="bnGo(this,'section-funnel-anchor')">
       <span class="bn-icon">📉</span>
       <span class="bn-lbl">Funnel</span>
     </a>
-    <a class="bn-item" onclick="bnGo(this,'section-tickets')">
+    <a class="bn-item" data-section="section-tickets" onclick="bnGo(this,'section-tickets')">
       <span class="bn-icon">🐛</span>
       <span class="bn-lbl">Bug</span>
       <span class="bn-bdg" id="bn-bdg-tickets"></span>
     </a>
-    <a class="bn-item" onclick="bnGo(this,'section-support')">
+    <a class="bn-item" data-section="section-support" onclick="bnGo(this,'section-support')">
       <span class="bn-icon">💬</span>
       <span class="bn-lbl">Chat</span>
       <span class="bn-bdg" id="bn-bdg-support"></span>
