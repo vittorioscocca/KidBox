@@ -166,18 +166,35 @@
       document.getElementById("consent-yes").onclick = function () { decide("granted"); };
       document.getElementById("consent-no").onclick = function () { decide("denied"); };
 
+      // Contatore nostro, indipendente dal consenso: Google parte solo dopo
+      // il «Va bene», ma chi arriva da un invito tocca lo store senza
+      // rispondere al banner, e in 28 giorni GA4 non ha visto nessuno. Qui
+      // viaggiano quattro parole (shown/store_ios/store_android/web e la
+      // piattaforma): niente cookie, niente identificativi, niente segreto.
+      // `sendBeacon` perché il tap sullo store porta via dalla pagina.
+      var PING = "https://europe-west1-kidbox-42cd7.cloudfunctions.net/inviteLandingPing";
+      function ping(event) {
+        var body = JSON.stringify({ event: event, platform: platform() });
+        try {
+          if (navigator.sendBeacon && navigator.sendBeacon(PING, body)) return;
+        } catch (e) {}
+        try { fetch(PING, { method: "POST", body: body, keepalive: true }); } catch (e) {}
+      }
+      ping("shown");
+
       // Il link alla web app porta con sé query e frammento: il segreto sta
       // nel frammento e non arriva mai al server, né qui né di là.
-      document.getElementById("web-join").href =
-        "https://app.kidboxapp.com/join" + location.search + location.hash;
+      var webJoin = document.getElementById("web-join");
+      webJoin.href = "https://app.kidboxapp.com/join" + location.search + location.hash;
+      webJoin.addEventListener("click", function () { ping("web"); });
 
       // Il tap sullo store è il passo che dice se la pagina funziona.
       document.querySelectorAll(".stores a").forEach(function (a) {
         a.addEventListener("click", function () {
+          var store = a.href.indexOf("apple") > -1 ? "ios" : "android";
+          ping("store_" + store);
           if (window.gtag) {
-            gtag("event", "invite_store_click", {
-              store: a.href.indexOf("apple") > -1 ? "ios" : "android"
-            });
+            gtag("event", "invite_store_click", { store: store });
           }
         });
       });

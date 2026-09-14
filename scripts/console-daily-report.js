@@ -223,6 +223,15 @@ async function main() {
     );
   }
 
+  // 3-bis. Pagina d'invito /join: contatore nostro (functions/inviteLanding.js),
+  // indipendente dal consenso GA4. Stessi 14 giorni del rollup.
+  const landing = await Promise.all(days.map((d) => getDoc(tok, `inviteLanding/${d}`)));
+  out.inviteLanding = days.map((date, i) => {
+    const r = landing[i] || {};
+    const shown = (r.shown_ios || 0) + (r.shown_android || 0) + (r.shown_other || 0);
+    return { date, shown, shownIos: r.shown_ios || 0, shownAndroid: r.shown_android || 0, shownOther: r.shown_other || 0, storeIos: r.store_ios || 0, storeAndroid: r.store_android || 0, web: r.web || 0 };
+  });
+
   // 4. Costi AI del mese e ticket aperti.
   out.ai = (await getDoc(tok, `ai_costs/${month}`, ["calls", "inputTokens", "outputTokens", "costUsd"])) || { calls: 0, costUsd: 0 };
   out.ai.month = month;
@@ -294,6 +303,16 @@ function print(o) {
   L.push("## Per feature — ultimi 7 gg (somma)");
   const f7 = Object.entries(agg).filter(([, v]) => Object.values(v).some((n) => n)).sort((x, y2) => Object.values(y2[1]).reduce((s, n) => s + n, 0) - Object.values(x[1]).reduce((s, n) => s + n, 0));
   L.push(f7.length ? f7.map(([k, v]) => `${k}=${v.created}/${v.updated}/${v.completed}/${v.retrieved}/${v.ai}`).join(", ") : "(nessuna)");
+  L.push("");
+
+  L.push("## Pagina d'invito /join (contatore nostro, dal 15/09/2026) — 14 gg");
+  L.push(pad("giorno", 12) + pad("viste", 7) + pad("iOS/And/altro", 15) + pad("→ store iOS", 13) + pad("→ store And", 13) + "→ web app");
+  for (const r of o.inviteLanding) {
+    if (!r.shown && !r.storeIos && !r.storeAndroid && !r.web) continue;
+    L.push(pad(r.date, 12) + pad(r.shown, 7) + pad(`${r.shownIos}/${r.shownAndroid}/${r.shownOther}`, 15) + pad(r.storeIos, 13) + pad(r.storeAndroid, 13) + r.web);
+  }
+  const lt = o.inviteLanding.slice(7).reduce((a, r) => ({ shown: a.shown + r.shown, store: a.store + r.storeIos + r.storeAndroid, web: a.web + r.web }), { shown: 0, store: 0, web: 0 });
+  L.push(`Ultimi 7 gg: ${lt.shown} viste → ${lt.store} tap store (${pct(lt.shown ? lt.store / lt.shown : null)}) → ${lt.web} web app. Chi ha già l'app non passa di qui: il link si apre direttamente in KidBox.`);
   L.push("");
 
   L.push(`## AI — mese ${o.ai.month}`);

@@ -5776,6 +5776,10 @@ exports.stripExpiredInvites = onSchedule(
     },
 );
 
+// Contatore della pagina d'invito /join, il passaggio cieco del funnel.
+// Il perché in `inviteLanding.js`.
+exports.inviteLandingPing = require("./inviteLanding").inviteLandingPing;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // WALLET
 // ─────────────────────────────────────────────────────────────────────────────

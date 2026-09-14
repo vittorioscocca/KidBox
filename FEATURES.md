@@ -152,8 +152,10 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
 
 ## 5. Backend, in breve
 
-- **64 function**, tutte in `europe-west1`. `alexaSkill` è l'unica HTTP: le
-  altre sono callable o trigger Firestore.
+- **65 function**, tutte in `europe-west1`. Due sole HTTP: `alexaSkill` e
+  `inviteLandingPing` (contatore anonimo della pagina d'invito `/join`, il
+  passaggio del funnel che GA4 non vede perché parte solo dopo il consenso);
+  le altre sono callable o trigger Firestore.
 - **AI**: una sola callable `askAI` con un `purpose` per funzione
   (`clinicalRecord`, `mealPlan`, `fitnessPlan`, `fitnessAdjust`,
   `fitnessCopilot`, …). Due modelli: Sonnet per il ragionamento, Haiku dove
