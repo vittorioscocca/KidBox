@@ -2,24 +2,32 @@
 """
 Traduzioni del blog in spagnolo e francese, a lotti.
 
-Ogni modulo `blog_<lingua>_<n>.py` espone un dizionario slug → {title, desc,
-body} nel formato degli articoli (vedi blog_data.py). Le traduzioni sono
+Ogni modulo `blog_<lingua>_<n>.py` (es: ES = {...}, fr: FR = {...}) espone un
+dizionario slug → {title, desc, body} nel formato degli articoli (vedi
+blog_data.py); vengono raccolti tutti in ordine di numero. Le traduzioni sono
 adattate, non letterali: niente Alexa (solo italiano), niente funzioni che
 KidBox non ha, e i link interni puntano solo ad articoli già tradotti.
 """
-from blog_es_1 import ES as _ES1  # noqa: E402
-from blog_es_2 import ES as _ES2  # noqa: E402
+import importlib
+import re
+from pathlib import Path
 
-TRANSLATIONS = {
-    "es": {**_ES1, **_ES2},
-}
+HERE = Path(__file__).resolve().parent
 
-try:
-    from blog_fr_1 import FR as _FR1  # noqa: E402
-    from blog_fr_2 import FR as _FR2  # noqa: E402
-    TRANSLATIONS["fr"] = {**_FR1, **_FR2}
-except ImportError:
-    pass
+
+def _load(lang):
+    found = {}
+    mods = sorted(HERE.glob(f"blog_{lang}_*.py"), key=lambda p: int(re.search(r"_(\d+)\.py$", p.name).group(1)))
+    for path in mods:
+        items = getattr(importlib.import_module(path.stem), lang.upper())
+        dup = set(found) & set(items)
+        if dup:
+            raise SystemExit(f"traduzione {lang}: articoli ripetuti in {path.name}: {dup}")
+        found.update(items)
+    return found
+
+
+TRANSLATIONS = {lang: _load(lang) for lang in ("es", "fr")}
 
 
 def apply(articles):
@@ -28,4 +36,6 @@ def apply(articles):
         for slug, text in items.items():
             if slug not in by_slug:
                 raise SystemExit(f"traduzione {lang}: articolo sconosciuto {slug}")
+            if set(text) != {"title", "desc", "body"}:
+                raise SystemExit(f"traduzione {lang}: campi errati in {slug}")
             by_slug[slug][lang] = text
