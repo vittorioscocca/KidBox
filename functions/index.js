@@ -1782,17 +1782,29 @@ const ANTHROPIC_OUTPUT_USD_PER_1M_HAIKU = 5.0;
 /**
  * Cartella clinica + PDF: richiede ragionamento contestuale (non summarization).
  * NON usare Haiku — confonde date GG/MM con pressione e fonde lesioni distinte.
+ *
+ * Sonnet 5 dal 15/09/2026 (era Sonnet 4.5): costa meno per token (2/10 $ per
+ * milione contro 3/15) ed è più capace. Due cose da sapere:
+ * - il tokenizer nuovo produce ~30% di token in più per lo stesso testo, quindi
+ *   il risparmio per richiesta è ~1/3 e non 1/3+1/3;
+ * - se si omette `thinking`, Sonnet 5 ragiona da solo (adattivo) consumando
+ *   `max_tokens` e tempo: sulla cartella clinica a 4096 e sui piani fitness a
+ *   8192 troncherebbe il JSON. Per questo `SONNET_THINKING` lo spegne e il
+ *   comportamento resta quello di Sonnet 4.5. Esperimento possibile:
+ *   `{type: "adaptive"}` + `output_config: {effort: "low"}` alzando i
+ *   max_tokens, da misurare su latenza e troncamenti prima di adottarlo.
  */
-const ANTHROPIC_MODEL_CLINICAL_RECORD = "claude-sonnet-4-5";
-const ANTHROPIC_INPUT_USD_PER_1M_SONNET = 3.0;
-const ANTHROPIC_OUTPUT_USD_PER_1M_SONNET = 15.0;
+const ANTHROPIC_MODEL_CLINICAL_RECORD = "claude-sonnet-5";
+const ANTHROPIC_INPUT_USD_PER_1M_SONNET = 2.0;
+const ANTHROPIC_OUTPUT_USD_PER_1M_SONNET = 10.0;
+const SONNET_THINKING = {type: "disabled"};
 const CLINICAL_RECORD_MAX_TOKENS = 4096;
 // Le chat (incluso l'assistente Salute) ragionano su visite/esami/cure/referti:
 // 1024 token tagliavano le risposte a metà frase. Haiku costa poco in output e si
 // paga solo ciò che genera, quindi diamo ampio margine.
 const CHAT_MAX_TOKENS = 4096;
 // Unità minime scalate dal limite giornaliero per una generazione cartella clinica.
-// Sonnet costa ~3× Haiku per token + niente caching (one-shot) → costo fisso più alto.
+// Sonnet costa ~2× Haiku per token + niente caching (one-shot) → costo fisso più alto.
 const CLINICAL_RECORD_MIN_UNITS = 3;
 // Piano alimentare: gira su HAIKU (non Sonnet). È una generazione lunga ma di
 // scrittura, non di ragionamento clinico: Sonnet costava ~0,135 $ a piano contro
@@ -2448,6 +2460,9 @@ exports.askAI = onCall(
           body: JSON.stringify({
             model: anthropicModel,
             max_tokens: maxTokens,
+            // Vedi `SONNET_THINKING`: su Sonnet 5 il ragionamento adattivo è
+            // acceso di default e mangerebbe max_tokens. Haiku 4.5 non lo ha.
+            ...(sonnetGeneration ? {thinking: SONNET_THINKING} : {}),
             // Prompt caching SOLO per le chat (multi-turno): breakpoint su system
             // (tools+system) e sull'ultimo messaggio (storico) → input ripetuto a
             // ~0.1× su cache hit. La cartella clinica è one-shot su Sonnet: il
