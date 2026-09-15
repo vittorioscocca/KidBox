@@ -459,6 +459,8 @@ export const translations = {
     },
     assistant: {
       title: "Assistente",
+      fabLabel: "Assistente di famiglia",
+      close: "Chiudi",
       history: "Storico",
       newSession: "Nuova sessione",
       newSessionConfirm:
@@ -1898,6 +1900,8 @@ export const translations = {
     },
     assistant: {
       title: "Assistant",
+      fabLabel: "Family Assistant",
+      close: "Close",
       history: "History",
       newSession: "New session",
       newSessionConfirm:
@@ -3287,6 +3291,8 @@ export const translations = {
     },
     assistant: {
       title: "Assistant",
+      fabLabel: "Assistant familial",
+      close: "Fermer",
       history: "Historique",
       newSession: "Nouvelle session",
       newSessionConfirm: "Démarrer une nouvelle session ? La conversation actuelle est archivée dans l'historique.",
@@ -4670,6 +4676,8 @@ export const translations = {
     },
     assistant: {
       title: "Asistente",
+      fabLabel: "Asistente familiar",
+      close: "Cerrar",
       history: "Historial",
       newSession: "Nueva sesión",
       newSessionConfirm: "¿Empezar una nueva sesión? La conversación actual se archiva en el historial.",

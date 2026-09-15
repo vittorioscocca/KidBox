@@ -45,7 +45,17 @@ async function pendingGroceryNames(familyId) {
   }
 }
 
-export default function Assistente() {
+/**
+ * L'assistente di famiglia. Non è più una voce della barra laterale: lo apre
+ * il pulsante flottante (`AIFab`) montato dal `Layout`, in un pannello a
+ * destra (`variant="panel"`). La rotta `/assistente` resta per i vecchi link e
+ * mostra la stessa chat a tutta pagina.
+ *
+ * Nel pannello non c'è spazio per storico e chat affiancati: lo storico prende
+ * il posto della chat finché non si sceglie una sessione.
+ */
+export default function Assistente({ variant = "page", onClose }) {
+  const isPanel = variant === "panel";
   const { currentFamilyId, currentFamily } = useFamily();
   const { user } = useAuth();
   const { t, locale } = useTranslation();
@@ -307,9 +317,9 @@ export default function Assistente() {
   }, [usage, a]);
 
   return (
-    <div className="ai-page">
+    <div className={"ai-page" + (isPanel ? " ai-panel" : "")}>
       <header className="pw-header">
-        <h1>{a.title}</h1>
+        {isPanel ? <h2>{a.fabLabel}</h2> : <h1>{a.title}</h1>}
         <div className="pw-toolbar">
           {quotaLabel && <span className="ai-quota">{quotaLabel}</span>}
           <button
@@ -321,6 +331,11 @@ export default function Assistente() {
           <button className="pw-btn-primary" onClick={newSession} disabled={!current}>
             ✨ {a.newSession}
           </button>
+          {isPanel && (
+            <button className="ai-panel-close" onClick={onClose} aria-label={a.close} title={a.close}>
+              ✕
+            </button>
+          )}
         </div>
       </header>
 
@@ -331,7 +346,10 @@ export default function Assistente() {
           <aside className="ai-history">
             <button
               className={"ai-history-item" + (isArchive ? "" : " active")}
-              onClick={() => setOpenArchiveId(null)}
+              onClick={() => {
+                setOpenArchiveId(null);
+                if (isPanel) setHistoryOpen(false);
+              }}
             >
               <span className="ai-history-title">{a.currentSession}</span>
               <span className="ai-history-meta">
@@ -352,7 +370,10 @@ export default function Assistente() {
                 >
                   <button
                     className="ai-history-open"
-                    onClick={() => setOpenArchiveId(conversation.docId)}
+                    onClick={() => {
+                      setOpenArchiveId(conversation.docId);
+                      if (isPanel) setHistoryOpen(false);
+                    }}
                   >
                     <span className="ai-history-title">{titleOf(conversation)}</span>
                     <span className="ai-history-meta">
@@ -373,7 +394,7 @@ export default function Assistente() {
           </aside>
         )}
 
-        <section className="ai-chat">
+        <section className="ai-chat" hidden={isPanel && historyOpen}>
           {isArchive && (
             <div className="ai-archive-banner">
               {a.archiveBanner}

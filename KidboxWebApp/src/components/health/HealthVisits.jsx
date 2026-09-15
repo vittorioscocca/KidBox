@@ -16,6 +16,7 @@ import {
   visitStatusInfo,
 } from "../../services/health";
 import HealthAIChat from "./HealthAIChat";
+import AIFab from "../AIFab";
 import { HEALTH_SCOPES, visitsSystemPrompt } from "../../services/healthChat";
 import {
   DetailRow,
@@ -89,13 +90,6 @@ export default function HealthVisits({
   return (
     <div className="sa-page">
       <ModuleHeader title={v.title} onBack={onBack} backLabel={h.back}>
-        <button
-          className="sa-ask-ai"
-          disabled={visits.length === 0}
-          onClick={() => setChatOpen(true)}
-        >
-          ✨ {h.chat.askVisits}
-        </button>
         <button className="pw-btn-primary" onClick={() => setEditing(emptyVisit())}>
           + {v.add}
         </button>
@@ -219,6 +213,12 @@ export default function HealthVisits({
           </aside>
         </div>
       )}
+
+      <AIFab
+        label={h.chat.askVisits}
+        disabled={visits.length === 0}
+        onClick={() => setChatOpen(true)}
+      />
 
       {chatOpen && (
         <HealthAIChat

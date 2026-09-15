@@ -1,0 +1,88 @@
+/* Fisso sul viewport, non sul contenuto: `.app-content` scorre, il pulsante no.
+   Sotto i pannelli laterali (`.pw-detail-overlay`, z-index 50), che quando si
+   aprono devono coprirlo. */
+.ai-fab {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  height: 56px;
+  min-width: 56px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), #9b5de5);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, gap 0.2s ease;
+}
+
+.ai-fab-icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+/* L'etichetta si apre al passaggio: a riposo il pulsante è un cerchio e non
+   copre il contenuto più del necessario. */
+.ai-fab-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease;
+}
+
+.ai-fab:not(:disabled):hover,
+.ai-fab:not(:disabled):focus-visible {
+  gap: 8px;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.ai-fab:not(:disabled):hover .ai-fab-label,
+.ai-fab:not(:disabled):focus-visible .ai-fab-label {
+  max-width: 260px;
+}
+
+.ai-fab:disabled {
+  background: var(--border);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (max-width: 520px) {
+  .ai-fab {
+    right: 16px;
+    bottom: 16px;
+    height: 52px;
+    min-width: 52px;
+    padding: 0 14px;
+  }
+}
+
+/* Spazio per il cerchio. In fondo alle pagine che scorrono, così l'ultima riga
+   si può sempre portare sopra il pulsante; nella chat di famiglia, a destra del
+   compositore, dove altrimenti coprirebbe il tasto d'invio.
+   Chat, Note e Calendario sono alte quanto la finestra: lì lo spazio in più
+   aggiungerebbe solo una fascia vuota da scorrere. */
+.app-shell:has(.ai-fab) .app-content:not(:has(.chat-page, .notes-page, .cal-page)) {
+  padding-bottom: calc(var(--content-pad-y) + 72px);
+}
+
+.app-shell:has(.ai-fab) .chat-composer {
+  padding-right: 76px;
+}
+
+@media (max-width: 520px) {
+  .app-shell:has(.ai-fab) .chat-composer {
+    padding-right: 64px;
+  }
+}

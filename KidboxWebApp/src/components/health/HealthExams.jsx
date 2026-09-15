@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import Modal from "../Modal";
 import { EXAM_STATUSES, deleteExam, examStatusInfo, saveExam } from "../../services/health";
 import HealthAIChat from "./HealthAIChat";
+import AIFab from "../AIFab";
 import { HEALTH_SCOPES, examsSystemPrompt } from "../../services/healthChat";
 import {
   DetailRow,
@@ -78,13 +79,6 @@ export default function HealthExams({
   return (
     <div className="sa-page">
       <ModuleHeader title={x.title} onBack={onBack} backLabel={h.back}>
-        <button
-          className="sa-ask-ai"
-          disabled={exams.length === 0}
-          onClick={() => setChatOpen(true)}
-        >
-          ✨ {h.chat.askExams}
-        </button>
         <button className="pw-btn-primary" onClick={() => setEditing(emptyExam())}>
           + {x.add}
         </button>
@@ -182,6 +176,12 @@ export default function HealthExams({
           </aside>
         </div>
       )}
+
+      <AIFab
+        label={h.chat.askExams}
+        disabled={exams.length === 0}
+        onClick={() => setChatOpen(true)}
+      />
 
       {chatOpen && (
         <HealthAIChat

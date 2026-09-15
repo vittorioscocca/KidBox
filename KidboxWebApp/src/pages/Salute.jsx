@@ -40,6 +40,7 @@ import HealthMealPlan from "../components/health/HealthMealPlan";
 import HealthFitnessPlan from "../components/health/HealthFitnessPlan";
 import HealthTimeline from "../components/health/HealthTimeline";
 import HealthAIChat from "../components/health/HealthAIChat";
+import AIFab from "../components/AIFab";
 import { HEALTH_SCOPES, healthSystemPrompt } from "../services/healthChat";
 import "./Salute.css";
 
@@ -331,14 +332,6 @@ export default function Salute() {
               <span className="sa-hero-name">{subject.name}</span>
               <span className="sa-hero-sub">{h.subtitle}</span>
             </span>
-            <span className="sa-spacer" />
-            <button
-              className="sa-ask-ai"
-              disabled={!hasHealthData}
-              onClick={() => setChatOpen(true)}
-            >
-              ✨ {h.chat.askHealth}
-            </button>
           </div>
 
           <div className="sa-modules">
@@ -362,6 +355,12 @@ export default function Salute() {
           </div>
 
           <p className="pw-hint">{h.appleHealthOnlyOnPhone}</p>
+
+          <AIFab
+            label={h.chat.askHealth}
+            disabled={!hasHealthData}
+            onClick={() => setChatOpen(true)}
+          />
 
           {chatOpen && (
             <HealthAIChat

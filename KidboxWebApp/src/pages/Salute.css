@@ -707,26 +707,6 @@
   font-weight: 600;
 }
 
-/* Pulsante «Chiedi all'AI»: la pillola in testa a ogni modulo. */
-.sa-ask-ai {
-  border: 1px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.sa-ask-ai:disabled {
-  border-color: var(--border);
-  background: transparent;
-  color: var(--muted);
-  cursor: default;
-}
-
 /* Riga di storico cliccabile: è un <button>, ma deve leggersi come testo. */
 .sa-item-open {
   border: none;
