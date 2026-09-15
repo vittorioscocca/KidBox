@@ -276,6 +276,7 @@ def page(lang, title, desc, canonical, body, depth):
   <link rel="icon" type="image/png" href="{prefix}icon.png?v=2">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/assets/consent.js" defer></script>
+  <script src="/assets/chat.js" defer></script>
   <script src="{LANG_JS}" defer></script>
 {style}
 </head>

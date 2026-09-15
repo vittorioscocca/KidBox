@@ -5780,6 +5780,10 @@ exports.stripExpiredInvites = onSchedule(
 // Il perché in `inviteLanding.js`.
 exports.inviteLandingPing = require("./inviteLanding").inviteLandingPing;
 
+// Chat «Chiedi a KidBox» della landing: il perché e i limiti di spesa in
+// `landingChat/index.js`.
+exports.landingChat = require("./landingChat").landingChat;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // WALLET
 // ─────────────────────────────────────────────────────────────────────────────

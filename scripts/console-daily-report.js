@@ -240,6 +240,58 @@ async function main() {
     return { date, shown, shownIos: r.shown_ios || 0, shownAndroid: r.shown_android || 0, shownOther: r.shown_other || 0, storeIos: r.store_ios || 0, storeAndroid: r.store_android || 0, web: r.web || 0 };
   });
 
+  // 3-ter. Chat «Chiedi a KidBox» della landing (functions/landingChat): contatori
+  // del giorno e testo delle domande libere, che scade dopo 30 giorni. Anche
+  // qui un contatore nostro: GA4 sulla landing vede solo chi ha acconsentito.
+  const chatDays = days.slice(7);
+  const chat = await Promise.all(chatDays.map((d) => getDoc(tok, `landingChat/${d}`)));
+  out.landingChat = chatDays.map((date, i) => {
+    const r = chat[i] || {};
+    const sum = (prefix) => Object.entries(r).filter(([k]) => k.startsWith(prefix)).reduce((a, [, v]) => a + (Number(v) || 0), 0);
+    const faq = {};
+    for (const [k, v] of Object.entries(r)) {
+      const m = /^(faq|faqmatch)_(.+)$/.exec(k);
+      if (m) faq[m[2]] = (faq[m[2]] || 0) + (Number(v) || 0);
+    }
+    return {
+      date,
+      opens: r.opens || 0,
+      faqChips: sum("faq_"),
+      faqMatch: sum("faqmatch_"),
+      cache: r.source_cache || 0,
+      llm: r.source_llm || 0,
+      blocked: sum("blocked_"),
+      errors: r.errors || 0,
+      costUsd: r.costUsd || 0,
+      faq,
+    };
+  });
+  const qRows = await call(tok, `${FS}:runQuery`, {
+    structuredQuery: {
+      from: [{ collectionId: "landingChatQuestions" }],
+      where: { fieldFilter: { field: { fieldPath: "day" }, op: "GREATER_THAN_OR_EQUAL", value: { stringValue: chatDays[0] } } },
+      limit: 2000,
+    },
+  });
+  const grouped = new Map();
+  for (const row of qRows) {
+    if (!row.document) continue;
+    const d = fields(row.document.fields);
+    if (d.day > yesterday) continue;
+    const key = String(d.q || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    if (!key) continue;
+    const g = grouped.get(key) || { q: d.q, n: 0, langs: new Set(), sources: new Set() };
+    g.n++;
+    g.langs.add(d.lang);
+    g.sources.add(d.source);
+    grouped.set(key, g);
+  }
+  out.landingChatQuestions = [...grouped.values()]
+    .sort((x, y) => y.n - x.n)
+    .slice(0, 20)
+    .map((g) => ({ q: g.q, n: g.n, langs: [...g.langs].join("/"), sources: [...g.sources].join("/") }));
+  out.landingChatDistinctQuestions = grouped.size;
+
   // 4. Costi AI del mese e ticket aperti.
   out.ai = (await getDoc(tok, `ai_costs/${month}`, ["calls", "inputTokens", "outputTokens", "costUsd"])) || { calls: 0, costUsd: 0 };
   out.ai.month = month;
@@ -321,6 +373,28 @@ function print(o) {
   }
   const lt = o.inviteLanding.slice(7).reduce((a, r) => ({ shown: a.shown + r.shown, store: a.store + r.storeIos + r.storeAndroid, web: a.web + r.web }), { shown: 0, store: 0, web: 0 });
   L.push(`Ultimi 7 gg: ${lt.shown} viste → ${lt.store} tap store (${pct(lt.shown ? lt.store / lt.shown : null)}) → ${lt.web} web app. Chi ha già l'app non passa di qui: il link si apre direttamente in KidBox.`);
+  L.push("");
+
+  L.push("## Chat «Chiedi a KidBox» sulla landing (contatore nostro) — 7 gg");
+  L.push(pad("giorno", 12) + pad("aperture", 10) + pad("chip FAQ", 10) + pad("FAQ locale", 12) + pad("cache", 7) + pad("modello", 9) + pad("bloccate", 10) + "costo $");
+  for (const r of o.landingChat) {
+    if (!r.opens && !r.faqChips && !r.faqMatch && !r.cache && !r.llm && !r.blocked) continue;
+    L.push(pad(r.date, 12) + pad(r.opens, 10) + pad(r.faqChips, 10) + pad(r.faqMatch, 12) + pad(r.cache, 7) + pad(r.llm, 9) + pad(r.blocked + (r.errors ? ` (+${r.errors} err)` : ""), 10) + r.costUsd.toFixed(3));
+  }
+  const ct = o.landingChat.reduce((a, r) => {
+    a.opens += r.opens; a.free += r.faqChips + r.faqMatch + r.cache; a.llm += r.llm; a.cost += r.costUsd;
+    for (const [k, v] of Object.entries(r.faq)) a.faq[k] = (a.faq[k] || 0) + v;
+    return a;
+  }, { opens: 0, free: 0, llm: 0, cost: 0, faq: {} });
+  const answered = ct.free + ct.llm;
+  L.push(`Totale 7 gg: ${ct.opens} aperture · ${answered} risposte, di cui senza modello ${ct.free} (${pct(answered ? ct.free / answered : null)}) · costo ${ct.cost.toFixed(2)} USD (tetto 1 $/giorno).`);
+  const faqTop = Object.entries(ct.faq).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${v}`).join(", ");
+  if (faqTop) L.push(`Domande suggerite (chip + ricerca locale): ${faqTop}`);
+  if (o.landingChatQuestions.length) {
+    L.push(`Domande scritte più frequenti (${o.landingChatDistinctQuestions} diverse; fonte: llm = modello, cache, faq_* = risposta scritta, blocked_* = limite):`);
+    for (const g of o.landingChatQuestions) L.push(`- ${g.n}× «${g.q}» [${g.langs}; ${g.sources}]`);
+    L.push("Le domande dello sviluppatore non sono escluse: la landing non sa chi scrive.");
+  }
   L.push("");
 
   L.push(`## AI — mese ${o.ai.month}`);

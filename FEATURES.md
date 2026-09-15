@@ -114,6 +114,7 @@ Legenda piano: **F** = incluso nel Free · **€** = richiede Pro o Max.
 | Assistente di famiglia | Chat AI che conosce i dati e crea eventi, to-do, spese | € (5 messaggi una tantum sul Free) |
 | Document Intelligence | Importi una fattura o un referto: l'AI legge e propone azioni | € |
 | Mente proattiva | Briefing mattutino, recap settimanale, analisi mensile | € |
+| Chat della landing | «Chiedi a KidBox» su kidboxapp.com: risponde sul prodotto a chi non ha l'app. Risposte scritte nel browser, cache, poi Haiku; tetto 1 $/giorno; base di conoscenza in `functions/landingChat/knowledge.md` | — |
 
 ### Estensioni iOS
 Fuori dall'app, e facili da dimenticare perché non stanno in `Features/`:
@@ -152,10 +153,11 @@ verrebbe da pensare. Ognuna è costata almeno una volta.
 
 ## 5. Backend, in breve
 
-- **65 function**, tutte in `europe-west1`. Due sole HTTP: `alexaSkill` e
+- **66 function**, tutte in `europe-west1`. Tre sole HTTP: `alexaSkill`,
   `inviteLandingPing` (contatore anonimo della pagina d'invito `/join`, il
-  passaggio del funnel che GA4 non vede perché parte solo dopo il consenso);
-  le altre sono callable o trigger Firestore.
+  passaggio del funnel che GA4 non vede perché parte solo dopo il consenso) e
+  `landingChat` (la chat «Chiedi a KidBox» della landing, dietro il rewrite
+  `/api/chat`); le altre sono callable o trigger Firestore.
 - **AI**: una sola callable `askAI` con un `purpose` per funzione
   (`clinicalRecord`, `mealPlan`, `fitnessPlan`, `fitnessAdjust`,
   `fitnessCopilot`, …). Due modelli: Sonnet per il ragionamento, Haiku dove
